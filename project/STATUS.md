@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-18T22:00:38+00:00 from repository state — do not edit_
+_generated 2026-10-18T22:19:12+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,6 @@ cancelled: 26, done: 80, failed: 3
 
 
 ## Recent events
-- 2026-10-16T23:11:55+00:00 run_finished {"run": "T0107-critic-20261016T160307-3500", "status": "completed", "cost": 1.99605, "subtype": "success", "report": "structured_output"}
 - 2026-10-16T23:11:57+00:00 inbox_opened {"id": "I0052", "kind": "decision", "subject": "[O001] PASS verdict disputed by review"}
 - 2026-10-16T23:53:28+00:00 sleep_detected {"gap_s": 1248, "runs_extended": 0}
 - 2026-10-17T00:21:44+00:00 sleep_detected {"gap_s": 1663, "runs_extended": 0}
@@ -30,3 +29,4 @@ cancelled: 26, done: 80, failed: 3
 - 2026-10-17T01:01:31+00:00 claim_recorded {"id": "C002", "status": "supported"}
 - 2026-10-17T01:01:33+00:00 objective_passed {"objective": "O001", "evaluation": "EV-O001-01"}
 - 2026-10-18T22:00:35+00:00 sleep_detected {"gap_s": 336, "runs_extended": 0}
+- 2026-10-18T22:19:09+00:00 sleep_detected {"gap_s": 1030, "runs_extended": 0}
