@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-19T13:55:32+00:00 from repository state — do not edit_
+_generated 2026-10-19T14:19:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,6 @@ cancelled: 26, done: 80, failed: 3
 
 
 ## Recent events
-- 2026-10-17T00:52:08+00:00 sleep_detected {"gap_s": 1823, "runs_extended": 0}
 - 2026-10-17T00:54:57+00:00 loop_started {"pid": 97947}
 - 2026-10-17T00:55:58+00:00 evaluation_rereview {"objective": "O001", "evaluation": "EV-O001-01", "ref": "c27e1da5e266a4f1dd2a0a7607a476f738986d90", "critics": 2}
 - 2026-10-17T00:55:58+00:00 inbox_resolved {"id": "I0052", "status": "answered", "note": "Founder (2026-10-16): the dispute's blocker was an orchestrator race (critics reviewed a snapshot taken before th
@@ -30,3 +29,4 @@ cancelled: 26, done: 80, failed: 3
 - 2026-10-19T01:34:37+00:00 sleep_detected {"gap_s": 3287, "runs_extended": 0}
 - 2026-10-19T13:41:38+00:00 sleep_detected {"gap_s": 356, "runs_extended": 0}
 - 2026-10-19T13:55:31+00:00 sleep_detected {"gap_s": 833, "runs_extended": 0}
+- 2026-10-19T14:19:24+00:00 sleep_detected {"gap_s": 1402, "runs_extended": 0}
