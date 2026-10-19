@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-19T16:53:38+00:00 from repository state — do not edit_
+_generated 2026-10-19T17:06:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,6 @@ cancelled: 26, done: 80, failed: 3
 
 
 ## Recent events
-- 2026-10-17T00:55:58+00:00 inbox_resolved {"id": "I0052", "status": "answered", "note": "Founder (2026-10-16): the dispute's blocker was an orchestrator race (critics reviewed a snapshot taken before th
 - 2026-10-17T00:56:04+00:00 run_started {"run": "T0108-critic-20261016T175604-4ce3", "task": "T0108", "role": "critic", "session": "bcf9acc6-b524-473d-949e-d8ffceb9a739"}
 - 2026-10-17T00:56:05+00:00 run_started {"run": "T0109-critic-20261016T175605-40c5", "task": "T0109", "role": "critic", "session": "acb694eb-c793-4916-a2ba-fd832037a74f"}
 - 2026-10-17T01:00:24+00:00 run_finished {"run": "T0108-critic-20261016T175604-4ce3", "status": "completed", "cost": 1.310809, "subtype": "success", "report": "structured_output"}
@@ -30,3 +29,4 @@ cancelled: 26, done: 80, failed: 3
 - 2026-10-19T14:19:24+00:00 sleep_detected {"gap_s": 1402, "runs_extended": 0}
 - 2026-10-19T14:41:00+00:00 sleep_detected {"gap_s": 519, "runs_extended": 0}
 - 2026-10-19T16:53:35+00:00 sleep_detected {"gap_s": 841, "runs_extended": 0}
+- 2026-10-19T17:06:20+00:00 sleep_detected {"gap_s": 343, "runs_extended": 0}
