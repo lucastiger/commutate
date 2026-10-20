@@ -771,6 +771,13 @@ class Orchestrator:
                                       "\n".join(ev.validity_problems), st=st)
         else:  # FAIL or INCONCLUSIVE
             st.log.append(f"verdict:{ev.verdict} {ev.id}")
+            # Put the decision registered before the evidence in front of the founder now; the diagnosis below
+            # informs it, it does not replace it.
+            pre = obj.hypothesis.decision_if_fail if ev.verdict == "FAIL" else obj.hypothesis.decision_if_inconclusive
+            self.s.add_inbox(kind="decision", subject=f"[{oid}] {ev.verdict} ({ev.id}): the pre-registered decision",
+                             summary=(f"{ev.explanation}\nPre-registered decision if {ev.verdict}: "
+                                      f"{pre or '(none recorded)'}\nA diagnosis and a statistics review are running."),
+                             refs=[oid, ev.id], options=["act on the pre-registered decision", "wait for the diagnosis"])
             cls = "model" if ev.verdict == "FAIL" else "experimental"
             self._spawn_investigation(self._pseudo(oid, ev.id), cls, f"objective verdict {ev.verdict}",
                                       ev.model_dump_json(indent=1), st=st)
@@ -825,8 +832,16 @@ class Orchestrator:
         reviews = [x.id for x in self._reviews_for(ev_id, ref=st.pending_review_ref)[0]]
         st.pending_evaluation, st.pending_review_ref = None, None
         self.s.save_objective_state(oid, st)
-        self.s.add_claim(statement=obj.hypothesis.statement, scope="; ".join(obj.scope_in) or "as stated",
-                         status="supported", objective=oid, evaluation=ev_id, reviews=reviews, caveats=caveats)
+        # The claim starts as a proposal whose scope is what was actually sampled; the founder approves its wording
+        # at a terminal (C002 copied the hypothesis's "DBC/AMB" and "converged" although only DBC was sampled).
+        domain, scope = self._claim_scope(oid, obj, ev_id)
+        claim = self.s.add_claim(statement=obj.hypothesis.statement, scope=scope, status="proposed", objective=oid,
+                                 evaluation=ev_id, reviews=reviews, caveats=caveats, domain=domain)
+        self.s.add_inbox(kind="claim_approval", subject=f"[{oid}] approve the wording of claim {claim.id}",
+                         summary=(f"Draft statement (the hypothesis): {claim.statement}\nScope from the sampled "
+                                  f"domain: {scope}\nCritic caveats: {len(caveats)}. Approve at a terminal with "
+                                  f"`uv run mfos claim approve {claim.id}` (optionally --statement-file / --scope)."),
+                         refs=[claim.id, oid, ev_id], options=["approve as drafted", "approve with a narrower wording"])
         self._commit_state(f"{oid} passed ({ev_id})")
         self.s.git("tag", "-f", "-a", f"{oid}-passed", "-m", f"{oid} passed: {ev_id}", check=False)
         self.s.event("objective_passed", objective=oid, evaluation=ev_id)
@@ -835,6 +850,20 @@ class Orchestrator:
                 t.status = "cancelled"
                 t.history.append({"outcome": "cancelled", "summary": "objective passed"})
                 self.s.save_task(t)
+
+    def _claim_scope(self, oid: str, obj: m.Objective, ev_id: str) -> tuple[dict, str]:
+        domain: dict[str, list] = {}
+        ev = evaluate._evaluation(self.s, oid, ev_id)
+        for eid, rid in (ev.results_used.items() if ev else []):
+            r = evaluate._result(self.s, eid, rid)
+            for k, vals in (r.domain if r else {}).items():
+                domain[k] = sorted({*map(json.dumps, domain.get(k, [])), *map(json.dumps, vals)})
+        domain = {k: [json.loads(x) for x in v] for k, v in domain.items()}
+        declared = "; ".join(obj.scope_in) or "none"
+        if not domain:
+            return {}, f"UNSPECIFIED — the runner declared no domain. Declared scope_in (unchecked): {declared}"
+        sampled = "; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in sorted(domain.items()))
+        return domain, f"Sampled: {sampled}. Declared scope_in (not checked against the samples): {declared}"
 
     # ================================================================== dispatch
     def _blockers(self, t: m.Task, running: list[m.Task]) -> list[str]:

@@ -26,6 +26,7 @@ class Hypothesis(_Strict):
     why_it_matters: str = ""
     decision_if_pass: str = ""
     decision_if_fail: str = ""
+    decision_if_inconclusive: str = ""  # quoted to the founder on an INCONCLUSIVE verdict (audit 2026-10-19)
 
 
 class Uncertainty(_Strict):
@@ -306,6 +307,7 @@ class ExperimentResult(_Strict):
     sanity: list[SanityResult] = []
     artifacts: list[ArtifactRef] = []
     notes: str = ""
+    domain: dict[str, list[Any]] = {}  # values actually sampled (ExperimentRun.domain): the source of a claim's scope
 
 
 # --------------------------------------------------------------------------- evaluation
@@ -346,7 +348,7 @@ class InboxItem(_Strict):
         "objective_approval", "plan_approval", "experiment_registration",
         "criteria_change", "budget_increase", "protected_change",
         "external_action", "thesis_change", "model_escalation", "decision", "question",
-        "infrastructure",
+        "infrastructure", "claim_approval",
     ]
     subject: str
     summary: str
@@ -357,9 +359,17 @@ class InboxItem(_Strict):
     response: str = ""
     created_at: str = ""
     resolved_at: Optional[str] = None
+    resolved_by: Optional[str] = None  # "human" (confirmed at a terminal) or "session" (e.g. an interactive AI session)
 
 
 # --------------------------------------------------------------------------- claims
+class Annotation(_Strict):
+    at: str
+    by: str
+    note: str
+    decision: Optional[str] = None  # decision record, e.g. D0006
+
+
 class Claim(_Strict):
     id: str
     statement: str
@@ -370,6 +380,14 @@ class Claim(_Strict):
     reviews: list[str] = []
     caveats: list[str] = []
     created_at: str = ""
+    # since the audit of 2026-10-19: claims start `proposed` with a scope generated from what was sampled, and become
+    # `supported` only when the founder approves the wording at a terminal; later restrictions are appended, never
+    # rewritten.
+    domain: dict[str, list[Any]] = {}
+    approved_by: Optional[str] = None
+    approved_at: Optional[str] = None
+    scope_restrictions: list[str] = []
+    annotations: list[Annotation] = []
 
 
 # --------------------------------------------------------------------------- agent outputs

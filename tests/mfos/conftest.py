@@ -54,6 +54,12 @@ def sandbox(tmp_path, monkeypatch):
     end = pol.index("[planning]")
     pol = pol[:start] + '[gates]\nfast = ["PYTHONPATH=src python3 -c \'import moduleforge\'"]\nfull = []\n\n' + pol[end:]
     (root / ".mfos" / "policy.toml").write_text(pol)
+    # The founder is at a terminal in these scenarios: gated commands (objective approve, exp register, approvals
+    # of gated inbox kinds, claim approve/annotate) are confirmed by typing the id. Tests of the refusal path patch
+    # mfos.human.interactive back to False.
+    from mfos import human
+    monkeypatch.setattr(human, "interactive", lambda: True)
+    monkeypatch.setattr(human, "ask", lambda prompt: prompt.split()[1])
     env_path = os.pathsep.join([str(root / "tools" / "mfos"), str(root / "src")])
     monkeypatch.setenv("PYTHONPATH", env_path)
     monkeypatch.setenv("MFOS_ROOT", str(root))

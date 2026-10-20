@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml
 
-from . import evaluate, experiments, gates, models as m, packets, report
+from . import evaluate, experiments, gates, human, models as m, packets, report
 from .store import Store, now
 
 
@@ -41,25 +41,37 @@ def cmd_objective(a: argparse.Namespace) -> int:
         print(f"created {d/'objective.yaml'} — edit it, then: mfos objective approve {a.id}")
         return 0
     if a.action == "approve":
-        obj = s.objective(a.id)  # validates schema
-        st = s.objective_state(a.id)
-        st.status, st.approved_by, st.approved_at = "active", "founder", now()
-        st.criteria_hash = s.criteria_hash(obj)
-        st.frozen_hash = s.frozen_hash(obj)
-        st.evidence_rules = max(st.evidence_rules, experiments.EVIDENCE_RULES)
-        st.needs_replan = True
-        s.save_objective_state(a.id, st)
-        s.event("objective_approved", actor="founder", objective=a.id, criteria_hash=st.criteria_hash)
-        d = s.objective_dir(a.id).relative_to(s.root)
-        s.git("add", "--", str(d / "objective.yaml"), str(d / "state.yaml"), check=False)
-        s.git("commit", "-q", "-m", f"Approve {a.id}: freeze hypothesis and acceptance criteria",
-              "-m", f"criteria_hash: {st.criteria_hash}", check=False, as_founder=True)
-        print(f"{a.id} approved and frozen ({st.criteria_hash[:19]}…)")
-        return 0
+        s.objective(a.id)  # validates schema before asking anyone to confirm
+        if not human.confirm(f"objective approve {a.id}", a.id):
+            return 2
+        return _approve_objective(s, a.id)
     if a.action == "show":
         print(yaml.safe_dump(s.objective(a.id).model_dump(mode="json"), sort_keys=False))
         print(yaml.safe_dump(s.objective_state(a.id).model_dump(mode="json"), sort_keys=False))
         return 0
+    return _objective_other(s, a)
+
+
+def _approve_objective(s: Store, oid: str) -> int:
+    """Freeze an objective (a founder act: callers confirm at a terminal first)."""
+    obj = s.objective(oid)  # validates schema
+    st = s.objective_state(oid)
+    st.status, st.approved_by, st.approved_at = "active", "founder", now()
+    st.criteria_hash = s.criteria_hash(obj)
+    st.frozen_hash = s.frozen_hash(obj)
+    st.evidence_rules = max(st.evidence_rules, experiments.EVIDENCE_RULES)
+    st.needs_replan = True
+    s.save_objective_state(oid, st)
+    s.event("objective_approved", actor="founder", objective=oid, criteria_hash=st.criteria_hash)
+    d = s.objective_dir(oid).relative_to(s.root)
+    s.git("add", "--", str(d / "objective.yaml"), str(d / "state.yaml"), check=False)
+    s.git("commit", "-q", "-m", f"Approve {oid}: freeze hypothesis and acceptance criteria",
+          "-m", f"criteria_hash: {st.criteria_hash}", check=False, as_founder=True)
+    print(f"{oid} approved and frozen ({st.criteria_hash[:19]}…)")
+    return 0
+
+
+def _objective_other(s: Store, a: argparse.Namespace) -> int:
     if a.action == "pause":
         st = s.objective_state(a.id)
         st.status = "needs_founder"
@@ -89,10 +101,18 @@ def _resolve(s: Store, iid: str, status: str, note: str, replan: bool = True) ->
     if item.status != "open":
         print(f"{iid} is already {item.status}")
         return 1
+    gated = item.kind in human.GATED_KINDS and status in ("approved", "rejected")
+    if gated and not human.confirm(f"{'approve' if status == 'approved' else 'reject'} {iid}", iid):
+        return 2
     item.status, item.response, item.resolved_at = status, note, now()
+    item.resolved_by = "human" if gated else human.resolver()
     approved = status == "approved"
     if item.kind == "objective_approval" and approved:
-        cmd_objective(argparse.Namespace(action="approve", id=item.refs[0]))
+        _approve_objective(s, item.refs[0])
+    elif item.kind == "claim_approval" and approved:
+        rc = _approve_claim(s, item.refs[0], statement=None, scope=None)
+        if rc:
+            return rc
     elif item.kind == "plan_approval":
         oid, tids = item.refs[0], item.refs[1:]
         for tid in tids:
@@ -143,9 +163,80 @@ def _resolve(s: Store, iid: str, status: str, note: str, replan: bool = True) ->
                     st.status = "active"
                 s.save_objective_state(ref, st)
     s.save_inbox(item)
-    s.event("inbox_resolved", actor="founder", id=iid, status=status, note=note)
+    s.event("inbox_resolved", actor="founder", id=iid, status=status, note=note, by=item.resolved_by)
     print(f"{iid} {status}")
     return 0
+
+
+# ------------------------------------------------------------------ claims
+def _claim_path(s: Store, cid: str) -> Path:
+    return s.project / "claims" / f"{cid}.yaml"
+
+
+def _commit_founder(s: Store, path: Path, message: str) -> None:
+    s.git("add", "--", str(path.relative_to(s.root)), check=False)
+    s.git("commit", "-q", "-m", message, check=False, as_founder=True)
+
+
+def _approve_claim(s: Store, cid: str, statement: str | None, scope: str | None) -> int:
+    c = s.read_yaml(_claim_path(s, cid), m.Claim)
+    if c.status != "proposed":
+        print(f"{cid} is {c.status}, not proposed", file=sys.stderr)
+        return 1
+    if scope is None and c.scope.startswith("UNSPECIFIED"):
+        print(f"{cid}: the runners declared no domain; approve with --scope stating what was sampled", file=sys.stderr)
+        return 1
+    if statement:
+        c.statement = statement
+    if scope:
+        c.scope = scope
+    c.status, c.approved_by, c.approved_at = "supported", "founder", now()
+    s.write_yaml(_claim_path(s, cid), c)
+    for item in s.inbox("open"):
+        if item.kind == "claim_approval" and cid in item.refs:
+            item.status, item.response, item.resolved_at, item.resolved_by = "approved", "claim approved", now(), "human"
+            s.save_inbox(item)
+    s.event("claim_approved", actor="founder", id=cid)
+    _commit_founder(s, _claim_path(s, cid), f"Approve claim {cid}")
+    print(f"{cid} supported")
+    return 0
+
+
+def cmd_claim(a: argparse.Namespace) -> int:
+    s = _store()
+    if a.action == "list":
+        for p in sorted((s.project / "claims").glob("C*.yaml")):
+            c = s.read_yaml(p, m.Claim)
+            extra = f" (+{len(c.scope_restrictions)} restrictions)" if c.scope_restrictions else ""
+            print(f"{c.id} {c.status:10s} {c.objective} {c.evaluation}{extra}")
+        return 0
+    if not a.id:
+        print("claim id required", file=sys.stderr)
+        return 1
+    if a.action == "show":
+        print(yaml.safe_dump(s.read_yaml(_claim_path(s, a.id), m.Claim).model_dump(mode="json"), sort_keys=False,
+                             allow_unicode=True, width=110))
+        return 0
+    if a.action == "approve":
+        if not human.confirm(f"claim approve {a.id}", a.id):
+            return 2
+        statement = Path(a.statement_file).read_text().strip() if a.statement_file else None
+        return _approve_claim(s, a.id, statement, a.scope)
+    if a.action == "annotate":
+        if not a.note:
+            print("claim annotate needs --note", file=sys.stderr)
+            return 1
+        if not human.confirm(f"claim annotate {a.id}", a.id):
+            return 2
+        c = s.read_yaml(_claim_path(s, a.id), m.Claim)
+        c.annotations.append(m.Annotation(at=now(), by="founder", note=a.note, decision=a.decision))
+        c.scope_restrictions += a.restrict or []
+        s.write_yaml(_claim_path(s, a.id), c)
+        s.event("claim_annotated", actor="founder", id=a.id, decision=a.decision, restrictions=len(a.restrict or []))
+        _commit_founder(s, _claim_path(s, a.id), f"Annotate claim {a.id}" + (f" ({a.decision})" if a.decision else ""))
+        print(f"{a.id} annotated")
+        return 0
+    return 1
 
 
 def cmd_inbox(a: argparse.Namespace) -> int:
@@ -265,6 +356,8 @@ def cmd_run(a: argparse.Namespace) -> int:
 def cmd_exp(a: argparse.Namespace) -> int:
     s = _store()
     if a.action == "register":
+        if not human.confirm(f"exp register {a.id}", a.id):
+            return 2
         try:
             spec = experiments.register(s, a.id, by="founder", override_null=a.override_null)
         except RuntimeError as e:
@@ -510,6 +603,15 @@ def _parser() -> argparse.ArgumentParser:
     for p_ in (ap, rj, an):
         p_.add_argument("--no-replan", action="store_true",
                         help="resolve a decision without asking the planner to replan the objective")
+
+    c = cmd("claim", cmd_claim, "list, show, approve (proposed -> supported) or annotate claims")
+    c.add_argument("action", choices=["list", "show", "approve", "annotate"])
+    c.add_argument("id", nargs="?")
+    c.add_argument("--statement-file", help="approve: the final claim statement, if it differs from the draft")
+    c.add_argument("--scope", help="approve: the scope, required when the runners declared no domain")
+    c.add_argument("--note", help="annotate: what changed and why")
+    c.add_argument("--restrict", action="append", help="annotate: a scope restriction (repeatable)")
+    c.add_argument("--decision", help="annotate: the decision record, e.g. D0006")
 
     t = cmd("task", cmd_task, "add, list, show, start, retry, cancel tasks")
     t.add_argument("action", choices=["add", "list", "show", "start", "retry", "cancel"])

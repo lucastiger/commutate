@@ -120,6 +120,18 @@ Return JSON matching the schema you were given. Report exactly which commands yo
     return _write(cwd, run_key, text)
 
 
+def _claims(store: Store) -> str:
+    out = []
+    for p in sorted((store.project / "claims").glob("C*.yaml")) if (store.project / "claims").exists() else []:
+        c = store.read_yaml(p, m.Claim)
+        if c.status not in ("supported", "proposed"):
+            continue
+        out.append(f"- {c.id} ({c.status}, {c.objective}): {c.statement}\n  scope: {c.scope}")
+        out += [f"  RESTRICTED: {r}" for r in c.scope_restrictions]
+        out += [f"  note ({a.at[:10]}{', ' + a.decision if a.decision else ''}): {a.note}" for a in c.annotations]
+    return "\n".join(out) or "none"
+
+
 def plan_packet(store: Store, oid: str, cwd: Path, run_key: str, trigger: str) -> str:
     o = store.objective(oid)
     st = store.objective_state(oid)
@@ -154,6 +166,9 @@ status={st.status} replans={st.replans}/{st.max_replans} evaluations={len(st.eva
 
 ## Experiments
 registered specs: {specs or 'none'}; drafts awaiting registration: {drafts or 'none'}
+
+## Claims (what earlier objectives established; respect their restrictions)
+{_claims(store)}
 
 ## Latest evaluations
 {chr(10).join(evals) or 'none'}
