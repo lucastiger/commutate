@@ -256,14 +256,25 @@ class Orchestrator:
             return
         if rec.status == "error":
             text = (rec.result_text + " " + rec.subtype).lower()
-            if any(k in text for k in CAPACITY_SIGNS):
+            if any(k in text for k in CAPACITY_SIGNS) or rec.extra.get("api_error_status") == 429:
+                # A usage limit states when it resets: wait until then (+2 min), then resume the same session, so
+                # the work done before the limit is not thrown away (61 of O001's 174 runs died on a limit).
+                reset = diagnose.parse_limit_reset(rec.result_text)
                 minutes = int(self.pol.get("limits", {}).get("backoff_minutes", 30))
-                (self.s.mfos / "backoff_until").write_text(str(time.time() + 60 * minutes))
+                until = reset.timestamp() + 120 if reset else time.time() + 60 * minutes
+                (self.s.mfos / "backoff_until").write_text(str(until))
                 t.attempts = max(0, t.attempts - 1)  # capacity problems are not the agent's failure
                 t.status = "todo"
-                t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now()})
+                limit = reset is not None or rec.extra.get("api_error_status") == 429 or "limit" in text
+                t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now(),
+                                  "until": dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(),
+                                  "session": rec.session_id if limit else None})
                 self.s.save_task(t)
-                self.s.event("capacity_backoff", task=t.id, minutes=minutes)
+                self.s.event("capacity_backoff", task=t.id, minutes=round((until - time.time()) / 60),
+                             parsed_reset=reset is not None)
+                return
+            if diagnose.classify_agent_error(rec.result_text + " " + str(rec.extra.get("stderr_tail", ""))):
+                self._fail(t, "cli_error", f"the Claude Code CLI failed (run {rec.run_id})", rec.result_text)
                 return
             if rec.subtype in ("error_max_turns", "error_max_budget_usd") and t.type not in ("plan", "review"):
                 wt = self.git.wt_root / t.id
@@ -273,8 +284,9 @@ class Orchestrator:
             return
         out = rec.structured_output or {}
         if not out and t.type in ("plan", "review"):
-            # Say so plainly: validating {} reads like a bad plan, not a missing one (O000, 2026-09-28).
-            self._fail(t, "agent_error", f"{t.agent} returned no structured report (run {rec.run_id}); "
+            # Say so plainly: validating {} reads like a bad plan, not a missing one (O000, 2026-09-28). The run
+            # finished, so this is the tooling (StructuredOutput missing from the agent's tools), not the agent.
+            self._fail(t, "no_structured_output", f"{t.agent} returned no structured report (run {rec.run_id}); "
                        "check that its tools: allow-list includes StructuredOutput", rec.result_text)
             return
         handler = {
@@ -551,11 +563,16 @@ class Orchestrator:
                           "failure_output": output[-4000:], "at": now()})
         resp = diagnose.respond(signal, t.attempts, t.max_attempts)
         self.s.event("task_failed_attempt", task=t.id, signal=signal, action=resp.action)
+        if resp.action == "pause":
+            self._pause_for_infrastructure(t, signal, summary, output)
+            return
         if resp.action == "repair" and t.type not in ("plan", "review"):
             t.status = "todo"
         elif t.type in ("plan", "review") and t.attempts < t.max_attempts:
             t.status = "todo"
-        elif resp.action in ("diagnose", "fix_experiment") and t.type != "investigate":
+        elif resp.action in ("diagnose", "fix_experiment") and t.type not in ("plan", "review", "investigate"):
+            # Plans, reviews and diagnoses never spawn diagnoses of themselves: a cascade of them is how O000's
+            # missing-tool problem cost $12.22 (2026-09-28).
             t.status = "failed"
             self._spawn_investigation(t, resp.failure_class, summary, output)
         else:
@@ -564,6 +581,25 @@ class Orchestrator:
                              summary=f"Class: {resp.failure_class}. {resp.note}\n\n{output[-1500:]}",
                              refs=[t.id, t.objective], options=["re-scope", "cancel", "give guidance"])
         self.s.save_task(t)
+
+    def _pause_for_infrastructure(self, t: m.Task, signal: str, summary: str, output: str) -> None:
+        """Tooling failed, not the work: give the attempt back, park the task, and tell the founder once per cause."""
+        t.attempts = max(0, t.attempts - 1)
+        t.status = "needs_founder"
+        self.s.save_task(t)
+        subject = f"infrastructure: {signal}"
+        item = next((i for i in self.s.inbox("open") if i.kind == "infrastructure" and i.subject == subject), None)
+        if item is not None:
+            if t.id not in item.refs:
+                item.refs.append(t.id)
+                item.summary += f"\n- also {t.id}: {summary}"
+                self.s.save_inbox(item)
+        else:
+            self.s.add_inbox(kind="infrastructure", subject=subject,
+                             summary=(f"{summary}\nNo attempt was used and no diagnosis was spawned. Fix the cause, "
+                                      f"then approve this item: every listed task returns to todo.\n\n{output[-1500:]}"),
+                             refs=[t.id], options=["fixed: retry the listed tasks", "reject: leave them parked"])
+        self.s.event("infrastructure_pause", task=t.id, signal=signal)
 
     def _spawn_investigation(self, t: m.Task, cls: str, summary: str, output: str,
                              st: Optional[m.ObjectiveState] = None) -> None:
@@ -629,8 +665,9 @@ class Orchestrator:
                      if r.provenance.finished and
                      dt.datetime.fromisoformat(r.provenance.finished).timestamp() >= rec["started"] - 1]
             if not fresh:
-                self._fail(t, "experiment_error", "experiment produced no result",
-                           (self.s.mfos / "exp_runs" / f"{t.id}.log").read_text()[-3000:])
+                log = (self.s.mfos / "exp_runs" / f"{t.id}.log").read_text()
+                signal = diagnose.classify_experiment_failure(log)
+                self._fail(t, signal, "experiment produced no result", log[-3000:])
                 continue
             r = fresh[-1]
             if r.status == "complete" and all(s.passed for s in r.sanity):
@@ -641,7 +678,10 @@ class Orchestrator:
                 self._fail(t, "sanity_failed", f"sanity checks failed in {r.run_id}",
                            json.dumps([s.model_dump() for s in r.sanity if not s.passed], indent=1))
             else:
-                self._fail(t, "experiment_error", f"{r.run_id} status={r.status}", r.notes[-3000:])
+                runner_log = self.s.root / "experiments" / "results" / (t.experiment or "") / r.run_id / "runner.log"
+                text = r.notes + ("\n" + runner_log.read_text()[-6000:] if runner_log.exists() else "")
+                signal = diagnose.classify_experiment_failure(text)
+                self._fail(t, signal, f"{r.run_id} status={r.status}", text[-3000:])
 
     # ================================================================== objectives
     def _objective(self, oid: str) -> None:
@@ -896,11 +936,26 @@ class Orchestrator:
                 # founder started resumes after a capacity pause without a second trigger
             if n_agents >= conc.get("agents", 2) or not self._budget_ok(t):
                 continue
-            self._start_agent(t)
+            session = self._resumable_session(t)
+            if session:  # continue the interrupted session; it is the same attempt
+                t.attempts += 1
+                t.history.append({"outcome": "capacity_resume", "summary": session, "at": now()})
+                self._start_agent(t, resume=session)
+            else:
+                self._start_agent(t)
             running.append(t)
             n_agents += 1
             started += 1
         return started
+
+    MAX_CAPACITY_RESUMES = 2
+
+    def _resumable_session(self, t: m.Task) -> Optional[str]:
+        """The session a usage limit interrupted, if it should be resumed (at most twice per task)."""
+        if not t.history or t.history[-1].get("outcome") != "capacity_backoff":
+            return None
+        resumes = sum(1 for h in t.history if h.get("outcome") == "capacity_resume")
+        return t.history[-1].get("session") if resumes < self.MAX_CAPACITY_RESUMES else None
 
     def _start_agent(self, t: m.Task, resume: Optional[str] = None) -> None:
         role = t.agent

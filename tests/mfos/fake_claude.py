@@ -9,6 +9,12 @@ Behaviour by --agent:
 
 The report goes in `structured_output`, unless the agent's `tools:` allow-list hides the StructuredOutput
 tool (then only prose comes back, as with the real CLI) or FAKE_REPORT_AS_TEXT=1 (bare JSON in `result`).
+
+Further switches (audit 2026-10-19 tests):
+  FAKE_ARGV_LOG=path           append this call's argv and selected env as one JSON line
+  FAKE_NO_REPORT_FOR=role      that role finishes "successfully" without any report
+  FAKE_LIMIT_ONCE=role         that role's first call ends on a usage limit (HTTP 429, a reset time in the text)
+  FAKE_DENIALS=n               report n permission denials
 """
 import json
 import os
@@ -20,6 +26,10 @@ from pathlib import Path
 args = sys.argv[1:]
 if os.environ.get("FAKE_RECORD_PATH"):  # lets tests see which python3 the hooks would get
     Path(os.environ["FAKE_RECORD_PATH"]).write_text(os.environ.get("PATH", "").split(os.pathsep)[0])
+if os.environ.get("FAKE_ARGV_LOG"):
+    with open(os.environ["FAKE_ARGV_LOG"], "a") as f:
+        f.write(json.dumps({"argv": args, "cwd": os.getcwd(),
+                            "env": {k: os.environ.get(k) for k in ("UV_OFFLINE", "UV_FROZEN", "MFOS_ROLE")}}) + "\n")
 role = args[args.index("--agent") + 1]
 prompt = args[args.index("-p") + 1]
 sid = args[args.index("--session-id") + 1] if "--session-id" in args else args[args.index("--resume") + 1]
@@ -71,7 +81,24 @@ else:
 
 envelope = {"type": "result", "subtype": "success", "is_error": False, "result": "done",
             "structured_output": out, "session_id": sid or str(uuid.uuid4()),
-            "total_cost_usd": 0.02, "num_turns": 3}
+            "total_cost_usd": 0.02, "num_turns": 3,
+            "usage": {"input_tokens": 10, "cache_creation_input_tokens": 100, "cache_read_input_tokens": 1000,
+                      "output_tokens": 50, "output_tokens_details": {"thinking_tokens": 20}},
+            "modelUsage": {"claude-fake": {}},
+            "permission_denials": [{"tool_name": "Bash", "tool_use_id": f"t{i}", "tool_input": {"command": "x"}}
+                                   for i in range(int(os.environ.get("FAKE_DENIALS", "0")))]}
+limit_marker = Path(os.environ.get("MFOS_ROOT_MAIN", ".")) / ".mfos" / "runs" / f"fake-limit-{role}"
+if os.environ.get("FAKE_LIMIT_ONCE") == role and not limit_marker.exists():
+    limit_marker.write_text("x")
+    envelope.update(is_error=True, subtype="success", api_error_status=429, structured_output=None,
+                    result="You've hit your session limit · resets 11pm (America/Los_Angeles)")
+    print(json.dumps(envelope))
+    sys.exit(1)
+if os.environ.get("FAKE_NO_REPORT_FOR") == role:
+    del envelope["structured_output"]
+    envelope["result"] = "All done."
+    print(json.dumps(envelope))
+    sys.exit(0)
 # Like the real CLI (checked with 2.1.284): an agent whose `tools:` allow-list omits StructuredOutput
 # never sees the schema, so its report exists only as prose in `result`.
 agent_md = Path(".claude") / "agents" / f"{role}.md"

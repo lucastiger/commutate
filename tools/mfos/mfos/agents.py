@@ -10,6 +10,8 @@ Run records live in .mfos/runs/<run_id>/ :
   record.json   written at dispatch, updated at completion (source of recovery)
   stdout.json   the CLI's final JSON (result, structured_output, cost, session id)
   stderr.log
+  packet.md, dod.json, transcript.jsonl   copied when the run ends (the worktree that held the packet is deleted
+                after merge, and Claude Code deletes local transcripts after cleanupPeriodDays, 30 by default)
 """
 from __future__ import annotations
 
@@ -17,6 +19,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -53,6 +56,7 @@ class RunRecord:
     structured_output: Optional[dict[str, Any]] = None
     result_text: str = ""
     deadline: float = 0.0
+    packet: str = ""  # packet path relative to cwd
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -161,7 +165,7 @@ class AgentRunner:
         wall = wall_minutes or pol.get("limits", {}).get("run_wall_minutes", 90)
         rec = RunRecord(run_id=run_id, task_id=task.id, role=role, session_id=session_id, cwd=str(cwd),
                         started=now(), pid=proc.pid, resumed_from=resume_session,
-                        deadline=time.time() + 60 * wall)
+                        deadline=time.time() + 60 * wall, packet=packet_rel)
         self.save(rec)
         self.s.event("run_started", run=run_id, task=task.id, role=role, session=session_id)
         return rec
@@ -193,6 +197,7 @@ class AgentRunner:
                 self._kill(rec.pid)
                 rec.status, rec.finished = "timeout", now()
                 self._bill_from_transcript(rec)
+                self.archive(rec)
                 self.save(rec)
                 self.s.event("run_timeout", run=rec.run_id, cost=rec.cost_usd)
             return rec
@@ -202,6 +207,7 @@ class AgentRunner:
         except Exception:
             rec.status, rec.finished = "interrupted", now()
             self._bill_from_transcript(rec)
+            self.archive(rec)
             self.save(rec)
             self.s.event("run_interrupted", run=rec.run_id, cost=rec.cost_usd)
             return rec
@@ -217,10 +223,58 @@ class AgentRunner:
         rec.result_text = str(data.get("result") or "")[-4000:]
         rec.session_id = data.get("session_id", rec.session_id)
         rec.status = "error" if rec.is_error or rec.subtype.startswith("error") else "completed"
+        self._account(rec, data)
+        self.archive(rec)
         self.save(rec)
         self.s.event("run_finished", run=rec.run_id, status=rec.status, cost=rec.cost_usd, subtype=rec.subtype,
                      report=rec.extra.get("report_source", "structured_output"))
         return rec
+
+    def _account(self, rec: RunRecord, data: dict[str, Any]) -> None:
+        """Tokens, models, permission denials and the API error status of a finished run (audit W6)."""
+        u = data.get("usage") or {}
+        rec.extra["usage"] = {
+            "input": int(u.get("input_tokens") or 0),
+            "cache_creation": int(u.get("cache_creation_input_tokens") or 0),
+            "cache_read": int(u.get("cache_read_input_tokens") or 0),
+            "output": int(u.get("output_tokens") or 0),
+            "thinking": int((u.get("output_tokens_details") or {}).get("thinking_tokens") or 0),
+        }
+        rec.extra["models"] = sorted((data.get("modelUsage") or {}).keys())
+        denials = data.get("permission_denials") or []
+        rec.extra["denials"] = len(denials)
+        counts: dict[str, int] = {}
+        for d in denials:
+            name = str(d.get("tool_name", "?")) if isinstance(d, dict) else "?"
+            counts[name] = counts.get(name, 0) + 1
+        rec.extra["denied_tools"] = counts
+        rec.extra["api_error_status"] = data.get("api_error_status")
+        if rec.status == "error":
+            err = self.runs_dir / rec.run_id / "stderr.log"
+            rec.extra["stderr_tail"] = err.read_text(errors="replace")[-1500:] if err.exists() else ""
+
+    @staticmethod
+    def transcript_path(session_id: str) -> Optional[Path]:
+        base = Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude") / "projects"
+        hits = sorted(base.glob(f"*/{session_id}.jsonl"))
+        return hits[0] if hits else None
+
+    def archive(self, rec: RunRecord) -> None:
+        """Keep the run's packet, DoD file and transcript beside its record (best effort; never fails a run)."""
+        rdir = self.runs_dir / rec.run_id
+        copies = []
+        if rec.packet:
+            src = Path(rec.cwd) / rec.packet
+            copies += [(src, rdir / "packet.md"), (src.with_name(src.name.replace(".md", ".dod.json")), rdir / "dod.json")]
+        tr = self.transcript_path(rec.session_id)
+        if tr is not None:
+            copies.append((tr, rdir / "transcript.jsonl"))
+        for src, dst in copies:
+            try:
+                if src.exists():
+                    shutil.copy2(src, dst)
+            except OSError:
+                pass
 
     @staticmethod
     def transcript_cost(session_id: str) -> Optional[float]:

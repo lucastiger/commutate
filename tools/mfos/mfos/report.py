@@ -8,6 +8,33 @@ from . import models as m
 from .store import Store, now
 
 
+def usage_by_objective(s: Store) -> dict[str, dict]:
+    """Aggregate the run records (.mfos/runs/*/record.json) per objective: runs, USD, tokens, denials, limit hits."""
+    out: dict[str, dict] = {}
+    runs = s.mfos / "runs"
+    for p in sorted(runs.glob("*/record.json")) if runs.exists() else []:
+        try:
+            rec = json.loads(p.read_text())
+        except ValueError:
+            continue
+        tp = s.task_path(rec.get("task_id", ""))
+        try:
+            oid = s.task(rec["task_id"]).objective if tp.exists() else "?"
+        except Exception:
+            oid = "?"
+        row = out.setdefault(oid, {"runs": 0, "usd": 0.0, "input": 0, "cache_read": 0, "cache_creation": 0,
+                                   "output": 0, "thinking": 0, "denials": 0, "limits": 0})
+        extra = rec.get("extra") or {}
+        row["runs"] += 1
+        row["usd"] += float(rec.get("cost_usd") or 0.0)
+        for k in ("input", "cache_read", "cache_creation", "output", "thinking"):
+            row[k] += int((extra.get("usage") or {}).get(k) or 0)
+        row["denials"] += int(extra.get("denials") or 0)
+        text = str(rec.get("result_text") or "").lower()
+        row["limits"] += int(extra.get("api_error_status") == 429 or "hit your" in text and "limit" in text)
+    return out
+
+
 def write_status(s: Store) -> str:
     lines = ["# ModuleForge status", f"_generated {now()} from repository state — do not edit_", ""]
     inbox = s.inbox("open")
@@ -22,6 +49,13 @@ def write_status(s: Store) -> str:
         cap = st.budget_override_usd or o.budget.usd
         lines.append(f"| {oid} | {st.status} | {st.last_verdict or '-'} | {len(st.evaluations)}/"
                      f"{o.acceptance.max_evaluations} | ${st.spent_usd:.2f}/${cap:.0f} | {o.title} |")
+    usage = usage_by_objective(s)
+    if usage:
+        lines += ["", "## Usage (from run records)", "| objective | runs | usd | output tokens | thinking | denials | limit hits |",
+                  "|---|---|---|---|---|---|---|"]
+        for oid, r in sorted(usage.items()):
+            lines.append(f"| {oid} | {r['runs']} | ${r['usd']:.2f} | {r['output']} | {r['thinking']} | {r['denials']} "
+                         f"| {r['limits']} |")
     tasks = s.tasks()
     counts = Counter(t.status for t in tasks)
     lines += ["", "## Tasks", ", ".join(f"{k}: {v}" for k, v in sorted(counts.items())) or "none", ""]

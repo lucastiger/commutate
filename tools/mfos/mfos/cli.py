@@ -113,6 +113,14 @@ def _resolve(s: Store, iid: str, status: str, note: str, replan: bool = True) ->
         t.approval = iid
         t.status = "merge"
         s.save_task(t)
+    elif item.kind == "infrastructure" and status in ("approved", "answered"):
+        for ref in item.refs:  # the cause is fixed: every task it parked goes back to todo
+            if s.task_path(ref).exists():
+                t = s.task(ref)
+                if t.status == "needs_founder":
+                    t.status = "todo"
+                    t.history.append({"outcome": "infrastructure_resolved", "summary": f"{iid}: {note}", "at": now()})
+                    s.save_task(t)
     elif item.kind == "budget_increase" and approved:
         for ref in item.refs:
             if ref.startswith("O"):
@@ -372,13 +380,45 @@ def cmd_report(a: argparse.Namespace) -> int:
 
 
 def cmd_costs(a: argparse.Namespace) -> int:
+    """Per objective, from the run records (the source of truth): runs, USD, tokens, denials, usage-limit hits."""
     s = _store()
+    rows = report.usage_by_objective(s)
+    print(f"{'objective':10s} {'runs':>5s} {'usd':>8s} {'input':>9s} {'cache_rd':>11s} {'cache_wr':>10s} "
+          f"{'output':>9s} {'thinking':>9s} {'denials':>7s} {'limits':>6s}")
+    for oid, r in sorted(rows.items()):
+        print(f"{oid:10s} {r['runs']:5d} {r['usd']:8.2f} {r['input']:9d} {r['cache_read']:11d} "
+              f"{r['cache_creation']:10d} {r['output']:9d} {r['thinking']:9d} {r['denials']:7d} {r['limits']:6d}")
     for oid in s.objective_ids():
         st = s.objective_state(oid)
-        print(f"{oid}: ${st.spent_usd:.2f}")
+        recorded = rows.get(oid, {}).get("usd", 0.0)
+        if abs(st.spent_usd - recorded) > 1.0:
+            print(f"NOTE {oid}: state ledger ${st.spent_usd:.2f} differs from the run records ${recorded:.2f}")
     from .agents import AgentRunner
     today = dt.datetime.now(dt.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
     print(f"today: ${AgentRunner(s).spent_since(today):.2f}")
+    return 0
+
+
+def cmd_archive(a: argparse.Namespace) -> int:
+    """Offline copy of the run records (packets, transcripts) and the event log, with a sha256 manifest."""
+    import hashlib
+    import tarfile
+    s = _store()
+    dest = Path(a.dest).expanduser()
+    dest.mkdir(parents=True, exist_ok=True)
+    out = dest / f"mfos-archive-{time.strftime('%Y%m%dT%H%M%S')}.tar.gz"
+    sources = [p for p in (s.mfos / "runs", s.project / "events.jsonl") if p.exists()]
+    manifest = []
+    for src in sources:
+        for f in sorted([src] if src.is_file() else src.rglob("*")):
+            if f.is_file():
+                manifest.append(f"{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.relative_to(s.root)}")
+    man = dest / (out.name + ".sha256")
+    man.write_text("\n".join(manifest) + "\n")
+    with tarfile.open(out, "w:gz") as tar:
+        for src in sources:
+            tar.add(src, arcname=str(src.relative_to(s.root)))
+    print(f"{out} ({len(manifest)} files; manifest {man.name})")
     return 0
 
 
@@ -516,7 +556,9 @@ def _parser() -> argparse.ArgumentParser:
     cmd("status", cmd_status, "write and print STATUS.md")
     rp = cmd("report", cmd_report, "write an objective's evidence package")
     rp.add_argument("id")
-    cmd("costs", cmd_costs, "spend by objective and today")
+    cmd("costs", cmd_costs, "spend, tokens, denials and usage-limit hits by objective")
+    ar = cmd("archive", cmd_archive, "offline copy of run records, transcripts and events")
+    ar.add_argument("--dest", default="~/mf-archive")
     dr = cmd("doctor", cmd_doctor, "check repository integrity")
     dr.add_argument("--ci", action="store_true")
     return p

@@ -346,6 +346,7 @@ class InboxItem(_Strict):
         "objective_approval", "plan_approval", "experiment_registration",
         "criteria_change", "budget_increase", "protected_change",
         "external_action", "thesis_change", "model_escalation", "decision", "question",
+        "infrastructure",
     ]
     subject: str
     summary: str
@@ -436,7 +437,8 @@ class ScienceReport(_Strict):
     for design/investigation tasks failure_class is 'none'."""
 
     summary: str
-    failure_class: Literal["implementation", "model", "experimental", "planning", "business", "none"] = "none"
+    failure_class: Literal["implementation", "model", "experimental", "planning", "business", "infrastructure",
+                           "none"] = "none"
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     root_cause: str = ""
     evidence: list[str] = []
