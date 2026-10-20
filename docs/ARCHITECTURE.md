@@ -312,16 +312,31 @@ For each criterion the evaluator reads `E###.metric` from the admissible result 
 ≥ 0.85; a kill criterion `MAPE > 0.20` fires only if the **lower** bound exceeds 0.20. A criterion that
 asks for an interval on a metric reported without one is *missing*, never silently passed.
 
-* **INVALID** — evidence inadmissible: spec hash mismatch, dirty tree, commit not on main, a declared
-  sanity check absent or failed, required experiment missing. Nothing about the hypothesis is concluded.
+* **INVALID** — evidence inadmissible. Nothing about the hypothesis is concluded.
+  - *Evaluator 1.0.0 (and, since 2.0.0, every spec registered before the audit of 2026-10-19,
+    `evidence_rules: 1`)* checks: spec registered and unmodified, dirty tree, the result's spec hash, a declared
+    sanity check absent or failed, required experiment missing. It did **not** check that the result's commit is
+    on main, although this section said so until 2026-10-19; it took the latest complete run.
+  - *Evaluator 2.0.0, specs with `evidence_rules: 2`* (all specs registered since) additionally checks, from git
+    and the run registry rather than from the runner: the run's commit is an ancestor of main and contains the
+    registered spec; `uv.lock`, the runner files and the declared `code_under_test` at that commit match what the
+    run recorded; every artifact exists in the run directory with its recorded sha256; the run was minted in
+    `experiments/registry.jsonl` (for sealed specs, `sha256(run_id:seed)` equals the minted commitment); every
+    objective in `requires_passed` has passed; and each `code_must_match` file has the hash recorded in the
+    referenced objective's last PASS evidence. It uses the **first** minted run that no earlier evaluation
+    consumed and lists the others (`unused_runs`); a run that fails a check about itself is marked consumed in
+    the registry, so skipping it is visible. `mfos audit-evidence OID` applies these checks to older evidence
+    without changing it.
 * **FAIL** — any kill criterion definitely met.
 * **PASS** — every pass criterion definitely met, no kill criterion met.
 * **INCONCLUSIVE** — anything else (typically intervals too wide).
 
 ### 6.3 Freezing and the forking-paths budget
-`mfos objective approve` computes `criteria_hash` over hypothesis, scope, evidence plan and acceptance.
-The evaluator and `mfos doctor` refuse to proceed if the file no longer matches — tampering is caught
-even if a hook were bypassed (tested). Changing criteria is legitimate only as your explicit act: edit,
+`mfos objective approve` computes `criteria_hash` over the `acceptance` block (until 2026-10-19 this section
+said it also covered hypothesis, scope and evidence plan; it never did) and, since evaluator 2.0.0, a second
+hash, `frozen_hash`, over hypothesis, scope, evidence plan and acceptance. The evaluator and `mfos doctor`
+refuse to proceed if the file no longer matches either recorded hash — tampering is caught even if a hook
+were bypassed (tested). Objectives approved before 2.0.0 (O000, O001) have only `criteria_hash`. Changing criteria is legitimate only as your explicit act: edit,
 then re-approve; the evaluation count carries over. `max_evaluations` (default 3) limits how many times
 one objective may be judged, because every re-evaluation after a model change spends statistical
 credibility; all evaluations, including failures, appear in `EVIDENCE.md`.

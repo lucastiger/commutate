@@ -145,7 +145,8 @@ class Orchestrator:
         busy = any(t.status in ("running", "verify", "review", "merge") for t in self.s.tasks())
         return {"started": started, "idle": not busy and started == 0}
 
-    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/")
+    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/",
+                   "experiments/registry.jsonl")
 
     def unexpected_changes(self) -> list[str]:
         out = self.s.git("status", "--porcelain", check=False).splitlines()
@@ -598,6 +599,9 @@ class Orchestrator:
         return self.s.mfos / "exp_runs" / f"{tid}.json"
 
     def _start_experiment(self, t: m.Task) -> None:
+        # The run checks out main: commit state first, so a registration made since the last tick is in the commit
+        # the result will cite (E003, 2026-10-11, ran on a commit without its spec).
+        self._commit_state(f"before running {t.experiment}")
         rec_path = self._exp_record(t.id)
         rec_path.parent.mkdir(parents=True, exist_ok=True)
         log = open(self.s.mfos / "exp_runs" / f"{t.id}.log", "w")
@@ -689,12 +693,11 @@ class Orchestrator:
         self.s.save_task(pt)
 
     def _maybe_evaluate(self, oid: str, obj: m.Objective, st: m.ObjectiveState) -> None:
-        latest: dict[str, str] = {}
-        for eid in obj.acceptance.required_experiments:
-            runs = [r for r in self.s.results(eid) if r.status == "complete"]
-            if not runs:
-                return
-            latest[eid] = runs[-1].run_id
+        # The evaluator's own selection: the latest complete run for legacy specs; for evidence-rules-v2 specs the
+        # first minted run that no earlier evaluation consumed (a later run never overtakes an earlier one).
+        latest = evaluate.selected_runs(self.s, obj)
+        if latest is None:
+            return
         if latest == st.evaluated_runs:
             return
         if len(st.evaluations) >= obj.acceptance.max_evaluations:
@@ -811,6 +814,10 @@ class Orchestrator:
         # the founder registered E002/E003, and failed three times each on the missing spec (2026-10-11).
         if t.type == "experiment" and t.experiment and not self.s.spec_path(t.experiment).exists():
             why.append(f"experiment {t.experiment} is not registered")
+        elif t.type == "experiment" and t.experiment:
+            for dep in self.s.spec(t.experiment).requires_passed:  # e.g. O003's L2 runs wait for O004 (rules v2)
+                if self.s.objective_state(dep).status != "passed":
+                    why.append(f"waiting for {dep} to pass")
         return why
 
     def _conflicts(self, t: m.Task, running: list[m.Task]) -> bool:
@@ -948,7 +955,7 @@ class Orchestrator:
 
     # ================================================================== state commits
     def _commit_state(self, why: str) -> None:
-        paths = ["project", "experiments/specs", "experiments/results", "experiments/drafts"]
+        paths = ["project", "experiments/specs", "experiments/results", "experiments/drafts", "experiments/registry.jsonl"]
         existing = [p for p in paths if (self.s.root / p).exists()]
         if not existing:
             return

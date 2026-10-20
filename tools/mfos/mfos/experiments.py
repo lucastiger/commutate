@@ -4,8 +4,16 @@ Rules enforced here:
   * only `registered` specs whose content hash still matches may run;
   * runs happen in a clean detached checkout of main (so results cite a merged commit);
   * sealed-seed specs get a fresh unseen seed per run, recorded in the result;
-  * a complete result for the same (spec_hash, commit, seed policy) is reused unless forced;
+  * a complete result for the same (spec_hash, commit, seed policy) is reused unless forced (legacy specs only);
   * the runner must write result.json through mfos.evidence.ExperimentRun.
+
+Evidence rules v2 (specs registered after the 2026-10-19 audit, ``evidence_rules: 2``):
+  * every run is minted first in experiments/registry.jsonl, with a commitment sha256(run_id:seed) for sealed
+    specs; the seed itself stays in the git-ignored .mfos/sealed/ until the run records it in its result;
+  * a burst VM runs a run minted on the main machine (`--run-id/--seed-file`) and never mints;
+  * the registered spec must be committed in the checkout that runs (closes E003's gap: registered in the
+    working tree 25 s before its run and committed afterwards);
+  * `mfos exp run` records the sha256 of the runner files and of the spec's code_under_test in the result.
 """
 from __future__ import annotations
 
@@ -34,6 +42,59 @@ def runner_files(root: Path, runner: str) -> dict[str, str]:
             if not tok.startswith("-") and (root / tok).is_file()}
 
 
+EVIDENCE_RULES = 2  # evidence-rules version given to newly registered specs and newly approved objectives
+
+
+def code_hashes(root: Path, patterns: list[str]) -> dict[str, str]:
+    """sha256 of every repository file matched by ``patterns`` (paths or globs relative to ``root``), sorted."""
+    out: dict[str, str] = {}
+    for pat in patterns:
+        hits = sorted(p for p in root.glob(pat) if p.is_file())
+        if not hits:
+            raise RuntimeError(f"code_under_test pattern `{pat}` matches no file in {root}")
+        for p in hits:
+            out[p.relative_to(root).as_posix()] = _file_sha256(p)
+    return dict(sorted(out.items()))
+
+
+def commitment(run_id: str, seed: int) -> str:
+    return hashlib.sha256(f"{run_id}:{seed}".encode()).hexdigest()
+
+
+def sealed_seed_path(store: Store, run_id: str) -> Path:
+    return store.mfos / "sealed" / f"{run_id}.seed"
+
+
+def new_run_id(eid: str) -> str:
+    return f"{eid}-{time.strftime('%Y%m%dT%H%M%S')}-{secrets.token_hex(2)}"
+
+
+def _registered(store: Store, eid: str) -> m.ExperimentSpec:
+    spec = store.spec(eid)
+    if spec.status != "registered" or spec.spec_hash != store.spec_hash(spec):
+        raise RuntimeError(f"{eid} is not a registered, unmodified spec; refusing to run")
+    return spec
+
+
+def mint(store: Store, eid: str) -> tuple[str, Optional[Path]]:
+    """Record a run id (and, for sealed specs, a commitment to a fresh seed) in the registry before the run exists.
+    Returns (run_id, seed file or None). Burst scripts mint here, then pass both to the VM."""
+    spec = _registered(store, eid)
+    run_id = new_run_id(eid)
+    seed_file = None
+    commit = None
+    if spec.sealed_seed:
+        seed = secrets.randbelow(2**31 - 1)
+        seed_file = sealed_seed_path(store, run_id)
+        seed_file.parent.mkdir(parents=True, exist_ok=True)
+        seed_file.write_text(str(seed))
+        os.chmod(seed_file, 0o600)
+        commit = commitment(run_id, seed)
+    store.registry_append(event="minted", experiment=eid, run_id=run_id, spec_hash=spec.spec_hash, commitment=commit)
+    store.event("experiment_minted", id=eid, run=run_id)
+    return run_id, seed_file
+
+
 def runner_changes(root: Path, spec: m.ExperimentSpec) -> list[str]:
     """Frozen runner files that are missing or differ in the checkout at ``root``."""
     return [rel for rel, want in spec.runner_files.items()
@@ -47,6 +108,9 @@ def register(store: Store, eid: str, by: str = "founder") -> m.ExperimentSpec:
     spec.runner_files = runner_files(store.root, spec.runner)
     if not spec.runner_files:
         raise RuntimeError(f"{eid}: cannot freeze the runner: `{spec.runner}` names no file in the repository")
+    spec.evidence_rules = max(spec.evidence_rules, EVIDENCE_RULES)
+    if spec.code_under_test:
+        code_hashes(store.root, spec.code_under_test)  # every pattern must name at least one file now
     spec.status = "registered"
     spec.registered_by = by
     spec.registered_at = now()
@@ -68,29 +132,48 @@ def _cached(store: Store, spec: m.ExperimentSpec, commit: str) -> Optional[m.Exp
 
 
 def run(store: Store, eid: str, *, ref: Optional[str] = None, force: bool = False,
-        here: bool = False) -> m.ExperimentResult:
-    spec = store.spec(eid)
-    if spec.status != "registered" or spec.spec_hash != store.spec_hash(spec):
-        raise RuntimeError(f"{eid} is not a registered, unmodified spec; refusing to run")
+        here: bool = False, run_id: Optional[str] = None, seed_file: Optional[Path] = None) -> m.ExperimentResult:
+    spec = _registered(store, eid)
+    v2 = spec.evidence_rules >= 2
+    if run_id and spec.sealed_seed and not seed_file:
+        raise RuntimeError(f"{eid}: a minted run of a sealed spec needs its --seed-file")
     git = GitOps(store)
     if here:
         cwd = store.root
     else:
         cwd = git.detached_worktree(f"exp-{eid}", ref or git.main)
     changed = runner_changes(cwd, spec)  # checked in the checkout that will actually run
+    if v2 and not here and not changed:
+        committed = cwd / "experiments" / "specs" / f"{eid}.yaml"
+        ok = committed.exists() and store.read_yaml(committed, m.ExperimentSpec).spec_hash == spec.spec_hash
+        if not ok:
+            git.remove_worktree(cwd)
+            raise RuntimeError(f"{eid}: the registered spec is not committed in {ref or git.main}; commit the "
+                               "registration first (a run must cite a commit that contains its spec)")
     if changed:
         if not here:
             git.remove_worktree(cwd)
         raise RuntimeError(f"{eid}: runner file(s) {changed} changed since registration; refusing to run "
                            "(register a new experiment id for a new design)")
     commit = store.git("rev-parse", "HEAD", cwd=cwd)
-    if not force and not here:
+    if not force and not here and not v2 and not run_id:
         hit = _cached(store, spec, commit)
         if hit:
             store.event("experiment_cached", id=eid, run=hit.run_id)
             git.remove_worktree(cwd)
             return hit
-    run_id = f"{eid}-{time.strftime('%Y%m%dT%H%M%S')}-{secrets.token_hex(2)}"
+    seed: Optional[int] = None
+    if run_id:  # minted elsewhere (burst VM): use exactly that id and seed, never touch the registry here
+        if seed_file:
+            seed = int(Path(seed_file).read_text().strip())
+    elif v2 and not here:
+        run_id, minted_seed_file = mint(store, eid)
+        if minted_seed_file:
+            seed = int(minted_seed_file.read_text().strip())
+    else:
+        run_id = new_run_id(eid)
+    if spec.sealed_seed and seed is None:
+        seed = secrets.randbelow(2**31 - 1)
     run_dir = store.root / "experiments" / "results" / eid / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     env = {**os.environ,
@@ -100,7 +183,7 @@ def run(store: Store, eid: str, *, ref: Optional[str] = None, force: bool = Fals
            "PYTHONPATH": os.pathsep.join(filter(None, [str(cwd / "tools" / "mfos"), str(cwd / "src"),
                                                        os.environ.get("PYTHONPATH", "")]))}
     if spec.sealed_seed:
-        env["MFOS_SEED"] = str(secrets.randbelow(2**31 - 1))
+        env["MFOS_SEED"] = str(seed)
     store.event("experiment_started", id=eid, run=run_id, commit=commit)
     t0 = time.time()
     with open(run_dir / "runner.log", "w") as log:
@@ -121,6 +204,14 @@ def run(store: Store, eid: str, *, ref: Optional[str] = None, force: bool = Fals
     if code != 0 and res.status == "complete":
         res.status = "error"
         res.notes += f"\nrunner exited with code {code} after writing a result; downgraded to error"
+        store.write_json(res_path, res)
+    if v2:  # recorded by the wrapper, never by the runner
+        res.provenance.runner_hashes = runner_files(cwd, spec.runner)
+        try:
+            res.provenance.code = code_hashes(cwd, spec.code_under_test)
+        except RuntimeError as e:
+            res.status = "error"
+            res.notes += f"\n{e}"
         store.write_json(res_path, res)
     seconds = round(time.time() - t0, 1)
     store.event("experiment_finished", id=eid, run=run_id, status=res.status, seconds=seconds)

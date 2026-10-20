@@ -104,6 +104,10 @@ class ObjectiveState(_Strict):
     spent_usd: float = 0.0
     budget_override_usd: Optional[float] = None
     log: list[str] = []
+    # Evidence rules (audit 2026-10-19): objectives approved by evaluator >= 2.0.0 record 2; O000/O001 keep 1.
+    evidence_rules: int = 1
+    # Hash of hypothesis, scope, evidence plan and acceptance at approval (criteria_hash covers acceptance only).
+    frozen_hash: Optional[str] = None
 
 
 # --------------------------------------------------------------------------- tasks
@@ -170,6 +174,14 @@ class SanitySpec(_Strict):
     description: str = ""
 
 
+class CodeMatch(_Strict):
+    """This experiment's hash of ``path`` must equal the hash recorded for it in the evidence of ``objective``'s
+    last PASS evaluation (e.g. the judge of O003 must be the L2 code that O004 validated)."""
+
+    path: str
+    objective: str
+
+
 class ExperimentSpec(_Strict):
     id: str
     title: str
@@ -187,6 +199,12 @@ class ExperimentSpec(_Strict):
     spec_hash: Optional[str] = None
     # repo path -> sha256 of each file the runner command names, frozen at registration (covered by spec_hash)
     runner_files: dict[str, str] = {}
+    # ---- evidence rules v2 (audit 2026-10-19). Each field enters spec_hash only when it differs from its default
+    # (Store.spec_hash), so specs registered before these fields existed keep their recorded hashes.
+    evidence_rules: int = 1  # set to 2 by `mfos exp register`; v2 checks apply only to specs with 2
+    code_under_test: list[str] = []  # repo files or globs whose sha256 every run records (provenance.code)
+    code_must_match: list[CodeMatch] = []
+    requires_passed: list[str] = []  # objectives that must have passed before this experiment runs or counts
 
 
 class MetricValue(_Strict):
@@ -218,6 +236,9 @@ class Provenance(_Strict):
     tools: dict[str, str] = {}
     started: str = ""
     finished: str = ""
+    # Recorded by `mfos exp run` (not by the runner) for evidence-rules-v2 specs:
+    code: dict[str, str] = {}  # code_under_test file -> sha256 in the checkout that ran
+    runner_hashes: dict[str, str] = {}  # runner file -> sha256 in the checkout that ran
 
 
 class ArtifactRef(_Strict):
@@ -262,6 +283,8 @@ class Evaluation(_Strict):
     fail_checks: list[CriterionVerdict]
     verdict: Literal["PASS", "FAIL", "INCONCLUSIVE", "INVALID"]
     explanation: str
+    unused_runs: dict[str, list[str]] = {}  # experiment -> complete runs this evaluation did not use (rules v2)
+    checks: dict[str, dict[str, str]] = {}  # experiment -> admissibility check -> "ok" | "n/a: ..." | reason
 
 
 # --------------------------------------------------------------------------- inbox
@@ -415,3 +438,7 @@ ROLE_OUTPUT: dict[str, type[BaseModel]] = {
     "scout": ResearchReport,
     "scribe": ScribeReport,
 }
+
+
+# Spec fields added after the first registrations. Store.spec_hash leaves each out while it holds its default.
+SPEC_FIELDS_HASHED_WHEN_SET = ("evidence_rules", "code_under_test", "code_must_match", "requires_passed")

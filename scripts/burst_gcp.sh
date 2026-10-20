@@ -54,6 +54,15 @@ if [ "$MODE" = exp ]; then
   if [ -n "$(git status --porcelain --untracked-files=no -- src experiments/runners tools pyproject.toml uv.lock)" ]; then
     echo "uncommitted code changes: the experiment must run on a commit that is on main" >&2; exit 1
   fi
+  git cat-file -e "$REF:experiments/specs/$EID.yaml" 2> /dev/null \
+    || { echo "$EID's registration is not committed on $REF: commit it first (the run must cite a commit with its spec)" >&2; exit 1; }
+  # Mint the run here, before any VM exists: its id and seed commitment go into experiments/registry.jsonl on this
+  # machine, and the VM runs exactly that run. Evaluator 2.0.0 uses the first minted run, so a run cannot be
+  # repeated quietly until a result looks good.
+  MINT="$(uv run mfos exp mint "$EID")"
+  RUN_ID="$(printf '%s' "$MINT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["run_id"])')"
+  SEED_FILE="$(printf '%s' "$MINT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["seed_file"] or "")')"
+  echo "minted $RUN_ID"
   TAG="$(echo "$EID" | tr '[:upper:]' '[:lower:]')"
 else
   TAG=cmd
@@ -99,7 +108,11 @@ gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "$REMOTE"
 # script polls for its exit code and copies the results back whether or not it succeeded. A VM-side shutdown after
 # MF_GCP_MAX_HOURS stops a VM this script can no longer delete.
 if [ "$MODE" = exp ]; then
-  JOB="uv run mfos exp run $EID --force"; FETCH="experiments/results/$EID"
+  JOB="uv run mfos exp run $EID --force --run-id $RUN_ID"; FETCH="experiments/results/$EID"
+  if [ -n "$SEED_FILE" ]; then
+    gcloud compute scp --zone "$ZONE" --quiet "$SEED_FILE" "$NAME:mf.seed" > /dev/null
+    JOB="$JOB --seed-file ~/mf.seed"
+  fi
 else
   JOB="$CMD"
 fi

@@ -45,6 +45,8 @@ def cmd_objective(a: argparse.Namespace) -> int:
         st = s.objective_state(a.id)
         st.status, st.approved_by, st.approved_at = "active", "founder", now()
         st.criteria_hash = s.criteria_hash(obj)
+        st.frozen_hash = s.frozen_hash(obj)
+        st.evidence_rules = max(st.evidence_rules, experiments.EVIDENCE_RULES)
         st.needs_replan = True
         s.save_objective_state(a.id, st)
         s.event("objective_approved", actor="founder", objective=a.id, criteria_hash=st.criteria_hash)
@@ -262,8 +264,19 @@ def cmd_exp(a: argparse.Namespace) -> int:
         item.status, item.response, item.resolved_at = "approved", "registered via mfos exp register", now()
         s.save_inbox(item)
         print(f"registered {a.id} {spec.spec_hash}")
+    elif a.action == "mint":
+        run_id, seed_file = experiments.mint(s, a.id)
+        print(json.dumps({"run_id": run_id, "seed_file": str(seed_file) if seed_file else None}))
+    elif a.action == "abandon":  # a minted run that will never produce a result (e.g. a VM that died)
+        if not a.run_id or not a.reason:
+            print("exp abandon needs --run-id and --reason", file=sys.stderr)
+            return 1
+        s.registry_append(event="abandoned", experiment=a.id, run_id=a.run_id, reason=a.reason, by="founder")
+        s.event("experiment_run_abandoned", actor="founder", id=a.id, run=a.run_id, reason=a.reason)
+        print(f"{a.run_id} abandoned")
     elif a.action == "run":
-        res = experiments.run(s, a.id, force=a.force, here=a.here)
+        res = experiments.run(s, a.id, force=a.force, here=a.here, run_id=a.run_id,
+                              seed_file=Path(a.seed_file).expanduser() if a.seed_file else None)
         print(json.dumps({"run": res.run_id, "status": res.status,
                           "metrics": {k: v.model_dump() for k, v in res.metrics.items()}}, indent=2))
         return 0 if res.status == "complete" else 3
@@ -278,6 +291,22 @@ def cmd_exp(a: argparse.Namespace) -> int:
 def cmd_evaluate(a: argparse.Namespace) -> int:
     ev = evaluate.evaluate(_store(), a.id, record=not a.dry_run)
     print(ev.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_audit_evidence(a: argparse.Namespace) -> int:
+    """Evidence rules v2 applied to the runs behind an objective's recorded evaluations. Writes nothing."""
+    s = _store()
+    rows = evaluate.audit_evidence(s, a.id)
+    if a.json:
+        print(evaluate.audit_json(s, a.id))
+        return 0
+    failures = 0
+    for ev_id, run, check, outcome in rows:
+        mark = "ok " if outcome == "ok" else ("n/a" if outcome.startswith("n/a") else "FAIL")
+        failures += mark == "FAIL"
+        print(f"{ev_id:12s} {run:34s} {check:17s} {mark:4s} {'' if outcome == 'ok' else outcome}")
+    print(f"audit-evidence {a.id}: {len(rows)} checks, {failures} failed")
     return 0
 
 
@@ -351,6 +380,8 @@ def cmd_doctor(a: argparse.Namespace) -> int:
         st = s.objective_state(oid)
         if st.criteria_hash and st.criteria_hash != s.criteria_hash(obj):
             problems.append(f"{oid}: acceptance criteria edited after approval — re-approve or revert")
+        if st.frozen_hash and st.frozen_hash != s.frozen_hash(obj):
+            problems.append(f"{oid}: hypothesis, scope or evidence plan edited after approval — re-approve or revert")
     for p in sorted((s.root / "experiments" / "specs").glob("*.yaml")):
         spec = s.read_yaml(p, m.ExperimentSpec)
         if spec.status == "registered" and spec.spec_hash != s.spec_hash(spec):
@@ -374,6 +405,16 @@ def cmd_doctor(a: argparse.Namespace) -> int:
         if tools is not None and "StructuredOutput" not in tools.split(":", 1)[1].replace(",", " ").split():
             problems.append(f"{p.relative_to(s.root)}: tools: allow-list omits StructuredOutput, "
                             "so the agent never sees the --json-schema report format")
+    if not a.ci:  # minted runs that never produced a result, for a week: abandon them visibly or run them
+        week = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
+        closed = {r.get("run_id") for r in s.registry() if r.get("event") in ("abandoned", "consumed")}
+        for r in s.registry():
+            if r.get("event") != "minted" or r.get("run_id") in closed:
+                continue
+            done = (s.root / "experiments" / "results" / r["experiment"] / r["run_id"] / "run.json").exists()
+            if not done and dt.datetime.fromisoformat(r["at"]) < week:
+                problems.append(f"minted run {r['run_id']} has no result after 7 days "
+                                f"(`mfos exp abandon {r['experiment']} --run-id {r['run_id']} --reason ...`)")
     claude_md = s.root / "CLAUDE.md"
     if claude_md.exists() and len(claude_md.read_text().splitlines()) > 200:
         problems.append("CLAUDE.md exceeds 200 lines; move procedures into skills")
@@ -433,13 +474,19 @@ def _parser() -> argparse.ArgumentParser:
     rn.add_argument("--poll", type=int, default=10)
 
     e = cmd("exp", cmd_exp, "register, run, or check experiments")
-    e.add_argument("action", choices=["register", "run", "check"])
+    e.add_argument("action", choices=["register", "run", "check", "mint", "abandon"])
     e.add_argument("id")
     e.add_argument("--force", action="store_true")
     e.add_argument("--here", action="store_true", help="dev only: run in this checkout")
+    e.add_argument("--run-id", help="run: a run minted elsewhere (burst VM); abandon: the run to abandon")
+    e.add_argument("--seed-file", help="run: the sealed seed of a minted run")
+    e.add_argument("--reason", help="abandon: why the minted run will never produce a result")
     ev = cmd("evaluate", cmd_evaluate, "evaluate an objective's acceptance criteria")
     ev.add_argument("id")
     ev.add_argument("--dry-run", action="store_true")
+    au = cmd("audit-evidence", cmd_audit_evidence, "apply evidence rules v2 to an objective's recorded evaluations")
+    au.add_argument("id")
+    au.add_argument("--json", action="store_true")
 
     g = cmd("gate", cmd_gate, "run quality gates")
     g.add_argument("--fast", action="store_true")

@@ -158,6 +158,13 @@ class Store:
     def criteria_hash(self, obj: m.Objective) -> str:
         return canonical_hash(obj.acceptance.model_dump(mode="json"))
 
+    FROZEN_FIELDS = {"hypothesis", "scope_in", "scope_out", "evidence_plan", "acceptance"}
+
+    def frozen_hash(self, obj: m.Objective) -> str:
+        """Hash of everything the founder freezes at approval. ``criteria_hash`` covers only ``acceptance`` (kept as it
+        is so O000/O001 keep their recorded values); defaults are left out so a new optional field never changes it."""
+        return canonical_hash(obj.model_dump(mode="json", include=self.FROZEN_FIELDS, exclude_defaults=True))
+
     # ------------------------------------------------------------------ tasks
     def task_path(self, tid: str) -> Path:
         return self.project / "tasks" / f"{tid}.yaml"
@@ -189,7 +196,30 @@ class Store:
         exclude = {"status", "registered_by", "registered_at", "spec_hash"}
         if not spec.runner_files:  # specs registered before runner freezing keep their original hash
             exclude.add("runner_files")
+        for name in m.SPEC_FIELDS_HASHED_WHEN_SET:  # fields added later enter the hash only once used
+            if getattr(spec, name) == m.ExperimentSpec.model_fields[name].get_default(call_default_factory=True):
+                exclude.add(name)
         return canonical_hash(spec.model_dump(mode="json", exclude=exclude))
+
+    # ------------------------------------------------------------------ run registry (append-only, committed)
+    @property
+    def registry_path(self) -> Path:
+        return self.root / "experiments" / "registry.jsonl"
+
+    def registry(self) -> list[dict[str, Any]]:
+        p = self.registry_path
+        if not p.exists():
+            return []
+        return [json.loads(x) for x in p.read_text().splitlines() if x.strip()]
+
+    def registry_append(self, **rec: Any) -> None:
+        rec = {"at": now(), "by": "mfos", **rec}
+        p = self.registry_path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a") as f:
+            f.write(json.dumps(rec, sort_keys=True) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
 
     def results(self, eid: str) -> list[m.ExperimentResult]:
         d = self.root / "experiments" / "results" / eid

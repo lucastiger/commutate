@@ -16,6 +16,15 @@ test -f "experiments/specs/$EID.yaml" || { echo "$EID is not registered (experim
 if [ -n "$(git status --porcelain --untracked-files=no -- src experiments/runners tools pyproject.toml uv.lock)" ]; then
   echo "uncommitted code changes: the experiment must run on a commit that is on main" >&2; exit 1
 fi
+git cat-file -e "main:experiments/specs/$EID.yaml" 2> /dev/null \
+  || { echo "$EID's registration is not committed on main: commit it first (the run must cite a commit with its spec)" >&2; exit 1; }
+# Mint the run here, before any VM exists: its id and seed commitment go into experiments/registry.jsonl on this
+# machine, and the VM runs exactly that run (mfos exp run --run-id/--seed-file). Evaluator 2.0.0 uses the first
+# minted run, so a run cannot be repeated quietly until a result looks good.
+MINT="$(uv run mfos exp mint "$EID")"
+RUN_ID="$(printf '%s' "$MINT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["run_id"])')"
+SEED_FILE="$(printf '%s' "$MINT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["seed_file"] or "")')"
+echo "minted $RUN_ID"
 BUNDLE="$(mktemp -d)/mf.bundle"
 git bundle create -q "$BUNDLE" main        # no GitHub credentials ever reach the VM
 OPTS=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o LogLevel=ERROR)
@@ -25,7 +34,8 @@ IP="$(hcloud server ip "$NAME")"
 echo "$NAME ($TYPE) at $IP"
 for _ in $(seq 1 60); do ssh "${OPTS[@]}" "root@$IP" true 2> /dev/null && break; sleep 5; done
 scp -q "${OPTS[@]}" "$BUNDLE" "root@$IP:/root/mf.bundle"
-ssh "${OPTS[@]}" "root@$IP" bash -s "$EID" << 'REMOTE'
+if [ -n "$SEED_FILE" ]; then scp -q "${OPTS[@]}" "$SEED_FILE" "root@$IP:/root/mf.seed"; fi
+ssh "${OPTS[@]}" "root@$IP" bash -s "$EID" "$RUN_ID" "${SEED_FILE:+/root/mf.seed}" << 'REMOTE'
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq && apt-get install -y -qq git build-essential > /dev/null
@@ -34,7 +44,7 @@ export PATH="$HOME/.local/bin:$PATH"
 git clone -q /root/mf.bundle /root/mf && cd /root/mf
 scripts/provision_compute.sh
 uv sync -q --all-groups
-uv run mfos exp run "$1" --force
+uv run mfos exp run "$1" --force --run-id "$2" ${3:+--seed-file "$3"}
 REMOTE
 mkdir -p "experiments/results/$EID"
 scp -q -r "${OPTS[@]}" "root@$IP:/root/mf/experiments/results/$EID/*" "experiments/results/$EID/"
