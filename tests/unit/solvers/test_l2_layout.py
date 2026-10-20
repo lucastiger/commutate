@@ -262,6 +262,7 @@ def l2_c1(level, f):
     return r.z[0, 0, 0].imag / (2 * math.pi * f), r.meta["solver_tol"]
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_c1_layout_internals_vs_l2_solve_same_refinement():
     """E001's C1 at 20 MHz: layout path (refinement 1) vs ``l2.solve`` at refinement 1 within 0.5 %."""
     f = 2e7
@@ -273,6 +274,7 @@ def test_c1_layout_internals_vs_l2_solve_same_refinement():
     assert lay == pytest.approx(ref, rel=5e-3)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_scaling_double_lengths_quarter_frequency_doubles_L():
     f = 2e7
     s1, p1 = c1_system(0, 1.0, 3, f)
@@ -310,6 +312,7 @@ def test_wire_grid_pfft_vs_dense_kernel_adjoint_and_bound(monkeypatch):
         dense.to_grid(np.abs(y), absolute=True)) * 1.0000001 + 1e-30
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_wire_grid_pfft_production_parameters_vs_dense_within_stated_bound():
     """Production PFFT_NEAR / PFFT_STENCIL / disc-rule nodes on a 0.25 mm grid big enough to have far branches: the
     compressed operator vs the dense exact finite-radius coupling, elementwise within its stated bound (interpolation +
@@ -372,6 +375,7 @@ def two_port_system():
     return sys_, [(nc, nc + 1), (nc + 2, nc + 3)]
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_reciprocity_two_port_and_solver_agrees_with_dense_saddle():
     sys_, ports = two_port_system()
     f = 2e7
@@ -423,6 +427,7 @@ def coarse(monkeypatch):
     monkeypatch.setattr(L, "WIRE_EDGES", ((0, .6, 1),) * n)  # the coarse wire mesh these tests were written with
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_reported_solver_tol_bounds_true_error_vs_dense_lu(coarse, monkeypatch):
     """D0004 consequence: reported solver_tol >= true relative Z error against a dense LU.  Oracle: the dense exact
     wire<->grid coupling and the dense saddle solve; subject: the compressed (precorrected FFT) operator and GMRES.  The
@@ -449,6 +454,7 @@ def test_reported_solver_tol_bounds_true_error_vs_dense_lu(coarse, monkeypatch):
     assert np.max(np.abs(out_f.z[:, 0, 0] - Zo) / np.abs(Zo)) <= out_f.solver_tol
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_layout_L_non_increasing_with_frequency_and_meta_contract(coarse):
     lay = tiny_layout()
     freqs = [1e5, 1e6, 5e6, 2e7, 8e7]
@@ -473,6 +479,7 @@ def test_layout_L_non_increasing_with_frequency_and_meta_contract(coarse):
         L.loop_inductance(lay, [0.0], 0)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_generated_two_die_half_bridge_between_1_and_100_nH():
     from moduleforge.generate.halfbridge import generate_layouts
     lay = generate_layouts(1, seed=7, dies_per_switch=2)[0]
@@ -481,6 +488,7 @@ def test_generated_two_die_half_bridge_between_1_and_100_nH():
     assert r.meta["solver_tol"] < 1e-3
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_l_at_a_frequency_does_not_depend_on_the_frequency_list(coarse):
     """One mesh per call graded to max(F_MESH, max(freqs)): L(20 MHz) alone equals L(20 MHz) inside a 3-frequency call."""
     lay = tiny_layout()
@@ -517,6 +525,7 @@ def strip_layout(stack=None, y0=2.0, y1=4.0, hs_x=11.0, dcp_x1=12.0, phase_x0=14
                   box(-8 * mm, -8 * mm, 32 * mm, 22 * mm), st)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_layout_mapping_dc_resistance_closed_form(coarse):
     """Independent check of the Layout -> system mapping (net labels, die-short merges, wire-end nodes, port cells on the
     port's net).  At 100 Hz (skin depth 6.6 mm >> every conductor) the loop is a series DC path with a closed form:
@@ -538,6 +547,7 @@ def test_layout_mapping_dc_resistance_closed_form(coarse):
     assert z.imag > 0 and out.solver_tol < 1e-3
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 @pytest.mark.parametrize("ref", range(L.MAX_REFINEMENT + 1))
 def test_solver_tol_usable_at_every_refinement(ref):
     """Review T0082: solver_tol must stay a usable bound (< 1e-3) at every refinement.  Two inclined-polyline wires (inter-
@@ -759,6 +769,7 @@ def test_near_parallel_pairs_are_counted_in_solver_tol():
     assert ex.max() > 0.5 * L.NEAR_PARALLEL_REL * 1e-10 * 2  # |M| of the 2 mm segments ~ 1e-9 H
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_solver_tol_is_also_reported_relative_to_L(coarse):
     """Item (4): solver_tol is relative to max|Z_ii|; meta carries it relative to L = Im Z / omega, which is larger by
     |Z| / Im Z (equal to |Z| / (omega L), large where R is comparable to omega L)."""
@@ -807,6 +818,7 @@ def _hl_mutual_collinear(blen, w, t, off):
     return K4 * tot / (w * t) ** 2
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_layout_loop_inductance_vs_independent_partial_inductance_sum(coarse):
     """Item (3): layout-level L against an independent oracle.  The strip layout carries one series current path: 13 strip
     branches (2 x 2 mm cross-section x 0.3 mm: bars on one axis, mutuals by the Hoer-Love closed form), and two bond wires.
@@ -929,6 +941,7 @@ def test_pair_table_equals_core_plane_table_and_bound(n1, n2):
         L.FAR_CHUNK_ELEMS = old
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_wire_foot_between_cell_centres_gives_a_smooth_L(coarse):
     """A wire foot is a point contact: snapped to the nearest cell centre it moves the injection point by up to half a cell
     (L stepped by +-5 % when the layout was shifted by a fraction of a 1 mm cell).  With the bilinear contact, moving the foot
@@ -1061,6 +1074,7 @@ def test_plane_table_far_entries_thick_layer_at_0p125mm_meet_quad_tol_and_match_
     assert bp == pytest.approx(bound, rel=1e-9, abs=0) and np.max(np.abs(Tp - T[0, 0])) <= 1e-9 * np.max(np.abs(T))
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_wire_grid_near_box_scales_with_wire_radius_and_bound_not_worse_at_0p125_than_0p25mm():
     """Production near box on 0.25 and 0.125 mm grids over the same 10 mm window: D_f = (near - 1) cells >= PFFT_NEAR_RADII x the
     largest filament radius, the stated wire-grid operator bound at 0.125 mm is no larger than at 0.25 mm and below 5e-5, and

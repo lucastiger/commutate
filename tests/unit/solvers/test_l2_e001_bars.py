@@ -140,6 +140,7 @@ def test_distinct_offset_reuse_is_exact():
 
 
 # ---------------------------------------------------------------------------------------------------- scaling
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_exact_length_scaling_of_bars():
     """Scaling all lengths by s and the frequency by 1/s^2 (skin depth scales by s, so the graded mesh is the same up to
     s): L -> s L, R -> R / s, hence Z -> Z / s.  Hoer-Love is homogeneous of degree 1 in lengths."""
@@ -153,6 +154,7 @@ def test_exact_length_scaling_of_bars():
     assert hl_self(40 * MM, 3 * MM, 0.3 * MM) > 2 * hl_self(20 * MM, 3 * MM, 0.3 * MM)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_bar_hf_current_crowding_lowers_inductance():
     """At 80 MHz (skin depth 7.4 um << 300 um) the internal inductance vanishes and Im Z/omega drops below DC L."""
     b = bar("b", 0, 10, 0, 0, 2, 0.3)

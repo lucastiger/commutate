@@ -31,6 +31,7 @@ def three_bars():
     return [bar("a", 0, 20, 0, 0), bar("b", 0, 20, 4, 0), bar("c", 5, 18, 1.5, 1.0, 2.0)]
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 @pytest.mark.parametrize("f", [100.0, 20e6])
 def test_sign_convention_and_positive_mutual(f):
     bs = three_bars()
@@ -50,6 +51,7 @@ def test_sign_convention_and_positive_mutual(f):
     assert z[0, 1].imag / w < z[0, 0].imag / w  # |M| < L for separated bars
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_reciprocity_with_every_port_column():
     bs = three_bars()
     r = l2.solve(bs, [], [port("p1", "a"), port("p2", "b"), port("p3", "c", rev=True)], [100.0, 5e6, 80e6], 2)
@@ -60,6 +62,7 @@ def test_reciprocity_with_every_port_column():
     assert r.meta["solver_tol"] < 1e-6
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_tie_assembly_vs_explicit_parallel_formula():
     """Ties at both ends of bars a and b = parallel connection of the two-port: (Z11 Z22 - Z12^2) / (Z11 + Z22 - 2 Z12)."""
     a, b = bar("a", 0, 20, 0, 0), bar("b", 0, 20, 4, 0)
@@ -71,6 +74,7 @@ def test_tie_assembly_vs_explicit_parallel_formula():
         assert tied.z[0, 0, 0] == pytest.approx(zp, rel=1e-9)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_tie_is_zero_impedance_series_connection():
     """Tie of the end of bar a to the start of bar b: a series connection, Z = Z11 + Z22 + 2 Z12 for the port across the
     free ends (current enters a at 0, leaves b at its far end)."""
@@ -116,6 +120,7 @@ def test_mesh_meta_equals_solve_meta_wires_plane(tiny):
     assert "gmres_info" in r.meta and all(i == 0 for row in r.meta["gmres_info"] for i in row)
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_mesh_meta_equals_solve_meta_bars():
     bs = three_bars()
     po = [port("p1", "a"), port("p2", "b")]
@@ -145,6 +150,7 @@ def test_mesh_params_are_real_sizes_with_one_refinement_ratio():
     assert all(b2["mesh_params"][k] < b1["mesh_params"][k] for k in b1["mesh_params"])
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_solver_tol_covers_gmres_vs_dense_lu(tiny):
     """The reported solver_tol bounds |Z_gmres - Z_dense| / |Z| for a plane problem solved both ways."""
     c, p, po = wire_plane_case()
