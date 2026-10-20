@@ -101,10 +101,19 @@ def runner_changes(root: Path, spec: m.ExperimentSpec) -> list[str]:
             if not (root / rel).is_file() or _file_sha256(root / rel) != want]
 
 
-def register(store: Store, eid: str, by: str = "founder") -> m.ExperimentSpec:
+def register(store: Store, eid: str, by: str = "founder", override_null: Optional[str] = None) -> m.ExperimentSpec:
     draft = store.spec_path(eid, draft=True)
     src = draft if draft.exists() else store.spec_path(eid)
     spec = store.read_yaml(src, m.ExperimentSpec)
+    if spec.dev_rows:  # null discrimination on dev-seed rows, before the design is frozen
+        from .evaluate import load_rows, null_check
+        lines, bad = null_check(store, spec, load_rows(store.root / spec.dev_rows))
+        if bad and not override_null:
+            raise RuntimeError(f"{eid}: pass criteria {bad} are also met by a declared null predictor on the dev rows "
+                               f"({spec.dev_rows}); fix the design, or register with an explicit, recorded reason "
+                               "(--override-null)\n" + "\n".join(lines))
+        if bad:
+            store.registry_append(event="null_override", experiment=eid, criteria=bad, reason=override_null, by=by)
     spec.runner_files = runner_files(store.root, spec.runner)
     if not spec.runner_files:
         raise RuntimeError(f"{eid}: cannot freeze the runner: `{spec.runner}` names no file in the repository")
@@ -245,6 +254,23 @@ def validate_draft(store: Store, eid: str) -> list[str]:
     runner_file = spec.runner.split()[-1] if spec.runner else ""
     if runner_file.endswith(".py") and not (store.root / runner_file).exists():
         problems.append(f"runner script {runner_file} not found")
+    if store.objective_state(spec.objective).evidence_rules >= 2:  # objectives approved under evidence rules v2
+        from .metrics import METRICS
+        declared = {rc.metric for rc in spec.recompute}
+        for name in sorted(needed - declared - set(spec.recompute_exempt)):
+            problems.append(f"metric {name} feeds an acceptance criterion but has no recompute entry and no "
+                            "recompute_exempt reason")
+        if spec.recompute and spec.rows is None:
+            problems.append("recompute entries need a rows artifact (spec field rows)")
+        for rc in spec.recompute:
+            if rc.fn not in METRICS:
+                problems.append(f"recompute {rc.metric}: unknown function {rc.fn} (known: {sorted(METRICS)})")
+        for ns in spec.null_baselines:
+            if not set(ns.applies_to) <= declared:
+                problems.append(f"null {ns.name} applies to metrics without a recompute entry: "
+                                f"{sorted(set(ns.applies_to) - declared)}")
+        if spec.dev_rows and not (store.root / spec.dev_rows).exists():
+            problems.append(f"dev_rows file {spec.dev_rows} not found")
     return problems
 
 

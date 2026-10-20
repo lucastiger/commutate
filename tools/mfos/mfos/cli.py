@@ -257,10 +257,16 @@ def cmd_run(a: argparse.Namespace) -> int:
 def cmd_exp(a: argparse.Namespace) -> int:
     s = _store()
     if a.action == "register":
-        spec = experiments.register(s, a.id, by="founder")
+        try:
+            spec = experiments.register(s, a.id, by="founder", override_null=a.override_null)
+        except RuntimeError as e:
+            print(e, file=sys.stderr)
+            return 1
         # Leave the same auditable trail as an inbox approval (checked by scripts/audit_main.py).
+        override = f" Null-discrimination override: {a.override_null}" if a.override_null else ""
         item = s.add_inbox(kind="experiment_registration", subject=f"register {a.id} (direct, via CLI)",
-                           summary=f"Registered directly by the founder. spec_hash={spec.spec_hash}", refs=[a.id])
+                           summary=f"Registered directly by the founder. spec_hash={spec.spec_hash}.{override}",
+                           refs=[a.id])
         item.status, item.response, item.resolved_at = "approved", "registered via mfos exp register", now()
         s.save_inbox(item)
         print(f"registered {a.id} {spec.spec_hash}")
@@ -284,6 +290,14 @@ def cmd_exp(a: argparse.Namespace) -> int:
         probs = experiments.validate_draft(s, a.id)
         for p in probs:
             print("PROBLEM:", p)
+        if a.rows:  # recompute every criterion on dev rows and test it against the declared nulls
+            draft = s.spec_path(a.id, draft=True)
+            spec = s.read_yaml(draft if draft.exists() else s.spec_path(a.id), m.ExperimentSpec)
+            lines, bad = evaluate.null_check(s, spec, evaluate.load_rows(Path(a.rows)))
+            print("\n".join(lines))
+            for c in bad:
+                print(f"PROBLEM: criterion {c} is also met by a declared null predictor on these rows")
+            probs = probs + bad
         return 1 if probs else 0
     return 0
 
@@ -481,6 +495,8 @@ def _parser() -> argparse.ArgumentParser:
     e.add_argument("--run-id", help="run: a run minted elsewhere (burst VM); abandon: the run to abandon")
     e.add_argument("--seed-file", help="run: the sealed seed of a minted run")
     e.add_argument("--reason", help="abandon: why the minted run will never produce a result")
+    e.add_argument("--rows", help="check: dev-seed rows to recompute the criteria and nulls on")
+    e.add_argument("--override-null", help="register: recorded reason to register despite a non-discriminating criterion")
     ev = cmd("evaluate", cmd_evaluate, "evaluate an objective's acceptance criteria")
     ev.add_argument("id")
     ev.add_argument("--dry-run", action="store_true")

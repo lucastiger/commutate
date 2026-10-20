@@ -38,6 +38,7 @@ def test_a_spec_registered_before_runner_freezing_keeps_its_hash(sandbox):
     """E000 was registered on 2026-09-29 without runner_files; its recorded hash must still verify."""
     s = Store()
     spec = s.read_yaml(s.spec_path("E000", draft=True), experiments.m.ExperimentSpec)
+    spec.recompute_exempt = {}  # added by the sandbox fixture for evidence rules v2; the 2026-09 E000 had none
     # the fields the spec had in 2026-09 (fields added later, e.g. by evidence rules v2, enter the hash only once set)
     legacy = spec.model_dump(mode="json", exclude={"status", "registered_by", "registered_at", "spec_hash",
                                                    "runner_files", *experiments.m.SPEC_FIELDS_HASHED_WHEN_SET})

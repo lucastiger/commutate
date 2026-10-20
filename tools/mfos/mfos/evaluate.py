@@ -22,11 +22,18 @@ their recorded hashes; the run was minted in experiments/registry.jsonl (with a 
 specs); required objectives have passed; and code that must match another objective's validated code does. The first
 complete registered run not consumed by an earlier evaluation is used; every other run is listed. Specs registered
 before v2 are judged exactly as by evaluator 1.0.0.
+
+Rules v2 also recompute every metric a spec declares under ``recompute`` from the run's rows artifact with
+``mfos.metrics`` and judge on those numbers (a runner value that disagrees makes the evidence INVALID), and check
+each pass criterion against the spec's ``null_baselines``: a criterion that a null predictor also meets is
+``non_discriminating`` and counts as not satisfied. For objectives approved under rules v2, every criterion metric
+must be recomputed or carry a written ``recompute_exempt`` reason.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import math
 import operator
 import subprocess
 from pathlib import Path
@@ -34,6 +41,7 @@ from typing import Callable, Optional
 
 import yaml
 
+from . import metrics as mx
 from . import models as m
 from .store import Store, file_sha256, now
 
@@ -320,11 +328,140 @@ def _select(store: Store, obj: m.Objective):
     return chosen, problems, unused, checks
 
 
+# ------------------------------------------------------------------------------------------------ recomputation
+def load_rows(path: Path) -> list[dict]:
+    data = json.loads(Path(path).read_text())
+    rows = data.get("rows") if isinstance(data, dict) else data
+    if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
+        raise ValueError(f"{path} is not a flat-records file ({{'rows': [{{...}}]}})")
+    return rows
+
+
+def run_rows(store: Store, spec: m.ExperimentSpec, res: m.ExperimentResult) -> list[dict]:
+    if spec.rows is None:
+        raise ValueError("the spec declares no rows artifact")
+    if spec.rows.artifact not in {a.name for a in res.artifacts}:
+        raise ValueError(f"the rows artifact {spec.rows.artifact} is not among the result's artifacts")
+    return load_rows(run_dir(store, res) / spec.rows.artifact)
+
+
+def _where(rows: list[dict], where: dict) -> list[dict]:
+    return [r for r in rows if all(r.get(k) == v for k, v in where.items())]
+
+
+def metric_value(rc: m.RecomputeSpec, rows: list[dict], pred: Optional[str]) -> m.MetricValue:
+    def stat(rr: list[dict]) -> float:
+        return mx.compute(rc.fn, rr, pred=pred, ref=rc.ref, strata=rc.strata, group=rc.group, role=rc.role,
+                          params=rc.params)
+    if rc.ci is None:
+        return m.MetricValue(value=stat(rows), n=len(rows))
+    point, ci = mx.bootstrap_ci(stat, rows, n_boot=rc.ci.n_boot, level=rc.ci.level, seed=rc.ci.seed,
+                                scheme=rc.ci.scheme, strata=rc.ci.strata, cluster=rc.ci.cluster)
+    return m.MetricValue(value=point, ci=ci, level=rc.ci.level, n=len(rows))
+
+
+def null_values(spec: m.ExperimentSpec, rc: m.RecomputeSpec, rows: list[dict]) -> list[tuple[str, m.MetricValue]]:
+    """The metric of ``rc`` computed with each applicable null predictor in place of ``rc.pred``."""
+    out = []
+    for ns in spec.null_baselines:
+        if rc.metric not in ns.applies_to:
+            continue
+        vals = mx.null_column(rows, ns.kind, rc.ref, ns.strata, ns.column)
+        nrows = [{**r, "__null__": v} for r, v in zip(rows, vals, strict=True)]
+        out.append((ns.name, metric_value(rc, nrows, "__null__")))
+    return out
+
+
+def _recompute(store: Store, obj: m.Objective, st: m.ObjectiveState, results: dict[str, m.ExperimentResult]):
+    """Replace runner-reported metrics with the evaluator's own (rules v2). Returns (results, problems, info)."""
+    out = dict(results)
+    problems: list[str] = []
+    info: dict[str, dict] = {}
+    for eid, res in results.items():
+        spec = store.spec(eid)
+        if spec.evidence_rules < 2 or not spec.recompute:
+            continue
+        try:
+            rows = run_rows(store, spec, res)
+        except Exception as e:
+            problems.append(f"{eid}/{res.run_id}: rows: {e}")
+            continue
+        metrics = dict(res.metrics)
+        for rc in spec.recompute:
+            key = f"{eid}.{rc.metric}"
+            sub = _where(rows, rc.where)
+            try:
+                mv = metric_value(rc, sub, rc.pred)
+                nulls = null_values(spec, rc, sub)
+            except Exception as e:
+                problems.append(f"{key}: cannot recompute from the rows: {e}")
+                continue
+            runner = res.metrics.get(rc.metric)
+            if runner is None:
+                problems.append(f"{key}: the runner did not report this metric")
+            elif not math.isclose(runner.value, mv.value, rel_tol=rc.rel_tol, abs_tol=rc.abs_tol):
+                problems.append(f"{key}: runner reported {runner.value!r}, recomputed {mv.value!r}")
+            metrics[rc.metric] = mv
+            info[key] = {"runner_value": runner.value if runner else None, "nulls": nulls}
+        out[eid] = res.model_copy(update={"metrics": metrics})
+    if st.evidence_rules >= 2:  # every criterion of an objective approved under rules v2 is recomputed or exempted
+        for c in obj.acceptance.pass_all + obj.acceptance.fail_any:
+            eid, _, name = c.metric.partition(".")
+            if not store.spec_path(eid).exists():
+                continue
+            spec = store.spec(eid)
+            if name not in {rc.metric for rc in spec.recompute} and name not in spec.recompute_exempt:
+                problems.append(f"{c.metric} (criterion {c.id}): no recompute entry and no recompute_exempt reason")
+    return out, problems, info
+
+
+def _annotate(v: m.CriterionVerdict, c: m.Criterion, info: Optional[dict], with_nulls: bool) -> m.CriterionVerdict:
+    if info is None:
+        return v
+    v.recomputed, v.runner_value = True, info["runner_value"]
+    if not with_nulls:
+        return v
+    for _name, nmv in info["nulls"]:
+        nv = judge(c, nmv, as_fail=False)
+        if v.null_value is None or nv.verdict == "satisfied":
+            v.null_value, v.null_bound = nmv.value, nv.bound_used
+        if nv.verdict == "satisfied" and v.verdict != "missing":
+            v.verdict = "non_discriminating"
+    return v
+
+
+def null_check(store: Store, spec: m.ExperimentSpec, rows: list[dict]) -> tuple[list[str], list[str]]:
+    """Registration-time check on dev rows: every pass criterion on this experiment, recomputed, against its nulls.
+    Returns (report lines, ids of non-discriminating criteria)."""
+    obj = store.objective(spec.objective)
+    lines, bad = [], []
+    for c in obj.acceptance.pass_all:
+        eid, _, name = c.metric.partition(".")
+        if eid != spec.id:
+            continue
+        rc = next((r for r in spec.recompute if r.metric == name), None)
+        if rc is None:
+            why = spec.recompute_exempt.get(name)
+            lines.append(f"{c.id} {c.metric}: " + (f"exempt ({why})" if why else "NO recompute entry"))
+            continue
+        sub = _where(rows, rc.where)
+        v = judge(c, metric_value(rc, sub, rc.pred), as_fail=False)
+        lines.append(f"{c.id} {c.metric} {c.comparator} {c.threshold}: dev value {v.value!r} -> {v.verdict}")
+        for nname, nmv in null_values(spec, rc, sub):
+            nv = judge(c, nmv, as_fail=False)
+            lines.append(f"    null {nname}: {nmv.value!r} -> {nv.verdict}")
+            if nv.verdict == "satisfied":
+                bad.append(c.id)
+    return lines, sorted(set(bad))
+
+
 # ------------------------------------------------------------------------------------------------ evaluation
 def evaluate(store: Store, oid: str, record: bool = True) -> m.Evaluation:
     obj = store.objective(oid)
     st = store.objective_state(oid)
     results, problems, unused, checks = _select(store, obj)
+    results, rc_problems, rc_info = _recompute(store, obj, st, results)
+    problems += rc_problems
     if st.criteria_hash and st.criteria_hash != store.criteria_hash(obj):
         problems.append("acceptance criteria changed after approval (criteria_hash mismatch)")
     if st.frozen_hash and st.frozen_hash != store.frozen_hash(obj):
@@ -332,8 +469,10 @@ def evaluate(store: Store, oid: str, record: bool = True) -> m.Evaluation:
     if len(st.evaluations) >= obj.acceptance.max_evaluations:
         problems.append(f"evaluation budget exhausted ({obj.acceptance.max_evaluations}); founder must decide")
 
-    pass_checks = [judge(c, _metric(results, c.metric), as_fail=False) for c in obj.acceptance.pass_all]
-    fail_checks = [judge(c, _metric(results, c.metric), as_fail=True) for c in obj.acceptance.fail_any]
+    pass_checks = [_annotate(judge(c, _metric(results, c.metric), as_fail=False), c, rc_info.get(c.metric), True)
+                   for c in obj.acceptance.pass_all]
+    fail_checks = [_annotate(judge(c, _metric(results, c.metric), as_fail=True), c, rc_info.get(c.metric), False)
+                   for c in obj.acceptance.fail_any]
     missing = [v.id for v in pass_checks + fail_checks if v.verdict == "missing"]
     if missing:
         problems.append("metrics missing or lacking required uncertainty: " + ", ".join(missing))
@@ -346,7 +485,8 @@ def evaluate(store: Store, oid: str, record: bool = True) -> m.Evaluation:
     elif all(v.verdict == "satisfied" for v in pass_checks):
         verdict, why = "PASS", "All pass criteria met at the conservative bound"
     else:
-        open_ = [v.id for v in pass_checks if v.verdict != "satisfied"]
+        open_ = [v.id + (" (non-discriminating: a declared null predictor also meets it)"
+                         if v.verdict == "non_discriminating" else "") for v in pass_checks if v.verdict != "satisfied"]
         verdict, why = "INCONCLUSIVE", f"Pass criteria not established: {', '.join(open_)}"
 
     eid = f"EV-{oid}-{len(st.evaluations) + 1:02d}"

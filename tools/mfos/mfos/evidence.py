@@ -85,6 +85,14 @@ class ExperimentRun:
         self._artifacts.append(ref)
         return ref
 
+    def rows(self, records: list[dict[str, Any]], name: str = "rows.json") -> m.ArtifactRef:
+        """Write flat records ({"schema": "mfos.rows/1", "rows": [...]}) into the run directory and register them as
+        an artifact. Evidence rules v2: the evaluator recomputes the spec's declared metrics from this file."""
+        path = self.run_dir / name
+        path.write_text(json.dumps({"schema": "mfos.rows/1", "rows": records}, indent=1,
+                                   default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+        return self.artifact(name, path)
+
     # ---------------------------------------------------------------- provenance
     def _provenance(self) -> m.Provenance:
         lock = Path("uv.lock")

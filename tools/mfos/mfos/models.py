@@ -182,6 +182,49 @@ class CodeMatch(_Strict):
     objective: str
 
 
+class RowsSpec(_Strict):
+    """The run's flat-records artifact ({"schema": "mfos.rows/1", "rows": [...]}) written with ExperimentRun.rows."""
+
+    artifact: str = "rows.json"
+
+
+class CISpec(_Strict):
+    scheme: Literal["plain", "stratified", "cluster"] = "plain"
+    n_boot: int = 2000
+    level: float = 0.95
+    seed: int = 0
+    strata: list[str] = []  # columns, for scheme "stratified"
+    cluster: Optional[str] = None  # column, for scheme "cluster"
+
+
+class RecomputeSpec(_Strict):
+    """How the evaluator recomputes one reported metric from the rows (mfos.metrics.METRICS[fn])."""
+
+    metric: str  # the metric name the runner reports, e.g. spearman_rho_Lloop
+    fn: str
+    pred: Optional[str] = None  # column of the model under test
+    ref: Optional[str] = None  # column of the reference
+    strata: list[str] = []  # columns whose values define strata
+    group: Optional[str] = None
+    role: Optional[str] = None
+    params: dict[str, Any] = {}  # e.g. {k_frac: 0.1, within_frac: 0.2}, {q: 0.95}, {agg: median}
+    where: dict[str, Any] = {}  # only rows whose columns equal these values
+    ci: Optional[CISpec] = None
+    rel_tol: float = 1e-9
+    abs_tol: float = 1e-12
+
+
+class NullSpec(_Strict):
+    """A predictor that ignores the decision-relevant information. A pass criterion that it also satisfies does not
+    discriminate (verdict non_discriminating)."""
+
+    name: str
+    kind: Literal["stratum_mean", "column"]
+    strata: list[str] = []  # stratum_mean: the mean of the metric's ref column within these strata
+    column: Optional[str] = None  # column: a predictor the runner wrote into the rows
+    applies_to: list[str] = []  # metric names
+
+
 class ExperimentSpec(_Strict):
     id: str
     title: str
@@ -205,6 +248,11 @@ class ExperimentSpec(_Strict):
     code_under_test: list[str] = []  # repo files or globs whose sha256 every run records (provenance.code)
     code_must_match: list[CodeMatch] = []
     requires_passed: list[str] = []  # objectives that must have passed before this experiment runs or counts
+    rows: Optional[RowsSpec] = None
+    recompute: list[RecomputeSpec] = []
+    null_baselines: list[NullSpec] = []
+    recompute_exempt: dict[str, str] = {}  # metric -> written reason it cannot be recomputed from rows
+    dev_rows: Optional[str] = None  # committed rows from a dev-seed run, checked for null discrimination at registration
 
 
 class MetricValue(_Strict):
@@ -268,7 +316,11 @@ class CriterionVerdict(_Strict):
     threshold: float
     value: Optional[float] = None
     bound_used: Optional[float] = None
-    verdict: Literal["satisfied", "not_satisfied", "undetermined", "missing"]
+    verdict: Literal["satisfied", "not_satisfied", "undetermined", "missing", "non_discriminating"]
+    recomputed: Optional[bool] = None  # rules v2: the value was recomputed from the rows by the evaluator
+    runner_value: Optional[float] = None
+    null_value: Optional[float] = None  # the declared null predictor's value of the same metric
+    null_bound: Optional[float] = None
 
 
 class Evaluation(_Strict):
@@ -441,4 +493,5 @@ ROLE_OUTPUT: dict[str, type[BaseModel]] = {
 
 
 # Spec fields added after the first registrations. Store.spec_hash leaves each out while it holds its default.
-SPEC_FIELDS_HASHED_WHEN_SET = ("evidence_rules", "code_under_test", "code_must_match", "requires_passed")
+SPEC_FIELDS_HASHED_WHEN_SET = ("evidence_rules", "code_under_test", "code_must_match", "requires_passed", "rows",
+                               "recompute", "null_baselines", "recompute_exempt", "dev_rows")

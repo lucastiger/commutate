@@ -34,6 +34,10 @@ def sandbox(tmp_path, monkeypatch):
     for key in ("registered_by", "registered_at", "spec_hash"):
         e000.pop(key, None)
     e000["status"] = "draft"
+    # Evidence rules v2: a criterion metric is recomputed from rows or carries a written exemption. The canary's metric
+    # is a point value against a closed-form reference computed inside the runner.
+    e000.setdefault("recompute_exempt", {"max_rel_err": "framework canary: point metric against a closed-form "
+                                                        "reference computed inside the runner"})
     draft = root / "experiments" / "drafts" / "E000.yaml"
     draft.parent.mkdir(parents=True, exist_ok=True)
     draft.write_text(yaml.safe_dump(e000, sort_keys=False).replace("uv run python", "python3"))
