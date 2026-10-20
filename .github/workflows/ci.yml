@@ -3,6 +3,15 @@ on:
   pull_request:
   push:
     branches: [main]
+    # The orchestrator commits state ticks (project/, experiments/) to main many times a day. They change no code,
+    # so they do not need the 20-minute full gate; .github/workflows/state.yml runs `mfos doctor --ci` on them.
+    # A push that also touches code still runs this workflow. Pull requests and the nightly run are unchanged.
+    paths-ignore:
+      - "project/**"
+      - "experiments/results/**"
+      - "experiments/specs/**"
+      - "experiments/drafts/**"
+      - "experiments/registry.jsonl"
   schedule:
     - cron: "17 6 * * *"   # nightly full gate on main
 permissions:
