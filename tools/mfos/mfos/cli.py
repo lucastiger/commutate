@@ -42,6 +42,7 @@ def cmd_objective(a: argparse.Namespace) -> int:
         return 0
     if a.action == "approve":
         s.objective(a.id)  # validates schema before asking anyone to confirm
+        _print_draft_reviews(s, a.id)
         if not human.confirm(f"objective approve {a.id}", a.id):
             return 2
         return _approve_objective(s, a.id)
@@ -50,6 +51,20 @@ def cmd_objective(a: argparse.Namespace) -> int:
         print(yaml.safe_dump(s.objective_state(a.id).model_dump(mode="json"), sort_keys=False))
         return 0
     return _objective_other(s, a)
+
+
+def _print_draft_reviews(s: Store, oid: str) -> None:
+    """The objective-draft reviews inform the approval; they do not gate it."""
+    d = s.project / "reviews" / f"OBJ-{oid}"
+    reviews = sorted(d.glob("*.json")) if d.exists() else []
+    if not reviews:
+        print(f"No draft review of {oid} on record (`uv run mfos objective review {oid}` runs one).")
+    for p in reviews:
+        rv = m.Review.model_validate_json(p.read_text())
+        print(f"draft review {p.stem}: {rv.verdict}")
+        for f in rv.findings:
+            if f.severity in ("blocker", "major"):
+                print(f"  [{f.severity}, {f.impact}] {f.title}")
 
 
 def _approve_objective(s: Store, oid: str) -> int:
@@ -76,6 +91,16 @@ def _objective_other(s: Store, a: argparse.Namespace) -> int:
         st = s.objective_state(a.id)
         st.status = "needs_founder"
         s.save_objective_state(a.id, st)
+        return 0
+    if a.action == "review":  # founder: adversarial review of a draft before approval (audit 2026-10-19)
+        from .loop import Orchestrator
+        try:
+            made = Orchestrator(s).review_objective_draft(a.id)
+        except ValueError as e:
+            print(e, file=sys.stderr)
+            return 1
+        print(f"{a.id}: draft review tasks {', '.join(made)}; the loop dispatches them; results in "
+              f"project/reviews/OBJ-{a.id}/")
         return 0
     if a.action == "rereview":  # founder: the blinded review of a PASS ran on a stale or wrong snapshot
         from .loop import Orchestrator
@@ -585,7 +610,7 @@ def _parser() -> argparse.ArgumentParser:
         return sp
 
     o = cmd("objective", cmd_objective, "create, approve (freeze), show, pause, resume an objective")
-    o.add_argument("action", choices=["new", "approve", "show", "pause", "resume", "rereview"])
+    o.add_argument("action", choices=["new", "approve", "show", "pause", "resume", "rereview", "review"])
     o.add_argument("id")
 
     i = cmd("inbox", cmd_inbox, "list or show founder decisions")

@@ -7,8 +7,19 @@ user-invocable: false
 # Adversarial review
 
 Always: restate the claim and its implied scope; name the three likeliest failure routes; perform
-independent checks; report findings with severity and evidence. Test the tests: a test that
+independent checks; report findings with severity, impact and evidence. Test the tests: a test that
 recomputes the implementation's own formula proves nothing.
+
+Materiality: only a blocker whose impact is `evidence` or `correctness` rejects. Second-order points
+(a tighter estimator, a nicer bound) are `major`/`minor` findings with impact `scope` or
+`maintainability`, or caveats. Ask whether the finding could change the decision the work feeds,
+given the margin by which it passes. After two rejected rounds the founder decides.
+
+## objective drafts (target OBJ-<OID>)
+Would each pass criterion also be met by a predictor that ignores the decision-relevant information
+(e.g. one that knows only the topology or die count)? Do the thresholds follow from the decision, or
+from what is easy to pass? Can the sample and its strata resolve the claim? Can the kill criteria
+actually fire? Is every metric recomputable from rows? Is the scope what will really be sampled?
 
 ## Running checks (sandboxed shell)
 Your shell commands run inside Claude Code's sandbox and are approved automatically there: the checkout

@@ -18,6 +18,7 @@ import fcntl
 import fnmatch
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -358,6 +359,10 @@ class Orchestrator:
         except Exception as e:
             self._fail(t, "agent_error", "critic returned invalid review", str(e))
             return
+        if self.pol.get("review", {}).get("materiality", False) and rv.verdict == "reject" and not any(
+                f.severity == "blocker" and f.impact in ("evidence", "correctness") for f in rv.findings):
+            rv.verdict = "accept_with_caveats"
+            rv.caveats.append("downgraded by policy: reject without an evidence- or correctness-impacting blocker")
         if rv.verdict in ("accept", "accept_with_caveats") and not rv.independent_checks_performed:
             rv.verdict = "cannot_assess"
             rv.caveats.append("downgraded: acceptance without any independent check is not admissible")
@@ -462,12 +467,48 @@ class Orchestrator:
                 return
             rejects = [r for r in revs if r.verdict in ("reject", "cannot_assess")]
             if rejects:
+                cap = int(self.pol.get("review", {}).get("max_rejected_rounds", 0) or 0)
+                rounds = 1 + sum(1 for h in t.history if h.get("outcome") == "review_rejected")
+                if cap and rounds >= cap:
+                    self._review_brief(t, rounds)
+                    return
                 self._fail(t, "review_rejected", "adversarial review rejected the work", rejection_text(t.id, rejects))
                 return
             t.status = "merge"
             self.s.save_task(t)
         if t.status == "merge":
             self._merge(t)
+
+    def _review_brief(self, t: m.Task, rounds: int) -> None:
+        """Stop the review loop after the policy's rounds; give the founder every round's findings in one place."""
+        lines = []
+        for p in sorted((self.s.project / "reviews" / t.id).glob("*.json")):
+            rv = m.Review.model_validate_json(p.read_text())
+            for f in sorted(rv.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9)):
+                lines.append(f"- {p.stem} [{f.severity}, impact {f.impact}] {f.title}"
+                             + (f" (check: {f.suggested_check})" if f.suggested_check else ""))
+        t.status = "needs_founder"
+        t.history.append({"attempt": t.attempts, "outcome": "review_round_cap", "summary": f"{rounds} rejected rounds",
+                          "at": now()})
+        self.s.save_task(t)
+        self.s.add_inbox(kind="decision", subject=f"{t.id}: {rounds} review rounds rejected; your call",
+                         summary=(f"{t.title}\nFindings of every round (project/reviews/{t.id}/):\n"
+                                  + "\n".join(lines)[-3500:]),
+                         refs=[t.id, t.objective], options=["merge as is", "give guidance and retry", "cancel"])
+        self.s.event("review_round_cap", task=t.id, rounds=rounds)
+
+    def _full_gate_ok(self, t: m.Task, path: Path) -> bool:
+        """High- and critical-risk branches pass the full gate (slow tests included) before merging; once per head."""
+        head = self.git.head(path)
+        if any(h.get("outcome") == "full_gate_passed" and h.get("summary") == head for h in t.history):
+            return True
+        passed, text = gates.summarize(gates.run_gate(self.s, path, "full"))
+        if not passed:
+            self._fail(t, "gate_failed", "the full gate fails before merge (high/critical risk)", text)
+            return False
+        t.history.append({"outcome": "full_gate_passed", "summary": head, "at": now()})
+        self.s.save_task(t)
+        return True
 
     def _merge(self, t: m.Task) -> None:
         path = self.git.task_worktree(t)
@@ -497,6 +538,8 @@ class Orchestrator:
                     self._fail(t, "dod_failed", "the fast gate fails once current main is merged into the branch",
                                "main changed after this task was verified; make the branch work with it.\n" + text)
                     return
+            if t.risk in ("high", "critical") and not self._full_gate_ok(t, path):
+                return
             self._commit_state(f"before merging {t.id}")
             body = f"Task {t.id} for {t.objective}\n\n{t.description[:3000]}\n\nDefinition of done verified by mfos."
             state, pr = self.git.integrate(t, path, body, auto)
@@ -875,7 +918,8 @@ class Orchestrator:
         if waiting:
             why.append("waiting on " + ", ".join(waiting))
         ost = self.s.objective_state(t.objective).status
-        if ost not in ("active", "evaluating"):
+        draft_review = t.type == "review" and (t.target or "").startswith("OBJ-")  # reviews of a draft objective
+        if ost not in ("active", "evaluating") and not draft_review:
             why.append(f"objective {t.objective} is {ost}")
         if self._conflicts(t, running):
             why.append("touches overlap a running task")
@@ -1039,16 +1083,19 @@ class Orchestrator:
 
     def _review_material(self, rt: m.Task, cwd: Path) -> tuple[str, str]:
         target = rt.target or ""
+        if target.startswith("OBJ-"):
+            return self._objective_draft_material(rt.objective)
         if target.startswith("EV-"):
             oid = rt.objective
             obj = self.s.objective(oid)
-            ev = (self.s.objective_dir(oid) / "evaluations" / f"{target}.json").read_text()
+            ev_text = (self.s.objective_dir(oid) / "evaluations" / f"{target}.json").read_text()
             specs = "\n\n".join((self.s.root / "experiments" / "specs" / f"{e}.yaml").read_text()
                                 for e in obj.acceptance.required_experiments
                                 if (self.s.root / "experiments" / "specs" / f"{e}.yaml").exists())
             claim = f"The evidence below supports: \"{obj.hypothesis.statement}\" within scope {obj.scope_in}."
-            return claim, f"### Evaluation\n```json\n{ev}\n```\n### Registered experiment specs\n```yaml\n{specs}\n```\n" \
-                          "Result files are under experiments/results/. Runner code is in the repository at this commit."
+            return claim, (self._verifier_report(m.Evaluation.model_validate_json(ev_text))
+                           + f"### Evaluation\n```json\n{ev_text}\n```\n### Registered experiment specs\n```yaml\n{specs}\n```\n"
+                           "Result files are under experiments/results/. Runner code is in the repository at this commit.")
         t = self.s.task(target)
         wt = self.git.wt_root / t.id
         diff = self.git.diff(wt) if wt.exists() else "(diff unavailable)"
@@ -1056,6 +1103,54 @@ class Orchestrator:
                  f"Deliverables: {t.deliverables}. It must satisfy: "
                  + "; ".join(d.cmd or d.exists or "" for d in t.definition_of_done))
         return claim, f"```diff\n{diff}\n```"
+
+    @staticmethod
+    def _verifier_report(ev: m.Evaluation) -> str:
+        lines = ["### Verified by code (evaluator " + ev.evaluator_version + ")",
+                 "Provenance and metric recomputation were verified by code. Spend your checks on physics, design and "
+                 "interpretation unless you have evidence the verifier is wrong."]
+        for eid, checks in ev.checks.items():
+            lines.append(f"- {eid}: " + "; ".join(f"{k} {v}" for k, v in checks.items()))
+        for c in ev.pass_checks + ev.fail_checks:
+            if c.recomputed:
+                lines.append(f"- {c.id} {c.metric}: recomputed {c.value!r} (runner {c.runner_value!r}); bound "
+                             f"{c.bound_used!r}; null {c.null_value!r} -> {c.verdict}")
+        if ev.unused_runs:
+            lines.append(f"- runs not used: {ev.unused_runs}")
+        if len(lines) == 2:
+            lines.append("- (legacy evidence rules: provenance checks limited to evaluator 1.0.0's)")
+        return "\n".join(lines) + "\n\n"
+
+    def _objective_draft_material(self, oid: str) -> tuple[str, str]:
+        obj_text = (self.s.objective_dir(oid) / "objective.yaml").read_text()
+        charter = self.s.project / "charter.md"
+        decisions = []
+        for did in sorted(set(re.findall(r"\bD\d{4}\b", obj_text))):
+            decisions += [p.read_text() for p in (self.s.project / "decisions").glob(f"{did}-*.md")]
+        claim = ("If every pass criterion below is met, the hypothesis is established against its stated null for the "
+                 "stated scope; no criterion would be met by a predictor that ignores the decision-relevant "
+                 "information; the thresholds and the sample can resolve the decision; the kill criteria can "
+                 "actually fire.")
+        material = (f"### Objective draft {oid} (not yet approved: criteria can still change)\n```yaml\n{obj_text}\n```\n"
+                    f"### Charter\n{charter.read_text() if charter.exists() else '(none)'}\n"
+                    f"### Claims so far\n{packets._claims(self.s)}\n"
+                    + ("### Decision records it names\n" + "\n\n".join(decisions) if decisions else ""))
+        return claim, material
+
+    def review_objective_draft(self, oid: str) -> list[str]:
+        """Founder: adversarial review of an objective draft before approval (`mfos objective review`)."""
+        rel = f"project/objectives/{oid}/objective.yaml"
+        committed = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=self.s.root, capture_output=True, text=True)
+        if committed.returncode != 0 or committed.stdout != (self.s.root / rel).read_text():
+            raise ValueError(f"commit {rel} first: critics review a committed snapshot")
+        lenses = [x.split(":", 1)[1] for x in self.pol.get("review_ladder", {}).get("objective_draft", [])
+                  if x.startswith("critic:")]
+        if not lenses:
+            raise ValueError("policy review_ladder.objective_draft names no critic lens")
+        ref = self.git.head()
+        made = [self._create_review(oid, target=f"OBJ-{oid}", lens=lens, ref=ref).id for lens in lenses]
+        self.s.event("objective_draft_review", objective=oid, ref=ref, tasks=made)
+        return made
 
     # ================================================================== state commits
     def _commit_state(self, why: str) -> None:

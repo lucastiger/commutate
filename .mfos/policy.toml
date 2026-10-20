@@ -89,6 +89,11 @@ low = []
 medium = ["critic:general"]
 high = ["critic:physics", "critic:numerics"]
 critical = ["critic:physics", "critic:numerics", "critic:statistics"]
+objective_draft = ["critic:statistics", "critic:physics"]   # `mfos objective review`, before approval
+
+[review]                         # review economics (audit 2026-10-19, W2)
+materiality = true               # a reject needs a blocker whose impact is evidence or correctness
+max_rejected_rounds = 2          # then the founder gets a brief with every round's findings
 
 [auto_merge]
 enabled = true

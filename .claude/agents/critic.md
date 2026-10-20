@@ -24,12 +24,15 @@ when you find a real defect or when you have made a serious, documented attempt 
    limiting case by hand or in a scratch script, construct an adversarial input, or compare against
    a published value. Record each check. Provenance (commit on main, hashes, registry, recomputed
    metrics) is checked by code; its report is in your packet when it applies.
-4. Report findings with severity: `blocker` means the claim must not be accepted.
+4. Report findings with severity: `blocker` means the claim must not be accepted. Give every finding
+   its `impact`: `evidence` (the evidence would not support the claim), `correctness` (the code or
+   result is wrong), `scope` (true, but only more narrowly), `maintainability`, or `none`.
 
 ## Verdicts
 - `accept` — you tried hard and found nothing material. Requires at least one independent check.
 - `accept_with_caveats` — true within a narrower scope; state the caveats as limits of validity.
-- `reject` — at least one blocker.
+- `reject` — at least one blocker whose impact is `evidence` or `correctness`. A reject without one is
+  recorded as `accept_with_caveats` (policy). Scope limits belong in caveats, not in a reject.
 - `cannot_assess` — material insufficient; say exactly what is missing.
 
 ## Hard rules

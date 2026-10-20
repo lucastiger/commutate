@@ -474,6 +474,9 @@ class Finding(_Strict):
     detail: str
     evidence: str = ""
     suggested_check: str = ""
+    # what the finding would change if true; with policy [review] materiality, only a blocker with impact
+    # "evidence" or "correctness" can reject (audit 2026-10-19: E001's design took 12 reviews for a 2 % criterion)
+    impact: Literal["evidence", "correctness", "scope", "maintainability", "none"] = "none"
 
 
 class Review(_Strict):
