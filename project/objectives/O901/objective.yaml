@@ -1,0 +1,51 @@
+id: O901
+title: Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence
+kind: build
+priority: 1
+risk: medium
+depends_on: []
+unlocks: []
+hypothesis:
+  statement: >-
+    moduleforge.canary.harmonic2(n) returns the generalized harmonic number H_n^(2) = sum_{k=1}^{n} 1/k^2 as a float64
+    with relative error at most 1e-13 against a 50-significant-digit decimal reference, for every n in a sealed,
+    decade-stratified sample of 60 integers in [1, 10^6].
+  null_hypothesis: >-
+    The upgraded pipeline cannot carry a known-answer claim to an admissible, recomputed, null-checked verdict on the
+    real Claude Code CLI.
+  why_it_matters: >-
+    Exercises the evidence path that O004, O003 and O002 depend on (experiment design and review, terminal-confirmed
+    registration, run registry and sealed seed, rows artifact, recomputation, null check, proposed claim,
+    terminal-confirmed claim approval), with sandboxed critics, at autonomy level 2, before any scientific objective
+    uses it.
+  decision_if_pass: Keep autonomy level 2; review and approve O004, O003 and O002.
+  decision_if_fail: Return to autonomy level 1 and fix the infrastructure before any scientific objective.
+  decision_if_inconclusive: Treat as an infrastructure failure; diagnose before approving any scientific objective.
+scope_in: ["pure-Python float64 implementation", "n in [1, 10^6]"]
+scope_out: [performance, n above 10^6]
+evidence_plan: [E901]
+acceptance:
+  required_experiments: [E901]
+  pass_all:
+    - {id: A1, metric: E901.max_rel_err, comparator: "<=", threshold: 1.0e-13, uncertainty: {use: point},
+       description: "max over the sample of |harmonic2(n)/H_ref(n) - 1|, recomputed by the evaluator from the rows; the null pi^2/6 - 1/n must not pass"}
+  fail_any:
+    - {id: K1, metric: E901.max_rel_err, comparator: ">", threshold: 1.0e-9, uncertainty: {use: point},
+       description: implementation clearly wrong}
+  max_evaluations: 2
+failure_modes:
+  - {id: F1, description: "sandboxed shells cannot run tests or write scratch files", detection: "denials above 0 in `uv run mfos costs`", response: "infrastructure: fix the sandbox settings, rerun scripts/sandbox_smoke.sh"}
+  - {id: F2, description: "decimal reference wrong", detection: "sanity check reference_valid", response: "experimental: new experiment id"}
+  - {id: F3, description: "criterion non-discriminating", detection: "evaluator null check", response: "design error: revise E901 before registration"}
+budget: {usd: 30, cpu_hours: 0.5, wall_days: 3}
+require_plan_approval: true
+notes: >-
+  E901 design requirements (scientist). Runner experiments/runners/e901_canary.py through mfos.evidence.ExperimentRun.
+  The sealed seed draws 10 integers uniformly from each decade [1,10), [10,100), ..., [10^5, 10^6]; the stratum is the
+  decade. Reference: sum of 1/k^2 in decimal arithmetic with 50 significant digits. Rows artifact via
+  ExperimentRun.rows with fields n, stratum, pred (harmonic2(n)), ref (the reference as a float), null_pred
+  (pi^2/6 - 1/n). Recompute entry: max_rel_err of pred vs ref. Null baseline: kind column, column null_pred, applies to
+  max_rel_err. Domain via ExperimentRun.domain(n_min=[1], n_max=[1000000], strata=[the six decades]). Sanity checks:
+  exact_small_cases (harmonic2(1) == 1.0 and harmonic2(2) == 1.25) and reference_valid (the decimal sum equals the exact
+  fractions.Fraction sum for every n <= 200 within 1e-40 relative). code_under_test: [src/moduleforge/canary.py].
+  timeout_min 10, cpu_hours_est 0.05 (runs locally).

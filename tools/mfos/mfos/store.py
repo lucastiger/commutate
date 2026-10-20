@@ -42,7 +42,7 @@ def now() -> str:
 
 def find_root(start: Optional[Path] = None) -> Path:
     env = os.environ.get("MFOS_ROOT")
-    if env:
+    if env and start is None:  # an explicit root (e.g. a task worktree being verified) wins over the environment
         return Path(env).resolve()
     p = (start or Path.cwd()).resolve()
     for cand in [p, *p.parents]:

@@ -212,7 +212,7 @@ class RecomputeSpec(_Strict):
     where: dict[str, Any] = {}  # only rows whose columns equal these values
     ci: Optional[CISpec] = None
     rel_tol: float = 1e-9
-    abs_tol: float = 1e-12
+    abs_tol: float = 1e-15  # recomputation uses the same rows and formula: only rounding may differ
 
 
 class NullSpec(_Strict):

@@ -375,10 +375,12 @@ def null_values(spec: m.ExperimentSpec, rc: m.RecomputeSpec, rows: list[dict]) -
 
 
 def _recompute(store: Store, obj: m.Objective, st: m.ObjectiveState, results: dict[str, m.ExperimentResult]):
-    """Replace runner-reported metrics with the evaluator's own (rules v2). Returns (results, problems, info)."""
+    """Replace runner-reported metrics with the evaluator's own (rules v2).
+    Returns (results, problems, info, run_problems): run_problems maps an experiment to what is wrong with its run."""
     out = dict(results)
     problems: list[str] = []
     info: dict[str, dict] = {}
+    run_problems: dict[str, list[str]] = {}
     for eid, res in results.items():
         spec = store.spec(eid)
         if spec.evidence_rules < 2 or not spec.recompute:
@@ -387,6 +389,7 @@ def _recompute(store: Store, obj: m.Objective, st: m.ObjectiveState, results: di
             rows = run_rows(store, spec, res)
         except Exception as e:
             problems.append(f"{eid}/{res.run_id}: rows: {e}")
+            run_problems.setdefault(eid, []).append(f"rows: {e}")
             continue
         metrics = dict(res.metrics)
         for rc in spec.recompute:
@@ -401,8 +404,10 @@ def _recompute(store: Store, obj: m.Objective, st: m.ObjectiveState, results: di
             runner = res.metrics.get(rc.metric)
             if runner is None:
                 problems.append(f"{key}: the runner did not report this metric")
+                run_problems.setdefault(eid, []).append(f"{rc.metric} not reported")
             elif not math.isclose(runner.value, mv.value, rel_tol=rc.rel_tol, abs_tol=rc.abs_tol):
                 problems.append(f"{key}: runner reported {runner.value!r}, recomputed {mv.value!r}")
+                run_problems.setdefault(eid, []).append(f"{rc.metric}: runner {runner.value!r} != {mv.value!r}")
             metrics[rc.metric] = mv
             info[key] = {"runner_value": runner.value if runner else None, "nulls": nulls}
         out[eid] = res.model_copy(update={"metrics": metrics})
@@ -414,7 +419,7 @@ def _recompute(store: Store, obj: m.Objective, st: m.ObjectiveState, results: di
             spec = store.spec(eid)
             if name not in {rc.metric for rc in spec.recompute} and name not in spec.recompute_exempt:
                 problems.append(f"{c.metric} (criterion {c.id}): no recompute entry and no recompute_exempt reason")
-    return out, problems, info
+    return out, problems, info, run_problems
 
 
 def _annotate(v: m.CriterionVerdict, c: m.Criterion, info: Optional[dict], with_nulls: bool) -> m.CriterionVerdict:
@@ -462,7 +467,7 @@ def evaluate(store: Store, oid: str, record: bool = True) -> m.Evaluation:
     obj = store.objective(oid)
     st = store.objective_state(oid)
     results, problems, unused, checks = _select(store, obj)
-    results, rc_problems, rc_info = _recompute(store, obj, st, results)
+    results, rc_problems, rc_info, rc_run_problems = _recompute(store, obj, st, results)
     problems += rc_problems
     if st.criteria_hash and st.criteria_hash != store.criteria_hash(obj):
         problems.append("acceptance criteria changed after approval (criteria_hash mismatch)")
@@ -510,10 +515,11 @@ def evaluate(store: Store, oid: str, record: bool = True) -> m.Evaluation:
         store.event("evaluation_invalid", objective=oid, problems=problems)
         # A run that fails a check about itself is consumed, visibly: the next evaluation uses the next minted run.
         for x, res in results.items():
-            bad = failed(checks.get(x, {}), RUN_CHECKS)
+            bad = [f"{k}: {v}" for k, v in failed(checks.get(x, {}), RUN_CHECKS).items()]
+            bad += [f"recompute: {why}" for why in rc_run_problems.get(x, [])]
             if bad:
                 store.registry_append(event="consumed", objective=oid, experiment=x, run_id=res.run_id,
-                                      evaluation=f"{eid}-invalid", reason="; ".join(f"{k}: {v}" for k, v in bad.items()))
+                                      evaluation=f"{eid}-invalid", reason="; ".join(bad))
     return ev
 
 
