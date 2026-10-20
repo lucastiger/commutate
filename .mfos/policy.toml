@@ -123,6 +123,12 @@ founder_email = "lucastiger@users.noreply.github.com"
 identity_name = "mfos-bot"
 identity_email = "mfos-bot@users.noreply.github.com"
 
+[sandbox]                        # Claude Code's OS sandbox around agents' shell commands (audit 2026-10-19, W2)
+enabled = true                   # sandboxed commands are auto-approved, write only to the checkout, $TMPDIR and uv's
+                                 # cache, and have no network; check with scripts/sandbox_smoke.sh after a CLI update
+provision_venv = true            # the orchestrator runs `uv sync --all-groups --frozen` in each checkout first
+extra_allow_write = []           # further writable paths, if a tool needs one
+
 [limits]
 run_wall_minutes = 150         # 90 cut T0071 off mid-solve (2026-10-05): its own checks take up to ~85 min
 backoff_minutes = 30             # pause dispatch after a rate/usage-limit error (does not count as an attempt)

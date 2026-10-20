@@ -10,6 +10,13 @@ Always: restate the claim and its implied scope; name the three likeliest failur
 independent checks; report findings with severity and evidence. Test the tests: a test that
 recomputes the implementation's own formula proves nothing.
 
+## Running checks (sandboxed shell)
+Your shell commands run inside Claude Code's sandbox and are approved automatically there: the checkout
+and `$TMPDIR` are writable, nothing else is, and there is no network. So: put scratch files in
+`$TMPDIR` or `$(mktemp -d)`; run scripts as `uv run python - <<'EOF' … EOF` or from `$TMPDIR`; never
+start a command with `VAR=value` (that form needs a permission prompt, which headless runs deny); use
+WebFetch/WebSearch, not curl, for sources. The virtual environment is already built.
+
 ## general / software
 Behavior vs implementation tests · edge cases (empty, degenerate geometry, zero current) · swallowed
 exceptions · tolerances loose enough to pass wrong answers · changes outside the stated scope ·

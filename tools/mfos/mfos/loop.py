@@ -1010,12 +1010,32 @@ class Orchestrator:
         else:
             cwd = self.git.task_worktree(t)
             rel = packets.work_packet(self.s, t, cwd, run_key)
+        problem = self._provision_venv(cwd)
+        if problem:
+            self._fail(t, "venv_provisioning", f"could not prepare the virtual environment in {cwd.name}", problem)
+            return
         rec = self.runner.start(task=t, role=role, cwd=cwd, packet_rel=rel, schema=packets.schema_for(role),
                                 budget_usd=t.budget_usd, max_turns=t.max_turns, model=model, resume_session=resume,
                                 settings_file=settings, wall_minutes=t.wall_minutes)
         t.status = "running"
         t.runs.append(rec.run_id)
         self.s.save_task(t)
+
+    def _provision_venv(self, cwd: Path) -> str:
+        """Sandboxed agents have no network: build the checkout's venv first (unsandboxed, as the orchestrator).
+        Returns the failure output, or "" when ready or not needed."""
+        pol = self.pol.get("sandbox", {})
+        if not pol.get("enabled", False) or not pol.get("provision_venv", True):
+            return ""
+        if cwd.resolve() == self.s.root.resolve() or not (cwd / "uv.lock").exists():
+            return ""  # the orchestrator's own checkout already has its venv; no lockfile, nothing to provision
+        env = {k: v for k, v in os.environ.items() if k not in ("UV_OFFLINE", "UV_FROZEN", "VIRTUAL_ENV")}
+        try:
+            r = subprocess.run(["uv", "sync", "--all-groups", "--frozen"], cwd=cwd, capture_output=True, text=True,
+                               timeout=900, env=env)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            return str(e)
+        return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
 
     def _review_material(self, rt: m.Task, cwd: Path) -> tuple[str, str]:
         target = rt.target or ""

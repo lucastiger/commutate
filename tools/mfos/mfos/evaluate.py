@@ -187,8 +187,10 @@ def admissibility(store: Store, spec: m.ExperimentSpec, res: m.ExperimentResult)
     bad = []
     for a in res.artifacts:
         p = rd / a.name
+        if not p.exists():  # large outputs may live only in the content-addressed store (ExperimentRun.artifact)
+            p = store.mfos / "artifacts" / a.sha256[:2] / a.sha256
         if not p.exists():
-            bad.append(f"{a.name} missing from the run directory")
+            bad.append(f"{a.name} missing from the run directory and the artifact store")
         elif file_sha256(p) != a.sha256:
             bad.append(f"{a.name} sha256 changed")
     c["artifacts"] = "ok" if not bad else "; ".join(bad)

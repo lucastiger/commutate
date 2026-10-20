@@ -36,6 +36,36 @@ from .store import Store, now
 # or act on GitHub. Only the orchestrator holds credentials.
 _SCRUB = ("GH_TOKEN", "GITHUB_TOKEN", "GH_CONFIG_DIR", "SSH_AUTH_SOCK", "MFOS_BOT_TOKEN")
 
+_UV_CACHE: Optional[str] = None
+
+
+def uv_cache_dir() -> str:
+    """uv's cache directory (writable inside the sandbox, so `uv run` can use its cache), resolved once."""
+    global _UV_CACHE
+    if _UV_CACHE is None:
+        try:
+            out = subprocess.run(["uv", "cache", "dir"], capture_output=True, text=True, timeout=30)
+            _UV_CACHE = out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else ""
+        except (OSError, subprocess.TimeoutExpired):
+            _UV_CACHE = ""
+        _UV_CACHE = _UV_CACHE or str(Path.home() / ".cache" / "uv")
+    return _UV_CACHE
+
+
+def sandbox_block(policy: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Claude Code sandbox settings for agent runs (policy [sandbox]), or None when disabled.
+
+    Sandboxed Bash commands are approved automatically whatever the permission mode, may write only to the working
+    directory, a per-user temp directory ($TMPDIR) and the paths below, and have no network. Bash deny rules and the
+    hooks still apply. No unsandboxed retry; refuse to start if the sandbox is unavailable. Audit 2026-10-19: all 52
+    substantive O001 critic runs had shell commands denied (267 denials)."""
+    pol = policy.get("sandbox", {})
+    if not pol.get("enabled", False):
+        return None
+    return {"enabled": True, "autoAllowBashIfSandboxed": True, "allowUnsandboxedCommands": False,
+            "failIfUnavailable": True,
+            "filesystem": {"allowWrite": [uv_cache_dir(), *pol.get("extra_allow_write", [])]}}
+
 
 @dataclass
 class RunRecord:
@@ -141,11 +171,22 @@ class AgentRunner:
         cmd += ["--resume", session_id] if resume_session else ["--session-id", session_id]
         if model:
             cmd += ["--model", model]
-        if settings_file:
-            cmd += ["--settings", str(settings_file)]
         rdir = self.runs_dir / run_id
         rdir.mkdir(parents=True, exist_ok=True)
+        # Per-run settings: a review checkout (an untrusted fresh repository) gets the orchestrator's permissions
+        # and hooks, as before; every run gets the sandbox block. Worktree runs keep the project's own settings, so
+        # their hooks are not loaded twice.
+        sandbox = sandbox_block(pol)
+        if sandbox is not None or settings_file:
+            merged: dict[str, Any] = json.loads(Path(settings_file).read_text()) if settings_file else {}
+            if sandbox is not None:
+                merged["sandbox"] = sandbox
+            per_run = rdir / "settings.json"
+            per_run.write_text(json.dumps(merged, indent=2))
+            cmd += ["--settings", str(per_run)]
         env = {k: v for k, v in os.environ.items() if k not in _SCRUB}
+        if sandbox is not None:  # no network in the sandbox: uv uses the provisioned venv and the lockfile as is
+            env.update({"UV_OFFLINE": "1", "UV_FROZEN": "1"})
         env.update({
             "MFOS_ROLE": role, "MFOS_TASK_ID": task.id, "MFOS_RUN_ID": run_id,
             "MFOS_OBJECTIVE": task.objective, "MFOS_ROOT_MAIN": str(self.s.root),
