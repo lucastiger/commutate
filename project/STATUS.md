@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-21T15:33:16+00:00 from repository state — do not edit_
+_generated 2026-10-21T17:06:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0053** [plan_approval] [O901] approve initial plan (3 tasks)
@@ -26,7 +26,6 @@ cancelled: 26, done: 81, failed: 3, proposed: 3
 - T0113 `proposed` none/experiment: Run E901 (orchestrator) (attempt 0)
 
 ## Recent events
-- 2026-10-20T18:23:31+00:00 sleep_detected {"gap_s": 1874, "runs_extended": 0}
 - 2026-10-20T19:21:26+00:00 sleep_detected {"gap_s": 1172, "runs_extended": 0}
 - 2026-10-20T19:57:00+00:00 sleep_detected {"gap_s": 1918, "runs_extended": 0}
 - 2026-10-20T20:22:16+00:00 sleep_detected {"gap_s": 1358, "runs_extended": 0}
@@ -41,3 +40,4 @@ cancelled: 26, done: 81, failed: 3, proposed: 3
 - 2026-10-21T15:33:15+00:00 run_finished {"run": "T0110-planner-20261021T083208-8f9d", "status": "completed", "cost": 0.202233, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T15:33:15+00:00 inbox_opened {"id": "I0053", "kind": "plan_approval", "subject": "[O901] approve initial plan (3 tasks)"}
 - 2026-10-21T15:33:15+00:00 plan_applied {"objective": "O901", "created": ["T0111", "T0112", "T0113"], "dropped": 0}
+- 2026-10-21T16:57:46+00:00 sleep_detected {"gap_s": 1419, "runs_extended": 0}
