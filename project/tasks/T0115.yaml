@@ -3,7 +3,7 @@ objective: O901
 title: Implement moduleforge.canary.harmonic2 with analytic unit tests
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: 'Add harmonic2(n: int) -> float to src/moduleforge/canary.py returning H_n^(2) = sum_{k=1}^{n}
   1/k^2 as float64, mirroring harmonic(): same TypeError/ValueError input validation (reject bool, n<1),
@@ -47,8 +47,8 @@ runs:
 - T0115-builder-20261021T102521-d142
 created_by: planner:T0114
 created_at: '2026-10-21T17:23:37+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0055
 target: null
 lens: null
 trigger: null

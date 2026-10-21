@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-10-21T17:27:26+00:00 from repository state — do not edit_
+_generated 2026-10-21T17:31:19+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0055** [protected_change] T0115: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -19,12 +19,11 @@ _generated 2026-10-21T17:27:26+00:00 from repository state — do not edit_
 | O901 | 3 | $0.61 | 12059 | 2019 | 0 | 0 |
 
 ## Tasks
-cancelled: 29, done: 82, failed: 3, needs_founder: 1, todo: 2
+cancelled: 29, done: 82, failed: 3, merge: 1, todo: 2
 
-- T0115 `needs_founder` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
+- T0115 `merge` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
 
 ## Recent events
-- 2026-10-21T15:33:15+00:00 run_finished {"run": "T0110-planner-20261021T083208-8f9d", "status": "completed", "cost": 0.202233, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T15:33:15+00:00 inbox_opened {"id": "I0053", "kind": "plan_approval", "subject": "[O901] approve initial plan (3 tasks)"}
 - 2026-10-21T15:33:15+00:00 plan_applied {"objective": "O901", "created": ["T0111", "T0112", "T0113"], "dropped": 0}
 - 2026-10-21T16:57:46+00:00 sleep_detected {"gap_s": 1419, "runs_extended": 0}
@@ -39,3 +38,4 @@ cancelled: 29, done: 82, failed: 3, needs_founder: 1, todo: 2
 - 2026-10-21T17:27:02+00:00 run_finished {"run": "T0115-builder-20261021T102521-d142", "status": "completed", "cost": 0.121589, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T17:27:23+00:00 verified {"task": "T0115"}
 - 2026-10-21T17:27:26+00:00 inbox_opened {"id": "I0055", "kind": "protected_change", "subject": "T0115: merge needs founder approval"}
+- 2026-10-21T17:31:09+00:00 inbox_resolved {"id": "I0055", "status": "approved", "note": "Reviewed diff; DoD + slow tests rerun independently (23 passed, ruff clean); 0 sandbox denials.", "by": "human"}
