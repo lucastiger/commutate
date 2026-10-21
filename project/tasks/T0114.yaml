@@ -5,7 +5,7 @@ title: 'Plan O901 (founder rejected plan: T0112: smoke mode must write under $TM
   [sandbox]). Otherwise unchanged.)'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -34,4 +34,18 @@ trigger: 'founder rejected plan: T0112: smoke mode must write under $TMPDIR (tem
   inside the checkout, not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]).
   Otherwise unchanged.'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O901 is active with no evaluations yet (0/2 used), and replans are at 2/3. The previous plan
+    was rejected for one reason only: T0112''s --smoke mode wrote to /tmp. The sandbox (policy.toml [sandbox])
+    only allows writes to the checkout, $TMPDIR and the uv cache. Writing to /tmp would have caused sandbox
+    denials, which is exactly failure mode F1, and would have broken the smoke check in the definition
+    of done. I checked the existing runners (e000–e003): all of them hard-code /tmp, and e002 also points
+    MFOS_ARTIFACT_STORE at /tmp, so a scientist copying e000_canary.py would repeat the mistake. The redesign
+    task therefore says explicitly that smoke output goes to tempfile.gettempdir()/e901-smoke (artifacts
+    included), and two automated checks enforce it: the literal string "/tmp" must not appear'
+  created:
+  - T0115
+  - T0116
+  - T0117
+  dropped_for_limits: 0

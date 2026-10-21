@@ -1,0 +1,32 @@
+id: I0054
+kind: plan_approval
+subject: '[O901] approve initial plan (3 tasks)'
+summary: 'O901 is active with no evaluations yet (0/2 used), and replans are at 2/3. The previous plan
+  was rejected for one reason only: T0112''s --smoke mode wrote to /tmp. The sandbox (policy.toml [sandbox])
+  only allows writes to the checkout, $TMPDIR and the uv cache. Writing to /tmp would have caused sandbox
+  denials, which is exactly failure mode F1, and would have broken the smoke check in the definition of
+  done. I checked the existing runners (e000–e003): all of them hard-code /tmp, and e002 also points MFOS_ARTIFACT_STORE
+  at /tmp, so a scientist copying e000_canary.py would repeat the mistake. The redesign task therefore
+  says explicitly that smoke output goes to tempfile.gettempdir()/e901-smoke (artifacts included), and
+  two automated checks enforce it: the literal string "/tmp" must not appear in the runner, and result.json
+  must exist under gettempdir() after the smoke run. The founder asked for nothing else to change, so
+  the rest is re-issued as before: implement harmonic2 with analytic tests (A1/K1 code under test, and
+  the first sandboxed-shell test for F1), design E901 with reference_valid (F2) and the null_pred column
+  baseline (F3), then the orchestrator runs E901. The cheapest kill shots are the builder''s Fraction/asymptotic
+  unit tests and the scientist''s reference_valid and null-baseline smoke run, all before the single counted
+  evaluation. The likeliest failure is infrastructure (sandbox denials or recompute/null-check wiring),
+  not the maths. Since this is replan 3 of 3, the plan stays minimal.'
+refs:
+- O901
+- T0115
+- T0116
+- T0117
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-10-21T17:23:37+00:00'
+resolved_at: null
+resolved_by: null

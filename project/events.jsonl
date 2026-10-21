@@ -972,3 +972,6 @@
 {"ts": "2026-10-21T17:07:16+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 570, "runs_extended": 0}
 {"ts": "2026-10-21T17:22:14+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0053", "status": "rejected", "note": "T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside the checkout, not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]). Otherwise unchanged.", "by": "session"}
 {"ts": "2026-10-21T17:22:28+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0114-planner-20261021T102228-61ac", "task": "T0114", "role": "planner", "session": "0cf54963-ec6f-48b3-9fa5-f6d2b6f5dfe4"}
+{"ts": "2026-10-21T17:23:36+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0114-planner-20261021T102228-61ac", "status": "completed", "cost": 0.283895, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-10-21T17:23:37+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0054", "kind": "plan_approval", "subject": "[O901] approve initial plan (3 tasks)"}
+{"ts": "2026-10-21T17:23:37+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O901", "created": ["T0115", "T0116", "T0117"], "dropped": 0}
