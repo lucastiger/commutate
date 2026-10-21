@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-21T17:48:52+00:00 from repository state — do not edit_
+_generated 2026-10-21T20:15:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0056** [protected_change] T0116: merge needs founder approval
@@ -24,7 +24,6 @@ cancelled: 29, done: 84, failed: 3, needs_founder: 1, todo: 1
 - T0116 `needs_founder` scientist/design_experiment: Design E901: draft spec and runner for harmonic2 known-answer canary (attempt 1)
 
 ## Recent events
-- 2026-10-21T17:23:37+00:00 inbox_opened {"id": "I0054", "kind": "plan_approval", "subject": "[O901] approve initial plan (3 tasks)"}
 - 2026-10-21T17:23:37+00:00 plan_applied {"objective": "O901", "created": ["T0115", "T0116", "T0117"], "dropped": 0}
 - 2026-10-21T17:25:01+00:00 inbox_resolved {"id": "I0054", "status": "approved", "note": "Approved: diff vs rejected plan is only the /tmp -> gettempdir() smoke fix plus two enforcing DoD checks; evidenc
 - 2026-10-21T17:25:21+00:00 run_started {"run": "T0115-builder-20261021T102521-d142", "task": "T0115", "role": "builder", "session": "1c526aa7-650a-435e-a63a-f6d1e63ab84d"}
@@ -39,3 +38,4 @@ cancelled: 29, done: 84, failed: 3, needs_founder: 1, todo: 1
 - 2026-10-21T17:41:14+00:00 run_started {"run": "T0118-critic-20261021T104114-53bc", "task": "T0118", "role": "critic", "session": "c335335b-79f5-40a6-86ed-128bb3538598"}
 - 2026-10-21T17:48:48+00:00 run_finished {"run": "T0118-critic-20261021T104114-53bc", "status": "completed", "cost": 1.49519, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T17:48:51+00:00 inbox_opened {"id": "I0056", "kind": "protected_change", "subject": "T0116: merge needs founder approval"}
+- 2026-10-21T20:15:37+00:00 sleep_detected {"gap_s": 359, "runs_extended": 0}
