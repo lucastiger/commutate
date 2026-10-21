@@ -34,6 +34,10 @@ def sandbox(tmp_path, monkeypatch):
     for key in ("registered_by", "registered_at", "spec_hash"):
         e000.pop(key, None)
     e000["status"] = "draft"
+    # Evidence rules v2: a criterion metric is recomputed from rows or carries a written exemption. The canary's metric
+    # is a point value against a closed-form reference computed inside the runner.
+    e000.setdefault("recompute_exempt", {"max_rel_err": "framework canary: point metric against a closed-form "
+                                                        "reference computed inside the runner"})
     draft = root / "experiments" / "drafts" / "E000.yaml"
     draft.parent.mkdir(parents=True, exist_ok=True)
     draft.write_text(yaml.safe_dump(e000, sort_keys=False).replace("uv run python", "python3"))
@@ -50,6 +54,12 @@ def sandbox(tmp_path, monkeypatch):
     end = pol.index("[planning]")
     pol = pol[:start] + '[gates]\nfast = ["PYTHONPATH=src python3 -c \'import moduleforge\'"]\nfull = []\n\n' + pol[end:]
     (root / ".mfos" / "policy.toml").write_text(pol)
+    # The founder is at a terminal in these scenarios: gated commands (objective approve, exp register, approvals
+    # of gated inbox kinds, claim approve/annotate) are confirmed by typing the id. Tests of the refusal path patch
+    # mfos.human.interactive back to False.
+    from mfos import human
+    monkeypatch.setattr(human, "interactive", lambda: True)
+    monkeypatch.setattr(human, "ask", lambda prompt: prompt.split()[1])
     env_path = os.pathsep.join([str(root / "tools" / "mfos"), str(root / "src")])
     monkeypatch.setenv("PYTHONPATH", env_path)
     monkeypatch.setenv("MFOS_ROOT", str(root))

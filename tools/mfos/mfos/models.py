@@ -26,6 +26,7 @@ class Hypothesis(_Strict):
     why_it_matters: str = ""
     decision_if_pass: str = ""
     decision_if_fail: str = ""
+    decision_if_inconclusive: str = ""  # quoted to the founder on an INCONCLUSIVE verdict (audit 2026-10-19)
 
 
 class Uncertainty(_Strict):
@@ -104,6 +105,10 @@ class ObjectiveState(_Strict):
     spent_usd: float = 0.0
     budget_override_usd: Optional[float] = None
     log: list[str] = []
+    # Evidence rules (audit 2026-10-19): objectives approved by evaluator >= 2.0.0 record 2; O000/O001 keep 1.
+    evidence_rules: int = 1
+    # Hash of hypothesis, scope, evidence plan and acceptance at approval (criteria_hash covers acceptance only).
+    frozen_hash: Optional[str] = None
 
 
 # --------------------------------------------------------------------------- tasks
@@ -170,6 +175,57 @@ class SanitySpec(_Strict):
     description: str = ""
 
 
+class CodeMatch(_Strict):
+    """This experiment's hash of ``path`` must equal the hash recorded for it in the evidence of ``objective``'s
+    last PASS evaluation (e.g. the judge of O003 must be the L2 code that O004 validated)."""
+
+    path: str
+    objective: str
+
+
+class RowsSpec(_Strict):
+    """The run's flat-records artifact ({"schema": "mfos.rows/1", "rows": [...]}) written with ExperimentRun.rows."""
+
+    artifact: str = "rows.json"
+
+
+class CISpec(_Strict):
+    scheme: Literal["plain", "stratified", "cluster"] = "plain"
+    n_boot: int = 2000
+    level: float = 0.95
+    seed: int = 0
+    strata: list[str] = []  # columns, for scheme "stratified"
+    cluster: Optional[str] = None  # column, for scheme "cluster"
+
+
+class RecomputeSpec(_Strict):
+    """How the evaluator recomputes one reported metric from the rows (mfos.metrics.METRICS[fn])."""
+
+    metric: str  # the metric name the runner reports, e.g. spearman_rho_Lloop
+    fn: str
+    pred: Optional[str] = None  # column of the model under test
+    ref: Optional[str] = None  # column of the reference
+    strata: list[str] = []  # columns whose values define strata
+    group: Optional[str] = None
+    role: Optional[str] = None
+    params: dict[str, Any] = {}  # e.g. {k_frac: 0.1, within_frac: 0.2}, {q: 0.95}, {agg: median}
+    where: dict[str, Any] = {}  # only rows whose columns equal these values
+    ci: Optional[CISpec] = None
+    rel_tol: float = 1e-9
+    abs_tol: float = 1e-15  # recomputation uses the same rows and formula: only rounding may differ
+
+
+class NullSpec(_Strict):
+    """A predictor that ignores the decision-relevant information. A pass criterion that it also satisfies does not
+    discriminate (verdict non_discriminating)."""
+
+    name: str
+    kind: Literal["stratum_mean", "column"]
+    strata: list[str] = []  # stratum_mean: the mean of the metric's ref column within these strata
+    column: Optional[str] = None  # column: a predictor the runner wrote into the rows
+    applies_to: list[str] = []  # metric names
+
+
 class ExperimentSpec(_Strict):
     id: str
     title: str
@@ -187,6 +243,17 @@ class ExperimentSpec(_Strict):
     spec_hash: Optional[str] = None
     # repo path -> sha256 of each file the runner command names, frozen at registration (covered by spec_hash)
     runner_files: dict[str, str] = {}
+    # ---- evidence rules v2 (audit 2026-10-19). Each field enters spec_hash only when it differs from its default
+    # (Store.spec_hash), so specs registered before these fields existed keep their recorded hashes.
+    evidence_rules: int = 1  # set to 2 by `mfos exp register`; v2 checks apply only to specs with 2
+    code_under_test: list[str] = []  # repo files or globs whose sha256 every run records (provenance.code)
+    code_must_match: list[CodeMatch] = []
+    requires_passed: list[str] = []  # objectives that must have passed before this experiment runs or counts
+    rows: Optional[RowsSpec] = None
+    recompute: list[RecomputeSpec] = []
+    null_baselines: list[NullSpec] = []
+    recompute_exempt: dict[str, str] = {}  # metric -> written reason it cannot be recomputed from rows
+    dev_rows: Optional[str] = None  # committed rows from a dev-seed run, checked for null discrimination at registration
 
 
 class MetricValue(_Strict):
@@ -218,6 +285,9 @@ class Provenance(_Strict):
     tools: dict[str, str] = {}
     started: str = ""
     finished: str = ""
+    # Recorded by `mfos exp run` (not by the runner) for evidence-rules-v2 specs:
+    code: dict[str, str] = {}  # code_under_test file -> sha256 in the checkout that ran
+    runner_hashes: dict[str, str] = {}  # runner file -> sha256 in the checkout that ran
 
 
 class ArtifactRef(_Strict):
@@ -237,6 +307,7 @@ class ExperimentResult(_Strict):
     sanity: list[SanityResult] = []
     artifacts: list[ArtifactRef] = []
     notes: str = ""
+    domain: dict[str, list[Any]] = {}  # values actually sampled (ExperimentRun.domain): the source of a claim's scope
 
 
 # --------------------------------------------------------------------------- evaluation
@@ -247,7 +318,11 @@ class CriterionVerdict(_Strict):
     threshold: float
     value: Optional[float] = None
     bound_used: Optional[float] = None
-    verdict: Literal["satisfied", "not_satisfied", "undetermined", "missing"]
+    verdict: Literal["satisfied", "not_satisfied", "undetermined", "missing", "non_discriminating"]
+    recomputed: Optional[bool] = None  # rules v2: the value was recomputed from the rows by the evaluator
+    runner_value: Optional[float] = None
+    null_value: Optional[float] = None  # the declared null predictor's value of the same metric
+    null_bound: Optional[float] = None
 
 
 class Evaluation(_Strict):
@@ -262,6 +337,8 @@ class Evaluation(_Strict):
     fail_checks: list[CriterionVerdict]
     verdict: Literal["PASS", "FAIL", "INCONCLUSIVE", "INVALID"]
     explanation: str
+    unused_runs: dict[str, list[str]] = {}  # experiment -> complete runs this evaluation did not use (rules v2)
+    checks: dict[str, dict[str, str]] = {}  # experiment -> admissibility check -> "ok" | "n/a: ..." | reason
 
 
 # --------------------------------------------------------------------------- inbox
@@ -271,6 +348,7 @@ class InboxItem(_Strict):
         "objective_approval", "plan_approval", "experiment_registration",
         "criteria_change", "budget_increase", "protected_change",
         "external_action", "thesis_change", "model_escalation", "decision", "question",
+        "infrastructure", "claim_approval",
     ]
     subject: str
     summary: str
@@ -281,9 +359,17 @@ class InboxItem(_Strict):
     response: str = ""
     created_at: str = ""
     resolved_at: Optional[str] = None
+    resolved_by: Optional[str] = None  # "human" (confirmed at a terminal) or "session" (e.g. an interactive AI session)
 
 
 # --------------------------------------------------------------------------- claims
+class Annotation(_Strict):
+    at: str
+    by: str
+    note: str
+    decision: Optional[str] = None  # decision record, e.g. D0006
+
+
 class Claim(_Strict):
     id: str
     statement: str
@@ -294,6 +380,14 @@ class Claim(_Strict):
     reviews: list[str] = []
     caveats: list[str] = []
     created_at: str = ""
+    # since the audit of 2026-10-19: claims start `proposed` with a scope generated from what was sampled, and become
+    # `supported` only when the founder approves the wording at a terminal; later restrictions are appended, never
+    # rewritten.
+    domain: dict[str, list[Any]] = {}
+    approved_by: Optional[str] = None
+    approved_at: Optional[str] = None
+    scope_restrictions: list[str] = []
+    annotations: list[Annotation] = []
 
 
 # --------------------------------------------------------------------------- agent outputs
@@ -361,7 +455,8 @@ class ScienceReport(_Strict):
     for design/investigation tasks failure_class is 'none'."""
 
     summary: str
-    failure_class: Literal["implementation", "model", "experimental", "planning", "business", "none"] = "none"
+    failure_class: Literal["implementation", "model", "experimental", "planning", "business", "infrastructure",
+                           "none"] = "none"
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     root_cause: str = ""
     evidence: list[str] = []
@@ -379,6 +474,9 @@ class Finding(_Strict):
     detail: str
     evidence: str = ""
     suggested_check: str = ""
+    # what the finding would change if true; with policy [review] materiality, only a blocker with impact
+    # "evidence" or "correctness" can reject (audit 2026-10-19: E001's design took 12 reviews for a 2 % criterion)
+    impact: Literal["evidence", "correctness", "scope", "maintainability", "none"] = "none"
 
 
 class Review(_Strict):
@@ -415,3 +513,8 @@ ROLE_OUTPUT: dict[str, type[BaseModel]] = {
     "scout": ResearchReport,
     "scribe": ScribeReport,
 }
+
+
+# Spec fields added after the first registrations. Store.spec_hash leaves each out while it holds its default.
+SPEC_FIELDS_HASHED_WHEN_SET = ("evidence_rules", "code_under_test", "code_must_match", "requires_passed", "rows",
+                               "recompute", "null_baselines", "recompute_exempt", "dev_rows")

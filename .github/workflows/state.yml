@@ -1,0 +1,23 @@
+name: state
+# Integrity check for orchestrator state pushes, which ci.yml skips: frozen objectives (criteria hash), registered
+# specs and runner hashes, and task-file schemas. Lightweight: no test suite.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "project/**"
+      - "experiments/results/**"
+      - "experiments/specs/**"
+      - "experiments/drafts/**"
+      - "experiments/registry.jsonl"
+permissions:
+  contents: read
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run --frozen mfos doctor --ci

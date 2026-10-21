@@ -59,6 +59,7 @@ class ExperimentRun:
         self._metrics: dict[str, m.MetricValue] = {}
         self._sanity: list[m.SanityResult] = []
         self._artifacts: list[m.ArtifactRef] = []
+        self._domain: dict[str, list[Any]] = {}
         self._started = _now()
         self.notes = ""
 
@@ -85,6 +86,21 @@ class ExperimentRun:
         self._artifacts.append(ref)
         return ref
 
+    def domain(self, **values: Any) -> None:
+        """Record what this run actually sampled, e.g. stack=["DBC Al2O3 0.38 mm"], dies=[2, 3, 4, 5, 6],
+        freq_hz=[2e7], cpu=["Apple M5"]. A passing objective's claim takes its scope from these values."""
+        for k, v in values.items():
+            vals = list(v) if isinstance(v, (list, tuple, set)) else [v]
+            self._domain[k] = sorted({*self._domain.get(k, []), *vals}, key=str)
+
+    def rows(self, records: list[dict[str, Any]], name: str = "rows.json") -> m.ArtifactRef:
+        """Write flat records ({"schema": "mfos.rows/1", "rows": [...]}) into the run directory and register them as
+        an artifact. Evidence rules v2: the evaluator recomputes the spec's declared metrics from this file."""
+        path = self.run_dir / name
+        path.write_text(json.dumps({"schema": "mfos.rows/1", "rows": records}, indent=1,
+                                   default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+        return self.artifact(name, path)
+
     # ---------------------------------------------------------------- provenance
     def _provenance(self) -> m.Provenance:
         lock = Path("uv.lock")
@@ -109,6 +125,7 @@ class ExperimentRun:
             experiment_id=self.experiment_id, run_id=self.run_id, status=status,  # type: ignore[arg-type]
             seed=self.seed, config=self.config, provenance=self._provenance(),
             metrics=self._metrics, sanity=self._sanity, artifacts=self._artifacts, notes=self.notes,
+            domain=self._domain,
         )
         out = self.run_dir / "result.json"
         tmp = out.with_suffix(".tmp")

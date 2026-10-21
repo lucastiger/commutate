@@ -155,6 +155,7 @@ def test_plane_and_wire_plane_quadrature_convergence(monkeypatch, tiny):
     assert np.max(np.abs(a - b)) <= op_lo.bound * np.max(np.abs(a)) * 10
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_proxy_order_convergence_and_stated_bound(tiny):
     """Z at P = 3, 5, 7 against P = 9: the differences shrink and stay inside the reported solver_tol (stated bounds)."""
     lp, pl = loop_case()
@@ -278,6 +279,7 @@ def test_a_posteriori_bound_exceeds_true_error(tiny):
     assert dense.parts[0]["resid"] < 1e-12 and dense.parts[0]["round"] < 1e-9
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_reciprocity_two_port_wires(tiny):
     w1, w2 = staple("w1", 0.0), staple("w2", 1.5)
     res = l2.solve([w1, w2], [], [port("p1", w1), port("p2", w2)], [1e6, 2e7], 1)
@@ -317,6 +319,7 @@ def test_plane_mesh_scales_exactly(tiny):
             "surf:loop"} <= set(a.meta["mesh_params"])
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_meta_contract_and_levels():
     w = wire("w", [(0, 0, 0), (10, 0, 0)])
     res = [l2.solve([w], [], [port("p", w)], [1e2, 5e6, 8e7], k) for k in (1, 2, 3)]
@@ -331,6 +334,7 @@ def test_meta_contract_and_levels():
     assert l2.MAX_REFINEMENT >= 5
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_L_non_increasing_with_frequency():
     w = wire("w", [(0, 0, 0), (10, 0, 0)])
     f = np.logspace(2, 8, 9)
@@ -340,6 +344,7 @@ def test_L_non_increasing_with_frequency():
     assert L[-1] < L[0]
 
 
+@pytest.mark.slow  # >5 s; runs in the full gate (CI, nightly, pre-merge of high/critical tasks)
 def test_B1_dc_closed_form():
     """B1 (Al wire, d = 0.3 mm, l = 10 mm) at 100 Hz vs the uniform-current closed form (docstring), <= 1e-4."""
     w = wire("w", [(0, 0, 0), (10, 0, 0)])

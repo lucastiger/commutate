@@ -303,12 +303,17 @@ def test_agent_whose_allow_list_hides_structured_output_is_caught(sandbox):
     md.write_text(md.read_text().replace(", StructuredOutput", ""))
     assert cli(["doctor", "--ci"]) == 1
     setup_objective()
-    s = _tick_until(lambda s: any(h.get("outcome") == "agent_error"
+    # Since the audit (2026-10-19) this is an infrastructure pause: the tooling failed, not the planner, so no attempt
+    # is used, no diagnosis is spawned, and the founder gets one inbox item for the cause.
+    s = _tick_until(lambda s: any(h.get("outcome") == "no_structured_output"
                                   for t in s.tasks("O000") if t.type == "plan" for h in t.history))
     plan = next(t for t in s.tasks("O000") if t.type == "plan")
-    failure = next(h for h in plan.history if h.get("outcome") == "agent_error")
+    failure = next(h for h in plan.history if h.get("outcome") == "no_structured_output")
     assert "no structured report" in failure["summary"] and "StructuredOutput" in failure["summary"]
     assert "schema but did not provide it" in failure["failure_output"]  # what the agent actually said
+    assert plan.status == "needs_founder" and plan.attempts == 0
+    assert [i.subject for i in s.inbox("open") if i.kind == "infrastructure"] == ["infrastructure: no_structured_output"]
+    assert not [t for t in s.tasks("O000") if t.type == "investigate"]
 
 
 def test_report_written_as_json_text_is_recovered_and_flagged(sandbox, monkeypatch):

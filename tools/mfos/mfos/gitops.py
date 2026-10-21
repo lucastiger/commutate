@@ -110,7 +110,8 @@ class GitOps:
     def head(self, path: Optional[Path] = None) -> str:
         return self.s.git("rev-parse", "HEAD", cwd=path)
 
-    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/")
+    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/",
+                   "experiments/registry.jsonl")
 
     def main_code_moved(self, path: Path) -> bool:
         """Whether main changed anything but orchestrator state since this branch last took it in."""

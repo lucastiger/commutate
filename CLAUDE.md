@@ -15,7 +15,8 @@ by pre-registered experiments, and the thesis can die.
 - If something is ambiguous, stop and say so. Do not invent requirements.
 
 ## Map
-- `src/moduleforge/` product code: geometry, drc, physics/{peec,thermal}, solvers, generate, optimize, io
+- `src/moduleforge/` product code: geometry, drc, generate, physics/peec (L1), solvers (L2: l2, l2_core, l2_dd,
+  l2_layout). thermal, optimize and io do not exist yet
 - `tests/unit/`, `tests/regression/` engineering tests · `tests/acceptance/` locked, founder-approved
 - `experiments/specs/` registered, immutable · `drafts/` proposals · `runners/` experiment code · `results/` evidence
 - `project/charter.md` thesis and assumptions · `objectives/<OID>/objective.yaml` frozen hypotheses ·
@@ -24,7 +25,8 @@ by pre-registered experiments, and the thesis can die.
 - `research/` analyses and diagnoses · `docs/` documentation, `docs/ARCHITECTURE.md` explains this system
 
 ## Commands
-- `uv sync --all-groups` · `uv run pytest -q tests/unit` · `uv run ruff check .` · `uv run mfos gate --fast`
+- `uv sync --all-groups` · fast tests: `uv run pytest -q -m 'not slow' tests/unit` · all tests: `uv run pytest -q tests`
+  · `uv run ruff check .` · `uv run mfos gate --fast`
 - `uv run mfos status` · `uv run mfos inbox` · `uv run mfos task list` · `uv run mfos exp check E0xx`
 - Founder slash commands: /status /inbox /objective /work /investigate /thesis-review /resume
 
@@ -37,7 +39,9 @@ by pre-registered experiments, and the thesis can die.
 - Agents never push, merge, rebase, or use `gh`. Permissive licenses only.
 
 ## Glossary
-L0 geometry/DRC · L1 fast models (JAX PEEC, spectral thermal) · L2 reference solvers (FastHenry-class
-PEEC, FEniCSx thermal, ngspice double-pulse) · L3 customer Q3D/Icepak decks · L4 hardware.
+L0 geometry/DRC · L1 fast models (numpy PEEC in `physics.peec`; thermal planned) · L2 reference solvers (in-house
+PEEC `solvers.l2` and `solvers.l2_layout`; FastHenry only as an optional external cross-check, D0002/D0004; a
+permissively licensed thermal reference still to be chosen; ngspice double-pulse) · L3 customer Q3D/Icepak decks ·
+L4 hardware.
 DBC/AMB: direct-bonded / active-metal-brazed copper on ceramic. Commutation loop: DC+ → high-side
 switch → phase → low-side switch → DC−. Tj: junction temperature.

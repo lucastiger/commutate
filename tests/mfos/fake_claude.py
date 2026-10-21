@@ -9,6 +9,12 @@ Behaviour by --agent:
 
 The report goes in `structured_output`, unless the agent's `tools:` allow-list hides the StructuredOutput
 tool (then only prose comes back, as with the real CLI) or FAKE_REPORT_AS_TEXT=1 (bare JSON in `result`).
+
+Further switches (audit 2026-10-19 tests):
+  FAKE_ARGV_LOG=path           append this call's argv and selected env as one JSON line
+  FAKE_NO_REPORT_FOR=role      that role finishes "successfully" without any report
+  FAKE_LIMIT_ONCE=role         that role's first call ends on a usage limit (HTTP 429, a reset time in the text)
+  FAKE_DENIALS=n               report n permission denials
 """
 import json
 import os
@@ -20,13 +26,109 @@ from pathlib import Path
 args = sys.argv[1:]
 if os.environ.get("FAKE_RECORD_PATH"):  # lets tests see which python3 the hooks would get
     Path(os.environ["FAKE_RECORD_PATH"]).write_text(os.environ.get("PATH", "").split(os.pathsep)[0])
+if os.environ.get("FAKE_ARGV_LOG"):
+    with open(os.environ["FAKE_ARGV_LOG"], "a") as f:
+        f.write(json.dumps({"argv": args, "cwd": os.getcwd(),
+                            "env": {k: os.environ.get(k) for k in ("UV_OFFLINE", "UV_FROZEN", "MFOS_ROLE")}}) + "\n")
 role = args[args.index("--agent") + 1]
 prompt = args[args.index("-p") + 1]
 sid = args[args.index("--session-id") + 1] if "--session-id" in args else args[args.index("--resume") + 1]
 packet = re.search(r"`([^`]*\.mfos/packets/[^`]+\.md)`", prompt)
 text = Path(packet.group(1)).read_text() if packet else ""
 
-if role == "planner":
+# ---- canary v2 (O901): implement harmonic2, design E901 (rows, recompute, null), run it ----------------------------
+E901_SPEC = """id: E901
+title: harmonic2 against a 50-digit decimal reference (infrastructure canary v2)
+objective: O901
+runner: python3 experiments/runners/e901_canary.py
+sealed_seed: true
+metrics:
+  - {name: max_rel_err, description: max over the sample of |harmonic2(n)/H_ref(n) - 1|}
+sanity_checks:
+  - {name: exact_small_cases, description: harmonic2(1) == 1 and harmonic2(2) == 1.25}
+  - {name: reference_valid, description: the decimal reference equals exact fractions for n <= 40}
+rows: {artifact: rows.json}
+recompute:
+  - {metric: max_rel_err, fn: max_rel_err, pred: pred, ref: ref}
+null_baselines:
+  - {name: pi2_over_6_minus_1_over_n, kind: column, column: null_pred, applies_to: [max_rel_err]}
+code_under_test: [src/moduleforge/canary.py]
+timeout_min: 10
+cpu_hours_est: 0.05
+"""
+E901_RUNNER = '''"""E901 (test double of the canary v2 design; decades up to 10^3 to stay fast)."""
+import math
+import os
+import random
+from decimal import Decimal, getcontext
+from fractions import Fraction
+
+from mfos.evidence import ExperimentRun
+from moduleforge.canary import harmonic2
+
+getcontext().prec = 50
+
+
+def reference(n):
+    s = Decimal(0)
+    for k in range(1, n + 1):
+        s += Decimal(1) / (Decimal(k) * Decimal(k))
+    return s
+
+
+with ExperimentRun() as run:
+    rng = random.Random(run.seed)
+    ns = sorted({rng.randrange(10 ** d, 10 ** (d + 1)) for d in range(3) for _ in range(10)})
+    exact = all(abs(reference(n) - Decimal(Fraction(sum(Fraction(1, k * k) for k in range(1, n + 1))).numerator)
+                    / Decimal(sum(Fraction(1, k * k) for k in range(1, n + 1)).denominator)) < Decimal(10) ** -40
+                for n in (1, 7, 40))
+    run.sanity("exact_small_cases", passed=harmonic2(1) == 1.0 and harmonic2(2) == 1.25)
+    run.sanity("reference_valid", passed=exact)
+    rows = []
+    for n in ns:
+        pred = harmonic2(n)
+        null = pred if os.environ.get("FAKE_E901_NULL_EQUALS_PRED") == "1" else math.pi ** 2 / 6 - 1 / n
+        rows.append({"n": n, "stratum": len(str(n)), "pred": pred, "ref": float(reference(n)), "null_pred": null})
+    run.rows(rows)
+    run.domain(n_min=[min(ns)], n_max=[max(ns)], decades=sorted({r["stratum"] for r in rows}))
+    value = max(abs(r["pred"] / r["ref"] - 1) for r in rows)
+    if os.environ.get("FAKE_E901_MISREPORT") == "1":
+        value += 1e-14  # small, but a tenth of the 1e-13 threshold
+    run.metric("max_rel_err", value, n=len(rows))
+'''
+CANARY2 = ("import math\n\n\ndef harmonic(n: int) -> float:\n    return math.fsum(1.0 / k for k in range(1, n + 1))\n\n\n"
+           "def harmonic2(n: int) -> float:\n    return math.fsum(1.0 / (k * k) for k in range(1, n + 1))\n")
+
+if role == "planner" and "O901" in text:
+    out = {
+        "assessment": "Canary v2: implement harmonic2, design E901 with rows, recompute and a null, then run it.",
+        "create_tasks": [
+            {"local_id": "n1", "title": "Implement moduleforge.canary.harmonic2", "type": "implement",
+             "agent": "builder", "description": "H_n^(2) in float64 with math.fsum.",
+             "deliverables": ["src/moduleforge/canary.py"], "touches": ["src/moduleforge/canary.py"],
+             "definition_of_done": [{"cmd": "PYTHONPATH=src python3 -c \"from moduleforge.canary import harmonic2; "
+                                            "assert harmonic2(2) == 1.25\""}], "risk": "low"},
+            {"local_id": "n2", "title": "Design E901", "type": "design_experiment", "agent": "scientist",
+             "experiment": "E901", "description": "Design E901 per O901's notes.",
+             "deliverables": ["experiments/drafts/E901.yaml", "experiments/runners/e901_canary.py"],
+             "touches": ["experiments/drafts/E901.yaml", "experiments/runners/e901_canary.py"], "risk": "low"},
+            {"local_id": "n3", "title": "Run E901", "type": "experiment", "agent": "none", "experiment": "E901",
+             "depends_on": ["n1", "n2"], "description": "orchestrator runs E901"},
+        ],
+        "evidence_complete": True,
+    }
+elif role == "builder" and "harmonic2" in text:
+    Path("src/moduleforge/canary.py").write_text(CANARY2)
+    out = {"status": "completed", "summary": "wrote harmonic2", "files_changed": ["src/moduleforge/canary.py"],
+           "checks_run": []}
+elif role == "scientist" and "(type: design_experiment" in text and "E901" in text:
+    Path("experiments/drafts").mkdir(parents=True, exist_ok=True)
+    Path("experiments/drafts/E901.yaml").write_text(E901_SPEC)
+    Path("experiments/runners/e901_canary.py").write_text(E901_RUNNER)
+    out = {"summary": "designed E901", "failure_class": "none", "confidence": 0.9,
+           "experiment_drafts": ["experiments/drafts/E901.yaml"],
+           "files_written": ["experiments/drafts/E901.yaml", "experiments/runners/e901_canary.py"]}
+elif role == "planner":
     out = {
         "assessment": "Canary: implement harmonic(), then run the pre-registered E000.",
         "create_tasks": [
@@ -71,7 +173,24 @@ else:
 
 envelope = {"type": "result", "subtype": "success", "is_error": False, "result": "done",
             "structured_output": out, "session_id": sid or str(uuid.uuid4()),
-            "total_cost_usd": 0.02, "num_turns": 3}
+            "total_cost_usd": 0.02, "num_turns": 3,
+            "usage": {"input_tokens": 10, "cache_creation_input_tokens": 100, "cache_read_input_tokens": 1000,
+                      "output_tokens": 50, "output_tokens_details": {"thinking_tokens": 20}},
+            "modelUsage": {"claude-fake": {}},
+            "permission_denials": [{"tool_name": "Bash", "tool_use_id": f"t{i}", "tool_input": {"command": "x"}}
+                                   for i in range(int(os.environ.get("FAKE_DENIALS", "0")))]}
+limit_marker = Path(os.environ.get("MFOS_ROOT_MAIN", ".")) / ".mfos" / "runs" / f"fake-limit-{role}"
+if os.environ.get("FAKE_LIMIT_ONCE") == role and not limit_marker.exists():
+    limit_marker.write_text("x")
+    envelope.update(is_error=True, subtype="success", api_error_status=429, structured_output=None,
+                    result="You've hit your session limit · resets 11pm (America/Los_Angeles)")
+    print(json.dumps(envelope))
+    sys.exit(1)
+if os.environ.get("FAKE_NO_REPORT_FOR") == role:
+    del envelope["structured_output"]
+    envelope["result"] = "All done."
+    print(json.dumps(envelope))
+    sys.exit(0)
 # Like the real CLI (checked with 2.1.284): an agent whose `tools:` allow-list omits StructuredOutput
 # never sees the schema, so its report exists only as prose in `result`.
 agent_md = Path(".claude") / "agents" / f"{role}.md"

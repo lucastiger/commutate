@@ -38,6 +38,30 @@ BASH_DENY = [
     (r"\b(pip|pip3)\s+install\b", "dependencies change only through uv and an approved task"),
     (r"\bchmod\s+-R\b|\bchown\b", "permission changes are not allowed"),
 ]
+# mfos commands an agent may run: read-only ones and the checks it is told to run. Everything else (approve, reject,
+# answer, objective approve, exp register/run/mint, claim approve/annotate, loop, start, stop, task start, ...) is a
+# founder or orchestrator act. An agent running them in its worktree was only caught afterwards, by the scope check.
+MFOS_CMD = re.compile(r"\bmfos(?:\.cli)?\s+([a-z-]+)((?:\s+[^;&|\n]*)?)")
+AGENT_MFOS_ALLOWED = {"gate", "status", "doctor", "costs"}
+AGENT_MFOS_SUB_ALLOWED = {"exp": {"check"}, "inbox": {"", "list", "show"}, "task": {"list", "show"},
+                          "objective": {"show"}, "claim": {"list", "show"}}
+
+
+def mfos_denied(cmd: str) -> str:
+    """Why an agent may not run this mfos command, or "" if it may."""
+    for mt in MFOS_CMD.finditer(cmd):
+        sub, rest = mt.group(1), (mt.group(2) or "").split()
+        if sub in AGENT_MFOS_ALLOWED:
+            continue
+        if sub == "evaluate" and "--dry-run" in rest:
+            continue
+        action = rest[0] if rest and not rest[0].startswith("-") else ""
+        if sub in AGENT_MFOS_SUB_ALLOWED and action in AGENT_MFOS_SUB_ALLOWED[sub]:
+            continue
+        return f"`mfos {sub}{' ' + action if action else ''}` is a founder or orchestrator action"
+    return ""
+
+
 REDIRECT = re.compile(r"(?:^|[^0-9&<>])>{1,2}\s*([^\s;&|<>]+)")
 TEE = re.compile(r"\btee\s+(?:-a\s+)?([^\s;&|]+)")
 MUTATORS = re.compile(r"\b(mv|cp|rm|truncate|touch|install|ln)\b|\bsed\s+-i|\bgit\s+(rm|mv|checkout\s+--|restore)\b")
@@ -150,6 +174,9 @@ def main() -> None:
         for pat, why in BASH_DENY:
             if re.search(pat, cmd):
                 emit("deny", f"blocked shell command: {why}")
+        why = mfos_denied(cmd)
+        if why:
+            emit("deny", why)
         for g in pol.get("read_deny", {}).get(role, []):
             if g.split("*")[0].rstrip("/") and g.split("*")[0].rstrip("/") in cmd:
                 emit("deny", f"{role} may not access {g}")

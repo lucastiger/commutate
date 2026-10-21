@@ -18,6 +18,7 @@ import fcntl
 import fnmatch
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -145,7 +146,8 @@ class Orchestrator:
         busy = any(t.status in ("running", "verify", "review", "merge") for t in self.s.tasks())
         return {"started": started, "idle": not busy and started == 0}
 
-    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/")
+    STATE_PATHS = ("project/", "experiments/specs/", "experiments/results/", "experiments/drafts/",
+                   "experiments/registry.jsonl")
 
     def unexpected_changes(self) -> list[str]:
         out = self.s.git("status", "--porcelain", check=False).splitlines()
@@ -255,14 +257,25 @@ class Orchestrator:
             return
         if rec.status == "error":
             text = (rec.result_text + " " + rec.subtype).lower()
-            if any(k in text for k in CAPACITY_SIGNS):
+            if any(k in text for k in CAPACITY_SIGNS) or rec.extra.get("api_error_status") == 429:
+                # A usage limit states when it resets: wait until then (+2 min), then resume the same session, so
+                # the work done before the limit is not thrown away (61 of O001's 174 runs died on a limit).
+                reset = diagnose.parse_limit_reset(rec.result_text)
                 minutes = int(self.pol.get("limits", {}).get("backoff_minutes", 30))
-                (self.s.mfos / "backoff_until").write_text(str(time.time() + 60 * minutes))
+                until = reset.timestamp() + 120 if reset else time.time() + 60 * minutes
+                (self.s.mfos / "backoff_until").write_text(str(until))
                 t.attempts = max(0, t.attempts - 1)  # capacity problems are not the agent's failure
                 t.status = "todo"
-                t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now()})
+                limit = reset is not None or rec.extra.get("api_error_status") == 429 or "limit" in text
+                t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now(),
+                                  "until": dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(),
+                                  "session": rec.session_id if limit else None})
                 self.s.save_task(t)
-                self.s.event("capacity_backoff", task=t.id, minutes=minutes)
+                self.s.event("capacity_backoff", task=t.id, minutes=round((until - time.time()) / 60),
+                             parsed_reset=reset is not None)
+                return
+            if diagnose.classify_agent_error(rec.result_text + " " + str(rec.extra.get("stderr_tail", ""))):
+                self._fail(t, "cli_error", f"the Claude Code CLI failed (run {rec.run_id})", rec.result_text)
                 return
             if rec.subtype in ("error_max_turns", "error_max_budget_usd") and t.type not in ("plan", "review"):
                 wt = self.git.wt_root / t.id
@@ -272,8 +285,9 @@ class Orchestrator:
             return
         out = rec.structured_output or {}
         if not out and t.type in ("plan", "review"):
-            # Say so plainly: validating {} reads like a bad plan, not a missing one (O000, 2026-09-28).
-            self._fail(t, "agent_error", f"{t.agent} returned no structured report (run {rec.run_id}); "
+            # Say so plainly: validating {} reads like a bad plan, not a missing one (O000, 2026-09-28). The run
+            # finished, so this is the tooling (StructuredOutput missing from the agent's tools), not the agent.
+            self._fail(t, "no_structured_output", f"{t.agent} returned no structured report (run {rec.run_id}); "
                        "check that its tools: allow-list includes StructuredOutput", rec.result_text)
             return
         handler = {
@@ -345,6 +359,10 @@ class Orchestrator:
         except Exception as e:
             self._fail(t, "agent_error", "critic returned invalid review", str(e))
             return
+        if self.pol.get("review", {}).get("materiality", False) and rv.verdict == "reject" and not any(
+                f.severity == "blocker" and f.impact in ("evidence", "correctness") for f in rv.findings):
+            rv.verdict = "accept_with_caveats"
+            rv.caveats.append("downgraded by policy: reject without an evidence- or correctness-impacting blocker")
         if rv.verdict in ("accept", "accept_with_caveats") and not rv.independent_checks_performed:
             rv.verdict = "cannot_assess"
             rv.caveats.append("downgraded: acceptance without any independent check is not admissible")
@@ -449,12 +467,48 @@ class Orchestrator:
                 return
             rejects = [r for r in revs if r.verdict in ("reject", "cannot_assess")]
             if rejects:
+                cap = int(self.pol.get("review", {}).get("max_rejected_rounds", 0) or 0)
+                rounds = 1 + sum(1 for h in t.history if h.get("outcome") == "review_rejected")
+                if cap and rounds >= cap:
+                    self._review_brief(t, rounds)
+                    return
                 self._fail(t, "review_rejected", "adversarial review rejected the work", rejection_text(t.id, rejects))
                 return
             t.status = "merge"
             self.s.save_task(t)
         if t.status == "merge":
             self._merge(t)
+
+    def _review_brief(self, t: m.Task, rounds: int) -> None:
+        """Stop the review loop after the policy's rounds; give the founder every round's findings in one place."""
+        lines = []
+        for p in sorted((self.s.project / "reviews" / t.id).glob("*.json")):
+            rv = m.Review.model_validate_json(p.read_text())
+            for f in sorted(rv.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9)):
+                lines.append(f"- {p.stem} [{f.severity}, impact {f.impact}] {f.title}"
+                             + (f" (check: {f.suggested_check})" if f.suggested_check else ""))
+        t.status = "needs_founder"
+        t.history.append({"attempt": t.attempts, "outcome": "review_round_cap", "summary": f"{rounds} rejected rounds",
+                          "at": now()})
+        self.s.save_task(t)
+        self.s.add_inbox(kind="decision", subject=f"{t.id}: {rounds} review rounds rejected; your call",
+                         summary=(f"{t.title}\nFindings of every round (project/reviews/{t.id}/):\n"
+                                  + "\n".join(lines)[-3500:]),
+                         refs=[t.id, t.objective], options=["merge as is", "give guidance and retry", "cancel"])
+        self.s.event("review_round_cap", task=t.id, rounds=rounds)
+
+    def _full_gate_ok(self, t: m.Task, path: Path) -> bool:
+        """High- and critical-risk branches pass the full gate (slow tests included) before merging; once per head."""
+        head = self.git.head(path)
+        if any(h.get("outcome") == "full_gate_passed" and h.get("summary") == head for h in t.history):
+            return True
+        passed, text = gates.summarize(gates.run_gate(self.s, path, "full"))
+        if not passed:
+            self._fail(t, "gate_failed", "the full gate fails before merge (high/critical risk)", text)
+            return False
+        t.history.append({"outcome": "full_gate_passed", "summary": head, "at": now()})
+        self.s.save_task(t)
+        return True
 
     def _merge(self, t: m.Task) -> None:
         path = self.git.task_worktree(t)
@@ -484,6 +538,8 @@ class Orchestrator:
                     self._fail(t, "dod_failed", "the fast gate fails once current main is merged into the branch",
                                "main changed after this task was verified; make the branch work with it.\n" + text)
                     return
+            if t.risk in ("high", "critical") and not self._full_gate_ok(t, path):
+                return
             self._commit_state(f"before merging {t.id}")
             body = f"Task {t.id} for {t.objective}\n\n{t.description[:3000]}\n\nDefinition of done verified by mfos."
             state, pr = self.git.integrate(t, path, body, auto)
@@ -550,11 +606,16 @@ class Orchestrator:
                           "failure_output": output[-4000:], "at": now()})
         resp = diagnose.respond(signal, t.attempts, t.max_attempts)
         self.s.event("task_failed_attempt", task=t.id, signal=signal, action=resp.action)
+        if resp.action == "pause":
+            self._pause_for_infrastructure(t, signal, summary, output)
+            return
         if resp.action == "repair" and t.type not in ("plan", "review"):
             t.status = "todo"
         elif t.type in ("plan", "review") and t.attempts < t.max_attempts:
             t.status = "todo"
-        elif resp.action in ("diagnose", "fix_experiment") and t.type != "investigate":
+        elif resp.action in ("diagnose", "fix_experiment") and t.type not in ("plan", "review", "investigate"):
+            # Plans, reviews and diagnoses never spawn diagnoses of themselves: a cascade of them is how O000's
+            # missing-tool problem cost $12.22 (2026-09-28).
             t.status = "failed"
             self._spawn_investigation(t, resp.failure_class, summary, output)
         else:
@@ -563,6 +624,25 @@ class Orchestrator:
                              summary=f"Class: {resp.failure_class}. {resp.note}\n\n{output[-1500:]}",
                              refs=[t.id, t.objective], options=["re-scope", "cancel", "give guidance"])
         self.s.save_task(t)
+
+    def _pause_for_infrastructure(self, t: m.Task, signal: str, summary: str, output: str) -> None:
+        """Tooling failed, not the work: give the attempt back, park the task, and tell the founder once per cause."""
+        t.attempts = max(0, t.attempts - 1)
+        t.status = "needs_founder"
+        self.s.save_task(t)
+        subject = f"infrastructure: {signal}"
+        item = next((i for i in self.s.inbox("open") if i.kind == "infrastructure" and i.subject == subject), None)
+        if item is not None:
+            if t.id not in item.refs:
+                item.refs.append(t.id)
+                item.summary += f"\n- also {t.id}: {summary}"
+                self.s.save_inbox(item)
+        else:
+            self.s.add_inbox(kind="infrastructure", subject=subject,
+                             summary=(f"{summary}\nNo attempt was used and no diagnosis was spawned. Fix the cause, "
+                                      f"then approve this item: every listed task returns to todo.\n\n{output[-1500:]}"),
+                             refs=[t.id], options=["fixed: retry the listed tasks", "reject: leave them parked"])
+        self.s.event("infrastructure_pause", task=t.id, signal=signal)
 
     def _spawn_investigation(self, t: m.Task, cls: str, summary: str, output: str,
                              st: Optional[m.ObjectiveState] = None) -> None:
@@ -598,6 +678,9 @@ class Orchestrator:
         return self.s.mfos / "exp_runs" / f"{tid}.json"
 
     def _start_experiment(self, t: m.Task) -> None:
+        # The run checks out main: commit state first, so a registration made since the last tick is in the commit
+        # the result will cite (E003, 2026-10-11, ran on a commit without its spec).
+        self._commit_state(f"before running {t.experiment}")
         rec_path = self._exp_record(t.id)
         rec_path.parent.mkdir(parents=True, exist_ok=True)
         log = open(self.s.mfos / "exp_runs" / f"{t.id}.log", "w")
@@ -625,8 +708,9 @@ class Orchestrator:
                      if r.provenance.finished and
                      dt.datetime.fromisoformat(r.provenance.finished).timestamp() >= rec["started"] - 1]
             if not fresh:
-                self._fail(t, "experiment_error", "experiment produced no result",
-                           (self.s.mfos / "exp_runs" / f"{t.id}.log").read_text()[-3000:])
+                log = (self.s.mfos / "exp_runs" / f"{t.id}.log").read_text()
+                signal = diagnose.classify_experiment_failure(log)
+                self._fail(t, signal, "experiment produced no result", log[-3000:])
                 continue
             r = fresh[-1]
             if r.status == "complete" and all(s.passed for s in r.sanity):
@@ -637,7 +721,10 @@ class Orchestrator:
                 self._fail(t, "sanity_failed", f"sanity checks failed in {r.run_id}",
                            json.dumps([s.model_dump() for s in r.sanity if not s.passed], indent=1))
             else:
-                self._fail(t, "experiment_error", f"{r.run_id} status={r.status}", r.notes[-3000:])
+                runner_log = self.s.root / "experiments" / "results" / (t.experiment or "") / r.run_id / "runner.log"
+                text = r.notes + ("\n" + runner_log.read_text()[-6000:] if runner_log.exists() else "")
+                signal = diagnose.classify_experiment_failure(text)
+                self._fail(t, signal, f"{r.run_id} status={r.status}", text[-3000:])
 
     # ================================================================== objectives
     def _objective(self, oid: str) -> None:
@@ -689,12 +776,11 @@ class Orchestrator:
         self.s.save_task(pt)
 
     def _maybe_evaluate(self, oid: str, obj: m.Objective, st: m.ObjectiveState) -> None:
-        latest: dict[str, str] = {}
-        for eid in obj.acceptance.required_experiments:
-            runs = [r for r in self.s.results(eid) if r.status == "complete"]
-            if not runs:
-                return
-            latest[eid] = runs[-1].run_id
+        # The evaluator's own selection: the latest complete run for legacy specs; for evidence-rules-v2 specs the
+        # first minted run that no earlier evaluation consumed (a later run never overtakes an earlier one).
+        latest = evaluate.selected_runs(self.s, obj)
+        if latest is None:
+            return
         if latest == st.evaluated_runs:
             return
         if len(st.evaluations) >= obj.acceptance.max_evaluations:
@@ -728,6 +814,13 @@ class Orchestrator:
                                       "\n".join(ev.validity_problems), st=st)
         else:  # FAIL or INCONCLUSIVE
             st.log.append(f"verdict:{ev.verdict} {ev.id}")
+            # Put the decision registered before the evidence in front of the founder now; the diagnosis below
+            # informs it, it does not replace it.
+            pre = obj.hypothesis.decision_if_fail if ev.verdict == "FAIL" else obj.hypothesis.decision_if_inconclusive
+            self.s.add_inbox(kind="decision", subject=f"[{oid}] {ev.verdict} ({ev.id}): the pre-registered decision",
+                             summary=(f"{ev.explanation}\nPre-registered decision if {ev.verdict}: "
+                                      f"{pre or '(none recorded)'}\nA diagnosis and a statistics review are running."),
+                             refs=[oid, ev.id], options=["act on the pre-registered decision", "wait for the diagnosis"])
             cls = "model" if ev.verdict == "FAIL" else "experimental"
             self._spawn_investigation(self._pseudo(oid, ev.id), cls, f"objective verdict {ev.verdict}",
                                       ev.model_dump_json(indent=1), st=st)
@@ -782,8 +875,16 @@ class Orchestrator:
         reviews = [x.id for x in self._reviews_for(ev_id, ref=st.pending_review_ref)[0]]
         st.pending_evaluation, st.pending_review_ref = None, None
         self.s.save_objective_state(oid, st)
-        self.s.add_claim(statement=obj.hypothesis.statement, scope="; ".join(obj.scope_in) or "as stated",
-                         status="supported", objective=oid, evaluation=ev_id, reviews=reviews, caveats=caveats)
+        # The claim starts as a proposal whose scope is what was actually sampled; the founder approves its wording
+        # at a terminal (C002 copied the hypothesis's "DBC/AMB" and "converged" although only DBC was sampled).
+        domain, scope = self._claim_scope(oid, obj, ev_id)
+        claim = self.s.add_claim(statement=obj.hypothesis.statement, scope=scope, status="proposed", objective=oid,
+                                 evaluation=ev_id, reviews=reviews, caveats=caveats, domain=domain)
+        self.s.add_inbox(kind="claim_approval", subject=f"[{oid}] approve the wording of claim {claim.id}",
+                         summary=(f"Draft statement (the hypothesis): {claim.statement}\nScope from the sampled "
+                                  f"domain: {scope}\nCritic caveats: {len(caveats)}. Approve at a terminal with "
+                                  f"`uv run mfos claim approve {claim.id}` (optionally --statement-file / --scope)."),
+                         refs=[claim.id, oid, ev_id], options=["approve as drafted", "approve with a narrower wording"])
         self._commit_state(f"{oid} passed ({ev_id})")
         self.s.git("tag", "-f", "-a", f"{oid}-passed", "-m", f"{oid} passed: {ev_id}", check=False)
         self.s.event("objective_passed", objective=oid, evaluation=ev_id)
@@ -792,6 +893,20 @@ class Orchestrator:
                 t.status = "cancelled"
                 t.history.append({"outcome": "cancelled", "summary": "objective passed"})
                 self.s.save_task(t)
+
+    def _claim_scope(self, oid: str, obj: m.Objective, ev_id: str) -> tuple[dict, str]:
+        domain: dict[str, list] = {}
+        ev = evaluate._evaluation(self.s, oid, ev_id)
+        for eid, rid in (ev.results_used.items() if ev else []):
+            r = evaluate._result(self.s, eid, rid)
+            for k, vals in (r.domain if r else {}).items():
+                domain[k] = sorted({*map(json.dumps, domain.get(k, [])), *map(json.dumps, vals)})
+        domain = {k: [json.loads(x) for x in v] for k, v in domain.items()}
+        declared = "; ".join(obj.scope_in) or "none"
+        if not domain:
+            return {}, f"UNSPECIFIED — the runner declared no domain. Declared scope_in (unchecked): {declared}"
+        sampled = "; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in sorted(domain.items()))
+        return domain, f"Sampled: {sampled}. Declared scope_in (not checked against the samples): {declared}"
 
     # ================================================================== dispatch
     def _blockers(self, t: m.Task, running: list[m.Task]) -> list[str]:
@@ -803,7 +918,8 @@ class Orchestrator:
         if waiting:
             why.append("waiting on " + ", ".join(waiting))
         ost = self.s.objective_state(t.objective).status
-        if ost not in ("active", "evaluating"):
+        draft_review = t.type == "review" and (t.target or "").startswith("OBJ-")  # reviews of a draft objective
+        if ost not in ("active", "evaluating") and not draft_review:
             why.append(f"objective {t.objective} is {ost}")
         if self._conflicts(t, running):
             why.append("touches overlap a running task")
@@ -811,6 +927,10 @@ class Orchestrator:
         # the founder registered E002/E003, and failed three times each on the missing spec (2026-10-11).
         if t.type == "experiment" and t.experiment and not self.s.spec_path(t.experiment).exists():
             why.append(f"experiment {t.experiment} is not registered")
+        elif t.type == "experiment" and t.experiment:
+            for dep in self.s.spec(t.experiment).requires_passed:  # e.g. O003's L2 runs wait for O004 (rules v2)
+                if self.s.objective_state(dep).status != "passed":
+                    why.append(f"waiting for {dep} to pass")
         return why
 
     def _conflicts(self, t: m.Task, running: list[m.Task]) -> bool:
@@ -889,11 +1009,26 @@ class Orchestrator:
                 # founder started resumes after a capacity pause without a second trigger
             if n_agents >= conc.get("agents", 2) or not self._budget_ok(t):
                 continue
-            self._start_agent(t)
+            session = self._resumable_session(t)
+            if session:  # continue the interrupted session; it is the same attempt
+                t.attempts += 1
+                t.history.append({"outcome": "capacity_resume", "summary": session, "at": now()})
+                self._start_agent(t, resume=session)
+            else:
+                self._start_agent(t)
             running.append(t)
             n_agents += 1
             started += 1
         return started
+
+    MAX_CAPACITY_RESUMES = 2
+
+    def _resumable_session(self, t: m.Task) -> Optional[str]:
+        """The session a usage limit interrupted, if it should be resumed (at most twice per task)."""
+        if not t.history or t.history[-1].get("outcome") != "capacity_backoff":
+            return None
+        resumes = sum(1 for h in t.history if h.get("outcome") == "capacity_resume")
+        return t.history[-1].get("session") if resumes < self.MAX_CAPACITY_RESUMES else None
 
     def _start_agent(self, t: m.Task, resume: Optional[str] = None) -> None:
         role = t.agent
@@ -919,6 +1054,10 @@ class Orchestrator:
         else:
             cwd = self.git.task_worktree(t)
             rel = packets.work_packet(self.s, t, cwd, run_key)
+        problem = self._provision_venv(cwd)
+        if problem:
+            self._fail(t, "venv_provisioning", f"could not prepare the virtual environment in {cwd.name}", problem)
+            return
         rec = self.runner.start(task=t, role=role, cwd=cwd, packet_rel=rel, schema=packets.schema_for(role),
                                 budget_usd=t.budget_usd, max_turns=t.max_turns, model=model, resume_session=resume,
                                 settings_file=settings, wall_minutes=t.wall_minutes)
@@ -926,18 +1065,37 @@ class Orchestrator:
         t.runs.append(rec.run_id)
         self.s.save_task(t)
 
+    def _provision_venv(self, cwd: Path) -> str:
+        """Sandboxed agents have no network: build the checkout's venv first (unsandboxed, as the orchestrator).
+        Returns the failure output, or "" when ready or not needed."""
+        pol = self.pol.get("sandbox", {})
+        if not pol.get("enabled", False) or not pol.get("provision_venv", True):
+            return ""
+        if cwd.resolve() == self.s.root.resolve() or not (cwd / "uv.lock").exists():
+            return ""  # the orchestrator's own checkout already has its venv; no lockfile, nothing to provision
+        env = {k: v for k, v in os.environ.items() if k not in ("UV_OFFLINE", "UV_FROZEN", "VIRTUAL_ENV")}
+        try:
+            r = subprocess.run(["uv", "sync", "--all-groups", "--frozen"], cwd=cwd, capture_output=True, text=True,
+                               timeout=900, env=env)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            return str(e)
+        return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
+
     def _review_material(self, rt: m.Task, cwd: Path) -> tuple[str, str]:
         target = rt.target or ""
+        if target.startswith("OBJ-"):
+            return self._objective_draft_material(rt.objective)
         if target.startswith("EV-"):
             oid = rt.objective
             obj = self.s.objective(oid)
-            ev = (self.s.objective_dir(oid) / "evaluations" / f"{target}.json").read_text()
+            ev_text = (self.s.objective_dir(oid) / "evaluations" / f"{target}.json").read_text()
             specs = "\n\n".join((self.s.root / "experiments" / "specs" / f"{e}.yaml").read_text()
                                 for e in obj.acceptance.required_experiments
                                 if (self.s.root / "experiments" / "specs" / f"{e}.yaml").exists())
             claim = f"The evidence below supports: \"{obj.hypothesis.statement}\" within scope {obj.scope_in}."
-            return claim, f"### Evaluation\n```json\n{ev}\n```\n### Registered experiment specs\n```yaml\n{specs}\n```\n" \
-                          "Result files are under experiments/results/. Runner code is in the repository at this commit."
+            return claim, (self._verifier_report(m.Evaluation.model_validate_json(ev_text))
+                           + f"### Evaluation\n```json\n{ev_text}\n```\n### Registered experiment specs\n```yaml\n{specs}\n```\n"
+                           "Result files are under experiments/results/. Runner code is in the repository at this commit.")
         t = self.s.task(target)
         wt = self.git.wt_root / t.id
         diff = self.git.diff(wt) if wt.exists() else "(diff unavailable)"
@@ -946,9 +1104,57 @@ class Orchestrator:
                  + "; ".join(d.cmd or d.exists or "" for d in t.definition_of_done))
         return claim, f"```diff\n{diff}\n```"
 
+    @staticmethod
+    def _verifier_report(ev: m.Evaluation) -> str:
+        lines = ["### Verified by code (evaluator " + ev.evaluator_version + ")",
+                 "Provenance and metric recomputation were verified by code. Spend your checks on physics, design and "
+                 "interpretation unless you have evidence the verifier is wrong."]
+        for eid, checks in ev.checks.items():
+            lines.append(f"- {eid}: " + "; ".join(f"{k} {v}" for k, v in checks.items()))
+        for c in ev.pass_checks + ev.fail_checks:
+            if c.recomputed:
+                lines.append(f"- {c.id} {c.metric}: recomputed {c.value!r} (runner {c.runner_value!r}); bound "
+                             f"{c.bound_used!r}; null {c.null_value!r} -> {c.verdict}")
+        if ev.unused_runs:
+            lines.append(f"- runs not used: {ev.unused_runs}")
+        if len(lines) == 2:
+            lines.append("- (legacy evidence rules: provenance checks limited to evaluator 1.0.0's)")
+        return "\n".join(lines) + "\n\n"
+
+    def _objective_draft_material(self, oid: str) -> tuple[str, str]:
+        obj_text = (self.s.objective_dir(oid) / "objective.yaml").read_text()
+        charter = self.s.project / "charter.md"
+        decisions = []
+        for did in sorted(set(re.findall(r"\bD\d{4}\b", obj_text))):
+            decisions += [p.read_text() for p in (self.s.project / "decisions").glob(f"{did}-*.md")]
+        claim = ("If every pass criterion below is met, the hypothesis is established against its stated null for the "
+                 "stated scope; no criterion would be met by a predictor that ignores the decision-relevant "
+                 "information; the thresholds and the sample can resolve the decision; the kill criteria can "
+                 "actually fire.")
+        material = (f"### Objective draft {oid} (not yet approved: criteria can still change)\n```yaml\n{obj_text}\n```\n"
+                    f"### Charter\n{charter.read_text() if charter.exists() else '(none)'}\n"
+                    f"### Claims so far\n{packets._claims(self.s)}\n"
+                    + ("### Decision records it names\n" + "\n\n".join(decisions) if decisions else ""))
+        return claim, material
+
+    def review_objective_draft(self, oid: str) -> list[str]:
+        """Founder: adversarial review of an objective draft before approval (`mfos objective review`)."""
+        rel = f"project/objectives/{oid}/objective.yaml"
+        committed = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=self.s.root, capture_output=True, text=True)
+        if committed.returncode != 0 or committed.stdout != (self.s.root / rel).read_text():
+            raise ValueError(f"commit {rel} first: critics review a committed snapshot")
+        lenses = [x.split(":", 1)[1] for x in self.pol.get("review_ladder", {}).get("objective_draft", [])
+                  if x.startswith("critic:")]
+        if not lenses:
+            raise ValueError("policy review_ladder.objective_draft names no critic lens")
+        ref = self.git.head()
+        made = [self._create_review(oid, target=f"OBJ-{oid}", lens=lens, ref=ref).id for lens in lenses]
+        self.s.event("objective_draft_review", objective=oid, ref=ref, tasks=made)
+        return made
+
     # ================================================================== state commits
     def _commit_state(self, why: str) -> None:
-        paths = ["project", "experiments/specs", "experiments/results", "experiments/drafts"]
+        paths = ["project", "experiments/specs", "experiments/results", "experiments/drafts", "experiments/registry.jsonl"]
         existing = [p for p in paths if (self.s.root / p).exists()]
         if not existing:
             return
