@@ -1,0 +1,53 @@
+{
+  "verdict": "accept",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Files outside the stated deliverables, labelled with another task id",
+      "detail": "The change adds research/e901_design/power.py and power.log as well as the two named deliverables. The script's docstring says it belongs to T0116, not T0118. The files are harmless, pass ruff, and power.py reproduces power.log exactly, but they go beyond the claimed scope.",
+      "evidence": "diff adds research/e901_design/{power.py,power.log}; the docstring reads 'E901 design check (T0116)'. Rerunning `uv run python research/e901_design/power.py` gives output identical to power.log.",
+      "suggested_check": "Confirm that research/ is inside T0118's write scope, or move the files to the task that owns them.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "No dev_rows, so the null check cannot run before registration",
+      "detail": "The objective's failure mode F3 ('criterion non-discriminating', detected by the evaluator's null check, response: revise E901 before registration) assumes a null check at registration time. register() runs that check only when the spec sets dev_rows, and E901 does not set it. The null check therefore runs only at evaluation, after the sealed run. The practical impact is nil. The null pi^2/6 - 1/n has relative error of at least about 3.04e-13 at every n in [1, 10^6] (the smallest value is at n = 10^6, per power.log and my rerun), so it can never meet A1 (1e-13) whatever the seed.",
+      "evidence": "experiments.py:108 (`if spec.dev_rows:` gates null_check); the E901.yaml spec has no dev_rows field; the null's max_rel_err was 0.355 (seeds 1 and 2^31-2) and 0.084 (seed 12345).",
+      "suggested_check": "Optionally commit smoke rows as dev_rows so the registration-time null check is exercised as F3 describes.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The A1 threshold cannot tell naive float64 summation from fsum",
+      "detail": "power.log, which I reproduced, shows that a naive left-to-right float64 sum has max relative error 2.75e-14, below A1's 1e-13, so P(A1 fails) = 0. The objective froze this threshold, so it is not a defect in this change. It does limit what a pass shows: it does not show correctly rounded summation.",
+      "evidence": "power.log row 'naive forward float64 2.75e-14 ... 0.000000'",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Smoke mode keeps any MFOS_ARTIFACT_STORE that is already set",
+      "detail": "Smoke mode sets MFOS_ARTIFACT_STORE with os.environ.setdefault. If the variable were already set, smoke artifacts would go to that store, not under gettempdir(), which contradicts the docstring's claim that smoke 'writes only under tempfile.gettempdir()'. The variable is set only inside `mfos exp run` (experiments.py:191), and that path never uses --smoke. In practice it has no effect.",
+      "evidence": "e901_canary.py main(): os.environ.setdefault(\"MFOS_ARTIFACT_STORE\", ...)",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself. `mfos exp check E901` passes. The '/tmp' literal check passes. `--smoke` exits 0 and writes $TMPDIR/e901-smoke/result.json (status complete, both declared sanity checks pass, rows.json artifact present). `ruff check` passes on the runner and on power.py. `git status` is clean after the smoke run, so nothing was written into the repo.",
+    "Checked the reference against an independent 90-digit decimal sum over 60 sealed-style draws plus the smoke n values (n up to 10^6): largest relative difference 2.6e-47. float(ref) equals the correctly rounded 90-digit value for every n. An exact fractions.Fraction sum at n = 3000 agrees to 1.9e-48 relative and rounds to the same float64.",
+    "Checked the runner's Euler-Maclaurin expansion and PI_50 against the 90-digit sum at n = 10^6: they agree to 2.5e-50. I also confirmed that the expansion's terms, signs and next-term truncation bound 5/(66 n^11) are correct.",
+    "Checked the deterministic error bound 3u(1+value)+1e-40: computed max_rel_err 1.11e-16, exact (90-digit) maximum 7.27e-17, bound 3.33e-16. The exact value lies inside the reported interval.",
+    "Called sealed_sample, reference_sums, reference_check and max_rel_err directly for seeds 1, 12345 and 2^31-2. Each seed gives exactly 10 draws in each of the 6 decades, endpoints included (n = 1 and n = 972933 to 893764 reached), the reference check is 2.1e-49 (well under 1e-40), harmonic2's max_rel_err is 1.1e-16 (A1 passes), and the null's max_rel_err is 0.08 to 0.36. Each run took under 0.5 s against the 10 min timeout.",
+    "Read mfos.evidence, experiments.run and validate_draft, and evaluate's recompute and null functions. `mfos exp run` injects MFOS_SPEC_JSON (so run.config comes from the spec), MFOS_SEED (so run.seed) and PYTHONPATH with src. The YAML config round-trips through JSON with no drift from EXPECTED_CONFIG and no unchecked keys. The recompute (fn max_rel_err, pred/ref columns) and the null column null_pred match the row fields. mfos.metrics.max_rel_err is |pred/ref - 1|, which matches the spec's description and the bound derivation.",
+    "Checked stratum_of at the decade boundaries (1, 9, 10, 99, 100, 999999, 10^6): all labels are correct.",
+    "Reran research/e901_design/power.py: output matches power.log exactly. The mutants (float32, off-by-one, n+1, 3- and 4-term asymptotics) are caught with probability 1 under the stratified design.",
+    "Checked the spec against each requirement in the objective's notes: runner, sealed seed, decade strata, 50-digit reference, row fields, recompute, null column, domain, both sanity checks, code_under_test, timeout_min 10 and cpu_hours_est 0.05 are all present and consistent."
+  ],
+  "caveats": [
+    "I could not run the non-smoke path end to end (ExperimentRun with an injected sealed seed and spec JSON, the config drift guard, the missing-seed guard). Simulated sealed-seed runs were blocked by the sandbox/permission guard. That path was checked by reading the code and by calling the runner's component functions directly, not by a full run. No definition-of-done command exercises it.",
+    "The registration-time null check is not configured (no dev_rows). Null discrimination is checked only at evaluation, though analytically the null can never pass A1 on [1, 10^6].",
+    "A pass under A1 (1e-13) shows float64-level accuracy, not correctly rounded summation: naive float64 summation would also pass."
+  ]
+}
