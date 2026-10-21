@@ -3,7 +3,7 @@ objective: O901
 title: Implement moduleforge.canary.harmonic2 with analytic unit tests
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on: []
 description: 'Add harmonic2(n: int) -> float to src/moduleforge/canary.py returning H_n^(2) = sum_{k=1}^{n}
   1/k^2 as float64, mirroring harmonic(): same TypeError/ValueError input validation (reject bool, n<1),
@@ -53,4 +53,32 @@ target: null
 lens: null
 trigger: null
 rationale: Code under test for A1/K1; also the first test of sandboxed shells (F1 detection).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Added harmonic2(n) to canary.py. It mirrors harmonic(): it rejects bool and non-int with TypeError,
+    rejects n<1 with ValueError, and sums 1.0/(k*k) with math.fsum. The docstring cites Concrete Mathematics
+    §6.3 and the Basel limit pi^2/6. Added tests for exact small values, Fraction agreement at n in {3,10,50,200},
+    the asymptotic expansion at n=1e4 and at n=1e6 (marked slow), monotonicity, and input validation.
+    harmonic() and the existing tests are unchanged. Committed on the branch.'
+  report:
+    status: completed
+    summary: 'Added harmonic2(n) to canary.py. It mirrors harmonic(): it rejects bool and non-int with
+      TypeError, rejects n<1 with ValueError, and sums 1.0/(k*k) with math.fsum. The docstring cites Concrete
+      Mathematics §6.3 and the Basel limit pi^2/6. Added tests for exact small values, Fraction agreement
+      at n in {3,10,50,200}, the asymptotic expansion at n=1e4 and at n=1e6 (marked slow), monotonicity,
+      and input validation. harmonic() and the existing tests are unchanged. Committed on the branch.'
+    files_changed:
+    - src/moduleforge/canary.py
+    - tests/unit/test_canary.py
+    checks_run:
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/test_canary.py
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/test_canary.py -k 1e6
+      exit_code: 0
+    - cmd: uv run python -c "from moduleforge.canary import harmonic2; assert harmonic2(1)==1.0 and harmonic2(2)==1.25"
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/canary.py tests/unit/test_canary.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0

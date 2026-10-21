@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-21T17:25:21+00:00 from repository state — do not edit_
+_generated 2026-10-21T17:27:20+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -9,22 +9,21 @@ _generated 2026-10-21T17:25:21+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O901 | active | - | 0/2 | $0.49/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
+| O901 | active | - | 0/2 | $0.61/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O000 | 14 | $12.71 | 0 | 0 | 0 | 0 |
 | O001 | 160 | $287.86 | 0 | 0 | 0 | 61 |
-| O901 | 3 | $0.49 | 9545 | 1917 | 0 | 0 |
+| O901 | 3 | $0.61 | 12059 | 2019 | 0 | 0 |
 
 ## Tasks
-cancelled: 29, done: 82, failed: 3, running: 1, todo: 2
+cancelled: 29, done: 82, failed: 3, todo: 2, verify: 1
 
-- T0115 `running` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
+- T0115 `verify` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
 
 ## Recent events
-- 2026-10-21T15:31:30+00:00 loop_started {"pid": 1660}
 - 2026-10-21T15:31:40+00:00 objective_approved {"objective": "O901", "criteria_hash": "sha256:3891bfa387eedf0b2c4810c8f137c3868c6f7806616371f3b2d5d72b4327b0fb"}
 - 2026-10-21T15:32:08+00:00 run_started {"run": "T0110-planner-20261021T083208-8f9d", "task": "T0110", "role": "planner", "session": "3c28b69a-f0bc-48ba-9b0a-17661fd60072"}
 - 2026-10-21T15:33:15+00:00 run_finished {"run": "T0110-planner-20261021T083208-8f9d", "status": "completed", "cost": 0.202233, "subtype": "success", "report": "structured_output"}
@@ -39,3 +38,4 @@ cancelled: 29, done: 82, failed: 3, running: 1, todo: 2
 - 2026-10-21T17:23:37+00:00 plan_applied {"objective": "O901", "created": ["T0115", "T0116", "T0117"], "dropped": 0}
 - 2026-10-21T17:25:01+00:00 inbox_resolved {"id": "I0054", "status": "approved", "note": "Approved: diff vs rejected plan is only the /tmp -> gettempdir() smoke fix plus two enforcing DoD checks; evidenc
 - 2026-10-21T17:25:21+00:00 run_started {"run": "T0115-builder-20261021T102521-d142", "task": "T0115", "role": "builder", "session": "1c526aa7-650a-435e-a63a-f6d1e63ab84d"}
+- 2026-10-21T17:27:02+00:00 run_finished {"run": "T0115-builder-20261021T102521-d142", "status": "completed", "cost": 0.121589, "subtype": "success", "report": "structured_output"}
