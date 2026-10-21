@@ -24,8 +24,10 @@ options:
 - approve
 - reject (with note for the planner)
 recommendation: ''
-status: open
-response: ''
+status: rejected
+response: 'T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside the checkout,
+  not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]). Otherwise
+  unchanged.'
 created_at: '2026-10-21T15:33:15+00:00'
-resolved_at: null
-resolved_by: null
+resolved_at: '2026-10-21T17:22:14+00:00'
+resolved_by: session

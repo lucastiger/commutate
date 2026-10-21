@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-10-21T17:07:19+00:00 from repository state — do not edit_
+_generated 2026-10-21T17:22:28+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0053** [plan_approval] [O901] approve initial plan (3 tasks)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -16,18 +16,14 @@ _generated 2026-10-21T17:07:19+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O000 | 14 | $12.71 | 0 | 0 | 0 | 0 |
 | O001 | 160 | $287.86 | 0 | 0 | 0 | 61 |
-| O901 | 1 | $0.20 | 4022 | 766 | 0 | 0 |
+| O901 | 2 | $0.20 | 4022 | 766 | 0 | 0 |
 
 ## Tasks
-cancelled: 26, done: 81, failed: 3, proposed: 3
+cancelled: 29, done: 81, failed: 3, running: 1
 
-- T0111 `proposed` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 0)
-- T0112 `proposed` scientist/design_experiment: Design E901: draft spec and runner for harmonic2 known-answer canary (attempt 0)
-- T0113 `proposed` none/experiment: Run E901 (orchestrator) (attempt 0)
+- T0114 `running` planner/plan: Plan O901 (founder rejected plan: T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside the checkout, not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]). Otherwise unchanged.) (attempt 1)
 
 ## Recent events
-- 2026-10-20T19:57:00+00:00 sleep_detected {"gap_s": 1918, "runs_extended": 0}
-- 2026-10-20T20:22:16+00:00 sleep_detected {"gap_s": 1358, "runs_extended": 0}
 - 2026-10-20T20:59:06+00:00 sleep_detected {"gap_s": 1551, "runs_extended": 0}
 - 2026-10-20T21:09:34+00:00 sleep_detected {"gap_s": 628, "runs_extended": 0}
 - 2026-10-20T21:25:24+00:00 sleep_detected {"gap_s": 399, "runs_extended": 0}
@@ -41,3 +37,5 @@ cancelled: 26, done: 81, failed: 3, proposed: 3
 - 2026-10-21T15:33:15+00:00 plan_applied {"objective": "O901", "created": ["T0111", "T0112", "T0113"], "dropped": 0}
 - 2026-10-21T16:57:46+00:00 sleep_detected {"gap_s": 1419, "runs_extended": 0}
 - 2026-10-21T17:07:16+00:00 sleep_detected {"gap_s": 570, "runs_extended": 0}
+- 2026-10-21T17:22:14+00:00 inbox_resolved {"id": "I0053", "status": "rejected", "note": "T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside the checkout, not /tmp; the sandbox 
+- 2026-10-21T17:22:28+00:00 run_started {"run": "T0114-planner-20261021T102228-61ac", "task": "T0114", "role": "planner", "session": "0cf54963-ec6f-48b3-9fa5-f6d2b6f5dfe4"}

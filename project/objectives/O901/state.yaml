@@ -7,11 +7,14 @@ last_verdict: null
 evaluated_runs: {}
 pending_evaluation: null
 pending_review_ref: null
-replans: 1
+replans: 2
 max_replans: 3
-needs_replan: false
+needs_replan: true
 spent_usd: 0.2022
 budget_override_usd: null
-log: []
+log:
+- 'founder rejected plan: T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside
+  the checkout, not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]).
+  Otherwise unchanged.'
 evidence_rules: 2
 frozen_hash: sha256:4ce934a533f33b2281568582fa2e4f5de9bac1fc439eea9b32783b8af6173c9d

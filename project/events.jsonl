@@ -970,3 +970,5 @@
 {"ts": "2026-10-21T15:33:15+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O901", "created": ["T0111", "T0112", "T0113"], "dropped": 0}
 {"ts": "2026-10-21T16:57:46+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 1419, "runs_extended": 0}
 {"ts": "2026-10-21T17:07:16+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 570, "runs_extended": 0}
+{"ts": "2026-10-21T17:22:14+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0053", "status": "rejected", "note": "T0112: smoke mode must write under $TMPDIR (tempfile.gettempdir()) or inside the checkout, not /tmp; the sandbox only allows checkout, $TMPDIR and uv cache (policy.toml [sandbox]). Otherwise unchanged.", "by": "session"}
+{"ts": "2026-10-21T17:22:28+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0114-planner-20261021T102228-61ac", "task": "T0114", "role": "planner", "session": "0cf54963-ec6f-48b3-9fa5-f6d2b6f5dfe4"}
