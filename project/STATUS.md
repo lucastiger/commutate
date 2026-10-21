@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-10-21T17:27:20+00:00 from repository state — do not edit_
+_generated 2026-10-21T17:27:26+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0055** [protected_change] T0115: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -19,13 +19,11 @@ _generated 2026-10-21T17:27:20+00:00 from repository state — do not edit_
 | O901 | 3 | $0.61 | 12059 | 2019 | 0 | 0 |
 
 ## Tasks
-cancelled: 29, done: 82, failed: 3, todo: 2, verify: 1
+cancelled: 29, done: 82, failed: 3, needs_founder: 1, todo: 2
 
-- T0115 `verify` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
+- T0115 `needs_founder` builder/implement: Implement moduleforge.canary.harmonic2 with analytic unit tests (attempt 1)
 
 ## Recent events
-- 2026-10-21T15:31:40+00:00 objective_approved {"objective": "O901", "criteria_hash": "sha256:3891bfa387eedf0b2c4810c8f137c3868c6f7806616371f3b2d5d72b4327b0fb"}
-- 2026-10-21T15:32:08+00:00 run_started {"run": "T0110-planner-20261021T083208-8f9d", "task": "T0110", "role": "planner", "session": "3c28b69a-f0bc-48ba-9b0a-17661fd60072"}
 - 2026-10-21T15:33:15+00:00 run_finished {"run": "T0110-planner-20261021T083208-8f9d", "status": "completed", "cost": 0.202233, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T15:33:15+00:00 inbox_opened {"id": "I0053", "kind": "plan_approval", "subject": "[O901] approve initial plan (3 tasks)"}
 - 2026-10-21T15:33:15+00:00 plan_applied {"objective": "O901", "created": ["T0111", "T0112", "T0113"], "dropped": 0}
@@ -39,3 +37,5 @@ cancelled: 29, done: 82, failed: 3, todo: 2, verify: 1
 - 2026-10-21T17:25:01+00:00 inbox_resolved {"id": "I0054", "status": "approved", "note": "Approved: diff vs rejected plan is only the /tmp -> gettempdir() smoke fix plus two enforcing DoD checks; evidenc
 - 2026-10-21T17:25:21+00:00 run_started {"run": "T0115-builder-20261021T102521-d142", "task": "T0115", "role": "builder", "session": "1c526aa7-650a-435e-a63a-f6d1e63ab84d"}
 - 2026-10-21T17:27:02+00:00 run_finished {"run": "T0115-builder-20261021T102521-d142", "status": "completed", "cost": 0.121589, "subtype": "success", "report": "structured_output"}
+- 2026-10-21T17:27:23+00:00 verified {"task": "T0115"}
+- 2026-10-21T17:27:26+00:00 inbox_opened {"id": "I0055", "kind": "protected_change", "subject": "T0115: merge needs founder approval"}
