@@ -20,3 +20,21 @@ def harmonic(n: int) -> float:
     if n < 1:
         raise ValueError(f"n must be >= 1, got {n}")
     return math.fsum(1.0 / k for k in range(1, n + 1))
+
+
+def harmonic2(n: int) -> float:
+    """Return the generalized harmonic number H_n^(2) = sum_{k=1}^{n} 1/k^2 as float64.
+
+    Definition: Graham, Knuth, Patashnik, *Concrete Mathematics*, 2nd ed., §6.3.
+    The limit as n -> infinity is pi^2/6 (Basel problem, Euler 1735).
+    Terms are summed with ``math.fsum`` (correctly rounded summation).
+
+    Raises:
+        TypeError: if ``n`` is not an int (bool is rejected).
+        ValueError: if ``n < 1``.
+    """
+    if isinstance(n, bool) or not isinstance(n, int):
+        raise TypeError(f"n must be an int, got {type(n).__name__}")
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
+    return math.fsum(1.0 / (k * k) for k in range(1, n + 1))
