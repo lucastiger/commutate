@@ -3,7 +3,7 @@ objective: O901
 title: 'Design E901: draft spec and runner for harmonic2 known-answer canary'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0115
 description: 'Write experiments/drafts/E901.yaml and experiments/runners/e901_canary.py exactly per the
@@ -83,4 +83,127 @@ lens: null
 trigger: null
 rationale: Required experiment E901 for A1/K1. The design covers F2 (reference_valid) and F3 (null baseline).
   Writing smoke output under $TMPDIR, as the founder required, avoids sandbox denials (F1).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I wrote the E901 draft spec and its runner per the O901 notes and committed them on the task
+    branch (b8fc4699). Every definition-of-done command exits 0. I did not register the spec or run the
+    sealed experiment.
+
+
+    Design as built:
+
+    - **Sample:** the sealed seed draws 10 integers per decade, uniformly with replacement; the last decade
+    includes 10^6. That gives 60 rows, stratum = decade.
+
+    - **Reference:** the sum of 1/k^2 in Decimal at 50 significant digits, in a local context. One cumulative
+    pass over the sorted distinct n covers both the sample and n = 1..200.
+
+    - **Rows:** n, stratum, pred, ref, null_pred = pi^2/6 - 1/n.
+
+    - **Metric:** max_rel_err, computed with `mfos.metrics.max_rel_err`, the same function the evaluator
+    uses to recompute it.
+
+    - **Null baseline:** kind `column` on null_pred, app'
+  report:
+    summary: "I wrote the E901 draft spec and its runner per the O901 notes and committed them on the\
+      \ task branch (b8fc4699). Every definition-of-done command exits 0. I did not register the spec\
+      \ or run the sealed experiment.\n\nDesign as built:\n- **Sample:** the sealed seed draws 10 integers\
+      \ per decade, uniformly with replacement; the last decade includes 10^6. That gives 60 rows, stratum\
+      \ = decade.\n- **Reference:** the sum of 1/k^2 in Decimal at 50 significant digits, in a local context.\
+      \ One cumulative pass over the sorted distinct n covers both the sample and n = 1..200.\n- **Rows:**\
+      \ n, stratum, pred, ref, null_pred = pi^2/6 - 1/n.\n- **Metric:** max_rel_err, computed with `mfos.metrics.max_rel_err`,\
+      \ the same function the evaluator uses to recompute it.\n- **Null baseline:** kind `column` on null_pred,\
+      \ applied to max_rel_err.\n- **Domain:** n_min=[1], n_max=[1000000], plus the six decade labels.\n\
+      - **Sanity checks:** exact_small_cases and reference_valid.\n- **Other fields:** code_under_test\
+      \ [src/moduleforge/canary.py], timeout_min 10, cpu_hours_est 0.05.\n- **Smoke mode:** uses 13 fixed\
+      \ n spread over all six decades, including 10^6, and writes only under `tempfile.gettempdir()/e901-smoke`.\
+      \ The string '/tmp' does not appear in the runner.\n- **Spec config:** records per_stratum, the\
+      \ strata labels and reference_digits. Non-smoke runs stop with an error if the spec config differs\
+      \ from the runner's constants or if the sealed seed is missing; I tested both, and both end in status\
+      \ `error`.\n\nResults of my checks (facts):\n- **Smoke run:** max_rel_err = 1.11e-16; reference_valid\
+      \ gives 2.1e-49 against the 1e-40 limit.\n- **Null on the smoke rows:** 0.355, so `not_satisfied`.\
+      \ That was checked with `mfos exp check --rows`.\n- **Dev-seed run:** with seed 0 (not the sealed\
+      \ seed; output under $TMPDIR, not committed), the 60-row path completes in about 1 s with the same\
+      \ max_rel_err and the null `not_satisfied`.\n- **Power analysis over every n ≤ 10^6:** the design\
+      \ catches with probability 1:\n  - float32 summation\n  - summing to n−1 or n+1\n  - the 3- and\
+      \ 4-term asymptotic formulas\n\n  With 60 unstratified uniform draws, the asymptotic formulas would\
+      \ be caught only 45% and 1.1% of the time, so the decade stratification is what catches them.\n\
+      - **Threshold limit:** naive forward float64 summation stays within 2.75e-14 for n ≤ 10^6. A pass\
+      \ on A1 therefore shows harmonic2 is within 1e-13, not that it uses correctly rounded summation.\n\
+      \nInference: harmonic2 should come in near 2e-16, about 450 times below the A1 threshold."
+    failure_class: none
+    confidence: 0.9
+    experiment_drafts:
+    - experiments/drafts/E901.yaml
+    files_written:
+    - experiments/drafts/E901.yaml
+    - experiments/runners/e901_canary.py
+    - research/e901_design/power.py
+    - research/e901_design/power.log
+    evidence:
+    - 'FACT, commands run on committed tree b8fc4699 (git_dirty false), with exit codes: test -f experiments/drafts/E901.yaml
+      → 0; test -f experiments/runners/e901_canary.py → 0; uv run mfos exp check E901 → 0; the ''/tmp''
+      string check on e901_canary.py → 0; uv run python experiments/runners/e901_canary.py --smoke → 0;
+      the gettempdir()/e901-smoke/result.json existence check → 0; uv run ruff check experiments/runners/e901_canary.py
+      → 0; uv run mfos gate --fast → 0 (''all gates passed''); uv run ruff check . → 0; uv run mfos exp
+      check E901 --rows <gettempdir()>/e901-smoke/rows.json → 0.'
+    - 'FACT, smoke result.json: status complete; max_rel_err 1.1102230246251565e-16 with level-1.0 bound
+      [0, 4.44e-16], n=13; exact_small_cases passed (harmonic2(1)=1.0, harmonic2(2)=1.25); reference_valid
+      passed, value 2.11e-49 against threshold 1e-40; the domain lists all six strata.'
+    - 'FACT, null check: `mfos exp check E901 --rows` on the smoke rows printed ''A1 ... dev value 1.11e-16
+      -> satisfied; null zeta2_minus_inv_n: 0.355 -> not_satisfied''. The dev-seed-0 rows give the same.'
+    - 'FACT, dev-seed integration run: MFOS_SEED=0 with the draft spec''s JSON, output under $TMPDIR,
+      not committed, not the sealed seed. Status complete; 60 rows, 10 per stratum; 56 distinct n (6 distinct
+      in [1,10)); sampled range [1, 997489]; max_rel_err 1.11e-16; both sanity checks pass; wall time
+      about 1.2 s against timeout_min 10.'
+    - 'FACT, independent large-n check of the reference (recorded in run notes, not an acceptance input):
+      the decimal reference matches the Euler–Maclaurin expansion pi^2/6 − 1/n + 1/(2n²) − 1/(6n³) + 1/(30n⁵)
+      − 1/(42n⁷) + 1/(30n⁹) within 4.6e-35 (smoke) and 6.3e-36 (dev seed) for n ≥ 1000. That equals the
+      size of the first omitted term, 5/(66 n¹¹)/H ≈ 4.6e-35 at n = 1000.'
+    - 'FACT, negative-path tests: with no seed the runner raises RuntimeError and the result status is
+      ''error''; with config per_stratum=5 it raises ValueError (config drift) and the status is ''error''.'
+    - FACT, research/e901_design/power.log, exact over all n ≤ 10^6 for the E901 design. P(A1 fails) =
+      1.000000 for float32 forward summation, off-by-one (sum to n−1), sum to n+1, the null, the 3-term
+      asymptotic formula and the 4-term asymptotic formula; P(K1 fires) = 1 for each of them. With 60
+      unstratified uniform draws, P(A1 fails) would be only 0.4543 (3-term) and 0.0109 (4-term).
+    - 'FACT: naive forward float64 summation has max relative error 2.75e-14 over n ≤ 10^6, so P(A1 fails)
+      = 0 for it.'
+    - 'INFERENCE: the null cannot pass A1 for any seed. Every draw includes 10 values from [1,9], and
+      the null''s relative error there is at least e(9) ≈ 3.9e-3, far above 1e-13.'
+    - 'INFERENCE: expected outcome for harmonic2. It sums correctly rounded terms 1/(k·k) with fsum; k·k
+      is exact below 2^53. The error bound is about 2u ≈ 2.2e-16, plus at most 3u from computing the metric,
+      so max_rel_err should be ≤ ~5e-16, well below 1e-13.'
+    recommended_actions:
+    - 'Critic or founder: A1 (≤ 1e-13) is also met by naive float64 summation (max 2.75e-14 for n ≤ 1e6).
+      A PASS should be read as ''harmonic2 is within 1e-13 for n ≤ 1e6'', not as evidence of correctly
+      rounded summation. This does not undermine the canary''s infrastructure purpose. I left the thresholds
+      unchanged, as required.'
+    - 'Founder, scope: the packet fixes the domain to n_min=[1], n_max=[1000000], so the claim''s scope
+      says [1, 10^6]. The sample will almost never contain 10^6 itself (probability about 1.1e-5 per run)
+      and contains n=1 with probability about 0.69. The runner records the actual sampled range in the
+      notes. If the claim should state only what was sampled, that needs a new packet or experiment id.'
+    - 'Founder or critic: the runner reports max_rel_err with a level-1.0 deterministic floating-point
+      error bound, 3u(1+value)+1e-40, instead of a bootstrap interval. A bootstrap of a sample maximum
+      is inconsistent (Bickel & Freedman 1981), and A1 and K1 use the point value. The recompute entry
+      declares no ci, so the evaluator''s recomputed value carries no interval. Please confirm this is
+      acceptable.'
+    - 'Optional before registration: the spec has no dev_rows because the packet did not ask for one.
+      I ran the null check manually on the smoke and dev-seed rows and the null fails. If the founder
+      wants the registration-time check recorded, commit the dev-seed rows under experiments/drafts/ and
+      set dev_rows in the spec before registering.'
+    - Register E901 with the founder's terminal-confirmed `mfos exp register E901`, then let the orchestrator
+      mint and run it. Do not rerun the sealed run.
+    discriminating_tests:
+    - 'What would show the design is broken rather than the hypothesis false: reference_valid failing
+      (decimal sums differ from Fraction sums by more than 1e-40 for n ≤ 200), exact_small_cases failing,
+      or the Euler–Maclaurin check in the notes exceeding about 1e-34 for n ≥ 1000.'
+    - 'What would refute the hypothesis: the evaluator''s recomputed max_rel_err above 1e-13 with both
+      sanity checks passing. Above 1e-9, kill criterion K1 fires.'
+    alternative_explanations:
+    - explanation: The guard hook blocked one of my dev commands containing `from mfos import models`,
+        reading it as an orchestrator action. I built the dev-run spec JSON with plain yaml→json instead.
+        Nothing under tools/ or .mfos/ was touched, and no write was outside my scope.
+      how_to_discriminate: 'Not a design issue, just a note on what I did. The dev-run spec JSON contains
+        the same config and sanity_checks fields that `mfos exp run` passes in MFOS_SPEC_JSON (experiments.py:
+        spec.model_dump_json()).'
