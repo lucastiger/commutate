@@ -1,0 +1,31 @@
+id: I0053
+kind: plan_approval
+subject: '[O901] approve initial plan (3 tasks)'
+summary: 'O901 is a known-answer infrastructure canary. Its job is to carry H_n^(2) through the full evidence
+  path: design, registration, sealed seed, rows, recompute, null check and claim. src/moduleforge/canary.py
+  only has harmonic(n) so far. harmonic2 does not exist yet, so it needs a small builder task. That task
+  copies the fsum pattern already proven in C001 and adds analytic unit tests (exact small cases, Fraction
+  agreement, and the asymptotic limit pi^2/6 - 1/n + 1/(2n^2)). Physics is not the real risk, because
+  fsum over 1/k^2 is accurate to roughly 1e-16. The risks that could kill the run are infrastructure failures:
+  F1, a sandbox that blocks tests or scratch writes, which the first builder task exposes cheaply; F2,
+  a wrong 50-digit Decimal reference, which the reference_valid Fraction check catches; and F3, a criterion
+  that doesn''t discriminate. F3 looks unlikely because the null pi^2/6 - 1/n has a relative error of
+  about 0.35 at n=1, and the stratified sample always includes the decade [1,10). mfos.evidence.ExperimentRun
+  already provides metric, sanity, domain and rows, so the scientist only needs to write the E901 draft
+  and runner, following e000_canary.py. The smallest graph is three tasks in a chain: implement harmonic2
+  → design E901 (the draft plus a runner that passes a smoke run) → the orchestrator-run E901 experiment.
+  Registration is terminal-confirmed by the founder between design and run, and it isn''t a planner task.'
+refs:
+- O901
+- T0111
+- T0112
+- T0113
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-10-21T15:33:15+00:00'
+resolved_at: null
+resolved_by: null

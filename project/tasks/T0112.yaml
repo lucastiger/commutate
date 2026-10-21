@@ -1,0 +1,69 @@
+id: T0112
+objective: O901
+title: 'Design E901: draft spec and runner for harmonic2 known-answer canary'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0111
+description: 'Write experiments/drafts/E901.yaml and experiments/runners/e901_canary.py exactly per the
+  O901 objective notes, modelled on experiments/specs/E000.yaml and experiments/runners/e000_canary.py,
+  using mfos.evidence.ExperimentRun (read tools/mfos/mfos/evidence.py for metric/sanity/domain/rows and
+  the spec schema for recompute and null baseline fields). Requirements: sealed seed draws 10 integers
+  uniformly from each decade [1,10),[10,100),...,[10^5,10^6] (stratum = decade; 60 total); reference =
+  sum 1/k^2 in decimal with 50 significant digits (local decimal context; may share a cumulative sum over
+  sorted n); rows via run.rows with fields n, stratum, pred, ref, null_pred (pi^2/6 - 1/n); metric max_rel_err
+  = max |pred/ref - 1|; recompute entry max_rel_err of pred vs ref; null baseline kind column, column
+  null_pred, applies to max_rel_err; run.domain(n_min=[1], n_max=[1000000], strata=[six decades]); sanity
+  checks exact_small_cases (harmonic2(1)==1.0 and harmonic2(2)==1.25) and reference_valid (decimal sum
+  equals Fraction sum for every n<=200 within 1e-40 relative); code_under_test [src/moduleforge/canary.py];
+  timeout_min 10; cpu_hours_est 0.05. Provide a --smoke mode writing to /tmp that uses a small fixed n
+  set. Acceptance thresholds come from the objective (A1 <= 1e-13, K1 > 1e-9); do not alter them. Do not
+  register the spec or run the full experiment.'
+context_files:
+- experiments/specs/E000.yaml
+- experiments/runners/e000_canary.py
+- tools/mfos/mfos/evidence.py
+- src/moduleforge/canary.py
+deliverables:
+- experiments/drafts/E901.yaml
+- experiments/runners/e901_canary.py
+touches:
+- experiments/drafts/E901.yaml
+- experiments/runners/e901_canary.py
+definition_of_done:
+- cmd: null
+  exists: experiments/drafts/E901.yaml
+  timeout_s: 900
+- cmd: null
+  exists: experiments/runners/e901_canary.py
+  timeout_s: 900
+- cmd: uv run mfos exp check E901
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e901_canary.py --smoke
+  exists: null
+  timeout_s: 600
+- cmd: uv run ruff check experiments/runners/e901_canary.py
+  exists: null
+  timeout_s: 120
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0110
+created_at: '2026-10-21T15:33:15+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Required experiment E901 for A1/K1; covers F2 (reference_valid) and F3 (null baseline) by design.
+history: []

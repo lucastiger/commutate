@@ -1,0 +1,54 @@
+id: T0111
+objective: O901
+title: Implement moduleforge.canary.harmonic2 with analytic unit tests
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Add harmonic2(n: int) -> float to src/moduleforge/canary.py returning H_n^(2) = sum_{k=1}^{n}
+  1/k^2 as float64, mirroring harmonic(): same TypeError/ValueError input validation (reject bool, n<1),
+  math.fsum over 1.0/(k*k) terms, and a docstring citing the definition (Concrete Mathematics §6.3 / Basel
+  problem limit pi^2/6, skill mf-conventions). Extend tests/unit/test_canary.py with: harmonic2(1)==1.0,
+  harmonic2(2)==1.25 exactly; agreement with fractions.Fraction exact sum for n in {3,10,50,200} within
+  1e-15 relative; asymptotic check |harmonic2(n) - (pi^2/6 - 1/n + 1/(2n^2) - 1/(6n^3))| / (pi^2/6) <
+  1e-12 for n=1e4 (and 1e6 if marked slow); monotonic increase; input-validation errors. Do not modify
+  harmonic() or existing tests. Read src/moduleforge/canary.py and tests/unit/test_canary.py first.'
+context_files:
+- src/moduleforge/canary.py
+- tests/unit/test_canary.py
+deliverables:
+- src/moduleforge/canary.py
+- tests/unit/test_canary.py
+touches:
+- src/moduleforge/canary.py
+- tests/unit/test_canary.py
+definition_of_done:
+- cmd: uv run pytest -q -m 'not slow' tests/unit/test_canary.py
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "from moduleforge.canary import harmonic2; assert harmonic2(1)==1.0 and harmonic2(2)==1.25"
+  exists: null
+  timeout_s: 60
+- cmd: uv run ruff check src/moduleforge/canary.py tests/unit/test_canary.py
+  exists: null
+  timeout_s: 120
+experiment: null
+risk: low
+model: null
+budget_usd: 3.0
+max_turns: 40
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0110
+created_at: '2026-10-21T15:33:15+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Code under test for A1/K1; also first exercise of sandboxed shells (F1 detection).
+history: []

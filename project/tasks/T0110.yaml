@@ -3,7 +3,7 @@ objective: O901
 title: Plan O901 (initial)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,18 @@ target: null
 lens: null
 trigger: initial
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O901 is a known-answer infrastructure canary. Its job is to carry H_n^(2) through the full
+    evidence path: design, registration, sealed seed, rows, recompute, null check and claim. src/moduleforge/canary.py
+    only has harmonic(n) so far. harmonic2 does not exist yet, so it needs a small builder task. That
+    task copies the fsum pattern already proven in C001 and adds analytic unit tests (exact small cases,
+    Fraction agreement, and the asymptotic limit pi^2/6 - 1/n + 1/(2n^2)). Physics is not the real risk,
+    because fsum over 1/k^2 is accurate to roughly 1e-16. The risks that could kill the run are infrastructure
+    failures: F1, a sandbox that blocks tests or scratch writes, which the first builder task exposes
+    cheaply; F2, a wrong 50-digit Decimal reference, which the reference_valid Fraction check'
+  created:
+  - T0111
+  - T0112
+  - T0113
+  dropped_for_limits: 0
