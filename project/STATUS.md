@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-10-22T16:27:50+00:00 from repository state — do not edit_
+_generated 2026-10-22T16:59:36+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0056** [protected_change] T0116: merge needs founder approval
@@ -24,7 +24,6 @@ cancelled: 29, done: 84, failed: 3, needs_founder: 1, todo: 1
 - T0116 `needs_founder` scientist/design_experiment: Design E901: draft spec and runner for harmonic2 known-answer canary (attempt 1)
 
 ## Recent events
-- 2026-10-21T17:48:48+00:00 run_finished {"run": "T0118-critic-20261021T104114-53bc", "status": "completed", "cost": 1.49519, "subtype": "success", "report": "structured_output"}
 - 2026-10-21T17:48:51+00:00 inbox_opened {"id": "I0056", "kind": "protected_change", "subject": "T0116: merge needs founder approval"}
 - 2026-10-21T20:15:37+00:00 sleep_detected {"gap_s": 359, "runs_extended": 0}
 - 2026-10-21T20:23:22+00:00 sleep_detected {"gap_s": 368, "runs_extended": 0}
@@ -39,3 +38,4 @@ cancelled: 29, done: 84, failed: 3, needs_founder: 1, todo: 1
 - 2026-10-22T15:15:52+00:00 sleep_detected {"gap_s": 619, "runs_extended": 0}
 - 2026-10-22T15:43:44+00:00 sleep_detected {"gap_s": 1672, "runs_extended": 0}
 - 2026-10-22T16:27:48+00:00 sleep_detected {"gap_s": 2281, "runs_extended": 0}
+- 2026-10-22T16:59:32+00:00 sleep_detected {"gap_s": 1477, "runs_extended": 0}
