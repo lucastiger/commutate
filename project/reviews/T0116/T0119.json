@@ -1,0 +1,54 @@
+{
+  "verdict": "accept",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Recorded domain is the design range, not what was sampled",
+      "detail": "run.domain(n_min=[1], n_max=[1000000]) is recorded unconditionally. With 10 draws with replacement from 1..9, n=1 is missing from the sample with probability (8/9)^10 ~ 0.31, and n=10^6 is almost never drawn (dev seed max 883935). A passing claim takes its scope from the domain, so it would read as covering all of [1, 10^6], although the hypothesis only covers the sampled n. The objective notes prescribe exactly this call, so this is not a defect of the change.",
+      "evidence": "draw_sample(901): sampled range [1, 883935]; runner line run.domain(n_min=[1], n_max=[1000000], strata=STRATA)",
+      "suggested_check": "Also record the actual sampled min and max (e.g. as notes or extra domain keys) so a later claim cannot overstate its coverage.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Smoke mode only defaults the artifact store, so it can write outside the temp dir",
+      "detail": "os.environ.setdefault('MFOS_ARTIFACT_STORE', ...) leaves an existing value in place. If --smoke runs in an environment that already sets MFOS_ARTIFACT_STORE (e.g. inside mfos exp run), smoke artifacts go to the real .mfos/artifacts store. That contradicts the docstring's 'writes only under tempfile.gettempdir()'. It does not happen in the definition-of-done context, where the variable is unset.",
+      "evidence": "evidence.py:80 reads MFOS_ARTIFACT_STORE; experiments.py:191 sets it only inside exp run; the definition-of-done smoke run wrote artifacts under $TMPDIR/e901-smoke/artifacts",
+      "suggested_check": "In smoke mode, set MFOS_ARTIFACT_STORE unconditionally.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The level-1.0 'rigorous' error bound has unstated conditions",
+      "detail": "The bound b = 3u(1+m) + 1e-40 depends on Sterbenz exactness, which needs pred/ref between 1/2 and 2, and it uses the computed m instead of the true error. It is first-order correct for a correct implementation and does not hold for grossly wrong ones. A1 and K1 use the point value and the evaluator recomputes without a CI, so it cannot change a verdict.",
+      "evidence": "evaluate.py judge(): uncertainty.use == 'point' ignores ci; smoke run: |exact_max - value| = 3.8e-17 <= b = 3.3e-16",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "'Sample of 60 integers' means 60 draws, not 60 distinct n",
+      "detail": "Draws are with replacement, which is unavoidable because the first decade has only 9 integers. The dev seed gives 60 rows but 55 distinct n. This is documented in the runner and the design note.",
+      "evidence": "draw_sample(901): 55 distinct n",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself: 'mfos exp check E901' exits 0 (checked through subprocess); the /tmp grep exits 0; ruff passes on the runner and on research/e901_design; --smoke writes $TMPDIR/e901-smoke/result.json (status complete, max_rel_err 1.11e-16, both sanity checks pass).",
+    "Checked the YAML spec config against the runner's CONFIG: equal, so a non-smoke run will not refuse to start. Confirmed in models.py and experiments.py that registration does not alter the spec config.",
+    "Recomputed draw_sample(901): it reproduces the n and stratum columns of E901.dev_rows.json exactly (60 rows, 55 distinct n, every n inside its stratum's bounds); the pred column equals harmonic2(n) and the null_pred column equals pi^2/6 - 1/n, bit for bit.",
+    "Checked the reference by a different method: for the 26 distinct n <= 3000, the ref values equal exact Fraction sums rounded to float64 (int/int true division); for the 29 distinct n > 3000, they equal pi^2/6 - psi'(n+1) from the trigamma asymptotic series through B_20, evaluated at 90 digits with pi computed by Machin's formula. All 55 agree. The runner's PI_63 constant matches.",
+    "Mutation test (monkeypatched harmonic2, smoke n set, fresh tempdir): float32 summation gives max_rel_err 1.26e-7 (K1 fires); H(n+1) gives 0.25 and fails exact_small_cases; the 4-term asymptotic formula gives 0.022 and fails exact_small_cases; naive float64 summation gives 1.1e-16 (passes, as the design note admits). The sanity checks and the metric can fail.",
+    "Ran 'mfos exp check E901 --rows experiments/drafts/E901.dev_rows.json': A1 is satisfied by the dev value (1.11e-16) and not satisfied by the null (0.355). Independently, the null's minimum relative error over the dev rows is 3.9e-13, above 1e-13.",
+    "Read the evaluator code paths: the recompute uses the same max_rel_err function on the float columns (so it is identical to the runner's value), and point-uncertainty criteria ignore the CI.",
+    "Timed the runner: smoke run 0.3 s; a full-size 50-digit reference pass up to n ~ 10^6 takes 0.2 s, far below timeout_min 10."
+  ],
+  "caveats": [
+    "I could not simulate an orchestrated 'mfos exp run' (spoofing the MFOS_* environment was denied). I checked its pieces separately: config equality, the seed path (int(MFOS_SEED), refusal when absent), and the artifact and rows writes.",
+    "A future PASS means only 'within 1e-13 over the sampled n'. The objective's 1e-13 threshold cannot tell fsum from naive float64 summation (worst case 2.75e-14 for n <= 10^6). This is an objective-level limit, not a defect of this change.",
+    "The null's failure of A1 comes mostly from the first decade (0.355 at n=1), although it fails on every row; the margin at the top decade is only about 3x.",
+    "I did not re-run research/e901_design/power.py (it enumerates all 10^6 n). Its detection probabilities are supporting material, not deliverables.",
+    "The change also adds research/e901_design files and E901.dev_rows.json beyond the two named deliverables. The spec's dev_rows field references the rows file, and all of these files pass lint."
+  ]
+}
