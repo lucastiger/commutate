@@ -1,0 +1,20 @@
+candidate                                        max err  P(A1 fails) strat  P unif60  P(K1) strat
+naive forward float64 cumsum                   2.753e-14           0.000000    0.0000     0.000000
+                                              per-stratum share > A1: 0.000 0.000 0.000 0.000 0.000 0.000
+float32 forward summation                      1.263e-04           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 0.778 1.000 1.000 1.000 1.000 1.000
+off by one: H_(n-1)                            1.000e+00           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 1.000 1.000 1.000 1.000 1.000 1.000
+off by one: H_(n+1)                            2.500e-01           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 1.000 1.000 1.000 1.000 1.000 1.000
+int32 overflow in k*k                                inf           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 0.000 0.000 0.000 0.000 0.596 1.000
+loop capped at 65536 terms                     8.668e-06           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 0.000 0.000 0.000 0.000 0.383 1.000
+asymptotic 3 terms (z2 - 1/n + 1/2n^2)         1.449e-01           1.000000    0.4543     1.000000
+                                              per-stratum share > A1: 1.000 1.000 1.000 1.000 0.000 0.000
+asymptotic 4 terms (... - 1/6n^3)              2.173e-02           1.000000    0.0109     1.000000
+                                              per-stratum share > A1: 1.000 1.000 0.092 0.000 0.000 0.000
+NULL pi^2/6 - 1/n                              3.551e-01           1.000000    1.0000     1.000000
+                                              per-stratum share > A1: 1.000 1.000 1.000 1.000 1.000 1.000
+min over all n<=1e6 of the null's relative error: 3.039e-13 at n=999995 (A1 threshold 1e-13); the null fails A1 on every single row, for any seed
