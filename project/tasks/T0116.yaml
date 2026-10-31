@@ -3,7 +3,7 @@ objective: O901
 title: 'Design E901: draft spec and runner for harmonic2 known-answer canary'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0115
 description: 'Write experiments/drafts/E901.yaml and experiments/runners/e901_canary.py exactly per the
@@ -208,3 +208,143 @@ history:
       how_to_discriminate: 'Not a design issue, just a note on what I did. The dev-run spec JSON contains
         the same config and sanity_checks fields that `mfos exp run` passes in MFOS_SPEC_JSON (experiments.py:
         spec.model_dump_json()).'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I wrote the E901 draft spec and its runner per the O901 notes and committed them on the task
+    branch as 8f91707. Attempt 1''s commit b8fc4699 is not in this repository, so I rebuilt everything
+    from scratch. Every definition-of-done command exits 0 on the committed tree, which is clean. I did
+    not register the spec or run the sealed experiment.
+
+
+    Design as built:
+
+    - **Sample:** `numpy.default_rng(sealed seed)` draws 10 integers per decade, uniformly with replacement.
+    Replacement is forced because [1,10) has only 9 integers. The last decade, [10^5,10^6], includes 10^6.
+    That gives 60 rows, stratum = decade label.
+
+    - **Reference:** the sum of 1/k^2 in Decimal at 50 significant digits, ROUND_HALF_EVEN, in a local
+    context. One cumulative pass over the sorted distinct n covers both the sample and n = 1'
+  report:
+    summary: "I wrote the E901 draft spec and its runner per the O901 notes and committed them on the\
+      \ task branch as 8f91707. Attempt 1's commit b8fc4699 is not in this repository, so I rebuilt everything\
+      \ from scratch. Every definition-of-done command exits 0 on the committed tree, which is clean.\
+      \ I did not register the spec or run the sealed experiment.\n\nDesign as built:\n- **Sample:** `numpy.default_rng(sealed\
+      \ seed)` draws 10 integers per decade, uniformly with replacement. Replacement is forced because\
+      \ [1,10) has only 9 integers. The last decade, [10^5,10^6], includes 10^6. That gives 60 rows, stratum\
+      \ = decade label.\n- **Reference:** the sum of 1/k^2 in Decimal at 50 significant digits, ROUND_HALF_EVEN,\
+      \ in a local context. One cumulative pass over the sorted distinct n covers both the sample and\
+      \ n = 1..200.\n- **Rows:** exactly n, stratum, pred, ref (float of the decimal value), null_pred\
+      \ = pi^2/6 - 1/n.\n- **Metric:** max_rel_err, computed with `mfos.metrics.max_rel_err`, the same\
+      \ function the evaluator uses to recompute it.\n- **Recompute entry:** max_rel_err of pred vs ref.\n\
+      - **Null baseline:** `basel_minus_leading_tail`, kind column, column null_pred, applied to max_rel_err.\n\
+      - **Domain:** n_min=[1], n_max=[1000000], plus the six decade labels.\n- **Sanity checks:** exact_small_cases\
+      \ and reference_valid.\n- **Other fields:** code_under_test [src/moduleforge/canary.py], timeout_min\
+      \ 10, cpu_hours_est 0.05. The acceptance thresholds are unchanged.\n- **Smoke mode:** uses 18 fixed\
+      \ n covering every decade, including 1 and 10^6. It writes only under `tempfile.gettempdir()/e901-smoke`,\
+      \ and the string '/tmp' does not appear in the runner.\n- **Non-smoke runs:** they stop with status\
+      \ `error` if the spec config differs from the runner's constants or if the sealed seed is missing.\
+      \ I tested both cases.\n\nThree additions beyond the notes:\n1. **dev_rows:** dev-seed rows (seed\
+      \ 901) are committed as `experiments/drafts/E901.dev_rows.json`, and the spec's `dev_rows` points\
+      \ to them. This is so the null check also runs automatically at registration, as the mf-evidence\
+      \ skill requires.\n2. **Reference artifact:** a `reference_decimal.json` artifact holds the 50-digit\
+      \ reference values, so anyone can check them.\n3. **Large-n cross-check:** the detail field of reference_valid\
+      \ reports an independent check against the asymptotic expansion for large n. It is informational\
+      \ and does not affect whether the check passes.\n\nFacts from my checks:\n- **Smoke run:** max_rel_err\
+      \ = 1.11e-16; reference_valid gives 2.1e-49 against the 1e-40 limit; the null scores 0.355.\n- **Dev\
+      \ run:** max_rel_err = 1.11e-16, and the null is `not_satisfied`.\n- **Null check catches a bad\
+      \ null:** when null_pred is replaced by pred, `mfos exp check --rows` reports A1 as non-discriminating\
+      \ and exits 1.\n- **Power analysis** (every n ≤ 10^6, enumerated exactly): the design catches each\
+      \ of these wrong implementations with probability 1, and the kill criterion K1 fires for each:\n\
+      \  - float32 summation\n  - summing to n−1 or n+1\n  - int32 overflow of k·k\n  - a loop capped\
+      \ at 65536 terms\n  - the 3- and 4-term asymptotic formulas\n- **Stratification:** with 60 unstratified\
+      \ uniform draws, the 3- and 4-term formulas would be caught only with probability 0.454 and 0.011.\n\
+      - **Threshold limit:** naive forward float64 summation stays within 2.75e-14, so a PASS on A1 shows\
+      \ harmonic2 is within 1e-13, not that it is correctly rounded.\n- **Null margin:** the null's relative\
+      \ error is at least 3.04e-13 at every n ≤ 10^6, so it cannot pass A1 for any seed. The margin at\
+      \ the top decade is only about 3×.\n\nInference: when the sealed run happens, harmonic2 should come\
+      \ in near 2e-16, about 450 times below the A1 threshold."
+    failure_class: none
+    confidence: 0.9
+    experiment_drafts:
+    - experiments/drafts/E901.yaml
+    files_written:
+    - experiments/drafts/E901.yaml
+    - experiments/drafts/E901.dev_rows.json
+    - experiments/runners/e901_canary.py
+    - research/e901_design/README.md
+    - research/e901_design/power.py
+    - research/e901_design/power.log
+    evidence:
+    - 'FACT: commands I ran on the committed tree 8f91707 (git status clean), with exit codes: `test -f
+      experiments/drafts/E901.yaml` → 0; `test -f experiments/runners/e901_canary.py` → 0; `uv run mfos
+      exp check E901` → 0; the ''/tmp'' check (`uv run python -c ...`) → 0; `uv run python experiments/runners/e901_canary.py
+      --smoke` → 0; the result.json assertion → 0 (<gettempdir()>/e901-smoke/result.json exists, status
+      complete); `uv run ruff check experiments/runners/e901_canary.py` → 0; `uv run mfos gate --fast`
+      → 0 (''all gates passed'').'
+    - 'FACT: `uv run mfos exp check E901 --rows experiments/drafts/E901.dev_rows.json` → exit 0. It printed:
+      A1 dev value 1.11e-16 → satisfied; null basel_minus_leading_tail 0.355 → not_satisfied.'
+    - 'FACT, the null check can fail: with null_pred replaced by pred in a copy of the dev rows (written
+      under $TMPDIR), `mfos exp check E901 --rows <copy>` reports ''criterion A1 is also met by a declared
+      null predictor'' and exits 1.'
+    - 'FACT, smoke run (18 fixed n, 1 to 10^6): max_rel_err = 1.1102230246251565e-16; reference_valid
+      value 2.11e-49 against threshold 1e-40; exact_small_cases passed; null max_rel_err 0.355. The large-n
+      check against the asymptotic expansion differs by 4.608e-35 at n = 1000, equal to the first omitted
+      term 5/(66 n^11)/H. That agreement is what the derived series predicts.'
+    - 'FACT, dev-seed run (seed 901, MFOS_SPEC_JSON built from the draft, output under $TMPDIR): status
+      complete, 60 rows, 55 distinct n, n from 1 to 883935, log10 span 5.95, max_rel_err 1.11e-16. The
+      exact decimal error, 7.35e-17, lies inside the reported bound interval [0, 4.44e-16].'
+    - 'FACT, refusal paths: a non-smoke run with no MFOS_SEED exits 1 with status error; a non-smoke run
+      whose spec config differs from the runner constants exits 1 with status error.'
+    - 'FACT (research/e901_design/power.log, exact enumeration over every n ≤ 10^6): with the stratified
+      design, P(A1 fails) = P(K1 fires) = 1 for float32 summation, H_(n-1), H_(n+1), int32 overflow of
+      k·k, a loop capped at 65536 terms, and the 3- and 4-term asymptotic formulas. With 60 unstratified
+      uniform draws, P(A1 fails) is 0.4543 for the 3-term formula and 0.0109 for the 4-term formula. Naive
+      forward float64 summation reaches at most 2.753e-14, so P(A1 fails) = 0 for it. The null''s minimum
+      relative error is 3.039e-13, at n = 999995.'
+    - 'FACT, mutation runs of the runner''s smoke path (harmonic2 replaced in memory, no source file changed):
+      H_(n+1) → max_rel_err 0.25 and exact_small_cases False; float32 summation → 1.26e-4; naive float64
+      forward summation → 2.64e-14 (passes A1).'
+    - 'INFERENCE: the metric''s only uncertainty is floating-point evaluation error, because the hypothesis
+      is about the sealed sample itself. The runner reports a rigorous level-1.0 bound b = 3u(1+m) + 1e-40,
+      with u = 2^-53. The derivation in the runner docstring uses the Sterbenz lemma and Higham §2.1/§2.5.
+      The interval is not a bootstrap, because a bootstrap of a sample maximum is inconsistent (Bickel
+      & Freedman 1981). A1 and K1 judge the point value, and the recompute entry declares no ci.'
+    alternative_explanations:
+    - explanation: Attempt 1's commit b8fc4699 is missing from this repository, and the task file records
+        only 'agent_finished' with status needs_founder. Its work may have been lost when the worktree
+        was recreated, or rejected for a reason that is not written down.
+      how_to_discriminate: 'Founder or orchestrator: check whether any rejection reason exists outside
+        the task file. My rebuild reproduces attempt 1''s numbers independently: 2.753e-14 for naive summation,
+        0.4543 and 0.0109 for unstratified draws, 0.355 for the null. It also adds dev_rows and a test
+        showing the null check can fail.'
+    discriminating_tests:
+    - 'Signs the experiment is broken, not the hypothesis false: reference_valid fails (decimal differs
+      from the Fraction sum by more than 1e-40 for some n ≤ 200); the large-n check exceeds its truncation
+      bound (the reference_valid detail shows ''within: False''); or the notes show ''within ci: False''
+      (the exact decimal error falls outside the float-error bound).'
+    - 'What would refute the hypothesis: the evaluator''s recomputed max_rel_err above 1e-13 with both
+      sanity checks passing. Above 1e-9, K1 fires.'
+    - 'Non-discrimination: a run where the null column meets A1 is impossible for n ≤ 10^6, since the
+      minimum null error is 3.04e-13. The evaluator''s null check would report non_discriminating if it
+      happened.'
+    recommended_actions:
+    - 'Founder: please confirm the three additions beyond the notes are acceptable before registering:
+      (1) `dev_rows: experiments/drafts/E901.dev_rows.json`, the dev-seed rows from seed 901; (2) a `reference_decimal.json`
+      artifact; (3) a large-n check against the asymptotic expansion, reported only in the detail field
+      of reference_valid. None of them changes the metric, the null, the sanity pass rules or the thresholds.
+      If you want the notes followed literally, remove the `dev_rows` line before registering.'
+    - 'Founder or critic: `exact_small_cases` tests the code under test, not the apparatus. A harmonic2
+      that is wrong at n=1 or 2 (for example H_(n+1)) therefore gives INVALID evidence, which O901 treats
+      as an infrastructure failure, instead of firing K1. I kept the check because it was prescribed.
+      In future experiments, put checks of the model under test in rows or criteria, not in sanity checks.'
+    - 'Founder or critic: A1 (≤ 1e-13) is also met by naive float64 summation (worst 2.75e-14 for n ≤
+      1e6). Read a PASS as ''harmonic2 is within 1e-13 for the sampled n'', not as evidence of correctly
+      rounded summation. Thresholds are unchanged.'
+    - 'Founder, scope: the domain is fixed by the packet at n_min=[1], n_max=[1000000], which describes
+      the population sampled from. The sample contains 10^6 itself only with probability about 1.1e-5,
+      and n=1 with probability about 0.65. The runner records the actual sampled range in the notes.'
+    - 'Founder or critic: the metric''s interval is a level-1.0 floating-point error bound, not a bootstrap
+      interval. Please confirm this is acceptable; A1 and K1 use the point value either way.'
+    - 'Next step: register E901 with the founder''s terminal-confirmed `mfos exp register E901` (this
+      runs the dev_rows null check), then let the orchestrator mint and run it once. Never rerun the sealed
+      run.'
