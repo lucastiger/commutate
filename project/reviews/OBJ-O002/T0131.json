@@ -1,0 +1,69 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F3 coverage/power gate can be satisfied by a Gaussian simulation model while realistic heavy-tailed errors make the A2 upper bound undercover",
+      "detail": "The hypothesis claims each metric 'as a 95th percentile, upper 95 % bound'. F3 requires simulated coverage >= 0.95 and power >= 0.8 but does not specify the error-generating model. For A2, pair errors are |r_a - r_b| of ~150 layout residuals (the effective n is layouts, not 675 pairs). With a within-stratum layout-cluster percentile bootstrap (self-pairs excluded, upper end of the 95 % interval), coverage is fine for normal residuals but falls below 0.95 for t3 or contaminated-normal residuals, and power at 0.6x threshold drops below 0.8. A design team simulating Gaussian errors would pass F3 and register a CI that undercovers.",
+      "evidence": "Scratch Monte Carlo (300 sims x 400 bootstrap reps, 15 strata x 10 layouts, true p95 = 0.3 K = 0.6 x 0.5 K): normal -> coverage 0.953, P(upper bound <= 0.5) = 1.00; t3 -> coverage 0.90, power 0.88; 5 % contamination with 4x SD -> coverage 0.92, power 0.76 (MC SE ~0.015).",
+      "suggested_check": "Pin F3's generator to resampled dev-row L1 residuals plus a heavy-tailed alternative (t3/contaminated), and use the cluster scheme the evaluator will actually run (within-stratum vs global).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3 can plausibly be met by a topology-only (die-slot) lookup that F2 does not test",
+      "detail": "Within a stratum the generator varies only dg in {1.5,2,2.5} mm, g, row extensions e in [0,2] mm and a narrow row offset (u in [0.85,1] for side_by_side, [0,0.15] for u_shaped). Most per-die Tj variation is therefore the deterministic centre-vs-edge / HS-vs-LS slot pattern. F2's null (b) returns the cell mean over all dies, which pays for the full inter-die spread. A lookup keyed additionally on (switch, die index) ignores all geometry that search changes, yet its residual is only the layout-driven variation. Against 5 % of a die-local rise of roughly 60-120 K at 100 W (3-6 K), that lookup is borderline-passing, especially in small-die-count strata. The claim's clause 'no criterion would be met by a predictor that ignores the decision-relevant information' is therefore not secured for A3. A2 still carries the geometry-skill burden, so the decision is not overturned.",
+      "evidence": "Generator source halfbridge.py _build/_rows; 1D stack estimate (Al2O3 0.38 mm k=24 dominates, ~0.5-0.6 K/W per 5 mm die); baseplate fin-model estimate of within-stratum hottest-die variation 3.6-11 K p95 at 100 W (side_by_side).",
+      "suggested_check": "Add a per-(family, dies, die size, load, switch, die index) dev-trained lookup to F2's nulls and require it to fail A3 at each level.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A4's 1 K spread threshold may be met by the stratum-mean-spread null at 50 W, and F2's prescribed response cannot repair that",
+      "detail": "Because the generator's within-stratum geometric freedom is small, layout-to-layout variation of the inter-die spread is small. A crude baseplate Green's-function (K0 fin, adiabatic-edge images) estimate for side_by_side strata gives |spread - stratum mean| p95 of 0.35/0.72/1.90 K at 100 W for 2/4/6 dies, i.e. about 0.18/0.36/0.95 K at 50 W, all at or below the 1 K threshold. F2 would then block registration, but its response ('revise E007') cannot change an objective-level threshold or the scoped population. The objective would have to be re-opened, contrary to the claim that the thresholds and sample can resolve the decision. Interleaved strata (u in [0,1]) will vary more, so the pooled outcome is uncertain.",
+      "evidence": "Scratch fin model (k=385, t=3.3 mm, h=5000, lambda ~16 mm; 40 layouts per die count, s=5 mm, 100 W per die): pair |dTjmax| p95 3.56/8.17/11.23 K; spread-deviation p95 0.35/0.72/1.90 K for n=2/4/6.",
+      "suggested_check": "Before approval, run the existing L2 prototype on ~10 generator layouts per stratum with fixed die size and compute the stratum-mean-spread null's A4 value at 50 W.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A1 and A5 are met by any layout-ignorant predictor",
+      "detail": "A1 verifies the L2 solver and A5 is a wall-time criterion that a lookup table meets trivially. The literal claim 'no criterion would be met by a predictor that ignores the decision-relevant information' holds only for A2-A4.",
+      "evidence": "Objective acceptance block.",
+      "suggested_check": "Restate the null-discrimination property as applying to A2-A4.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Pooled p95 across 15 strata does not guarantee adequacy for the customer's family/die count",
+      "detail": "With 45 pairs per stratum (675 per level), a p95 point estimate allows ~34 arbitrary pairs (about 75 % of one stratum); after the upper bound, roughly 40 % of one stratum's pairs can still be badly wrong. O003 searches within one family and die count, which could be the bad stratum.",
+      "evidence": "Arithmetic on 15 x C(10,2) pairs.",
+      "suggested_check": "Report per-stratum p95 of A2 errors alongside the pooled metric.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Second evaluation allowed without multiplicity adjustment; spread definition ambiguous",
+      "detail": "max_evaluations: 2 lets an INCONCLUSIVE first run be followed by a fresh-seed rerun, roughly doubling the pass chance of a boundary L1. 'spread = max - min of per-die Tj max' is over all dies of the layout, while why_it_matters speaks of spread across paralleled dies (per switch).",
+      "evidence": "evaluate.py lines 476-477; A4 description.",
+      "suggested_check": "State that a second evaluation must use a tightened level or be pre-registered, and define spread per switch position or overall explicitly.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the evaluator's judge(): pass criteria use the conservative CI bound and fail criteria require the lower bound > threshold, so K1/K2 semantics are as described.",
+    "Read the generator (halfbridge.py): s is snapped to {4.0,4.5,5.0,5.5} mm, within-stratum freedom is limited to dg, g, e and a narrow row offset for side_by_side/u_shaped; read the default stack (3 mm Cu baseplate, 0.38 mm Al2O3 k=24).",
+    "Monte Carlo of A2's percentile layout-cluster bootstrap (within-stratum, self-pairs excluded) for normal, t3 and contaminated residuals: coverage 0.953 / 0.90 / 0.92 and power at 0.6x threshold 1.00 / 0.88 / 0.76.",
+    "Baseplate K0 fin-model estimate (adiabatic-edge images) of within-stratum variability for side_by_side, s=5 mm, 100 W: pair |dTjmax| p95 3.6-11 K (the A2 null fails by a wide margin and K1 can fire for a near-null L1); spread-deviation p95 0.35-1.9 K (A4 null near or below 1 K at 50 W).",
+    "1D stack resistance estimate (~0.5-0.6 K/W per 5x5 mm die, dominated by the ceramic) to size A3's 5 % band (about 3 K or more at 100 W).",
+    "Checked max_evaluations handling in evaluate.py (2 evaluations permitted)."
+  ],
+  "caveats": [
+    "Valid only for randomly generated moduleforge.generate layouts within a stratum. Search-selected candidates are adversarially selected for favourable L1 error, so the p95 over random pairs does not bound the error at chosen designs; this relies on D0008's L2 audit of finalists.",
+    "The 'upper 95 % bound' is trustworthy only if F3's coverage simulation uses a realistic, heavy-tailed error model; with Gaussian-only simulation the bound can undercover (about 0.90-0.92).",
+    "The null-discrimination property holds for A2 (the decision-relevant criterion) with a wide margin by my estimate, is unsecured for A3 against a die-slot lookup, may fail for A4 at 50 W, and does not apply to A1/A5.",
+    "Pooled p95 over 15 strata does not establish adequacy for any single family/die count.",
+    "Metrics are not yet recomputable: the required mfos.metrics additions (quantile of relative/absolute error, per-level max, self-pair exclusion) are protected-path work not yet done, so the claim is conditional on their correct implementation.",
+    "My physical magnitudes come from a crude baseplate-only fin model (no DBC layers, point sources, image edges); I could not run the 3D FD model in this sandbox (pyamg absent; longer inline scripts were blocked by the permission checker), so findings 2 and 3 are plausible risks, not demonstrated failures."
+  ]
+}
