@@ -1,0 +1,87 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The headroom error band behind both A1 and K1 has no defined formula or limit, so the verdict depends on an unspecified choice",
+      "detail": "A1 (median of h_lo >= 0.20) and K1 (median of h_hi < 0.10) are both judged on a band that the draft only says 'combines' three things: both layouts' discretisation estimates, the L2-FastHenry agreement from P4, and the F2 fh_ratio_diff. It does not say whether these are per-layout absolute errors or ratio-level errors, whether they add linearly or in quadrature (RSS), or how fh_ratio_diff is 'added'. There is no maximum band width. Plugging O004's own gate magnitudes into the possible readings gives a half-width w on h of 0.008 to 0.088. That moves the bar A1 needs from point h >= 0.208 to h >= 0.288, and the bar K1 needs from h < 0.092 to h < 0.012. The planned recompute takes the median of a runner-computed h_lo column, so it only re-medians the runner's own band and does not recompute the band from primitive rows. D0009's fallback when FastHenry is unusable (2x discretisation) can give a narrower band than the validated FastHenry path: 0.008 versus 0.023-0.088 at ratio level. The fallback also drops the F2 winner's-curse re-check. So less validation makes both PASS and the kill easier, and the 'minimum of 8 L2 values' selection bias is then covered by nothing independent.",
+      "evidence": "Scratch calculation at r=0.8. Ratio-level linear (0.5+2+2 %): w=0.036. Ratio-level RSS: w=0.023. Absolute linear (1.5+1.5+3+3+2 %): w=0.088. Absolute RSS: w=0.041. Fallback 2x discretisation, absolute: w=0.048. Fallback 2x discretisation, ratio-level: w=0.008. mfos.metrics.headroom_by_group computes only the point h; no band function exists.",
+      "suggested_check": "Fix the band formula in the objective: ratio-level, with named row columns and a stated combination. Add a gated precision check (e.g. half-width <= 0.04, otherwise INVALID). Make the no-FastHenry fallback at least as wide as the FastHenry path.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "blocker",
+      "title": "The references are the PowerSynth optimizer's sample inputs, so A1 can be met however close real layouts are to the optimum",
+      "detail": "The null hypothesis is about 'real reference layouts already near the loop-inductance optimum', and a pass is to support A-T3 ('real derivative problems') and be used with customers. The only in-scope references are PowerSynth 2D_Case_2R and 2D_Case_6; the Aalborg module has no published dimensions. Each ships with optimizer macro scripts (macro_mode1/2 for MOPSO, NSGAII and RAND) and a Solutions/ folder, which indicates (an inference) that layout_geometry_script.txt is the starting layout for PowerSynth's own optimizer, not a production layout. The only public comparison with a commercial module (about 18 %) is scoped out, and the benchmark note itself says headroom against real commercial derivatives is probably smaller. Any competent search would probably clear 20 % against an optimizer's seed layout, so A1 does not use the decision-relevant information. That contradicts the claim that no criterion could be met by a predictor that ignores it. Two cases from one group are also not a diverse sample. With n=2 the median is the mean: h_lo of (0.35, 0.06) passes even though one reference is near optimal.",
+      "evidence": "WebFetch of github.com/e3da/PowerSynth2-pkg Sample_Designs/2D_Case_2R and 2D_Case_6: macro_mode{1,2}_{MOPSO,NSGAII,RAND}.txt and Solutions/ present; READMEs give no fabrication or production status. research/notes/o003-public-benchmarks.md, Relevance section: 'Headroom against real commercial derivatives is probably smaller'. Computed: median(0.35, 0.06) = 0.205, which meets A1.",
+      "suggested_check": "Add an already-optimised reference, e.g. PowerSynth's best published Solution for the same case, and require A1 on it. Otherwise restate decision_if_pass as 'not killed; A-T3 not supported by this evidence'.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "At the expected headroom and n = 2-3, the design almost never resolves, and K1 rarely fires even when the null is true",
+      "detail": "Monte Carlo with a spread of 0.08 between references. At the only prior estimate (true median about 0.18), INCONCLUSIVE has probability 0.78-0.98 for w in 0.03-0.09. With the null true at h=0.05, K1 fires with probability only 0.64, 0.43 and 0.24 for w = 0.03, 0.06 and 0.09; at h=0.10 it is at most 0.30. decision_if_inconclusive says 'headroom between 10 % and 20 %', but INCONCLUSIVE also covers point headroom from 0.10-w up to 0.20+w (e.g. h=0.05 or h=0.27). So the stated decision does not match the region it applies to.",
+      "evidence": "OC table (P/F/I, n=2): w=0.03: mu 0.05 -> 0.00/0.64/0.36; mu 0.18 -> 0.19/0.03/0.78. w=0.09: mu 0.05 -> 0.00/0.24/0.76; mu 0.18 -> 0.03/0.00/0.97. n=3 is nearly identical.",
+      "suggested_check": "Pre-compute and state the region of point headroom that each verdict covers under the fixed band, and rewrite decision_if_inconclusive to match it.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Nothing stops the generator and search from being developed on the judged references (leakage and forking paths)",
+      "detail": "Only the reconstructions are frozen before any solve. The generalised generator, its parameter space (which F3 requires to be able to express each reference) and the search driver are built after the references are known. Nothing confines development runs to 2D_Case_4 or the generator's own layouts. With 20,000 candidates and a top-8 shortlist, the outcome depends on the generator design, not the seed, so sealing the seed does not prevent tuning toward headroom.",
+      "evidence": "",
+      "suggested_check": "Require generator and search development only on 2D_Case_4 and generator layouts. Hash the generator and search code into E008's spec before any L1 or L2 solve on a judged reference, and log every such run.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "h is undefined when no shortlisted candidate meets the +2 K limit, and there is no positive control for search power",
+      "detail": "The thermal limit is applied only to the 8 candidates shortlisted by inductance. Those are biased toward compact, thermally coupled placements, so all 8 may fail it. The draft does not say what h is in that case. It also does not say whether the reference itself is in the candidate pool (a floor of h=0) or whether negative h is allowed. If the shortlist is weak or thermally infeasible, h is near zero or negative and K1 can fire because of the search design rather than because the reference is near optimal. F3 only checks that the reference can be expressed in the generator's space and reports its L1 rank; there is no test that the search can recover headroom it is known to have.",
+      "evidence": "",
+      "suggested_check": "Define h when the shortlist is infeasible, e.g. continue down the L1 order until 8 candidates are feasible. Include the reference in the pool. Add a positive control: a deliberately degraded reference whose headroom is known must be recovered within the band.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The 'not applicable' exemption from null baselines skips an available artifact control",
+      "detail": "There is a natural null: run the same search with an already-optimal layout (the winner, or PowerSynth's optimised Solution) as the reference; its headroom should be about zero within the band. Without it, A1 could be met by artifacts: L1/L2 disagreement, winner's-curse selection among 8 L2 values, or a Tj asymmetry between the reference and candidates.",
+      "evidence": "",
+      "suggested_check": "Declare a re-run with the winner as reference as a gated null whose headroom must fall inside the band.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Wire count and wire diameter are not fixed, so part of the 'headroom' may come from adding wires rather than re-laying out",
+      "detail": "scope_in fixes the dies, die count, stack, outline and terminals, but not the wires per die or the wire diameter. The current generator draws 2-3 wires per die (halfbridge.py:115). More parallel wires lower L but change current rating and reliability, so headroom from extra wires is not layout headroom of the kind A-T3 means. F1 only sets a minimum wire pitch.",
+      "evidence": "",
+      "suggested_check": "Fix wires per die and wire diameter to each reference's values in scope_in and in the F1 sanity check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The reference set is decided by an undefined rule after the fact",
+      "detail": "The Aalborg/Danfoss module is included 'if its dimensions suffice', with no rule for what suffices. The benchmark note says S8 shows its geometry 'only in figures, with no dimensions'. Going from 2 to 3 references changes the median from the mean of two to the middle value, which can flip A1 or K1.",
+      "evidence": "",
+      "suggested_check": "Fix the reference list and the inclusion rule before any solve.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the evaluator's verdict logic (tools/mfos/mfos/evaluate.py). PASS needs every pass criterion met at the conservative bound, FAIL needs any kill criterion met, anything else is INCONCLUSIVE; criteria judged on 'point' use the runner's band directly.",
+    "Read mfos.metrics: headroom_by_group returns only the point h = 1 - L_sel/L_ref, aggregated over groups; there is no band or h_lo/h_hi function, so the band cannot be recomputed from rows today.",
+    "Computed the band half-width on h at r = 0.8 under six readings of 'combines', using O004's own gate magnitudes (discretisation 1.5 % absolute or 0.5 % ratio; FastHenry 3 % absolute or 2 % ratio; fh_ratio_diff 2 %). w ranges from 0.008 to 0.088, so A1 needs point h between 0.208 and 0.288 and K1 needs h below 0.092 to 0.012 depending on the reading.",
+    "Monte Carlo of verdict probabilities (200k trials each; n = 2 and 3; spread between references 0.08; w = 0.03/0.06/0.09; true median 0.05-0.30). P(INCONCLUSIVE) is 0.78-0.98 at the prior of about 0.18. P(K1 fires) is 0.24-0.64 when the true median is 0.05.",
+    "Checked by random interval sampling (5000 cases) that the median of the per-reference lower ends is the lower bound of the median over all values inside the bands. So A1's per-reference construction is consistent with the hypothesis's 'lower end of the band of the median'; no finding there.",
+    "Showed that with n = 2 the median equals the mean: h_lo of (0.35, 0.06) gives 0.205 and passes A1.",
+    "WebFetch of the PowerSynth2-pkg 2D_Case_2R and 2D_Case_6 directories. Both contain MOPSO/NSGAII/RAND optimizer macros and a Solutions/ folder; the READMEs say nothing about fabrication or production status.",
+    "Read research/notes/o003-public-benchmarks.md: the Aalborg geometry has no dimensions, the only commercial comparator is scoped out by O003, and the note expects smaller headroom against commercial derivatives.",
+    "Checked the current generator: wires per die are drawn from 2-3 (src/moduleforge/generate/halfbridge.py:115), and O003's scope does not fix them.",
+    "Read O004 and O006 for the precision gates and leakage rules O003 inherits. O006 F4 excludes only 2D_Case_4 as pilot geometry; O004 envisaged a band of about 2 points, which O003's undefined combination rule does not guarantee."
+  ],
+  "caveats": [
+    "The finding that the PowerSynth layout_geometry_script files are the optimizer's starting layouts is an inference from the repository structure (optimizer macros and Solutions/ folders). The file contents and the Evans TPEL 2019 text were not read.",
+    "The band magnitudes come from O004's acceptance gates, not from measurements. P4 has not run, so the real w may lie outside 0.008-0.088.",
+    "The verdict-probability model treats the per-reference headroom as normally distributed with a spread of 0.08. The conclusion that INCONCLUSIVE dominates near 0.18 holds for any small n with w >= 0.03, but the exact probabilities depend on that assumption.",
+    "D0009 (an accepted founder decision) sets the kill rule and the fallback. The findings question how O003 puts them into practice, not whether the founder may make that decision."
+  ]
+}
