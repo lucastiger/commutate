@@ -1,0 +1,69 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A1/K1 denominator is about zero (negative) at a point the draft names: Case 2, source 1 mean. K1 fires on a correct solver",
+      "detail": "A1 and K1 divide by dT_spread,ref, the rise above the 1D uniform-flux solution. Over the top surface this spreading rise averages exactly to zero: the m=n=0 Fourier term is the 1D solution. So in a multi-source case with unequal powers, a low-power source can have a spreading rise near zero or below it. In Case 2 (50x50x10 mm, k=150, h=400, sources of 10/25/20/15 W at the four 12.5 mm positions), the 1D rise is 71.867 K. The converged mean rise of source 1 (10 W) is 71.856 K, so dT_spread,ref = -0.0105 K. The paper's printed mean (96.85 C) gives -0.017 K. Two readings are possible. (i) If the denominator keeps its sign, as written, the ratio is negative, so this point passes A1 and can never trigger K1 whatever the error. (ii) If it uses |dT_spread|, the usual definition of a relative error, then A1 needs |error| <= 1.05e-4 K (7e-6 of the 72 K rise) and K1 fires above 5.3e-4 K. That is far below what F2 allows (Richardson estimate up to 0.0125 K). The repo's scikit-fem scratch run at h=0.5 mm missed this mean by 0.008 K, a ratio of 0.77. That run is D0006's fallback, which decision_if_fail switches to. So under reading (ii), a correct, converged FV or FEM solver fails A1 and fires K1, and switching to the fallback fails in the same way. The kill can fire for a reason that has nothing to do with the solver, and the thresholds cannot settle the in-house-vs-fallback decision. The same problem returns in case (b) whenever die powers are unequal. Source 1's centroid (dT_spread = 0.52 K, A1 tolerance 0.0052 K) is strict but feasible.",
+      "evidence": "My series, derived independently (Robin base, adiabatic sides, cosine modes), converged at N=2000-6000 terms per direction. Source 1: centroid 97.3876 C, mean 96.8561 C, T_1D 96.8667 C, so spreading rises are +0.521 K (centroid) and -0.0105 K (mean). Sources 2-4: mean spreading rises +5.486, +3.257, +2.219 K. Numerically, surface mean minus T_1D = 0.00e+00 K. Cross-checks: the converged centroids match the repo's scikit-fem scratch values (97.388/103.797/101.264/99.921) to <= 0.0012 K, and Case 3 reproduces the paper's printed 80.61 C and 78.87 C (80.6147 and 78.8712 at 50 terms).",
+      "suggested_check": "Recompute dT_spread,ref for every case and point before registration. Use a denominator that cannot vanish: a floor, such as a fixed fraction of the case's largest spreading rise, or each source's self-spreading rise. Or exclude points whose spreading rise is below a stated threshold, and state whether the denominator is signed or absolute.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A1 (and therefore K1 and the F3 null) is undefined for the manufactured-solution case (c)",
+      "detail": "Case (c) is a 3D manufactured solution with k(T), so heat enters as a volumetric source term (which can take either sign) plus derived boundary fluxes. There is no natural '1D uniform-flux solution' to subtract. The denominator depends on unregistered choices: where the net heat is applied, whether the 1D solution uses k(T), and what Q_in means for the energy-balance gate when sources have both signs. A1, K1 and F3 ('constant-k null must fail A1 and A2') all depend on that denominator, so the metric is not recomputable from the draft. A2 still constrains case (c).",
+      "evidence": "Reasoning from the definitions in the A1 description and F3. Nothing in the draft defines dT_spread for a field with volumetric sources.",
+      "suggested_check": "Define the denominator for case (c) explicitly in the criteria, or apply only A2 and the absolute F3 test to the manufactured case.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F1 gate 'own 50-term implementation reproduces the paper's printed values to printed digits' may fail for a correct reference on Case 2",
+      "detail": "My implementation reproduces Case 3 to the printed digits at 50 terms. For Case 2, though, a plain 50-term truncation (N = 49-52, including the m=0/n=0 single sums) misses the printed centroids by up to 0.021 K and the printed means by up to 0.015 K. The printed resolution is +/-0.005 K. Meanwhile my converged Case 2 values agree with an independent FEM run (literature note S59) to about 0.001 K. The paper's Case 2 truncation or input convention cannot be identified from the text, so this gated check could make E006 INVALID even when the reference is right.",
+      "evidence": "At N=50, my values minus the printed values: centroids [+0.0065, +0.0209, +0.0193, +0.0082] K; means [+0.0019, +0.0126, +0.0152, +0.0094] K. Case 3 at N=50: 80.6147 C vs printed 80.61, and 78.8712 C vs printed 78.87.",
+      "suggested_check": "Run the 50-term reproduction for every case before registration and set the gate tolerance from that result; for example, require agreement within the paper's own agreement with an independent method, rather than to the printed digits.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "F1 convergence gate (< 1e-9 relative change on doubling the terms) needs about 4e9 terms per value with naive double sums",
+      "detail": "Centroid and mean series converge roughly as N^-2. At N=4000 the change on doubling is 6.4e-8 relative for the centroid and 2e-8 for the mean. Getting below 1e-9 needs N of about 32k-64k per direction, i.e. around 4e9 terms per reported value. That is feasible only with chunking or series acceleration (for example, subtracting the half-space closed form). The case (b) N-layer series with die-sized sources on a module footprint converges more slowly still.",
+      "evidence": "Source 1 centroid change on doubling: N 1000->2000: 2.48e-5 K; 2000->4000: 6.2e-6 K; 4000->6000: 1.15e-6 K.",
+      "suggested_check": "Budget the reference computation, or relax the gate to a level tied to the A1/A2 tolerances (for example, 1e-3 of the tolerance).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "None of the verification cases has re-entrant material corners, which is where the frozen grid rule is weakest",
+      "detail": "Cases (a) and (b) are laterally uniform layers, and case (c) is a smooth manufactured field. None tests the corner singularities at die / die-attach / copper-trace edges of real layouts. So E006 does not show that the frozen grid rule meets 0.05 K on O002's geometry, although decision_if_pass adopts that rule for O002. O002's own F1 (per-solve three-grid Richardson estimate <= 0.05 K, plus a scikit-fem cross-check within 0.1 K) partly closes this gap. The D0006 scikit-fem cross-check is not part of O006.",
+      "evidence": "Hypothesis items (a)-(c); O002 objective.yaml line 71.",
+      "suggested_check": "Have E006 also run one or two real generator layouts through the three-grid study and the scikit-fem cross-check, as reported (not judged) rows.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "'The surface maximum' is singular; per-source maxima are not clearly reported points",
+      "detail": "O002 judges each die's Tj max, but A1/A2 list a single 'surface maximum from the reference field'. In Case 2 that maximum (103.81 C) sits about 0.4 mm off source 2's centroid. The maxima of the lower-power sources would not be checked unless each source's maximum is listed.",
+      "evidence": "Converged field maximum 103.8099 C at about (37.9, 12.3) mm; source 2 centroid 103.7958 C.",
+      "suggested_check": "Make each source's surface maximum a reported point.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the source PDF of Muzychka, Culham & Yovanovich (2003) and pulled out the Case 2 inputs (Table 3: four 10x10 mm sources of 10/25/20/15 W at 12.5/37.5 mm; plate 50x50x10 mm, k=150, h=400) and the Case 3 inputs (five 20 mm sources of 5 W in a cross, 100x100x10 mm, k=50, h=50, Tf=25 C).",
+    "Derived and coded my own surface-temperature series for an isotropic flux channel (cosine modes, Robin base, adiabatic sides). Validation: Case 3 reproduces the printed 80.61 C and 78.87 C; converged Case 2 centroids match the repo's independent scikit-fem scratch values to <= 0.0012 K.",
+    "Computed converged spreading rises (minus T_1D) at every Case 2 and Case 3 source centroid and mean. Source 1 mean in Case 2 = -0.0105 K, which makes the A1/K1 denominator degenerate.",
+    "Checked numerically that the top-surface average of the spreading rise is exactly zero (0.00e+00 K), so near-zero or negative spreading rises at low-power sources are structural, not an accident of Case 2.",
+    "Measured how a scikit-fem solution at the resolution of the repo's scratch run scores on A1/K1 at that point: 0.008 K error / 0.0105 K = 0.77, above K1's 0.05.",
+    "Tested 50-term truncation conventions (N=49-52) against the printed Case 2 tables: off by up to 0.021 K at the centroids, so the F1 printed-digits gate is not reproducible.",
+    "Measured series convergence on doubling the terms (about N^-2) to judge whether the 1e-9 F1 gate is feasible.",
+    "Read O002's draft criteria to see which precision requirements O006 has to serve, and whether O002's own gates cover the real-geometry grid accuracy."
+  ],
+  "caveats": [
+    "Case 2 does not state Tf. I took Tf = 25 C as the repo's scratch run did. The spreading rise does not depend on Tf, so the blocker holds either way.",
+    "I could not see the earlier draft reviews T0137/T0138 (project/reviews is absent at this commit), so I did not check how their 0.86 % truncation figure was obtained.",
+    "Case 1a/1b source positions were not extracted, so I did not compute their spreading rises. From the printed centroids, Case 1b spreading rises are about 3.5-6.9 K, which is resolvable.",
+    "The objective is a draft, and the blocker is fixable before registration by redefining the A1/K1 denominator. The rest of the design (null baseline for k(T), gated convergence, converged rather than tabulated references) is sound."
+  ]
+}
