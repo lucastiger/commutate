@@ -1,0 +1,76 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The 100 W per die level is outside the physical envelope of the default Al2O3 DBC stack, yet it is the level that decides A2, A4 and K1",
+      "detail": "The default stack has 0.38 mm Al2O3 at k = 24 W/(m K). With 5 mm dies at 100 W each, the junction rise above the 65 \u00b0C coolant is 107-179 K even with constant k, so Tj is about 172-244 \u00b0C. That is above the 175 \u00b0C SiC rating in 5 of the 6 strata I sampled, and near or above the SAC305 solidus (217 \u00b0C) if the die attach is solder. Including k(T) for Al2O3 (its k drops by roughly 30-40 % by 150-200 \u00b0C) or the 4.0 mm dies the generator can draw would raise Tj further; that last point is inference, not run. The draft justifies the operating point as 'h matches benchmarks/infra/thermal_bench.py', but that bench uses 0.32 mm ceramic at k = 90, not the default Al2O3. A2, A4 and K1 are absolute-K thresholds aggregated as a max over load levels, so the unrealistic 100 W level is the binding one. An L1 that meets 0.5 K at realistic loads can fail at 100 W, partly through k(T) nonlinearity at 200-250 \u00b0C. That would send O003 to its L2 fallback for a regime no customer runs. F4's k(T) test is also built around this level.",
+      "evidence": "Scratch finite-volume solve (0.5 mm cells, default stack, h = 5000, uniform die-top flux, 60 generator layouts in 6 strata with s = 5.0 mm). Max rise per stratum: sbs-4 164 K, int-4 145 K, u-6 177 K, int-2 110 K, sbs-6 179 K, u-3 143 K. Energy balance Q_out/Q_in = 1.0000000. Refining the vertical grid moved Tj by at most 0.3 K. At 50 W, Tj is 119-155 \u00b0C.",
+      "suggested_check": "Before approval, re-pin the load levels so that L2 Tj stays at or below 150-175 \u00b0C on the default stack for the smallest die size (for example from a Tj target), and state the die-attach material.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A lookup on die position alone almost meets A3, and F2's nulls do not include it",
+      "detail": "F2 null (b) returns the cell mean of Tj max. Applied to each die, it ignores the 4-40 K spread inside a layout, so it fails A3 by a wide margin; it is a weak null. A lookup keyed only on topology, (family, dies, die size, load, die index), does much better. Within each stratum the hottest die index was the same in every layout (one stratum split between two indices), so position explains most of the per-die variation. Its pooled p95 of |error| over the die-local rise is 0.056, against A3's 0.05. Per stratum it ranges 0.019-0.070, and it passes A3 on its own in 4 of the 6 strata. The ratio does not depend on load, so this holds at 50 W too. As written, the F2 gate would pass while A3 still has almost no margin over a predictor that ignores the layout geometry. This weakens the clause that no criterion is met by a layout-ignorant predictor. It is not a blocker: the conjunction still requires A2, which the nulls fail by 5-25x.",
+      "evidence": "Same scratch run. Per-position mean null, computed in-sample over 10 layouts per stratum: pooled p95 0.056. Cell-mean-of-Tj-max null: 0.321.",
+      "suggested_check": "Add a dev-trained lookup per die position, (family, dies, die index, die size, load), to F2's nulls for A3 and A4.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "decision_if_pass carries L1 to O003 layouts that are outside O002's scope",
+      "detail": "O003's benchmarks are reconstructed academic layouts (PowerSynth, UTK, CPES, Danfoss; research/notes/o003-public-benchmarks.md), each with its own housing and stack. A-T3's +2 K is measured against that reference layout. O002 samples only moduleforge.generate layouts on the default DBC stack and housing, and only pairs where both layouts come from the generator. A PASS therefore does not cover the candidate-versus-reference comparisons O003 will actually make.",
+      "evidence": "Hypothesis scope_in versus the O003 benchmark notes.",
+      "suggested_check": "State in decision_if_pass that the L1 constraint is validated only for generator layouts on the default stack, and that O003 must audit benchmark references with L2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F2 must fail at each load level against absolute thresholds, and its stated response cannot fix a failure",
+      "detail": "Null errors in kelvin halve at 50 W. The cell-mean spread null scores 2.42 K at 100 W but only 1.21 K at 50 W, against A4's 1.0 K. In small-die-count strata it is 0.4-0.45 K at 50 W. A different stratum mix could trip the F2 gate at 50 W even though the criterion, a max over load levels, is decided at 100 W. F2's response, 'revise E007', cannot change thresholds that live in the objective, so registration could stall.",
+      "evidence": "Scratch run: A4 null p95 per stratum 0.83-3.34 K at 100 W (linear model; 50 W is half).",
+      "suggested_check": "Make F2 test the aggregated metric, or move threshold-level fixes to the objective.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A4's 'spread' covers both switch positions, while the text says 'paralleled dies'",
+      "detail": "A4 defines spread as max \u2212 min over all dies of a layout, so it mixes the high-side versus low-side row offset (about 10-15 K in side_by_side) with the imbalance between paralleled dies. why_it_matters describes the spread across paralleled dies, which is a different quantity.",
+      "evidence": "sbs-4 layout: HS row 148-164 K, LS row 137-152 K; spread over the layout 27.7 K, per switch about 16 K.",
+      "suggested_check": "Define the spread per switch position, then take the max over the two positions.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A1's justification is numerically wrong at 100 W, and the heat source and die-attach material are not pinned",
+      "detail": "The draft says '0.2 % of rise is about 0.1-0.2 K'. At 100 W the rise is 107-179 K, so 0.2 % is 0.2-0.36 K, up to about 70 % of A2's budget rather than a fifth. F1's 0.05 K Richardson gate does carry E007's L2 accuracy, so this is a wording error. Separately, 'k(T) for every layer material' cannot be met as the repo stands: the die-attach material and the SiC die are not in LayerStack. The heat-source footprint (full die or active/source area) is also unspecified, and it changes the surface Tj max.",
+      "evidence": "",
+      "suggested_check": "Pin the attach material, the die k(T) source and the source footprint in scope_in.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The checks that support the claim held",
+      "detail": "The stratum-mean null fails A2 by a wide margin at both loads, and K1 fires for such a predictor: its p95 at 100 W is 2.6-12.0 K, above 1.5 K in every stratum. F2(b) fails A3 (0.32). Within-stratum Tj-max differences come from layout geometry (row separation, die gap), so A2 is the right instrument for the +2 K decision.",
+      "evidence": "Scratch run over 6 strata \u00d7 10 layouts.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Wrote a scratch finite-volume steady conduction solver (0.5 mm cells conforming to the generator's design grid, default DBC stack, patterned top Cu, 1 mm backside inset, h = 5000 at the bottom of the 86 \u00d7 56 mm baseplate, scipy direct solve). Energy balance closes to 1e-13. Refining the vertical grid from 3/1 to 6/3 cells (baseplate/ceramic) changed Tj by at most 0.3 K.",
+    "Solved 60 DRC-valid generator layouts at fixed die size 5.0 mm, 100 W per die, in strata side_by_side-4, interleaved-4, u_shaped-6, interleaved-2, side_by_side-6 and u_shaped-3.",
+    "Computed the null metrics: stratum-mean A2 null p95 2.6-12.0 K (100 W); cell-mean-Tj-max A3 null pooled p95 0.321; per-position A3 null pooled p95 0.056 (0.019-0.070 per stratum); cell-mean spread A4 null pooled p95 2.42 K (100 W) and 1.21 K (50 W).",
+    "Read the generator: die size is drawn from {4.0, 4.5, 5.0, 5.5} mm; within a stratum only the die gap, row gaps and extensions, and row start vary; the hottest die index is the same in every layout of a stratum in 5 of 6 strata.",
+    "Compared the cited source benchmarks/infra/thermal_bench.py (ceramic k = 90, 0.32 mm) with default_dbc_stack (Al2O3, k = 24, 0.38 mm) to test the operating point's justification.",
+    "Read research/notes/o003-public-benchmarks.md to check whether O002's scope transfers to O003's comparisons."
+  ],
+  "caveats": [
+    "The scratch model is coarse: constant k, uniform flux over the full die top, an assumed die-attach k of 58 W/(m K), and in-sample per-position means from only 10 layouts per stratum. The null metrics could move by about 10-20 %, and the per-position A3 null (0.056 against 0.05) is borderline in either direction.",
+    "A run with 4.0 mm dies and a reduced Al2O3 k (the ~200 \u00b0C value) was blocked by the sandbox and not executed. The claim that these raise Tj further is an inference from power density and published Al2O3 k(T) trends.",
+    "A PASS establishes the hypothesis only for moduleforge.generate layouts on the default Al2O3 DBC stack and housing, at the stated 50/100 W points, with all dies equally loaded. It does not cover O003's reconstructed benchmark references, other stacks, or comparisons across die sizes.",
+    "At 100 W per die, L2 Tj on the default stack is about 172-244 \u00b0C even with constant k. Founder confirmation of the operating point at approval should account for this, because the 100 W level is the one that decides A2, A4, K1 and F4.",
+    "A3 discriminates weakly against a layout-ignorant lookup on die position. The layout-resolving evidence rests mainly on A2."
+  ]
+}
