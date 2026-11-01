@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Failed linear solves and disconnected active regions return garbage without raising",
+      "detail": "The docstring says the relative residual <= linear_tol is 'verified on the true residual'. In fact _Solver.solve gives up after 6 attempts and returns whatever it has, and nothing downstream raises. The only singularity guard is the global 'at least one Robin face' check. An active component with no conduction path to z = 0 (e.g. a mis-rasterised die-attach footprint) makes the system singular, and nothing detects it. Observed: on the direct path a floating cell with a source gives T = NaN with only a scipy MatrixRankWarning. On the CG path a floating slab gives Tmax = 1.37e24 K, energy_balance = 1.3e10 and linear_residual = 1.8e15, again with no exception. With a 1e7 conductivity contrast (1e4 vs 1e-3 W/mK) the solver returns linear_residual = 6.4e-9 against a 1e-12 target, silently. For realistic stacks the target is met (7.4e-13 to 7.8e-13, see checks), and E006's energy-balance gate would catch the floating case. So this does not falsify the core for valid inputs, but a reference solver should not hand back 1e24 K silently. Remedy: raise or warn when res > linear_tol after the retries, and check connectivity of active cells to the Robin set (e.g. scipy.sparse.csgraph.connected_components).",
+      "evidence": "Scratch runs: 1x1x3 grid with mat [0,-1,0] and source 1e6 gives T = [nan nan nan], bal = nan, no exception. 20x20x12 grid with layer 5 void and top flux 1e5 (CG path) gives Tmax = 1.37e24, res = 1.77e15, no exception. Materials [1e4, 1e-3, 1.0] give res = 6.39e-9 > 1e-12, no exception.",
+      "suggested_check": "Assert solve_steady raises on a floating island and on a forced non-converged CG solve (maxiter tiny).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Means over isoflux sources converge below second order; pointwise surface convergence is not monotone",
+      "detail": "Against my own Fourier-series solution (single layer, uniform h, off-centre rectangular source on a grid conforming to the source), the centroid error converges at order 2.46 then 2.13. The source-mean error converges at only order 1.69 then 1.74 (0.120, 0.037, 0.011 K). This is the expected edge singularity of an isoflux source, not an implementation bug. In the manufactured k(T) case, surface errors at fixed points fall overall but with erratic per-point orders (0.3 to 6.7, one negative), because the column centres move under refinement. Both affect how E006's Roache GCI classifies convergence, not whether this core is correct.",
+      "evidence": "Fourier check: centroid errors 1.08e-2, 1.96e-3, 4.49e-4 K; mean errors 1.20e-1, 3.72e-2, 1.12e-2 K. MMS surface max point errors 4.4e-2, 7.9e-3, 3.2e-3 K.",
+      "suggested_check": "In E006, report observed order per point and expect Fs = 3 classifications for source means and fixed-point values.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Some tests are weaker than they look",
+      "detail": "In test_input_validation, the second pytest.raises block passes only because n_gauss=2 is rejected first, so its flux dict content is never exercised. Lateral prescribed fluxes are tested only through energy_balance, which matches the linear-system residual sum by construction and cannot catch a wrong sign or area on lateral faces. My manufactured test with lateral fluxes on all side faces and void-adjacent faces passed at second order, so the code is right; the suite just would not catch a regression there. No test exercises a non-converged solve or a disconnected component.",
+      "evidence": "Code reading of test_input_validation and test_energy_balance_heterogeneous_with_voids_and_k_of_T; independent MMS with lateral/void fluxes passed.",
+      "suggested_check": "Add a manufactured case with nonzero lateral and void-adjacent fluxes to the suite.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Energy balance cannot detect quadrature error from discontinuities off the grid",
+      "detail": "q_in is computed with the same Gauss quadrature as the right-hand side. A source or flux edge that does not lie on a grid line is integrated wrongly, and energy_balance still reports ~1e-14. The docstring documents the grid-conforming requirement; the grid builder must enforce it.",
+      "evidence": "Code reading of the flux/source assembly and the q_in computation.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three definition-of-done commands: tests/unit/solvers/test_thermal_fv.py gives 11 passed, including the slow million-cell test, in 48.7 s; the fast unit suite gives 361 passed, 32 deselected; ruff check reports all checks passed.",
+    "Manufactured 3D k(T) solution, written independently with sympy. 4H-SiC power law, ~85 K field range, piecewise-stretched non-uniform grid, a void notch giving re-entrant edges, prescribed fluxes on every lateral and void-adjacent face via the callable form, Robin bottom with spatially varying T_inf. Cell max error 0.187 / 0.0507 / 0.0130 K, observed order 1.88 then 1.97; energy balance <= 3e-14; 9 Picard iterations.",
+    "Two-layer 1D slab with k(T) in both layers (Cu linear law and 4H-SiC power law, real Layer.k_at) against an exact sequential Kirchhoff solution solved with brentq. Top-surface errors 1.18e-3, 2.94e-4, 7.35e-5, 1.84e-5 K, observed order 2.0000 at every step, so the half-cell series conductance with k at each cell's own temperature is second order across a material interface.",
+    "Own Fourier-series solution of a rectangular flux channel (uniform h bottom, adiabatic sides, off-centre isoflux source, 4000x4000 modes) against solver centroid and source-mean via surface()/surface_stats(). Centroid order 2.46 then 2.13; mean order ~1.7; energy balance ~1e-14.",
+    "Realistic module case: default DBC stack plus die attach and SiC dies (Layer k(T) laws), two mirror-image dies, copper trench void, 59k cells on the CG path. Residual 7.8e-13 <= 1e-12, balance 1e-14, and per-die mean/max agree to 4e-10 K by symmetry.",
+    "Plausible high contrast and aspect ratio: thermal interface layer k = 1 and k = 0.2 in 10 \u00b5m cells under 1 mm lateral cells, with and without k(T). Residual 6.9e-13 to 7.8e-13, meeting the 1e-12 target.",
+    "Adversarial inputs: a floating active island (direct and CG paths) and a 1e7 conductivity contrast. Both return unconverged or garbage results without raising (finding 1).",
+    "Default picard_tol (1e-4) vs 1e-7 on the manufactured case: max T difference 3.3e-7 K, so the Picard stop criterion is not a material error source."
+  ],
+  "caveats": [
+    "Validated for steady conduction on connected active domains (every active cell has a conduction path to the z = 0 Robin face) with physically plausible conductivity contrasts (up to ~2000:1 tested). Outside that, failures are not raised; check meta['linear_residual'] and meta['energy_balance'].",
+    "Second-order convergence holds for smooth fields. Means over isoflux sources converge at about order 1.7 (edge singularity), and fixed-point surface values converge non-monotonically on non-nested column centres; E006's GCI should expect this.",
+    "Flux and source integration is exact only when discontinuities lie on grid lines; energy_balance cannot detect a misaligned source.",
+    "Scope is the steady core only: no transient, no fixed-temperature (Dirichlet) sink, no grid rule, and no meta['solver_tol'] discretisation bound, all of which D0006 and the O006 build notes list. These are presumably separate tasks; the task record T0158.yaml is not in this snapshot."
+  ]
+}
