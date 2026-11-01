@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T21:04:59+00:00 from repository state — do not edit_
+_generated 2026-11-01T21:41:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-01T21:04:59+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | draft | - | 0/1 | $11.30/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $11.30/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,17 +23,15 @@ _generated 2026-11-01T21:04:59+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 6 | $11.30 | 294729 | 209229 | 16 | 0 |
+| O006 | 7 | $11.30 | 294729 | 209229 | 16 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 114, failed: 3
+cancelled: 29, done: 114, failed: 3, running: 1
 
+- T0147 `running` planner/plan: Plan O006 (periodic) (attempt 1)
 
 ## Recent events
-- 2026-11-01T20:32:01+00:00 run_finished {"run": "T0139-critic-20261101T122307-c6ca", "status": "completed", "cost": 2.009917, "subtype": "success", "report": "structured_output"}
-- 2026-11-01T20:32:03+00:00 run_started {"run": "T0142-critic-20261101T123203-5d3f", "task": "T0142", "role": "critic", "session": "224e3acf-b1ff-4da1-8c18-08d3eb488e18"}
-- 2026-11-01T20:36:16+00:00 run_finished {"run": "T0141-critic-20261101T123051-bdbb", "status": "completed", "cost": 1.422383, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T20:37:04+00:00 run_finished {"run": "T0142-critic-20261101T123203-5d3f", "status": "completed", "cost": 1.364276, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T20:47:02+00:00 objective_draft_review {"objective": "O006", "ref": "4c86729cbd304c55bec8f84494a66795580613fe", "tasks": ["T0143", "T0144"]}
 - 2026-11-01T20:47:02+00:00 objective_draft_review {"objective": "O003", "ref": "4c86729cbd304c55bec8f84494a66795580613fe", "tasks": ["T0145", "T0146"]}
@@ -46,3 +44,6 @@ cancelled: 29, done: 114, failed: 3
 - 2026-11-01T20:57:59+00:00 run_started {"run": "T0146-critic-20261101T125759-d08b", "task": "T0146", "role": "critic", "session": "0c46540c-52c0-4685-bd93-3946512c5a24"}
 - 2026-11-01T21:01:49+00:00 run_finished {"run": "T0145-critic-20261101T125602-6b24", "status": "completed", "cost": 1.591919, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T21:04:58+00:00 run_finished {"run": "T0146-critic-20261101T125759-d08b", "status": "completed", "cost": 1.513737, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T21:41:04+00:00 objective_approved {"objective": "O006", "criteria_hash": "sha256:735554c518e06ff625ca1e225a23c24853293b88ba363229fc826cca4712ccee"}
+- 2026-11-01T21:41:31+00:00 loop_started {"pid": 30130}
+- 2026-11-01T21:41:34+00:00 run_started {"run": "T0147-planner-20261101T134134-d1d8", "task": "T0147", "role": "planner", "session": "8a4a0eb1-5753-4cb9-bc9f-a84466ae6220"}
