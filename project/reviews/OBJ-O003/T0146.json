@@ -1,0 +1,101 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The 20 %/10 % thresholds are applied to a substrate-only denominator, and the prior that motivates them is misread",
+      "detail": "A1 and K1 judge h = 1 - L_best/L_ref, where L is the substrate-level loop between the DC+ and DC- terminal pads. The 20 % and 10 % lines come from A-T3 and the charter's day-60 kill, which concern the loop inductance the product sells: what customers see between the DC+ and DC- terminals. why_it_matters cites 'about 18 % substrate-only headroom' from research/notes/o003-public-benchmarks.md. In that note, 18 % is the substrate gain (4.9 nH) divided by the module-internal loop (about 27.2 nH). On O003's own metric the same public comparison gives 1 - 4.8/9.7 = 0.505, i.e. about 50 % substrate-level headroom. Using that comparison's proportions (substrate share 9.7/27.2 = 0.36), a substrate-level PASS at h = 0.20 corresponds to about 7 % module-level headroom, which is below the 10 % line the null hypothesis and the kill describe. The K1 line of 0.10 corresponds to about 3.6 % module-level. So the pass criterion can be met while the decision-relevant headroom is below the null's 10 %. A pass therefore does not reject the null's 'value proposition does not hold' clause, yet decision_if_pass marks A-T3 supported and puts the re-layouts in front of customers. scope_out admits that substrate-level headroom overstates module-level headroom, but the thresholds were not re-derived and the decision rules carry no caveat. The 'genuinely uncertain' rationale rests on the misread number.",
+      "evidence": "research/notes/o003-public-benchmarks.md lines 65-72: 'Substrate-associated loop inductance \u2026 drop from 9.7 nH to only 4.8 nH'; 'module-internal total \u2248 27.2 nH'; 'substrate-only gain (4.9 nH) is \u224818% of the module-internal loop'. Recomputed: 1 - 4.8/9.7 = 0.505; 0.20 x 9.7/27.2 = 0.071; 0.10 x 0.357 = 0.036.",
+      "suggested_check": "Either judge A1/K1 on a module-level loop (fixed terminal tabs included) or re-derive the substrate-level thresholds from the decision, and fix why_it_matters to state the 18 %/50 % distinction.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "blocker",
+      "title": "No search-power (planted-headroom) control: an uninformative search meets K1 while every F1 gate stays green",
+      "detail": "Clause (2) of the claim says no criterion is met by a predictor that ignores the decision-relevant information. Take a degenerate search that returns its input, ignoring all inductance information. It gets h = 0 on every reference. Twin check (a) does not depend on the search and passes. 'Positive control' (b) started from the winner returns the winner, so h_control = 0 and it passes. (c) w <= 0.05 passes. The null column (the median candidate, here the reference) is far below A1, so it passes. Result: median h_hi = w < 0.10, so K1 fires (the day-60 kill) and every sanity check is green. Gate (b) only tests that the search is stationary. It is not a positive control, because nothing checks that the search recovers headroom known to exist. This matters because the generalised generator and search are new, are frozen before any judged reference is seen, and must work inside unseen outlines with fixed pads and keep-outs. A weak search is therefore a live way to kill the company falsely.",
+      "evidence": "F1 detection (a)-(c) and the null column as written in the draft; reasoning traced for an identity search.",
+      "suggested_check": "Add a gated planted-headroom control per reference, e.g. run the search from a deliberately degraded copy of the twin with a known lower-L layout in generator space, and require it to recover at least that headroom minus w.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The 'positive control' (b) is either vacuous or fails on legitimate physics through a Tj ratchet, making the single evaluation INVALID",
+      "detail": "The search run with the winner as reference re-normalises power so that the winner's hottest die rises 60 K. Its limit is the winner's Tj + 2 K, which is up to about +4 K relative to the original reference. Top-L1 candidates rejected for Tj in the first run (n_tj_rejected > 0; compact loops run hotter) become admissible and can beat the winner. If Tj does not bind and the candidate pool is seed-identical, h_control = 0 by construction and the check says nothing. The only public Pareto front (PowerSynth TPEL 2019: 7 nH over 15 \u00b0C) gives about 0.47 nH/K, so 2 K buys about 0.93 nH: 9.3 %, 6.2 % and 4.7 % of a 10, 15 and 20 nH loop. That reaches or exceeds w <= 0.05, so (b) can fail on a correct generator and search. The response is INVALID, with max_evaluations: 1, before day 60.",
+      "evidence": "Scratch computation: slope 7/15 nH/K; 2 K x slope / L for L = 10, 15, 20 nH -> 0.093, 0.062, 0.047.",
+      "suggested_check": "Run the control at the original reference's absolute Tj limit and power, or replace it with the planted-headroom control.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The null-baseline column is ill-defined, and its computable reading turns a genuine PASS into INCONCLUSIVE",
+      "detail": "'The median DRC-valid candidate that meets the Tj limit' has a Tj value only if thermal L2 was run on it. The fixed budget runs thermal L2 only down the L1-ordered list (at most 50), and inductance L2 only on the at most 8 that meet the limit. The computable reading is therefore the median of the L1-top shortlist. Given E002's 1.4-1.5 % within-stratum L1 residual, its headroom trails the winner by only about 1-2 points. In mfos/evaluate.py `_annotate`, a null that meets A1 makes the criterion `non_discriminating`, which yields INCONCLUSIVE (not INVALID, as F1's response states). So any PASS whose margin exceeds the shortlist spread is converted to INCONCLUSIVE. Under the other reading (the median of all 20,000 candidates), Tj is outside the budget. In that reading, a reference that a typical re-layout beats by 20 % (a true rejection of the null) also becomes INCONCLUSIVE.",
+      "evidence": "tools/mfos/mfos/evaluate.py lines 426-436 and 493-497 (non_discriminating counts as not satisfied -> INCONCLUSIVE); F3 budget text; F1 response 'INVALID'.",
+      "suggested_check": "Define the null population and its Tj and L2 evaluation explicitly (e.g. a sealed random sample of DRC-valid candidates, with Tj and L2 run on them), and check it on 2D_Case_4 dev rows with `mfos exp check`.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "w cannot be computed as defined for customer references processed locally; d_fh is defined inconsistently",
+      "detail": "e_ref and e_best need the three-level ladder (0.5/0.25/0.125 mm). The 0.125 mm level needs about 35 GB and is 'VM only' on the 16 GB machine. F5 and D0010 keep customer geometry local unless that customer's NDA allows a VM. With only the local levels there is no Richardson estimate. Using the I0039 ladder, the k_star (0.25 mm) error is about 1.46 % per layout, so the FastHenry-unusable band is w = 2(e_ref + e_best) \u2248 0.058 > 0.05: gate F1(c) gives INVALID. FastHenry (P4, F2) also runs on a burst VM. Separately, A1 defines d_fh as the ratio difference 'measured in O006 pilot P4', which uses 2D_Case_4 and two perturbations. F2 instead re-checks the actual winner against its reference. A ratio difference transferred from small perturbations will understate the error for an optimiser-selected layout that differs topologically from the reference.",
+      "evidence": "docs/notes/o001-l2-layout-cost.md lines 20, 202, 233 (0.125 mm ~35 GB, VM only); l2_layout.py docstring ladder 12.889/12.766/12.692 nH -> observed order p = 0.73, Richardson e(0.125 mm) = 0.88 %, e(0.25 mm) = 1.46 % (scratch script).",
+      "suggested_check": "Pre-register how e and d_fh are obtained for local-only customer references (and whether VM permission is a precondition), and use one definition of d_fh in A1 and F2.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Snapping the reference copper to the lattice is unspecified and its bias is not in the band",
+      "detail": "l2_layout refuses any layout whose top-Cu rectangles, outlines or die footprints are off its lattice, and it represents copper only as rectangles. The scope only says die footprints are snapped identically. Customer and PowerSynth copper (off-grid dimensions, 45\u00b0 or curved edges) must be staircased or snapped, to 0.5 mm for the three-level ladder. That moves edges by up to 0.25 mm. Gaps and widths set the DC+/DC- mutual cancellation and the microstrip inductance, so this changes L_ref by an estimated few percent. Candidates are generated on the lattice natively, so this error does not cancel in r, is not part of w, and F4 only reports L1 sensitivities.",
+      "evidence": "src/moduleforge/solvers/l2_layout.py docstring: 'every top-Cu rectangle \u2026 must lie on cell boundaries \u2026 A layout that is not on the lattice raises ValueError'; 'A cell holding copper of two nets is refused'.",
+      "suggested_check": "Specify the copper snapping rule and add the L2 change from snapping the reference (snapped vs finer-lattice reference) to w or to a gated bound.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The '+2 K Tj' bound holds only at equal per-die power, and low-L re-layouts are known to worsen current sharing",
+      "detail": "Tj is evaluated at equal power per die. Moving dies to shorten the commutation loop changes how current is shared between parallel dies. The cited public source (UTK S2, chapter 6) reports that the lower-inductance layout had larger mismatch between paralleled branches. Conduction loss scales with I\u00b2, so a 10 % current imbalance gives about 21 % more power on the hottest die, about 12 K at a 60 K rise. That far exceeds the 2 K bound, and the bias favours candidates. The current-mismatch branch is scoped out, but the Tj constraint, part of the hypothesis itself, depends on it.",
+      "evidence": "research/notes/o003-public-benchmarks.md line 51; scope_in Tj clause.",
+      "suggested_check": "State the Tj bound as 'at equal per-die power' in the hypothesis and decisions, or report the per-die current split l2_layout already solves for, for the reference and the winner.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The INCONCLUSIVE region is wide; the claim that the thresholds can resolve the decision holds only at extreme outcomes",
+      "detail": "With h_lo = h - r w and h_hi = h + r w, PASS needs point headroom h >= 0.208/0.216/0.223/0.238 at w = 0.01/0.02/0.03/0.05. KILL needs h < 0.091/0.082/0.072/0.053. At a realistic w of about 0.03, every point headroom between about 7 % and 22 % is INCONCLUSIVE. The band also covers only discretisation and FastHenry error. Seed-to-seed variation of the best-of-8 result and reconstruction error (F4, reported only) are outside it. Across references there is no sampling uncertainty at all: with n = 1-2, the 'median' is one or two numbers.",
+      "evidence": "Scratch computation of the PASS and KILL boundaries for w in {0.01..0.06}.",
+      "suggested_check": "Report P(PASS), P(INCONCLUSIVE) and P(FAIL) under the corrected priors before approval.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The reference-set rule is undefined when every shared customer reference is excluded",
+      "detail": "D0010 falls back to the public set only if no customer shares a layout. scope_in excludes customer references that have antiparallel diode dies, are not SiC MOSFET half-bridges, or (implicitly) are IGBT or six-pack modules. If customers share only excluded layouts, the reference set is empty and the median is undefined. No rule says whether the public fallback applies.",
+      "evidence": "D0010 Decision bullet 1 vs O003 scope_in bullet 1.",
+      "suggested_check": "Add one sentence: if all shared customer references are excluded, use the public fallback, labelled as such.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The twin check can make the single evaluation INVALID when the frozen generator cannot express an unseen layout",
+      "detail": "The generator is frozen on its own layouts and 2D_Case_4. Gate (a) requires its twin of an unseen customer layout to match within |h| <= w (about 3 %). A customer topology outside the generator's families fails the gate, and with max_evaluations: 1 there is no second attempt.",
+      "evidence": "F1(a), F3, max_evaluations: 1.",
+      "suggested_check": "Pre-register what happens to a reference whose twin fails (exclude it and report, or end INVALID).",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the PASS and KILL boundaries in point headroom for w = 0.01-0.06 from h_lo = 1 - r(1+w) and h_hi = 1 - r(1-w): at w = 0.03, PASS needs h >= 0.223 and KILL needs h < 0.072.",
+    "Recomputed the cited prior from research/notes/o003-public-benchmarks.md: substrate-level headroom 1 - 4.8/9.7 = 0.505, against 18 % of the module-internal loop; a substrate-level 0.20 maps to about 0.071 module-level.",
+    "Richardson analysis of the l2_layout I0039 ladder (12.889/12.766/12.692 nH): observed order 0.73, e(0.125 mm) = 0.88 %, e(0.25 mm) = 1.46 %; the FastHenry-unusable band at the locally feasible level is about 0.058 > 0.05.",
+    "Checked docs/notes/o001-l2-layout-cost.md: the 0.125 mm level needs about 35 GB and runs only on a VM (16 GB laptop), which conflicts with local-only processing of customer data.",
+    "Read the l2_layout lattice rules: rectangles only, on cell boundaries, otherwise ValueError; a cell holding copper of two nets is refused.",
+    "Read tools/mfos/mfos/evaluate.py: a null baseline that meets a pass criterion makes it non_discriminating, which yields INCONCLUSIVE (F1 states INVALID).",
+    "Traced an identity (do-nothing) search through gates F1(a)-(c) and the null column: all pass and K1 fires.",
+    "Estimated the Tj-ratchet effect of control (b) from the PowerSynth TPEL 2019 Pareto front: 0.93 nH per 2 K, i.e. 4.7-9.3 % of a 10-20 nH loop."
+  ],
+  "caveats": [
+    "Shared model choices (ideal die shorts with an equipotential footprint, point-contact terminal pads, lattice snapping) can be exploited by the optimiser, and none of the criteria detects this; it stays unbounded until O004's F6 diagnostic.",
+    "Any verdict holds only for the one or two specific references of D0010. With no sampling uncertainty across references, it does not generalise to 'real derivative problems'. O003 also keeps the reference's own dies, whereas a real derivative changes the dies.",
+    "The S3 numbers I used (9.7 to 4.8 nH substrate-level; about 27.2 nH module-internal) compare different modules, not a same-housing re-layout. They are the objective's own cited prior and fix only the order of magnitude.",
+    "The PowerSynth Pareto slope (7 nH over 15 \u00b0C) comes from a varying substrate area and is used only to show that a 2 K relaxation can be worth more than w."
+  ]
+}
