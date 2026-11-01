@@ -11,12 +11,13 @@ temperature — together with customer-runnable verification decks — removes i
 ## Assumptions (each must be tested by an objective; update statuses via /thesis-review)
 | id | assumption | tested by | status |
 |---|---|---|---|
-| A-T1 | A fast L1 electromagnetic model ranks layouts faithfully enough to drive search | O001 | untested |
+| A-T1 | A fast L1 electromagnetic model ranks layouts faithfully enough to drive search | O001 | supported, narrowly (C002: default DBC stack, 20 MHz, across strata; pairs differing by < 5 % misordered 23-38 %) |
+| A-T1b | Within a fixed family and die count (the derivative regime), choosing by L1 loses ≤ 2 % loop inductance against the best L2 layout | O005 | untested |
 | A-T2 | A fast L1 thermal model is faithful enough for Tj max and spread | O002 | untested |
 | A-T3 | Real derivative problems have ≥20% loop-inductance or ≥50% current-mismatch headroom at ≤ +2 K Tj | O003 | untested |
 | A-T4 | Customers will accept software-generated layouts verified in their own Q3D/Icepak flow | customer interviews | untested |
 | A-T5 | Paid "derivative layout sprints" can start within 90 days | customer interviews | untested |
-| A-T6 | No incumbent or academic tool already delivers this commercially | scout research | partially tested |
+| A-T6 | No incumbent or academic tool already delivers this commercially | scout research | supported as stated, capability not unique (research/notes/a-t6-competitive-landscape.md: no commercial re-layout product; PowerSynth 2 academic GPL tool and Siemens power-module optimization are the nearest) |
 
 ## Constraints
 Solo founder, AI-leveraged; no wet or fab lab; cash-constrained compute; customer data is confidential
@@ -28,4 +29,6 @@ proxies, a GUI.
 
 ## Kill criteria
 Day 30: O001 FAIL with no credible fix path. Day 45: no customer willing to share a reference layout
-under NDA. Day 60: O003 shows < 10% headroom on public benchmarks. Day 90: no paid or LOI-backed sprint.
+under NDA. Day 60: O003 shows < 10% headroom on public benchmarks (the pre-registered set reconstructed from research/notes/o003-public-benchmarks.md, with housing and terminals fixed and the loop and extraction frequency fixed in O003). Day 90: no paid or LOI-backed sprint.
+Customer evidence for the day-45 and day-90 criteria and for A-T4/A-T5 counts only when recorded in
+project/customers/ (README format, tagged with the assumption id).
