@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T19:15:00+00:00 from repository state — do not edit_
+_generated 2026-11-01T19:15:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,6 +10,7 @@ _generated 2026-11-01T19:15:00+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
+| O003 | draft | - | 0/3 | $0.00/$60 | <one line: what we will know when this is done> |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | draft | - | 0/1 | $0.00/$80 | The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix |
