@@ -1,0 +1,51 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The 60 W top load breaks the draft's own F1 validity gate (Tj \u2264 175 \u00b0C on \u2265 90 % of layouts), so E007 cannot settle the decision as drafted",
+      "detail": "Scope_in says Tj at the top load must stay within the SiC rating, and F1 gates E007 on 'Tj max at 60 W at most 175 \u00b0C on at least 90 % of layouts'. A converged scratch finite-volume model of the generator's layouts, on the default DBC stack plus a 50 \u00b5m SAC die attach and a 180 \u00b5m SiC die, gives these Tj max ranges at 60 W per die with constant room-temperature conductivities: side_by_side-6 at 4.5 mm dies 177.7\u2013187.3 \u00b0C (all 12 layouts above 175 \u00b0C); interleaved-6 166.8\u2013174.9 \u00b0C; u_shaped-5 167.9\u2013174.8 \u00b0C. Room-temperature k is a lower bound on Tj, because every layer's k falls with temperature. Al2O3 dominates: it is about 1.6e-5 of the roughly 2.8e-5 m\u00b2K/W 1D resistance under the die, and its k drops from about 24 to about 17 W/(m K) near 120 \u00b0C. So the k(T) the hypothesis requires adds roughly 10\u201315 K, which puts most 5- and 6-die strata, and probably some 4-die strata, above 175 \u00b0C. 4.0 mm dies (one of the four sizes the generator draws) carry 27 % more flux than 4.5 mm dies. Even the draft's own figure (T0132: 172\u2013244 \u00b0C at 100 W) scales linearly to about 172 \u00b0C at 60 W before k(T). With 15 equally sized strata, two or more hot strata already break the 90 % gate. The likely outcome is an experimental failure (F1) instead of a test of the hypothesis. Changing the load changes the hypothesis statement and the operating point O003 adopts, so this has to be fixed before approval, not after a run. That makes the claim 'the thresholds and the sample can resolve the decision' false at the drafted operating point.",
+      "evidence": "Scratch FV model in $TMPDIR/rv/fv.py: non-uniform grid with lines on every trace and die edge, harmonic-series conductances, Robin h = 5000 W/(m\u00b2 K) at 65 \u00b0C over the 86\u00d756 mm baseplate bottom, top-Cu gaps adiabatic. Energy balance Q_out/Q_in = 1.000. Mean bottom temperature 94.9 \u00b0C equals 65 + 720/(5000\u00b74.816e-3). Lateral refinement 2\u21921\u21920.5 mm moves the hottest die 171.43\u2192170.47\u2192170.02 \u00b0C; doubling the z cells moves it 0.05 K. 12 fixed-die-size layouts per stratum from generate_layouts.",
+      "suggested_check": "Before approval, run the L2 prototype (or any converged model) with cited k(T) at 60 W over all 15 strata \u00d7 the 4 drawable die sizes. Then lower the top load (about 40\u201345 W looks feasible) or exclude or derate the 5\u20136-die strata so that F1's 90 % gate is expected to hold.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A3, A4 and A5 pool over strata; in low-die-count strata the layout-ignorant nulls nearly meet or meet them",
+      "detail": "Per stratum, at 60 W, leave-one-out in-sample: a die-position lookup reaches an A3 p95 of 3.1 % (u_shaped-2) and 3.4 % (interleaved-3), against the 3 % threshold. It reaches 5.2\u20137.5 % in 5\u20136-die strata, which matches the cited pooled 5.6 %. The stratum-mean spread null has an A4 p95 of 0.41\u20130.63 K in three of the five strata I sampled, under A4's 1.0 K threshold; only the 6-die strata (1.19\u20131.32 K) exceed it. The pooled p95 is dominated by high-die-count strata, which contribute up to 3\u00d7 more dies and switches with larger errors. So passing A3, A4 and A5 establishes per-die and spread accuracy pooled across strata, not within each stratum. An L1 that is no better than a die-position lookup on 2\u20133-die strata could still pass. (The A5 ratio for the die-position lookup was 0.51\u20131.04, so A5 does block that null pooled.)",
+      "evidence": "Per-stratum null metrics from the scratch model, listed under independent checks.",
+      "suggested_check": "Report A3\u2013A5 per die-count band in the claim's scope, or state in the claim that accuracy is pooled; F3 already asks for per-stratum reporting.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "A2 covers L1\u2013L1 differences between generator layouts; the +2 K budget in O003 compares candidates with a reference outside that population",
+      "detail": "A2's 0.5 K applies to pairs of generator layouts in the same stratum, both evaluated by L1. The A-T3 budget is relative to a reference layout. decision_if_pass sends reconstructed benchmark references on another stack or housing to L2 only. Any comparison of an L1 candidate with an L2 reference therefore depends on L1's absolute error. A3 allows 3 % of a die-local rise of about 59\u201377 K at 60 W, which is about 1.8\u20132.3 K at p95: the size of the whole +2 K budget. Multi-fidelity L2 audits of finalists (D0008) limit the damage, but the pass criteria support 'enforce +2 K during search' only for references that are themselves generator layouts in the candidate's stratum.",
+      "evidence": "Die-local rise (Tj \u2212 mean baseplate-bottom temperature) in the scratch runs: 59.1 K (u_shaped-2) to 77.3 K (side_by_side-6).",
+      "suggested_check": "State in decision_if_pass how the O003 constraint is formed (L1 vs L1 within a stratum, or L1 vs L2), and limit the claim's scope to match.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Kill criteria K1 and K2 can fire, and A2 is not met by a layout-blind predictor",
+      "detail": "Within one stratum at fixed die size, the stratum-mean (layout-blind) predictor's p95 pair error on Tj max is 2.95\u20137.56 K at 60 W, about half that at 30 W. It fails A2 (0.5 K) by a wide margin and would fire K1 (1.5 K) at 60 W. A die-size-aware cell-mean lookup reaches 3.4\u201320 % of the die-local rise, so K2 (15 %) can fire for a layout-ignorant L1 on high-die-count strata. This part of the claim survived the check.",
+      "evidence": "A2-null p95 |\u0394Tj|: side_by_side-6 7.56 K, interleaved-6 7.24 K, u_shaped-5 5.17 K, u_shaped-2 3.26 K, interleaved-3 2.95 K.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Built a scratch 3D finite-volume steady conduction model in $TMPDIR (not repository code). It uses the default_dbc_stack layers plus a 50 \u00b5m SAC305 die attach (k 58) and a 180 \u00b5m SiC die (k 370), the 86\u00d756 mm baseplate box from moduleforge.generate, the 70\u00d740 mm substrate footprint, patterned top Cu from the layout traces, h = 5000 W/(m\u00b2 K) to 65 \u00b0C at the baseplate bottom, and 60 W uniform over each die top.",
+    "Verified the scratch model: energy balance Q_out/Q_in = 1.000; mean baseplate-bottom temperature 94.9 \u00b0C equals the analytic 65 + Q/(hA) = 65 + 720/(5000\u00b74.816e-3); lateral grid study 2/1/0.5 mm puts the hottest die at 171.43/170.47/170.02 \u00b0C; doubling the z cells changes it by 0.05 K.",
+    "Solved 12 fixed-die-size layouts in each of 5 strata from generate_layouts (side_by_side-6, interleaved-3, u_shaped-2, interleaved-6, u_shaped-5). Tj max ranges at 60 W, constant k: 177.7\u2013187.3, 149.7\u2013153.1, 132.9\u2013136.7, 166.8\u2013174.9 and 167.9\u2013174.8 \u00b0C.",
+    "Computed the F2 null metrics per stratum. Stratum-mean A2 pair-error p95: 7.56/2.95/3.26/7.24/5.17 K. Stratum-mean spread A4 error p95: 1.32/0.45/0.63/1.19/0.41 K. Die-position (per-switch) spread ratio to the stratum mean: 0.51/0.74/0.86/0.78/1.04. Die-position lookup A3 p95: 7.5/3.4/3.1/6.8/5.2 %. Cell-mean A3 p95: 19.7/7.4/3.4/20.0/14.3 %.",
+    "Hand estimate of the k(T) effect: the 1D resistance under the die is about 2.8e-5 m\u00b2K/W, of which Al2O3 is about 1.6e-5. With Al2O3 k falling to about 17 W/(m K) near 120 \u00b0C, the die-local rise grows by about 15\u201325 %, which is +10\u201315 K on the hottest strata at 60 W.",
+    "Read moduleforge.generate.halfbridge (die sizes 4.0\u20135.5 mm on a 0.5 mm grid, die gap 1.5\u20132.5 mm, baseplate box), geometry.stack (default DBC layers, no die layers) and geometry.layout.Die (attach 50 \u00b5m, die 180 \u00b5m)."
+  ],
+  "caveats": [
+    "The Tj figures come from my own scratch model with constant room-temperature conductivities, not from the D0006 L2. Constant k is a lower bound on Tj in this temperature range; the k(T) increase is a hand estimate, because a Picard k(T) sweep over all strata and die sizes was blocked when the sandbox denied further Bash calls.",
+    "The null metrics are in-sample leave-one-out over 12 layouts in each of 5 of the 15 strata, at one die size per stratum, which is optimistic for the dev-trained lookups. The 30 W level was not solved separately; in a constant-k model it is half the 60 W rise.",
+    "The earlier reviews (T0127, T0128, T0131, T0132) are not in this checkout, so the 5.6 % die-position figure and the '172\u2013244 \u00b0C at 100 W' estimate could not be checked against their source. My per-stratum results agree with a pooled figure of about 5.6 %.",
+    "If the top load is lowered (for example to about 40\u201345 W) or the hot strata are derated, the remaining findings are limits on scope, not grounds to reject: K1 and K2 can fire, A2 is far from being met by a layout-blind predictor, and A5 blocks the stratum-mean and die-position nulls when pooled."
+  ]
+}

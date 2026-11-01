@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T19:00:25+00:00 from repository state — do not edit_
+_generated 2026-11-01T19:01:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -9,7 +9,7 @@ _generated 2026-11-01T19:00:25+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | draft | - | 0/1 | $9.92/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
+| O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
@@ -17,18 +17,16 @@ _generated 2026-11-01T19:00:25+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 6 | $9.92 | 250945 | 153383 | 25 | 0 |
+| O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 103, failed: 3, running: 1
+cancelled: 29, done: 104, failed: 3
 
-- T0136 `running` critic/review: Review OBJ-O002 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T06:54:36+00:00 run_started {"run": "T0131-critic-20261031T235436-0912", "task": "T0131", "role": "critic", "session": "3f771395-07e2-425e-8443-f03c2663d90b"}
 - 2026-11-01T06:56:31+00:00 run_finished {"run": "T0130-critic-20261031T234934-6494", "status": "completed", "cost": 1.748829, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T06:56:33+00:00 run_started {"run": "T0132-critic-20261031T235633-7b24", "task": "T0132", "role": "critic", "session": "64448faf-9ad3-4ca6-b929-713310a5a12d"}
 - 2026-11-01T07:03:06+00:00 run_finished {"run": "T0131-critic-20261031T235436-0912", "status": "completed", "cost": 2.032035, "subtype": "success", "report": "structured_output"}
@@ -43,3 +41,4 @@ cancelled: 29, done: 103, failed: 3, running: 1
 - 2026-11-01T18:51:50+00:00 run_finished {"run": "T0134-critic-20261101T104320-076f", "status": "completed", "cost": 1.934152, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T18:51:52+00:00 run_started {"run": "T0136-critic-20261101T105152-385e", "task": "T0136", "role": "critic", "session": "5446742d-3f02-4dd8-8907-ffa67e21f65b"}
 - 2026-11-01T19:00:23+00:00 run_finished {"run": "T0135-critic-20261101T104953-e3b7", "status": "completed", "cost": 2.060116, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T19:01:12+00:00 run_finished {"run": "T0136-critic-20261101T105152-385e", "status": "completed", "cost": 1.518633, "subtype": "success", "report": "structured_output"}
