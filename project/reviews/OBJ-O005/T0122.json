@@ -1,0 +1,93 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "K1 cannot fire for any L1 at least as informative as a random within-stratum pick",
+      "detail": "K1 needs the lower 95% bound of the median-over-strata top-1 regret to exceed 5%. On this sample design (about 100 layouts within the 200 CPU-h budget, so about 15 strata of 6), even a pick made with no information has a median regret of only about 7%. Its lower bound rarely clears 5%. An L1 whose within-stratum ordering is poor still has a median regret of 2% or less. So K1 fires only for a predictor worse than random (for example, argmax L1). The regret route to decision_if_fail, which is the decision this objective exists for, cannot be reached. FAIL can come only from K2 (ordering). This contradicts the claim that the kill criteria can actually fire.",
+      "evidence": "E002 run E002-20261016T054426-b69a (15 strata x 6). Random picker: K1 fired in 1/200 samples with a stratified bootstrap and 66/500 with a cluster bootstrap over strata; mean median regret 0.068\u20130.070. Simulated L1 = L2 + N(0, s) in log space, with within-stratum log-L2 SD 0.057 (from E002): K1 fired in 0/40 samples at every s from 0.005 to 0.08, i.e. Spearman 0.99 down to 0.55 (median regret at s = 0.08 was only 0.016). Anti-L1 (argmax) fires: CI [0.099, 0.164].",
+      "suggested_check": "Define K1 relative to what a random pick loses in the same stratum, or lower its threshold. Then show by simulation on dev rows that it fires for a predictor at the null's information level.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Wide band of L1 quality gives INCONCLUSIVE almost surely; A2's 0.90 is inherited from O001, not derived from the decision",
+      "detail": "In the simulation, within-stratum L1 noise of 0.03\u20130.06 (Spearman about 0.87 down to 0.66) gave INCONCLUSIVE in 117 of 120 samples. Across that band the median regret stayed at 0.008 or below, under the 2% decision threshold, yet PASS never occurred. A2's lower bound of 0.90 and A3 block it, and K1 cannot fire. At noise 0.02 (Spearman about 0.93), PASS occurred in only 25% of samples. Even at the noise level estimated from E002 (residual SD 0.015), A2 is the binding criterion (26/30 pass). With max_evaluations 2, the decision between L1-only and multi-fidelity search stays unresolved for plausible intermediate L1 quality. The 0.90 threshold is justified as 'the same level O001 required', not by what L1-only search can afford to lose.",
+      "evidence": "Verdicts per 40 simulated samples (15x6 strata, stratified percentile bootstrap): noise 0.01 PASS 40; 0.02 PASS 10 / INC 30; 0.03 INC 40; 0.04 INC 40; 0.06 INC 37 / FAIL 3; 0.08 FAIL 22 / INC 18.",
+      "suggested_check": "Run a design-time operating-characteristic simulation over L1 quality as part of the F4 power analysis, and derive A2 (or drop it) from the regret the decision can tolerate.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "CI method unspecified; the natural stratified bootstrap gives anti-conservative or degenerate bounds for A1 and A3",
+      "detail": "Top-1 regret is computed against a minimum. Resampling layouts within a stratum drops the true best from many resamples, which biases the bootstrap regret low. In one adversarial case the A1 upper bound fell below the point estimate. For L1 on E002, the A1 bound is degenerate at [0, 0] and the A3 bound at [1, 1] (all 127 pairs correct). A3 pairs share layouts, so a binomial interval on pairs is also too narrow. Since the pass criteria are judged on the CI bound, the bound must be a real uncertainty statement.",
+      "evidence": "Adversarial case: point A1 = 0.0109, but the stratified-bootstrap upper bound is 0.0036 (the cluster bootstrap over strata gives 0.0318). Anti-L1 point regret 0.180 with stratified CI [0.099, 0.164], which excludes the point. L1 on E002: A1 CI [0, 0].",
+      "suggested_check": "Fix the CI method in the objective: a cluster bootstrap over strata (or an order-statistic interval) for A1, and an interval that accounts for pair dependence for A3.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The hypothesis says 'within each stratum'; A1 only tests the median stratum",
+      "detail": "The median over strata is at most 2% whenever more than half the strata have small regret. L1 can therefore lose 2\u20135% in up to 7 of 15 strata without failing A1. A3 only catches losses of 5% or more. In the adversarial case below, A2 and A3 happened to block a PASS, A3 only narrowly (lower bound 0.944 against 0.95), so this protection is incidental. A PASS would therefore not establish the stated per-stratum hypothesis.",
+      "evidence": "E002 with L1 values of the best and second-best layout swapped in the 7 strata whose gap is 2\u20135%: per-stratum regrets are 6 zeros, 0.009, 0.011, then seven values between 0.029 and 0.048. Results: A1 point 0.011 (passes); A2 lower bound 0.861; A3 lower bound 0.944.",
+      "suggested_check": "Either restate the hypothesis as a median, or use an upper quantile, the mean, or the share of strata with regret above 2% as the A1 statistic.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "decision_if_pass extends random-sample evidence to search that selects candidates",
+      "detail": "E005 draws about 6 random layouts per stratum. O003 would instead take the argmin of L1 over many candidates chosen by an optimizer, which pushes toward the geometries where L1 is most biased. C002 records die-count-dependent bias and an unconverged mesh, both systematic errors a search can exploit. Under independent noise, regret grows only modestly with pool size. Systematic errors that a search exploits are not tested by this design. L2 audits of the final candidates are the only safeguard.",
+      "evidence": "Independent noise 0.015, log-L2 SD 0.057: mean regret 0.0026 / 0.0035 / 0.0047 / 0.0062 and P(regret > 2%) 0.049 / 0.061 / 0.084 / 0.133 for pool sizes N = 6 / 20 / 100 / 1000.",
+      "suggested_check": "Add a caveat that the decision covers random generator draws only, or include optimizer-selected candidates in E005's sample.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 cannot be recomputed with the existing mfos.metrics; a protected-path change is needed",
+      "detail": "discordance_rate and discordance_by_gap pool all pairs, including pairs across strata, and take no strata argument. A3 is also stated as an accuracy (>= 0.95), while the library returns a discordance rate. Rules v2 require a recompute entry or an exemption, so E005 needs a new metric in tools/mfos, which is a protected path, before registration. The notes do not mention this.",
+      "evidence": "tools/mfos/mfos/metrics.py lines 117\u2013135; evaluate.py lines 414\u2013421.",
+      "suggested_check": "Add a within-stratum pair-discordance metric with founder approval, or restate A3 as a discordance rate of at most 0.05 and supply such a metric.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "F1's precision rule is ill-posed for A1",
+      "detail": "The difference that enters A1 is L2_inf(pick) minus min L2_inf, which is zero whenever L1 picks the best layout (13 of 15 strata in E002). So 'error estimate <= 1/4 of the smallest delta' cannot hold. Excluding such strata would remove exactly L1's successes. A1 only needs the reference error to be small against the 2% threshold.",
+      "evidence": "E002 interleaved:5: the best and second-best layouts differ by 0.06% while the error estimate is 0.23%. The maximum pred_err in any stratum is 0.0034.",
+      "suggested_check": "Apply the quarter-delta rule only to A3 pairs; for A1, require the error estimate to be at most about 0.5%.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "group_selection_regret breaks ties by row order",
+      "detail": "np.argmin takes the first row of a stratum. Any null predictor with ties (for example, constant within a stratum) then gets a regret set by how the runner ordered its rows. If a tied null happens to meet A1, the evaluator marks A1 non_discriminating and can block a valid PASS.",
+      "evidence": "In E002 row order, the best layout is the first row of its stratum in 3 of 15 strata.",
+      "suggested_check": "Specify continuous seeded nulls, or random tie-breaking, in E005.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The null predictors tested on E002 fail every pass criterion",
+      "detail": "A random within-stratum pick fails A1 in 200/200 samples. A loop-area proxy and a plane-distance proxy fail A1 at the upper bound and fail A2 and A3 clearly. L1 meets all three on E002. The part of the claim that no pass criterion is met by an information-free predictor holds for the nulls tested.",
+      "evidence": "area: A1 0.031 [0, 0.136], A2 -0.128, A3 61/127. plane_dist: A1 0.046 [0.011, 0.117], A2 0.330, A3 87/127. L1: A1 0 [0, 0], A2 0.977, A3 127/127 (2\u20135% gap pairs 53/57; <2% pairs 27/41).",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed per-stratum top-1 regret on E002 rows and reference (15 strata x 6) for L1, a random pick, the worst pick, and the loop-area and plane-distance proxies",
+    "Computed the within-stratum demeaned Spearman and the pair accuracy for gaps of 5% or more, 2\u20135% and under 2%, for L1 and the geometric proxies",
+    "Simulated K1 firing for a random picker (stratified bootstrap: 200 samples; cluster bootstrap over strata: 500 samples) and for an anti-L1 picker",
+    "Simulated a noise model fitted to E002 (slope 1.067, residual SD 0.0149, log-L2 SD 0.057) to map PASS/FAIL/INCONCLUSIVE rates and per-criterion pass rates against L1 quality",
+    "Built an adversarial E002 case (best and second-best L1 values swapped in 7 strata) to test whether A1 can pass while the per-stratum hypothesis fails, and compared the stratified and cluster bootstrap bounds",
+    "Simulated regret growth with pool size (N = 6 to 1000) under independent L1 noise",
+    "Read evaluate.judge (conservative-bound and fail-certainty logic, null non-discrimination) and the mfos.metrics function set to check recomputability of A1\u2013A3 and tie handling",
+    "Checked the F1 precision rule against E002 best/second-best gaps and pred_err"
+  ],
+  "caveats": [
+    "The simulations assume E005 strata resemble E002 (15 strata x 6, within-stratum log-L2 SD about 0.057) and model L1 error as independent Gaussian noise; E005's real sizing is left to a power analysis that has not been done.",
+    "Larger pools per stratum would raise a random pick's regret and make K1 more reachable, but the 200 CPU-h budget (E002 used 172 CPU-h for 90 layouts) caps the design near E002's size.",
+    "The CI method for each metric is not fixed by the draft. Conclusions about bounds were checked under both a stratified bootstrap of layouts and a cluster bootstrap over strata.",
+    "E002 data has already been seen; it was used here only for design analysis, not as evidence for the hypothesis."
+  ]
+}
