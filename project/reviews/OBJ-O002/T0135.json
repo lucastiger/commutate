@@ -1,0 +1,62 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "At 60 W per die the F1 Tj \u2264 175 \u00b0C sanity gate is likely to fail (INVALID), and F1's stated remedy contradicts the frozen hypothesis",
+      "detail": "Claim part 3 says the thresholds and the sample can resolve the decision. The hypothesis and scope_in fix 30 and 60 W per die with k(T). F1 gates E007 on 'Tj max at 60 W at most 175 \u00b0C on at least 90 % of layouts'. The generator draws die size from uniform(4.0, 5.5) snapped to 0.5 mm, i.e. {4.0, 4.5, 5.0, 5.5} with probabilities {1/6, 1/3, 1/3, 1/6}, one size per stratum. I ran a coarse finite-volume model of the repo's default DBC stack plus die (180 \u00b5m) and attach (50 \u00b5m). It has constant k, 65 \u00b0C coolant and h = 5000. Results at 60 W: every 6-die stratum with 4.0 mm dies reaches 177-194 \u00b0C; 6-die with 4.5 mm dies reaches 171-183 \u00b0C; the 5-die/4.0 mm stratum reaches 170-177 \u00b0C. Temperature-dependent conductivity, which the objective requires, raises these further: Al2O3 k falls by about 25-30 % at ceramic temperatures of 120-150 \u00b0C, and the ceramic carries roughly 35-45 K of the local rise, so I estimate about +10 K. My hand estimate of P(more than 10 % of the 150 layouts exceed 175 \u00b0C) is about 0.25 at constant k and about 0.9 with k(T). Each stratum is 6.7 % of the layouts, so two hot 6-die strata already break the 90 % gate. The draft's own figure (T0132: 172-244 \u00b0C at 100 W) scales linearly to at most 172 \u00b0C at 60 W, a 3 K margin before k(T). The inconsistency: F1's response is 'lower the load under a new experiment id ... the hypothesis is untouched'. But the load is written into hypothesis.statement and scope_in, so lowering it changes frozen fields and needs re-approval. As drafted, the likely outcome is an INVALID run whose stated repair path is unavailable.",
+      "evidence": "Scratch FV model ($TMPDIR/t135/fv.py; energy balance |Q_out/Q_in - 1| = 2e-13). Tj max at 60 W, constant k: side_by_side 6: 193.9/189.0 (4.0 mm), 179.1/183.1 (4.5 mm), 171.3/172.9 (5.0 mm); interleaved 6: 177.4/182.5 (4.0 mm), 171.2/170.9 (4.5 mm); u_shaped 6: 188.3/191.3 (4.0 mm), 174.8/175.7 (4.5 mm), 165.4/169.4 (5.0 mm); interleaved 5: 176.7/170.4 (4.0 mm). A 10-layout side_by_side-6/4.5 mm sample: 8 of 10 above 175 \u00b0C. Die sizes from src/moduleforge/generate/halfbridge.py:110.",
+      "suggested_check": "Before approval, solve the hottest cells (each family \u00d7 6 dies \u00d7 4.0/4.5 mm) with k(T) on the planned die and attach stack, then pick a load (or a per-stratum die-size floor) that leaves margin on the 90 % gate, or move the load out of the frozen hypothesis text so F1's repair path is real.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A4 (spread error \u2264 1 K) is nearly met by the layout-ignorant stratum-mean-spread predictor; F2's dev check on it is a coin flip",
+      "detail": "Claim part 2 says no criterion would be met by a predictor that ignores the decision-relevant information. On simulated rows (6 strata \u00d7 10 layouts, 60 W), predicting each switch's spread by the stratum mean gives a pooled p95 error of 1.04 K against A4's 1.0 K threshold. Per stratum: 0.16 K (sbs-2), 0.37 K (int-3), 0.33 K (u-4), 0.83 K (int-5), 0.85 K (u-6), 1.62 K (sbs-6). A per-(stratum, switch) mean would do better still. So A4 alone carries almost no layout information; only A5 does. The draft acknowledges this ('so A4 cannot pass on a uniform stratum alone'). But F2 requires every null to fail A2-A5 at its point estimate on dev rows before registration, so whether the stratum-mean null fails A4 on dev rows is close to random. If it passes, F2 says 'revise E007's design; a threshold change is a founder decision', which stalls registration for a reason no E007 design change can fix.",
+      "evidence": "Scratch rows from the FV model: per-stratum spread mean/sd (K): sbs-2 0.46/0.10, int-3 5.06/0.21, u-4 9.09/0.20, int-5 11.85/0.47, sbs-6 16.81/0.92, u-6 18.13/0.42; pooled stratum-mean null p95 = 1.04 K.",
+      "suggested_check": "Recompute the stratum-mean and (stratum, switch)-mean spread null on the real L2 dev rows now. Either tighten A4 or state that F2's null requirement for A4 is carried by A5 (founder decision).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Pooled p95s are dominated by 5-6-die strata: A3 and A5 do not show L1 beats a die-position lookup in 2-4-die strata",
+      "detail": "In my simulated rows an in-sample die-position lookup (mean Tj by stratum, switch and die index) has a p95 relative error of 2.4 % (sbs-2), 4.0 % (int-3) and 2.7 % (u-4), against 6.1-8.1 % in 5-6-die strata. The pooled value of 6.2 % matches the draft's 5.6 %. So in two of three low-die-count strata the lookup already meets A3's 3 %, and A3's discrimination comes from the large-die-count strata. Likewise, A5's denominator, the null's spread error, is about 1 K pooled but only 0.16-0.37 K in 2-4-die strata. A pooled pass therefore supports 'L1 beats a position lookup and captures spread variation' only where die counts are high. F3 reports per-stratum results but does not gate on them.",
+      "evidence": "Per-stratum p95 |Tj - position mean| / (Tj - mean baseplate T) from the scratch rows: sbs-2 0.0243, int-3 0.0397, u-4 0.0272, int-5 0.0614, u-6 0.0629, sbs-6 0.0813; pooled 0.0621.",
+      "suggested_check": "Report A3/A5 and their nulls per die count. Either gate them or limit the claim's scope to the pooled population.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Dev-trained lookups keyed on die size are undefined for most test strata; the stronger in-sample null is not declared for A3",
+      "detail": "With one die size drawn per stratum from 4 values, a dev sample has the same die size as the test sample in a given stratum with probability of only about 0.28. Nulls (b) and (c), trained on dev rows and keyed on die size, then have empty cells, and the draft does not say what they fall back to. They are also runner-computed columns. The evaluator already supports a 'stratum_mean' null over arbitrary strata columns (mfos.metrics.null_column), recomputed from the test rows. An in-sample mean over [family, dies, load, switch, die_index] is the strongest layout-ignorant predictor and needs no dev data.",
+      "evidence": "tools/mfos/mfos/metrics.py null_column (kinds 'stratum_mean' and 'column'); halfbridge.py:110 die-size draw.",
+      "suggested_check": "Declare the A3 null as stratum_mean with strata [family, dies, load, switch, die_index] in E007.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Random generator pairs are not the pairs search produces",
+      "detail": "A2's p95 is taken over random same-stratum pairs from the generator. O003's optimiser will choose candidates at the extremes of the objective, where L1 error may correlate with the selection. A2 therefore does not bound L1 error at search-selected candidates. Under D0008 L2 audits the finalists, which mitigates this, but the bound should be stated as distributional.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the evaluator (tools/mfos/mfos/evaluate.py judge/_annotate/null_check) and metrics (bootstrap_ci, null_column). Pass criteria use the upper end of a two-sided percentile interval (so 'upper 95 % bound' is in effect a one-sided 97.5 % bound, which is conservative). Kill criteria need the lower end above the threshold. A null counts as non-discriminating only if its own conservative bound meets the threshold.",
+    "Read the generator (halfbridge.py). Die size takes 4 discrete values on the 0.5 mm grid. Within a stratum only die gap (1.5/2.0/2.5 mm), trace gaps and extensions, and the row start vary.",
+    "Built a scratch 3D finite-volume conduction model of the default DBC stack (baseplate, solder, backside Cu, Al2O3, patterned top Cu, die attach, SiC die; h = 5000 at the baseplate bottom; 60 W per die uniform over the die top). Energy balance holds to 2e-13. I checked the magnitudes against a hand estimate (ceramic 1D with 45\u00b0 spreading plus baseplate spreading length sqrt(k t / h) \u2248 15 mm).",
+    "Solved 60 layouts (6 strata \u00d7 10, fixed die size per stratum) plus 32 layouts covering every die size in the 5- and 6-die strata.",
+    "A2 null (stratum mean, i.e. predicted difference 0): pooled p95 |\u0394Tj,max| = 7.4 K at 60 W (about 3.7 K at 30 W); the smallest stratum p95 is 2.86 K. A2 discriminates by a factor of about 15, and K1 (lower bound above 1.5 K) can fire for an L1 no better than the null.",
+    "K2 can fire: the within-switch spread reaches 17-18 K in 6-die strata, so an isolated-die model with no inter-die coupling would be off by well over 15 % of the die-local rise.",
+    "A3 null (in-sample die-position mean): pooled p95 6.2 %, consistent with the draft's 5.6 %; per stratum 2.4-8.1 %.",
+    "A4 null (stratum-mean spread): pooled p95 1.04 K against the 1.0 K threshold; per stratum 0.16-1.62 K.",
+    "Tj max at 60 W with constant k across all die sizes in the 5- and 6-die strata: up to 194 \u00b0C. I estimated the probability that F1's 90 % gate fails by hand, from die-size probabilities and per-cell exceedance."
+  ],
+  "caveats": [
+    "My thermal model is a coarse scratch check: 0.5 mm lateral cells, cell-centre die maxima, constant k, die-attach k = 200 W/(m K) and SiC 180 \u00b5m from the Die defaults. The k(T) effect (about +10 K at the hot end) is a hand estimate, not a Picard solve. The sandbox denied the k(T) run and the Monte Carlo script, so the F1 failure probabilities (about 0.25 at constant k, about 0.9 with k(T)) are hand calculations. If the D0006 L2 with the planned die and attach layers runs about 15 % cooler (the draft's T0132 figure suggests it might), the F1 risk falls to roughly 0.1-0.2. The inconsistency between F1's response and the frozen load still holds.",
+    "The simulated rows give magnitudes of the null errors, not L2-quality values. The A4 and A3 per-stratum conclusions should be confirmed on real dev rows from the D0006 solver.",
+    "The earlier review reports (T0127/T0128/T0131/T0132) are not in this snapshot. The 5.6 % lookup figure and the 172-244 \u00b0C range were taken as quoted in the draft.",
+    "Not examined: the F3 power and coverage simulation (it does not exist yet), and the new mfos.metrics functions the draft requires (protected, not yet written)."
+  ]
+}
