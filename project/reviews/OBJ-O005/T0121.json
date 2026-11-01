@@ -1,0 +1,68 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The sample cannot resolve the decision, and the kill criteria almost never fire under the stated null",
+      "detail": "The claim says the thresholds and the sample can resolve the decision and that the kill criteria can actually fire. At E002's within-stratum spread and size (15 strata \u00d7 6, about the largest sample the 200 CPU-h budget allows), a FAIL verdict needs K1 (median-regret lower bound > 5 %) or K2 (Spearman upper bound < 0.70). In simulation, an L1 with within-stratum Spearman 0.71 that misorders 13 % of the \u2265 5 % pairs gets FAIL 2 % of the time and INCONCLUSIVE 98 % of the time. Every noise level from Spearman 0.89 down to 0.71 is INCONCLUSIVE with probability \u2265 0.98. Even a zero-information random pick fires K1 only 14 % of the time, so K1 only fires for an anti-correlated predictor. The null as stated ('too little information to pick near-best layouts') covers exactly this 0.6-0.9 band, and there the experiment returns INCONCLUSIVE, not FAIL. decision_if_inconclusive then allows one re-evaluation and has no default architecture. E002's own exploratory interval [0.940, 0.983] puts real prior mass in the transition zone: at noise \u03c3 = 2 % (Spearman 0.947), P(PASS) is 0.48 and the rest is INCONCLUSIVE.",
+      "evidence": "Monte-Carlo on E002's L2_inf values (log L1 = log L2_inf + \u03c3\u00b7N(0,1); bootstraps: strata for A1, layouts within strata for A2/A3; 120 reps; 300 resamples). \u03c3=0.02: Spearman 0.947, P(PASS) 0.48, P(FAIL) 0.00. \u03c3=0.03: Spearman 0.891, accuracy on \u22655 % pairs 0.974, P(INC) 1.00. \u03c3=0.04: Spearman 0.827, accuracy 0.938, P(INC) 1.00. \u03c3=0.06: Spearman 0.706, accuracy 0.872, P(FAIL) 0.02, P(INC) 0.98. Random pick (1000 seeds): A1 met 0.000, K1 fires 0.142.",
+      "suggested_check": "Before approval, run the F4 power analysis against these thresholds. Then either move the kill criteria next to the pass thresholds (e.g. a kill criterion on A3's upper bound < 0.95, or K1 measured against the seeded-random regret), or make decision_if_inconclusive default to multi-fidelity search.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1's median over strata cannot establish 'within each stratum' and is lenient on its own",
+      "detail": "The hypothesis says 'within each stratum ... within 2 %'. A1 tests only the median stratum. Per-stratum regret is zero-inflated: L1 often picks the exact best, so the median is 0 even when L1 is weak. On E002's L2 values the loop-area proxy has within-stratum Spearman \u22120.13, yet its median regret is only 3.1 % (only its 15.7 % upper bound fails A1). When A1 passes at \u03c3 = 3 % (80 % of runs), 15 % of strata average more than 2 % regret and the worst stratum has a median regret of 5 % (p90 8 %). A PASS still needs A2 and A3, but none of the criteria bounds the tail of per-problem regret, and O003 runs one problem in one stratum at a time.",
+      "evidence": "Loop-area proxy per-stratum regrets [0.191 0.031 0.19 0.117 0 0.16 0 0 0.094 0.157 0 0 0.136 0.02 0]. At \u03c3=0.03, among runs where A1 passes: 0.148 of strata have regret > 2 %; worst-stratum regret median 0.050, p90 0.080.",
+      "suggested_check": "Either restate the hypothesis as typical-stratum regret, or add a criterion on an upper quantile (e.g. the 80th percentile) of per-stratum regret.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Top-1 of a few random generator draws does not represent L1-alone search",
+      "detail": "decision_if_pass sends O003 to L1-only search. A search takes the argmin over a large, optimized candidate set and so exploits L1's error structure (winner's curse; L1 is not mesh-converged, with family- and die-dependent bias). E005 measures the argmin over a small random set per stratum, and the set size is not fixed in the hypothesis: it is chosen later by the power analysis. Regret depends directly on that size, so A1's 2 % means something different at n=6 than at search scale. This is also a design-time forking path: fewer layouts per stratum make A1 easier.",
+      "evidence": "Hypothesis text: 'choosing the layout with the lowest L1 ... within 2 % of the stratum's lowest L2_inf', with no candidate-set size. Notes: 'Size the number of strata and layouts per stratum by power analysis'.",
+      "suggested_check": "Fix the candidate-set size in the objective, or add a stratum built from L1-optimized candidates (e.g. the L1-best few of many generator draws) so that selection effects are measured.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The compute budget caps the evaluation sample at about E002's size, before dev rows",
+      "detail": "E002 used about 172 CPU-h for 90 layouts (about 1.9 CPU-h per layout). The 200 CPU-h budget therefore buys about 105 L2_inf layouts in total. F2 requires null baselines on dev rows, and F4 requires a power analysis on dev seeds; both need L2_inf on dev layouts. The evaluation sample is therefore at or below the size that the simulation above shows cannot resolve the 0.6-0.95 Spearman band.",
+      "evidence": "D0005 per-layout costs; F5 cites 172 CPU-h for 90 layouts; budget.cpu_hours: 200.",
+      "suggested_check": "Size eval and dev rows explicitly within the budget, or ask the founder for burst compute under F5 before approval.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The F1 precision exclusion rule is undefined for A1 and is binding for a noticeable share of pairs",
+      "detail": "E002's L2_inf error estimates (pred_err) are 0.12-0.34 %, so the 4\u00d7 rule excludes deltas up to about 1.4 %. In E002, 29 of 225 within-stratum pairs (13 %) fall below 4\u00d7 the largest error. A1 is a per-stratum quantity: when L1's pick is within about 1 % of the best, the stratum's best is indeterminate. The objective does not say whether that stratum is excluded (which removes near-successes), counted as zero regret, or kept.",
+      "evidence": "pred_err from e002_reference.json; pair-difference count on E002 L2_inf.",
+      "suggested_check": "Define in E005 how A1 treats strata whose top candidates fall within 4\u00d7 the error estimate.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 and A3 carry little information from low-spread strata, the ones most like derivative candidates",
+      "detail": "Pooled demeaned Spearman is weighted toward strata with large spread. A3 uses only pairs that differ by \u2265 5 %: in E002, interleaved:3 and u_shaped:3 (CV about 2 %) contribute 2 eligible pairs each, against 7-12 in other strata. Those are the near-equivalent strata. Pairs share layouts, so A3's CI needs a clustered or within-stratum layout bootstrap, and the objective does not specify one.",
+      "evidence": "Eligible \u2265 5 % pairs per stratum: I2 10, I3 2, I4 9, I5 8, I6 9, S2 11, S3 10, S4 11, S5 10, S6 12, U2 7, U3 2, U4 8, U5 9, U6 9 (127 of 225).",
+      "suggested_check": "Require a layout-clustered bootstrap for A3, and report per-stratum results for low-CV strata.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos evaluate.judge: pass criteria use the pessimistic CI bound; fail criteria need the CI wholly on the failing side (K1 needs lower bound > 0.05, K2 needs upper bound < 0.70).",
+    "From E002 L2_inf (90 layouts, 15 strata): per-stratum CV 0.020-0.102, worst-pick regret 5.8-31 %, expected random-pick regret 3.0-14.7 % (median 8.0 %).",
+    "Seeded random-pick null over 1000 seeds with a strata bootstrap of the median: P(A1 met) = 0.000, P(K1 fires) = 0.142.",
+    "Loop-area geometric null on E002: per-stratum regrets, median 3.1 % with upper bound 15.7 %; pooled demeaned Spearman \u22120.128; accuracy 0.48 on \u2265 5 % pairs.",
+    "Monte-Carlo verdict probabilities over L1 noise \u03c3 \u2208 {0.5,1,1.5,2,3,4,6} % using the objective's three pass and two kill criteria: the transition to INCONCLUSIVE starts near Spearman 0.95, and P(FAIL) \u2264 0.02 down to Spearman 0.71.",
+    "Tail regret when A1 passes: at \u03c3 = 3 %, 15 % of strata exceed 2 % regret and the worst stratum's median regret is 5 %.",
+    "Counted within-stratum pairs by L2_inf difference: 127 at \u2265 5 %, 57 at 2-5 %, 41 below 2 %; 29 below 4\u00d7 the largest error estimate (F1 exclusion zone).",
+    "Checked compute: 200 CPU-h at E002's about 1.9 CPU-h per layout gives about 105 L2_inf layouts, including the dev rows that F2 and F4 require."
+  ],
+  "caveats": [
+    "The null-predictor part of the claim mostly holds on E002's L2_inf data: a seeded random pick never met A1 (0 of 1000), and the loop-area proxy fails A1 (upper bound 15.7 %), A2 (Spearman \u22120.13) and A3 (accuracy 0.48). A stratum-mean predictor is constant within strata, so it cannot meet A2 or A3, provided ties in A1's argmin are broken independently of row order.",
+    "The simulations assume Gaussian log-noise on E002's actual L2_inf values, with E002's stratum structure (15 \u00d7 6). E005's real spread and size are not fixed yet. Larger strata or different spread change the numbers but not the gap between the pass and kill thresholds.",
+    "A permission hook rejected several scripts that read the E002 artifacts. I continued with self-contained scripts that embed the L2_inf, loop-area and stratum values I had already printed, and I did not recompute the joint L1-versus-L2 statistics from the files. L1's actual per-stratum regrets on E002 are therefore not part of these checks."
+  ]
+}
