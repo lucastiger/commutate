@@ -1,0 +1,82 @@
+id: O006
+title: The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix
+kind: build
+priority: 1
+risk: medium
+depends_on: []
+unlocks: [O002, O004]
+hypothesis:
+  statement: >-
+    The in-house finite-volume thermal L2 solver of D0006 (steady state, k(T) by Picard iteration, uniform h at the
+    baseplate, layer- and edge-conforming rectilinear grid, numpy/scipy/pyamg), with die-attach and SiC die layers added
+    to LayerStack, reproduces analytic and semi-analytic conduction solutions within 0.2 % of the temperature rise: the
+    1D series resistance of a uniformly heated multilayer; the single- and multi-source rectangular flux-channel cases of
+    Muzychka, Culham & Yovanovich (2003); and manufactured solutions with temperature-dependent conductivity.
+  null_hypothesis: >-
+    The in-house thermal L2 cannot be verified to the precision O002 needs; D0006's fallback (scikit-fem) or another
+    reference is required.
+  why_it_matters: >-
+    Three draft-review rounds of O002 and O004 (project/reviews/OBJ-O002, OBJ-O004, T0125-T0136) showed that their
+    thresholds cannot be fixed honestly until a few facts are measured: the thermal operating envelope (power per die
+    that keeps Tj within the SiC rating on the generator's layouts), the null predictors' errors per stratum, the
+    inductance reference's convergence on module-scale external geometry, and whether FastHenry is usable at that scale.
+    This objective builds and verifies the thermal reference (the one O002 criterion the critics accepted) and runs those
+    pilots as exploratory design work, so O002 and O004 can be finalised with measured parameters (founder decision
+    2026-11-01).
+  decision_if_pass: >-
+    Use the verified thermal L2 as O002's reference (code_must_match); finalise O002 and O004 from the pilot notes and
+    run one final draft review of each.
+  decision_if_fail: >-
+    Switch the thermal reference to D0006's fallback (scikit-fem) and re-verify under a new experiment id; the pilots'
+    findings still inform O004.
+  decision_if_inconclusive: Same as fail.
+scope_in:
+  - steady-state conduction in the default DBC stack plus die attach and SiC die; constant and temperature-dependent k
+  - the analytic and manufactured cases named in the hypothesis, at grid resolutions the solver uses in O002
+scope_out:
+  - transient conduction; convection inside the cold plate; the L1 thermal model (O002)
+  - any sealed evaluation of O002 or O004 (the pilots below are exploratory design work, never evidence)
+evidence_plan: [E006]
+acceptance:
+  required_experiments: [E006]
+  pass_all:
+    - {id: A1, metric: E006.max_rel_err_vs_analytic, comparator: "<=", threshold: 0.002, uncertainty: {use: point},
+       description: "max over the verification cases of |dT_L2 - dT_analytic| / dT_analytic at the reported points (centroid, mean and surface maximum where the source tabulates them); deterministic, judged on the point value with the three-grid discretisation estimate reported"}
+  fail_any:
+    - {id: K1, metric: E006.max_rel_err_vs_analytic, comparator: ">", threshold: 0.01, uncertainty: {use: point},
+       description: "the solver misses an analytic case by more than 1 % of the rise"}
+  max_evaluations: 1
+failure_modes:
+  - id: F1
+    description: "Analytic reference evaluated wrongly (series truncation, transcription)"
+    detection: "sanity checks: each series converged (terms doubled change the value by < 1e-6 relative); published table values reproduced from the series to their printed digits before the solver is compared"
+    response: "experimental failure: fix the reference under a new experiment id"
+  - id: F2
+    description: "Discretisation error hidden by a lucky grid"
+    detection: "three-grid study per case with observed order reported; energy balance |Q_out/Q_in - 1| <= 1e-6"
+    response: "refine; report"
+  - id: F3
+    description: "Pilots leak into later sealed evaluations"
+    detection: "pilots use dev seeds and geometry outside O004's judged set only (PowerSynth 2D_Case_4, which has no published values, is the EM pilot module and is excluded from O004's benchmark set); pilot outputs are research notes, not evidence"
+    response: "a leaked layout or seed is excluded from O002/O004 evaluation"
+budget: {usd: 80, cpu_hours: 60, wall_days: 14}
+require_plan_approval: true
+notes: >-
+  Draft by the founder session of 2026-11-01 (founder decision: pilots before finalising O002 and O004; D0009 for the
+  day-60 gate). Build work (planner): (1) die-attach (cited material and k(T), e.g. SAC305 or sintered Ag) and SiC die
+  layers in moduleforge.geometry.stack; (2) the thermal L2 solver of D0006 in moduleforge.solvers with an honest
+  discretisation bound in meta['solver_tol']; (3) E006 (scientist; E001 pattern): rows per case and point (case, point,
+  dT_l2, dT_ref, grid), recompute with mfos.metrics.max_rel_err, sanity checks per F1/F2.
+  Pilots (investigate tasks; outputs are research notes under research/notes/, never evidence):
+  P1 thermal envelope: Tj max on generator layouts (all families, 2-6 dies, die sizes 4.0-5.5 mm) at 65 °C coolant and
+  h = 5000 W/(m² K) versus power per die, with and without k(T); the highest power per die keeping Tj max <= 175 °C on at
+  least 95 % of layouts per die size; recommended load levels for O002.
+  P2 thermal nulls: per-stratum errors of the stratum-mean, die-size cell-mean and die-position lookup predictors on dev
+  layouts at those load levels (A2-A5 statistics of the O002 draft), to set O002's thresholds and strata.
+  P3 EM convergence: l2_layout on PowerSynth 2D_Case_4 (reconstructed per D0007) and two perturbations of it, at 0.5,
+  0.25 and 0.125 mm and with thickness-layer and wire-filament refinement, at 10 and 20 MHz: absolute and pair-ratio
+  discretisation estimates and observed order.
+  P4 FastHenry feasibility: the same geometry through a Layout -> FastHenry exporter (SI metres, D0002), direct and
+  multipole solves at increasing refinement on a burst VM; memory, time, crashes and the extrapolated L; the
+  L2-FastHenry difference and ratio difference on this module.
+  After P1-P4 the founder session revises O002 and O004 from the pilot notes for one final draft review each.
