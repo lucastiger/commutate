@@ -1,0 +1,69 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The fixed sample and thresholds cannot resolve the decision at L1 quality calibrated to E002, so F4's P(PASS) >= 0.8 cannot be met",
+      "detail": "The objective fixes 15 strata, 12 candidates per stratum, the 2 % / 1 % thresholds and the Clopper-Pearson rule (pass only with at most 1 exceeding stratum of 15). Under the calibration F4 itself prescribes, the hypothesis is true in the model but the design passes it only 20-40 % of the time. With L1 errors at E002's within-stratum level, the true mean regret is about 0.76 % (below 1 %) and the true share of strata above 2 % regret is about 0.16 (below 0.30). Yet P(A1) is about 0.29, P(A2) about 0.25 and P(PASS) about 0.20 on real generator tails; a Gaussian model gives 0.35-0.38. The reason is that 'upper 95 % bound <= 0.30' with n = 15 needs at most 1 exceedance, so A1 effectively tests a share of about 5 % or less, not 30 %. P(PASS) >= 0.8 needs the within-stratum L1 residual to be about 1.0 % or less, against E002's 1.48 %. A finer L1 mesh does not close the gap (1.37 % at 0.5 mm), so the error comes from the model form, not the mesh. The only design choice left to E005 is the A2 bound method, and A1 alone limits power to about 0.3, so F4 would send E005 to 'redesign' with nothing left that a redesign may change. If it ran anyway, about 400 CPU-hours would most likely return INCONCLUSIVE, which maps to multi-fidelity search even when L1 alone is adequate. That is a wrong decision with probability about 0.6-0.8 in the plausible regime.",
+      "evidence": "E002 run E002-20261016T054426-b69a, within strata: regression of log L2_inf on log L1 gives slope 0.884 and residual SD 0.0148 (75 df); demeaned log(L2/L1) has SD 0.0167; per-stratum residual 0.0065-0.0298; the residual RMS for the lowest-L2 layout of each stratum is 0.0156, so no shrinkage at the best end. Real-tail simulation: 206 generate_layouts draws per stratum (seeds 55500-55514), L1 computed, L2 given L1 drawn from N(0.884\u00b7l1, sd). sd 0.0148: P(A1) 0.29, P(A2) 0.25, P(PASS) 0.20, mean per-stratum P(exceedance) 0.157. sd 0.011: P(PASS) 0.68. sd 0.0074: 0.99. Gaussian model calibrated per stratum: P(PASS) 0.35 (scale 1), 0.38 (slope-corrected). Clopper-Pearson upper bounds at n = 15: 0.181, 0.279, 0.363 for 0, 1, 2 exceedances. The A2 bound uses a t-approximation.",
+      "suggested_check": "Before approval, run the F4 operating-characteristic simulation with L1 noise from E002's conditional residual (1.4-1.5 %) and the real L1 tails of generator draws, then choose thresholds or the number of independent candidate sets so that P(PASS) >= 0.8 is reachable.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Kill criterion K1 cannot fire under the stated null or for any L1 consistent with E002",
+      "detail": "K1's denominator is the mean regret over all 12 candidates. It is dominated by the 6 random draws (mean regret about 18 %; about 11 % over all 12), which even an uninformative within-set choice beats easily. Take a pick that is random among the 6 L1-selected candidates: this is exactly the null's scenario, where L1 screens well but cannot choose among near-equivalent candidates. Its ratio is 0.25-0.33, and K1 fired in 0 of 1500 simulated evaluations. K1's point estimate exceeds 0.5 only when L1's within-stratum correlation with L2 falls to about 0.4 or below. E002 already excludes that: the post-hoc within-stratum Spearman is 0.977, CI [0.94, 0.98]. So E005 can in practice end only PASS or INCONCLUSIVE (the evaluator gives FAIL only when the K1 lower bound exceeds 0.5), and A-T1b could never be refuted. F4's requirement 'P(K1) >= 0.8 for a predictor with half the null's information' is not defined operationally. Under the natural reading (true ratio 0.5), P(K1) is at most about 0.05 by construction. The O003 decision is unaffected, because INCONCLUSIVE maps to the same multi-fidelity default. But the claim that 'the kill criteria can actually fire' is false in practice.",
+      "evidence": "Simulation: random-among-selected ratio median 0.334 (Gaussian) and 0.25-0.31 (real tails); P(K1 fires) 0.0 with a stratum-bootstrap lower bound, B = 500. With pooled residual scaled until mean within-stratum rho is 0.39, the L1 ratio median is 0.57; at rho 0.73 it is 0.27. Evaluator semantics: tools/mfos/mfos/evaluate.py lines 6-16.",
+      "suggested_check": "Define K1 relative to a random pick among the L1-selected half (or among the top candidates that multi-fidelity search would re-rank), and give 'half the null's information' an operational definition.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Whether the '6 further random draws' are fresh or taken from the remaining 194 is unspecified",
+      "detail": "If they are fresh draws, one of them has lower L1 than all 200 in about 3 % of strata (6/206). L1's pick then comes from the 'random' half, which blurs the selected_by_l1 split and the secondary metric that separates the selection effect. This happened in one of my 15 simulated strata (side_by_side, 5 dies).",
+      "evidence": "Real-tail simulation, seed 55503: a fresh draw had the lowest L1 in the 12-candidate set.",
+      "suggested_check": "State that the random half is drawn from the 194 draws not selected.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "F2 dev rows built from E002 cannot represent the L1-selected candidate structure",
+      "detail": "E002 has 6 random layouts per stratum and no top-6-of-200 selection. A null that fails A1/A2 on E002-style rows (wide within-stratum spread, CV 2-10 %) therefore says little about how it behaves on E005 sets, where half the candidates are an L1-selected tail. The null-baseline check performed before registration is weaker than the text implies.",
+      "evidence": "Spread of the 6 lowest L1 values of 200 draws: 1.7-8.3 % in log L1, compared with E002 random-draw CVs of 2-10 %.",
+      "suggested_check": "Build dev rows from fresh L1-only draws with L2 imputed from E002's conditional model, labelled as simulated.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "F4's simulation omits reference noise and the upward bias of regret measured against a minimum of 12 noisy values",
+      "detail": "Regret is measured against the minimum of 12 noisy L2_inf values, which biases it upward by roughly the per-candidate error, about 0.1-0.3 % at E002's pred_err. F1 allows up to 0.5 %. The effect is small next to the 1.5 % L1 residual, but it lowers power further and belongs in the OC simulation.",
+      "evidence": "Recomputed E002 pred_err: 0.115-0.337 %, median 0.173 %.",
+      "suggested_check": "Add L2_inf noise at the F1 limit to the F4 simulation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Checked and holding: the A1 arithmetic, uninformed predictors failing A1/A2, and the fail-side power",
+      "detail": "The Clopper-Pearson bounds confirm 'passes with at most 1 exceeding stratum'. The exact random pick has mean regret of about 11 %, and the loop_area_proxy picks lose up to 19 % in E002 strata (within-stratum Spearman -0.89 to 0.60), so neither meets A1 or A2. P(PASS | true share 0.35) = 0.014, which is at most 0.05. Set-relative regret fits the decision, because both candidate architectures share the L1 screening step.",
+      "evidence": "Computed from E002 rows and the binomial distribution.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed per-stratum L1-vs-L2_inf quality from E002 rows and reference (90 layouts, 15 strata): residual SD 1.48 % after slope correction (slope 0.884); per-stratum L2 CV 2-10 %; no residual shrinkage for the lowest-L2 layouts",
+    "Recomputed one-sided 95 % Clopper-Pearson upper bounds for n = 15 (0.181, 0.279, 0.363) and P(X <= 1 | p = 0.35) = 0.014",
+    "Gaussian operating-characteristic simulation of the O005 design (200 draws, top 6 by L1 plus 6 random, 15 strata) calibrated to E002: P(PASS) about 0.35-0.38",
+    "Real-tail simulation: generated 206 DRC-valid layouts per stratum with moduleforge.generate (seeds 55500-55514, not E002's), computed L1 at 20 MHz, imposed the E002 conditional L2-given-L1 model: P(PASS) 0.20 at E002 noise, 0.68 at 1.1 %, 0.99 at 0.74 %",
+    "K1 firing test: stratum-bootstrap lower bound of the ratio for a pick random among the L1-selected candidates (P(K1) = 0 in 1500 runs), and K1 point estimates as L1 correlation degrades",
+    "Checked that refining the L1 mesh (2, 1, 0.5 mm) barely reduces E002's within-stratum residual (1.46 %, 1.38 %, 1.37 %)",
+    "Checked uninformed and geometric null predictors on E002 (exact random pick, loop_area_proxy): both fail A1/A2",
+    "Read the evaluator's verdict logic (FAIL only when a fail criterion is definitely satisfied, otherwise INCONCLUSIVE)"
+  ],
+  "caveats": [
+    "The power simulations assume L1 errors are independent across candidates given L1, calibrated on E002's 90 random layouts (6 per stratum). If L1 errors are strongly positively correlated among similar L1-selected candidates, power would be higher; E002 cannot test that, although its residual shows no shrinkage for the best layouts.",
+    "The real-tail simulation uses one realization of 206 generator draws per stratum. The pass probabilities are indicative; the true values depend on the actual E005 draws.",
+    "The A2 bound was approximated with a t-interval. The E005 method (coverage >= 0.93) may differ slightly, but A1 alone limits P(PASS) to about 0.3 at E002 quality.",
+    "data/holdout was not read; E002's sealed seed was not used for generation."
+  ]
+}
