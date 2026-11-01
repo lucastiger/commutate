@@ -1,82 +1,98 @@
 id: O006
-title: The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix
+title: The thermal L2 reference matches converged analytic solutions, and design pilots measure what O002 and O004 must fix
 kind: build
 priority: 1
 risk: medium
 depends_on: []
-unlocks: [O002, O004]
+unlocks: [O002, O003, O004]
 hypothesis:
   statement: >-
     The in-house finite-volume thermal L2 solver of D0006 (steady state, k(T) by Picard iteration, uniform h at the
     baseplate, layer- and edge-conforming rectilinear grid, numpy/scipy/pyamg), with die-attach and SiC die layers added
-    to LayerStack, reproduces analytic and semi-analytic conduction solutions within 0.2 % of the temperature rise: the
-    1D series resistance of a uniformly heated multilayer; the single- and multi-source rectangular flux-channel cases of
-    Muzychka, Culham & Yovanovich (2003); and manufactured solutions with temperature-dependent conductivity.
+    to LayerStack, reproduces converged reference solutions within 1 % of each point's spreading rise (its rise above the
+    1D uniform-flux solution) and within 0.05 K absolute: (a) the converged single- and two-layer rectangular flux-channel
+    series of Muzychka, Culham & Yovanovich (2003) for their Cases 1a, 1b, 2 and 3; (b) a converged N-layer Fourier series
+    for the default stack with die attach and SiC die (laterally uniform layers, several die-sized sources); (c) a 3D
+    manufactured solution on the default stack geometry with patterned top copper and k varying by at least 30 % over its
+    temperature range; each on grids from the solver's frozen grid rule, with second-order convergence observed.
   null_hypothesis: >-
     The in-house thermal L2 cannot be verified to the precision O002 needs; D0006's fallback (scikit-fem) or another
     reference is required.
   why_it_matters: >-
-    Three draft-review rounds of O002 and O004 (project/reviews/OBJ-O002, OBJ-O004, T0125-T0136) showed that their
-    thresholds cannot be fixed honestly until a few facts are measured: the thermal operating envelope (power per die
-    that keeps Tj within the SiC rating on the generator's layouts), the null predictors' errors per stratum, the
-    inductance reference's convergence on module-scale external geometry, and whether FastHenry is usable at that scale.
-    This objective builds and verifies the thermal reference (the one O002 criterion the critics accepted) and runs those
-    pilots as exploratory design work, so O002 and O004 can be finalised with measured parameters (founder decision
-    2026-11-01).
+    Draft reviews of O002 and O004 (project/reviews/OBJ-O002, OBJ-O004, T0125-T0136) showed their thresholds need measured
+    inputs; O002 judges per-die Tj max, pair differences of 0.5 K and spreads of 1 K, which live in the spreading part of
+    the rise, not the film term. This objective builds and verifies the thermal reference at that resolution, and runs the
+    design pilots as exploratory work so O002, O003 and O004 can be finalised with measured parameters (founder decision
+    2026-11-01). Draft reviews T0137/T0138 of this objective's first draft shaped the criteria.
   decision_if_pass: >-
-    Use the verified thermal L2 as O002's reference (code_must_match); finalise O002 and O004 from the pilot notes and
-    run one final draft review of each.
+    Use the verified thermal L2 (code_must_match on this evaluation) and its grid rule as the thermal reference of O002
+    and O003; finalise O002 and O004 from the pilot notes and run one final draft review of each.
   decision_if_fail: >-
     Switch the thermal reference to D0006's fallback (scikit-fem) and re-verify under a new experiment id; the pilots'
-    findings still inform O004.
+    findings still inform O002, O003 and O004.
   decision_if_inconclusive: Same as fail.
 scope_in:
-  - steady-state conduction in the default DBC stack plus die attach and SiC die; constant and temperature-dependent k
-  - the analytic and manufactured cases named in the hypothesis, at grid resolutions the solver uses in O002
+  - steady-state conduction; laterally uniform multilayer stacks and the default DBC stack plus die attach and SiC die
+    with patterned top copper; constant and temperature-dependent k
+  - the reference solutions named in the hypothesis, each implemented independently of the solver (own code, converged)
+  - grids produced by the solver's grid rule (cells per layer thickness, lateral cell size relative to sources and
+    copper features), frozen in the solver before E006 registration and reused unchanged by O002 and O003
 scope_out:
   - transient conduction; convection inside the cold plate; the L1 thermal model (O002)
-  - any sealed evaluation of O002 or O004 (the pilots below are exploratory design work, never evidence)
+  - any sealed evaluation of O002, O003 or O004 (the pilots below are exploratory design work, never evidence)
 evidence_plan: [E006]
 acceptance:
   required_experiments: [E006]
   pass_all:
-    - {id: A1, metric: E006.max_rel_err_vs_analytic, comparator: "<=", threshold: 0.002, uncertainty: {use: point},
-       description: "max over the verification cases of |dT_L2 - dT_analytic| / dT_analytic at the reported points (centroid, mean and surface maximum where the source tabulates them); deterministic, judged on the point value with the three-grid discretisation estimate reported"}
+    - {id: A1, metric: E006.max_spreading_rel_err, comparator: "<=", threshold: 0.01, uncertainty: {use: point},
+       description: "max over cases and reported points (centroid, source mean, and the surface maximum from the reference field) of |dT_L2 - dT_ref| / dT_spread,ref, dT_spread = rise above the 1D uniform-flux solution; finest grid of the frozen rule only; O002's quantities live in this spreading part"}
+    - {id: A2, metric: E006.max_abs_err_K, comparator: "<=", threshold: 0.05, uncertainty: {use: point},
+       description: "max over the same cases and points of |T_L2 - T_ref| in K at the stated loads (the N-layer and manufactured cases at O002-like rises of 60-110 K); matches O002's per-Tj discretisation allowance"}
   fail_any:
-    - {id: K1, metric: E006.max_rel_err_vs_analytic, comparator: ">", threshold: 0.01, uncertainty: {use: point},
-       description: "the solver misses an analytic case by more than 1 % of the rise"}
+    - {id: K1, metric: E006.max_spreading_rel_err, comparator: ">", threshold: 0.05, uncertainty: {use: point},
+       description: "the solver misses some case by more than 5 % of the spreading rise: a model or implementation error, not resolution"}
   max_evaluations: 1
 failure_modes:
   - id: F1
-    description: "Analytic reference evaluated wrongly (series truncation, transcription)"
-    detection: "sanity checks: each series converged (terms doubled change the value by < 1e-6 relative); published table values reproduced from the series to their printed digits before the solver is compared"
-    response: "experimental failure: fix the reference under a new experiment id"
+    description: "Reference solution wrong (series truncation, transcription, own implementation bug)"
+    detection: "gated sanity checks: each series converged (doubling the terms changes every reported value by < 1e-9 relative); the own Muzychka implementation truncated at the paper's 50 terms reproduces the paper's printed values to their printed digits (the paper's tables are truncated, so the converged series, not the tables, is the reference); the N-layer series reduces to the two-layer Muzychka series when the extra layers are given the same conductivity; the manufactured source term derived symbolically and checked numerically"
+    response: "experimental failure (INVALID): fix the reference under a new experiment id"
   - id: F2
     description: "Discretisation error hidden by a lucky grid"
-    detection: "three-grid study per case with observed order reported; energy balance |Q_out/Q_in - 1| <= 1e-6"
-    response: "refine; report"
+    detection: "gated sanity checks per case: three grids from the frozen rule refined by a constant ratio; observed order between 1.5 and 2.5 for the second-order scheme; the Richardson error estimate of each reported value at most a quarter of A1's and A2's tolerances; energy balance |Q_out/Q_in - 1| <= 1e-6; only finest-grid rows enter A1 and A2"
+    response: "experimental failure (INVALID); refine the grid rule under a new experiment id"
   - id: F3
+    description: "The k(T) case cannot discriminate"
+    detection: "declared null baseline: the same manufactured case solved with constant k at the layer-mean temperature (a runner column) must fail A1 and A2"
+    response: "design error: strengthen the manufactured case before registration"
+  - id: F4
     description: "Pilots leak into later sealed evaluations"
-    detection: "pilots use dev seeds and geometry outside O004's judged set only (PowerSynth 2D_Case_4, which has no published values, is the EM pilot module and is excluded from O004's benchmark set); pilot outputs are research notes, not evidence"
-    response: "a leaked layout or seed is excluded from O002/O004 evaluation"
+    detection: "pilots use dev seeds and geometry outside O004's and O003's judged sets only (PowerSynth 2D_Case_4, which has no published values, is the EM pilot module and is excluded from both); pilot outputs are research notes, not evidence"
+    response: "a leaked layout or seed is excluded from O002, O003 and O004 evaluation"
 budget: {usd: 80, cpu_hours: 60, wall_days: 14}
 require_plan_approval: true
 notes: >-
   Draft by the founder session of 2026-11-01 (founder decision: pilots before finalising O002 and O004; D0009 for the
-  day-60 gate). Build work (planner): (1) die-attach (cited material and k(T), e.g. SAC305 or sintered Ag) and SiC die
-  layers in moduleforge.geometry.stack; (2) the thermal L2 solver of D0006 in moduleforge.solvers with an honest
-  discretisation bound in meta['solver_tol']; (3) E006 (scientist; E001 pattern): rows per case and point (case, point,
-  dT_l2, dT_ref, grid), recompute with mfos.metrics.max_rel_err, sanity checks per F1/F2.
+  day-60 gate), revised after draft reviews T0137 (statistics) and T0138 (physics), which rejected the first draft: the
+  Muzychka 2003 tables are truncated 50-term series (off by up to 0.86 % of the rise); errors against the total rise hide
+  the spreading error; no multilayer case for the real stack; convergence checks were not gated; the k(T) case lacked a
+  null. Build work (planner): (1) die-attach (cited material and k(T), e.g. SAC305 or sintered Ag) and SiC die layers in
+  moduleforge.geometry.stack; (2) the thermal L2 solver of D0006 in moduleforge.solvers, with its grid rule and an honest
+  discretisation bound in meta['solver_tol']; (3) independent reference implementations (Muzychka 2003 series; an N-layer
+  Fourier series after Albers 1995 / Bagnall, Muzychka & Wang 2014 / Choudhury & Rogers 2019; a symbolic manufactured
+  solution); (4) E006 (scientist; E001 pattern): rows per case, point and grid (case, point, grid_level, dT_l2, dT_ref,
+  dT_spread_ref, dT_const_k for the k(T) case), recompute entries for both metrics (max of the relative spreading error and
+  of the absolute error over finest-grid rows; new mfos.metrics functions if needed, founder approval for the protected
+  path), sanity checks per F1/F2, the F3 null.
   Pilots (investigate tasks; outputs are research notes under research/notes/, never evidence):
   P1 thermal envelope: Tj max on generator layouts (all families, 2-6 dies, die sizes 4.0-5.5 mm) at 65 °C coolant and
   h = 5000 W/(m² K) versus power per die, with and without k(T); the highest power per die keeping Tj max <= 175 °C on at
-  least 95 % of layouts per die size; recommended load levels for O002.
+  least 95 % of layouts per die size; recommended load levels for O002 and the operating point for O003.
   P2 thermal nulls: per-stratum errors of the stratum-mean, die-size cell-mean and die-position lookup predictors on dev
-  layouts at those load levels (A2-A5 statistics of the O002 draft), to set O002's thresholds and strata.
+  layouts at those load levels (the A2-A5 statistics of the O002 draft), to set O002's thresholds and strata.
   P3 EM convergence: l2_layout on PowerSynth 2D_Case_4 (reconstructed per D0007) and two perturbations of it, at 0.5,
   0.25 and 0.125 mm and with thickness-layer and wire-filament refinement, at 10 and 20 MHz: absolute and pair-ratio
   discretisation estimates and observed order.
   P4 FastHenry feasibility: the same geometry through a Layout -> FastHenry exporter (SI metres, D0002), direct and
   multipole solves at increasing refinement on a burst VM; memory, time, crashes and the extrapolated L; the
-  L2-FastHenry difference and ratio difference on this module.
-  After P1-P4 the founder session revises O002 and O004 from the pilot notes for one final draft review each.
+  L2-FastHenry difference and ratio difference on this module (the band input of D0009).
