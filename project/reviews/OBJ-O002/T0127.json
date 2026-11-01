@@ -1,0 +1,84 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "Absolute-K thresholds (A2 0.5 K, A4 1 K, K1 1.5 K) are not tied to any operating point; criteria are pooled across load levels",
+      "detail": "Power per die, the cold-plate h and the load levels are all left to E007 (\"power per die as designed in E007 (at least two load levels)\"). With losses fixed, every temperature difference and every L1-vs-L2 error in K scales roughly with power and with 1/h. So the same L1 can fail or pass A2/A4 depending only on the chosen power. K1 can be disabled the same way: an L1 with a 1 K p95 pair error at a 100 K rise shows 0.5 K at a 50 K rise. Per-load-level metrics are only 'reported' (F3); A2, A3 and A4 are judged on pooled rows. A light second load level therefore dilutes the p95 toward the heavy level's ~p90. The objective also does not say how pairs are formed across load levels. pairwise_diff_error_quantile pairs every row within the (family, dies) stratum, so with rows per layout x load it includes cross-load pairs and same-layout pairs. The F2 null check does not guard against a low power choice: die-size variation (next finding) makes the stratum-mean null fail A2 at any realistic rise. The claim that the thresholds can resolve the decision and that the kill criteria can fire is therefore not established by the objective as written.",
+      "evidence": "objective.yaml scope_in and F3 (operating point qualitative, metrics only reported); tools/mfos/mfos/metrics.py:153-161 (pairs every row within a stratum); A-T3's +2 K budget is meaningful only at the customer's operating Tj.",
+      "suggested_check": "Pin a minimum Tj rise (or power per die and h) at the top load level in the objective; require A2, A4 and K1 at each load level (recompute `where` per level, load level in the strata).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Declared nulls are strawmen; die size varies inside every stratum, so a layout-ignorant but die-size-aware predictor is the real null and is not declared",
+      "detail": "The generator draws die size per layout (s = snap(U(4.0, 5.5)) mm), so each (family, dies) stratum mixes 4.0-5.5 mm dies. In a sealed-style sample of 90 layouts (15 strata x 6), 168 of 225 within-stratum pairs (75 %) differ in die size. In my FD estimate of one isolated die on the default DBC stack and baseplate (h = 5000 W/m^2K), the Tj rise is 0.995 K/W at 4 mm, 0.803 K/W at 5 mm and 0.674 K/W at about 6 mm, so die size alone moves Tj by ~20-25 % of the rise (tens of K at realistic power). The stratum-mean null therefore fails A2 by tens of K. The 1D-without-spreading null (1/(h A_die) alone is 12.5 K/W for a 4 mm die) overestimates the rise about 10x and fails A2-A4 trivially. Neither tests whether L1's layout information (placement, spacing, copper) matters. A null that knows only die size and stratum is not declared: isolated-die response P*R_iso(s) plus a stratum offset, or the (family, dies, die size) cell mean, which null_column 'stratum_mean' already supports with an extra strata column. It plausibly meets A3: the residual is mutual-heating spread of a few K against a rise above 100 K. It may also meet A4 via the stratum-mean spread. 'No criterion would be met by a predictor that ignores the decision-relevant information' is not shown for A3 and A4.",
+      "evidence": "src/moduleforge/generate/halfbridge.py:109 (s drawn per layout); my generator count of within-stratum pairs (seed 7, n = 90): 57/225 same die size; isolated-die FD in $TMPDIR (energy balance 1.000000).",
+      "suggested_check": "Declare the die-size-aware isolated-die null and the (family, dies, die_size) cell-mean null for A2-A4 (and a stratum-mean-spread null for A4), and run `mfos exp check E007 --rows` on dev rows with them.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A2's pair sample does not match the search decision it gates",
+      "detail": "A2 is a p95 over within-(family, dies) pairs, most of which differ in die size. In the derivative regime that O003 searches, the die is fixed, so candidates differ in placement, spacing and copper; these differences are much smaller and are a different error population. Conversely, if O003 searches across families, or compares to a reference with a different die count or generation (the product's stated use cases), the +2 K comparison is cross-stratum, and A2 excludes those pairs. A3's 5 % of rise (about 5 K at a 100 K rise) does not resolve 2 K. Passing A2 thus neither shows the same-die resolution search needs nor covers cross-stratum comparisons. The null hypothesis ('too inaccurate to enforce A-T3's +2 K budget during search') is broader than what A2 tests.",
+      "evidence": "Hypothesis statement ('two layouts of the same stratum'); strata (family, dies) as in E002 (15 strata x 6 layouts); charter thesis (die generation, supplier or count changes).",
+      "suggested_check": "Compute A2 over same-die pairs (die size in the strata) and, if O003 searches across families, add same-die-count cross-family pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Cluster bootstrap upper bound of the pairwise p95 undercovers at the planned stratum sizes",
+      "detail": "I simulated mfos.metrics' scheme (pairwise_diff_error_quantile with q = 0.95, layouts resampled with replacement, upper bound = 97.5 % percentile) with 15 strata and normal per-layout errors. True-p95 coverage was 0.91 at 4 layouts per stratum, 0.935-0.94 at 6 and 0.965 at 10, against a nominal 0.975. With heavy-tailed (t3) errors at 6 per stratum it was 0.88. Part of the cause: a layout drawn twice forms a self-pair with error exactly 0, about 1/m of all pairs. Dropping those pairs raised coverage to 0.965 (normal) and 0.91 (t3); the rest is percentile-bootstrap undercoverage of a tail quantile. With max_evaluations 2, the false-pass probability at the A2 boundary is several times nominal.",
+      "evidence": "Simulation in my sandbox (200 replicates, 300 bootstrap draws; Monte Carlo SE about 1.1 %), reimplementing metrics.py:153-161 and 236-273.",
+      "suggested_check": "Exclude self-pairs of duplicated layouts in bootstrap resamples (a change to tools/mfos), require at least 10 layouts per stratum, or use an order-statistic bound.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3, A4 and A5 cannot be recomputed with the evaluator's metric functions",
+      "detail": "mfos.metrics has pairwise_diff_error_quantile (A2) but no quantile of relative error (A3), quantile of absolute error (A4) or median of a column (A5); max_rel_err and max_abs_err are maxima. Under rules v2, a criterion metric with no recompute entry and no exemption makes the evaluation INVALID. tools/mfos is a protected path. The notes' 'recompute entries for A2-A5' cannot be written today.",
+      "evidence": "tools/mfos/mfos/metrics.py METRICS dict (lines 201-224); evaluate.py:414-421.",
+      "suggested_check": "Add quantile-of-relative-error, quantile-of-absolute-error and median functions to mfos.metrics (with founder approval) before E007 is registered.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A3's denominator includes a large layout-independent cold-plate rise",
+      "detail": "With uniform h, the bulk convective rise P_total/(h A_baseplate) is the same for every layout of a stratum. Example: 12 dies x 100 W at h = 5000 W/m^2K over the 86 x 56 mm baseplate gives about 50 K. Normalising by the total rise lets a model with a larger relative error on the layout-dependent part meet 5 %. How much depends on h, which is unpinned.",
+      "evidence": "Baseplate box -8..78 x -8..48 mm (halfbridge.py:161); hand computation 1200 W / (5000 x 0.004816 m^2) = 49.8 K.",
+      "suggested_check": "Normalise A3 by the die-local rise (Tj minus mean baseplate-bottom temperature), or pin h.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "L2's verified accuracy is coarser than A2's resolution",
+      "detail": "A1 accepts L2 at 1 % of rise, which is about 1 K at a 100 K rise and twice A2's 0.5 K threshold. The E007 sanity checks allow 0.1 K per Tj (up to 0.2 K on a difference) and a 0.2 K scikit-fem cross-check, so the reference may consume up to 40 % of A2's budget.",
+      "evidence": "A1 and F1 detection text.",
+      "suggested_check": "State an absolute L2 bound on pair differences (for example 0.1 K) as a gated E007 sanity check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Null discrimination is judged at the null's pessimistic bound",
+      "detail": "A null counts as meeting a criterion only if its upper bound clears the threshold. On a small dev sample, a null whose point estimate passes still counts as discriminating, so the F2 registration check is lenient.",
+      "evidence": "evaluate.py:425-437 and 440-462 (judge(c, nmv, as_fail=False)).",
+      "suggested_check": "Require nulls to fail at the point estimate (or at the lower bound) on the dev rows.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the evaluator (tools/mfos/mfos/evaluate.py, metrics.py): pass and kill semantics, null handling, cluster bootstrap, available metric functions.",
+    "Ran the generator (generate_layouts(90, 7)): 15 strata x 6 layouts; die sizes 4.0/4.5/5.0/5.5 mm in 13/34/31/12 layouts; 57 of 225 within-stratum pairs share a die size.",
+    "FD conduction solve (scipy direct solver, 0.5 mm grid) of one isolated die on the default DBC stack over a 3 mm Cu baseplate, h = 5000: Tj rise per W of 0.995 at 4 mm, 0.803 at 5 mm and 0.674 at about 6 mm; energy balance 1.000000.",
+    "Monte Carlo coverage of the evaluator's cluster-bootstrap upper bound on the pairwise p95: 0.91, 0.935-0.94 and 0.965 at 4, 6 and 10 layouts per stratum; 0.88 with t3 errors at 6; 0.965 (normal) and 0.91 (t3) with self-pairs dropped.",
+    "Hand calculation of the bulk cold-plate rise: 1200 W / (5000 W/m^2K x 0.004816 m^2) = 49.8 K.",
+    "Checked kill-criterion reachability: K1 and K2 require the lower bound past 1.5 K / 15 %; K1's absolute-K threshold is reachable only at a sufficiently high, unpinned power. A4 and A5 have no kill criterion; INCONCLUSIVE is treated as fail."
+  ],
+  "caveats": [
+    "My thermal numbers come from a rough uniform-grid, constant-k FD model of one isolated die with unpatterned top copper. They show magnitudes, not L2-quality values. The sandbox denied the full multi-die FD on generator layouts, so I could not measure whether a die-size-aware null actually meets A3 or A4.",
+    "Even if all criteria pass, the claim is L1 vs L2 only: both share the modelling assumptions (k(T) data, uniform h, no bond wires, voids or TIM), so the result says nothing about agreement with customers' Icepak runs.",
+    "A p95 over random generator layouts does not bound L1's error on search-optimised layouts (optimizer's curse); the L2 audits of final candidates in decision_if_pass partly mitigate this.",
+    "The objective states no sample size per stratum; E002-like numbers (6 layouts per stratum) were assumed for the coverage simulation.",
+    "max_evaluations 2 on fresh seeds roughly doubles the family-wise false-pass chance."
+  ]
+}

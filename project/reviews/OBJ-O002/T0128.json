@@ -1,0 +1,76 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A4 (spread within 1 K) is met by a layout-ignorant lookup-table predictor at a load level the draft permits",
+      "detail": "The claim says no criterion would be met by a predictor that ignores the decision-relevant information. A predictor that knows only (family, dies per switch, load level) and returns the mean inter-die spread learned from dev seeds meets A4 at 25 W/die with the clustered upper bound. It sits within 15 % of the threshold at 50 W/die and its pooled point estimate passes. The draft requires at least two load levels but fixes neither, and A4 is an absolute 1 K threshold, so the low level makes A4 non-discriminating. F2 lists a stratum-mean null only for A2. The 1D null it lists for A4 fails for an unrelated reason (no spreading). The dev-row check would therefore not catch this. A4 is the only criterion that tests the spread clause of the hypothesis, which why_it_matters says customers verify.",
+      "evidence": "Laterally uniform N-layer cosine-series proxy of the default DBC stack (86x56 mm footprint, h = 5000 W/(m^2 K), die and attach as 1D). Lookup table from dev seeds (10 per stratum), evaluated on 90 fresh layouts (6 per stratum), percentile bootstrap over layouts with 2000 resamples. 25 W/die: p95 0.57 K, upper bound 0.80 K, PASS. 50 W/die: p95 1.14 K, upper bound 1.61 K. Pooled: p95 0.91 K, upper bound 1.26 K. Oracle stratum-mean spread null at 50 W: p95 1.15 K (h=5000), 1.90 K (h=2000).",
+      "suggested_check": "Run a dev-trained (family, dies, load) lookup null for A3 and A4 on E007 dev rows at each load level. Make A4 relative to that null (or require it to fail) and gate A4 per load level.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Operating point unspecified and metrics pooled across load levels while thresholds are absolute kelvin",
+      "detail": "A2, A4 and K1 are absolute (0.5 K, 1 K, 1.5 K). The power per die, uniform h and coolant temperature are left to E007 ('as designed in E007', 'realistic SiC operation'). Temperature errors scale roughly linearly with power, so whether the same L1 passes depends on a parameter the experiment designer chooses. Pooling a lower load level into a single p95 dilutes the tail. The +2 K budget the thresholds derive from holds at O003's operating point, which is not tied to E007's load levels.",
+      "evidence": "Proxy L1 with ceramic k +10 % (26.4 vs 24 W/(m K)), 300 layouts: A2 p95 0.422 K at 50 W/die, 0.211 K at 25 W/die, 0.355 K pooled. The same L1 would be about 0.63 K at 75 W/die and fail.",
+      "suggested_check": "Fix power per die (or loss density), h and T_coolant in the objective, tied to O003's operating point, and gate A2/A4/K1 at the highest load level (or per level, max over levels).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Sample size not fixed; bootstrap upper bound of a p95 is wide relative to the thresholds",
+      "detail": "The claim that the sample can resolve the decision cannot be verified: the objective does not state n layouts or pairs. For a p95 statistic at E002's size (90 layouts), the clustered upper bound sat about 40 % above the point estimate. An L1 with a true p95 near 0.35 to 0.4 K could therefore be inconclusive on A2.",
+      "evidence": "Lookup null at 50 W: point 1.14 K vs upper bound 1.61 K; at 25 W: 0.57 K vs 0.80 K (n = 90, 2000 resamples).",
+      "suggested_check": "Size E007 by simulation on dev rows so that a model with true p95 = 0.6x threshold passes A2 and A4 with power at least 0.8.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F2's 1D series-resistance null is a straw man",
+      "detail": "The per-die 1D null without spreading puts the cold-plate film resistance over the die area. It fails A2 by hundreds of kelvin because its absolute scale is wrong, not because it lacks layout information. 'Must fail A2-A4' is therefore guaranteed and uninformative. The informative nulls (isolated-die spreading without coupling, die-size-only fit, stratum lookup) are not named, except the stratum mean for A2.",
+      "evidence": "A2 p95, pooled loads: 1D null 243 K; isolated-die null 6.1 K; die-size-only fit 3.4 K; zero-difference 15.3 K (3.5 K for same-die-size pairs). All fail A2 in the proxy, but only the 1D and stratum-mean nulls are required by F2.",
+      "suggested_check": "Replace or augment the 1D null with an isolated-die spreading model and a dev-trained stratum lookup for A2-A4.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A1's 1 % of rise is justified only against A3, not the absolute A2/A4 thresholds",
+      "detail": "1 % of a 50 to 150 K rise is 0.5 to 1.5 K, the same size as A2 (0.5 K) and A4 (1 K). The E007 sanity checks (Richardson below 0.1 K, scikit-fem within 0.2 K) cover discretisation. They do not cover model-form errors shared by both solvers. Analytic benchmark tables (e.g. Muzychka 2003 Case 2) resolve about 0.03 % of rise, so 1 % is loose relative to what is checkable. Systematic proportional L2 errors largely cancel in within-stratum differences, which limits the impact.",
+      "evidence": "Arithmetic from the stated thresholds; scratch scikit-fem vs Muzychka Case 2 agreement of 0.03 % of rise reported in thermal-l2-reference.md.",
+      "suggested_check": "State A1 also in absolute K at the E007 operating point (e.g. at most 0.1 K, or 0.2 % of rise).",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Within-stratum pairs are dominated by die-size differences that a derivative search never varies",
+      "detail": "Die size s is drawn from 4.0 to 5.5 mm within each stratum, so about 75 % of the A2 pairs differ in die size. Same-die pairs, the derivative regime, have p95 |dTj| of about 4 K at 50 W/die, against 18 K for all pairs. This makes A2 stricter rather than looser, but the regime O003 needs is the same-die subset.",
+      "evidence": "Proxy, 50 W/die: zero-difference p95 18.4 K (all pairs) vs 4.1 K (same-s pairs, 748 of 2850).",
+      "suggested_check": "Report A2 also on same-die-size pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "A 10 % error in ceramic conductivity passes A2, A3 and A4 at 50 W/die",
+      "detail": "The hypothesis includes k(T), and the draft names k(T) as a likely missing-physics diagnosis. An L1 with a 10 % alumina k error, roughly the shift k(T) causes over the operating range, passes every accuracy criterion at 50 W/die, so the k(T) scope may not be separately tested.",
+      "evidence": "Proxy: A2 p95 0.434 K, A3 p95 0.023, A4 p95 0.120 K at h = 5000; 0.433 K / 0.018 / 0.124 K at h = 2000.",
+      "suggested_check": "Include a load level high enough that ignoring k(T) produces errors above the thresholds, or report a constant-k L1 ablation.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read moduleforge.generate.halfbridge and geometry.stack. Within each (family, dies) stratum, die size s ranges over 4.0-5.5 mm, die gap dg over 1.5-2.5 mm, and row position varies. Default DBC stack: 3 mm Cu baseplate, 0.1 mm SAC, 0.3 mm Cu, 0.38 mm Al2O3 (k 24), 0.3 mm Cu; 180 um die, 50 um attach.",
+    "Built a laterally uniform N-layer cosine-series (DCT) surface-temperature model with the transmission-line impedance recursion (Muzychka/Yovanovich/Culham 2004; Bagnall/Muzychka/Wang 2014). Verified the uniform-flux DC mode against the 1D series value: 2.26908 K = 2.26908 K at 1e4 W/m^2.",
+    "A2 nulls on 300 generator layouts (20 per stratum) at 50 and 25 W/die: zero-difference, isolated-die (no coupling), 1D series, and die-size-only fitted predictors all exceed 0.5 K at p95 (lowest: 2.07 K, the 25 W/die same-size pairs).",
+    "A3 nulls at 50 W/die: isolated-die p95 0.508, oracle stratum-mean p95 0.193 (threshold 0.05). Both fail.",
+    "Flawed-L1 sensitivity (ceramic k +10 %): A2 p95 0.422 K at 50 W, 0.211 K at 25 W, 0.355 K pooled. Showed that pooling loosens the criterion and the scale depends on power. A3 0.023 and A4 0.12 K at h = 5000 and 2000.",
+    "A4 lookup-table null trained on dev seeds (different seed family), evaluated on 90 fresh layouts with a 2000-resample percentile bootstrap: passes A4 at 25 W/die (p95 0.57 K, upper bound 0.80 K); 50 W/die p95 1.14 K (upper bound 1.61 K); pooled 0.91 K (upper bound 1.26 K).",
+    "Compared against O001's criteria design and O005's note that a stratum-mean predictor met O001's pooled criteria. O002 confines A2 to within-stratum pairs, but A4 has no stratum null."
+  ],
+  "caveats": [
+    "All quantitative checks use a reviewer-built proxy, not the planned D0006 L2. It has laterally uniform layers over the baseplate footprint, no patterned top copper, no DBC confined to the 70x40 mm substrate, constant k, die and attach as 1D, and h = 5000 (one A4 check also at 2000). Real layout-dependent spread variability may be larger, which would make the A4 null fail. The blocker rests on the proxy giving the right order of magnitude for spread variability (null p95 of about 1.1 K at 50 W/die).",
+    "The objective delegates power levels, h, coolant temperature and sample size to E007. If E007 fixes a high, O003-matched operating point and gates per load level, the A4 concern shrinks but does not vanish: the null sits within 15 % of the threshold at 50 W/die in the proxy.",
+    "A2, A3 and the kill criteria K1/K2 appear sound: every null tested fails A2 by at least 4x and A3 by at least 4x, and K1 would fire for a no-coupling L1 (A2 p95 about 6 K).",
+    "A5 (50 ms) is not binding: the proxy spectral model evaluates in 1-2 ms. A k(T) iteration would multiply that, but likely stays well under 50 ms."
+  ]
+}
