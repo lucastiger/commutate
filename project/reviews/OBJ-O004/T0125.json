@@ -1,0 +1,91 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A2's 10 % ratio tolerance is about as wide as the 10-point headroom gap it is supposed to resolve",
+      "detail": "Headroom is h = 1 - r. A relative ratio error d moves h by r*d. Near O003's decision boundary (r = 0.8-0.9), a 10 % ratio error therefore moves h by 8-9 points, almost the full gap between the 20 % hypothesis and the 10 % kill line. A true h of 9 % (a kill case) can be reported as 18.1 %. A true h of 10 % can be reported anywhere from 1 % to 19 %. A2 is the only criterion that compares L2 with something outside the solvers, so a PASS still allows errors against reality large enough to flip the day-60 verdict. This contradicts the objective's own rationale ('reference error must stay well inside that 10-point gap, especially on ratios between layouts'). It also means a PASS does not refute the stated null ('not accurate enough \u2026 for a 20 % versus 10 % headroom verdict'). A1 is no remedy: two absolute errors of 3 % in opposite directions give a 6.2 % ratio error, about \u00b15.6 points at r = 0.9.",
+      "evidence": "Scratch computation: true h = 0.20 with ratio error \u00b10.10 gives reported h in [0.120, 0.280]; true h = 0.10 gives [0.010, 0.190]; true h = 0.09 gives [-0.001, 0.181]. Worst-case ratio error from A1 alone: 1.03/0.97 - 1 = 0.0619.",
+      "suggested_check": "Derive A2's threshold from the gap (for example, ratio error at most 3-4 % so that r*d stays at about 3 points or less), or restate A2 as a gross-error check and drop the claim that a PASS settles adequacy for 20 vs 10.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "blocker",
+      "title": "The published UTK ratios conflict with each other by more than both thresholds, so A2 cannot pass and K2 fires on a solver that matches the paper's own Q3D",
+      "detail": "The only clearly in-scope published pair is S2's conventional vs P/N-cell layout (S1 is DC and outside scope). Its ratios, proposed over conventional, are: Table 5.1 simulated 0.351 (Loop1) and 0.424 (Loop2); Table 5.1 measured 0.260 and 0.286; Table 3.3 Q3D AC 0.400 and 0.465. Simulated and measured differ by 35 % (Loop1) and 48 % (Loop2). If both are kept, no L2 ratio is within 10 % of both, for either loop. An L2 that reproduces the publication's own Q3D ratio exactly is 35 % and 48 % off the measured ratios, so K2 (> 30 %) fires and the result is FAIL. F4's detection rule ('only ratios measured or simulated by one method at one frequency within one source') keeps both ratios, since each comes from a single method. Which one survives is therefore an unregistered choice made under F4's 'drop the inconsistent pair', and nothing stops it being made after the L2 ratio is known. As written, the PASS/FAIL outcome depends on a post-hoc exclusion rather than on L2's accuracy.",
+      "evidence": "Feasible L2-ratio interval for A2 with sim and meas both kept: Loop1 [0.316, 0.286] and Loop2 [0.381, 0.314], both empty. Exact-Q3D ratio vs measured: 0.351/0.260 - 1 = 0.35 and 0.424/0.286 - 1 = 0.48, both > 0.30. Values are taken from research/notes/o003-public-benchmarks.md (S2).",
+      "suggested_check": "Before any solve, pre-register for each pair which published value (source table, method, frequency) is the comparator, and how conflicting values in one source are resolved.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "No minimum sample: after scope, F2 and F4 exclusions, A2 may rest on one layout pair or on none",
+      "detail": "In scope are publication-stated frequencies of 1-20 MHz with DC excluded. That removes S1. S4's measured tables were not recoverable, Le et al. 2021 values are unknown, and CPES's commercial module would be rebuilt from a figure, so it is likely to exceed F2's 5 % sensitivity limit. What realistically remains is one independent layout pair (UTK, two loops). The objective sets no minimum number of layouts or pairs and says nothing about an empty set. With uncertainty 'point', a NaN fails A2 and does not fire K2, giving INCONCLUSIVE. But a runner that computes max(..., default=0) would PASS A2 vacuously. A 'max over pairs' taken over n \u2248 1 cannot show that L2 'reproduces every published layout-pair ratio' in any sense that carries over.",
+      "evidence": "tools/mfos/mfos/evaluate.py judge(): the point path is op(mv.value, threshold) with no count or NaN guard. Benchmark note: S1 Table II is DC; S4 tables are 'not recoverable'; CPES commercial layout is 'from a figure'.",
+      "suggested_check": "Require a minimum number of independent pairs from at least two sources, and make an empty or undersized set INCONCLUSIVE in the spec.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Leakage: reconstructions are built while the published ratios they are scored against are visible",
+      "detail": "Unknown dimensions (terminal geometry, wire loop heights, figure-read distances) are chosen by people or agents who can see the target ratios. F2's 'never tune toward the published value' is a norm with no mechanism behind it. Nothing requires the reconstructions and their assumed dimensions to be frozen and hashed before the first L2 or FastHenry solve, and pilot solves on them are not forbidden. A predictor that encodes the published ratio through its reconstruction choices would pass A2.",
+      "evidence": "Objective F2 detection/response; notes section 'Build work first (3)': no freeze or registration step before solving.",
+      "suggested_check": "Register each reconstruction's geometry hash and assumed dimensions in E004's spec before any solve on it.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Forking paths: after a FAIL the benchmark set can be narrowed, with a second evaluation allowed",
+      "detail": "decision_if_fail (and inconclusive) lets the team 'narrow the benchmark set to layouts reconstructed well enough' once failing layouts are known, and max_evaluations is 2. Attributing a failure to 'reconstruction' rather than 'solver' after seeing which layouts failed, then re-evaluating without them, selects on the outcome. A second-round PASS would then be nearly guaranteed.",
+      "evidence": "O004 decision_if_fail; acceptance.max_evaluations: 2.",
+      "suggested_check": "Limit exclusions to rules applied before the outcome is known (F2 sensitivity, pre-registered F4 choices), and evaluate any narrowed set as a new registered experiment.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1 compares two solvers on one exporter's geometry, so shared model errors are invisible; no pilot shows that 3 % is achievable",
+      "detail": "Both tools receive identical geometry from one exporter. l2_layout models dies as ideal shorts and uses bilinear point contacts at the terminals; whatever the exporter writes, FastHenry inherits. A1 therefore tests numerical agreement, not agreement with reality, and leaves A2 (see blocker 1) as the only external check. The repository holds no earlier L2-vs-FastHenry comparison on layout geometry. Recorded mesh choices alone moved L by 2.6 % (grading frequency, review T0082). The power of A1 to pass a correct solver is therefore unknown.",
+      "evidence": "src/moduleforge/solvers/l2_layout.py docstring: 'Dies are ideal shorts'; 'L(20 MHz) \u2026 moved 2.6 % between grading at 20 and at 80 MHz'. A grep of research/ and experiments/results for fh_zc_rel_diff or FastHenry comparisons found only notes.",
+      "suggested_check": "Run a pilot L2-vs-FastHenry comparison on one reconstructed layout before fixing A1's threshold.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'Frequency its publication used' is undefined for the main source",
+      "detail": "S2's measurements are a 1-10 MHz sweep, not a single frequency, and the note does not give the frequency of the Q3D 'AC' values. The frequency at which A1 and A2 are evaluated is therefore a free choice for the researcher.",
+      "evidence": "Benchmark note: Table 5.1 measured 'from 1 MHz to 10 MHz'.",
+      "suggested_check": "Fix the frequency for each layout in the spec.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "F2's 5 % sensitivity limit does not say whether it applies per dimension or to the combined effect",
+      "detail": "If it applies to each dimension separately, k assumed dimensions could together shift the ratio by about sqrt(k)*5 %. Reconstruction uncertainty alone could then use up A2's 10 % tolerance, so A2 would partly measure reconstruction luck.",
+      "evidence": "F2 detection text: '\u00b110 % on each assumed dimension; a pair whose ratio sensitivity exceeds 5 %'.",
+      "suggested_check": "Define the limit on the combined (for example root-sum-square or worst-case) ratio sensitivity.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "The ratio-1 null does fail A2, and the kill criteria can fire",
+      "detail": "Against the published ratios, the no-difference predictor (ratio 1) has errors of 102-285 %, so it fails A2 and fires K2. A predictor that ignores geometry cannot meet A1. K1 and K2 can both fire, and K2 can in fact fire too easily (blocker 2). This part of the claim holds.",
+      "evidence": "Ratio-1 errors: UTK Loop1 1.50/1.85/2.85, Loop2 1.15/1.36/2.50; CPES substrate loop 1.02.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the S2 proposed/conventional ratios (Table 3.3 Q3D AC, Table 5.1 simulated and measured) from the repository's benchmark note, plus the A2 and K2 feasibility intervals: A2 cannot be met when the simulated and measured ratios are both kept, and an L2 that matches the paper's Q3D fires K2 against the measured ratios (35 %, 48 %).",
+    "Computed the errors of the ratio-1 null predictor (102-285 %): it fails A2 and fires K2.",
+    "Converted the A2 (10 %) and A1 (3 %, giving up to 6.2 % ratio error) thresholds into headroom error at r = 0.8-0.91: up to \u00b18-9 points, and a true h of 9 % can be reported as 18 %.",
+    "Read tools/mfos/mfos/evaluate.py judge(): the point-uncertainty path has no minimum-count guard and no NaN or empty-set guard.",
+    "Searched research/ and experiments/results for earlier L2-vs-FastHenry layout comparisons: none found.",
+    "Read the l2_layout model docstring: dies are ideal shorts, terminals are point contacts, and mesh grading alone moved L by 2.6 %.",
+    "Tried to verify the S2 tables first-hand: the PDF downloaded, but its text could not be extracted (no pdftotext, pypdf or pdftoppm in the sandbox)."
+  ],
+  "caveats": [
+    "The S2 inductance values come from research/notes/o003-public-benchmarks.md, written by an agent; the founder session did not re-check them. I could not re-read the dissertation's tables first-hand. If the note misquotes Table 5.1, the size of blocker 2 changes, but the need to pre-register the comparator does not.",
+    "Whether the Q3D AC values in S2 Table 3.3 state a frequency in the 1-20 MHz range is unknown. If they do not, scope removes them and the A2 set shrinks further.",
+    "Even if every finding is fixed, a PASS validates L2 only on the reconstructed benchmark layouts, at published ratios of 0.26-0.50. O003 will apply it to re-layouts generated on the generator lattice with the new stacks, at ratios of 0.8-0.9, and those are in neither E001/E002 nor E004."
+  ]
+}
