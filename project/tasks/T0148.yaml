@@ -4,7 +4,7 @@ title: 'Thermal materials: die-attach and SiC die layers with cited k(T) in Laye
   model definition, pyamg/scikit-fem/sympy dependencies'
 type: implement
 agent: builder
-status: proposed
+status: running
 depends_on: []
 description: 'Infrastructure for every O006 criterion (hypothesis: die-attach and SiC die layers added
   to LayerStack). (1) Extend moduleforge.geometry.stack with a die-attach material (SAC305 or sintered
@@ -70,11 +70,12 @@ model: null
 budget_usd: 3.5
 max_turns: 60
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0148-thermal-materials-die-attach-and-sic-die
 pr: null
-runs: []
+runs:
+- T0148-builder-20261101T144807-95bc
 created_by: planner:T0147
 created_at: '2026-11-01T21:49:21+00:00'
 protected_approved: false
