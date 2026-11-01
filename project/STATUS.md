@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-10-31T23:55:23+00:00 from repository state — do not edit_
+_generated 2026-11-01T00:01:03+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0058** [experiment_registration] register E901 (pre-registration)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -17,14 +17,11 @@ _generated 2026-10-31T23:55:23+00:00 from repository state — do not edit_
 | O901 | 2 | $3.94 | 77003 | 41182 | 9 | 0 |
 
 ## Tasks
-cancelled: 29, done: 86, failed: 3, todo: 1
+cancelled: 29, done: 86, failed: 3, running: 1
 
+- T0117 `running` none/experiment: Run E901 (orchestrator) (attempt 1)
 
 ## Recent events
-- 2026-10-23T00:28:38+00:00 sleep_detected {"gap_s": 1073, "runs_extended": 0}
-- 2026-10-23T00:35:01+00:00 sleep_detected {"gap_s": 383, "runs_extended": 0}
-- 2026-10-23T00:57:04+00:00 sleep_detected {"gap_s": 1323, "runs_extended": 0}
-- 2026-10-31T23:30:28+00:00 inbox_resolved {"id": "I0056", "status": "rejected", "note": "T0116 branch task/T0116-design-e901-draft-spec-and-runner-for-ha (b8fc469) was lost with the stolen laptop; never
 - 2026-10-31T23:33:36+00:00 loop_started {"pid": 56044}
 - 2026-10-31T23:33:39+00:00 run_started {"run": "T0116-scientist-20261031T163339-a49c", "task": "T0116", "role": "scientist", "session": "376075ad-206d-4b03-9dce-30ec7d3113cf"}
 - 2026-10-31T23:43:41+00:00 run_finished {"run": "T0116-scientist-20261031T163339-a49c", "status": "completed", "cost": 2.272436, "subtype": "success", "report": "structured_output"}
@@ -36,3 +33,7 @@ cancelled: 29, done: 86, failed: 3, todo: 1
 - 2026-10-31T23:55:18+00:00 loop_started {"pid": 62550}
 - 2026-10-31T23:55:22+00:00 merged {"task": "T0116"}
 - 2026-10-31T23:55:22+00:00 inbox_opened {"id": "I0058", "kind": "experiment_registration", "subject": "register E901 (pre-registration)"}
+- 2026-10-31T23:57:48+00:00 experiment_registered {"id": "E901", "hash": "sha256:063203fe01ea3e5ee334c05ebbb0a386a543fa5685c4c245c1db2b5496d9974b", "by": "founder"}
+- 2026-10-31T23:57:48+00:00 inbox_resolved {"id": "I0058", "status": "approved", "note": "Register E901 as designed by T0116 attempt 2 and reviewed by T0119.", "by": "human"}
+- 2026-11-01T00:00:59+00:00 loop_started {"pid": 62851}
+- 2026-11-01T00:01:03+00:00 experiment_task_started {"task": "T0117", "experiment": "E901"}
