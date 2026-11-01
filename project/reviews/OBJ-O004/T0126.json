@@ -1,0 +1,77 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A2's 10 % ratio threshold is as wide as the 20 %-vs-10 % gap, so passing A1+A2 does not reject the stated null",
+      "detail": "The null is that L2 is 'not accurate enough on externally defined geometry for a 20 % versus 10 % headroom verdict'. Headroom h = 1 - r, with r = L(re-layout)/L(reference). In O003's decision band (r about 0.8-0.9), A2's permitted ratio error of 10 % moves reported headroom by about +-8.5 to 9 points: true h = 0.15 is reported anywhere in [0.065, 0.235], and true h = 0.10 in [0.01, 0.19]. An L2 that passes A2 at its threshold can therefore turn a kill into a pass or the reverse, which is exactly what the null asserts. A1 does not close the gap. It bounds each layout's absolute disagreement with FastHenry at 3 %, which still allows about 6 % on a ratio (true h = 0.15 reported in [0.099, 0.201] if errors are uncorrelated). There is no ratio-level criterion against FastHenry. The objective's own why_it_matters ('reference error must stay well inside that 10-point gap, especially on ratios') is contradicted by its thresholds.",
+      "evidence": "Scratch computation: for r in {0.80, 0.85, 0.90} and ratio errors {3, 6, 10} %, reported h intervals: h=0.20 at 10 % -> 0.120..0.280; h=0.15 at 10 % -> 0.065..0.235; h=0.15 at 6 % -> 0.099..0.201; h=0.10 at 10 % -> 0.010..0.190.",
+      "suggested_check": "Add a ratio criterion of L2 against FastHenry on layout pairs, including derivative-scale pairs with r near 0.8-0.9, with a threshold derived from the gap (about 2-3 %).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "blocker",
+      "title": "A2/K2 comparand is unpinned, and the published values disagree within one source by more than both A2's and K2's thresholds",
+      "detail": "F4 admits ratios that were 'measured or simulated by one method' within one source, but the objective never says which published number is 'the published ratio' for a pair. In the UTK dissertation (S2), the authors' own Q3D ratio on the dummy modules differs from their measured ratio by 35 % (Loop1) and 48 % (Loop2). The two Q3D tables (3.3 and 5.1) differ by 14 % and 10 %. Consequences: (a) compared against measured ratios, a solver as accurate as the authors' own Q3D on their own CAD fires K2 (48 % > 30 %), a false kill; (b) if both measured and simulated rows are included, no predictor can get below about 16 % (Loop1) and 22 % (Loop2), so A2 can never pass and the outcome is INCONCLUSIVE whatever L2's accuracy; (c) using only simulated values makes A2 an L2-vs-Q3D check whose result depends on which table is chosen (10-14 % apart, more than A2's 10 %). The verdict is therefore decided by an unregistered choice of comparand, not by L2.",
+      "evidence": "From research/notes/o003-public-benchmarks.md: T5.1 sim 7.2/20.5 = 0.351 vs meas 6.5/25 = 0.260 -> +35.1 %; sim 8.6/20.3 = 0.424 vs meas 6.0/21 = 0.286 -> +48.3 %; T3.3 7.2/18.0 = 0.400 vs T5.1 0.351 -> +13.9 %; 8.6/18.5 = 0.465 vs 0.424 -> +9.7 % (computed with uv run python -c).",
+      "suggested_check": "Pin in the objective, for each pair, the exact source table and column (simulated or measured) and the geometry variant (dummy module or real dice) before any L2 run, and state whether a pair whose sim and measured ratios disagree is dropped under F4.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A predictor that ignores all geometry can meet A2 on the pairs likely to remain",
+      "detail": "The objective guards A2 only against the ratio-1 null, which fails badly (errors 72-285 %). A constant ratio that knows only 'P/N-cell vs conventional' is not excluded. A constant 0.43 meets A2 with a maximum error of 7.5 % on the S2 Table 3.3 Loop1/Loop2 pair, and 0.384 meets it with 9.35 % on the Table 5.1 simulated pair. Loop1 and Loop2 are two loops of the same pair of modules, not independent pairs. Only when the CPES substrate ratio (0.495) also survives does the constant fail, and only barely (10.6 %). There is no minimum number of pairs or sources, and F2 (sensitivity > 5 %), F4 and the 'insufficient dimensions' exclusion can shrink the set to the UTK pair alone. The sub-claim that 'no criterion would be met by a predictor that ignores the decision-relevant information' is false for plausible samples.",
+      "evidence": "Minimax constant-predictor search over r in [0.2, 0.7]: T3.3 pair -> 0.430, max err 0.075; T5.1 sim pair -> 0.384, 0.0935; T3.3 + CPES -> 0.442, 0.106.",
+      "suggested_check": "Require at least N independent pairs from at least 2 sources, and add a constant-ratio (topology-only) null that A2 must reject.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "'The frequency its publication used' is undefined or out of scope for most comparands",
+      "detail": "S1's Table II is a DC solution (excluded by scope). S2 Table 3.3 'AC' values come from Q3D's surface-based solver, which assumes fully developed skin effect, not a stated frequency. The S3 (CPES) Q3D comparison states no frequency in the note. The S2 measurements are a 1-10 MHz sweep. S4 (PowerSynth) mentions 100 kHz, which lies outside the scope_in range of 1-20 MHz (it may be the switching frequency). A1 and A2 are both defined 'at the publication frequency', so the runner must choose frequencies per layout, an unregistered degree of freedom. In l2_layout, frequency-related mesh choices are already known to move L by 2.6 % (module docstring, lines 57-59), about the size of A1's 3 % threshold.",
+      "evidence": "research/notes/o003-public-benchmarks.md lines 39, 46, 48, 81; src/moduleforge/solvers/l2_layout.py lines 57-59 and 134; Ansys Q3D datasheet: the AC solver is a surface-based high-frequency solver.",
+      "suggested_check": "Fix one extraction frequency per layout in the objective (e.g. 10 MHz), and state how Q3D 'AC' high-frequency-limit values are matched.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The decision applies L2 to layouts outside the validation sample (optimizer-produced re-layouts)",
+      "detail": "decision_if_pass makes L2 the judge of O003's headroom, 1 - L(re-layout)/L(reference). E004 tests only reconstructed reference layouts and published pairs. O003's re-layouts are selected by optimisation, and if the multi-fidelity search uses L2 (D0008), selection favours layouts where L2 errs low (winner's curse), which biases headroom upward. Accuracy on reference layouts does not carry over to the selected extremes.",
+      "evidence": "Objective decision_if_pass and why_it_matters; charter A-T1b note (D0008: multi-fidelity search).",
+      "suggested_check": "Require a FastHenry check of O003's winning re-layout against its reference, reported as a ratio, before the day-60 verdict.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "K1 can be reclassified rather than fire",
+      "detail": "An L2-FastHenry disagreement above 10 % can be routed to F1 (not converged -> experimental failure, new experiment id) or to F3 (model mismatch -> diagnose, founder decision), instead of counting as K1. The objective does not say that differences attributed under F3 still count toward A1/K1. Exclusions under F2/F4 are applied per pair with no floor. An empty pair set gives a missing metric (np.max on an empty array raises), so the result is INCONCLUSIVE, which the objective treats the same as a fail, not a silent pass.",
+      "evidence": "tools/mfos/mfos/metrics.py: AGG 'max' = np.max (raises on empty); evaluate.judge returns 'missing' for an absent metric.",
+      "suggested_check": "State that A1/K1 are judged on the raw L2/FastHenry values whatever the F3 attribution.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Attainability of A1 is untested: no layout-level L2-vs-FastHenry comparison exists",
+      "detail": "D0004 removed FastHenry from the layout path. Among the experiment runners, FastHenry appears only in a comment (e001_reference.py line 17), and the exporter does not exist. D0002 records intermittent segfaults with multipole. l2_layout is hard-wired to a baseplate box of -8..78 x -8..48 mm. Whether 3 % is achievable on baseplate-plus-planes geometry at 1-20 MHz is unknown. This is not a defect of the criteria.",
+      "evidence": "grep -rln fasthenry experiments research project/claims project/memory; l2_layout.py lines 5-13 and 1752-1765.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed every published layout-pair ratio in research/notes/o003-public-benchmarks.md and the ratio-1 null's A2 error for each (0.72-2.85), which confirms the ratio-1 null fails A2",
+    "Computed within-source discrepancies: S2 simulated vs measured ratio +35.1 % (Loop1) and +48.3 % (Loop2); Table 3.3 vs Table 5.1 simulated ratio +13.9 % and +9.7 %",
+    "Minimax constant-ratio predictor search on plausible surviving pair sets: max errors 7.5 %, 9.35 % and 10.6 %",
+    "Mapped ratio errors of 3/6/10 % to reported-headroom intervals at r = 0.80, 0.85, 0.90",
+    "Read tools/mfos/mfos/evaluate.py and metrics.py: point judging, missing-metric handling, and np.max on an empty pair set",
+    "Read src/moduleforge/solvers/l2_layout.py frequency handling (F_MESH grading, the 2.6 % grading sensitivity note) and its lattice constraints",
+    "Searched the repository for any earlier layout-level L2-vs-FastHenry evidence (none found)",
+    "Web search on the meaning of the Q3D Extractor AC solution (surface-based, fully developed skin effect)"
+  ],
+  "caveats": [
+    "The published numbers come from the research note, which records that only one source (S5) was re-opened and S1 could not be; the others were not re-checked. I did not verify the numbers against the original papers.",
+    "My reading of the Q3D 'AC' solution as a high-frequency-limit, surface-based solve comes from the Ansys datasheet and forum posts, not the official help.",
+    "The 100 kHz figure in S4 may be the switching frequency of the optimisation example rather than an inductance-extraction frequency.",
+    "Heredoc Python was denied in this sandbox; all arithmetic was run as one-line uv run python -c commands."
+  ]
+}
