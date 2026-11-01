@@ -1,0 +1,77 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A4's Richardson estimator is not defined; the choice moves the metric by about 30 % and an uncapped observed order can pass a lucky grid",
+      "detail": "The draft does not say how A4's 'three-grid Richardson discretisation estimate' is computed. It could use the formal order (p=2) or the observed order, capped or not, with or without a GCI safety factor. It also does not say what happens when convergence oscillates (negative ratio) or when the observed order is below 1. In a scratch r-z FV model of one die on the default stack (Tj rise 66.9 K at 60 W), the observed order of Tj max was 1.65-1.75 because re-entrant corners pollute the solution. There the observed-order estimate is about 30 % larger than the p=2 estimate. With a 0.0125 K threshold, some grid triple will pass under one convention and fail under the other. An uncapped observed order also lets grids whose lateral and vertical errors partly cancel report an inflated order and a tiny estimate. That is the 'lucky grid' F2 is meant to catch, and A4 is F2's main detector.",
+      "evidence": "Scratch model (4x4 mm die as an equal-area disc; SAC die attach 0.1 mm; SiC 0.18 mm; Cu 0.3 mm with an 8 mm island; Al2O3 0.38 mm; backside Cu; solder; 3 mm Cu baseplate; h=5000). Grid triple m=2,4,8: p_obs=1.71, estimate 0.0194 K with p_obs vs 0.0147 K with p=2. Triple m=4,8,16: 0.0062 vs 0.0046 K. Triple m=8,16,32: 0.0021 vs 0.0015 K. Energy balance about 1e-13.",
+      "suggested_check": "Fix the estimator in the objective, e.g. |f1-f2|/(r^p-1) with p = observed order clipped to [1, formal order], and declare oscillatory or p<1 triples as failing A4 (or as the largest pairwise difference).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3 is the only check of the decision-relevant geometry, but nothing requires the scikit-fem model to map the geometry independently",
+      "detail": "None of the analytic cases has the geometry that sets O002's quantities. The Muzychka and N-layer cases are laterally uniform; in the N-layer case the die attach and SiC die are full-width layers. The manufactured case names only patterned top copper. So discrete die islands, die-attach footprints, the 1 mm backside-Cu inset and the 8 mm baseplate overhang (layout.py and halfbridge.py: baseplate -8..78 x -8..48 mm, substrate 70 x 40 mm) are tested only by A3. D0006 says scikit-fem runs 'on the same tensor grid'. If the cross-check reuses L2's grid and material map, a layout-to-grid bug (a die footprint offset by a cell, a wrong inset or overhang, a die-attach footprint drawn as a full layer) is common to both solvers. Every criterion would then pass. This breaks the claim that no criterion is met by a solver that ignores the decision-relevant geometry.",
+      "evidence": "D0006 decision: 'scikit-fem with trilinear hexahedra on the same tensor grid'. O006 note (4) says 'on the same geometry'. The hypothesis says 'independent' but never defines what must be independent.",
+      "suggested_check": "Require the scikit-fem cross-check to build its mesh and material assignment from the Layout IR with its own code, or add a gate checking per-material volumes and die and die-attach footprint areas and centroids from the L2 grid against the shapely polygons.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A4/A3 at 0.0125 K is four times stricter than O002's own 0.05 K Richardson gate, and the fallback a failure leads to cannot do better",
+      "detail": "In the scratch model, Tj max error falls roughly as h^1.7 and is dominated by resolution inside the die, not at the corners: grading toward the die edge made it worse. About 0.05 K needs m\u22484.6 and about 0.0125 K needs m\u224811, roughly 2.4 times finer per direction, or about 14 times the unknowns in 3D. On a full 86 x 56 mm generator layout with up to 12 die columns, a tensor grid would plausibly reach tens of millions of unknowns. A3 requires scikit-fem to reach the same 0.0125 K on two full layouts, and D0006 measures about 7.7 kB per DOF for it versus about 0.8 kB for the FV prototype. If A4 fails because of cost, decision_if_fail switches to that same scikit-fem, which would need about nine times the memory. The draft also gives no outcome (INVALID or FAIL) for the case where scikit-fem's own estimate exceeds 0.0125 K. The decision tree can therefore stall instead of resolving. O002's F1 asks only for Richardson below 0.05 K per Tj.",
+      "evidence": "Separate refinement against a (48,48) reference. Lateral error: mr=4: 0.043 K, mr=8: 0.013 K, mr=16: 0.0037 K. Vertical error: mz=4: 0.026 K, mz=8: 0.0077 K. Graded lateral grids (g=5, 20) gave larger errors at equal cell count (m=8: 0.029 and 0.055 K vs 0.024 K uniform). This is a proxy: axisymmetric, single die, constant k.",
+      "suggested_check": "Before registration, have pilot P1 measure the grid size and memory each solver needs for a 0.0125 K estimate on one generator layout. Either justify 0.0125 K from O002's need or align A4 with it, and map a scikit-fem estimate above 0.0125 K to an explicit outcome.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F1's 0.005 K scikit-fem agreement gates on linear cases state no load level",
+      "detail": "The constant-k Muzychka Case 2 and N-layer checks are linear, so an absolute agreement in K scales with the applied power. With no stated power, the gate passes trivially at low power. At the A2 rises (60-110 K) it would need scikit-fem errors of about 0.0025 K, which by the scaling above is very expensive. Either way, the gate can be satisfied for the wrong reason or turn the run INVALID for cost reasons alone.",
+      "evidence": "F1 detection: 'agree with an independent scikit-fem run within 0.005 K' (Case 2 and the laterally uniform default stack), with no load given.",
+      "suggested_check": "State these gates relative to the case scale (e.g. at most 1e-4 of scale) or at the A2 load level.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "k(T) is verified only by the manufactured case; the F3 null shows only that k(T) matters at all",
+      "detail": "The N-layer and Muzychka cases have constant k. A3 does not say whether scikit-fem solves with k(T), so the combination O002 actually runs (die islands with cited material k(T)) is never cross-checked. The F3 null (constant k at the layer-mean temperature) fails A1/A2 almost by construction once k varies by 30 % or more. It does not test sensitivity to plausible Picard defects such as lagged k, cell-versus-face k evaluation or the averaging rule. The manufactured case also needs a gate that the analytic field satisfies global and interface flux balance, including interface or boundary source terms. Otherwise a missing interface term looks like a solver miss (K1, then FAIL and the fallback) rather than an F1 INVALID.",
+      "evidence": "Hypothesis (a): only the 3D manufactured solution has k(T). A3's description is silent on k(T). F1 says only 'derived symbolically and checked numerically'.",
+      "suggested_check": "Run A3 with cited k(T), and add an F1 gate: integral of S over the domain plus the manufactured boundary and interface fluxes = 0 to 1e-10 relative.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The surface temperature of a cell-centred FV is not defined; the raw top-cell value converges at first order",
+      "detail": "A1 compares 'max of the L2 field' with 'no interpolation'. In the scratch model, using the top cell-centre value without reconstructing the surface gave observed orders of 0.57-0.89 and estimates of 0.036 K even at m=32. With reconstruction (T_c + q\u00b7dz/2k) the order was about 1.7. The objective or the spec should state which surface value is reported so that A1/A4 measure what O002 uses.",
+      "evidence": "Scratch: Tcell0 triples gave p_obs -0.31, 0.57, 0.79, 0.89 with p_obs estimates of 0.20 K (m=2,4,8) and 0.036 K (m=8,16,32).",
+      "suggested_check": "Define the per-die surface value (e.g. reconstruction with the imposed flux) in the spec.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The A1 scale definition does not say which point of a source sets the 'spreading rise'",
+      "detail": "The spreading rise can be taken at a source's centroid, mean or maximum, and these differ. The A1 denominator, and so A1's binding strength, depends on the choice.",
+      "evidence": "A1: 'scale = the largest spreading rise (rise above the 1D uniform-flux solution) among the case's sources'.",
+      "suggested_check": "Name the point, e.g. the source's maximum minus the 1D value.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Wrote a scratch r-z axisymmetric finite-volume conduction model (scipy spsolve) of a 4x4 mm die (as an equal-area disc) at 60 W on the repository's default DBC stack (stack.py values) with SAC die attach and a SiC die, an 8 mm copper island, h=5000 W/(m\u00b2 K). Tj rise 66.9 K, inside O006's 60-110 K range. Energy balance holds to 1e-13.",
+    "Ran a refinement sequence m=1..32 with ratio 2. Observed order of Tj max and mean is 1.65-1.75. Three-grid estimates with observed order vs p=2 are 0.0194/0.0147 K (m=2,4,8), 0.0062/0.0046 K (m=4,8,16) and 0.0021/0.0015 K (m=8,16,32). The convention changes the estimate by about 30 %.",
+    "Separated the lateral and vertical error contributions against a (48,48) reference. Reaching about 0.0125 K needs roughly 2.4 times finer cells per direction than about 0.05 K; grading toward the die edge did not help because the error is dominated by resolution inside the die.",
+    "Checked the surface-value convention: the raw top cell-centre value converges at order 0.6-0.9; surface reconstruction restores order about 1.7.",
+    "Read the generator and layout geometry (substrate 70x40 mm, baseplate -8..78 x -8..48 mm, backside Cu inset 1 mm, 0.5 mm design grid) to confirm that none of O006's analytic cases has the laterally non-uniform geometry, so it is covered only by A3.",
+    "Cross-read D0006 ('scikit-fem ... on the same tensor grid') and the O002 draft (F1 Richardson gate 0.05 K per Tj; scikit-fem within 0.1 K) against O006's A3 and A4 thresholds and the fallback decision."
+  ],
+  "caveats": [
+    "Scratch evidence: the cost and convergence numbers come from an axisymmetric, single-die, constant-k model. 3D square dies, multiple dies and k(T) will change the constants, though probably not the conclusions about the order and the estimator convention.",
+    "Even if A1-A4 pass, the grid rule is verified on two dev-seed generator layouts only. Its generalisation to all families, 2-6 dies and 4.0-5.5 mm dies relies on O002 keeping a per-layout Richardson gate and a scikit-fem subset check.",
+    "k(T) is verified only through the manufactured case unless A3 is run with the cited material k(T).",
+    "The kill criteria K1 and K2 can fire, but because decision_if_inconclusive equals decision_if_fail they change no decision; the pass_all criteria carry the decision.",
+    "I could not install or run pyamg or scikit-fem here (they are not in the environment), so the scikit-fem cost argument rests on D0006's 7.7 kB per DOF figure.",
+    "I did not check the Muzychka 2003 case tables against the paper."
+  ]
+}
