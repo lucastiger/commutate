@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-01T00:05:47+00:00 from repository state — do not edit_
+_generated 2026-11-01T00:11:46+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0059** [claim_approval] [O901] approve the wording of claim C003
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -21,7 +21,6 @@ cancelled: 29, done: 88, failed: 3
 
 
 ## Recent events
-- 2026-10-31T23:55:22+00:00 merged {"task": "T0116"}
 - 2026-10-31T23:55:22+00:00 inbox_opened {"id": "I0058", "kind": "experiment_registration", "subject": "register E901 (pre-registration)"}
 - 2026-10-31T23:57:48+00:00 experiment_registered {"id": "E901", "hash": "sha256:063203fe01ea3e5ee334c05ebbb0a386a543fa5685c4c245c1db2b5496d9974b", "by": "founder"}
 - 2026-10-31T23:57:48+00:00 inbox_resolved {"id": "I0058", "status": "approved", "note": "Register E901 as designed by T0116 attempt 2 and reviewed by T0119.", "by": "human"}
@@ -36,3 +35,4 @@ cancelled: 29, done: 88, failed: 3
 - 2026-11-01T00:05:45+00:00 claim_recorded {"id": "C003", "status": "proposed"}
 - 2026-11-01T00:05:45+00:00 inbox_opened {"id": "I0059", "kind": "claim_approval", "subject": "[O901] approve the wording of claim C003"}
 - 2026-11-01T00:05:46+00:00 objective_passed {"objective": "O901", "evaluation": "EV-O901-01"}
+- 2026-11-01T00:08:48+00:00 claim_approved {"id": "C003"}
