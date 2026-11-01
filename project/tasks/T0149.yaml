@@ -4,7 +4,7 @@ title: 'Thermal L2 core: steady finite-volume conduction on a non-uniform rectil
   (solvers/thermal_fv.py)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0148
 description: 'D0006 primary L2, steady part only (transient is out of scope). Implement src/moduleforge/solvers/thermal_fv.py;
@@ -72,4 +72,76 @@ lens: null
 trigger: null
 rationale: Code under test for A1, A2 and A4; the boundary and source contract enables the manufactured
   case; energy balance and Picard stop rule are F2's detections.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I added `src/moduleforge/solvers/thermal_fv.py` and `tests/unit/solvers/test_thermal_fv.py`.
+    The solver is steady cell-centred finite-volume conduction on a non-uniform rectilinear grid. Face
+    conductance uses the two half-cells in series. Void cells are excluded and their faces are adiabatic
+    unless a flux is prescribed. Picard iteration for k(T) stops at max |dT| < 1e-4 K. The linear solve
+    is scipy CG preconditioned by pyamg smoothed aggregation, to a relative residual of 1e-12. The module
+    docstring documents the Robin, flux and source contract for n6 and cites its formulas. All 11 tests
+    in `test_thermal_fv.py` pass, including the slow 1e6-cell solve, the DoD pytest and ruff commands
+    exit 0, and `mfos gate --fast` printed "all gates passed". The tests cover:
+
+    - 1D multilayer slab against th'
+  report:
+    status: completed
+    summary: 'I added `src/moduleforge/solvers/thermal_fv.py` and `tests/unit/solvers/test_thermal_fv.py`.
+      The solver is steady cell-centred finite-volume conduction on a non-uniform rectilinear grid. Face
+      conductance uses the two half-cells in series. Void cells are excluded and their faces are adiabatic
+      unless a flux is prescribed. Picard iteration for k(T) stops at max |dT| < 1e-4 K. The linear solve
+      is scipy CG preconditioned by pyamg smoothed aggregation, to a relative residual of 1e-12. The module
+      docstring documents the Robin, flux and source contract for n6 and cites its formulas. All 11 tests
+      in `test_thermal_fv.py` pass, including the slow 1e6-cell solve, the DoD pytest and ruff commands
+      exit 0, and `mfos gate --fast` printed "all gates passed". The tests cover:
+
+      - 1D multilayer slab against the series-resistance closed form (relative 1e-10);
+
+      - energy balance <= 1e-9 on a heterogeneous k(T) case with voids;
+
+      - mirror symmetry (<1e-9 K);
+
+      - observed order in [1.8, 2.2] on smooth graded grids of 16, 32 and 64 cells per direction;
+
+      - the 1D SiC k(T) slab against the Kirchhoff-transform closed form;
+
+      - adiabatic void faces and flux on a void-bounding face;
+
+      - Gauss integration of a degree-5 source;
+
+      - the bilinear surface interpolation, area mean and maximum;
+
+      - input validation.'
+    concerns:
+    - The 1e6-cell slow test (140x140x60 cells, k(T) layers, about 5 Picard solves) took 30 s in one run
+      and about 38 s in another, against the 60 s limit. A loaded machine could cut that margin.
+    - AMG convergence is weak on the thin, anisotropic layer-conforming cells (dz about 10 um against
+      dx about 0.4 mm). A single 300k-cell solve to 1e-8 needed about 128 CG iterations, and 'evolution'
+      strength was far too slow. I settled on forward/backward Gauss-Seidel smoothing, no candidate improvement,
+      and a hierarchy reused across Picard steps until CG iterations exceed twice the fresh count plus
+      10. Larger or more anisotropic grids may need a better preconditioner (z-line smoothing).
+    - The observed-order test uses 16, 32 and 64 cells per direction. The first attempt at 8, 16 and 32
+      gave 1.76 and 1.96, which is below the 1.8 floor, because 8 cells is not yet in the asymptotic regime.
+      I changed the grids, not the tolerance.
+    - The task asks for k(T) Picard with the half-cell k evaluated at the cell temperature. Intermediate
+      Picard solves use a relative linear tolerance of 1e-8, and the converged iterate is polished to
+      linear_tol (1e-12).
+    - The surface interpolation replaces a stencil node on a different surface level (a die top next to
+      copper) or in a void column with the value of the column that contains the query point. That is
+      only first-order accurate within half a cell of such an edge.
+    - '`flux` array specs are dicts keyed by (axis, sign) with cell-shaped arrays, and callables take
+      1-D Gauss-point arrays. This is my own reading of ''callable or per-face array'', documented in
+      the docstring. n6 should confirm it matches what it expects.'
+    files_changed:
+    - src/moduleforge/solvers/thermal_fv.py
+    - tests/unit/solvers/test_thermal_fv.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fv.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
