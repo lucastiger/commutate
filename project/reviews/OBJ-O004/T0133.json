@@ -1,0 +1,69 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's convergence gates (1.5 % absolute, 0.5 % ratio) already fail on the project's own L2 ladders, so INVALID is the likely outcome and there is no affordable way to refine",
+      "detail": "Restated claim: if A1 and A2 pass and K1 and K2 do not fire, the hypothesis is established; the criteria discriminate; the thresholds and sample can resolve the decision; the kill criteria can fire. The 'can resolve' part fails. F1 makes any layout whose three-level (0.5/0.25/0.125 mm) L2 error estimate exceeds 1.5 % (or 0.5 % on a pair ratio) an INVALID run. Round 2 set 1.5 % from the size of the 0.25->0.125 mm step (0.7-1.2 %). But the error left at the finest level is the step times c/(1-c). The observed contraction is c \u2248 0.56-0.62 (orders p \u2248 0.7-0.8), so the remaining error is about 1.4x the last step, not 1x. Recomputed from research/l2_layout_vm{,2}: finest-level errors are 0.80, 1.10, 1.10, 1.12 and 1.64 % (s11_d6 above 1.5 %). From E002's own fit: l2_kstar_bias_max 3.19 % at 0.25 mm x r_hat 0.584 gives \u22481.86 % at 0.125 mm for its worst layout (mean \u22480.99 %). For ratios, the three generator pairs with ratios in [0.75, 0.95] (0.87, 0.795, 0.91) give 0.34, 0.93 and 0.58 % against the 0.5 % gate. Even the most lenient p=1 estimate gives 0.73 % for the 0.795 pair. The claim that errors 'largely cancel in ratios' for perturbation pairs is asserted, never shown, and the pilot (build step 3) only targets A1's 3 %. Every one of 16-20 layouts and 12 or more pairs must clear F1. Refining one level further (0.0625 mm) costs about 8x the 0.125 mm level (7.5-8.2 CPU-h and 38-39 GB per solve today). That does not fit in 260 CPU-h, 21 wall-days, or before the 2026-11-27 day-60 gate. As written, E004 most likely ends INVALID and never resolves whether O003 may use L2.",
+      "evidence": "research/l2_layout_vm*/solve_*_r{0,1,2}.json (cell_m 0.5/0.25/0.125 mm): L(nH) s11_d2 12.835/12.683/12.592; s3_d6 4.174/4.126/4.097; s7_d2 11.115/11.029/10.976; s11_d6 9.015/8.829/8.722; s7_d6 8.119/8.007/7.942. Pair ratio s11_d6/s7_d2 by level: 0.8111/0.8005/0.7946, extrapolated 0.7872. E002-20261016T054426-b69a: l2_kstar_bias_max 0.0319, l2_kstar_bias_mean 0.0170, r_hat 0.5836. l2_layout_vm2/cost.json: 0.125 mm solves 27-29k CPU-s, 38-39 GB.",
+      "suggested_check": "Recompute each existing ladder's finest-level error with the estimator F1 will actually use, and either set the gates from that distribution (or judge on the extrapolated L2 with its estimated error) or require the pilot to show that perturbation pairs clear 0.5 % before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "After an INVALID run, the same benchmark layouts can be reused once their L2 and FastHenry values are known",
+      "detail": "The rule that layouts with known FastHenry values are never reused for judgement sits only in decision_if_fail (FAIL and INCONCLUSIVE). F1's response is 'refine under a new experiment id' and does not require new reconstructions. The evaluator records nothing for an INVALID verdict and does not count it toward max_evaluations: 1. Its rows still show A1 and A2 on the real benchmark layouts. Code_must_match ties O003 to the code that was evaluated, not to code frozen before the first benchmark solve. So L2 or the exporter can be changed with the raw differences in view, then re-run on the same layouts under a new id. Given the first finding, this path is likely to be taken. Extending the no-reuse rule to INVALID runs would instead drain the small public pool (about five sources). Either way the round-2 design leaves a forking path open.",
+      "evidence": "tools/mfos/mfos/evaluate.py lines 487-488 (problems lead to INVALID) and 507 (an INVALID evaluation is not recorded and does not count against max_evaluations). Objective F1 response: 'refine under a new experiment id'. decision_if_fail: 'layouts whose FastHenry values are known are never re-used for judgement'.",
+      "suggested_check": "Freeze the L2 and exporter source hashes at registration, and state whether layouts from an INVALID run may be judged again.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Which L2 value is judged, and the mesh level O003 must use, are not pinned, so the validation may not carry over to O003",
+      "detail": "Neither A1/A2 nor the row schema (L_l2, L_l2_err) says whether L_l2 is the raw 0.125 mm value or the three-level extrapolation. decision_if_pass pins the code, loop and frequency but not the mesh level. O003 will need many L2 solves, and at 0.125 mm each costs 8.7-9.3 CPU-h, so it will likely run at 0.25 mm (1-1.45 CPU-h). At 0.25 mm the in-band generator pair ratios sit 1.7 % (0.8005 vs extrapolated 0.787) and 1.0 % (0.9069 vs 0.916) from their extrapolated values. That uses up most of A2's 2 % before any difference between solvers. If raw 0.125 mm values are judged in A1, L2 also carries a one-signed +1.0 % (mean) to +1.9 % discretisation bias, about two-thirds of A1's 3 % margin. A1 would then pass or fail partly on cancelling discretisation errors rather than on solver accuracy.",
+      "evidence": "Ratio extrapolation from the ladders above. D0005 cost figures. The E002 bias numbers above.",
+      "suggested_check": "State in the acceptance descriptions which L2 value is judged, and make decision_if_pass require O003 to use that same refinement level (or extrapolation).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "A1, A2 and K1 test agreement on exported geometry, not the accuracy the null hypothesis is about",
+      "detail": "The null says L2 is 'not accurate enough on externally defined geometry for a 20 % versus 10 % headroom verdict'. Both tools solve the same exported geometry. So a reconstruction or exporter error, or a shared model choice (point-contact terminals, ideal die shorts, lattice snapping), passes A1 and A2 by construction. The only check that touches real geometry is K2 at 30 %, which the draft admits a topology-only constant also passes. F6 reports shared-model effects on two references and leads to a founder decision, not FAIL or INCONCLUSIVE. Any error between 2 % and 30 % that both tools share goes undetected by every criterion. That is exactly the 'predictor that ignores decision-relevant information' (the real module geometry) the claim says cannot pass. Passing establishes the narrower hypothesis (agreement with FastHenry), not rejection of the null as worded.",
+      "evidence": "Objective scope_out item 4; K2 description; F6 response.",
+      "suggested_check": "Narrow the null to solver agreement on exported geometry, or make F6's 2 % pair-ratio limit a criterion that leads to INCONCLUSIVE.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F4's ratio strata do not guarantee the constant-ratio null fails, and the null is the weakest available",
+      "detail": "The evaluator does support a declared null (null_baselines kind 'column' makes a criterion non_discriminating, which gives INCONCLUSIVE). But F4 requires only one registered pair in [0.75, 0.85) and one in [0.85, 0.95]. Hand counterexample: pairs at 0.845 and 0.855 with median 0.85 give a constant-null error of 0.59 %, inside 2 %. A2 would then be non_discriminating and the run INCONCLUSIVE, which the draft treats as a fail, purely because of sample design. With median 0.85, the null fails only if some r_FH is below 0.833 or above 0.867. A per-perturbation-rule mean null, which would test sensitivity to geometry beyond the rule's average effect, is not declared.",
+      "evidence": "evaluate.py _annotate and null_values; metrics.null_column; hand computation |0.85/0.845-1| = 0.0059.",
+      "suggested_check": "Require registered pairs at or below 0.80 and at or above 0.90 (the h = 20 % and 10 % decision points), and declare a per-rule stratum_mean null alongside the global constant.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F4 does not say whether K2's comparator count is taken before or after the F2 exclusion",
+      "detail": "F2 drops comparators whose L1 dimensional sensitivity exceeds 5 %, and the UTK figures form one 'comparator family'. If F4's 'at least 2 comparators from 2 sources' counts before exclusion, K2 can rest on a single source. If every comparator is excluded, max_rel_err over the empty row set raises, the metric cannot be recomputed, and the run goes INVALID. K2 is therefore never silently empty, but it can be one-source.",
+      "evidence": "metrics.max_rel_err uses np.max (raises on an empty array); evaluate._recompute catches the exception, adds a problem, and the verdict is INVALID.",
+      "suggested_check": "State that F4's comparator count is taken after the F2 exclusion.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Diffed the packet's O004 YAML against project/objectives/O004/objective.yaml: identical apart from a trailing newline.",
+    "Read tools/mfos/mfos/evaluate.py and metrics.py. Point-judged criteria compare the raw value. Declared null_baselines make a pass criterion non_discriminating, giving INCONCLUSIVE. An INVALID evaluation is not recorded and does not count against max_evaluations. max_rel_err on an empty row set raises, giving INVALID.",
+    "Recomputed the three-level L2 convergence for the five 0.5/0.25/0.125 mm ladders in research/l2_layout_vm{,2}: orders p = 0.69-0.80, contraction 0.57-0.62, finest-level extrapolated error 0.80-1.64 % (s11_d6 above the 1.5 % gate).",
+    "Recomputed pair-ratio convergence for all ten generator pairs. The three pairs with ratios in [0.75, 0.95] have finest-level ratio errors of 0.34, 0.93 and 0.58 % against the 0.5 % gate. At 0.25 mm they sit 1.7 % and 1.0 % from their extrapolated values.",
+    "From E002's registered result (E002-20261016T054426-b69a): l2_kstar_bias_max 3.19 %, mean 1.70 %, r_hat 0.584. The derived 0.125 mm-level error is up to about 1.86 % (mean about 0.99 %).",
+    "Checked costs in l2_layout_vm2/cost.json against D0005: 7.5-8.2 CPU-h and 38-39 GB per 0.125 mm solve. One more refinement level does not fit the 260 CPU-h budget.",
+    "Built a hand counterexample showing F4's strata can let the constant-ratio null pass A2 (0.845 and 0.855 against median 0.85 gives 0.59 % < 2 %)."
+  ],
+  "caveats": [
+    "Bash calls began to be denied partway through the review, so I could not compute exactly how many of E002's 90 layouts exceed 1.5 % at 0.125 mm. The figure used is the worst case implied by E002's reported l2_kstar_bias_max and r_hat.",
+    "The generator pairs used for the ratio-gate evidence are cross-layout pairs (different seed or die count), not rule-based perturbations of one reference. Perturbation pairs may cancel discretisation error better. The draft asserts this but nothing in the repository shows it.",
+    "Real reconstructed modules (other substrate sizes, baseplates and feature scales) may converge better or worse than generator layouts. Larger housings, such as the commercial 100 A module, may also cost more than D0005's figures.",
+    "Whether FastHenry can meet its own F1 gates (1 % absolute, 0.5 % ratio, at least three meshes) at 10-20 MHz on module-scale geometry with baseplates is a physics and numerics question I did not assess.",
+    "Not a defect: A1's 3 % absolute threshold is a founder choice, not derived from the decision, which depends only on ratios. It is conservative, so it can block a pass but cannot make a pass unjustified."
+  ]
+}
