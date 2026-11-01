@@ -1,11 +1,14 @@
 id: C003
-statement: moduleforge.canary.harmonic2(n) returns the generalized harmonic number H_n^(2) = sum_{k=1}^{n}
-  1/k^2 as a float64 with relative error at most 1e-13 against a 50-significant-digit decimal reference,
-  for every n in a sealed, decade-stratified sample of 60 integers in [1, 10^6].
-scope: 'Sampled: n_max: 1000000; n_min: 1; strata: [10^0,10^1), [10^1,10^2), [10^2,10^3), [10^3,10^4),
-  [10^4,10^5), [10^5,10^6]. Declared scope_in (not checked against the samples): pure-Python float64 implementation;
-  n in [1, 10^6]'
-status: proposed
+statement: moduleforge.canary.harmonic2(n) returned the generalized harmonic number H_n^(2) = sum_{k=1}^{n}
+  1/k^2 as a float64 with relative error at most 1e-13 (observed maximum 1.11e-16) against a 50-significant-digit
+  decimal reference, for every n in one sealed, decade-stratified sample of 60 draws (56 distinct integers,
+  n from 1 to 925925) from [1, 10^6] (run E901-20261031T170104-5b1d, evaluation EV-O901-01).
+scope: 'The 56 distinct n of sealed run E901-20261031T170104-5b1d (rows.json): n in [1, 925925], in all
+  six decade strata ([10^0,10^1): 6 distinct n; each other decade: 10). Pure-Python float64 implementation
+  in src/moduleforge/canary.py at the evaluated commit. Not established: n outside the sample, n > 925925,
+  or n above about 9.49e7, where k*k exceeds 2^53. Not evidence of correctly rounded summation: naive
+  float64 summation also meets 1e-13 (max 2.75e-14 for n <= 10^6).'
+status: supported
 objective: O901
 evaluation: EV-O901-01
 reviews:
@@ -31,7 +34,7 @@ domain:
   - '[10^3,10^4)'
   - '[10^4,10^5)'
   - '[10^5,10^6]'
-approved_by: null
-approved_at: null
+approved_by: founder
+approved_at: '2026-11-01T00:08:48+00:00'
 scope_restrictions: []
 annotations: []
