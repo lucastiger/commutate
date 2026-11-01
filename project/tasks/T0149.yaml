@@ -1,0 +1,74 @@
+id: T0149
+objective: O006
+title: 'Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard
+  (solvers/thermal_fv.py)'
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0148
+description: 'D0006 primary L2, steady part only (transient is out of scope). Implement src/moduleforge/solvers/thermal_fv.py;
+  do not edit solvers/__init__.py. Inputs: tensor grid lines x, y, z (non-uniform); a material id per
+  cell, with void allowed (void cells are excluded and their faces adiabatic); materials with k(T) from
+  geometry.stack. Discretisation: cell-centred FV with face conductance from the two half-cells in series,
+  which is exact for 1D piecewise-constant k with interfaces on grid lines. Boundary and source data are
+  the contract the manufactured reference (n6) relies on; document them in the module docstring: (a) Robin
+  at z = 0 with h and T_inf, each a scalar or a callable of (x, y); (b) prescribed normal flux, as a callable
+  or a per-face array, on any exterior or void-bounding face (default 0); rectangular top-surface isoflux
+  sources are a special case; (c) volumetric source, given per cell or as a callable integrated per cell
+  with tensor Gauss-Legendre of at least 3 points per direction. k(T): Picard iteration with half-cell
+  k evaluated at the cell temperature; stop when max |dT| < 1e-4 K (F2), and report the iteration count.
+  Linear solve: scipy.sparse plus pyamg smoothed-aggregation-preconditioned CG, tight enough that the
+  energy balance |Q_out/Q_in - 1| <= 1e-9 (F2 gates at 1e-6). Outputs: cell temperatures; the reconstructed
+  top-surface temperature T_c + q dz/(2k) per top face (O006 A1); second-order bilinear interpolation
+  of that surface field at arbitrary (x, y); area mean and maximum over a rectangle; energy balance; meta
+  (n_cells, picard_iters, linear residual, energy_balance, wall time). Tests in tests/unit/solvers/test_thermal_fv.py:
+  1D multilayer slab with h against the cited series-resistance closed form (relative 1e-10); energy balance
+  <= 1e-9; mirror symmetry; observed order in [1.8, 2.2] for a smooth single-material 3D test field of
+  your own (not E006''s) on three non-uniform grids; 1D k(T) slab against the cited Kirchhoff-transform
+  closed form, within the Picard tolerance plus the discretisation error; void faces are adiabatic. One
+  slow-marked test: 1e6 cells solve in under 60 s on this Mac. Start from benchmarks/infra/thermal_bench.py.'
+context_files:
+- benchmarks/infra/thermal_bench.py
+- project/decisions/D0006-thermal-l2-reference.md
+- src/moduleforge/geometry/stack.py
+- docs/thermal_model.md
+- project/objectives/O006/objective.yaml
+- project/memory/literature/thermal-l2-reference.md
+deliverables:
+- src/moduleforge/solvers/thermal_fv.py
+- tests/unit/solvers/test_thermal_fv.py
+touches:
+- src/moduleforge/solvers/thermal_fv.py
+- tests/unit/solvers/test_thermal_fv.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fv.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Code under test for A1, A2 and A4; the boundary and source contract enables the manufactured
+  case; energy balance and Picard stop rule are F2's detections.
+history: []

@@ -1,0 +1,75 @@
+id: T0155
+objective: O006
+title: 'Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note,
+  not evidence)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0154
+description: 'This is pilot P4 of the O006 notes; it is input (b) of D0009''s day-60 error band. Write
+  research/scripts/o006_p4/fh_export.py, a Layout-to-FastHenry exporter that writes decks in SI metres
+  (never `.units mm`, D0002), starting from benchmarks/infra/fh_gen.py. It covers traces, the die shorts,
+  bond wires, and the backside-Cu and baseplate planes as the l2_layout model has them; state every modelling
+  difference. Refinement knobs: nwinc/nhinc, plane segmentation, wire segmentation. `--selftest` checks
+  the deck structure without running FastHenry (units in metres, node and segment counts, a single port
+  between the DC+ and DC- terminal centres). Reuse P3''s reconstruction (research/scripts/o006_case4_layout.py)
+  and its two perturbations unchanged. Run FastHenry 3.0wr, built outside the uv environment per D0002,
+  with direct and multipole-accelerated iterative solves at increasing refinement at 10 and 20 MHz, on
+  a burst VM if agents may use one (docs/INFRASTRUCTURE.md); otherwise record the runs not done. Report
+  memory, time and crashes per run, L per level, extrapolated L, the L2-FastHenry difference (absolute
+  and relative) against P3''s extrapolated l2_layout values, and the pair-ratio difference. State explicitly
+  whether FastHenry is usable at module scale; if it is not, D0009 doubles l2_layout''s discretisation
+  estimate instead. Outputs are a research note, not evidence (F4). Write research/o006_p4/results.json
+  with the schema {fasthenry_version, usable, geometries: [{name, runs: [{mode, refinement, freq_hz, status,
+  wall_s, peak_mem_mb, L_H}], L_extrap_H, diff_vs_l2_rel}], ratio_diff}, and research/notes/o006-p4-fasthenry-feasibility.md.'
+context_files:
+- project/decisions/D0002-l2-reference-fasthenry-license.md
+- project/decisions/D0004-l2-iterative-solve-fasthenry-optional.md
+- project/decisions/D0009-day60-provisional-validation.md
+- benchmarks/infra/fh_gen.py
+- research/scripts/o006_case4_layout.py
+- research/o006_p3/results.json
+- docs/INFRASTRUCTURE.md
+- project/objectives/O006/objective.yaml
+deliverables:
+- research/scripts/o006_p4/fh_export.py
+- research/o006_p4/results.json
+- research/notes/o006-p4-fasthenry-feasibility.md
+touches:
+- research/scripts/o006_p4/**
+- research/o006_p4/**
+- research/notes/o006-p4-fasthenry-feasibility.md
+definition_of_done:
+- cmd: uv run python research/scripts/o006_p4/fh_export.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-p4-fasthenry-feasibility.md
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('research/o006_p4/results.json')); assert isinstance(d['usable'],
+    bool) and d['fasthenry_version']; G=d['geometries']; assert G and all(g['runs'] and all('status' in
+    r for r in g['runs']) for g in G); assert 'ratio_diff' in d"
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Pilot P4 named in the objective; D0009's band input (b); it depends on P3 so both compare the
+  identical reconstruction.
+history: []

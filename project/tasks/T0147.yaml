@@ -3,7 +3,7 @@ objective: O006
 title: Plan O006 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,23 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O006 is active with no build work yet: no thermal solver, no die-attach or SiC layers, and
+    pyamg, scikit-fem and sympy are not dependencies. Of $90, $78.70 remains, and only the draft-review
+    tasks exist. The most likely ways the hypothesis dies are A4 and A3. A4 needs a grid convergence index
+    of at most 0.025 K, which is 2.5e-4 of a 100 K rise. That is hard to reach on affordable grids, because
+    the die, die-attach and copper corners lower the observed order and push Fs to 3. A3 has the same
+    risk on the scikit-fem side: at about 7.7 kB per DOF it may not converge to 0.025 K on this Mac, and
+    the fallback would then fail its own test. So this plan front-loads both kill shots. The FV layout
+    task (n3) and the scikit-fem task (n5) each ship a convergence and cost benchmark on the two A3 layouts '
+  created:
+  - T0148
+  - T0149
+  - T0150
+  - T0151
+  - T0152
+  - T0153
+  - T0154
+  - T0155
+  dropped_for_limits: 0

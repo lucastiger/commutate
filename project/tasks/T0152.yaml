@@ -1,0 +1,91 @@
+id: T0152
+objective: O006
+title: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own
+  GCI, A3 convergence/cost benchmark
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0148
+description: 'Implement src/moduleforge/solvers/thermal_fem.py with scikit-fem trilinear hexahedra and
+  pyamg; do not edit solvers/__init__.py. Independence (A3) requires that it never imports thermal_fv
+  or thermal_layout and builds its own mesh, materials and boundary conditions. (a) Box-stack mode: laterally
+  uniform layers, rectangular isoflux surface sources, h at the bottom, adiabatic sides. E006''s F1 checks
+  need it for Muzychka Case 2 and for the laterally uniform default stack at a 60-110 K rise. (b) Layout
+  mode, implementing docs/thermal_model.md: a conforming hexahedral mesh with nodes on every die, die-attach,
+  copper, backside-Cu and baseplate edge, and void elements removed; its own Picard loop for k(T), stopping
+  when max |dT| < 1e-4 K; per-die Tj max (maximum over die-top surface nodes) and mean; energy balance;
+  its own refinement rule with a constant ratio over three levels; and the per-die Roache GCI, using the
+  same formula as O006 A4. Document the largest DOF count this Mac supports (about 7.7 kB per DOF, D0006).
+  Tests in tests/unit/solvers/test_thermal_fem.py: 1D slab series resistance, energy balance, mirror symmetry,
+  mesh conformity to die and copper edges, and a 1D k(T) Kirchhoff case. Benchmark benchmarks/thermal_fem_convergence.py:
+  the two A3 layouts (the first DRC-valid side_by_side layout with 6 dies per switch and the first u_shaped
+  layout with 2 dies per switch, generate_layouts dev seed 20261101), 65 C coolant, h = 5000 W/(m2 K),
+  k(T), per-die power giving a 60-110 K Tj max rise (record it). Write benchmarks/results/thermal_fem_convergence.json
+  with the schema {mode, layouts: [{name, fingerprint, power_per_die_W, levels: [{level, dofs, wall_s,
+  peak_rss_mb, energy_balance, status}], dies: [{id, tj_max_K: [3 values or null], gci_K, p_obs}]}]}.
+  Set mode to ''full'' for the real run. A level that does not fit in memory gets status ''skipped: memory'',
+  with its estimated DOFs and memory and null values, never invented values. This is A3''s kill shot:
+  scikit-fem''s own GCI must be at most 0.025 K.'
+context_files:
+- docs/thermal_model.md
+- project/decisions/D0006-thermal-l2-reference.md
+- project/memory/literature/thermal-l2-reference.md
+- src/moduleforge/generate/halfbridge.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/geometry/stack.py
+- project/objectives/O006/objective.yaml
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem.py
+- benchmarks/thermal_fem_convergence.py
+- benchmarks/results/thermal_fem_convergence.json
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem.py
+- benchmarks/thermal_fem_convergence.py
+- benchmarks/results/thermal_fem_convergence.json
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s=open('src/moduleforge/solvers/thermal_fem.py').read(); assert 'thermal_fv'
+    not in s and 'thermal_layout' not in s"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_fem_convergence.py --smoke
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('benchmarks/results/thermal_fem_convergence.json'));
+    assert d['mode']=='full'; L=d['layouts']; assert len(L)==2; assert all(len(x['levels'])==3 and x['dies']
+    for x in L); assert all(all(k in dd for k in ('tj_max_K','gci_K','p_obs')) for x in L for dd in x['dies']);
+    assert all(all(k in lv for k in ('dofs','wall_s','peak_rss_mb','status')) for x in L for lv in x['levels'])"
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: A3 (independent FEM on generator layouts, its own GCI <= 0.025 K) and F1's scikit-fem agreement
+  checks; also the decision_if_fail fallback.
+history: []

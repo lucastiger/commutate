@@ -1,0 +1,76 @@
+id: T0153
+objective: O006
+title: 'E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack
+  with patterned top copper'
+type: research
+agent: scientist
+status: proposed
+depends_on:
+- T0148
+description: 'Write experiments/runners/e006_mms.py with your own code; it must not import moduleforge.solvers.
+  Build a manufactured temperature field T*(x, y, z) on the default stack geometry: baseplate, solder,
+  backside Cu, ceramic, and patterned top Cu with at least two islands and a gap, with die attach and
+  SiC die on one island. Use k(T) such that k varies by at least 30 % over the field in at least one layer,
+  with cited or explicitly manufactured k(T) laws. The field range is O002-like (60-110 K). Derive with
+  sympy: the volumetric source q'''''' = -div(k(T*) grad T*) per material region; the normal flux on every
+  exterior and void-bounding face; and the Robin data (h, T_inf(x, y)) at z = 0 consistent with T*. T*
+  and its normal flux must be continuous at every material interface, for example through per-layer Kirchhoff-transformed
+  profiles. Stay inside the FV solver''s contract (n2): per-cell volumetric source, prescribed normal
+  flux on exterior and void faces, and Robin at z = 0 with T_inf(x, y). If the case cannot be built inside
+  that contract, say so in the note instead of extending it. `--selfcheck` exits non-zero on failure:
+  the lambdified source against an independent finite-difference evaluation of -div(k grad T*) at >= 1000
+  seeded random points (relative 1e-6); interface flux continuity to 1e-10; global balance (integral of
+  q'''''' dV + boundary fluxes = 0) to 1e-10 relative by cubature; k variation >= 30 %. Also report an
+  estimate of how far a constant-k solution at the layer-mean temperature moves the reported points, so
+  F3''s null dT_const_k is expected to fail A1 (1 % of the field range) and A2 (0.05 K). The E006 dev
+  rows will confirm it. `--emit PATH` writes the reported points and values with sha256 into research/e006_refs/.
+  Write research/notes/o006-manufactured-solution.md with the derivation, regions, reported points and
+  the F3 estimate.'
+context_files:
+- project/objectives/O006/objective.yaml
+- docs/thermal_model.md
+- src/moduleforge/geometry/stack.py
+- project/memory/literature/thermal-l2-reference.md
+deliverables:
+- experiments/runners/e006_mms.py
+- research/e006_refs/mms_values.json
+- research/notes/o006-manufactured-solution.md
+touches:
+- experiments/runners/e006_mms.py
+- research/e006_refs/mms*
+- research/notes/o006-manufactured-solution.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e006_mms.py --selfcheck
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s=open('experiments/runners/e006_mms.py').read(); assert 'moduleforge.solvers'
+    not in s and 'thermal_fv' not in s and 'skfem' not in s"
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/e006_refs/mms_values.json
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-manufactured-solution.md
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Manufactured case of hypothesis (a), the only reference with k(T) on patterned copper; F1 (symbolic
+  derivation checked numerically) and F3 (k(T) must discriminate).
+history: []

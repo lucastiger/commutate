@@ -1,0 +1,93 @@
+id: T0150
+objective: O006
+title: 'Thermal L2 on Layouts and box stacks: conforming grid builder, frozen grid rule, three-grid GCI
+  in meta[''solver_tol''], A4 convergence/cost benchmark'
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0149
+description: 'Implement src/moduleforge/solvers/thermal_layout.py on top of thermal_fv; do not edit solvers/__init__.py.
+  (a) Layout mode: build docs/thermal_model.md''s model on a grid with lines on every layer interface
+  and on every top-copper, die, die-attach, backside-Cu, ceramic and baseplate edge (generator geometry
+  lies on a 0.5 mm design grid). (b) Box-stack mode: a laterally uniform N-layer flux channel with rectangular
+  isoflux surface sources, adiabatic sides and h at the bottom (E006''s analytic cases: Muzychka 2003
+  Cases 1a, 1b, 2, 3, and the default stack plus die attach and SiC die with several die-sized sources).
+  (c) The grid rule: one documented function of level giving cells per layer thickness and lateral cell
+  size relative to the smallest source or copper feature, with any grading. Between consecutive levels
+  every spacing scales by one constant ratio r. Freeze the constants at module level; O002 and O003 will
+  reuse the rule unchanged. (d) Solve at three consecutive levels. At the finest level report, per die
+  or source: Tj max, Tj mean, centroid T and the inter-die spread. Put the per-value Roache GCI in meta[''solver_tol''],
+  computed exactly as O006 A4 defines it: GCI = Fs |f2 - f1| / (r^p - 1); for monotone convergence with
+  p_obs in [1.5, 2.5], Fs = 1.25 and p = min(p_obs, 2); otherwise Fs = 3 and p = 2. Also report p_obs,
+  the three values, r, cell counts and energy balance per level, and Picard iterations. (e) benchmarks/thermal_l2_convergence.py:
+  the two A3 layouts (the first DRC-valid side_by_side layout with 6 dies per switch and the first u_shaped
+  layout with 2 dies per switch from generate_layouts with dev seed 20261101), 65 C coolant, h = 5000
+  W/(m2 K), k(T), per-die power chosen so the hottest Tj max rise is 60-110 K (record it). Write benchmarks/results/thermal_l2_convergence.json
+  with the schema {mode, layouts: [{name, fingerprint, power_per_die_W, levels: [{level, n_cells, wall_s,
+  peak_rss_mb, energy_balance, status}], dies: [{id, tj_max_K: [3 values or null], gci_K, p_obs}]}]}.
+  Set mode to ''full'' for the real run; a level that cannot run gets a status reason and nulls, never
+  invented values. This is A4''s kill shot. Report the numbers as they come out, and do not tune the rule
+  to this benchmark beyond what its documentation states. Tests in tests/unit/solvers/test_thermal_layout.py:
+  every geometry edge is a grid line at every level; constant ratio; material assignment at sample points;
+  energy balance; the GCI function against hand-computed monotone, oscillatory and out-of-range-p cases;
+  box-stack with a full-top uniform source against 1D series resistance.'
+context_files:
+- src/moduleforge/solvers/thermal_fv.py
+- docs/thermal_model.md
+- src/moduleforge/generate/halfbridge.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/geometry/stack.py
+- project/objectives/O006/objective.yaml
+- project/decisions/D0006-thermal-l2-reference.md
+deliverables:
+- src/moduleforge/solvers/thermal_layout.py
+- tests/unit/solvers/test_thermal_layout.py
+- benchmarks/thermal_l2_convergence.py
+- benchmarks/results/thermal_l2_convergence.json
+touches:
+- src/moduleforge/solvers/thermal_layout.py
+- tests/unit/solvers/test_thermal_layout.py
+- benchmarks/thermal_l2_convergence.py
+- benchmarks/results/thermal_l2_convergence.json
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_layout.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_l2_convergence.py --smoke
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('benchmarks/results/thermal_l2_convergence.json'));
+    assert d['mode']=='full'; L=d['layouts']; assert len(L)==2; assert all(len(x['levels'])==3 and x['dies']
+    for x in L); assert all(all(k in dd for k in ('tj_max_K','gci_K','p_obs')) for x in L for dd in x['dies']);
+    assert all(all(k in lv for k in ('n_cells','wall_s','peak_rss_mb','status')) for x in L for lv in
+    x['levels'])"
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Grid rule frozen before E006 registration (scope_in), GCI estimator of A4 and F2, A3's L2 side,
+  and the cheapest early falsifier of A4.
+history: []

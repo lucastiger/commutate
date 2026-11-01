@@ -1,0 +1,87 @@
+id: T0148
+objective: O006
+title: 'Thermal materials: die-attach and SiC die layers with cited k(T) in LayerStack, shared thermal
+  model definition, pyamg/scikit-fem/sympy dependencies'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Infrastructure for every O006 criterion (hypothesis: die-attach and SiC die layers added
+  to LayerStack). (1) Extend moduleforge.geometry.stack with a die-attach material (SAC305 or sintered
+  Ag, your choice, cited) and a 4H-SiC die material. Give every thermal material (Cu, SAC305 solder, Al2O3,
+  Si3N4, die attach, SiC) a cited k(T) law valid at least over 290-480 K, with the citation in the docstring
+  (mf-conventions). Keep Layer.k as the value at the stated reference temperature. Keep one source of
+  truth for die and attach thickness: reconcile with Die.thickness / Die.attach_thickness (180 / 50 um)
+  in geometry/layout.py. Layout.fingerprint() must cover every new field; extend the coverage test in
+  tests/unit/geometry/test_layout.py, never weaken it. (2) Electromagnetic behaviour must not change.
+  BEFORE editing, capture from the current commit to_conductors() output and the L1 PEEC loop inductance
+  (physics.peec) for generate_layouts seed 7, one layout per family at 2 and 6 dies per switch, into tests/regression/data/em_before_thermal_stack.json.
+  Add tests/regression/test_em_unchanged_by_thermal_stack.py asserting equality (rtol <= 1e-14). (3) Write
+  docs/thermal_model.md: the single written definition of a Layout''s thermal model that the FV solver
+  (n3) and the scikit-fem cross-check (n5) implement independently. It covers the regions and their materials
+  (baseplate outline and overhang, solder, backside Cu with backside_inset, ceramic, top-Cu traces, gaps
+  as void with adiabatic faces, die-attach footprint, die), the heat input (uniform flux over each die''s
+  top face, total P per die), the boundary conditions (uniform h at the baseplate bottom to coolant T;
+  all other faces adiabatic), the outputs (Tj max = maximum of the die-top surface temperature; Tj mean
+  = area mean; inter-die spread), and the laterally uniform box-stack (flux-channel) mode the analytic
+  cases use. (4) Add pyamg (MIT) and scikit-fem (BSD-3) to project dependencies and sympy (BSD) to the
+  dev group, and update uv.lock. Never add gmsh or pygmsh (D0006).'
+context_files:
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/geometry/layout.py
+- tests/unit/geometry/test_layout.py
+- tests/unit/geometry/test_stack.py
+- project/decisions/D0006-thermal-l2-reference.md
+- project/memory/literature/thermal-l2-reference.md
+- project/objectives/O006/objective.yaml
+deliverables:
+- src/moduleforge/geometry/stack.py
+- tests/regression/test_em_unchanged_by_thermal_stack.py
+- tests/regression/data/em_before_thermal_stack.json
+- docs/thermal_model.md
+- pyproject.toml
+- uv.lock
+touches:
+- src/moduleforge/geometry/**
+- tests/unit/geometry/**
+- tests/regression/**
+- docs/thermal_model.md
+- pyproject.toml
+- uv.lock
+definition_of_done:
+- cmd: uv run python -c "import pyamg, skfem, sympy"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python scripts/check_licenses.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit tests/regression/test_em_unchanged_by_thermal_stack.py
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: docs/thermal_model.md
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.5
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Hypothesis prerequisite (die attach + SiC in LayerStack); the shared model definition keeps
+  the A3 cross-check independent while both solvers model the same physics.
+history: []

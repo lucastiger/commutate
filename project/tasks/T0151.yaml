@@ -1,0 +1,79 @@
+id: T0151
+objective: O006
+title: 'E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier
+  series, with F1 self-checks'
+type: research
+agent: scientist
+status: proposed
+depends_on:
+- T0148
+description: 'Write the series references in experiments/runners/e006_series.py with your own code. The
+  module must not import moduleforge.solvers or skfem; importing moduleforge.geometry.stack for material
+  constants is allowed. (1) Muzychka, Culham & Yovanovich 2003 (S44): single- and two-layer rectangular
+  flux channel with eccentric rectangular isoflux sources, h at the sink plane and adiabatic sides. Per
+  source, compute the centroid temperature, the source-mean temperature, the maximum of the field over
+  the source (and its location), and the 1D uniform-flux solution that defines each case''s A1 scale (largest
+  spreading rise among the case''s sources). Cases 1a, 1b, 2 and 3 use the paper''s parameters; Case 2
+  does not state Tf, so fix and document a value. (2) An N-layer Fourier series (Albers 1995 recursion
+  or transfer matrices; Bagnall, Muzychka & Wang 2014; Choudhury & Rogers 2019) for the laterally uniform
+  default DBC stack plus die attach and SiC die (materials from geometry.stack), with constant k and several
+  die-sized sources at O002-like rises of 60-110 K. (3) Series acceleration so that doubling the terms
+  changes every reported value by less than 1e-7 relative. (4) `--selfcheck` runs F1''s gates for these
+  references and exits non-zero on any failure: convergence under doubling; the Muzychka implementation
+  truncated at the paper''s 50 terms reproduces the printed Case 3 values (80.61 C maximum at the centre,
+  78.87 C source mean), and the printed Case 1a/1b centroids, to their printed digits; the N-layer series
+  equals the two-layer series (relative 1e-9) when layers share a conductivity; the full-top uniform source
+  equals the 1D series resistance. (5) `--emit PATH` writes every reference value (case, source, point
+  type, x, y, T) plus each case scale to JSON with its sha256; write research/e006_refs/series_values.json.
+  (6) research/notes/o006-reference-series.md: formulas with equation numbers and citations, parameters,
+  the acceleration method, gate results, and the A1/A2 point list per case. Out of scope: any comparison
+  with the L2 or with scikit-fem. F1 requires the references to be frozen before the first solver comparison,
+  and the scikit-fem agreement checks belong to E006.'
+context_files:
+- project/objectives/O006/objective.yaml
+- project/memory/literature/thermal-l2-reference.md
+- src/moduleforge/geometry/stack.py
+- experiments/runners/e001_reference.py
+deliverables:
+- experiments/runners/e006_series.py
+- research/e006_refs/series_values.json
+- research/notes/o006-reference-series.md
+touches:
+- experiments/runners/e006_series.py
+- research/e006_refs/series*
+- research/notes/o006-reference-series.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e006_series.py --selfcheck
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s=open('experiments/runners/e006_series.py').read(); assert 'moduleforge.solvers'
+    not in s and 'skfem' not in s and 'thermal_fv' not in s"
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/e006_refs/series_values.json
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-reference-series.md
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: A1/A2 analytic cases (hypothesis part a) and failure mode F1; independent of the solver by
+  construction.
+history: []

@@ -1,0 +1,75 @@
+id: T0154
+objective: O006
+title: 'Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note,
+  not evidence)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: 'This is pilot P3 of the O006 notes; it feeds D0009''s day-60 error band (2026-11-27). Following
+  D0007, re-model PowerSynth 2D_Case_4 (e3da/PowerSynth2-pkg, work/Sample_Designs, GPL-3.0) as a ModuleForge
+  Layout from its geometry facts in research/scripts/o006_case4_layout.py. Never commit, copy or import
+  GPL files. Record the repository commit and the sha256 of every file read. Define two documented perturbations
+  (for example a die shift and a trace-width change) for pair ratios. Run solvers.l2_layout.loop_inductance
+  at lateral cells of 0.5, 0.25 and 0.125 mm plus thickness and filament refinement, stating exactly which
+  parameters are refined and by what ratio, at 10 and 20 MHz. For each geometry and frequency report L
+  per level, the observed order, the Richardson-extrapolated L, an absolute discretisation estimate (state
+  the formula), and the pair-ratio (L_pert / L_base) discretisation estimate. Use a burst VM (scripts/burst.sh
+  or scripts/burst_gcp.sh, docs/INFRASTRUCTURE.md) for levels beyond this Mac if agents may use one; otherwise
+  mark those levels as not run, with their estimated cost. F4: 2D_Case_4 and its perturbations are pilot
+  geometry excluded from O003''s and O004''s judged sets, and the outputs are a research note, not evidence.
+  Write research/o006_p3/results.json with the schema {powersynth_commit, sources_sha256: {path: sha256},
+  geometries: [{name, fingerprint, levels: [{cell_mm, params, L_H: {freq: value}, wall_s, peak_mem_mb,
+  status}], p_obs, L_extrap_H, abs_est_H}], pair_ratios: [{pert, freq_hz, ratio_per_level, ratio_est}]},
+  and research/notes/o006-p3-em-convergence.md.'
+context_files:
+- project/decisions/D0007-powersynth-external-use.md
+- project/decisions/D0009-day60-provisional-validation.md
+- research/notes/o003-public-benchmarks.md
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/geometry/layout.py
+- research/scripts/l2_layout_lateral_diag.py
+- docs/INFRASTRUCTURE.md
+- project/objectives/O006/objective.yaml
+deliverables:
+- research/scripts/o006_case4_layout.py
+- research/o006_p3/results.json
+- research/notes/o006-p3-em-convergence.md
+touches:
+- research/scripts/o006_case4_layout.py
+- research/scripts/o006_p3*
+- research/o006_p3/**
+- research/notes/o006-p3-em-convergence.md
+definition_of_done:
+- cmd: uv run python research/scripts/o006_case4_layout.py --check
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-p3-em-convergence.md
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('research/o006_p3/results.json')); assert d['powersynth_commit']
+    and d['sources_sha256']; G=d['geometries']; assert len(G)==3; assert all(g['levels'] and 'L_extrap_H'
+    in g and 'abs_est_H' in g and 'p_obs' in g for g in G); assert d['pair_ratios']"
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 6.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0147
+created_at: '2026-11-01T21:49:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Pilot P3 named in the objective; input (a) of D0009's day-60 error band, so it is time-critical
+  and has no thermal dependency.
+history: []
