@@ -1,0 +1,75 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A1 never checks the surface maximum or inter-die spread that O002 relies on, and drops the N-layer case that D0006 and O002's own A1 require",
+      "detail": "decision_if_pass is 'use the verified thermal L2 as O002's reference (code_must_match)'. O002 judges Tj max taken from the die surface field (not the centroid) and the spread across paralleled dies, on a stack of five or more layers. O006's A1 compares only 'centroid, mean and surface maximum where the source tabulates them'. The repo's own literature audit says Muzychka et al. (2003) tabulates only centroid and mean temperatures, and gives a maximum only for a single centred source. So for multi-source fields the surface maximum, the cell-centred surface reconstruction that produces it, and the spread are never compared with an analytic value. The 3D analytic cases have at most two layers (Case 1b); the real stack is only exercised in the 1D series case. D0006 (accepted) requires the Bagnall\u2013Muzychka\u2013Wang (2014) N-layer surface field, which gives per-die maximum and spread, plus the Kirchhoff transform, 'before any L1 comparison'. O002's draft A1, the criterion earlier critics accepted, also lists Bagnall 2014 for E006. O006 drops both. A pass would therefore not establish the hypothesis against its null ('cannot be verified to the precision O002 needs') for the quantities and the stack in scope_in.",
+      "evidence": "project/objectives/O002/objective.yaml: A1 description includes 'Bagnall, Muzychka & Wang 2014 N-layer surface field'; scope_in says 'per-die Tj max taken from the die surface field (not the centroid)'. project/memory/literature/thermal-l2-reference.md, l.198: 'S44 and S46 tabulate centroid and mean temperatures; S49 gives the maximum for a single centred source. With several dies, the maximum may not sit at a die centroid.' l.208: 'A cell-centred FV needs a surface reconstruction for this.' D0006 Decision, verification list.",
+      "suggested_check": "Remove 'where the source tabulates them'. Add rows for the per-source surface maximum and the pairwise spread, computed from the converged series (which gives the whole field), and restore an N-layer (\u22654 layers, default-stack properties) case. Otherwise amend D0006 and narrow scope_in.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F1's two sanity conditions contradict each other on Muzychka Case 2, so E006 would be INVALID or need an ad hoc reading",
+      "detail": "F1 requires each series to be converged (doubling the terms changes the value by < 1e-6) AND the published table to be reproduced from the series to its printed digits. I derived the single-layer flux-channel solution independently (50\u00d750\u00d710 mm, k = 150, h = 400, four 10 mm sources at the quarter points; I assumed these positions because Table 3 was unreadable to me). The converged centroid rises are 72.388 / 78.796 / 76.263 / 74.920 K. The repo's independent scikit-fem scratch run gives 72.388 / 78.797 / 76.264 / 74.921 K, which confirms both the positions and the converged values. The published values (97.40 / 103.82 / 101.28 / 99.94 \u00b0C, Tf = 25 \u00b0C) differ from the converged series by +0.012 / +0.024 / +0.017 / +0.020 K, 2.5\u20135 times the printed half-digit of 0.005 K. Only a truncated series reproduces all four printed digits (uniform N = 68 or 71 terms; the paper says it used 50). Read literally, F1 fails on Case 2 and declares an experimental failure. Or the scientist decides after the fact at which truncation to check the digits, which is a forking path in a one-evaluation design.",
+      "evidence": "Scratch script ($TMPDIR, uv run python): partial sums at N = 50/100/200/400/800/1600 vs 3200. Differences at N = 50: +0.019 to +0.045 K. At N \u2265 800: \u2264 1e-4 K. Scan of N from 10 to 120: all four printed digits match only at N \u2208 {68, 71}.",
+      "suggested_check": "Rewrite F1: printed digits are reproduced at the source's own truncation, and the converged series (doubling test) is the reference used for A1.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Measuring error against the total rise lets the 1/(hA) film term swamp the spreading error",
+      "detail": "A1 divides by the total rise, and that rise includes the uniform film term, which any predictor gets right. In Case 2 the mean surface rise is \u03b80 = 71.87 K (70.0 K of it film) out of rises of 72.4\u201378.8 K. The source-local component the 3D solver must resolve is 0.53 / 6.95 / 4.41 / 3.07 K. So 0.2 % of the rise equals 27 % / 2.3 % / 3.5 % / 4.9 % of that local component. Case 1b, from the literature-note numbers, is similar: about 28 K film/1D out of about 31.6\u201334.9 K. On these cases A1 accepts a solver that gets the spreading wrong by up to about a quarter. That defeats the claim that no criterion is met by a predictor ignoring the decision-relevant (lateral spreading) information. The objective does not fix which cases enter the max, so whether a discriminating case (e.g. Case 1a, low Biot number, spreading about half the rise) is included is left to the experiment spec. O002's A3 divides by the die-local rise (Tj max minus mean baseplate-bottom temperature) for exactly this reason.",
+      "evidence": "Scratch computation: \u03b80 = Q/(ab)\u00b7(t/k + 1/h) = 71.87 K. 0.2 %\u00b7rise/(rise \u2212 \u03b80) = [0.271, 0.023, 0.035, 0.049] from the published values, and [0.278, 0.023, 0.035, 0.049] from the converged series.",
+      "suggested_check": "Divide by the rise above the mean sink-plane (or source-plane mean) temperature, as O002's A3 does, and list the cases in the max in the objective.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "0.2 % threshold does not follow from the null or the decision, and no criterion separates a bias from discretisation error",
+      "detail": "The null is stated in terms of 'the precision O002 needs'. O002's draft states that precision: a three-grid estimate below 0.05 K per Tj, 0.1 K on pair differences, and the scikit-fem cross-check within 0.1 K. At O002's top load the rise reaches about 110 K (65 \u2192 175 \u00b0C), so 0.2 % \u2248 0.22 K per point, about 4 times O002's per-Tj allowance. A1 is judged on the finest-grid point value only. The observed order from the three-grid study is reported, not gated (F2: 'refine; report'), so a bias that does not shrink with refinement passes as long as it stays below 0.2 %. If per-source errors of \u00b10.2 % do not cancel, the spread error is up to about 0.44 K against O002's 1 K A4 threshold. O002's own F1 gates partly backstop this, which is why this is major rather than a blocker.",
+      "evidence": "O002 objective.yaml F1 detection: 'three-grid Richardson estimate of every reported Tj below 0.05 K (0.1 K on a pair difference); the scikit-fem cross-check ... within 0.1 K'. O006 A1: uncertainty point, threshold 0.002, three-grid estimate 'reported'.",
+      "suggested_check": "Either reword the null as code verification and gate an observed order of at least about 1.8 per case together with the 0.2 % point error, or tie A1 to O002's 0.05 K in absolute terms at O002-like rises.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Discriminating power of the k(T) case is unspecified",
+      "detail": "Nothing requires the manufactured k(T) case to be one where a constant-k or layer-mean-k solve fails A1. I checked a 1D slab with Al2O3-like k \u221d T^-1.25, 0.63 mm thick, h = 5000, at fluxes up to 6e5 W/m\u00b2 (rise 142 K). A self-consistent layer-mean-k solve is within 0.004 % of the exact Kirchhoff solution. So series- or 1D-type k(T) checks cannot tell a broken Picard/local-k implementation apart. Only a 3D manufactured solution with a stated k contrast can, and the objective does not state one.",
+      "evidence": "Scratch script: layer-mean-k errors of 0.0000 / 0.0001 / 0.0008 / 0.0041 % of the rise at q = 2e4 / 1e5 / 3e5 / 6e5 W/m\u00b2.",
+      "suggested_check": "Before registration, require that a reference-temperature constant-k solve of the k(T) case misses by at least 10\u00d7 A1.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "'Grid resolutions the solver uses in O002' is circular and cannot be pinned",
+      "detail": "scope_in ties verification to O002's grids, but O002 is finalised after O006, and O002's F1 chooses resolution per layout with a three-grid estimate. E006's spec cannot register a grid that does not exist yet, so A1 may pass on grids finer than O002 will afford.",
+      "evidence": "O006 notes: 'After P1-P4 the founder session revises O002'. O006 scope_in, item 2.",
+      "suggested_check": "State a feature-relative grid rule (cells per die edge and per layer) in E006, and require O002 to use at least that rule.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "K1 can fire but does not change the decision",
+      "detail": "decision_if_inconclusive equals decision_if_fail, so K1 (> 1 %) only labels a non-pass as FAIL rather than INCONCLUSIVE. It can fire for bugs that do not shrink with refinement (boundary conditions, material assignment, Picard). It cannot fire for an error that refinement removes, because grid choice is open.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the O006 draft against the O002 draft, D0006 and the thermal-L2 literature audit. Confirmed that O006's A1 drops the Bagnall 2014 N-layer surface-field case and the Kirchhoff transform, both listed in D0006 and in O002's A1. Confirmed that Muzychka 2003 tabulates only centroid and mean temperatures (audit l.198).",
+    "Derived the single-layer rectangular flux-channel solution independently and evaluated Muzychka Case 2. The converged centroid rises (72.388 / 78.796 / 76.263 / 74.920 K) match the repo's scikit-fem scratch values to \u2264 0.001 K. The published values differ by 0.012\u20130.024 K and are reproduced only by a truncated series (N = 68 or 71), so F1's two conditions conflict.",
+    "Computed the film/mean term \u03b80 = 71.87 K for Case 2 and showed that 0.2 % of the rise equals 2.3\u201327 % of each source's local (spreading) component.",
+    "Converted the 0.2 % threshold to K at O002's operating envelope (about 110 K rise \u2192 about 0.22 K) and compared it with O002's own L2 precision gates (0.05 K per Tj, 0.1 K per pair).",
+    "1D Kirchhoff-transform check with Al2O3-like k(T): a layer-mean-k solve stays within 0.004 % of the exact rise up to a 142 K rise, so a weak k(T) case cannot discriminate.",
+    "Read mfos.metrics.max_rel_err (max |pred/ref \u2212 1|) to confirm that the denominator is dT_ref as A1 describes."
+  ],
+  "caveats": [
+    "I could not read Muzychka (2003) Table 3 directly (the PDF could not be rendered here). I placed the Case 2 sources at the quarter points. The match with the repo's independent scikit-fem result to \u2264 0.001 K on all four sources strongly suggests these are the published positions, but that is an inference.",
+    "The blocker is cheap to fix. Computing the surface maximum and spread from the converged series and restoring an N-layer case, or narrowing scope_in and amending D0006, would remove it.",
+    "O002's draft F1 gates (three-grid 0.05 K, scikit-fem within 0.1 K) partly backstop the threshold and bias concerns at the O002 stage. That is why those are graded major rather than blocker.",
+    "The case list, grids and k(T) manufactured-solution design are left to the E006 spec. Findings that depend on them describe what the objective as written permits, not what E006 will necessarily do."
+  ]
+}

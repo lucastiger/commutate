@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T19:16:12+00:00 from repository state — do not edit_
+_generated 2026-11-01T19:21:59+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-01T19:16:12+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $0.00/$150 | Public wire-bonded half-bridge modules leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | draft | - | 0/1 | $0.00/$80 | The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix |
+| O006 | draft | - | 0/1 | $1.52/$80 | The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -22,17 +22,15 @@ _generated 2026-11-01T19:16:12+00:00 from repository state — do not edit_
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 2 | $0.00 | 0 | 0 | 0 | 0 |
+| O006 | 2 | $1.52 | 41116 | 31469 | 1 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 104, failed: 3, running: 2
+cancelled: 29, done: 105, failed: 3, running: 1
 
-- T0137 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
 - T0138 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T18:42:36+00:00 objective_draft_review {"objective": "O002", "ref": "7c6c63a5e910a3d0620a931d47368c73f5f38a47", "tasks": ["T0135", "T0136"]}
 - 2026-11-01T18:43:16+00:00 loop_started {"pid": 2692}
 - 2026-11-01T18:43:20+00:00 run_started {"run": "T0133-critic-20261101T104320-f345", "task": "T0133", "role": "critic", "session": "2884c638-fd83-4364-909a-a8f2e35bbd19"}
 - 2026-11-01T18:43:20+00:00 run_started {"run": "T0134-critic-20261101T104320-076f", "task": "T0134", "role": "critic", "session": "f6ecd333-5c80-4bba-85b9-aa51d897d4ab"}
@@ -47,3 +45,4 @@ cancelled: 29, done: 104, failed: 3, running: 2
 - 2026-11-01T19:15:00+00:00 run_started {"run": "T0137-critic-20261101T111500-d960", "task": "T0137", "role": "critic", "session": "16abcbe8-ae79-4aea-aeeb-64341a81a7c4"}
 - 2026-11-01T19:15:00+00:00 run_started {"run": "T0138-critic-20261101T111500-0f31", "task": "T0138", "role": "critic", "session": "f921a724-c8a1-4239-854b-4d927f7caa14"}
 - 2026-11-01T19:15:49+00:00 tick_error {"error": "ValidationError: 1 validation error for Objective\nscope_out.1\n  Input should be a valid string [type=string_type, input_value={'modules with separa
+- 2026-11-01T19:21:57+00:00 run_finished {"run": "T0137-critic-20261101T111500-d960", "status": "completed", "cost": 1.517392, "subtype": "success", "report": "structured_output"}
