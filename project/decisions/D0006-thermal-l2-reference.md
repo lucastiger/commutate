@@ -1,8 +1,5 @@
 # D0006 — L2 thermal reference: in-house finite-volume conduction solver; scikit-fem FEM as cross-check
-Date: <date of founder decision> · Status: proposed (draft by the founder session, 2026-10-31) · Decider: founder
-
-<!-- Draft. Decision records are a protected path: if you accept it, copy this file to
-     project/decisions/D0006-thermal-l2-reference.md, set Date and Status, edit as you see fit, and commit it. -->
+Date: 2026-10-31 · Status: accepted · Decider: founder
 
 ## Context
 O002 (A-T2: a fast L1 thermal model is faithful enough for Tj max and spread) needs an L2 thermal reference before it
