@@ -15,7 +15,7 @@ hypothesis:
     manufactured solution on the default stack geometry with patterned top copper and k varying by at least 30 %) within
     1 % of each case's scale and within 0.05 K; (b) agrees within 0.05 K with an independent scikit-fem solution on two
     generator layouts with discrete die islands, die-attach footprints and patterned copper; and (c) has a Richardson
-    discretisation estimate of at most 0.0125 K for every reported value.
+    discretisation estimate (Roache grid convergence index) of at most 0.025 K for every reported value.
   null_hypothesis: >-
     The in-house thermal L2 cannot be verified to the precision O002 needs on the geometry O002 uses; D0006's fallback
     (scikit-fem) or another reference is required.
@@ -46,13 +46,13 @@ acceptance:
   required_experiments: [E006]
   pass_all:
     - {id: A1, metric: E006.max_case_scaled_err, comparator: "<=", threshold: 0.01, uncertainty: {use: point},
-       description: "max over the reference cases of (max over the case's reported points of |T_L2 - T_ref|) / the case's scale; scale = the largest spreading rise (rise above the 1D uniform-flux solution) among the case's sources, or for the manufactured case the range of the manufactured field; points = each source's centroid and mean, and each source's maximum compared as max of the L2 field vs max of the reference field over that source (no interpolation); finest grid only"}
+       description: "max over the reference cases of (max over the case's reported points of |T_L2 - T_ref|) / the case's scale; scale = the largest spreading rise (rise above the 1D uniform-flux solution, taken at each source's maximum) among the case's sources, or for the manufactured case the range of the manufactured field; points = each source's centroid and mean and the reference field's maximum over each source, the L2 value at a point taken from the reconstructed surface temperature (T_c + q dz / 2k) interpolated bilinearly (second order); finest grid only. A2 usually binds first; A1 guards cases with small rises"}
     - {id: A2, metric: E006.max_abs_err_K, comparator: "<=", threshold: 0.05, uncertainty: {use: point},
        description: "max over the same cases and points of |T_L2 - T_ref| in K, the N-layer and manufactured cases at O002-like rises of 60-110 K; O002's per-Tj allowance"}
     - {id: A3, metric: E006.max_abs_diff_vs_skfem_K, comparator: "<=", threshold: 0.05, uncertainty: {use: point},
-       description: "max over two generator layouts (dev seeds) and every die of |Tj max (L2) - Tj max (scikit-fem)| in K, scikit-fem on a refined conforming hexahedral grid with its own Richardson estimate at most 0.0125 K; covers re-entrant die and copper-edge corners the analytic cases lack"}
-    - {id: A4, metric: E006.max_richardson_est_K, comparator: "<=", threshold: 0.0125, uncertainty: {use: point},
-       description: "max over every reported L2 value of its three-grid Richardson discretisation estimate (constant refinement ratio, grids from the frozen rule): a solver that cannot be converged on affordable grids fails here, which leads to the scikit-fem fallback rather than an INVALID run"}
+       description: "max over two generator layouts and every die of |Tj max (L2) - Tj max (scikit-fem)| in K, with k(T); layouts by rule: the first DRC-valid side_by_side layout with 6 dies and the first u_shaped layout with 2 dies from dev seed 20261101; scikit-fem builds its mesh, materials and boundary conditions from the Layout with its own code (not the FV grid builder), on a refined conforming hexahedral grid, with its own Picard loop; scikit-fem's own grid convergence index must be at most 0.025 K, otherwise A3 is not met; covers die islands, die-attach footprints, copper edges and the baseplate overhang the analytic cases lack"}
+    - {id: A4, metric: E006.max_richardson_est_K, comparator: "<=", threshold: 0.025, uncertainty: {use: point},
+       description: "max over every reported L2 value of its grid convergence index from three grids of the frozen rule with constant ratio r (Roache): GCI = Fs |f2 - f1| / (r^p - 1); for monotone convergence with observed order p_obs in [1.5, 2.5], Fs = 1.25 and p = min(p_obs, 2); otherwise (oscillatory or p_obs outside that range) Fs = 3 and p = 2. Half of O002's 0.05 K per-Tj allowance. A solver that cannot be converged on affordable grids does not meet A4 (the decision is then the fallback), rather than an INVALID run"}
   fail_any:
     - {id: K1, metric: E006.max_case_scaled_err, comparator: ">", threshold: 0.05, uncertainty: {use: point},
        description: "the solver misses some reference case by more than 5 % of its scale: a model or implementation error"}
@@ -62,12 +62,12 @@ acceptance:
 failure_modes:
   - id: F1
     description: "Reference solution wrong (series truncation, transcription, own implementation bug), or tuned toward the solver"
-    detection: "gated sanity checks, all before the first solver comparison: each series converged (doubling the terms changes every reported value by < 1e-7 relative, by series acceleration where needed); the own Muzychka implementation truncated at the paper's 50 terms reproduces the paper's printed Case 3 values to their printed digits, and its converged Case 2 values agree with an independent scikit-fem run within 0.005 K; the N-layer series reduces to the two-layer series when layers share a conductivity and agrees with an independent scikit-fem run on the laterally uniform default stack within 0.005 K; the manufactured source term is derived symbolically and checked numerically; every reference value is frozen and hashed in the spec, and a reference change after the first comparison voids the run"
+    detection: "gated sanity checks, all before the first solver comparison: each series converged (doubling the terms changes every reported value by < 1e-7 relative, by series acceleration where needed); the own Muzychka implementation truncated at the paper's 50 terms reproduces the paper's printed Case 3 values to their printed digits, and its converged Case 2 values agree with an independent scikit-fem run within 0.02 K; the N-layer series reduces to the two-layer series when layers share a conductivity and agrees with an independent scikit-fem run on the laterally uniform default stack within 0.02 K at a rise of 60-110 K; the manufactured source term is derived symbolically and checked numerically; every reference value is frozen and hashed in the spec, and a reference change after the first comparison voids the run"
     response: "experimental failure (INVALID): fix the reference under a new experiment id"
   - id: F2
     description: "Discretisation error hidden by a lucky grid"
     detection: "A4 is a criterion; three grids from the frozen rule refined by a constant ratio; observed order reported per value; energy balance |Q_out/Q_in - 1| <= 1e-6 (manufactured case: against the integrated manufactured source and boundary fluxes); Picard iteration until the largest temperature change is below 1e-4 K"
-    response: "a failed A4 is a FAIL (fallback); a failed energy balance is INVALID"
+    response: "a failed A4 alone gives INCONCLUSIVE, which leads to the same decision as FAIL (fallback); a failed energy balance is INVALID"
   - id: F3
     description: "The k(T) case cannot discriminate"
     detection: "declared null baseline: the column dT_const_k (every row solved with constant k at the layer-mean temperature; identical to the L2 value on constant-k cases) must fail A1 and A2"
@@ -83,7 +83,9 @@ notes: >-
   after draft reviews T0137/T0138 (round 1, both reject) and T0139 (statistics, accept with caveats) / T0140 (physics,
   reject: a per-point spreading denominator is near zero at weak sources; no denominator for the manufactured case; the
   paper's Case 2 table is not reproducible at 50 terms; a 1e-9 series gate is impractical; no re-entrant corners; a
-  failed convergence gate ended INVALID instead of reaching the fallback). O002's draft A1 (E006.max_rel_err_vs_analytic)
+  failed convergence gate ended INVALID instead of reaching the fallback). Round 3 (T0143, T0144: both accept with
+  caveats) led to the defined GCI estimator at 0.025 K, the reconstructed surface temperature, the A3 layout rule and
+  independent scikit-fem geometry, and the load level of F1's agreement checks; approved without a further review round. O002's draft A1 (E006.max_rel_err_vs_analytic)
   is superseded by this objective and is removed when O002 is finalised.
   Build work (planner): (1) die-attach (cited material and k(T), e.g. SAC305 or sintered Ag) and SiC die layers in
   moduleforge.geometry.stack; (2) the thermal L2 solver of D0006 in moduleforge.solvers, with its grid rule and an honest
