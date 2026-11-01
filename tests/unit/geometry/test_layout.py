@@ -163,7 +163,9 @@ def test_die_shorts_span_trace_top_to_die_top(layouts):
 FP_EXEMPT = {"BondWire.loop_height", "Terminal.net"}  # exactly the fingerprint docstring's 'Not covered' list
 _IR_CLASSES = (Layout, Trace, Die, BondWire, Terminal, LayerStack, Layer)
 # Containers: pinned through the fields of their elements, not as a whole.
-_CONTAINERS = {"Layout.stack", "Layout.traces", "Layout.dies", "Layout.wires", "LayerStack.layers"}
+_CONTAINERS = {"Layout.stack", "Layout.traces", "Layout.dies", "Layout.wires", "LayerStack.layers",
+               "LayerStack.die_attach", "LayerStack.die"}
+_DIE_LAYERS = ("die_attach", "die")  # thermal layers above the top Cu, held as LayerStack fields (not in layers)
 # Hashed, but not a free input: LayerStack.__post_init__ forces the layer names to LAYER_ORDER.
 _FIXED = {"Layer.name"}
 _UM = 1e-6
@@ -213,6 +215,7 @@ FP_PINS = {
     "terminal names": (("terminals",), lambda ts: {("AC" if k == PHASE else k): t for k, t in ts.items()}),
     **{f"{n} {f}": (("stack", "layers", LAYER_ORDER.index(n), f), change)
        for n in LAYER_ORDER for f, change in _LAYER_CHANGES.items()},
+    **{f"stack {n} {f}": (("stack", n, f), change) for n in _DIE_LAYERS for f, change in _LAYER_CHANGES.items()},
 }
 
 
@@ -297,6 +300,9 @@ def test_fingerprint_pin_table_covers_every_ir_field(g2):
     layer_pins = {path[2:] for path, _ in FP_PINS.values() if path[:2] == ("stack", "layers")}
     assert layer_pins == {(i, f.name) for i in range(len(LAYER_ORDER)) for f in dataclasses.fields(Layer)
                           if f"Layer.{f.name}" not in _FIXED}
+    die_layer_pins = {path[1:] for path, _ in FP_PINS.values() if path[:2] in {("stack", n) for n in _DIE_LAYERS}}
+    assert die_layer_pins == {(n, f.name) for n in _DIE_LAYERS for f in dataclasses.fields(Layer)
+                              if f"Layer.{f.name}" not in _FIXED}
     pad_pins = {path[3] for path, _ in FP_PINS.values() if path[:3] == ("dies", "*", "pads") and len(path) == 4}
     assert pad_pins == {k for d in g2.dies for k in d.pads} == {"source", "gate"}
     # element fields of lists/dicts are pinned on every element, not only the first
@@ -316,7 +322,7 @@ def test_fingerprint_ignores_exactly_the_documented_fields(g2, path):
 
 def test_fingerprint_docstring_not_covered_list_is_exact():
     doc = " ".join(inspect.getdoc(Layout.fingerprint).split())
-    assert "thermal" not in doc  # there is no thermal model to cover
+    assert "die_attach" in doc and "``die``" in doc  # the thermal die layers are named as covered
     assert "1 nm per field" in doc and "12 significant digits" in doc
     head, not_covered = doc.split("Not covered", 1)
     assert set(re.findall(r"``(\w+\.\w+)``", not_covered)) == FP_EXEMPT

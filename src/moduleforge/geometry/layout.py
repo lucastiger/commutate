@@ -20,7 +20,7 @@ from .conductors import (
     WireSegment,
     decompose_polygon,
 )
-from .stack import SIGMA_AL_WIRE, LayerStack, default_dbc_stack
+from .stack import DIE_ATTACH_THICKNESS, DIE_THICKNESS, SIGMA_AL_WIRE, LayerStack, default_dbc_stack
 
 DC_PLUS = "DC+"
 DC_MINUS = "DC-"
@@ -50,8 +50,8 @@ class Die:
     h: float
     switch: str
     pads: dict[str, tuple[float, float, float, float]]
-    thickness: float = 180e-6  # typical SiC/IGBT die thickness
-    attach_thickness: float = 50e-6  # typical solder/sinter die attach
+    thickness: float = DIE_THICKNESS  # default = stack.die thickness (single source: geometry/stack.py)
+    attach_thickness: float = DIE_ATTACH_THICKNESS  # default = stack.die_attach thickness
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -136,7 +136,8 @@ class Layout:
         label included).
 
         Covered: ``family`` and ``dies_per_switch``; the whole ``LayerStack`` (its ``kind`` label and, for
-        every layer, name, material, thickness, sigma and k); ``backside_inset`` and ``wire_sigma``; the
+        every layer, name, material, thickness, sigma and k, for the five substrate layers and for the ``die_attach``
+        and ``die`` layers); ``backside_inset`` and ``wire_sigma``; the
         substrate ``outline`` and ``baseplate_outline`` (shapely-normalized rings); every ``Trace`` (net,
         polygon rings); every ``Die`` (switch, cx, cy, w, h, thickness, attach_thickness, and each pad's name
         and rectangle); every ``BondWire`` (net, 3D points, diameter); every ``Terminal`` (dict key, cx, cy,
@@ -167,9 +168,12 @@ class Layout:
         def sig(v):
             return f"{float(v):.12g}"
 
+        def layer(la):
+            return (la.name, la.material, nm(la.thickness), sig(la.sigma), sig(la.k))
+
         put("family", self.family, self.dies_per_switch)
-        put("stack", self.stack.kind, [(la.name, la.material, nm(la.thickness), sig(la.sigma), sig(la.k))
-                      for la in self.stack.layers])
+        put("stack", self.stack.kind, [layer(la) for la in self.stack.layers])
+        put("stack die layers", layer(self.stack.die_attach), layer(self.stack.die))
         put("backside_inset", nm(self.backside_inset), "wire_sigma", sig(self.wire_sigma))
         put("outline", _ring_ints(self.outline), _ring_ints(self.baseplate_outline))
         for t in self.traces:

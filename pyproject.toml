@@ -10,10 +10,12 @@ dependencies = [
   "scipy>=1.13",
   "shapely>=2.0",
   "jax>=0.4.30",
+  "pyamg>=5.0",
+  "scikit-fem>=10.0",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff>=0.6", "sympy>=1.12"]
 
 [project.scripts]
 mfos = "mfos.cli:main"
