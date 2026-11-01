@@ -1,0 +1,45 @@
+{
+  "verdict": "accept",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Pass threshold 1e-13 does not discriminate correctly rounded summation from naive summation",
+      "detail": "Over every n in [1, 1e6], a plain left-to-right float64 sum of 1.0/(k*k) has max relative error 2.75e-14 (at n=865182), which also satisfies A1 (<= 1e-13) and never fires K1 (> 1e-9). So the experiment supports the stated accuracy claim but does not show that math.fsum is needed. The threshold still catches gross defects: a missing last term at n~9e5 gives ~6e-13 and float32 would fail. Suggested remedy: if the precision matters to anything downstream, register an additional criterion near a few ulps (e.g. 1e-15).",
+      "evidence": "Exhaustive scratch sweep: naive float64 cumulative sum vs exact scaled-integer reference, max rel err 2.748e-14 at n 865182; fsum-semantics max 7.35e-17 at n 22.",
+      "suggested_check": "Add a regression row or criterion at ~1e-15 so that naive summation would fail.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The '60 integers' are 60 draws with replacement covering 56 distinct values",
+      "detail": "Duplicates are kept as rows. The first decade covers only {1,3,5,6,7,9} (n=2 is covered by the exact_small_cases sanity check). The largest sampled n is 925925, so (925925, 1e6] is not sampled. 'For every n in the sample' still holds, and my exhaustive sweep covers the whole range anyway.",
+      "evidence": "rows.json: 60 rows, 56 distinct n, range [1, 925925]; the runner's notes report the same.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Evaluator bound_used is the point value, not the CI upper end",
+      "detail": "A1 reports bound_used = 1.11e-16, which equals the recomputed point value, while the runner reports ci = [0, 4.44e-16]. A conservative <= check would use 4.44e-16. This changes nothing, since both are about 225x or more below 1e-13.",
+      "evidence": "Evaluation JSON pass_checks[0].bound_used vs result.json metrics.max_rel_err.ci.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Redrew the sample from the recorded seed with my own code following the documented design (default_rng(seed), integers(lo, hi, endpoint=True) per decade): all 60 rows match rows.json in order; stratum labels recomputed from digit count all match.",
+    "Re-evaluated moduleforge.canary.harmonic2 at this commit for all 56 distinct sampled n: bitwise identical to the pred column. sha256 of canary.py and e901_canary.py match the recorded provenance hashes.",
+    "Independent reference A (not decimal summation): exact integer sum of floor(1e80/k^2) with a rigorous interval [T, T+n]*1e-80. Max |pred/H - 1| = 6.98e-17 (matches the runner's exact_max diagnostic); the ref column is the correctly rounded float64 of the true value for all n.",
+    "Independent reference B: Euler-Maclaurin, H_n = pi^2/6 - psi'(n+1), with exact Bernoulli numbers to B_24 and pi from Machin's formula at 90 digits (independent of the runner's PI_63), for n >= 1000: max |pred/H - 1| = 6.27e-17; A and B agree to 2.8e-75.",
+    "Exhaustive sweep over all n in [1, 1e6] using an exact dyadic accumulator of the float64 terms, correctly rounded (the guaranteed behaviour of math.fsum): max relative error 7.35e-17 (n=22). The model equals harmonic2 bitwise at 160 spot n including 1, 2, 999999, 1e6.",
+    "Tested whether the threshold discriminates: a naive left-to-right float64 sum reaches max rel err 2.75e-14 over [1, 1e6], which also passes 1e-13 (finding 1).",
+    "Checked the runner's float-evaluation error bound b = 3u(1+m) + 1e-40 by hand (Sterbenz plus two roundings); the exact error 6.98e-17 lies inside the reported ci [0, 4.44e-16].",
+    "Checked the asymptotic expansion in asymptotic_check against DLMF 5.15.8 (psi'(n+1) = psi'(n) - 1/n^2): the signs and coefficients 1/(30n^5), -1/(42n^7), 1/(30n^9) are correct.",
+    "Ran tests/unit/test_canary.py: 23 passed. Reviewed mfos.metrics.max_rel_err (max |pred/ref - 1| via numpy); it is the same function the evaluator uses, so the evaluator's recomputation is not independent, which is why I computed my own references."
+  ],
+  "caveats": [
+    "The result's git commit d743a57 is not present in this review worktree, and a guard hook blocked the git ancestry command, so I could not check ancestry myself. I relied on the evaluator's on_main ok and on the matching file hashes.",
+    "A permission denial stopped my direct comparison of the stored 50-digit strings in reference_decimal.json against exact sums. The float64-rounded ref column was verified independently.",
+    "The evidence covers this pure-Python float64 implementation for n <= 1e6. Beyond n of about 9.49e7, k*k exceeds 2^53 and the per-term error argument needs rechecking."
+  ]
+}
