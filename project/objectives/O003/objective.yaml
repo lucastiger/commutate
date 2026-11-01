@@ -1,5 +1,5 @@
 id: O003
-title: Public wire-bonded half-bridge modules leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj
+title: Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj
 kind: hypothesis
 priority: 1
 risk: critical
@@ -7,90 +7,95 @@ depends_on: [O006]
 unlocks: []
 hypothesis:
   statement: >-
-    For the reconstructed public SiC MOSFET half-bridge reference modules (research/notes/o003-public-benchmarks.md,
-    D0007), a multi-fidelity search (D0008) inside each reference's own substrate outline, terminals, stack, dies and die
-    count, under the project's design rules, finds a layout whose module-internal commutation-loop inductance at 20 MHz
-    (DC+ terminal to DC- terminal, dies as shorts; l2_layout) is at least 20 % below the reference's, while its maximum
-    junction temperature (verified thermal L2 of O006, at the operating point below) is at most 2 K above the
-    reference's: the lower end of the error band of the median headroom across references is at least 0.20.
+    For the reference set fixed by D0010 (customer reference layouts shared under NDA by 2026-11-12; otherwise the public
+    PowerSynth 2D_Case_2R and 2D_Case_6), a multi-fidelity search (D0008) inside each reference's own substrate outline,
+    terminal pads, stack, dies, die count, bond-wire count, diameter and loop height, with the reference's gate and Kelvin
+    copper kept as fixed keep-out areas, under design rules at least as strict as the reference's own features, finds a
+    layout whose substrate-level commutation-loop inductance at 20 MHz (between the DC+ and DC- terminal pads, dies as
+    shorts; l2_layout) is at least 20 % below the reference's, while its maximum junction temperature (thermal L2 verified
+    in O006) is at most 2 K above the reference's: the lower end of the error band of the median headroom across the
+    references is at least 0.20.
   null_hypothesis: >-
-    Real reference layouts are already near the loop-inductance optimum for their housing and dies; derivative
-    re-layout offers little (< 10 %) inductance improvement at bounded Tj, and the thesis's value proposition does not
-    hold on public benchmarks.
+    Reference layouts are already near the loop-inductance optimum for their housing, dies and bonding; re-layout offers
+    little (< 10 %) inductance improvement at bounded Tj, and the value proposition does not hold.
   why_it_matters: >-
-    Charter assumption A-T3 and the day-60 kill criterion (2026-11-27): "O003 shows < 10 % headroom on public
-    benchmarks". The only public comparison with a commercial module implies about 18 % substrate-only headroom with the
-    terminals fixed (research/notes/o003-public-benchmarks.md, an inference), so the outcome is genuinely uncertain.
+    Charter assumption A-T3 and the day-60 kill criterion (2026-11-27), as amended by D0009 and D0010. The only public
+    comparison with a commercial module implies about 18 % substrate-only headroom with terminals fixed
+    (research/notes/o003-public-benchmarks.md, an inference), so the outcome is genuinely uncertain.
   decision_if_pass: >-
-    A-T3's loop-inductance branch is supported (provisionally, D0009, until O004 passes); use the benchmark re-layouts in
-    customer conversations and build the derivative workflow around them.
+    A-T3's loop-inductance branch is supported (provisionally, D0009, until O004 passes; "indicative" if judged on public
+    benchmarks, D0010); use the re-layouts in customer conversations and build the derivative workflow around them.
   decision_if_fail: >-
-    Day-60 kill (charter, D0009): founder thesis review on whether any other value (current sharing, gate-loop symmetry,
-    cycle time) carries the business, or stop.
+    Day-60 kill (charter, D0009, D0010): founder thesis review on whether any other value (current sharing, gate-loop
+    symmetry, cycle time) carries the business, or stop.
   decision_if_inconclusive: >-
-    Headroom between 10 % and 20 %: founder thesis review of the value proposition at that level; test the
-    current-mismatch branch of A-T3 before any further loop-inductance work.
+    Founder thesis review on 2026-11-27 (D0010), not continuing by default; test the current-mismatch branch of A-T3
+    before any further loop-inductance work.
 scope_in:
-  - SiC MOSFET half-bridge references without separate antiparallel diode dies, reconstructed from the public sources
-    (PowerSynth 2D_Case_2R and 2D_Case_6 per D0007; the Aalborg/Danfoss 4-die module if its dimensions suffice); the
-    same frozen reconstructions O004 uses; PowerSynth 2D_Case_4 is excluded (O006 pilot geometry)
-  - re-layout inside each reference's substrate outline with its terminal positions, stack, dies and die count fixed;
-    layouts DRC-valid under the project's design rules, made at least as strict as the reference's own smallest
-    trace width, spacing and wire pitch
-  - loop inductance by l2_layout at 20 MHz with the error band of D0009; Tj by the thermal L2 verified in O006, coolant
-    65 °C, uniform h = 5000 W/(m² K), equal power per die set so the reference's hottest die rises 60 K above coolant
+  - the reference set of D0010; references must be SiC MOSFET half-bridges without separate antiparallel diode dies
+    (a customer reference with diode dies is reported and excluded until diode dies are modelled)
+  - re-layout inside each reference's substrate outline with terminal pads, stack, dies, die count, wires per die, wire
+    diameter and loop height fixed; the reference's gate and Kelvin copper copied as fixed keep-out areas; design rules
+    at least as strict as the reference's smallest trace width, spacing and wire pitch
+  - substrate-level loop inductance by l2_layout at 20 MHz; die footprints snapped to the l2_layout lattice identically
+    in the reference and every candidate (snapping recorded)
+  - Tj by the thermal L2 verified in O006 at its frozen grid rule; coolant 65 °C, uniform h = 5000 W/(m² K), equal power
+    per die set so the reference's hottest die rises 60 K above coolant (or the customer's stated operating point)
 scope_out:
-  - the current-mismatch branch of A-T3 (no current-sharing model exists yet; a later objective)
-  - modules with separate antiparallel diode dies (UTK, CPES, the commercial module), deferred
-  - die swaps and die-count changes (derivative variants are reported as secondary metrics only, if built in time)
-  - manufacturability beyond the project's design rules (vendor rules are not available)
+  - the current-mismatch branch of A-T3 (no current-sharing model exists yet); gate-loop symmetry
+  - terminal tabs, leads and bus bars (module-level headroom is reported as a secondary metric where the customer's own
+    terminal inductance is known; substrate-level headroom overstates module-level headroom)
+  - modules with separate antiparallel diode dies; die swaps and die-count changes
+  - manufacturability beyond the stated design rules (vendor rules are not available)
 evidence_plan: [E008]
 acceptance:
   required_experiments: [E008]
   pass_all:
     - {id: A1, metric: E008.headroom_median_lo, comparator: ">=", threshold: 0.20, uncertainty: {use: point},
-       description: "median over references of the lower end of each reference's headroom band, h = 1 - L(best re-layout meeting the Tj constraint) / L(reference), both by l2_layout; the band combines both layouts' discretisation estimates and the L2-FastHenry agreement measured in O006's pilot P4 (D0009). The bound is already conservative, so it is judged on the point value"}
+       description: "median over references of h_lo = 1 - r (1 + w), r = L(best re-layout meeting the Tj limit) / L(reference), w = e_ref + e_best + d_fh (linear sum of both layouts' relative discretisation estimates and the relative L2-FastHenry ratio difference measured in O006 pilot P4, or 2 (e_ref + e_best) if P4 found FastHenry unusable); h = 0 when no candidate meets the Tj limit (the reference is in the pool)"}
   fail_any:
     - {id: K1, metric: E008.headroom_median_hi, comparator: "<", threshold: 0.10, uncertainty: {use: point},
-       description: "the day-60 kill of the charter as made operational by D0009: the upper end of the error band of the median headroom is below 10 %"}
+       description: "the day-60 kill of D0009/D0010: median over references of h_hi = 1 - r (1 - w) below 10 %"}
   max_evaluations: 1
 failure_modes:
   - id: F1
-    description: "Design rules looser than the reference's process inflate headroom"
-    detection: "sanity check: the rules used are at least as strict as the smallest trace width, spacing and wire pitch measured on each reconstruction; the reference reconstruction itself is DRC-valid under them"
-    response: "experimental failure (INVALID): tighten rules under a new experiment id"
+    description: "The search or the model, not the reference, creates headroom (artifacts)"
+    detection: "gated sanity checks per reference: (a) the reference expressed in the generator's parameter space (its twin) has |h| <= w; (b) a positive control, the same search started from the run's own winner as reference, finds |h| <= w; (c) band width w <= 0.05; declared null baseline column: the median DRC-valid candidate that meets the Tj limit, whose headroom must not reach A1"
+    response: "experimental failure (INVALID): fix the generator or search under a new experiment id"
   - id: F2
-    description: "Winner's curse: choosing the lowest L2 among re-ranked candidates selects L2's low errors"
-    detection: "the winning re-layout and its reference re-checked with FastHenry where O006's pilot P4 shows it usable; the ratio difference reported and added to the band"
-    response: "report; the band carries it"
+    description: "Winner's curse and shared model choices"
+    detection: "the winner and its reference re-checked with FastHenry where O006 pilot P4 shows it usable (the ratio difference is part of w); exploitation of model choices both tools share (ideal die shorts, point-contact terminal pads, lattice snapping) is not detectable here and is stated with the verdict; O004's F6 diagnostic covers it later"
+    response: "report"
   - id: F3
-    description: "Search too weak: low headroom reflects the generator, not the reference"
-    detection: "fixed search budget per reference (20,000 DRC-valid L1 candidates from the generalised generator, top 8 re-ranked by L2); the reference reconstruction is also expressed in the generator's parameter space and its L1 rank among the candidates reported"
-    response: "if the reference cannot be expressed in the generator's space, the search space is too narrow: report, founder decision"
+    description: "Leakage or forking paths: generator and search tuned on the judged references"
+    detection: "the generalised generator and the search driver are developed only on the generator's own layouts and PowerSynth 2D_Case_4, and frozen (code hashes in E008's spec) before any judged reference is loaded; reconstructions frozen and hashed before any solve; fixed search budget (20,000 DRC-valid L1 candidates per reference, L1 order, thermal L2 down the list until 8 candidates meet the Tj limit or 50 are tried)"
+    response: "a change after freezing voids the run"
   - id: F4
-    description: "Reconstruction errors bias the reference's inductance"
-    detection: "the same frozen reconstructions as O004 (hash-checked); headroom compares two layouts on identical stack, outline and terminals, so common reconstruction errors largely cancel; the L1 ratio sensitivity to assumed dimensions reported"
+    description: "Reconstruction errors bias the reference"
+    detection: "public references: the same frozen reconstructions as O004; customer references: reconstructed from the customer's own files in the vault; the L1 sensitivity of r to assumed dimensions reported; reconstruction errors common to reference and candidates largely cancel in r"
     response: "report; founder judgement in the day-60 decision"
   - id: F5
-    description: "Thermal constraint inactive or misapplied"
-    detection: "per reference, the share of the 8 re-ranked candidates rejected by the +2 K constraint and the Tj margin of the winner reported; thermal L2 discretisation estimate below 0.2 K"
-    response: "report"
+    description: "Customer data leaves its permitted boundary"
+    detection: "E008 rows hold reference ids, vault sha256s and inductance and temperature values only, never geometry; customer runs local unless that customer's NDA permits a VM (recorded per customer before the run)"
+    response: "stop; founder decision; remove leaked data"
 budget: {usd: 150, cpu_hours: 320, wall_days: 25}
 require_plan_approval: true
 notes: >-
-  Draft by the founder session of 2026-11-01 (founder request). Inputs: D0007 (PowerSynth geometry), D0008 (multi-fidelity
-  search), D0009 (day 60 stays 2026-11-27, provisional validation, kill rule), O006 (thermal L2 and pilots P3/P4), O004
-  (frozen reconstructions, later validation). Timeline: to inform the 2026-11-27 decision, E008 must run by about
-  2026-11-24; O006 must pass first (thermal L2), and the reconstructions are shared with O004.
-  Build work (planner): (1) reconstructions of the references in ModuleForge's layout format (shared with O004, frozen
-  and hashed before any solve); (2) a generalised generator producing DRC-valid re-layouts inside a given substrate
-  outline with fixed terminal positions, stack, die type and count (today's generator is tied to its own 70 x 40 mm
-  housing); (3) the search driver per D0008 (L1 screening, L2 re-ranking of the top 8, thermal L2 check of those 8);
-  (4) design-rule strictness per F1.
-  E008 design (scientist): sealed seed for candidate generation; rows per reference (reference_id, L_ref, L_ref_err,
-  L_best, L_best_err, fh_ratio_diff, h, h_lo, h_hi, tj_ref, tj_best, n_rejected_by_tj) and per re-ranked candidate;
-  recompute entries for headroom_median_lo and headroom_median_hi (new mfos.metrics functions: protected path, founder
-  approval needed); null baselines are not applicable (headroom is a property of the reference and the search, not a
-  predictor): declare the exemption in the spec with this reason; secondary metrics: per-reference headroom, the
-  generator-space rank of the reference, derivative variants if built. Day-60 verdict: recorded as a founder decision
-  per D0009.
+  Draft by the founder session of 2026-11-01, revised after draft reviews T0141 (statistics) and T0142 (physics), which
+  rejected the first draft (undefined error band; tool sample inputs as the only references; n = 2 almost never
+  resolves; leakage through generator development; h undefined when the Tj limit removes the shortlist; null baselines
+  wrongly exempted; free wire count and diameter; gate and Kelvin routing ignored; substrate-only loop called
+  module-internal; lattice versus real die sizes). Founder decision D0010 (customer layouts first, public fallback,
+  INCONCLUSIVE -> thesis review) fixes the reference set by rule before any data. Inputs: D0007, D0008, D0009, D0010, O006
+  (thermal L2 and pilots P3/P4), O004 (frozen public reconstructions, later validation). Timeline: E008 must run by about
+  2026-11-24; O006 must pass first.
+  Build work (planner): (1) reconstructions (public: shared with O004, frozen; customer: in the vault, never committed);
+  (2) a generalised generator producing DRC-valid re-layouts inside a given outline with fixed terminal pads, keep-out
+  areas, stack, dies, die count and wire parameters (today's generator is tied to its own 70 x 40 mm housing); (3) the
+  search driver per D0008 and F3; (4) design-rule strictness per scope_in.
+  E008 design (scientist): sealed seed for candidate generation; rows per reference (reference_id, vault_sha256 or
+  reconstruction hash, L_ref, e_ref, L_best, e_best, d_fh, w, r, h, h_lo, h_hi, tj_ref, tj_best, n_tj_rejected,
+  h_twin, h_control, h_null) and per thermally checked candidate; recompute entries for headroom_median_lo and
+  headroom_median_hi (new mfos.metrics functions: protected path, founder approval needed); the null column per F1;
+  secondary metrics: per-reference headroom, module-level headroom where terminal inductance is known, die-snapping
+  sensitivity. The day-60 verdict is a founder decision per D0009/D0010.
