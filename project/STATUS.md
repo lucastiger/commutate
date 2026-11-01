@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T23:06:42+00:00 from repository state — do not edit_
+_generated 2026-11-01T23:06:48+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -23,19 +23,16 @@ _generated 2026-11-01T23:06:42+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 10 | $15.99 | 381348 | 255400 | 16 | 0 |
+| O006 | 11 | $15.99 | 381348 | 255400 | 16 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 116, failed: 3, merge: 1, running: 1, todo: 6
+cancelled: 29, done: 117, failed: 3, running: 2, todo: 6
 
-- T0148 `merge` builder/implement: Thermal materials: die-attach and SiC die layers with cited k(T) in LayerStack, shared thermal model definition, pyamg/scikit-fem/sympy dependencies (attempt 1)
+- T0149 `running` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 1)
 - T0154 `running` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-01T21:41:31+00:00 loop_started {"pid": 30130}
-- 2026-11-01T21:41:34+00:00 run_started {"run": "T0147-planner-20261101T134134-d1d8", "task": "T0147", "role": "planner", "session": "8a4a0eb1-5753-4cb9-bc9f-a84466ae6220"}
-- 2026-11-01T21:49:20+00:00 run_finished {"run": "T0147-planner-20261101T134134-d1d8", "status": "completed", "cost": 1.966868, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T21:49:21+00:00 inbox_opened {"id": "I0060", "kind": "plan_approval", "subject": "[O006] approve initial plan (8 tasks)"}
 - 2026-11-01T21:49:21+00:00 plan_applied {"objective": "O006", "created": ["T0148", "T0149", "T0150", "T0151", "T0152", "T0153", "T0154", "T0155"], "dropped": 0}
 - 2026-11-01T22:46:35+00:00 inbox_resolved {"id": "I0060", "status": "approved", "note": "Plan approved as proposed", "by": "human"}
@@ -48,3 +45,6 @@ cancelled: 29, done: 116, failed: 3, merge: 1, running: 1, todo: 6
 - 2026-11-01T23:00:40+00:00 run_finished {"run": "T0156-critic-20261101T145504-e069", "status": "completed", "cost": 1.913495, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T23:00:44+00:00 inbox_opened {"id": "I0061", "kind": "protected_change", "subject": "T0148: merge needs founder approval"}
 - 2026-11-01T23:06:30+00:00 inbox_resolved {"id": "I0061", "status": "approved", "note": "Approved with founder-session fixes 0e649fa for review T0156 (BC sign, Al2O3 table law, SAC305 slope, NaN guard).
+- 2026-11-01T23:06:43+00:00 task_added {"task": "T0157"}
+- 2026-11-01T23:06:46+00:00 merged {"task": "T0148"}
+- 2026-11-01T23:06:48+00:00 run_started {"run": "T0149-builder-20261101T150648-59a5", "task": "T0149", "role": "builder", "session": "cfdd279b-60d9-4f48-ae4e-4f21dc9d906f"}
