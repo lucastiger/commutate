@@ -1,0 +1,84 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "K1 (the day-60 kill) is met by a search that has no power, and the declared 'positive control' does not test power",
+      "detail": "The claim says no criterion would be met by a predictor that ignores the decision-relevant information. K1 is. Because the reference is in the pool, r <= 1. A search that returns only the reference, or a generalised generator too weak to beat a well-designed reference within a customer outline, gives r = 1. Then h_hi = 1 - (1 - w) = w <= 0.05 (gate F1c), which is below 0.10, so K1 fires deterministically. None of the gates prevents this. (a) The twin check only shows that the reference can be expressed in the generator's space. (b) The so-called positive control re-runs the search with the winner as reference; it is a self-consistency or convergence check, and no headroom is expected in it. (c) The band-width gate is unrelated to power. Nothing makes the search show it can recover headroom that is known to be present before K1 is read. A FAIL therefore cannot separate the stated null ('reference layouts are already near the optimum') from 'the new generator or search is weak'. Yet decision_if_fail is the day-60 kill. The risk is concrete. The generator must be generalised from its fixed 70 x 40 mm housing to arbitrary outlines and fixed keep-outs within about three weeks. It is developed only on its own layouts and 2D_Case_4. A-T1b, whether search driven by L1 loses headroom, is deferred (D0008), so the search's optimisation power is validated nowhere.",
+      "evidence": "Scratch computation: with h = 0 (reference returned) and w in {0, 0.02, 0.05}, h_hi is 0.000, 0.020 and 0.050; K1 fires in every case. judge() with uncertainty 'point' satisfies a fail criterion when value < threshold (evaluate.py lines 71-74). F1(b) as written: 'the same search started from the run's own winner as reference, finds |h| <= w'.",
+      "suggested_check": "Add a gated, true positive control per reference, run before K1 can be read: for example the twin or winner degraded by a known, planted inductance increase of at least 25 %, which the frozen search must recover to within w; otherwise the run is INVALID rather than a kill.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1's declared null baseline is not well defined, and under the only reading the budget supports, P(PASS) falls toward 0 as the true headroom grows",
+      "detail": "F1 declares the null column as 'the median DRC-valid candidate that meets the Tj limit'. The fixed budget in F3 computes Tj (thermal L2) only for candidates down the L1 list, until 8 meet the limit or 50 are tried. So the only candidates known to meet the Tj limit are the near-best shortlist. If h_null is the median of that shortlist, it sits a few percent below the winner. The mfos evaluator marks A1 'non_discriminating' (counted as not satisfied, so INCONCLUSIVE) whenever this null also reaches 0.20. A1 can then pass only in a narrow window just above the threshold, and becomes INCONCLUSIVE exactly when the headroom is large. The other reading is the median candidate of all 20,000 in L1 order. That reading needs thermal L2 and l2_layout solves the fixed budget does not include. It also turns real headroom against a weak but real customer reference into INCONCLUSIVE: if a typical layout beats the reference by 20 %, that refutes the stated null rather than supporting it.",
+      "evidence": "Toy simulation (20,000 candidates, log(L/L_ref) ~ N(m, 0.15), L1 residual 1.5 %, Tj correlated with compactness, the F3 shortlist rule, w = 0.03, null = median of the Tj-feasible shortlist). Mean h_lo of the best: 0.18, 0.23, 0.27, 0.32 gave P(PASS): 0.26, 0.44, 0.00, 0.00. With a compressed tail (s = 0.08), best h_lo 0.24 gave P(PASS) 0.28, and 0.26 gave 0.00. Evaluator: _annotate() sets non_discriminating whenever a null meets the criterion; evaluate() treats that as not satisfied, so INCONCLUSIVE (evaluate.py lines 431-437 and 492-497).",
+      "suggested_check": "Define the null population and how its values are computed (which candidates get thermal L2 and l2_layout, and inside which budget), and check that P(PASS) increases monotonically with true headroom in a simulation before registration.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The F1(b) check can return INVALID because the Tj limit is relative and ratchets, not because of any artifact",
+      "detail": "When the winner becomes the reference, the operating point is reset so that the winner's hottest die rises 60 K, and the Tj limit becomes the winner's Tj + 2 K. If Tj was binding for the winner, which is expected because compact loops concentrate heat, the limit effectively rises by about 2 K \u00d7 1.03. Lower-L candidates that were rejected in the first run then become feasible. h_control then exceeds w and the run is INVALID, even though nothing is wrong with the model. If Tj was not binding, and the generator does not depend on the reference copper (as the build notes describe), the same seed yields the same pool, h_control = 0, and the check cannot fail. Either way it detects nothing about artifacts. An INVALID run on about 2026-11-24 leaves no admissible day-60 evidence.",
+      "evidence": "Derived: new limit relative to the original reference = 2 + dTj_winner \u00d7 62/60 K. In the toy simulation where Tj binds, P(h_control > w) was 0.29-0.70 for slopes of 5-10 K per unit headroom and w of 0.03-0.05. The size depends on the L-Tj trade-off; the PowerSynth front (S4) spans about 7 nH and 15 \u00b0C, so this is plausible.",
+      "suggested_check": "Keep the original reference's operating point and Tj limit in the control, and state whether the control uses a new seed.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Under the public fallback, the sample and thresholds still mostly cannot resolve the question",
+      "detail": "The inconclusive zone of true point headroom is [(0.10 - w)/(1 - w), (0.20 + w)/(1 + w)]: 0.082 to 0.216 at w = 0.02, and 0.053 to 0.238 at w = 0.05. The only prior is about 18 % (research note, an inference), which lies inside it. A median over n = 2 is the mean of the two, and the criterion ignores sampling error. D0010 routes INCONCLUSIVE to a thesis review, so every outcome has an action. But the claim that the thresholds and sample can resolve the decision does not hold for the fallback set.",
+      "evidence": "Monte Carlo, per-reference true h ~ N(0.18, 0.07). For n = 2: P(INCONCLUSIVE) = 0.74 at w = 0.02 and 0.88 at w = 0.05; with no heterogeneity, 1.00. For n = 1: 0.62 and 0.76. At mu = 0.25, n = 2 still gives 0.25 and 0.41.",
+      "suggested_check": "State the expected P(PASS/FAIL/INCONCLUSIVE) for the fallback set in the objective, so that the day-60 review is planned as the likely outcome.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The reference set can be empty, and no rule covers that case",
+      "detail": "scope_in excludes any customer reference with separate antiparallel diode dies. Every IGBT module has them, and many SiC modules have SiC Schottky diodes. The charter covers SiC and IGBT. D0010 says the verdict is judged on the customer layouts whenever any arrive by 2026-11-12. If every customer layout shared is excluded, the draft does not say whether the public set is used instead. With n = 0 the median is undefined, the run is INVALID, and day 60 has no admissible metric. With n = 1, a 'median' with point uncertainty is used to call A-T3 'supported'.",
+      "evidence": "scope_in item 1; D0010 Decision bullet 1; charter thesis 'SiC/IGBT'.",
+      "suggested_check": "Add one rule: if no admissible customer reference remains after exclusions, use the public fallback, labelled indicative.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The band w leaves out reconstruction error for public references, and F4's 'cancel in r' only partly holds",
+      "detail": "Candidates replace the reference's copper pattern and wire routing. Errors in exactly those reconstructed features bias L_ref and do not cancel in r. Only shared items (stack, dies, wire diameter, pads) cancel. F4 reports the L1 sensitivity but keeps it outside w, so A1 at its point value can count reconstruction bias as headroom.",
+      "evidence": "F4 detection text; A1 defines w = e_ref + e_best + d_fh only.",
+      "suggested_check": "Add the F4 L1 sensitivity of r to w for public references, or state the verdict as conditional on the reconstruction.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "With n = 2, the median is a mean and can pass while one reference has no headroom",
+      "detail": "For example, per-reference h_lo of 0.36 and 0.05 gives a median of 0.205, so A1 passes. The title says reference layouts leave at least 20 %, yet one of the two would be at about the null level.",
+      "evidence": "Arithmetic; the hypothesis statement uses the 'median headroom across the references'.",
+      "suggested_check": "Report per-reference h_lo next to the verdict, and say in the claim scope whether one reference may fail.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Operating-point fork",
+      "detail": "The Tj operating point is '60 K rise ... (or the customer's stated operating point)'. The choice changes how tightly the absolute +2 K limit binds, so it must be fixed per reference before any solve, as the vault NDA flags are.",
+      "evidence": "scope_in, Tj item.",
+      "suggested_check": "Record the operating-point choice per reference in the E008 spec before freezing.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Checked that the packet draft matches project/objectives/O003/objective.yaml (identical apart from a trailing newline).",
+    "Read the mfos evaluator (evaluate.py: judge, null_values, _annotate, evaluate) and metrics.null_column to confirm the semantics of 'point' uncertainty, non_discriminating nulls and INVALID.",
+    "Computed by hand and in a script the inconclusive zone of true headroom for w = 0.02, 0.04, 0.05, and showed that an information-free search (h = 0) fires K1 for every allowed w.",
+    "Monte Carlo of P(PASS/FAIL/INCONCLUSIVE) for n = 1, 2, 3, w in {0.02, 0.05} and several priors around the 18 % benchmark inference.",
+    "Simulated the declared null baseline under the budget-consistent reading (median of the Tj-feasible L1 shortlist): P(PASS) is not monotone in headroom.",
+    "Derived and simulated the Tj-limit ratchet in F1(b) when the winner becomes the reference with the power rescaled.",
+    "Read the E002 spec (conv_tol 1 %) to check whether w <= 0.05 is reachable; it is if e is about 1 % per layout and d_fh is small."
+  ],
+  "caveats": [
+    "The simulations are toy models: lognormal candidate inductances, an assumed L1 residual and Tj\u2013headroom slope. They show that the problems can occur and how large they might be, not how likely they are for the real generator.",
+    "The reading of F1(b) assumes the generalised generator does not depend on the reference's copper (as the build notes describe). If it is instead a local search seeded from the reference, the vacuous-check half of that finding changes, but the Tj ratchet still applies.",
+    "Shared-model exploitation (ideal die shorts, point-contact pads, lattice snapping) is a physics-lens question. The draft already discloses it as not detectable; I did not assess it.",
+    "Within the in-model scope (l2_layout, the stated Tj model), a PASS on A1 excludes the < 10 % null for those specific references. The first part of the claim mostly holds, apart from the null-baseline defect."
+  ]
+}
