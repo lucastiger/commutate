@@ -1,0 +1,94 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "K2 does not test the geometry: a constant ratio satisfies it, and the evaluator cannot flag this",
+      "detail": "The claim says no criterion would be met by a predictor that ignores the decision-relevant information. That is false for K2. The draft's own topology-only null (a constant ratio equal to the mean of the pinned ratios, 0.423) misses the pinned published ratios by at most 20.5 %, so K2 (>30 %) does not fire. Any constant between 0.346 and 0.457 also passes. The draft only says this null is 'reported'. In mfos/evaluate.py, null baselines are judged only on pass criteria (fail_checks are annotated with with_nulls=False), so a declared null can never mark K2 as non-discriminating. K2 is also the only check that does not go through the shared exporter. It catches gross convention errors such as including the terminal leads (misses of 64-114 %), but not DC versus AC extraction (misses of 10-14 %) or the CPES substrate-only versus whole-module loop (17 % miss for a 4-9 point headroom shift).",
+      "evidence": "Pinned ratios 0.3512, 0.4236, 0.4948. Constant 0.4232 gives a K2 metric of 0.205. Constants passing K2: [0.3464, 0.4566]. Alternatives against the pinned values: UTK Table 3.3 AC 0.400 / 0.465 (miss 0.139 / 0.097); Table 3.3 DC 0.305 / 0.376 (0.130 / 0.113); CPES whole-module 0.58 (0.172; h 0.42 vs 0.505); S1 DC with leads 0.752 / 0.694 (1.14 / 0.64). evaluate.py lines 479-482.",
+      "suggested_check": "Require that the constant-ratio null fire K2 when the experiment is registered, or add a pinned published comparator that no constant can match within the tolerance.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The second evaluation re-uses the same layouts after their FastHenry answers are known",
+      "detail": "max_evaluations is 2, and decision_if_fail allows a fix under a new experiment id. Nothing requires new reconstructions or perturbations for the second evaluation. Once evaluation 1 has produced FastHenry values on every benchmark layout, any change to l2_layout or the exporter can be tuned against them. F3 only requires a founder decision for model choices that change L by more than 1 %, which is enough to move A1 from 3.5 % to under 3 %. A pass on the second evaluation would show agreement only on layouts the code was tuned on, not on externally defined geometry.",
+      "evidence": "Objective: acceptance.max_evaluations 2; decision_if_fail 'fix under a new experiment id. The benchmark set is never narrowed'; F3 response '>1 % needs a founder decision'.",
+      "suggested_check": "Require any second evaluation to add reconstructions or perturbations registered after the fix, and judge it on those, or on all layouts including them.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A2 sets no minimum spread of pair ratios, so a constant ratio can meet it",
+      "detail": "A2 discriminates only if the registered pair ratios are spread out. The 0.75-0.95 band sets limits but not spread. If the perturbation steps are tuned with L1 to hit a target, the ratios may cluster. If all pair ratios fall within about 0.034 of each other (near r = 0.85), a constant ratio meets A2's 2 %. No constant-ratio null is required for A2.",
+      "evidence": "Best-constant A2 metric by ratio spread around 0.85: 0.02 -> 0.0118, 0.034 -> 0.020, 0.05 -> 0.029, 0.10 -> 0.059.",
+      "suggested_check": "Require the registered L1 ratios to span at least about 0.1, and declare a constant-ratio null on A2 so the evaluator's non-discrimination check applies.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "FastHenry's stopping rule is not an error bound, so A2 may fail because of discretisation alone",
+      "detail": "F1 stops FastHenry refinement when L changes by less than 0.5 % between its last two meshes. That is not an error bound. If convergence is slow, the remaining error can be several times the last change. Under per-layout errors within \u00b10.5 % for both tools, convergence noise alone uses up a median 1.1 % of A2's 2 % limit (max over 12 pairs). If FastHenry's true error is 2\u00d7 its last change, a false A2 failure has a 22 % chance; at 4\u00d7, 97 %. This risks failing and delaying O003 (day-60 gate on 2026-11-27) rather than passing a bad solver, but it means the 2 % limit can only be resolved if both tools have real error bounds.",
+      "evidence": "Monte Carlo, 2e5 trials, seed 20261031, 12 pairs, per-layout errors independent (overstates noise for correlated meshes). Median max|dr| and P(max>0.02): 0.0110 / 0.000; 0.0172 / 0.224; 0.0314 / 0.974.",
+      "suggested_check": "Require a Richardson-type error estimate for FastHenry, like L2's, and a pre-registered combined ratio-uncertainty budget well under 2 % as a sanity check.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "O003's benchmark references may fall outside O004's validated sample",
+      "detail": "decision_if_pass lets O003 use l2_layout as its judge on 'the benchmark set'. F4 only requires at least 4 references from at least 2 sources. D0007 says O003's set may include the Aalborg reconstructions, but O004's scope_in does not list Aalborg (4 dies per switch). Nothing requires every O003 reference layout to be among O004's A1 layouts or to have perturbation pairs.",
+      "evidence": "D0007 Consequences: 'UTK, CPES and Aalborg reconstructions'. O004 scope_in lists only PowerSynth, UTK and CPES with the commercial module.",
+      "suggested_check": "Require O003's pre-registered reference layouts to be a subset of E004's A1 layouts, each with perturbation pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The F2 exclusion rule biases the solver comparison toward easy geometry",
+      "detail": "Pairs whose ratio sensitivity to assumed dimensions exceeds 3 % (L1, root-sum-square) are dropped. That uncertainty matters for agreement with published values, but not for L2 versus FastHenry on identical exported geometry. The rule removes the geometries most sensitive to small changes (tight gaps, strong near-field coupling), which is where the two solvers' discretisations are most likely to differ and where an inductance-minimising optimizer tends to go.",
+      "evidence": "Objective F2 detection text.",
+      "suggested_check": "Apply the 3 % rule only to comparisons with published values, or solve the dropped pairs too and report their L2/FastHenry differences.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Unclear which tool decides the 0.75-0.95 ratio band",
+      "detail": "The hypothesis restricts pairs to ratios between 0.75 and 0.95 but does not say which tool decides membership, or when. If L2 or FastHenry ratios decide it, pairs are selected by outcome, which undermines 'every pre-registered pair'. Band membership and F2 exclusions are also not among the rows, so they cannot be recomputed.",
+      "evidence": "Hypothesis text; the per-pair rows in the notes contain only pair_id, r_l2 and r_fh.",
+      "suggested_check": "State that band membership is decided with L1 before registration, that no pair is dropped afterwards, and add r_l1 and exclusion flags to the rows.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Validation at 10 MHz while O003's extraction frequency is not yet fixed",
+      "detail": "The charter leaves the loop and frequency to O003, which does not exist yet. O001/C002 worked at 20 MHz. A1/A2 validate only 10 MHz. At 10-20 MHz the copper is many skin depths thick, so the difference is probably small, but it is not covered.",
+      "evidence": "Charter kill criteria; C002 scope '20 MHz'.",
+      "suggested_check": "Tie O004's frequency to O003's, or add a 20 MHz row for each pair.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Too few layouts or pairs would give INVALID, not the stated INCONCLUSIVE",
+      "detail": "If the F4 minimums are implemented as a sanity check, the evaluator returns INVALID, which does not use up an evaluation. The draft says INCONCLUSIVE, which does. The difference changes how the two-evaluation budget is used.",
+      "evidence": "evaluate.py lines 319-324 (failed sanity -> problems -> INVALID) and line 507 (INVALID not recorded).",
+      "suggested_check": "State which outcome is intended for too small a sample and how the spec implements it.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the pinned K2 ratios (UTK 7.2/20.5 = 0.3512 and 8.6/20.3 = 0.4236, CPES 4.8/9.7 = 0.4948) and the draft's constant-ratio null (0.4232): it misses by at most 20.5 %, so K2 does not fire. Any constant in [0.346, 0.457] passes K2; the best constant, 0.411, misses by 17 %.",
+    "Measured K2 against plausible convention errors: UTK Table 3.3 AC and DC ratios (misses of 10-14 %), S1 DC with terminal leads (64-114 %), UTK measured ratios (26-33 %), CPES whole-module 0.58 (17 %). K2 catches only the leads case.",
+    "Reproduced the draft's '35-48 %' UTK simulated-versus-measured figure (0.351/0.260 - 1 = 35 %, 0.424/0.286 - 1 = 48 %) and checked the headroom-error formula (h = 1 - r, so a ratio error d moves h by r\u00b7d).",
+    "Read mfos/evaluate.py: null baselines are judged only on pass_all criteria (lines 479-482), so a declared null cannot flag K2. A failed sanity check gives INVALID, not INCONCLUSIVE (lines 319-324, 487-488). Read mfos.metrics.max_rel_err = max |pred/ref - 1|, which matches the A1, A2 and K2 definitions.",
+    "Monte Carlo (seed 20261031, 2e5 trials, 12 pairs) of the A2 metric under convergence noise alone: median 1.1 % with errors within the stated 0.5 %; a 22 % chance of exceeding 2 % at 2\u00d7 FastHenry's last change and 97 % at 4\u00d7.",
+    "Computed the rule-of-three bound after all pairs pass: 95 % upper bound on per-pair failure 22 % for n = 12, 53 % for n = 4 clusters. Computed the best-constant A2 metric against ratio spread: it meets 2 % once the spread is 0.034 or less near r = 0.85.",
+    "Cross-checked scope against D0007, which lists Aalborg as a possible O003 benchmark, and the charter, which leaves O003's frequency and loop unfixed. Confirmed project/objectives/O004/objective.yaml matches the packet draft."
+  ],
+  "caveats": [
+    "The claim that no criterion can be met by a predictor that ignores the geometry holds only for A1 and A2, and for A2 only if the pair ratios are spread out. K2 is a loose check on the published values: a constant ratio between 0.346 and 0.457 satisfies it.",
+    "A pass on the first evaluation supports the hypothesis only for the registered set, which the F2 rule biases toward geometry insensitive to assumed dimensions. A pass on the second evaluation, after code changes made with FastHenry results on the same layouts known, does not establish it.",
+    "Coverage of optimizer-chosen layouts rests entirely on O003's required FastHenry re-check of its winning ratio. With 12 of 12 pairs passing, the 95 % upper bound on the per-pair failure rate is 22 % (53 % with 4 reference clusters).",
+    "Errors shared by both solvers through the common exporter (loop definition, terminals, DC versus AC) are checked only by K2. K2 cannot tell the CPES substrate-only loop from the whole-module loop, a 4-9 point headroom difference.",
+    "Validated only at 10 MHz and only for the sources in scope_in (no Aalborg). The sample-size gate (F4) is only met if PowerSynth or 2 or more sources are reconstructed.",
+    "Not re-checked: the dissertation tables themselves. The pinned values come from research/notes/o003-public-benchmarks.md, which says the sources were not all re-opened."
+  ]
+}
