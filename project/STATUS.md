@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T06:54:36+00:00 from repository state — do not edit_
+_generated 2026-11-01T06:56:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,27 +10,25 @@ _generated 2026-11-01T06:54:36+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/2 | $3.91/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O004 | draft | - | 0/2 | $3.91/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
+| O004 | draft | - | 0/2 | $5.66/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 3 | $3.91 | 92918 | 54813 | 9 | 0 |
-| O004 | 4 | $3.91 | 92297 | 61159 | 6 | 0 |
+| O002 | 4 | $3.91 | 92918 | 54813 | 9 | 0 |
+| O004 | 4 | $5.66 | 133856 | 91423 | 10 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 97, failed: 3, running: 2, todo: 1
+cancelled: 29, done: 98, failed: 3, running: 2
 
-- T0130 `running` critic/review: Review OBJ-O004 (physics) (attempt 1)
 - T0131 `running` critic/review: Review OBJ-O002 (statistics) (attempt 1)
+- T0132 `running` critic/review: Review OBJ-O002 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T06:32:40+00:00 run_started {"run": "T0125-critic-20261031T233240-efc1", "task": "T0125", "role": "critic", "session": "5815873b-754f-4878-a252-6cdc015ae967"}
-- 2026-11-01T06:32:40+00:00 run_started {"run": "T0126-critic-20261031T233240-c423", "task": "T0126", "role": "critic", "session": "91951d9a-c68f-4304-8f27-13f96e7c8f44"}
 - 2026-11-01T06:37:15+00:00 run_finished {"run": "T0125-critic-20261031T233240-efc1", "status": "completed", "cost": 1.203358, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T06:37:17+00:00 run_started {"run": "T0127-critic-20261031T233717-72a0", "task": "T0127", "role": "critic", "session": "55338d83-e48f-4454-9692-b50cedcb9ee5"}
 - 2026-11-01T06:38:04+00:00 run_finished {"run": "T0126-critic-20261031T233240-c423", "status": "completed", "cost": 1.382527, "subtype": "success", "report": "structured_output"}
@@ -44,3 +42,5 @@ cancelled: 29, done: 97, failed: 3, running: 2, todo: 1
 - 2026-11-01T06:49:34+00:00 run_started {"run": "T0130-critic-20261031T234934-6494", "task": "T0130", "role": "critic", "session": "d1975650-8306-44c9-aa5b-dcdf8d07dfc8"}
 - 2026-11-01T06:54:34+00:00 run_finished {"run": "T0129-critic-20261031T234934-be4c", "status": "completed", "cost": 1.328618, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T06:54:36+00:00 run_started {"run": "T0131-critic-20261031T235436-0912", "task": "T0131", "role": "critic", "session": "3f771395-07e2-425e-8443-f03c2663d90b"}
+- 2026-11-01T06:56:31+00:00 run_finished {"run": "T0130-critic-20261031T234934-6494", "status": "completed", "cost": 1.748829, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T06:56:33+00:00 run_started {"run": "T0132-critic-20261031T235633-7b24", "task": "T0132", "role": "critic", "session": "64448faf-9ad3-4ca6-b929-713310a5a12d"}

@@ -1,0 +1,85 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's 0.5 % L2 convergence gate fails on every three-level ladder in the repo, and no finer level is affordable",
+      "detail": "F1 requires the 'l2_layout three-level Richardson estimate and solver_tol below 0.5 % per layout' as a sanity check, and a failure means an experimental failure under a new experiment id. The repo has three full 0.5/0.25/0.125 mm ladders on the generator's own layouts. In all three, the step from 0.25 to 0.125 mm is still 0.70-1.21 %, the contraction ratio is about 0.57-0.61 (observed order p \u2248 0.7-0.8, below first order), and the Richardson estimate of the remaining error at 0.125 mm is 1.1-1.6 %. That is 2-3 times the gate. A finer level does not exist: the 0.125 mm level already needs 36-39 GB and 8.2-9.3 CPU-h per layout, and 0.0625 mm would be roughly 4 times that across 16-20 layouts, against a 200 CPU-h budget. Reconstructed layouts with point terminal contacts and finer features are unlikely to converge faster. Read as written, E004 would therefore come out INVALID or INCONCLUSIVE (which the draft treats as FAIL) whatever the truth of the hypothesis, so the claim that 'the thresholds and the sample can resolve the decision' is false. The other reading is that only solver_tol (about 1e-4) must be under 0.5 % and the Richardson estimate is just reported. Then L2 has no convergence gate at all on a geometry class where it has never been validated, and an unchecked error of 1-1.6 % uses up a third to a half of A1's 3 % margin.",
+      "evidence": "research/l2_layout_vm/solve_s11_d2_r*.json: 12.8345 / 12.6832 / 12.5919 nH (464k / 1.87M / 7.53M unknowns), steps -1.18 % then -0.72 %, q = 0.603, Richardson residual 0.139 nH = 1.10 %. solve_s3_d6_r*: 4.1736 / 4.1260 / 4.0970 nH, q = 0.609, residual 1.10 %. research/l2_layout_vm2/solve_s11_d6_r*: 9.0150 / 8.8285 / 8.7216 nH, q = 0.573, residual 1.64 %. The finest level costs 29,485-33,529 CPU-s and peaks at 35.8-39.1 GB. The I0039 ladder quoted in the l2_layout.py docstring gives 0.89 %.",
+      "suggested_check": "Restate F1 so it can be met and still means something: for example, report L2's discretisation error from the ladder for each layout and for each pair's ratio (most of it cancels in a ratio), and require that it, combined with FastHenry's, stays below a stated fraction of A1's and A2's margins. Then show in pilot step (3) that the restated gate can actually be met.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "K2 is passed by a predictor that knows only the topology, and it is the only check of the model the two tools share",
+      "detail": "The claim says no criterion is met by a predictor that ignores the decision-relevant information. K2 fails that test. With the pinned ratios 0.3512 (7.2/20.5), 0.4236 (8.6/20.3) and 0.4948 (4.8/9.7), any constant ratio from 0.346 to 0.457 stays inside K2's 30 % on every comparator. The 'mean of pinned ratios' null that the notes say will be reported against K2 has a worst error of 20.5 % (the others are 0.1 % and 14.5 %), so it does not fire K2. The evaluator also attaches declared nulls only to pass criteria (_annotate with with_nulls=False for fail_any), so nothing machine-checks K2's power to discriminate. K2 is meant as a loose gross-error check, but it is also the only part of the objective that compares the shared exporter model against anything independent. Hypothesis part (c) is therefore established trivially.",
+      "evidence": "Hand computation from the pinned values in the O004 notes; tools/mfos/mfos/evaluate.py lines 424-437 and 476-479 (nulls are applied only to pass_checks).",
+      "suggested_check": "Either state that K2 carries no information beyond topology and drop (c) from the hypothesis statement, or add a pass criterion requiring L2 to beat the declared constant-ratio null by a stated margin on the pinned comparators.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "K2's extraction frequency and loop are not pinned per comparator, and within one source DC versus AC moves the ratio by about as much as K2's threshold",
+      "detail": "Scope_in sets K2 at 'its stated frequency, or at 20 MHz as the HF proxy for Q3D AC values', but the notes pin only the numbers: not the frequency and not the port or loop definition. In the same UTK source, the Q3D proposed/conventional ratio is 0.305 at DC and 0.400 at AC for Loop1 (+31 %), and 0.376 versus 0.465 for Loop2 (+24 %). That is the same size as K2's 30 % threshold. Whether K2 fires can therefore turn on a frequency choice made after approval. The note's figures also hint that Table 5.1's proposed 'simulated' values (7.2, 8.6) are the same numbers as Table 3.3's AC values while the conventional ones differ (20.5 versus 18.0). Which frequency Table 5.1 uses must come from the source; I could not render the PDF to check. The CPES 'substrate-associated' 9.7 \u2192 4.8 nH value also does not say DC or AC, and it uses a substrate-only port, unlike UTK's Loop1 and Loop2.",
+      "evidence": "research/notes/o003-public-benchmarks.md: S2 Table 3.3 DC/AC 38.3/18.0, 11.7/7.2, 38.3/18.5, 14.4/8.6 nH; ratios computed by hand. The UTK PDF was fetched, but pages could not be rendered (no poppler), so Table 5.1's frequency is unverified.",
+      "suggested_check": "Before approval, pin for each K2 comparator the source table, the extraction frequency (or DC) quoted from the text, and the port and loop definition.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A pass shows agreement with FastHenry on one shared conductor model, not accuracy on the modules; F3's 1 % model-choice rule cannot detect shared choices",
+      "detail": "Both tools receive 'the identical conductor geometry from one exporter'. Model choices built into l2_layout therefore become common-mode assumptions that A1, A2 and K1 cannot see: ideal die shorts with an equipotential footprint ('a model assumption and is not bounded', l2_layout.py docstring), bilinear point-contact port terminals in place of physical terminal tabs, mitred polyline wires, and footprints snapped to the 0.5 mm lattice (5.85, 4.08, 2.26 and 3.08 mm dies all have to move). F3's response ('a model choice that changes L by more than 1 % needs a founder decision') has no detection path: the per-conductor-group diagnostic attributes differences between L2 and FastHenry, not between the model and reality. Shared assumptions do not cancel in ratios. For example, a series inductance common to both layouts but misrepresented by the model shifts r = L_p/L_r. Since K2 is non-discriminating (see above), nothing in the objective bounds these effects. The title's 'accurate on reconstructed public modules' claims more than A1 and A2 can show.",
+      "evidence": "src/moduleforge/solvers/l2_layout.py lines 8-17, 34-39, 63-65; the O004 F3 text.",
+      "suggested_check": "Re-title and re-scope the claim to 'agrees with FastHenry on the exported model', or add a pre-registered FastHenry-only sensitivity run (die as a solid block instead of a short, terminal tabs instead of point contacts) on at least one pair so that the F3 1 % rule can actually trigger.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Validated frequency and loop are not tied to the ones O003 will use",
+      "detail": "The charter says the loop and the extraction frequency are fixed in O003, and O003 does not exist yet. O004 validates at 10 MHz with no stated definition of the commutation-loop port (substrate-only, module-internal with terminals, or including the bus bar). All earlier L2 evidence (C002, E002) is at 20 MHz, and the benchmark note shows the loop definition and DC versus AC change L by up to 2 times. decision_if_pass lets O003 use l2_layout 'as its judge on the benchmark set' with no condition on frequency or port. If O003 settles on DC, 20 MHz or a different loop, this objective does not support its verdict.",
+      "evidence": "project/charter.md kill criteria (day 60); docs/reports/thesis-review-2026-10-31.md lines 28 and 100; O004 decision_if_pass.",
+      "suggested_check": "Pin in O004 the frequency and the port/loop definition that O003 must then use, or write into decision_if_pass that O003 must use the same ones.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 has no spread requirement or declared null, and membership in the 0.75-0.95 window is not tied to a pre-registration tool",
+      "detail": "A constant ratio c meets A2 whenever every r_FH lies in [c/1.02, c/0.98], for example [0.882, 0.918] for c = 0.9. Three perturbation rules applied across references, then thinned by F2's 3 % screen, could cluster that tightly, and the draft neither requires the pairs to span the window nor declares a constant-ratio null_baseline for A2. The draft also does not say which tool decides that a pair's ratio lies 'between 0.75 and 0.95'. If L2 or FastHenry decides it after the solve, that is selection after the outcome, against decision_if_fail's no-narrowing rule. Small rule-based perturbations on 0.5 mm steps may also struggle to reach r \u2264 0.95 when terminals are about 50 % of the loop (S3) or 2 \u00d7 15 nH of 53 nH (S1), which risks failing F4's \u2265 12 pairs and ending INCONCLUSIVE.",
+      "evidence": "Hand computation of the band; O004 hypothesis (b) and F2/F4 text; research note S1 and S3 terminal shares.",
+      "suggested_check": "Set window membership by L1 at registration, keep every registered pair whatever its solved ratio, and either require pairs in both halves of the window or declare a constant-ratio null for A2 in E004.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "FastHenry's convergence rule is a stopping rule, not an error bound; compute budget is tight",
+      "detail": "'Refined until L changes below 0.5 % between its last two meshes' leaves a residual of about q/(1-q) times the last change, around 1.5 times (\u22480.75 %) at the q \u2248 0.6 seen in L2's ladders. D0002 also records intermittent segfaults at only 1680 filaments. On budget: 16-20 layouts at the measured cost of about 9.4-11 CPU-h each (0.125 mm level plus the coarser levels) come to roughly 150-220 CPU-h for L2 alone, against 200 CPU-h in total including FastHenry.",
+      "evidence": "D0002 known issues; D0005 and research/l2_layout_vm*/ cpu_s values.",
+      "suggested_check": "Report a FastHenry error estimate from at least three meshes, and size the budget once pilot step (3) is done.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The draft's derived numbers check out",
+      "detail": "Pinned ratios 7.2/20.5 = 0.351, 8.6/20.3 = 0.424 and 4.8/9.7 = 0.495 are correct. Simulated against measured ratios differ by 35 % and 48 % (0.351 vs 0.260, 0.424 vs 0.286), as stated. The headroom shift r\u00b7d is at most 1.8 points at r \u2264 0.9 with d = 2 %, inside the 10-point gap. K1 (> 10 %) and K2 can both fire mechanically, and missing metrics make the result INVALID (evaluate.py), so an absent K2 cannot let a PASS through.",
+      "evidence": "Hand computation; tools/mfos/mfos/evaluate.py lines 476-490.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the pinned K2 ratios and the topology-only constant null by hand: the mean 0.4232 gives errors of 20.5 %, 0.1 % and 14.5 %, so K2 does not fire; every constant in [0.346, 0.457] survives K2.",
+    "Recomputed DC versus AC Q3D ratio spreads within S2 from the research note (+31 % for Loop1, +24 % for Loop2) and the simulated versus measured spreads (35 %, 48 %).",
+    "Extracted L at 0.5/0.25/0.125 mm from the three VM ladders in research/l2_layout_vm and research/l2_layout_vm2 and computed contraction ratios (0.57-0.61) and Richardson residuals (1.10 %, 1.10 %, 1.64 %) against F1's 0.5 % gate; also checked the I0039 ladder in the l2_layout.py docstring (0.89 %).",
+    "Checked the cost of the finest level (8.2-9.3 CPU-h, 36-39 GB per layout) against the 200 CPU-h budget for 16-20 layouts.",
+    "Read tools/mfos/mfos/evaluate.py: missing metrics make the result INVALID, kill checks are judged before pass checks, and declared nulls are attached only to pass criteria.",
+    "Read the l2_layout.py model docstring for the assumptions both tools would share (ideal die shorts, point-contact ports, lattice alignment).",
+    "Checked the A2 constant-predictor band ([0.882, 0.918] for c = 0.9) and the headroom shift r\u00b7d \u2264 1.8 points.",
+    "Searched the repo for O003's loop and frequency definition: not fixed anywhere (charter, D0008, thesis review)."
+  ],
+  "caveats": [
+    "I could not read the UTK dissertation's Table 5.1 or Table 3.3 myself: the PDF was fetched, but pages could not be rendered in the sandbox (no poppler). The S2 numbers come from the research note, and the Table 5.1 simulation frequency is unverified.",
+    "Inline Python scratch scripts were refused in this session, so every recomputation was done by hand from values in the repo.",
+    "The convergence evidence for the blocker comes from the generator's own layouts at 20 MHz. Reconstructed layouts at 10 MHz could converge differently, which pilot step (3) would show. The blocker is that the gate as written fails on all existing evidence and no finer level is affordable.",
+    "If F1 is read as gating only solver_tol, the blocker falls to major: then L2 has no convergence gate at all on the new geometries."
+  ]
+}
