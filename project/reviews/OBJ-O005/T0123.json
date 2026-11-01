@@ -1,0 +1,60 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The fixed design (15 strata x 12 candidates, k<=1 rule, 1 % mean bound) cannot meet the objective's own power bar at E002's within-stratum L1 quality",
+      "detail": "The claim says the thresholds and the sample can resolve the decision, and F4 requires P(PASS) >= 0.8 at E002's estimated within-stratum L1 quality. E002 shows a within-stratum L1-vs-L2_inf residual of about 1-2 % (median correlation about 0.98, within-stratum L2 spread 2-10 %), the same size as the 2 % regret threshold. A1 passes only with at most 1 of 15 strata exceeding, so P(A1) >= 0.8 needs a true per-stratum exceedance probability of about 5 % or less. Simulating the E005 construction (200 draws, top 6 by L1 plus 6 random, argmin L1, L2_inf noise 0.2 %) calibrated to E002 gives P(PASS) of about 0.64-0.76 with Gaussian tails and E002's per-stratum correlations, and about 0.42-0.46 for A1 alone using the heavier lower tails of research/e002_design/pool_l1.json. P(PASS) is about 0.11 at the low end of E002's within-stratum CI (0.94) and reaches 0.88 only at rho >= 0.985. In the hypothesis-true state at E002 quality (6.5 % of strata exceeding, mean regret 0.4 %) there is a 25-55 % chance of INCONCLUSIVE, which maps to multi-fidelity search. The objective fixes N, set size and thresholds ('fixed by this objective, not by the power analysis'), so E005 cannot be redesigned to meet F4, and F4's response would block registration.",
+      "evidence": "Simulation using E002 run E002-20261016T054426-b69a. Gaussian model with E002 per-stratum correlations: share>2 % 0.065, mean regret 0.0038, P(A1) 0.74, P(A2 percentile bootstrap) 0.70. Common rho 0.977: P(A1) 0.76-0.79, P(PASS) 0.64-0.76. rho 0.96: P(PASS) 0.28-0.40. rho 0.94: P(PASS) 0.11. Pool-tail model: P(A1) 0.42-0.46. Binomial check: P(X<=1 | n=15, p=0.05) = 0.83; at p=0.30 it is 0.035.",
+      "suggested_check": "Run the F4 operating-characteristic simulation at objective level now, across E002's within-stratum correlation CI [0.94, 0.983], and add independent candidate sets per stratum or re-set A1 so P(PASS) >= 0.8 is reachable before approval.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A1's Clopper-Pearson bound cannot be computed by the evaluator, and the available bootstrap path passes A1 with 2 of 15 strata exceeding",
+      "detail": "A1 specifies a one-sided 95 % Clopper-Pearson bound with uncertainty use: ci. The evaluator gets a CI only from mfos.metrics.bootstrap_ci, a percentile bootstrap (CISpec schemes plain, stratified, cluster); there is no Clopper-Pearson path, and the founder's permission covers only new functions in metrics.py. On the natural substitute (cluster bootstrap with the stratum as cluster, metric grouped by stratum), duplicated strata merge into one group, so each resample averages over unique strata only. With 2 of 15 exceeding, the upper bound is 0.25 (level 0.95) or 0.22 (level 0.90), so A1 passes, although the Clopper-Pearson bound is 0.363 and the description says at most 1 stratum may exceed. A2's upper bound is about 25 % too narrow the same way. Separately, CISpec level 0.95 is two-sided (a one-sided 97.5 % bound), which does not match 'one-sided 95 %'.",
+      "evidence": "Real mfos.metrics.bootstrap_ci, scheme=cluster, with group_selection_regret grouped by stratum. k=1: upper 0.125. k=2: upper 0.25 (passes <= 0.30). k=3: upper 0.333. A2 case (13 strata at 0, 2 at about 2 %): cluster-scheme CI [0, 0.00495] vs proper with-replacement bootstrap [0, 0.0066]. Clopper-Pearson upper bounds for n=15, k=0..3: 0.181, 0.279, 0.363, 0.440.",
+      "suggested_check": "Either add a Clopper-Pearson CI path to the evaluator (protected change) or restate A1 as use: point on a metric defined as the Clopper-Pearson upper bound, and make the new metrics weight duplicated clusters by multiplicity.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "K1 can fire only when L1 is almost uninformative within a stratum, so the hypothesis can practically never be refuted",
+      "detail": "K1 needs the lower bound of (L1 regret / uniform-random regret) to exceed 0.5. The denominator is inflated by the 6 random draws, whose regret against the set's best is about 10-30 % (E002 pool). Simulated P(K1) is 0.0 at rho = 0.98, 0.9 and 0.7, 0.07 at rho = 0.5, 0.53 at 0.25, and 0.95 at 0. At rho = 0.7 the hypothesis is clearly false (53 % of strata exceed 2 %, mean regret 3.8 %), yet the verdict would be INCONCLUSIVE, not FAIL. F4's target 'P(K1) >= 0.8 for a predictor with half the null's information' is undefined (a null has no information); read as a true ratio of 0.5, it is about 0.07 by construction. The O003 decision is unaffected (INCONCLUSIVE maps to FAIL), but A-T1b's refuted status is almost unreachable.",
+      "evidence": "Simulation, L2 spread fixed at E002 values, within-stratum correlation varied. rho=0.7: share 0.527, mean regret 0.038, ratio 0.34, P(K1)=0.0. rho=0.5: ratio 0.50, P(K1)=0.067. rho=0: ratio 0.985, P(K1)=0.953.",
+      "suggested_check": "Add a kill criterion tied to the hypothesis itself (e.g. lower bound of the exceedance share above 0.30 or of the mean regret above 1-2 %) and define F4's K1 operating point precisely.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F2's pre-registration null check on E002 dev rows does not test the E005 candidate-set structure, and the exact random-pick null cannot be declared",
+      "detail": "E002 has 6 random draws per stratum, with no top-6-of-200 selection and no selected_by_l1 flag, so dev rows built from it cannot reproduce the near-equivalent L1-selected half where nulls and L1 differ. The evaluator's NullSpec kinds are only stratum_mean (exact ties within stratum, so np.argmin picks the first row and the result depends on row order) and column. The 'exact uniformly-random pick (expected regret)' cannot be expressed; only a seeded realization can.",
+      "evidence": "Code reading: models.NullSpec kind in {stratum_mean, column}; metrics.group_selection_regret uses np.argmin with no tie-breaking. E002 rows: 15 strata x 6 random layouts.",
+      "suggested_check": "Build dev rows with the E005 structure from the L1 pool plus a calibrated L2 model, and declare the random null as a seeded column.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 coverage bar is loose and its simulation model is unspecified",
+      "detail": "Accepting simulated coverage of 0.93 for a nominal 95 % upper bound allows an anti-conservative bound. Coverage of a percentile bootstrap over 15 zero-inflated, skewed per-stratum regrets depends on the data-generating model, which is not specified (nor is whether level means one- or two-sided).",
+      "evidence": "A1/A2 descriptions in the draft; CISpec level semantics in mfos.metrics.bootstrap_ci (alpha = (1 - level)/2).",
+      "suggested_check": "Require coverage >= 0.95 at the nominal one-sided level under the same E002-calibrated model used for F4.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Computed one-sided 95 % Clopper-Pearson upper bounds for n=15 (k=0..3: 0.181, 0.279, 0.363, 0.440), confirming 'passes with at most 1 exceeding stratum', and binomial P(X<=1) at p = 0.02-0.35",
+    "Estimated within-stratum L1-vs-L2_inf agreement from E002 rows and reference (per-stratum correlation 0.90-0.999, residual 0.25-2.8 %, within-stratum L2 spread 2-10 %), and per-stratum L1 spread and lower-tail gaps from the 1500-draw L1 pool",
+    "Operating-characteristic simulation of the E005 construction (200 draws, top 6 plus 6 random, argmin L1, L2_inf noise) under per-stratum E002 calibration, pool-based tails and a sweep of common correlations 0.94-0.99: P(A1), P(A2), joint P(PASS)",
+    "Simulated K1 firing probability against within-stratum correlation 0-0.98 with L2 spread held fixed",
+    "Simulated null predictors (uniform random, random among L1's top 6, loop-area proxy with E002 correlations) against A1/A2: all fail",
+    "Read the evaluator verdict logic (FAIL only through fail_any; INCONCLUSIVE otherwise), judge() bound selection, CISpec/NullSpec models and policy protected paths",
+    "Ran the real mfos.metrics.bootstrap_ci cluster scheme with group_selection_regret: duplicated strata merge, so A1 passes with k=2 (upper 0.25) and the A2 upper bound is about 25 % too narrow (0.00495 vs 0.0066)"
+  ],
+  "caveats": [
+    "The power numbers come from my own model calibrated to E002's 6 random draws per stratum (homoscedastic Gaussian residuals of L2 given L1, iid reference noise); L1's error on the extreme top-6-of-200 layouts is not observable in E002 and could be worse.",
+    "Even if the design were fixed, a PASS covers only candidate sets built as stated; optimizer-driven search applies stronger selection pressure on L1's errors than top 6 of 200.",
+    "Physics-lens questions (e.g. modeling errors shared by L1 and L2, both in-house PEEC) were not assessed.",
+    "Several of my longer inline scripts were denied by the sandbox; checks were re-run as shorter inline commands."
+  ]
+}
