@@ -1,0 +1,83 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The likeliest form of the null ends as INVALID, so the pre-registered switch to scikit-fem cannot be reached",
+      "detail": "The null says the solver cannot be verified to the precision O002 needs. Its most plausible form is that the solver cannot be converged to that precision on grids the budget allows. That case trips F2's gates (Richardson estimate at most a quarter of A1/A2, i.e. <= 0.0125 K, or observed order outside [1.5, 2.5]). F2's response is INVALID: 'refine the grid rule under a new experiment id'. In the evaluator an INVALID outcome is not recorded as an evaluation and does not use up max_evaluations: 1. It starts an 'experimental' investigation and never puts decision_if_fail in front of the founder. K1 can only be judged once F2 passes, so it fires only for a bias in an already-converged solver, which is what its own text says. An implementation bug that lowers the convergence order (common: first-order boundary or interface treatment, a lagged Picard step) also ends in INVALID, with a response (refine the grid) that cannot fix it. So K1 can fire, but only narrowly. The claim that the thresholds can resolve the in-house-vs-fallback decision fails exactly where the null is true. A PASS is still meaningful.",
+      "evidence": "tools/mfos/mfos/evaluate.py:487-488: any sanity problem gives INVALID before fail/pass checks. Lines 507-515: INVALID is written as -invalid.json and not appended to st.evaluations. tools/mfos/mfos/loop.py:811-813: INVALID only spawns an 'experimental' investigation. Lines 815-821: decision_if_fail/inconclusive are surfaced only for FAIL or INCONCLUSIVE. O006 F2 response: 'experimental failure (INVALID); refine the grid rule under a new experiment id'.",
+      "suggested_check": "Pre-register when an F2 failure counts as the null. For example: the frozen rule's finest grid exceeds the budgeted unknowns or CPU, or a second F2-INVALID occurs. Map that case to decision_if_fail.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1's denominator is undefined for case (c) and has no floor elsewhere; at weak sources A1 is about 10x stricter than O002 needs",
+      "detail": "A manufactured solution has no 'sources' and no '1D uniform-flux solution'. A1's centroid, source-mean and spreading-rise terms are therefore undefined for case (c). Whatever the spec author picks, unregistered at objective level, sets A1 for (c) and F3's requirement that the constant-k null 'fail A1'. Only A2 is well defined there. In the Muzychka cases the spreading rise at a weak source is small. My own converged Fourier series for Case 2 (50x50x10 mm, k=150, h=400, 10/25/20/15 W on 10x10 mm sources, positions assumed because Table 3 could not be read) gives theta_1D = 71.87 K and a spreading rise of 0.52 K (quadrant layout) or 0.81 K (spread layout) at the 10 W centroid. The source mean is smaller still. A1 then allows about 5 mK, K1 about 26 mK, and F2's Richardson cap about 1.3 mK, against A2's 50 mK and O002's 0.05 K allowance. One weak-source point decides A1, and if a point's spreading rise is near zero or negative the ratio blows up. Nothing in the objective guards against that. At such points the threshold comes from the denominator, not from O002's decision. Combined with the first finding, a solver that is good enough for O002 but not converged to about 1 mK there ends in an INVALID loop.",
+      "evidence": "Scratch series (impedance recursion, M=400 vs 800 converged to 1e-4 K): Case 2 centroid spreading [0.52, 6.93, 4.40, 3.05] K (quadrant positions) and [0.81, 6.17, 7.27, 5.00] K (spread positions). From printed values: Case 1a spreading 31.9/55.4 K (A2 binds); Case 1b 3.49/6.88 K.",
+      "suggested_check": "Define dT_spread for case (c) explicitly or drop (c) from A1. Add a design-time gate that every reported dT_spread_ref exceeds a stated floor (or use max(dT_spread, floor) in the denominator).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "No independent reference covers the geometry that sets O002's Tj: discrete die islands, die-attach footprints, patterned-copper edges",
+      "detail": "Case (b) treats die attach and SiC as laterally uniform full-width layers. Cases (a) and (b) have no lateral material interfaces and no re-entrant copper or die-edge corners. Only (c) has patterned copper, and how it is built is not specified. It does not say how flux continuity across lateral k jumps under k(T) is achieved. It does not say whether normal flux crosses the copper edges at all; if dT/dn = 0 there, the test cannot see interface-conductance errors. It does not say whether k(x) and the source term are evaluated from the layout geometry independently of the solver's material map. If they use the solver's map, a rasterization or interface-averaging bug cancels out. A smooth manufactured solution also has none of the corner singularities present in every O002 layout. A PASS therefore verifies the solver's code on these cases. It does not show that the frozen grid rule is adequate on O002 layouts. That rests on O002's own per-run Richardson and scikit-fem gates (O002 F1), not on E006.",
+      "evidence": "O006 hypothesis (b) 'laterally uniform layers'; (c) only 'patterned top copper' with k varying >= 30 %; F1 says 'manufactured source term derived symbolically and checked numerically' with no independence or interface requirement. D0006's scikit-fem cross-check is not among O006's criteria.",
+      "suggested_check": "Require (c) to evaluate coefficients and sources from the layout geometry independently, with nonzero normal flux across copper edges. Alternatively add a scikit-fem cross-check on one discrete-die layout.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The N-layer reference has only an equal-conductivity external anchor, and F1 lets the reference be 'fixed' after it disagrees with the solver",
+      "detail": "The N-layer series is checked externally only by reducing to two-layer Muzychka when the extra layers share one conductivity. Errors that appear only with three or more distinct conductivities (e.g. interior k-ratio orientation) are checked only against the solver under test. F1 then allows the reference to be fixed under a new id after a disagreement. That opens a path to reconciling the reference toward the code.",
+      "evidence": "O006 F1 detection list; notes (3).",
+      "suggested_check": "Reproduce a published example with three or more distinct layers (Albers 1995, Choudhury & Rogers 2019) or cross-check (b) with scikit-fem.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'surface maximum from the reference field' point may break the observed-order gate and differs from O002's quantity",
+      "detail": "Evaluating L2 at the reference's argmax means interpolating off-node. Under constant-ratio refinement the point's position within its cell changes, so the error coefficient is not asymptotic. Observed order can then fall outside [1.5, 2.5] for a correct solver. O002 instead uses L2's own maximum over the die surface field.",
+      "evidence": "A1 description; O002 scope_in 'per-die Tj max taken from the die surface field'.",
+      "suggested_check": "Put grid lines through every reported point, or compare L2's own surface maximum.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "K1 changes nothing in the decision, and A2 has no kill counterpart",
+      "detail": "decision_if_inconclusive equals decision_if_fail, so K1 only relabels the outcome FAIL and changes the investigation class. A converged solver with a large absolute (film-term) error but a spreading error under 5 % is INCONCLUSIVE. That leads to the same decision.",
+      "evidence": "O006 acceptance and decisions; loop.py:821.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The O002 draft cites an E006 metric that O006 does not define",
+      "detail": "O002's A1 uses E006.max_rel_err_vs_analytic <= 0.002 of the total rise. O006 defines max_spreading_rel_err and max_abs_err_K. The two must be reconciled when O002 is finalised.",
+      "evidence": "project/objectives/O002/objective.yaml A1.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Picard tolerance and the dT_const_k column on non-k(T) rows are unspecified",
+      "detail": "With A2 at 0.05 K on a 60-110 K rise, the Picard residual must sit well below the Richardson cap. Also, mfos 'column' null baselines replace the prediction on every row the metric covers, so dT_const_k must be filled for all rows or recomputation fails and the run is INVALID.",
+      "evidence": "evaluate.py null_values (lines 365-374).",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the mfos evaluator and loop (tools/mfos/mfos/evaluate.py lines 1-30, 360-440, 480-515; loop.py 795-830). Confirmed: a failed sanity check gives INVALID before fail and pass checks; INVALID is not recorded as an evaluation, does not use max_evaluations, and never surfaces decision_if_fail. Column null baselines replace the prediction on every row.",
+    "Recomputed theta_1D and the spreading rise from the printed Muzychka values. Case 1a: theta_1D 28.06 K, centroid spreading 31.9 and 55.4 K, so A2 binds. Case 1b: 3.49 and 6.88 K, so A1 (35-69 mK) is comparable to A2 (50 mK).",
+    "Wrote an independent Fourier-cosine flux-channel series (layered impedance recursion, adiabatic sides, convective sink) for Case 2's plate and loads. It converged to 1e-4 K between 400 and 800 terms per index. The 10 W source's centroid spreading rise is 0.52-0.81 K against theta_1D = 71.87 K, giving A1 about 5 mK, K1 about 26 mK and an F2 Richardson cap about 1.3 mK, versus A2's 50 mK.",
+    "Checked O006 against the O002 draft. A2's 0.05 K matches O002 F1's Richardson allowance. The 60-110 K rises match O002's 60 W level (scaled from O002's 172-244 \u00b0C at 100 W gives about 64-107 K). O002 A1 still cites the obsolete metric E006.max_rel_err_vs_analytic.",
+    "Checked the literature note (project/memory/literature/thermal-l2-reference.md) for the case parameters. Tried to read Muzychka 2003 Table 3 directly; the PDF was fetched, but the sandbox blocked text extraction."
+  ],
+  "caveats": [
+    "A PASS establishes code verification of the solver on these cases: Muzychka 1a/1b/2/3, one laterally uniform N-layer stack, one smooth manufactured case. It does not establish that the frozen grid rule meets 0.05 K on O002's discrete-die, patterned-copper layouts. That depends on O002's own per-run gates (F1 there).",
+    "If the in-house solver cannot be converged to the needed precision within budget, the objective as written yields INVALID outcomes, not the pre-registered switch to scikit-fem. The founder must close that path by decision.",
+    "A1 is meaningful only for cases with a defined, clearly positive spreading rise. For case (c) only A2 (0.05 K) carries the claim unless the spec defines dT_spread there.",
+    "The reference error budget (<= 0.05 K per Tj) can use up to 0.1 K of O002's 0.5 K pair-difference threshold, i.e. 20 %.",
+    "The Case 2 source positions in my scratch calculation were assumed: the paper's Table 3 could not be read because PDF text extraction was blocked in this sandbox. The order of magnitude of the weak-source spreading rise (about 0.5-0.8 K) is robust; its exact value and sign at the real positions were not verified."
+  ]
+}
