@@ -1,0 +1,57 @@
+{
+  "id": "EV-O901-01",
+  "objective": "O901",
+  "timestamp": "2026-11-01T00:01:28+00:00",
+  "criteria_hash": "sha256:3891bfa387eedf0b2c4810c8f137c3868c6f7806616371f3b2d5d72b4327b0fb",
+  "evaluator_version": "2.0.0",
+  "results_used": {
+    "E901": "E901-20261031T170104-5b1d"
+  },
+  "validity_problems": [],
+  "pass_checks": [
+    {
+      "id": "A1",
+      "metric": "E901.max_rel_err",
+      "comparator": "<=",
+      "threshold": 1e-13,
+      "value": 1.1102230246251565e-16,
+      "bound_used": 1.1102230246251565e-16,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 1.1102230246251565e-16,
+      "null_value": 0.3550659331517736,
+      "null_bound": 0.3550659331517736
+    }
+  ],
+  "fail_checks": [
+    {
+      "id": "K1",
+      "metric": "E901.max_rel_err",
+      "comparator": ">",
+      "threshold": 1e-09,
+      "value": 1.1102230246251565e-16,
+      "bound_used": 1.1102230246251565e-16,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 1.1102230246251565e-16,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "verdict": "PASS",
+  "explanation": "All pass criteria met at the conservative bound",
+  "unused_runs": {},
+  "checks": {
+    "E901": {
+      "on_main": "ok",
+      "spec_in_commit": "ok",
+      "lockfile": "ok",
+      "runner_files": "ok",
+      "code_under_test": "ok",
+      "artifacts": "ok",
+      "registry": "ok",
+      "code_must_match": "n/a: the spec declares no code_must_match",
+      "requires_passed": "n/a: the spec requires no objective"
+    }
+  }
+}
