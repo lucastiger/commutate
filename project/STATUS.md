@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T06:12:27+00:00 from repository state — do not edit_
+_generated 2026-11-01T06:14:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -9,6 +9,8 @@ _generated 2026-11-01T06:12:27+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
+| O002 | draft | - | 0/3 | $0.00/$60 | <one line: what we will know when this is done> |
+| O004 | draft | - | 0/3 | $0.00/$60 | <one line: what we will know when this is done> |
 | O005 | draft | - | 0/2 | $3.61/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
