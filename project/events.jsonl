@@ -1099,3 +1099,8 @@
 {"ts": "2026-11-01T19:15:49+00:00", "event": "tick_error", "actor": "orchestrator", "error": "ValidationError: 1 validation error for Objective\nscope_out.1\n  Input should be a valid string [type=string_type, input_value={'modules with separate a...al module)': 'deferred'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/string_type", "consecutive": 1}
 {"ts": "2026-11-01T19:21:57+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0137-critic-20261101T111500-d960", "status": "completed", "cost": 1.517392, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-01T19:27:24+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0138-critic-20261101T111500-0f31", "status": "completed", "cost": 1.891239, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-01T20:22:38+00:00", "event": "objective_draft_review", "actor": "orchestrator", "objective": "O006", "ref": "159270499cd76184e484ebfa751be31b0c3b8782", "tasks": ["T0139", "T0140"]}
+{"ts": "2026-11-01T20:22:38+00:00", "event": "objective_draft_review", "actor": "orchestrator", "objective": "O003", "ref": "159270499cd76184e484ebfa751be31b0c3b8782", "tasks": ["T0141", "T0142"]}
+{"ts": "2026-11-01T20:23:04+00:00", "event": "loop_started", "actor": "orchestrator", "pid": 15679}
+{"ts": "2026-11-01T20:23:07+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0139-critic-20261101T122307-c6ca", "task": "T0139", "role": "critic", "session": "b577487c-0dc2-4640-a60b-6266f3282f06"}
+{"ts": "2026-11-01T20:23:08+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0140-critic-20261101T122308-301f", "task": "T0140", "role": "critic", "session": "f1f5f434-b2ae-4b13-953f-909e83ab8bc8"}

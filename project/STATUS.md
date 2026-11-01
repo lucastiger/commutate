@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T19:27:25+00:00 from repository state — do not edit_
+_generated 2026-11-01T20:23:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-01T19:27:25+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $0.00/$150 | Public wire-bonded half-bridge modules leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | draft | - | 0/1 | $3.41/$80 | The thermal L2 reference matches analytic solutions, and design pilots measure what O002 and O004 must fix |
+| O006 | draft | - | 0/1 | $3.41/$80 | The thermal L2 reference matches converged analytic solutions, and design pilots measure what O002 and O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -22,19 +22,16 @@ _generated 2026-11-01T19:27:25+00:00 from repository state — do not edit_
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 2 | $3.41 | 88082 | 61412 | 3 | 0 |
+| O006 | 4 | $3.41 | 88082 | 61412 | 3 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 106, failed: 3
+cancelled: 29, done: 106, failed: 3, running: 2, todo: 2
 
+- T0139 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
+- T0140 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T18:43:20+00:00 run_started {"run": "T0133-critic-20261101T104320-f345", "task": "T0133", "role": "critic", "session": "2884c638-fd83-4364-909a-a8f2e35bbd19"}
-- 2026-11-01T18:43:20+00:00 run_started {"run": "T0134-critic-20261101T104320-076f", "task": "T0134", "role": "critic", "session": "f6ecd333-5c80-4bba-85b9-aa51d897d4ab"}
-- 2026-11-01T18:49:52+00:00 run_finished {"run": "T0133-critic-20261101T104320-f345", "status": "completed", "cost": 1.909622, "subtype": "success", "report": "structured_output"}
-- 2026-11-01T18:49:53+00:00 run_started {"run": "T0135-critic-20261101T104953-e3b7", "task": "T0135", "role": "critic", "session": "5d7f5827-60c7-4b3d-88a5-6c1ad0c823a9"}
-- 2026-11-01T18:51:50+00:00 run_finished {"run": "T0134-critic-20261101T104320-076f", "status": "completed", "cost": 1.934152, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T18:51:52+00:00 run_started {"run": "T0136-critic-20261101T105152-385e", "task": "T0136", "role": "critic", "session": "5446742d-3f02-4dd8-8907-ffa67e21f65b"}
 - 2026-11-01T19:00:23+00:00 run_finished {"run": "T0135-critic-20261101T104953-e3b7", "status": "completed", "cost": 2.060116, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T19:01:12+00:00 run_finished {"run": "T0136-critic-20261101T105152-385e", "status": "completed", "cost": 1.518633, "subtype": "success", "report": "structured_output"}
@@ -45,3 +42,8 @@ cancelled: 29, done: 106, failed: 3
 - 2026-11-01T19:15:49+00:00 tick_error {"error": "ValidationError: 1 validation error for Objective\nscope_out.1\n  Input should be a valid string [type=string_type, input_value={'modules with separa
 - 2026-11-01T19:21:57+00:00 run_finished {"run": "T0137-critic-20261101T111500-d960", "status": "completed", "cost": 1.517392, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T19:27:24+00:00 run_finished {"run": "T0138-critic-20261101T111500-0f31", "status": "completed", "cost": 1.891239, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T20:22:38+00:00 objective_draft_review {"objective": "O006", "ref": "159270499cd76184e484ebfa751be31b0c3b8782", "tasks": ["T0139", "T0140"]}
+- 2026-11-01T20:22:38+00:00 objective_draft_review {"objective": "O003", "ref": "159270499cd76184e484ebfa751be31b0c3b8782", "tasks": ["T0141", "T0142"]}
+- 2026-11-01T20:23:04+00:00 loop_started {"pid": 15679}
+- 2026-11-01T20:23:07+00:00 run_started {"run": "T0139-critic-20261101T122307-c6ca", "task": "T0139", "role": "critic", "session": "b577487c-0dc2-4640-a60b-6266f3282f06"}
+- 2026-11-01T20:23:08+00:00 run_started {"run": "T0140-critic-20261101T122308-301f", "task": "T0140", "role": "critic", "session": "f1f5f434-b2ae-4b13-953f-909e83ab8bc8"}
