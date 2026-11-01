@@ -10,15 +10,15 @@ licences only inside the product; D0002 set the precedent for using a tool as a 
 
 ## Decision
 - PowerSynth sample designs may be used as external benchmark inputs. Their geometry facts (dimensions, layer stack,
-  die and bond-wire placement) are re-modelleout format. The GPL files themselves are never
+  die and bond-wire placement) are re-modelled in ModuleForge's own layout format. The GPL files themselves are never
   committed to this repository, imported or redistributed. Each experiment that uses them records the repository
-  commit and the sha256 of every file it read
+  commit and the sha256 of every file it read.
 - PowerSynth 2 may be run unmodified as a separate executable, installed outside the project's uv environment, for
-  internal head-to-head comparison on public d, linked, imported or redistributed. Pin the
+  internal head-to-head comparison on public cases. It is never vendored, linked, imported or redistributed. Pin the
   commit at first use.
-- This is the founder's reading of the licencot legal advice. Revisit it before any
+- This is the founder's reading of the licence for internal research, not legal advice. Revisit it before any
   customer-facing use or distribution of results derived from these files.
 
 ## Consequences
-O003's benchmark set may include the PowerSyne the UTK, CPES and Aalborg reconstructions.
+O003's benchmark set may include the PowerSynth sample designs alongside the UTK, CPES and Aalborg reconstructions.
 `scripts/check_licenses.py` is unaffected because nothing is installed into the environment.

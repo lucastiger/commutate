@@ -7,81 +7,92 @@ depends_on: [O001]
 unlocks: [O003]
 hypothesis:
   statement: >-
-    Within each (layout family, dies per switch) stratum of DRC-valid wire-bonded half-bridge layouts on the default
-    DBC stack, choosing the layout with the lowest L1 commutation-loop inductance at 20 MHz yields a layout whose
-    converged reference inductance (Richardson-extrapolated L2, L2_inf) is within 2 % of the stratum's lowest L2_inf,
-    and L1 orders layouts within strata consistently with L2_inf, on fresh sealed seeds never used by E002.
+    For each (layout family, dies per switch) stratum of DRC-valid wire-bonded half-bridge layouts on the default DBC
+    stack, take a search-like candidate set of 12 layouts (the 6 lowest-L1 of 200 fresh generator draws plus 6 further
+    random draws) and choose the candidate with the lowest L1 commutation-loop inductance at 20 MHz. Measured against
+    the converged reference (Richardson-extrapolated L2, L2_inf), that choice loses more than 2 % against the set's
+    best L2_inf in at most 30 % of strata (upper 95 % bound), and loses at most 1 % on average over strata (upper
+    95 % bound), on fresh sealed seeds never used by E002.
   null_hypothesis: >-
-    Within a stratum, L1's ordering carries too little information to pick near-best layouts: O001's ranking evidence
-    came from differences between strata, and derivative search needs L2 (or a better fast model) to choose among
-    candidates of the same family and die count.
+    Within a stratum, L1's choice among near-equivalent and L1-selected candidates is too unreliable to replace L2:
+    O001's ranking evidence came from differences between strata, and derivative search needs L2 (or a better fast
+    model) to choose among candidates of the same family and die count.
   why_it_matters: >-
     A derivative re-layout keeps the housing and usually the family and die count, so search ranks near-equivalent
-    layouts. O001 showed L1 ranks layouts across strata (C002), but a stratum-mean-only predictor met its pooled
-    criteria (Spearman 0.972), and below about 5 % inductance difference L1 misordered 23-38 % of pairs (C002 caveats).
-    The post hoc within-stratum Spearman of 0.977 [0.940, 0.983] (research/notes/o001-e002-within-stratum-exploratory.md)
-    is hypothesis-generating only. This objective decides the search architecture for O003.
+    layouts, and it chooses among candidates that L1 itself has selected, which exposes L1's systematic errors (C002
+    caveats: unconverged mesh, die-count-dependent bias). O001 showed L1 ranks layouts across strata (C002), but a
+    stratum-mean-only predictor met its pooled criteria, and below about 5 % difference L1 misordered 23-38 % of pairs.
+    This objective decides O003's search architecture.
   decision_if_pass: >-
-    O003 searches on L1 alone within a stratum, with L2 audits of the final candidates only.
+    O003 searches on L1 alone within a stratum, with L2 audits of the final candidates only. The decision covers
+    candidate sets like E005's (L1-selected plus random draws from moduleforge.generate); optimizer-driven candidates
+    beyond that are covered by O003's own L2 audits.
   decision_if_fail: >-
-    O003 uses multi-fidelity search: L1 screens, L2 re-ranks the top candidates of each stratum; re-estimate the
-    per-design compute cost (founder decision) before O003 is approved.
+    O003 uses multi-fidelity search: L1 screens, L2 re-ranks the top candidates of each stratum; the founder
+    re-estimates per-design compute before O003 is approved.
   decision_if_inconclusive: >-
-    Diagnose (reference precision versus within-stratum spread, sample size); one re-evaluation on fresh sealed seeds
-    at most, under a new experiment id.
+    Same as fail: O003 uses multi-fidelity search (the safe default; founder decision 2026-10-31). A second
+    evaluation on fresh sealed seeds only if a diagnosis shows the first was invalid, not merely inconclusive.
 scope_in:
   - generator families of moduleforge.generate (as validated in O001), 2-6 parallel dies per switch position
   - default DBC stack (Al2O3 0.38 mm ceramic, 0.3 mm Cu), the 70 x 40 mm housing used by E002
   - commutation-loop inductance at 20 MHz; L1 at its default mesh (the configuration C002 supports)
+  - candidate sets of 12 per stratum built as in the hypothesis
 scope_out:
   - AMB and other stacks or housings; other frequencies; gate-loop inductance; current sharing; thermal
   - absolute accuracy of L1 (biased low by 5-14 % per the C002 caveats); comparison across families or die counts
+  - candidate sets produced by an optimizer other than the L1-top-6-of-200 selection
 evidence_plan: [E005]
 acceptance:
   required_experiments: [E005]
   pass_all:
-    - {id: A1, metric: E005.top1_regret_median, comparator: "<=", threshold: 0.02, uncertainty: {use: ci},
-       description: "median over strata of L2_inf(L1's lowest-L1 layout) / min L2_inf in the stratum - 1, upper 95 % bound. 2 % keeps an order of magnitude below the >= 20 % headroom O003 must find (A-T3), so trusting L1 costs little of it"}
-    - {id: A2, metric: E005.spearman_within_stratum, comparator: ">=", threshold: 0.90, uncertainty: {use: ci},
-       description: "Spearman of stratum-demeaned log L1 vs log L2_inf pooled over strata, lower 95 % bound; the same 0.90 ordering level O001 required (A3), now within strata where the stratum-mean null is uninformative"}
-    - {id: A3, metric: E005.pair_order_acc_ge5pct, comparator: ">=", threshold: 0.95, uncertainty: {use: ci},
-       description: "share of within-stratum layout pairs whose L2_inf differs by >= 5 % that L1 orders correctly, lower 95 % bound; differences of that size are what derivative search must not get wrong"}
+    - {id: A1, metric: E005.regret_exceed_2pct_share, comparator: "<=", threshold: 0.30, uncertainty: {use: ci},
+       description: "share of strata in which L1's pick loses > 2 % against the set's best L2_inf; upper bound is the one-sided 95 % Clopper-Pearson bound with the stratum as the unit (15 strata: passes with at most 1 exceeding stratum). Derivative jobs are one stratum each; a 2 % loss is an order of magnitude below the >= 20 % headroom O003 must find (A-T3)"}
+    - {id: A2, metric: E005.regret_mean, comparator: "<=", threshold: 0.01, uncertainty: {use: ci},
+       description: "mean over strata of L2_inf(L1's pick) / min L2_inf - 1; upper 95 % bound with the stratum as the resampling unit, method fixed in E005 with simulated coverage >= 0.93. A 1 % average loss keeps search on L1 nearly free"}
   fail_any:
-    - {id: K1, metric: E005.top1_regret_median, comparator: ">", threshold: 0.05, uncertainty: {use: ci},
-       description: "L1's pick definitely loses more than 5 % against the stratum's best: L1 alone cannot drive search"}
-    - {id: K2, metric: E005.spearman_within_stratum, comparator: "<", threshold: 0.70, uncertainty: {use: ci},
-       description: within-stratum ordering definitely weak}
+    - {id: K1, metric: E005.regret_ratio_vs_random, comparator: ">", threshold: 0.5, uncertainty: {use: ci},
+       description: "mean regret of L1's pick divided by the mean regret of a uniformly random pick from the same sets (computed exactly as the average over candidates), lower 95 % bound above 0.5: L1 definitely recovers less than half of what an uninformed choice loses"}
   max_evaluations: 2
 failure_modes:
   - id: F1
-    description: "Reference too imprecise for within-stratum differences (within-stratum L2 CV was 1.8-9.4 % in E002)"
-    detection: "sanity check: every layout's L2_inf extrapolation error estimate is at most a quarter of the smallest within-stratum |delta L2_inf| that enters A1/A3, or the pair is excluded and counted"
+    description: "Reference too imprecise for the 1-2 % regrets that A1 and A2 judge"
+    detection: "sanity check: every candidate's L2_inf extrapolation error estimate is at most 0.5 % (E002's were 0.12-0.34 %); strata whose regret lies within the combined error estimates of the pick and the best are reported as borderline"
     response: "experimental failure: refine the reference under a new experiment id; the hypothesis is untouched"
   - id: F2
-    description: "A null predictor meets a criterion (non-discriminating design)"
-    detection: "null baselines: within-stratum random order (seeded) and a geometric proxy without field solving (e.g. commutation-loop path length or enclosed area), applied to A1-A3; `mfos exp check E005 --rows <dev rows>` must show every null failing before registration"
+    description: "A null predictor meets a pass criterion (non-discriminating design), or ties make a null depend on row order"
+    detection: "null baselines: the exact uniformly-random pick (expected regret, no ties) and a continuous geometric proxy without field solving (e.g. commutation-loop path length or enclosed area, with seeded jitter below its resolution); dev rows (may be built from E002's results, design use only) with `mfos exp check E005 --rows <dev rows>` showing every null failing A1 and A2 before registration; L1 ties broken by a seeded random choice"
     response: "design error: revise E005 before registration"
   - id: F3
     description: "Overfitting to seen data"
-    detection: "fresh sealed seeds; E002's sample and seed are never reused; evaluation count"
+    detection: "fresh sealed seeds; E002's sample and seed are never used for evaluation; evaluation count"
     response: "never re-evaluate on data that has been seen"
   - id: F4
-    description: "Strata with too few layouts or too little spread make per-stratum regret noisy"
-    detection: "design-time power analysis on dev seeds; sanity check of per-stratum counts and L2_inf spread"
-    response: "redesign under a new experiment id"
+    description: "The design cannot resolve the decision at plausible L1 quality"
+    detection: "design-time operating-characteristic simulation in E005 (over L1 noise levels calibrated to E002, including die-count-dependent bias): P(PASS) >= 0.8 at E002's estimated within-stratum L1 quality, P(PASS) <= 0.05 when the true exceedance share is >= 0.35 or the true mean regret is >= 2 %, and P(K1) >= 0.8 for a predictor with half the null's information"
+    response: "redesign under a new experiment id before registration; never adjust thresholds after approval"
   - id: F5
-    description: "Compute overrun (E002 needed about 172 CPU-hours for 90 layouts)"
-    detection: "cpu_hours_est in the registered spec against this budget"
-    response: "founder decision on burst compute before registration (precedent D0005)"
-budget: {usd: 60, cpu_hours: 200, wall_days: 14}
+    description: "Compute overrun (E002 needed about 172 CPU-hours for 90 layouts, about 1.9 per layout)"
+    detection: "cpu_hours_est in the registered spec against this budget: 15 strata x 12 candidates = 180 L2_inf layouts, about 340-400 CPU-hours"
+    response: "founder decision on further burst compute before registration (precedent D0005)"
+budget: {usd: 60, cpu_hours: 400, wall_days: 21}
 require_plan_approval: true
 notes: >-
-  Draft by the founder session of 2026-10-31 from thesis review docs/reports/thesis-review-2026-10-31.md (proposal 3);
-  thresholds and budget are proposals for the founder to confirm. E005 design requirements (scientist): fresh sealed
-  seed; strata = (family, dies per switch) as in E002; L1 at its default mesh; reference L2_inf = Richardson-extrapolated
-  solvers.l2_layout as in E002, with the precision sanity check of F1; rows via ExperimentRun.rows with fields
-  layout_id, family, dies, stratum, L1, L2_inf, L2_err_est and the null predictors; recompute entries for all three
-  metrics; null baselines per F2; domain via run.domain(stack, housing, families, dies, freq_hz). Report the pairwise
-  ordering accuracy for pairs differing by 2-5 % and below 2 % as secondary metrics (not criteria). Size the number of
-  strata and layouts per stratum by power analysis within the 200 CPU-hour budget. Id note: O004 is reserved for the
-  L2 validation objective referenced in tools/mfos/mfos/models.py (CodeMatch) and project/objectives/O901.
+  Draft by the founder session of 2026-10-31 (thesis review proposal 3), revised the same day after the draft
+  reviews T0121 (statistics) and T0122 (physics), which rejected the first draft. Founder decisions of 2026-10-31:
+  INCONCLUSIVE maps to multi-fidelity search; compute budget 400 CPU-hours (burst VM); new within-stratum metrics may
+  be added to tools/mfos/mfos/metrics.py (protected path: the builder task's merge still comes to the founder as a
+  protected_change); A1 uses the share of strata above 2 % regret instead of the median.
+  E005 design requirements (scientist): fresh sealed seed; strata = (family, dies per switch) as in E002 (15 strata);
+  per stratum, 200 DRC-valid generator draws evaluated by L1, the 6 lowest-L1 plus 6 further random draws form the
+  candidate set of 12 (fixed by this objective, not by the power analysis); L1 at its default mesh; reference L2_inf =
+  Richardson-extrapolated solvers.l2_layout as in E002 with the F1 precision check; rows via ExperimentRun.rows with
+  fields layout_id, family, dies, stratum, selected_by_l1 (bool), L1, L2_inf, L2_err_est and the null predictors;
+  recompute entries for regret_exceed_2pct_share, regret_mean and regret_ratio_vs_random, which need new functions
+  in mfos.metrics (per-stratum regret exceedance share with a Clopper-Pearson bound, mean regret with a stratum-level
+  bound, regret ratio against the exact random-pick expectation) plus a within-stratum pair-discordance-by-gap function
+  for secondary metrics; ties in L1 broken by a seeded random choice. Secondary metrics (reported, not criteria):
+  within-stratum Spearman of demeaned log L (as in the O001 exploratory note), within-stratum pair discordance for
+  gaps < 2 %, 2-5 % and >= 5 % (layout-clustered bootstrap), per-stratum regrets, and regret on the L1-selected and
+  random halves separately (the selection effect). Id note: O004 is reserved for the L2 validation objective referenced
+  in tools/mfos/mfos/models.py (CodeMatch) and project/objectives/O901.
