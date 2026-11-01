@@ -1,0 +1,83 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The metric measures a substrate-only loop, while the thresholds and kill line were set for the module-internal loop",
+      "detail": "The hypothesis says 'module-internal commutation-loop inductance (DC+ terminal to DC- terminal)' measured by l2_layout. In l2_layout a terminal is only a pad on the top copper. Layout.Terminal is a 'housing-fixed terminal pad \u2026 on the top-Cu surface', the port is a pair of point contacts at the pad centres, and O004's scope lists 'point-contact terminals' as a shared model choice. Terminal tabs, leads and bus bars are not in the model, so h = 1 - L_best/L_ref is substrate-only headroom. The 20 % pass and 10 % kill thresholds, and the claim that the outcome is 'genuinely uncertain', rest on the research note's S3 figure of about 18 %. That 18 % is the substrate gain as a share of the whole module-internal loop including terminals. The same S3 comparison scored on O003's own metric gives 1 - 4.8/9.7 = 0.505. The research note says terminals are about 50 % of the internal loop (S3) and the leads are 30.6 of 53.06 nH (S1). With those shares, a substrate-only h of 0.20 is only 0.071 to 0.085 of the module-internal loop, below the charter's 10 % kill line. So A1 can pass in a world where, on the denominator the charter and the null mean, the kill should fire. The criteria therefore do not establish the hypothesis against its null, and the thresholds do not follow from the decision.",
+      "evidence": "src/moduleforge/geometry/layout.py: Terminal docstring; to_conductors builds Port((tp.cx,tp.cy,z1),(tn.cx,tn.cy,z1)). O004 objective line 49: 'point-contact terminals'. Research note lines 64-72 and 128-129: denominator must be fixed; S3 9.7\u21924.8 nH substrate vs 27.2 nH module-internal. Scratch computation: S3 on O003's metric gives 0.505; substrate-only h_s = 0.20 maps to module-internal h_m = 0.071 (S3 share 0.356) or 0.085 (S1 share 0.423); h_m = 0.10 needs h_s = 0.236 to 0.281.",
+      "suggested_check": "Either add a pre-registered, fixed terminal/tab inductance to both L_ref and L_best, or relabel the loop as substrate-only and re-derive A1 and K1 (with the S3-based estimate, h_s of about 0.24 to 0.28 corresponds to 10 % module-internal).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Gate and Kelvin routing cannot be represented, so re-layouts are freed from constraints the reference had to meet",
+      "detail": "The Layout IR and the DRC accept only power wiring: every wire must start on a die source pad and land on PHASE (from HS dies) or DC- (from LS dies). F1 requires the reference reconstruction itself to be DRC-valid, so the gate and Kelvin wires of the references must be stripped (2D_Case_2R's README says 'wire-bonded gate and power loops'). The generalised generator then never has to route gates or keep the substrate area, the gate-terminal access and the copper they need. That inflates headroom through a removed constraint, the same mechanism F1 exists to catch, and F1 does not detect it. scope_out does not mention gate routing. decision_if_pass would put these gate-less re-layouts into customer conversations.",
+      "evidence": "Independent check: on a generator layout (seed 3, side_by_side, 2 dies, DRC-clean), adding a wire from an HS gate pad produced violations ['wire_landing','wire_length','wire_start'], and a Kelvin-source wire produced 'wire_net' among others. drc/rules.py lines 143-186: wire_start requires the source pad; expect = {HS: PHASE, LS: DC-}.",
+      "suggested_check": "Require gate/Kelvin copper and wire keep-outs (at least the reference's gate-trace area and terminal access) to be preserved in every candidate, and report how much L the reference gains when its gate copper is removed.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Bond-wire count, diameter, loop height and per-net spacing are free, and F1 does not cover them",
+      "detail": "The scope fixes the terminals, stack, dies and die count. F1 makes only trace width, spacing and wire pitch at least as strict as the reference's. Nothing stops a candidate from using more wires per die, thicker wires (the DRC allows up to 0.5 mm; today's generator draws 2-3 wires of 0.3-0.4 mm with 0.6-1.5 mm loops) or lower loops than the reference's bonding process shows. In real derivatives these are set by the bond line and the current rating. One net-independent min_spacing set to the reference's smallest gap also lets DC+ and DC- copper come as close as the reference's tightest gap, which may be a low-voltage gap. Each of these lowers L without any better layout.",
+      "evidence": "Grover straight-filament formulas (Grover 1946, ch. 7): a 10 mm bundle at 1 mm pitch has L_eff = 6.24 nH for 2 x 0.3 mm wires, 5.95 nH for 2 x 0.4 mm and 5.06 nH for 3 x 0.4 mm (-19 %). generate/halfbridge.py lines 115-117; drc/rules.py has max_wire_diameter = 0.5 mm and a single min_spacing for all net pairs.",
+      "suggested_check": "Fix wire diameter, wires per die and minimum loop height at each reference's values, and apply the reference's DC+/DC- gap as a net-pair spacing rule.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The 'null baselines not applicable' exemption is wrong: a search that ignores inductance is a meaningful null",
+      "detail": "The claim says no criterion could be met by a predictor that ignores the decision-relevant information. Headroom does have a natural null: the headroom of (i) the reference's own twin expressed in the generator's parameter space (should be about 0) and (ii) a random or median DRC-valid candidate that meets Tj. If (i) is not about 0, or (ii) already reaches 20 %, the headroom comes from reconstruction mismatch or relaxed constraints (findings 1-3), not from a better layout. F3 reports only the twin's L1 rank, not its L2 headroom.",
+      "evidence": "O003 notes: 'null baselines are not applicable \u2026 declare the exemption'; F3 detection text.",
+      "suggested_check": "Pre-register L2 headroom of the reference's generator-space twin (|h| below the band) and of the median candidate as gated sanity checks.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Whether K1 can fire depends on an error band with no pre-registered width or combination rule",
+      "detail": "A1 needs median(h_lo) >= 0.20 and K1 needs median(h_hi) < 0.10. With a symmetric band half-width b, the point headroom must reach 0.20 + b to pass and fall below 0.10 - b to kill. For b >= 0.10, K1 cannot fire for any h >= 0. The band uses the FastHenry agreement from P4, which has not yet been measured on another module. The objective does not say whether that agreement enters as an absolute L difference on each layout, which does not cancel in the ratio and widens b, or as the ratio difference. It does not say whether the parts are summed linearly or in quadrature, and it sets no maximum b beyond which the run is INVALID. decision_if_inconclusive describes the inconclusive outcome as 'headroom between 10 % and 20 %', but the real region is [0.10 - b, 0.20 + b).",
+      "evidence": "Scratch computation: b = 0.05 means pass needs h >= 0.25 and kill needs h < 0.05; b = 0.10 means kill needs h < 0.",
+      "suggested_check": "Pre-register the band formula (ratio-based, with a stated combination rule) and a maximum half-width (e.g., 0.03 to 0.05) above which the result is INVALID rather than inconclusive.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The sample is two or three academic sample designs, and a median of two lets one reference carry a pass",
+      "detail": "The research note says the Aalborg/Danfoss geometry is 'shown only in figures, with no dimensions', so the realistic set is the two PowerSynth sample designs: one source, one research group, tool test vehicles rather than commercial derivatives. The null is about 'real reference layouts', and the note itself infers that headroom against commercial derivatives is probably smaller than against academic 'conventional' baselines. With n = 2 the median is the mean. For example, h_lo = 0.35 and 0.06 give 0.205, a PASS even though one reference is below the kill line. There is no per-reference floor. 'A-T3 supported' for 'real derivative problems' goes beyond what this sample can resolve.",
+      "evidence": "Research note lines 103 and 130; O003 scope_in; median([0.35, 0.06]) = 0.205.",
+      "suggested_check": "Add a per-reference floor (e.g., every h_lo >= 0.10), or restrict decision_if_pass to the PowerSynth test vehicles.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The l2_layout lattice requirement conflicts with 'dies fixed' for real reconstructions",
+      "detail": "l2_layout refuses any layout whose copper rectangles or die footprints are not on the 0.5/0.25/0.125 mm cell lattice (it raises ValueError rather than approximating). Public dies such as 4.08 mm cannot be placed on that lattice without resizing, which breaks 'dies fixed', or a much finer lattice, whose cost is above the 35 GB already needed at 0.125 mm. The generator also snaps die size to 0.5 mm. The snapping protocol has to be identical for the reference and the candidates and frozen in advance, but O003 does not state it.",
+      "evidence": "l2_layout.py docstring lines 8-17 and 55; halfbridge.py line 110.",
+      "suggested_check": "Measure each reconstruction's dimensions against the lattice before registration, and pre-register a snapping rule that is applied identically to the reference and the candidates.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "F2's FastHenry re-check cannot see optimisation against model choices FastHenry shares",
+      "detail": "Choosing the L2-best of 20,000 screened candidates rewards layouts that exploit unbounded model choices: the equipotential die footprint ('a model assumption and is not bounded'), point-contact terminals and lattice snapping. O004 states that FastHenry gets these same choices through the exporter, so the F2 FastHenry re-check cannot detect this.",
+      "evidence": "l2_layout.py lines 63-65; O004 objective line 49.",
+      "suggested_check": "Run O004's distributed-die and physical-tab diagnostic on the winner and on its reference, and add the change in the ratio to the band.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read Layout, DRC, the generator and the l2_layout docstring: terminals are point-contact pads on the top copper with no tab or lead conductor (confirmed by O004 line 49), so l2_layout's loop is substrate-only.",
+    "Recomputed from the research note: the S3 comparison scores 0.505 on O003's substrate-only metric versus 0.18 module-internal. A substrate-only h of 0.20 corresponds to 0.071 (S3 share) or 0.085 (S1 share) module-internal, below the 10 % kill line.",
+    "Built a DRC-clean generator layout (seed 3) and added a gate wire and a Kelvin-source wire. The DRC rejects both (wire_start and wire_net), so gate and Kelvin routing cannot appear in a DRC-valid reconstruction.",
+    "Grover straight-filament bundle calculation: going from 2 x 0.3 mm to 3 x 0.4 mm wires lowers bundle L by 19 % (6.24 to 5.06 nH), so unconstrained wire choices matter at the scale of the threshold.",
+    "Worked out the A1/K1 dead zone as a function of band half-width b: K1 cannot fire for h >= 0 once b >= 0.10.",
+    "Example of a median over two references: 0.35 and 0.06 give 0.205, a pass with one reference below the kill line."
+  ],
+  "caveats": [
+    "The PowerSynth sample files were not opened (no network in the shell; GPL policy). The gate-trace area and wire parameters of 2D_Case_2R and 2D_Case_6 come from the research note, not from the files.",
+    "The conversion from substrate-only to module-internal headroom uses the research note's S1 and S3 terminal shares, which come from IGBT and SiC modules other than the PowerSynth references; the shares for the actual references are unknown.",
+    "The bond-wire estimate is a partial-inductance calculation on an isolated bundle, not an l2_layout loop solve. It shows the effect is large, not its exact size in the loop.",
+    "The generalised generator does not exist yet. The findings on its freedom come from the scope text and today's generator and DRC."
+  ]
+}
