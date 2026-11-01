@@ -1,0 +1,74 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Sign error in the convective boundary condition of the shared thermal definition",
+      "detail": "docs/thermal_model.md \u00a74 (line 69) states the baseplate-bottom condition as `-k \u2202T/\u2202z = h (T \u2212 T_c)` 'with outward normal \u2212z'. With z = 0 at the baseplate bottom and z pointing up (doc \u00a71), the outward heat flux there is q\u00b7(\u2212\u1e91) = +k \u2202T/\u2202z, so the correct condition is `k \u2202T/\u2202z = h (T \u2212 T_c)`, equivalently `-k \u2202T/\u2202n = h (T \u2212 T_c)`. As written, a 1D case with heat entering at the top (\u2202T/\u2202z > 0) gives T < T_c at the bottom, which is not physical. The formula contradicts the prose on the same line ('the heat flux leaving is h (T \u2212 T_c)') and the \u00a73 die-top condition, which uses \u2202/\u2202n correctly. Both solvers (n3, n5) are told to implement 'this document independently', so this defect sits in the shared reference. It is not a blocker: the prose and the required energy-balance self-check would expose a literal implementation at once.",
+      "evidence": "docs/thermal_model.md:69 vs :63; derivation: heat flux q = \u2212k\u2207T, outward normal n = \u2212\u1e91 \u21d2 q\u00b7n = k \u2202T/\u2202z.",
+      "suggested_check": "Replace with `-k \u2202T/\u2202n = h (T \u2212 T_c)` (n outward, = \u2212z), i.e. `k \u2202T/\u2202z = h (T \u2212 T_c)` at z = 0.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Al2O3 k(T) citation misquotes Incropera Table A.2, and the 'independent tabulated ratio' test depends on the misquote",
+      "detail": "stack.py cites Incropera Table A.2 polycrystalline Al2O3 as 36, 26, 15.8 W/(m K) at 300/400/600 K and derives interval exponents \u22121.13/\u22121.23. The table value at 400 K is 26.4, which gives \u22121.08 and \u22121.27. The fitted exponent \u22121.15 is still correct for 300\u2013480 K (log-interpolated endpoint fit: \u22121.151). However, tests/unit/geometry/test_stack.py:83 checks k(400)/k against 26.0/36 with rel=0.015. The model is 2.05 % off the real 26.4/36, so that 'independent' check would fail with the correct table value. It passes only because of the misquote.",
+      "evidence": "Computed (4/3)^-1.15 = 0.7183; |0.7183/(26/36) \u2212 1| = 0.54 %; |0.7183/(26.4/36) \u2212 1| = 2.05 %. Table row 36.0 / 26.4 / 15.8 confirmed in Scribd copies of Incropera App. A, Table A.2.",
+      "suggested_check": "Quote 26.4 and the correct exponents, and set the test's reference to 26.4/36 with an honestly stated fit tolerance (\u22482.5 %).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "SAC305 k(T) docstring misstates the slope of the coded law",
+      "detail": "The stack.py docstring says 'Medium-low confidence in the slope (\u22127 % between 300 and 480 K)'. The coded law f = (T/300)/(1 + 4.2e-3 (T \u2212 300)) gives f(480)/f(300) = 0.911, i.e. \u22128.9 %.",
+      "evidence": "K_LAWS['SAC305'](480)/K_LAWS['SAC305'](300) = 0.91116; the default solder layer goes 58.0 \u2192 52.85 W/(m K).",
+      "suggested_check": "Correct the stated percentage to \u22129 %.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Layer.k_at silently accepts NaN",
+      "detail": "The range guard `np.any(T < K_T_MIN) or np.any(T > K_T_MAX)` is False for NaN. A diverged Picard iterate fed to k_at therefore returns NaN rather than the documented ValueError.",
+      "evidence": "default_dbc_stack().die.k_at(float('nan')) \u2192 nan (no exception).",
+      "suggested_check": "Reject non-finite T explicitly (e.g. `if not np.all(np.isfinite(T))`).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "All Layout fingerprints change; stored E002 fingerprints are no longer reproducible",
+      "detail": "Layout.fingerprint now also hashes stack.die_attach and stack.die, so every existing fingerprint changes. Example: generate_layouts(1, seed=7, family='side_by_side', dies_per_switch=2) goes from 5bcd22a3\u2026 (pre-change code, rebuilt in scratch) to 65138a70\u2026. experiments/results/E002/*/e002_rows.json stores fingerprints that current code can no longer regenerate. No test or tool recomputes them today. layout.py and test_layout.py are modified, though neither appears in the deliverables list.",
+      "evidence": "Pre-change fingerprint computed from a reverse-patched scratch copy of src.",
+      "suggested_check": "Record in the change log or ADR that fingerprints changed at this commit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Stack die-layer thicknesses are decoupled from the per-die geometry",
+      "detail": "By design, Die.thickness and Die.attach_thickness rule the geometry. Changing stack.die_attach.thickness (or k) has no effect on EM outputs or on the die z-range, and nothing warns when the two disagree. The doc states this is allowed, but a thermal solver could read the wrong one.",
+      "evidence": "Mutation check: setting stack.die_attach.thickness = 1 mm, k = 1 left the EM snapshot identical. A +1 \u00b5m Die.thickness change was caught (shorts z_top).",
+      "suggested_check": "Consider a warning or check in the thermal solver when stack and per-die thicknesses differ.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: the pyamg/skfem/sympy import works (5.4.1 / 12.0.2 / 1.14.0); check_licenses blocks nothing (only moduleforge flagged for review); ruff clean; the required pytest selection gives 357 passed, 31 deselected.",
+    "uv lock --check --offline: lock consistent with pyproject.",
+    "Reverse-applied the packet diff to a scratch copy of src and recomputed the EM snapshot for all 6 cases with pre-change code: exact JSON equality with em_before_thermal_stack.json (the baseline is genuinely pre-change).",
+    "Mutation-tested the EM regression compare: Die.thickness +1 \u00b5m is caught; a change to the stack die_attach layer alone is (by design) not.",
+    "Evaluated k_at for every layer of the DBC and AMB stacks at 273.15/300/400/480/523.15 K; checked the boundary values and an out-of-range array raise ValueError, an unknown material raises KeyError, and NaN passes through.",
+    "Re-derived the Cu law against Incropera Table A.1 (393 at 400 K exact; 377 vs 379 at 600 K) and the Al2O3 law against Table A.2 (26.4 at 400 K; fitted exponent \u22121.151 over 300\u2013480 K); found the test tolerance would fail with the true 26.4.",
+    "Computed the SAC305 law ratio 480/300 = 0.911 (docstring says \u22127 %), and the Wiedemann\u2013Franz check k(300) = 56.3 W/(m K).",
+    "Checked the doc \u00a72 containment rules on 72 generated layouts (3 families \u00d7 {2, 4, 6} dies \u00d7 8): no violations. All generated dies use 180 \u00b5m / 50 \u00b5m.",
+    "Hand-derived the sign of the convective and flux boundary conditions in doc \u00a73\u20134 from q = \u2212k\u2207T: the die-top flux BC is correct, the baseplate-bottom formula is sign-flipped.",
+    "Compared layout fingerprints before and after the change and searched the repo for stored or recomputed fingerprints (E002 rows store them; nothing recomputes them).",
+    "Web-verified the Muzychka/Culham/Yovanovich J. Electron. Packag. 125(2):178\u2013185 (2003) citation and the Incropera Table A.2 Al2O3 row.",
+    "Ran the non-slow suite over all of tests/ with -x: 146 passed, then 1 failed in tests/mfos/test_sandbox.py::test_with_the_sandbox_disabled_nothing_changes. It asserts UV_OFFLINE is unset, but the review sandbox sets UV_OFFLINE=1; the test covers mfos orchestration code this change does not touch."
+  ],
+  "caveats": [
+    "Doc \u00a74 must be read through its prose ('heat flux leaving is h(T \u2212 T_c)'), not its formula, until the sign is fixed; downstream solvers n3/n5 should not implement the formula literally.",
+    "The Al2O3 law is a 300\u2013480 K fit that is up to about 2 % below Incropera at 400 K (conservative: hotter Tj); the 'independent tabulated' unit test does not actually check against the table value.",
+    "The SAC305 and Si3N4 k(T) laws are physically motivated shapes with medium-low and medium confidence, not fits to primary data; the 4H-SiC (T/300)^-1.49 TCAD attribution was not independently verified.",
+    "Layout fingerprints differ from those stored in E002 results; any provenance check that regenerates layouts and compares fingerprints across this commit will mismatch.",
+    "The full non-slow run over all of tests/ stopped at its first failure after 146 passes: an environment-dependent mfos sandbox test (UV_OFFLINE set by the review sandbox), unrelated to this change. The rest of the wider suite was not exercised here; only the DoD-specified test selection was verified to pass in full."
+  ]
+}

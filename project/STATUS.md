@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T22:55:04+00:00 from repository state — do not edit_
+_generated 2026-11-01T23:00:40+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-01T22:55:04+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $14.08/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $15.99/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,18 +23,16 @@ _generated 2026-11-01T22:55:04+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 10 | $14.08 | 376852 | 255189 | 16 | 0 |
+| O006 | 10 | $15.99 | 381348 | 255400 | 16 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 115, failed: 3, review: 1, running: 2, todo: 6
+cancelled: 29, done: 116, failed: 3, review: 1, running: 1, todo: 6
 
 - T0148 `review` builder/implement: Thermal materials: die-attach and SiC die layers with cited k(T) in LayerStack, shared thermal model definition, pyamg/scikit-fem/sympy dependencies (attempt 1)
 - T0154 `running` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
-- T0156 `running` critic/review: Review T0148 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-01T21:01:49+00:00 run_finished {"run": "T0145-critic-20261101T125602-6b24", "status": "completed", "cost": 1.591919, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T21:04:58+00:00 run_finished {"run": "T0146-critic-20261101T125759-d08b", "status": "completed", "cost": 1.513737, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T21:41:04+00:00 objective_approved {"objective": "O006", "criteria_hash": "sha256:735554c518e06ff625ca1e225a23c24853293b88ba363229fc826cca4712ccee"}
 - 2026-11-01T21:41:31+00:00 loop_started {"pid": 30130}
@@ -49,3 +47,4 @@ cancelled: 29, done: 115, failed: 3, review: 1, running: 2, todo: 6
 - 2026-11-01T22:54:21+00:00 run_finished {"run": "T0148-builder-20261101T144807-95bc", "status": "completed", "cost": 0.814296, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T22:55:02+00:00 verified {"task": "T0148"}
 - 2026-11-01T22:55:04+00:00 run_started {"run": "T0156-critic-20261101T145504-e069", "task": "T0156", "role": "critic", "session": "ef1f4388-6257-458c-9818-b4d463a9f0cc"}
+- 2026-11-01T23:00:40+00:00 run_finished {"run": "T0156-critic-20261101T145504-e069", "status": "completed", "cost": 1.913495, "subtype": "success", "report": "structured_output"}
