@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T20:47:34+00:00 from repository state — do not edit_
+_generated 2026-11-01T20:56:02+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,28 +13,26 @@ _generated 2026-11-01T20:47:34+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $2.79/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | draft | - | 0/1 | $7.19/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | draft | - | 0/1 | $9.37/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 2 | $2.79 | 60884 | 40297 | 4 | 0 |
+| O003 | 3 | $2.79 | 60884 | 40297 | 4 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 6 | $7.19 | 186614 | 133542 | 11 | 0 |
+| O006 | 6 | $9.37 | 239725 | 171087 | 14 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 110, failed: 3, running: 2, todo: 2
+cancelled: 29, done: 111, failed: 3, running: 2, todo: 1
 
-- T0143 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
 - T0144 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
+- T0145 `running` critic/review: Review OBJ-O003 (statistics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T20:22:38+00:00 objective_draft_review {"objective": "O003", "ref": "159270499cd76184e484ebfa751be31b0c3b8782", "tasks": ["T0141", "T0142"]}
-- 2026-11-01T20:23:04+00:00 loop_started {"pid": 15679}
 - 2026-11-01T20:23:07+00:00 run_started {"run": "T0139-critic-20261101T122307-c6ca", "task": "T0139", "role": "critic", "session": "b577487c-0dc2-4640-a60b-6266f3282f06"}
 - 2026-11-01T20:23:08+00:00 run_started {"run": "T0140-critic-20261101T122308-301f", "task": "T0140", "role": "critic", "session": "f1f5f434-b2ae-4b13-953f-909e83ab8bc8"}
 - 2026-11-01T20:30:49+00:00 run_finished {"run": "T0140-critic-20261101T122308-301f", "status": "completed", "cost": 1.772264, "subtype": "success", "report": "structured_output"}
@@ -48,3 +46,5 @@ cancelled: 29, done: 110, failed: 3, running: 2, todo: 2
 - 2026-11-01T20:47:30+00:00 loop_started {"pid": 22169}
 - 2026-11-01T20:47:33+00:00 run_started {"run": "T0143-critic-20261101T124733-070e", "task": "T0143", "role": "critic", "session": "725e85d7-f07d-4fc4-bf31-68d7095914bc"}
 - 2026-11-01T20:47:34+00:00 run_started {"run": "T0144-critic-20261101T124734-f623", "task": "T0144", "role": "critic", "session": "66a48247-6c11-4356-9fe5-18288d28a3d5"}
+- 2026-11-01T20:56:00+00:00 run_finished {"run": "T0143-critic-20261101T124733-070e", "status": "completed", "cost": 2.178639, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T20:56:02+00:00 run_started {"run": "T0145-critic-20261101T125602-6b24", "task": "T0145", "role": "critic", "session": "87f0b428-6ed1-4602-a2f3-6a4a96d82252"}

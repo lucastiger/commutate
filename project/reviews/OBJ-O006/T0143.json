@@ -1,0 +1,94 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A3, the only check on real geometry, uses two developer-chosen layouts with no selection rule",
+      "detail": "A3 is the only criterion that tests true error on die islands, die-attach footprints and patterned copper. The analytic cases have none of these: their layers are laterally uniform, or the case is the manufactured solution. A3 uses 'two generator layouts (dev seeds)', but the draft gives no rule for choosing them. Dev layouts are visible while the grid rule is being developed, so the two layouts can be picked or tuned until they pass. O002 covers 3 families (side_by_side, interleaved, u_shaped) \u00d7 5 die counts \u00d7 die sizes 4.0\u20135.5 mm, and each family has different gap and corner features. Two unspecified layouts cannot show that the frozen grid rule reaches 0.05 K across that scope, so this sample does not settle the null ('cannot be verified \u2026 on the geometry O002 uses').",
+      "evidence": "objective.yaml A3 and F4 ('pilots and A3 use dev seeds'); src/moduleforge/generate/halfbridge.py:40 FAMILIES; O002 scope_in (2\u20136 dies, 15 strata).",
+      "suggested_check": "Pre-register the A3 selection: fresh seeds outside O002/O003/O004's sealed sets, drawn after the grid rule is frozen, with at least one layout per family at the extreme die count and smallest die size.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The scikit-fem cross-check is not required to build its geometry independently",
+      "detail": "The hypothesis calls the scikit-fem solution 'independent', but nothing requires its geometry and material mapping to be independent. D0006 specifies scikit-fem 'on the same tensor grid', and the notes say 'on the same geometry'. If both solvers share the step that turns a Layout into a grid, materials and boundary conditions, a shared error passes A3 by construction. Examples: a dropped or mis-sized die-attach footprint, a filled island gap, h applied at the wrong face. A1 and A2 cannot catch such errors, because no analytic case has footprints or islands. A solver that ignores this geometry could therefore meet every criterion, which contradicts the claim's second clause.",
+      "evidence": "D0006 Decision: 'scikit-fem with trilinear hexahedra on the same tensor grid'; objective notes item (4); F1 requires independence only for the analytic references.",
+      "suggested_check": "Require the scikit-fem mesh and material map to be built from the Layout by separate code, and add a gated geometry sanity check (per-material volumes and footprint areas against the Layout).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Comparing the source maximum without interpolation has a first-order bias, so a correct solver can fail A2 or even trigger K2",
+      "detail": "The 'max of the L2 field vs max of the reference field over that source (no interpolation)' point compares a continuous maximum with a maximum over sample points. When the true maximum over a source lies on the source's edge, the cell-centre maximum is low by about |\u2207T|\u00b7\u0394/2. That happens for abutting sources (as in a cross) and for a weak source beside a strong one. A converged, correct FV solver then fails A2 at practical grids and trips K2 (0.25 K) on coarse ones. FAIL is then read as 'a model or implementation error', and the run goes to the fallback. A Q1 FEM, whose element nodes lie on the source edges, does not have this bias, so the metric favours the fallback. Interior maxima (Case 2) are unaffected. Exposure depends on the Case 3 cross geometry, which I could not confirm, and on the source powers chosen for the N-layer case.",
+      "evidence": "2D FV test against an exact cosine series (k=150, t=1.5 mm, h=5000, sources 2.0 and 0.5 MW/m\u00b2): the weak source's maximum is at its edge (gradient 3753 K/m). Cell-centre maximum error was \u22120.789, \u22120.352, \u22120.156 and \u22120.069 K at 5, 10, 20 and 40 cells/mm (first order). Strong-source (interior) maximum error: 0.058, 0.017, 0.004, 0.001 K. 3D series for abutting 5-source crosses: outer-source maximum on the shared edge with gradients 72\u20134224 K/m.",
+      "suggested_check": "Evaluate the reference at the L2 field's own sample points (cell centres or reconstructed faces) and take both maxima over that common set, or restrict the max point to sources whose reference maximum is interior.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A4 limits a Richardson estimate whose formula is unspecified and whose honesty is never tested",
+      "detail": "A4 limits the estimate, not the true error. The draft does not fix how the estimate is computed: observed or formal order, handling of oscillatory or non-monotone triples, a bound on p, or a safety factor. Each of these choices can shrink the estimate on a 'lucky' triple, which is exactly failure mode F2. Nothing checks that the estimate actually bounds the error where the error is known, even though O002 and O003 rely on meta['solver_tol'] as an 'honest' bound on unseen layouts (O002 F1 accepts Richardson \u2264 0.05 K per Tj). Because A2 is 4 \u00d7 A4, a solver whose estimate understates its error by a factor of 4 still passes. On O002 that would allow about 0.2 K of true error, 40 % of the 0.5 K pair threshold.",
+      "evidence": "A2 0.05 K vs A4 0.0125 K; O002 F1 Richardson gate 0.05 K; D0006 'honest discretization error bound'. In my smooth 2D test the observed-order estimate was honest (0.00107 vs 0.00104 K true; edge-max case 0.071 vs 0.069 K), so the estimator is untested here rather than shown to be wrong.",
+      "suggested_check": "Fix the estimator in the spec (for example GCI with bounded p, and a rule for oscillatory triples) and add a criterion that |T_L2 \u2212 T_ref| \u2264 rich_est + reference tolerance at every analytic point.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "No rule for when A3's precondition cannot be met, and the fallback is the costlier solver",
+      "detail": "A3 requires scikit-fem's own Richardson estimate to be at most 0.0125 K on module-scale layouts. The draft does not say whether failing that makes the run INVALID or fails A3. If INVALID, failure modes that end in INVALID mean 'new experiment id', and the decision loops without ever reaching the fallback. The audit measured scikit-fem at about 7.7 kB per DOF, about 9 times the FV prototype, with a ceiling of 1.5\u20132 M DOF on the laptop. If L2 fails A4 because the frozen grid rule cannot converge on affordable grids, decision_if_fail switches to the solver that needs about 9\u00d7 more memory per DOF to reach the same tolerance.",
+      "evidence": "project/memory/literature/thermal-l2-reference.md lines 104\u2013107; D0006 alternative (b); objective A3 and A4 descriptions; evaluate.py lines 10\u201316 (failed sanity check \u2192 INVALID).",
+      "suggested_check": "State how an unmet scikit-fem convergence precondition is classified, and budget or demonstrate a converged scikit-fem solve on one generator layout before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A1 and K1 never bind: the scaled-error criteria are redundant given each case's scale",
+      "detail": "For every named case the scale is above 5 K, so 1 % of scale is above 0.05 K and A2 always binds first. Case 2's largest spreading rise is 6.94 K (A1 0.069 K); Case 1b is about 6.9 K; the N-layer and manufactured cases are at 60\u2013110 K. Likewise K2 (0.25 K) fires before K1 (5 % of scale \u2265 0.35 K). In effect, the evaluation is a single absolute 0.05 K test. That is not wrong, but the relative criterion added to answer T0140 has no effect.",
+      "evidence": "Reconstructed Case 2 spreading rises 0.56 / 6.94 / 4.40 / 3.06 K above the 1D value of 96.867 \u00b0C. Case 1b: 59.94 \u2212 53.06 \u2248 6.9 K.",
+      "suggested_check": "Either drop A1 and K1 or add a case whose scale is below 5 K, so the relative test means something.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The kill criteria can fire but cannot change the decision, and the F2 response mislabels the verdict",
+      "detail": "K1 and K2 are point metrics with absolute thresholds, so they can fire. But decision_if_inconclusive equals decision_if_fail, so a kill changes nothing. There is no kill on A3 or A4. 'A failed A4 is a FAIL' is wrong as stated: under evaluate.py a lone A4 failure is INCONCLUSIVE. The decision is the same, but the label is wrong.",
+      "evidence": "tools/mfos/mfos/evaluate.py lines 10\u201316; objective F2 response.",
+      "suggested_check": "Reword F2's response to 'INCONCLUSIVE (same decision as FAIL)'.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The k(T) null (F3) passes trivially and says nothing about k(T) on real geometry",
+      "detail": "Solving with constant k at the layer-mean temperature against a manufactured solution whose k varies by 30 % or more is off by kelvins, so F3 can never fail. It shows that ignoring k(T) entirely is caught, but nothing more. The manufactured solution is the only k(T) case, and A3 does not say whether its comparison runs with k(T).",
+      "evidence": "F3 detection text; A3 description is silent on k(T).",
+      "suggested_check": "State that A3 runs with O002's k(T) materials, or report the k(T) effect on the A3 layouts.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "decision_if_pass extends L2 beyond the verified geometry, to O003's references",
+      "detail": "O003's thermal checks run on PowerSynth 2D_Case_2R/2D_Case_6 or customer layouts, each on its own stack and housing. O006 verifies only the default DBC stack on generator layouts, and F4 deliberately keeps O003's references out. O003 needs only about 2 K resolution, so this matters little for the decision, but 'verified' does not cover those references.",
+      "evidence": "O003 objective.yaml lines 10\u201316 and 42; O006 scope_in and F4.",
+      "suggested_check": "Have O003 report per-reference Richardson estimates as its own check.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Confirmed that project/objectives/O006/objective.yaml matches the packet's draft (read in full).",
+    "Built a 2D finite-volume model (conforming grid, convective bottom, two flux sources) against an exact cosine series. A strong source with an interior maximum showed second-order cell-centre error (0.058 \u2192 0.001 K). A weak source with an edge maximum showed first-order bias of \u22120.79, \u22120.35, \u22120.16 and \u22120.069 K at 5, 10, 20 and 40 cells/mm, enough to fail A2 and trip K2 on coarse grids. The three-grid observed-order Richardson estimate was honest in both cases.",
+    "Rebuilt Muzychka 2003 Case 2 as a converged 2500\u00d72500-term single-layer series (50\u00d750\u00d710 mm, k=150, h=400, sources at the quadrant centres). Centroids 97.388/103.796/101.263/99.920 \u00b0C agree within 0.001 K with the audit's 214k-DOF scikit-fem scratch run and differ from the printed 50-term table by 0.012\u20130.024 K. So the F1 0.005 K scikit-fem gate on Case 2 is feasible. Maxima are interior, and the cell-centre sampling bias is \u22640.017 K at 1 mm and \u22640.003 K at 0.5 mm.",
+    "Swept candidate Case 3 cross geometries on two plates. Abutting crosses put the outer-source maximum on the shared edge, with gradients of 72\u20134224 K/m; I could not identify the paper's exact Case 3 geometry.",
+    "Computed scale against threshold per case: Case 2's largest spreading rise is 6.94 K and Case 1b's about 6.9 K, so A1 (1 %) is looser than A2 everywhere and K2 fires before K1.",
+    "Read tools/mfos/mfos/evaluate.py verdict logic: PASS, FAIL, INCONCLUSIVE, INVALID. A lone A4 failure is INCONCLUSIVE, which carries the same decision as FAIL.",
+    "Cross-read O002 and O003 drafts, D0006 and the thermal audit memory: O002 F1 uses a 0.05 K Richardson gate and a 0.1 K scikit-fem subset check; O003 uses L2 thermal on non-generator references; scikit-fem uses about 7.7 kB per DOF, with a ceiling of 1.5\u20132 M DOF."
+  ],
+  "caveats": [
+    "The claim holds only in a narrower sense: passing A1\u2013A4 shows the solver core is accurate to about 0.05 K on laterally uniform stacks and the manufactured solution, and agrees with scikit-fem on two unspecified dev layouts. It does not show that the frozen grid rule reaches that precision across O002's 3 families \u00d7 5 die counts \u00d7 die sizes.",
+    "A3 counts as independent evidence only if the scikit-fem geometry and material mapping is built separately from L2's. As drafted (D0006: 'same tensor grid'), shared mapping errors pass A3.",
+    "In practice the evaluation reduces to one absolute 0.05 K test (A2). A1 and K1 never bind for the named cases.",
+    "The 'max over source, no interpolation' point should be confined to sources with interior maxima, or compared on a common point set. Otherwise a correct FV solver can fail A2 or K2 on abutting or unequal-power sources.",
+    "A4 bounds an estimate. The honesty of meta['solver_tol'], which O002 and O003 rely on, is not tested by any criterion.",
+    "Not verified: the exact geometry of Muzychka 2003 Case 3. I found the paper's PDF via web search (https://uwaterloo.ca/microelectronics-heat-transfer-laboratory/sites/default/files/uploads/documents/spreading_resistance_3-mhtl03-1.pdf) but could not render it, and I did not confirm it is the 2003 paper. Case parameters come from project/memory/literature/thermal-l2-reference.md. The Case 2 source placement is my reconstruction, chosen because it reproduces the published centroids."
+  ]
+}
