@@ -1,0 +1,85 @@
+id: O002
+title: A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search
+kind: hypothesis
+priority: 2
+risk: high
+depends_on: []
+unlocks: [O003]
+hypothesis:
+  statement: >-
+    On DRC-valid wire-bonded half-bridge layouts from moduleforge.generate on the default DBC stack, in steady state
+    with temperature-dependent conductivity, uniform heat-transfer coefficient at the cold plate and specified power
+    per die, a fast L1 thermal model (at most 50 ms median per evaluation on one core) predicts, against the verified
+    L2 thermal reference of D0006: the difference in maximum junction temperature between two layouts of the same
+    stratum within 0.5 K; each die's Tj max within 5 % of its temperature rise; and the inter-die Tj spread of each
+    layout within 1 K (each as a 95th percentile, upper 95 % bound), on fresh sealed seeds.
+  null_hypothesis: >-
+    L1 thermal is too inaccurate to enforce A-T3's +2 K Tj budget during search; search needs L2 thermal in the loop
+    or a better fast model.
+  why_it_matters: >-
+    The thesis promises bounded junction temperature (A-T2), and A-T3's headroom is stated at <= +2 K Tj. Search must
+    compare layouts' Tj, so L1 must resolve differences well below 2 K; absolute Tj and the spread across paralleled
+    dies are what customers verify in Icepak.
+  decision_if_pass: Use L1 thermal as the search constraint in O003 with L2 thermal audits of final candidates.
+  decision_if_fail: >-
+    Diagnose (missing physics: lateral spreading, k(T), patterned copper); if not fixable within budget, O003 checks
+    Tj with L2 thermal on shortlisted candidates only (founder decision on compute).
+  decision_if_inconclusive: Same as fail.
+scope_in:
+  - generator families of moduleforge.generate, 2-6 parallel dies per switch, the default DBC stack and housing
+  - steady state; k(T) for every layer material from cited sources; uniform h at the cold plate; power per die as
+    designed in E007 (at least two load levels)
+  - per-die Tj max taken from the die surface field (not the centroid)
+scope_out:
+  - transient thermal impedance (Zth); bond-wire heat paths; solder voids or fillets; non-uniform h; TIM layers
+  - electro-thermal coupling (losses fixed per die); AMB and other stacks
+evidence_plan: [E006, E007]
+acceptance:
+  required_experiments: [E006, E007]
+  pass_all:
+    - {id: A1, metric: E006.max_rel_err_vs_analytic, comparator: "<=", threshold: 0.01, uncertainty: {use: point},
+       description: "L2 thermal verification: max relative error of the temperature rise against the analytic benchmarks (1D series resistance; Muzychka, Culham & Yovanovich 2003 multi-source cases; Bagnall, Muzychka & Wang 2014 N-layer surface field; manufactured solutions for k(T)). 1 % of rise keeps the reference five times tighter than L1's 5 % budget"}
+    - {id: A2, metric: E007.dtj_pair_err_p95_K, comparator: "<=", threshold: 0.5, uncertainty: {use: ci},
+       description: "95th percentile over within-stratum layout pairs of |(Tj,max,a - Tj,max,b)_L1 - (...)_L2| in K, upper 95 % bound (bootstrap clustered by layout); search must enforce a +2 K budget, so L1's error on differences must be a quarter of it"}
+    - {id: A3, metric: E007.tjmax_rel_err_p95, comparator: "<=", threshold: 0.05, uncertainty: {use: ci},
+       description: "95th percentile over dies of |Tj,max,L1 - Tj,max,L2| / (Tj,max,L2 - T_coolant), upper 95 % bound (clustered by layout)"}
+    - {id: A4, metric: E007.spread_err_p95_K, comparator: "<=", threshold: 1.0, uncertainty: {use: ci},
+       description: "95th percentile over layouts of |spread_L1 - spread_L2| in K, spread = max - min of per-die Tj max, upper 95 % bound"}
+    - {id: A5, metric: E007.l1_eval_ms_p50, comparator: "<=", threshold: 50.0, uncertainty: {use: point},
+       description: "median wall time per L1 thermal evaluation on one core, as O001's A6 for L1 EM"}
+  fail_any:
+    - {id: K1, metric: E007.dtj_pair_err_p95_K, comparator: ">", threshold: 1.5, uncertainty: {use: ci},
+       description: "L1 cannot enforce a +2 K budget (lower 95 % bound above 1.5 K)"}
+    - {id: K2, metric: E007.tjmax_rel_err_p95, comparator: ">", threshold: 0.15, uncertainty: {use: ci},
+       description: L1's per-die Tj max definitely off by more than 15 % of the rise}
+  max_evaluations: 2
+failure_modes:
+  - id: F1
+    description: "L2 thermal wrong or not converged"
+    detection: "E006 (A1); in E007, sanity checks of energy balance (|Q_out/Q_in - 1| <= 1e-6), three-grid Richardson estimate of every reported Tj below 0.1 K, and the scikit-fem cross-check (D0006) on a subset within 0.2 K"
+    response: "experimental failure; repair L2 under a new experiment id; the hypothesis is untouched"
+  - id: F2
+    description: "A null predictor meets a criterion"
+    detection: "null baselines: per-die 1D series resistance without spreading or coupling (must fail A2-A4), and the stratum mean for A2; dev rows with `mfos exp check E007 --rows <dev rows>` before registration"
+    response: "design error: revise E007 before registration"
+  - id: F3
+    description: "k(T) data or power levels unrepresentative"
+    detection: "k(T) sources cited in E007's spec; power per die chosen so the Tj rise spans realistic SiC operation (at least two load levels); per-load-level metrics reported"
+    response: "founder decision on the operating point; new experiment id"
+  - id: F4
+    description: "Overfitting to seen data"
+    detection: "sealed seeds; the L1 thermal model is frozen (code_under_test) before E007 registration"
+    response: "never re-evaluate on data that has been seen"
+budget: {usd: 120, cpu_hours: 40, wall_days: 28}
+require_plan_approval: true
+notes: >-
+  Draft by the founder session of 2026-10-31 (thesis review proposal 4; D0006; founder answers of 2026-10-31: error
+  budget dTj 0.5 K, Tj 5 % of rise, spread 1 K; first version steady state with k(T) and uniform h). Build work first
+  (planner): (1) the L2 thermal solver of D0006 in moduleforge.solvers (finite volume on a layer- and edge-conforming
+  rectilinear grid, pyamg; Picard for k(T)); (2) E006, an E001-style verification against the analytic benchmarks of
+  project/memory/literature/thermal-l2-reference.md and manufactured solutions, with an honest discretisation bound as
+  meta['solver_tol']; (3) the L1 thermal model (spectral / N-layer Green's function per docs/INFRASTRUCTURE.md, with
+  a correction for patterned copper), frozen before E007; (4) E007 on fresh sealed generator layouts, strata (family,
+  dies) as in E002, rows per die and per layout, recompute entries for A2-A5, nulls per F2, code_must_match tying
+  E007's L2 to the code E006 verified. Thermal solves are cheap (about 3 M unknowns in 7 s on the M5): local compute
+  only, runs above 5 M unknowns on a burst VM. Id note: E006 and E007 are new ids; E005 belongs to O005, E004 to O004.

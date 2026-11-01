@@ -1,0 +1,91 @@
+id: O004
+title: The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom
+kind: hypothesis
+priority: 1
+risk: high
+depends_on: [O001]
+unlocks: [O003]
+hypothesis:
+  statement: >-
+    solvers.l2_layout, extended to the layer stacks, substrate outlines, terminals and die/bond-wire placements of the
+    reconstructed public benchmark modules (research/notes/o003-public-benchmarks.md, D0007), (a) agrees with the pinned
+    FastHenry build (D0002) run as a separate executable on the same geometry within 3 % in commutation-loop inductance,
+    for every benchmark layout at the frequency its publication used, and (b) reproduces every published layout-pair
+    inductance ratio in the benchmark set within 10 %.
+  null_hypothesis: >-
+    L2, validated so far on the generator's own lattice, default stack and housing (E001, E002's in-run checks), is not
+    accurate enough on externally defined geometry for a 20 % versus 10 % headroom verdict; O003 cannot use it as its
+    judge without further solver work or a different reference.
+  why_it_matters: >-
+    O003's day-60 kill criterion (charter) is headroom on public benchmarks: 1 - L(re-layout) / L(reference layout),
+    judged by L2. The hypothesis is >= 20 % and the kill line < 10 %, so reference error must stay well inside that
+    10-point gap, especially on ratios between layouts. models.CodeMatch makes O003's experiments use the L2 code this
+    objective validates.
+  decision_if_pass: >-
+    O003 uses the validated l2_layout (code_must_match on the files of this evaluation) as its judge on the benchmark
+    set.
+  decision_if_fail: >-
+    Diagnose (solver model versus geometry reconstruction). If the solver is at fault, fix it under a new experiment
+    id; if the reconstruction is, narrow the benchmark set to layouts reconstructed well enough; the founder decides
+    whether the day-60 criterion is then evaluated on the narrowed set.
+  decision_if_inconclusive: Same as fail.
+scope_in:
+  - wire-bonded half-bridge layouts reconstructed from the public sources of research/notes/o003-public-benchmarks.md
+    (PowerSynth sample designs per D0007, UTK conventional and P/N-cell pair, CPES SiC phase legs and the commercial
+    module they compare against), as far as their published dimensions allow
+  - commutation-loop inductance at each publication's stated frequency (DC-equivalent excluded), 1-20 MHz
+  - the stacks those publications state (Al2O3 or AlN DBC, Cu thicknesses), baseplate as stated or omitted as stated
+scope_out:
+  - gate loops, current sharing, thermal; full-wave effects; measured double-pulse waveforms
+  - layouts whose published dimensions are insufficient to reconstruct the commutation loop (reported, not used)
+  - absolute agreement with published measurements beyond the pair ratios (reconstruction uncertainty dominates)
+evidence_plan: [E004]
+acceptance:
+  required_experiments: [E004]
+  pass_all:
+    - {id: A1, metric: E004.max_rel_diff_vs_fasthenry, comparator: "<=", threshold: 0.03, uncertainty: {use: point},
+       description: "max over benchmark layouts of |L_L2 / L_FastHenry - 1| at the publication frequency, both converged per their sanity checks; deterministic, so judged on the point value, with both tools' stated error bounds reported. 3 % keeps reference disagreement well inside the 10-point gap between O003's hypothesis and kill line"}
+    - {id: A2, metric: E004.max_ratio_err_vs_published, comparator: "<=", threshold: 0.10, uncertainty: {use: point},
+       description: "max over published layout pairs of |(L_a / L_b)_L2 / (L_a / L_b)_published - 1|; headroom is a ratio, so ratio fidelity is what O003 needs. The null 'no difference' (ratio 1) must fail it"}
+  fail_any:
+    - {id: K1, metric: E004.max_rel_diff_vs_fasthenry, comparator: ">", threshold: 0.10, uncertainty: {use: point},
+       description: L2 and FastHenry disagree by more than 10 % on some benchmark layout}
+    - {id: K2, metric: E004.max_ratio_err_vs_published, comparator: ">", threshold: 0.30, uncertainty: {use: point},
+       description: L2 misstates some published layout-pair ratio by more than 30 %}
+  max_evaluations: 2
+failure_modes:
+  - id: F1
+    description: "Either solver not converged on the new geometries"
+    detection: "sanity checks: l2_layout three-level Richardson estimate and solver_tol below 0.5 %; FastHenry discretisation refined until L changes below 0.5 % between its last two meshes; both reported per layout"
+    response: "experimental failure: refine under a new experiment id"
+  - id: F2
+    description: "Reconstruction error mistaken for solver error (dimensions read from figures, unstated terminal geometry)"
+    detection: "each reconstruction records its source table or figure, every assumed dimension and a sensitivity run (+-10 % on each assumed dimension); a pair whose ratio sensitivity exceeds 5 % is reported, not used for A2"
+    response: "narrow the benchmark set; never tune a reconstruction toward the published value"
+  - id: F3
+    description: "Model mismatch between the tools (terminals, plane treatment, wire filaments) rather than error"
+    detection: "both tools get the identical conductor geometry from one exporter; differences are attributed per conductor group in a diagnostic"
+    response: "diagnose; a model choice that changes L by more than 1 % needs a founder decision"
+  - id: F4
+    description: "Published values themselves inconsistent (simulated vs measured, DC vs AC)"
+    detection: "only ratios measured or simulated by one method at one frequency within one source are compared"
+    response: "drop the inconsistent pair, record why"
+  - id: F5
+    description: "Licence breach in using GPL sample designs"
+    detection: "D0007 rules: geometry re-modelled in ModuleForge's own format; GPL files never committed; commit and sha256 of every file read recorded"
+    response: "stop and remove; founder decision"
+budget: {usd: 100, cpu_hours: 150, wall_days: 21}
+require_plan_approval: true
+notes: >-
+  Draft by the founder session of 2026-10-31 (thesis review addendum; founder answers of 2026-10-31: validate against
+  FastHenry plus published ratios; within 3 % and +-10 %). Timing: the day-60 gate is 2026-11-27, and O003 depends on
+  this objective, so wall_days 21 is the latest useful finish. Build work first (planner): (1) extend
+  solvers.l2_layout to arbitrary stacks, outlines and terminals on its lattice (reconstructed dimensions snapped to a
+  lattice that divides them, snapping recorded); (2) a Layout -> FastHenry deck exporter producing the identical
+  conductor geometry in SI metres (D0002: the provisioned build mis-scales under .units mm), run as a separate
+  executable per D0002/D0004; (3) reconstructions of the benchmark layouts in ModuleForge's layout format, each with
+  its source, assumed dimensions and sensitivity (F2). E004 design requirements (scientist): rows per layout with
+  layout_id, source, freq_hz, L_l2, L_l2_err, L_fh, L_fh_err; rows per published pair with L_a, L_b and the published
+  ratio; recompute entries for both metrics; null for A2: ratio 1; sanity checks per F1; domain via run.domain(stacks,
+  sources, freq_hz). Cost: about 8-10 layouts x three L2 levels (the 0.125 mm level needs a burst VM, D0005 precedent)
+  plus FastHenry runs.
