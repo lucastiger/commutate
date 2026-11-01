@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-01T06:21:43+00:00 from repository state — do not edit_
+_generated 2026-11-01T06:32:40+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -17,19 +17,17 @@ _generated 2026-11-01T06:21:43+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
+| O004 | 2 | $0.00 | 0 | 0 | 0 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 92, failed: 3
+cancelled: 29, done: 92, failed: 3, running: 2, todo: 2
 
+- T0125 `running` critic/review: Review OBJ-O004 (statistics) (attempt 1)
+- T0126 `running` critic/review: Review OBJ-O004 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T00:05:46+00:00 objective_passed {"objective": "O901", "evaluation": "EV-O901-01"}
-- 2026-11-01T00:08:48+00:00 claim_approved {"id": "C003"}
-- 2026-11-01T05:31:05+00:00 objective_draft_review {"objective": "O005", "ref": "f72ad62059042dc199908b3201e30a9c150f199c", "tasks": ["T0121", "T0122"]}
-- 2026-11-01T05:38:17+00:00 loop_started {"pid": 74678}
-- 2026-11-01T05:38:20+00:00 run_started {"run": "T0121-critic-20261031T223819-f868", "task": "T0121", "role": "critic", "session": "91f61444-003e-4c56-8aae-03be7c4e734a"}
 - 2026-11-01T05:38:20+00:00 run_started {"run": "T0122-critic-20261031T223820-ba3d", "task": "T0122", "role": "critic", "session": "44213831-5859-402c-b557-9c139159f934"}
 - 2026-11-01T05:45:33+00:00 run_finished {"run": "T0121-critic-20261031T223819-f868", "status": "completed", "cost": 1.743688, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T05:45:57+00:00 run_finished {"run": "T0122-critic-20261031T223820-ba3d", "status": "completed", "cost": 1.865114, "subtype": "success", "report": "structured_output"}
@@ -40,3 +38,8 @@ cancelled: 29, done: 92, failed: 3
 - 2026-11-01T06:14:47+00:00 tick_error {"error": "ValidationError: 1 validation error for Objective\nacceptance.pass_all.4.as O001's A6 for L1 EM\n  Extra inputs are not permitted [type=extra_forbidd
 - 2026-11-01T06:21:17+00:00 run_finished {"run": "T0124-critic-20261031T231227-7557", "status": "completed", "cost": 1.883029, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T06:21:42+00:00 run_finished {"run": "T0123-critic-20261031T231227-b81b", "status": "completed", "cost": 2.159944, "subtype": "success", "report": "structured_output"}
+- 2026-11-01T06:32:10+00:00 objective_draft_review {"objective": "O004", "ref": "680d2365b87eb761932f577c3611af2d2ddd4e8d", "tasks": ["T0125", "T0126"]}
+- 2026-11-01T06:32:11+00:00 objective_draft_review {"objective": "O002", "ref": "680d2365b87eb761932f577c3611af2d2ddd4e8d", "tasks": ["T0127", "T0128"]}
+- 2026-11-01T06:32:37+00:00 loop_started {"pid": 80808}
+- 2026-11-01T06:32:40+00:00 run_started {"run": "T0125-critic-20261031T233240-efc1", "task": "T0125", "role": "critic", "session": "5815873b-754f-4878-a252-6cdc015ae967"}
+- 2026-11-01T06:32:40+00:00 run_started {"run": "T0126-critic-20261031T233240-c423", "task": "T0126", "role": "critic", "session": "91951d9a-c68f-4304-8f27-13f96e7c8f44"}

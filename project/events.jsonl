@@ -1059,3 +1059,8 @@
 {"ts": "2026-11-01T06:14:47+00:00", "event": "tick_error", "actor": "orchestrator", "error": "ValidationError: 1 validation error for Objective\nacceptance.pass_all.4.as O001's A6 for L1 EM\n  Extra inputs are not permitted [type=extra_forbidden, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden", "consecutive": 1}
 {"ts": "2026-11-01T06:21:17+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0124-critic-20261031T231227-7557", "status": "completed", "cost": 1.883029, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-01T06:21:42+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0123-critic-20261031T231227-b81b", "status": "completed", "cost": 2.159944, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-01T06:32:10+00:00", "event": "objective_draft_review", "actor": "orchestrator", "objective": "O004", "ref": "680d2365b87eb761932f577c3611af2d2ddd4e8d", "tasks": ["T0125", "T0126"]}
+{"ts": "2026-11-01T06:32:11+00:00", "event": "objective_draft_review", "actor": "orchestrator", "objective": "O002", "ref": "680d2365b87eb761932f577c3611af2d2ddd4e8d", "tasks": ["T0127", "T0128"]}
+{"ts": "2026-11-01T06:32:37+00:00", "event": "loop_started", "actor": "orchestrator", "pid": 80808}
+{"ts": "2026-11-01T06:32:40+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0125-critic-20261031T233240-efc1", "task": "T0125", "role": "critic", "session": "5815873b-754f-4878-a252-6cdc015ae967"}
+{"ts": "2026-11-01T06:32:40+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0126-critic-20261031T233240-c423", "task": "T0126", "role": "critic", "session": "91951d9a-c68f-4304-8f27-13f96e7c8f44"}
