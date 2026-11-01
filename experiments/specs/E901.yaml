@@ -1,0 +1,67 @@
+id: E901
+title: harmonic2(n) vs a 50-significant-digit decimal reference on a sealed decade-stratified sample (canary
+  v2)
+objective: O901
+status: registered
+runner: uv run python experiments/runners/e901_canary.py
+config:
+  per_stratum: 10
+  strata:
+  - '[10^0,10^1)'
+  - '[10^1,10^2)'
+  - '[10^2,10^3)'
+  - '[10^3,10^4)'
+  - '[10^4,10^5)'
+  - '[10^5,10^6]'
+  reference_digits: 50
+  reference_valid_n_max: 200
+  reference_valid_rel_tol: 1.0e-40
+sealed_seed: true
+metrics:
+- name: max_rel_err
+  description: max over the 60 sampled n of |harmonic2(n) / H_ref(n) - 1|, H_ref the 50-significant-digit
+    decimal sum of 1/k^2 rounded to float64; computed with mfos.metrics.max_rel_err (rows columns pred,
+    ref)
+  unit: ''
+sanity_checks:
+- name: exact_small_cases
+  description: harmonic2(1) == 1.0 and harmonic2(2) == 1.25 exactly
+- name: reference_valid
+  description: the decimal reference equals the exact fractions.Fraction sum of 1/k^2 within 1e-40 relative
+    for every n <= 200
+timeout_min: 10
+cpu_hours_est: 0.05
+registered_by: founder
+registered_at: '2026-10-31T23:57:48+00:00'
+spec_hash: sha256:063203fe01ea3e5ee334c05ebbb0a386a543fa5685c4c245c1db2b5496d9974b
+runner_files:
+  experiments/runners/e901_canary.py: 783654c546866527308fd9fc7488e01792633dbede7a16eab786245a647b1606
+evidence_rules: 2
+code_under_test:
+- src/moduleforge/canary.py
+code_must_match: []
+requires_passed: []
+rows:
+  artifact: rows.json
+recompute:
+- metric: max_rel_err
+  fn: max_rel_err
+  pred: pred
+  ref: ref
+  strata: []
+  group: null
+  role: null
+  params: {}
+  where: {}
+  ci: null
+  rel_tol: 1.0e-09
+  abs_tol: 1.0e-15
+null_baselines:
+- name: basel_minus_leading_tail
+  kind: column
+  strata: []
+  column: null_pred
+  applies_to:
+  - max_rel_err
+recompute_exempt: {}
+dev_rows: experiments/drafts/E901.dev_rows.json
