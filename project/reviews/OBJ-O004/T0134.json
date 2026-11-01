@@ -1,0 +1,71 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The 'dies as shorts' loop is not defined for modules with separate freewheeling diodes, which covers 2 of the 4 sources",
+      "detail": "The hypothesis and scope_in define the loop as 'DC+ terminal to DC- terminal, dies as shorts'. The UTK modules (IGBT plus diode) and the CPES and commercial modules (SiC MOSFET plus SBD; the commercial module's CPW2-1200-S010B are Schottky diodes) have separate antiparallel diode dies. If every die is shorted, the result is not any commutation loop. Each switch position's switch-die wires and diode-die wires carry current in parallel, and in the P/N-cell layout the P-cell and N-cell loops sit in parallel. A k=0 estimate from S2's values gives Loop1||Loop2 \u2248 3.9 nH, against Loop1 = 7.2 nH. The K2 notes compare 'with that dissertation's loop definitions' (Loop1 = T1 with D2, Loop2 = T2 with D1), which need selective conduction. So K2 judges a die-conduction setup that A1/A2 never validate. decision_if_pass ties O003 to 'the same loop definition', so this ambiguity carries into the day-60 headroom. The code has no diode or non-conducting die: DieShort is documented as 'Die with the switch on', and grep finds no diode concept in src/moduleforge. The build list (1)-(4) does not add one.",
+      "evidence": "src/moduleforge/geometry/conductors.py:61-67 (DieShort = switch on); l2_layout.py docstring 'Dies are ideal shorts (node merge ...)'; research/notes/o003-public-benchmarks.md S1/S2/S3 bills of materials; parallel estimate 7.2*8.6/15.8 = 3.92 nH",
+      "suggested_check": "For each source and commutation direction, pin which dies conduct, for A1/A2, K2 and O003 alike, and add non-conducting dies to the build work.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "F1's L2 'absolute discretisation error' is a lateral-only estimate; thickness and wire filaments can be shared with FastHenry and go unmeasured",
+      "detail": "The l2_layout ladder (0.5/0.25/0.125 mm) refines only laterally. Thickness layers (10/6/6) and wire filaments (WIRE_EDGES) are the same at every level, and the module docstring lists them as discretisation outside solver_tol. The grading choice alone moved L(20 MHz) by 2.6 % in review T0082. F1 calls the three-level number 'the absolute discretisation error' (\u22641.5 %). It also does not require FastHenry's three meshes to refine through-thickness (nhinc/rh) or wire subdivisions independently of L2's layering. An exporter that copies L2's layering into the deck ('identical exported geometry') would make both tools share that error. A1 could then pass on raw agreement while both are off the converged value by more than the stated budget. Most of this cancels in pair ratios, so A2 and the O003 decision are much less exposed than A1 and clause (a).",
+      "evidence": "l2_layout.py docstring: 'the ladder refines laterally only'; 'L(20 MHz) of the DoD layout moved 2.6 % between grading at 20 and at 80 MHz (review T0082)'; LAYERS_TOP/BACK/BASE and WIRE_EDGES constant across refinements",
+      "suggested_check": "Require FastHenry's ladder to refine thickness and wire filaments independently of L2's fixed layering, or add a thickness/wire refinement step to the L2 estimate.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "K2 judges quantities that depend on shared exporter choices that scope_out says are 'not judged', so it can fire with a perfect solver",
+      "detail": "scope_out says the shared model choices (point-contact terminals, lattice snapping, ideal die shorts) are 'reported by the F6 diagnostic, not judged'. K2 compares L2 ratios with published loops that may include terminal or lead inductance, and the 0.5 mm lattice snaps die sizes such as 4.08 mm MOSFETs, 2.26 mm SBDs and 5.85 mm diodes. Solving r_pub = (a+T)/(b+T) with L2 = a/b exact, K2 fires as soon as a common inductance T that is in the published loop but missing from the model exceeds 2.86 nH for UTK Loop1 (14 % of 20.5 nH), 3.67 nH for Loop2 and 2.2 nH for CPES. S1 lists terminal leads of 15.3 nH each. Within S2, the AC simulated ratios for nominally the same comparison already differ by 12-14 % (Table 3.3 AC 0.400 against Table 5.1 0.351; 0.465 against 0.424), which uses up about 40 % of the 30 % band. F2's screen covers assumed dimensions only, not whether terminals are in the loop or how much snapping moves the ratio. This route gives a false FAIL, not a false pass. The O003 judge would be lost before day 60.",
+      "evidence": "Scratch computation: thresholds T = 2.86 / 3.67 / 2.20 nH; S2 ratios: AC 0.400/0.465, DC 0.305/0.376, Table 5.1 0.351/0.424; S1 ratio with leads 0.752, without leads 0.441",
+      "suggested_check": "For each pinned comparator, state in the notes whether its published loop includes terminal leads, and model that consistently, or report terminal-dependent comparators only.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "FastHenry's \u22641 % three-mesh gate and the 260 CPU-h budget are unverified at module scale; the experiment may not resolve before day 60",
+      "detail": "An L2-equivalent discretisation of a 45x50 mm DBC (10/6 layers) on a 55x60 mm baseplate (6 layers) gives about 0.37 M, 1.5 M and 6 M filaments at 0.5, 0.25 and 0.125 mm. A dense complex direct solve then needs about 2.2 TB at 0.5 mm. It fits on the 251 GB VM only at 1-2 mm cells, which cannot hold features of the 0.5 mm design grid on cell boundaries. The finer meshes therefore need FastHenry's multipole path. D0002 records that path segfaulting intermittently on a 1680-filament case and has not tested it at 10^5-10^6 filaments. On the L2 side, D0005's 8.7-9.3 CPU-h per layout at 0.125 mm was for one frequency, and solve_system runs GMRES once per frequency ('for f in freqs'), with GMRES a large share of each solve. Running 10 and 20 MHz therefore puts 16-20 layouts near or above the 260 CPU-h budget before any FastHenry run. The outcome would be INVALID, not a false pass. But the claim that the sample can resolve the decision in time (gate 2026-11-27, max_evaluations 1, FastHenry-solved layouts never re-used) is untested. The pilot (3) covers only L2 vs FastHenry agreement on generator layouts.",
+      "evidence": "Scratch filament and memory estimate; l2_layout.solve_system loops over freqs; D0002 Known issues; D0005 cost figures",
+      "suggested_check": "Extend pilot (3) with a full-size FastHenry three-mesh convergence run at both frequencies, and re-cost E004 from it before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Hypothesis clause (c) is stronger than what K2 checks after the F2 exclusions; F4's comparator count is ambiguous",
+      "detail": "The statement says 'no pinned published simulation ratio is missed by more than 30 %'. F2 removes comparators whose L1 sensitivity is above 5 %, so a pinned comparator could miss by more than 30 % and still allow PASS. F4 does not say whether its '\u22652 comparators from 2 sources' counts before or after exclusion. If CPES is excluded, only the UTK family remains. If every comparator is excluded, mfos.metrics.max_rel_err on empty rows raises ValueError, so the run errors out instead of getting a defined INVALID. F2 also does not say which uncertainty ranges its 'sensitivity' uses, even though L1 has been run on the comparators before registration.",
+      "evidence": "Ran max_rel_err([], []): ValueError 'zero-size array to reduction operation maximum'",
+      "suggested_check": "Reword (c) to 'among comparators retained by F2', make F4 count retained comparators, and pin the per-dimension uncertainty ranges used by the F2 screen.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "FastHenry cannot represent round bond wires, so the wire mapping is a tool difference the exporter must pin",
+      "detail": "FastHenry segments have rectangular cross-sections, while L2 models round rods with ring filaments. For equal area, the square's GMD (0.4470 s = 0.7923 a) and the round wire's (0.7788 a) differ by 1.7 % in ln(GMD). That is about 0.4 % of the partial self inductance of a 10 mm, 0.3 mm-diameter wire, and the gap changes at high frequency, where current sits at the perimeter. It fits inside A1's 3 % but is neither a shared choice nor a lateral discretisation error. The exporter's rule (equal area, equal perimeter or GMD-matched) is unspecified.",
+      "evidence": "Closed-form GMD values (Grover ch. 7); hand computation",
+      "suggested_check": "Pin the wire-to-segment mapping rule in the exporter spec and put its size in the F3 diagnostic.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-derived the headroom-error rule: h = 1 - r, so a relative ratio error d moves h by r*d = 1.6 points at r=0.8 and 1.8 points at r=0.9 for d=2 %. This matches why_it_matters.",
+    "Read the l2_layout model docstring and code. Terminals and wire feet are bilinear point contacts; dies are node-merge shorts; the ladder refines laterally only, with thickness and wire filaments fixed; GMRES runs once per frequency.",
+    "Checked analytically whether point-contact terminals make L diverge under refinement. The parallel-plate spreading term (mu0 d / theta) ln(R/r) stops growing at r ~ d (ceramic gap about 0.7 mm), so L stays convergent for cells \u22640.5 mm; no defect.",
+    "Richardson estimate on the I0039 three-level ladder (12.889/12.766/12.692 nH): contraction 0.60, error left beyond 0.125 mm about 0.11 nH = 0.88 %, inside F1's 1.5 %. The E002 cross-family ratio step 0.5\u21920.25 mm is -0.41 %, which suggests the 0.5 % ratio gate is reachable.",
+    "Checked the mfos evaluator: declared null_baselines (kind 'column' or 'stratum_mean') are evaluated, and a criterion a null also meets is 'non_discriminating' and yields INCONCLUSIVE. A2's constant-ratio null can be enforced mechanically if E004 declares it.",
+    "Ran mfos.metrics.max_rel_err on empty input: it raises ValueError, so an all-excluded K2 errors out instead of passing silently.",
+    "Computed when K2 fires with a perfect solver: a common terminal or lead inductance missing from the model above 2.86 / 3.67 / 2.20 nH for UTK Loop1 / UTK Loop2 / CPES. Computed the spread between S2's own simulated ratios: Table 3.3 AC against Table 5.1 differ by 12-14 %; DC against AC by 24-31 %.",
+    "Estimated the effect of shorting every die in the UTK P/N-cell layout: Loop1||Loop2 \u2248 3.9 nH against Loop1 = 7.2 nH. Grepped src/moduleforge: no diode or non-conducting die model exists.",
+    "Computed skin depths: Cu 20.9 / 14.8 um and AlSiC-9 72.6 / 51.4 um at 10 / 20 MHz. Estimated FastHenry filament counts and dense-solve memory at L2-equivalent layering (0.37 M filaments and 2.2 TB at 0.5 mm)."
+  ],
+  "caveats": [
+    "Valid only once the conducting dies are pinned for every source with separate antiparallel diodes (UTK, CPES, commercial). Until then 'the module-internal commutation loop' is fully defined only for the MOSFET-only sources (PowerSynth, Aalborg).",
+    "A PASS supports agreement between L2 and FastHenry on the shared exported geometry and discretisation. Absolute accuracy (clause a) holds only to the extent FastHenry's ladder refines thickness and wire filaments independently of L2's fixed layering. Ratio accuracy, the quantity the decision needs, is much less exposed.",
+    "Clause (c) is established only for comparators retained by F2. K2 also partly tests whether terminals and snapping are reconstructed faithfully, not only L2 accuracy, so a K2 FAIL needs the F6 diagnosis before it is blamed on the solver.",
+    "Whether the experiment can resolve depends on two untested things: FastHenry multipole convergence at 10^5-10^6 filaments, and fitting two frequencies into the 260 CPU-h budget before the 2026-11-27 gate. INVALID or over-budget runs are more likely than a false PASS.",
+    "Prior review reports T0125/T0126/T0129/T0130 are not in this snapshot. I did not open the UTK or CPES dissertations, so whether terminals are inside the published loops and which loop CPES's 'substrate-associated' figure uses are taken from the research note, not checked against the sources."
+  ]
+}
