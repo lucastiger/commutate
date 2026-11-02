@@ -40,7 +40,8 @@ void cell.
     1/h, ``G = A / (dz/(2k) + 1/h)``.  Every face-connected group of active cells must contain a Robin face (else the
     problem is singular); ``ValueError`` otherwise, e.g. for a die island floating above a void.
 (b) Prescribed normal flux ``flux``, **heat flow into the domain in W/m2** (positive heats the cell), on any exposed
-    face (default 0), additive to the Robin condition on z = 0.  Either
+    face (default 0), additive to the Robin condition on z = 0, where it is applied at the face (combined face
+    condition ``T_inf_eff = T_inf + q/h``, second order; elsewhere it enters the adjacent cell).  Either
     * a callable ``flux(x, y, z, axis, sign)`` applied to every exposed face, called per face orientation with 1-D
       arrays of face Gauss points, or
     * a dict ``{(axis, sign): spec}``; spec is a scalar, a callable ``f(x, y, z)`` (1-D arrays) or an array of the
@@ -360,6 +361,7 @@ def solve_steady(x, y, z, cell_material, materials: Sequence, *, h, T_inf, flux=
         raise ValueError("flux must be None, a callable flux(x, y, z, axis, sign) or a dict {(axis, sign): spec}")
     pad = np.pad(act, 1, constant_values=False)
     F = np.zeros(n)  # W into each cell
+    q_rob = np.zeros((nx, ny))  # W/m2 prescribed inflow on the z = 0 Robin face, folded into the face condition
     q_top = np.zeros(shape)  # W/m2 into the cell through its +z face
     for axis in range(3):
         for sign in (-1, 1):
@@ -369,6 +371,8 @@ def solve_steady(x, y, z, cell_material, materials: Sequence, *, h, T_inf, flux=
             spec = flux
             if isinstance(flux, dict):
                 spec = flux.get((axis, sign))
+                if isinstance(spec, np.ndarray) and spec.ndim == 0:  # 0-d numpy scalar spec == plain scalar
+                    spec = float(spec)
             if spec is None or not exposed.any():
                 if isinstance(spec, np.ndarray) and np.any(spec != 0):
                     raise ValueError(f"flux array for face {(axis, sign)} is nonzero on non-exposed faces")
@@ -400,9 +404,20 @@ def solve_steady(x, y, z, cell_material, materials: Sequence, *, h, T_inf, flux=
                         else:
                             qq = np.broadcast_to(np.asarray(flux(*pts, axis, sign), float), ei.size)
                         qm += wa * wb * qq
+            if axis == 2 and sign < 0:  # Robin face: combined face condition below, not a cell-centre source
+                on_rob = ek == 0
+                q_rob[ei[on_rob], ej[on_rob]] = qm[on_rob]
+                ei, ej, ek, qm, area = ei[~on_rob], ej[~on_rob], ek[~on_rob], qm[~on_rob], area[~on_rob]
             np.add.at(F, idx[ei, ej, ek], qm * area)
             if axis == 2 and sign > 0:
                 q_top[ei, ej, ek] = qm
+
+    # Combined Robin-plus-flux face condition (review T0160).  Face balance  h (T_inf - T_f) + q = G_h (T_f - T_c)  with
+    # G_h = 2k/dz the half-cell conductance gives heat into the cell  g (T_inf + q/h - T_c),  g = 1/(1/G_h + 1/h):
+    # the flux acts at the face (second order), not at the cell centre (first order).  Gauss-averaged like h T_inf.
+    q_rob_f = q_rob[bi, bj]
+    tinf_eff = (hT_f + q_rob_f) / h_f
+    q_rob_w = float((q_rob_f * rob_area).sum())
 
     # ---- volumetric source ------------------------------------------------------------------------------------------
     if source is None:
@@ -482,27 +497,32 @@ def solve_steady(x, y, z, cell_material, materials: Sequence, *, h, T_inf, flux=
         k_a = _material_k(materials, matid, Tc)
         A, g_rob = assemble(k_a)
         b = Qv + F
-        b[rob_cell] += g_rob * (tinf_f - T0)
+        b[rob_cell] += g_rob * (tinf_eff - T0)
         # inexact Picard: intermediate iterates need only ~1e-8 relative accuracy; the converged one is polished
         inner_tol = linear_tol if not nonlinear else max(linear_tol, _INNER_TOL)
         u, res, accepted = solver.solve(A, b, u, inner_tol)
         T_new = u + T0
         dT = float(np.max(np.abs(T_new - Tc)))
-        Tc = T_new
+        T_prev, Tc = Tc, T_new
         if not nonlinear or dT < picard_tol:
             if res > linear_tol and inner_tol > linear_tol:
                 u, res, accepted = solver.solve(A, b, u, linear_tol)
                 Tc = u + T0
+                dT = float(np.max(np.abs(Tc - T_prev)))  # re-check the Picard stop on the field actually returned
+                if dT >= picard_tol and iters < max_picard:
+                    continue
             break
         if iters >= max_picard:
             raise RuntimeError(f"Picard iteration did not converge in {max_picard} steps (last dT = {dT:.3g} K)")
+    if nonlinear and not dT < picard_tol:
+        raise RuntimeError(f"Picard iteration did not converge in {max_picard} steps (last dT = {dT:.3g} K)")
     if not res <= accepted:  # also catches NaN (review T0158/T0159: never return an unconverged field silently)
         raise RuntimeError(f"linear solve did not reach the relative residual {accepted:.1e} (got {res:.3g}); "
                            "loosen linear_tol or check the conductivity contrast and cell aspect ratios")
 
     # ---- outputs ----------------------------------------------------------------------------------------------------
-    q_in = float(Qv.sum() + F.sum())
-    q_out = float((g_rob * (Tc[rob_cell] - tinf_f)).sum())
+    q_in = float(Qv.sum() + F.sum() + q_rob_w)
+    q_out = float((g_rob * (Tc[rob_cell] - tinf_eff)).sum()) + q_rob_w  # Robin outflow h (T_f - T_inf)
     balance = abs(q_out / q_in - 1.0) if q_in != 0.0 else abs(q_out)
 
     Tfull = np.full(shape, np.nan)

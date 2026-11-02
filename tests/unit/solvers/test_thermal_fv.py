@@ -67,6 +67,122 @@ def test_observed_order_smooth_3d_nonuniform():
     assert all(1.8 <= p <= 2.2 for p in orders), (errs, orders)
 
 
+def _slab_with_robin_flux(N):
+    """1-D slab, constant k, T = 300 + a z + b z^2 (source -2 k b), Robin bottom plus a LARGE prescribed flux on the
+    same face, flux top.  Returns the max cell-centre error on a smooth non-uniform grid."""
+    L, k, h, a, b, q0 = 2e-3, 30.0, 1500.0, -4.0e4, 2.5e7, 4.0e5
+    s = np.linspace(0, 1, N + 1)
+    z = L * (s + 0.3 * np.sin(2 * np.pi * s) / (2 * np.pi))
+    Tex = lambda zz: 300.0 + a * zz + b * zz**2  # noqa: E731
+    # face balance at z = 0: q0 + h (T_inf - T(0)) = -k T'(0)
+    Tinf = Tex(0.0) + (-k * a - q0) / h
+    res = solve_steady([0, 1e-3], [0, 1e-3], z, np.zeros((1, 1, N), int), [k], h=h, T_inf=Tinf, source=-2.0 * k * b,
+                       flux={(2, -1): np.float64(q0), (2, 1): np.asarray(k * (a + 2 * b * L))})  # incl. 0-d array spec
+    zc = 0.5 * (z[:-1] + z[1:])
+    assert res.meta["energy_balance"] <= 1e-9
+    return np.max(np.abs(res.T[0, 0, :] - Tex(zc))), res
+
+
+def test_robin_face_prescribed_flux_second_order():
+    # review T0160: a flux added on the Robin face must act at the face (T_inf + q/h), not at the cell centre
+    errs = [_slab_with_robin_flux(N)[0] for N in (8, 16, 32, 64)]
+    orders = [np.log2(errs[i] / errs[i + 1]) for i in range(3)]
+    assert all(p >= 1.9 for p in orders), (errs, orders)
+    assert errs[-1] < 0.02  # K, against a 100 K rise
+
+
+def test_robin_face_flux_equivalent_to_shifted_ambient():
+    # the combined face condition is exactly T_inf -> T_inf + q/h for a spatially uniform flux
+    z = np.linspace(0, 1e-3, 9)
+    mat = np.zeros((2, 2, 8), int)
+    kw = dict(h=900.0, source=1e8)
+    r1 = solve_steady([0, 1e-3, 2e-3], [0, 1e-3, 2e-3], z, mat, [20.0], T_inf=300.0 + 5e5 / 900.0, **kw)
+    r2 = solve_steady([0, 1e-3, 2e-3], [0, 1e-3, 2e-3], z, mat, [20.0], T_inf=300.0, flux={(2, -1): 5e5}, **kw)
+    assert np.max(np.abs(r1.T - r2.T)) < 1e-9
+    # heat leaves through the Robin face: source power plus the prescribed inflow
+    assert abs(r2.meta["q_in"] - (1e8 * 4e-6 * 1e-3 + 5e5 * 4e-6)) < 1e-9 and r2.meta["energy_balance"] <= 1e-9
+
+
+def _ktemp_problem(N):
+    """3-D manufactured field with k(T) = k0 (1 + beta (T - 300)) (varies by > 30 %), adiabatic sides, Robin bottom with
+    a prescribed flux, flux top.  Source f = -div(k grad T) = -(k0 beta |grad T|^2 + k lap T)."""
+    Lx, Ly, Lz, k0, beta, h = 3e-3, 2e-3, 1e-3, 20.0, 0.02, 2e4
+
+    def grid(L, n, amp):
+        s = np.linspace(0, 1, n + 1)
+        return L * (s + amp * np.sin(2 * np.pi * s) / (2 * np.pi))
+
+    x, y, z = grid(Lx, N, 0.4), grid(Ly, N, -0.3), grid(Lz, N, 0.35)
+    A = 8.0
+
+    def parts(x, y, z):
+        cx, cy = np.cos(np.pi * x / Lx), np.cos(2 * np.pi * y / Ly)
+        sx, sy = np.sin(np.pi * x / Lx), np.sin(2 * np.pi * y / Ly)
+        g = 1.0 + 0.5 * np.sin(2 * z / Lz) + z / Lz
+        gz = (np.cos(2 * z / Lz) + 1.0) / Lz
+        gzz = -2.0 * np.sin(2 * z / Lz) / Lz**2
+        T = 300.0 + A * cx * cy * g
+        Tx = -A * (np.pi / Lx) * sx * cy * g
+        Ty = -A * (2 * np.pi / Ly) * cx * sy * g
+        Tz = A * cx * cy * gz
+        lap = A * cx * cy * (-(np.pi / Lx) ** 2 * g - (2 * np.pi / Ly) ** 2 * g + gzz)
+        return T, Tx, Ty, Tz, lap
+
+    kf = lambda T: k0 * (1.0 + beta * (T - 300.0))  # noqa: E731
+
+    def source(x, y, z):
+        T, Tx, Ty, Tz, lap = parts(x, y, z)
+        return -(k0 * beta * (Tx**2 + Ty**2 + Tz**2) + kf(T) * lap)
+
+    q0 = lambda x, y: 3e4 * (1.0 + np.cos(np.pi * x / Lx))  # noqa: E731  prescribed flux on the Robin face
+
+    def tinf(x, y):
+        T, _, _, Tz, _ = parts(x, y, 0 * x)
+        return T + (-kf(T) * Tz - q0(x, y)) / h
+
+    def top(x, y, z):
+        T, _, _, Tz, _ = parts(x, y, z)
+        return kf(T) * Tz
+
+    def bot_flux(x, y, z):
+        return q0(x, y)
+
+    mat = np.zeros((N, N, N), dtype=int)
+    material = lambda T: kf(T)  # noqa: E731
+    res = solve_steady(x, y, z, mat, [material], h=h, T_inf=tinf, source=source, picard_tol=1e-9,
+                       flux={(2, 1): top, (2, -1): bot_flux})
+    xc, yc, zc = (0.5 * (a[:-1] + a[1:]) for a in (x, y, z))
+    exact = parts(xc[:, None, None], yc[None, :, None], zc[None, None, :])[0]
+    kr = kf(exact)
+    return np.max(np.abs(res.T - exact)), res, kr.max() / kr.min() - 1.0
+
+
+def test_observed_order_3d_k_of_T_with_robin_flux():
+    out = [_ktemp_problem(N) for N in (8, 16, 32)]
+    errs = [o[0] for o in out]
+    orders = [np.log2(errs[i] / errs[i + 1]) for i in range(2)]
+    assert all(1.8 <= p <= 2.3 for p in orders), (errs, orders)
+    assert out[0][2] > 0.3  # k varies by more than 30 %
+    for _, res, _ in out:
+        assert res.meta["picard_iters"] > 2
+        assert res.meta["picard_dT"] < 1e-9
+        assert res.meta["energy_balance"] <= 1e-9
+
+
+def test_picard_stop_holds_for_returned_field():
+    # large system (iterative path, inexact intermediate solves): the returned field must itself satisfy the stop
+    n = 14
+    lines = np.linspace(0, 1e-3, n + 1)
+    sic = Layer("die", "4H-SiC", 1e-3, 0.0, 370.0)
+    res = solve_steady(lines, lines, lines, np.zeros((n, n, n), int), [sic], h=2e4, T_inf=300.0, source=2e9,
+                       flux={(2, 1): 1e5}, picard_tol=1e-6)
+    assert res.meta["picard_iters"] > 1 and res.meta["picard_dT"] < 1e-6
+    # fixed point: re-solving with k evaluated on the returned temperatures changes nothing beyond the stop
+    ref = solve_steady(lines, lines, lines, np.zeros((n, n, n), int), [sic], h=2e4, T_inf=300.0, source=2e9,
+                       flux={(2, 1): 1e5}, picard_tol=1e-10, T_init=float(np.mean(res.T)))
+    assert np.max(np.abs(ref.T - res.T)) < 1e-5
+
+
 def test_energy_balance_heterogeneous_with_voids_and_k_of_T():
     rng = np.random.default_rng(7)
     x = np.cumsum(np.r_[0, rng.uniform(0.5e-3, 2e-3, 14)])
