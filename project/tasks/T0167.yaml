@@ -56,7 +56,11 @@ description: 'Pilots P1 and P2 of the O006 notes, merged into one task because P
   Write research/o006_p1/results.json {seeds, layouts: [...], power_limit_W_by_die_size, recommended_load_levels_W,
   o003_operating_point, level_bias_K, nulls: [{stratum, predictor, p95_abs_err_K, n_layouts}]}, research/notes/o006-p1-thermal-envelope.md
   and research/notes/o006-p2-thermal-nulls.md. Keep the total compute to about 3 CPU-hours and state every
-  sample size.'
+  sample size. Founder amendment 2026-11-02 (T0157 citation check, research/notes/o006-kT-citations.md):
+  the 4H-SiC and SAC305 laws are not confirmed by primary sources. Report the P1 envelope (the highest
+  power per die keeping Tj max <= 175 C) also with the 4H-SiC exponent -1.26 instead of -1.49 and k(300
+  K) of 280 and 370 W/(m K), and with the SAC305 slope halved and doubled; state whether the recommended
+  load levels change. Do not edit geometry/stack.py; vary the laws locally in the pilot script only.'
 context_files:
 - project/objectives/O006/objective.yaml
 - project/objectives/O002/objective.yaml
@@ -114,4 +118,7 @@ lens: null
 trigger: null
 rationale: 'The objective''s pilots: decision_if_pass and decision_if_fail finalise O002/O003/O004 from
   these notes. F4 is respected through dev seeds and research-only outputs.'
-history: []
+history:
+- outcome: founder_brief_amended
+  summary: added SiC/SAC305 k(T) sensitivity per T0157
+  at: '2026-11-02T03:36:58+00:00'

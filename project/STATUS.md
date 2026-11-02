@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:36:51+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:37:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -34,8 +34,6 @@ cancelled: 30, done: 131, failed: 3, review: 1, running: 2, todo: 7
 - T0174 `running` critic/review: Review T0157 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:24:29+00:00 inbox_resolved {"id": "I0070", "status": "approved", "note": "Approved; A3 needs a 3D-refined scikit-fem benchmark on a burst VM (review T0171).", "by": "human"}
-- 2026-11-02T03:24:30+00:00 task_added {"task": "T0172"}
 - 2026-11-02T03:24:51+00:00 task_amended {"task": "T0172", "reason": "DoD/touches/depends_on set"}
 - 2026-11-02T03:24:52+00:00 merged {"task": "T0152"}
 - 2026-11-02T03:26:07+00:00 run_finished {"run": "T0153-scientist-20261101T190330-2c7a", "status": "completed", "cost": 4.07876, "subtype": "success", "report": "structured_output"}
@@ -49,3 +47,5 @@ cancelled: 30, done: 131, failed: 3, review: 1, running: 2, todo: 7
 - 2026-11-02T03:36:44+00:00 verified {"task": "T0157"}
 - 2026-11-02T03:36:47+00:00 merged {"task": "T0153"}
 - 2026-11-02T03:36:51+00:00 run_started {"run": "T0174-critic-20261101T193651-8590", "task": "T0174", "role": "critic", "session": "1bb919a0-7296-4f8f-ae9e-c0f7b673357c"}
+- 2026-11-02T03:36:58+00:00 task_amended {"task": "T0165", "reason": "pin k(T) 30 % reading (T0173)"}
+- 2026-11-02T03:36:58+00:00 task_amended {"task": "T0167", "reason": "k(T) sensitivity per T0157"}

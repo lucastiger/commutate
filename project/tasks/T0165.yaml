@@ -108,7 +108,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   (9) research/notes/o006-e006-design.md: how each metric maps to A1-A4/K1/K2, the point list, F1-F3 coverage,
   and the runtime/memory plan. Treat any refcheck failure as an F1 reference problem: report it and do
-  not loosen it.'
+  not loosen it. Founder amendment 2026-11-02 (review T0173 of T0153): define O006''s ''k varying by at
+  least 30 %'' as k_max/k_min - 1 >= 0.30 within one layer of the manufactured case (T0153 reaches 0.3227
+  in Al2O3); record this reading, the measured value and its margin in the E006 spec, and report the k_max-normalised
+  value (0.244) alongside. This fixes the interpretation before registration.'
 context_files:
 - project/objectives/O006/objective.yaml
 - experiments/specs/E001.yaml
@@ -181,3 +184,6 @@ history:
 - outcome: founder_dependency_added
   summary: waits for T0170 (grid rule refinement) so E006 is designed against the final rule
   at: '2026-11-02T03:07:18+00:00'
+- outcome: founder_brief_amended
+  summary: pinned the 30 % k(T) reading as k_max/k_min - 1 (review T0173)
+  at: '2026-11-02T03:36:58+00:00'
