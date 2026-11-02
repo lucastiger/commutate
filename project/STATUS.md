@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T01:54:11+00:00 from repository state — do not edit_
+_generated 2026-11-02T02:08:17+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0063** [protected_change] T0149: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,15 +27,13 @@ _generated 2026-11-02T01:54:11+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 122, failed: 3, needs_founder: 1, running: 2, todo: 5
+cancelled: 29, done: 122, failed: 3, merge: 1, running: 2, todo: 6
 
-- T0149 `needs_founder` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
+- T0149 `merge` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
 - T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 2)
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 
 ## Recent events
-- 2026-11-02T01:19:47+00:00 run_started {"run": "T0151-scientist-20261101T171947-55ab", "task": "T0151", "role": "scientist", "session": "805d7720-c3f5-4741-9d39-d94522c974a3"}
-- 2026-11-02T01:28:23+00:00 run_finished {"run": "T0149-builder-20261101T163001-621c", "status": "completed", "cost": 2.713318, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:29:32+00:00 verified {"task": "T0149"}
 - 2026-11-02T01:29:35+00:00 run_started {"run": "T0160-critic-20261101T172935-b7f4", "task": "T0160", "role": "critic", "session": "984b6a20-027c-4d02-a666-57168b664548"}
 - 2026-11-02T01:37:33+00:00 run_finished {"run": "T0160-critic-20261101T172935-b7f4", "status": "completed", "cost": 1.817234, "subtype": "success", "report": "structured_output"}
@@ -49,3 +47,5 @@ cancelled: 29, done: 122, failed: 3, needs_founder: 1, running: 2, todo: 5
 - 2026-11-02T01:53:43+00:00 run_started {"run": "T0152-builder-20261101T175343-7282", "task": "T0152", "role": "builder", "session": "2da7fe1e-e5e3-40cc-8acf-1a8b1877bd0e"}
 - 2026-11-02T01:54:05+00:00 sleep_detected {"gap_s": 713, "runs_extended": 2}
 - 2026-11-02T01:54:09+00:00 merged {"task": "T0154"}
+- 2026-11-02T01:54:48+00:00 inbox_resolved {"id": "I0063", "status": "approved", "note": "Approved; Robin-face prescribed-flux path to be made second order in a follow-up before E006 (review T0160).", "b
+- 2026-11-02T01:54:49+00:00 task_added {"task": "T0163"}

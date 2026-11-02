@@ -1,0 +1,38 @@
+id: T0163
+objective: O006
+title: 'thermal_fv: second-order prescribed flux on the Robin face, Picard re-check of the returned field,
+  tests (review T0160)'
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: 'Review T0160 of T0149: (1) a prescribed flux on the z=0 Robin face is injected at the cell
+  centre, making that path first order; apply it at the face (combined Robin-plus-flux face condition)
+  so it is second order, as E006''s manufactured case needs. (2) Re-verify the Picard stop on the field
+  actually returned after the final solve. (3) Add tests: Robin-face flux path convergence order >= 1.9
+  on a 1-D manufactured case, and a 3-D k(T) convergence test. (4) Accept 0-d numpy flux specs. Must merge
+  before the E006 experiment runs.'
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T01:54:49+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

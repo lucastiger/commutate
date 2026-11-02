@@ -4,7 +4,7 @@ title: 'Thermal L2 core: steady finite-volume conduction on a non-uniform rectil
   (solvers/thermal_fv.py)'
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on:
 - T0148
 description: 'D0006 primary L2, steady part only (transient is out of scope). Implement src/moduleforge/solvers/thermal_fv.py;
@@ -67,8 +67,8 @@ runs:
 - T0149-builder-20261101T163001-621c
 created_by: planner:T0147
 created_at: '2026-11-01T21:49:21+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0063
 target: null
 lens: null
 trigger: null
@@ -251,3 +251,6 @@ history:
 - outcome: full_gate_passed
   summary: 9b53030002e6c8852444ce725a2c286227495493
   at: '2026-11-02T01:53:38+00:00'
+- outcome: full_gate_passed
+  summary: 6406e409324f0e7cd79645956935cdd7a687ec91
+  at: '2026-11-02T02:08:24+00:00'
