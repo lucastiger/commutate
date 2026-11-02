@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T12:34:18+00:00 from repository state — do not edit_
+_generated 2026-11-02T12:41:29+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -14,7 +14,7 @@ _generated 2026-11-02T12:34:18+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $107.74/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $109.18/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -24,17 +24,15 @@ _generated 2026-11-02T12:34:18+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 60 | $107.74 | 2130209 | 1179473 | 100 | 0 |
+| O006 | 60 | $109.18 | 2150898 | 1188894 | 101 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 156, failed: 3, review: 1, running: 1, todo: 2
+cancelled: 30, done: 157, failed: 3, merge: 1, todo: 2
 
-- T0189 `review` builder/implement: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) with O006's A4 estimator (D0013 addendum) (attempt 2)
-- T0193 `running` critic/review: Review T0189 (general) (attempt 1)
+- T0189 `merge` builder/implement: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) with O006's A4 estimator (D0013 addendum) (attempt 2)
 
 ## Recent events
-- 2026-11-02T11:56:40+00:00 inbox_resolved {"id": "I0086", "status": "approved", "note": "Founder (2026-11-02, same decision as I0085): no replan after the O006 re-approval. The remaining path is complet
 - 2026-11-02T11:56:40+00:00 task_amended {"task": "T0165", "reason": "D0013 addendum 2"}
 - 2026-11-02T12:04:10+00:00 run_finished {"run": "T0189-builder-20261102T034907-970e", "status": "completed", "cost": 0.418945, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T12:07:33+00:00 verified {"task": "T0189"}
@@ -49,3 +47,4 @@ cancelled: 30, done: 156, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-02T12:30:11+00:00 run_finished {"run": "T0189-builder-20261102T041922-bb6d", "status": "completed", "cost": 1.554871, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T12:34:15+00:00 verified {"task": "T0189"}
 - 2026-11-02T12:34:18+00:00 run_started {"run": "T0193-critic-20261102T043418-daf4", "task": "T0193", "role": "critic", "session": "17adc34b-54da-4201-ae1e-db2ca777a904"}
+- 2026-11-02T12:39:31+00:00 run_finished {"run": "T0193-critic-20261102T043418-daf4", "status": "completed", "cost": 1.432634, "subtype": "success", "report": "structured_output"}

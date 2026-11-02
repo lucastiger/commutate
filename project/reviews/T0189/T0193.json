@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "gci_three_grid raises ValueError where the evaluator returns +inf (rho = +inf)",
+      "detail": "gci_three_grid computes p_obs = math.log2(1.0 / rho) before it checks |rho| >= 1. When rho = d2/d1 is +inf, 1/rho is 0 and log2 raises 'math domain error'. mfos.metrics.gci_capped returns +inf for the same input because it checks the divergent branch first. Two inputs reach this: an infinite finest value (for example a blown-up solve), and, with floor=0, a subnormal d1. With the default 1e-3 K floor and finite temperatures it cannot happen unless |d2| exceeds about 1e305. combine_levels would then crash after three expensive level solves instead of reporting solver_tol = inf. The new equality test covers only finite sequences, so it does not catch this. The claim's 'identical to gci_capped' holds on every finite physical-range input but not on degenerate ones.",
+      "evidence": "tl.gci_three_grid(410.0, 410.5, math.inf) -> ValueError, gci_capped(410.0, 410.5, inf, 1e-3) -> inf. tl.gci_three_grid(0.0, 5e-324, 1.0, floor=0.0) -> ValueError, gci_capped -> inf. F.gci([inf, 410.5, 410.0]) -> ValueError. A grid scan over 9408 sequences with inf/nan/subnormal steps gave exactly one mismatch class: ValueError vs inf (32 cases on the reduced grid).",
+      "suggested_check": "Compute p_obs only after the |rho| >= 1 branch (or guard rho == inf), and add an inf-input case to test_thermal_gci_matches_evaluator.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "meta['convergence'] drops the A4 branch label (and d1/d2), which O006 asks to have reported per value",
+      "detail": "gci_three_grid now returns 'branch', but combine_levels copies only values, p_obs, monotone, Fs and p into meta['convergence']. O006's detection text asks for 'observed order, A4 branch, d1 and d2 reported per value'. d1 and d2 can be rebuilt from 'values', but the branch must be recomputed downstream. This does not affect solver_tol, which the claim is about.",
+      "evidence": "src/moduleforge/solvers/thermal_layout.py:352: conv[n] = {values, p_obs, monotone, Fs, p}, with no 'branch'. project/objectives/O006/objective.yaml line 90 asks for 'A4 branch, d1 and d2 reported per value'.",
+      "suggested_check": "Add g['branch'] to conv[n] in combine_levels.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Stale wording in thermal_fem docstrings",
+      "detail": "The public F.gci docstring still says 'per-value Roache GCI'. The _gci docstring says p_obs is NaN when convergence is not monotone. In fact p_obs is finite (<= 0) for monotone divergent sequences (rho >= 1) and NaN for rho = 0 in the 'fast' branch.",
+      "evidence": "src/moduleforge/solvers/thermal_fem.py:228-238",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "scikit-fem's _gci is only the lateral three-grid part of its O006 estimate",
+      "detail": "thermal_fem._gci/convergence_study's gci_K now equals A4's three-grid estimator, as the claim says. O006's A3 and F5 add 2.5|dTj_z| for scikit-fem, which this function does not include. The evaluator adds that term from separate columns, so this is a limit on how gci_K may be used, not a defect.",
+      "evidence": "O006 A3/F5 text; D0013 addendum 2 ('scikit-fem z term'); thermal_fem.py convergence_study",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos.metrics.gci_capped (the evaluator, protected path), D0013 with both addenda, and O006 A4's text. Checked the new gci_three_grid branch by branch against both: floor uses strict '<', d1 = 0 < |d2| gives inf, |rho| >= 1 gives inf, oscillatory gives 3 max, fast gives 1.25 max(|d2|, |d1|/4), monotone has p capped at 1. The default floor is 1e-3 K, as O006 A4 requires.",
+    "Ran the DoD commands: the two named test files plus test_thermal_fem.py (51 passed), the inline python assertion (ok), ruff (all checks passed), and the fast unit suite (418 passed, 37 deselected).",
+    "Ran my own exact-equality fuzz (==, not approx) of tl.gci_three_grid and F.gci against gci_capped(floor=1e-3) on 217,412 sequences. These were random 1e-6..10 K steps of both signs at 300-500 K with mixed float32/float64 inputs, plus decimal floor-straddling steps (\u00b10.001, 0.0009999, 0.0010001) at 2001 base temperatures. Result: 0 mismatches.",
+    "Ran an adversarial grid (subnormal, 1e-16, exactly 1e-3, inf, nan steps, floors 0 and 1e-3, 9408 sequences). It gave one mismatch class: ValueError in the solver vs +inf in the evaluator when rho = +inf (reported as a minor finding).",
+    "Mutation reasoning on the new tests. Swapping the FEM argument order, defaulting the floor to 0, using '<=' at the floor, using factor 1.25 on oscillatory sequences, or using '> 1' for divergence would each be caught: exact-1e-3 and rho = 1 sequences are in the test grid, and the default-floor comparison is asserted. A '<=' at rho = 1/4 would not be caught but gives the same values (the rule is continuous there).",
+    "Ran the slow tests not in the DoD: the GCI vs converged Fourier-series truth on three partial-source boxes, the coarser-level-pair check, and the layout study's solver_tol keys (5 passed). The 1e-3 K floor does not make solver_tol understate the true error on those cases.",
+    "Grepped every caller of gci_three_grid/_gci/F.gci and of the removed FS_MONO/P_CAP constants. None import the removed constants. All callers pass r = 2 (REFINEMENT_RATIO = 2, R = 2), so the new r != 2 ValueError does not break src, benchmarks or research scripts. E006 runners do not use the solver GCI."
+  ],
+  "caveats": [
+    "Equality with mfos.metrics.gci_capped(floor=1e-3) holds exactly on finite inputs. On non-finite or overflow inputs (rho = +inf) the solver raises ValueError where the evaluator returns +inf.",
+    "meta['convergence'] does not carry the A4 branch label that O006 asks to have reported per value. E006/O003 consumers must recompute it.",
+    "thermal_fem's gci_K is the lateral three-grid A4 estimator only. scikit-fem's O006 estimate (A3/F5) also needs the 2.5|dTj_z| term, which the evaluator adds.",
+    "research/scripts (gci_study.py 'gci_frozen', thermal_envelope.py) and benchmarks/thermal_l2_convergence.py now compute the new rule if rerun. Their committed results were produced under the old rule, which the docs acknowledge.",
+    "I could not see the pre-change tree (single 'review snapshot' commit), so changes outside the shown diff were not audited."
+  ]
+}
