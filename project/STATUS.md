@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T00:25:35+00:00 from repository state — do not edit_
+_generated 2026-11-02T00:26:03+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 29, done: 119, failed: 3, running: 2, todo: 6
 - T0154 `running` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-01T22:55:04+00:00 run_started {"run": "T0156-critic-20261101T145504-e069", "task": "T0156", "role": "critic", "session": "ef1f4388-6257-458c-9818-b4d463a9f0cc"}
 - 2026-11-01T23:00:40+00:00 run_finished {"run": "T0156-critic-20261101T145504-e069", "status": "completed", "cost": 1.913495, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T23:00:44+00:00 inbox_opened {"id": "I0061", "kind": "protected_change", "subject": "T0148: merge needs founder approval"}
 - 2026-11-01T23:06:30+00:00 inbox_resolved {"id": "I0061", "status": "approved", "note": "Approved with founder-session fixes 0e649fa for review T0156 (BC sign, Al2O3 table law, SAC305 slope, NaN guard).
@@ -48,3 +47,4 @@ cancelled: 29, done: 119, failed: 3, running: 2, todo: 6
 - 2026-11-02T00:10:27+00:00 run_finished {"run": "T0159-critic-20261101T155909-04e5", "status": "completed", "cost": 1.86505, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T00:25:33+00:00 task_failed_attempt {"task": "T0149", "signal": "gate_failed", "action": "repair"}
 - 2026-11-02T00:25:35+00:00 run_started {"run": "T0149-builder-20261101T162535-8e18", "task": "T0149", "role": "builder", "session": "52e3ed90-fcc9-41a3-b0c4-c8fadc196c7c"}
+- 2026-11-02T00:25:59+00:00 sleep_detected {"gap_s": 933, "runs_extended": 2}
