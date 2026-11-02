@@ -16,7 +16,11 @@ Role = Literal["planner", "builder", "scientist", "critic", "scout", "scribe", "
 
 
 class _Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # ser_json_inf_nan: +inf is a legitimate metric value ("criterion not met", mfos.metrics) and must survive a
+    # result.json round trip; pydantic's default writes it as null, which then fails validation, so the store ignored
+    # the result as corrupt (E006 run E006-20261102T113312-b41e, 2026-11-02). Written as Infinity/NaN, as json.dumps
+    # writes the rows file.
+    model_config = ConfigDict(extra="forbid", ser_json_inf_nan="constants")
 
 
 # --------------------------------------------------------------------------- objectives

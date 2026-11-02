@@ -246,3 +246,26 @@ def test_a_legacy_spec_is_judged_exactly_as_before(sandbox):
     ev = evaluation()
     assert ev.verdict == "PASS" and ev.results_used == {"E000": last.run_id}
     assert ev.checks == {} and ev.unused_runs == {}
+
+
+def test_an_infinite_metric_survives_the_result_and_evaluation_round_trip(tmp_path):
+    """2026-11-02: E006 reported max_conservative_gci_K = +inf (a divergent grid sequence, "not met" by design in
+    mfos.metrics); pydantic wrote it as null, the result failed validation on reload and the store ignored it."""
+    import math
+    from pathlib import Path
+    src = next(Path("experiments/results/E901").glob("*/result.json"))
+    res = m.ExperimentResult.model_validate_json(src.read_text())
+    res.metrics["inf_metric"] = m.MetricValue(value=math.inf, ci=(-math.inf, math.inf))
+    res.metrics["nan_metric"] = m.MetricValue(value=math.nan)
+    back = m.ExperimentResult.model_validate_json(res.model_dump_json(indent=2))
+    assert back.metrics["inf_metric"].value == math.inf and back.metrics["inf_metric"].ci == (-math.inf, math.inf)
+    assert math.isnan(back.metrics["nan_metric"].value)
+    assert '"value": Infinity' in res.model_dump_json(indent=2)
+    out = tmp_path / "result.json"  # the Store's own JSON path (model_dump(mode="json") + json.dumps)
+    Store(Path(".")).write_json(out, res)
+    assert m.ExperimentResult.model_validate_json(out.read_text()).metrics["inf_metric"].value == math.inf
+    v = m.CriterionVerdict.model_validate({"id": "A4", "metric": "E006.max_conservative_gci_K", "comparator": "<=",
+                                           "threshold": 0.5, "value": math.inf, "verdict": "not_satisfied",
+                                           "recomputed": True, "runner_value": math.inf})
+    back_v = m.CriterionVerdict.model_validate_json(v.model_dump_json())  # Optional: the old default read it as None
+    assert back_v.value == math.inf and back_v.runner_value == math.inf
