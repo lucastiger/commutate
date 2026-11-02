@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Item (3) memory arithmetic is wrong: lowest measured rate is 0.47 kB/cell, not 0.65, so the level-3 estimate is about 16.5 GB, not \u2265 23 GB",
+      "detail": "Section 6 says level 2 needed '0.65-1.25 kB per active cell' and that level 3 is '>= 23 GB even at the lowest measured rate', so 'level 2 is the finest level of the frozen rule that fits in 16 GB'. The note's own pairs_jobs.jsonl gives u_shaped #0 at level 2 as 4.672 GB for 10,033,024 cells (0.466 kB/cell) and interleaved #0 as 0.506 kB/cell. The strip's level 7 (run.log) peaked at 8.82 GB for 21.43 M cells (0.41 kB/cell), so the rate keeps falling with size (the solver is AMG-preconditioned CG, so memory scales roughly linearly). Level 3 of the 4.44-4.69 M-cell layouts is 35.5-37.5 M cells, which comes to about 14.6-17.5 GB at 0.41-0.47 kB/cell. That is borderline, so the claim that level 3 cannot fit is not shown for the smaller layouts. The A4 conclusion still holds, because the note itself estimates that 0.025 K needs 2-3 more levels, not one.",
+      "evidence": "Recomputed peak_rss_gb*1e9/n_cells for all 9 level-2 jobs: 0.466, 0.506, 0.654, 0.703, 0.983, 0.992, 1.163, 1.224, 1.251 kB/cell. Strip L7: 8.82 GB / 21,430,272 cells = 0.41 kB/cell (research/o006_gci/run.log).",
+      "suggested_check": "Restate the rate as 0.41-1.25 kB/cell and the level-3 estimate as about 15-17 GB for the small layouts and 37-52 GB for the 10 M-cell layouts, or measure one level-3 solve.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The claim's question (conservativeness at the die-attach corner) is answered with the case that also contains the Cu-on-ceramic corners; the isolated die-attach result is omitted",
+      "detail": "Section 4 answers 'are the estimators conservative at the singular corner?' with strip2d, which also contains the ungraded Cu-on-Al2O3 and backside-inset corners. The note itself (T1) blames those corners, not the die-attach corner, for the non-conservatism. strip_dieonly is the case that isolates the die-attach corner. The note reports its p_obs and err(L2) but not its verdicts. There the frozen GCI is conservative for 5 of 6 per-die values, undetermined for die0.tj_max (0.0076 vs 0.0073 \u00b1 0.0016) and non-conservative for none. The direct answer to the claim's question is therefore roughly 'conservative at the die-attach corner alone; non-conservative once ungraded trace edges are present'. The deliverable implies this but never states it. Note also that the die-only reference comes from levels 3-4-5 only, and its tj_max p_obs still drifts (1.54 to 1.23).",
+      "evidence": "part_strip_dieonly.json, gci_frozen_L012_vs_true verdicts: die0.tj_mean, die0.tj_centroid, die1.tj_max, die1.tj_mean and die1.tj_centroid are conservative; die0.tj_max is undetermined.",
+      "suggested_check": "Add a strip_dieonly row to the section-4 table and state the die-attach-only verdict explicitly.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Section 6 calls GCI_A+GCI_B 'the only estimator verified conservative', but section 4 shows the raw-sequence GCIs passing the same two strip cases",
+      "detail": "Section 6 and conclusion 3 say the raw-sequence frozen GCI was 'not shown to be conservative' and that GCI_A+GCI_B (strip, 2 cases) is 'the only estimator verified conservative'. Section 4 and part_derived.json show raw_gci_frozen and raw_gci_candidate as 'conservative' for both diff_tj_max and diff_tj_mean on strip2d. The frozen raw GCI is also conservative on diff_tj_mean in strip_dieonly and on both differences in constk. More importantly, the strip differences compare two dies on one shared grid. Between-layout differences use different grids. So none of the difference estimators has been verified for the item-(1) setting. The note's caution is justified, but the reason it gives is misstated.",
+      "evidence": "part_derived.json strip2d_check: raw_gci_frozen 0.038 (conservative) and 0.015 (conservative); component_gci_sum_frozen 0.102 and 0.094 (both conservative).",
+      "suggested_check": "Reword: every estimator was conservative on 2 within-layout (shared-grid) strip differences; none has been checked on between-layout differences.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Provenance labels for the 5-6-7 reference are stale",
+      "detail": "part_strip2d_kT_L6.json says source 'run.log (levels 0..6, 1e-5 K resolution)', and the parse_log.py docstring says level 7 exceeded the host and its JSON was never written. The record nevertheless holds levels 0..7, and section 4's reference uses level 7, parsed from the run.log line (21,430,272 cells, 1433.6 s, 8.82 GB). The values are consistent with the log. However, these log-parsed levels carry no energy-balance or Picard record, and the labels contradict the content.",
+      "evidence": "run.log, line 'strip2d kT 7 21430272 1433.6 8.82 ...'; part_strip2d_kT_L6.json levels list has 8 entries.",
+      "suggested_check": "Correct the source string and the docstring to 'levels 0..7'.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Minor imprecision in the section-5 summaries",
+      "detail": "'the differences converge at p_obs 2.0-2.9' holds only for the layout-tj_max differences. Across all 17 monotone difference sequences p_obs ranges from 1.08 to 3.12. The counts '9 of 30' and '5 of 30' also double-count, because layout tj_max always equals one die's tj_max, so there are 24 distinct values, not 30.",
+      "evidence": "Recomputed from pairs_jobs.jsonl: monotone diff p_obs is between 1.079 and 3.120.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed p_obs, RE, frozen GCI and candidate GCI for all 45 absolute values and 30 differences from the raw pairs_jobs.jsonl. Every section-5 range and count reproduces (45 monotone, p 1.14-2.23, 17 inside / 28 below; 13 oscillatory; 9/30 and 5/30 at or below 0.025 K; GCI_A+GCI_B 0.14-0.63 / 0.14-1.19 K), as do all pair_tables.md rows checked.",
+    "Recomputed the section-4 table from part_strip2d_kT_L6 values_K (5-6-7 Richardson reference, u_ref, verdicts). All errors, uncertainties, verdicts, '5 of 7 RE non-conservative', 'err = 0.41-0.55|d21|' and '3-4-5 vs 5-6-7 references differ by <= 0.0005 K' reproduce.",
+    "Re-derived the bimaterial wedge eigen-equation k1 tan(lam pi/2) + k2 tan(lam pi) = 0 by hand (continuity of T and flux, adiabatic faces). Solved it: 0.8353 (58/385), 0.5187 (385/24), 2/3 homogeneous. The flux mismatch at the root is about 1e-9, and the root is unique on (0.5, 1).",
+    "Regenerated generate_layouts(16, 1181, family=f, dies_per_switch=2). Fingerprints of gen #0, #1 and #3 match the jobs. Gen #2 is 5.0 mm, so (#0, #1) is the first equal-size pair, and level-0 grids of 262k vs 110-114k cells confirm (#1, #3) is the first pair with both level-2 grids at or below 8 M.",
+    "Checked the section-1 T0170 values against benchmarks/results/thermal_l2_convergence.json (422.7176 / 422.0881 / 421.7657 give p_obs 0.966).",
+    "Computed the strip_dieonly and strip2d_constk estimator verdicts, which the note does not tabulate.",
+    "Computed RSS per active cell for all level-2 jobs and the strip level 7, which contradicts the 0.65 kB/cell lower bound and the '>= 23 GB' claim.",
+    "Verified results.json equals the merge of every part_*.json file, and that all strip cases use q = 1.03 MW/m2.",
+    "Ran `uv run ruff check .`: all checks passed. Verified the deliverable files exist."
+  ],
+  "caveats": [
+    "Research note, not evidence. All results use dev seed 1181 and 2D strips; 3D die-corner (vertex) singularities and the die3d case were not run.",
+    "Whether the difference GCI is conservative for same-stratum layout pairs (different grids) is undetermined. There is no full-layout reference, and the strip differences share one grid.",
+    "'Level 2 is the finest level that fits in 16 GB' is shown only for the roughly 10 M-cell layouts. For the 4.4-4.7 M-cell layouts, level 3 is borderline (about 15-17 GB). The A4 unreachability conclusion still holds because it needs 2-3 more levels.",
+    "At the isolated die-attach corner (strip_dieonly) the frozen GCI was conservative for 5 of 6 per-die values (1 undetermined). The note's non-conservative 3 of 6 comes from strip2d, which also contains the ungraded Cu-on-ceramic edges.",
+    "The root-cause attribution to the Cu-on-Al2O3 corner (lambda 0.519) is an inference at confidence 0.7. strip_dieonly also removes the solder-on-baseplate corners and the baseplate overhang, so the attribution is not isolated to a single corner type."
+  ]
+}
