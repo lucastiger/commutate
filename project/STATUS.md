@@ -1,10 +1,11 @@
 # ModuleForge status
-_generated 2026-11-02T05:08:05+00:00 from repository state — do not edit_
+_generated 2026-11-02T05:08:19+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (4 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0074** [protected_change] T0157: merge needs founder approval
 - **I0075** [protected_change] T0164: merge needs founder approval
+- **I0076** [protected_change] T0155: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -25,21 +26,20 @@ _generated 2026-11-02T05:08:05+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 40 | $71.02 | 1564799 | 852594 | 55 | 0 |
+| O006 | 41 | $71.02 | 1564799 | 852594 | 55 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 136, failed: 3, merge: 1, needs_founder: 2, review: 1, running: 1, todo: 5
+cancelled: 30, done: 136, failed: 3, needs_founder: 3, review: 1, running: 2, todo: 4
 
-- T0155 `merge` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
+- T0155 `needs_founder` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 - T0157 `needs_founder` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
 - T0164 `needs_founder` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
 - T0170 `review` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 - T0178 `running` critic/review: Review T0170 (physics) (attempt 1)
+- T0179 `running` critic/review: Review T0170 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T04:02:47+00:00 run_finished {"run": "T0157-scout-20261101T200059-95a3", "status": "completed", "cost": 0.318994, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T04:03:28+00:00 verified {"task": "T0157"}
 - 2026-11-02T04:03:33+00:00 run_started {"run": "T0177-critic-20261101T200333-2bd6", "task": "T0177", "role": "critic", "session": "8271ffd2-1c55-4ab1-8363-cc4ad544bb7c"}
 - 2026-11-02T04:08:50+00:00 run_finished {"run": "T0177-critic-20261101T200333-2bd6", "status": "completed", "cost": 1.323057, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T04:09:37+00:00 inbox_opened {"id": "I0074", "kind": "protected_change", "subject": "T0157: merge needs founder approval"}
@@ -53,3 +53,5 @@ cancelled: 30, done: 136, failed: 3, merge: 1, needs_founder: 2, review: 1, runn
 - 2026-11-02T05:03:58+00:00 run_started {"run": "T0178-critic-20261101T210358-a9cd", "task": "T0178", "role": "critic", "session": "8f64c3f5-74d2-4a1b-8573-392a9c8e44df"}
 - 2026-11-02T05:07:01+00:00 run_finished {"run": "T0155-scientist-20261101T192217-0866", "status": "completed", "cost": 4.372007, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:07:40+00:00 verified {"task": "T0155"}
+- 2026-11-02T05:08:15+00:00 inbox_opened {"id": "I0076", "kind": "protected_change", "subject": "T0155: merge needs founder approval"}
+- 2026-11-02T05:08:19+00:00 run_started {"run": "T0179-critic-20261101T210819-d6fa", "task": "T0179", "role": "critic", "session": "19e1b94e-5ea2-49df-8ddc-7f0f5aa6261f"}
