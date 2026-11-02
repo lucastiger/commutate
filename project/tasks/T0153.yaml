@@ -4,7 +4,7 @@ title: 'E006 manufactured reference: symbolic 3D manufactured solution with k(T)
   with patterned top copper'
 type: research
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0148
 description: 'Write experiments/runners/e006_mms.py with your own code; it must not import moduleforge.solvers.
@@ -74,4 +74,100 @@ lens: null
 trigger: null
 rationale: Manufactured case of hypothesis (a), the only reference with k(T) on patterned copper; F1 (symbolic
   derivation checked numerically) and F3 (k(T) must discriminate).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The E006 manufactured reference is built, entirely inside the FV solver''s contract (n2):
+    per-cell source callable, inflow callable on exterior and void faces, Robin at z = 0 with scalar h
+    and T_inf(x, y). Nothing was extended. The solver''s materials are the stack''s own Layer objects
+    with their cited k(T) laws. Geometry: the default DBC stack (baseplate with overhang, solder, backside
+    Cu inset, Al2O3, top Cu) plus a 50 µm SAC305 die attach and a 180 µm 4H-SiC die. The top Cu has two
+    islands: island A carries the 5×5 mm die, island B is L-shaped with a re-entrant corner. There is
+    a 1.5 mm gap, a notch and ceramic margins. In each layer T* is a cubic Hermite in z built from interface
+    data Θ_i(x, y) and G_i = k ∂T/∂z that both neighbouring layers share. So T and the normal flux are
+    continuous '
+  report:
+    summary: 'The E006 manufactured reference is built, entirely inside the FV solver''s contract (n2):
+      per-cell source callable, inflow callable on exterior and void faces, Robin at z = 0 with scalar
+      h and T_inf(x, y). Nothing was extended. The solver''s materials are the stack''s own Layer objects
+      with their cited k(T) laws. Geometry: the default DBC stack (baseplate with overhang, solder, backside
+      Cu inset, Al2O3, top Cu) plus a 50 µm SAC305 die attach and a 180 µm 4H-SiC die. The top Cu has
+      two islands: island A carries the 5×5 mm die, island B is L-shaped with a re-entrant corner. There
+      is a 1.5 mm gap, a notch and ceramic margins. In each layer T* is a cubic Hermite in z built from
+      interface data Θ_i(x, y) and G_i = k ∂T/∂z that both neighbouring layers share. So T and the normal
+      flux are continuous at every interface by construction. Sympy derives the source −div(k(T*)∇T*)
+      per region, the inflow k ∂T*/∂n on every exterior and void face, and T_inf = Θ₀ − G₀/h. All 10 gated
+      self-checks pass. Field: 294.74–395.49 K (range 100.75 K; this is the A1 scale). Ceramic k varies
+      by 32.3 % (k_max/k_min − 1). Source vs an independent finite-difference evaluation (Kirchhoff form,
+      uses the stack''s k_at) at 1400 seeded points: max relative error 1.0e-8. Interface jumps: 5.8e-16
+      in T, 4.2e-13 in flux. Global balance: 3.3e-12. Per-region balance: 7.9e-13. F3 estimate (my own
+      FV, k(T) and constant k at the layer-mean T*, two grids): constant k moves the reported points by
+      up to 2.51 K, steady between grids. That exceeds A1 (1.007 K) by 2.5× and A2 (0.05 K) by 50×, so
+      the F3 null dT_const_k should fail both. The same FV converges to T* at second order (0.144 → 0.036
+      K), which shows the manufactured data are consistent and the signs correct. Commands run and exit
+      codes: `uv run python experiments/runners/e006_mms.py --selfcheck` → 0 (run again after lint fixes
+      → 0); the definition-of-done string check (`python -c "...assert ''moduleforge.solvers'' not in
+      s..."`) → 0; `uv run ruff check experiments/runners/e006_mms.py` → all checks passed after fixes;
+      `uv run python experiments/runners/e006_mms.py --emit research/e006_refs/mms_values.json` → 0, run
+      twice with the same payload sha256 ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b;
+      `uv run mfos gate --fast` → 0 (all gates passed). Committed as 8436387 on the task branch.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '--selfcheck (exit 0): k laws match Layer.k_at to 2.1e-14; field range 100.749 K (inside 60-110);
+      T* and T_inf (288.7-332.5 K) inside 273.15-523.15 K; ceramic max 390.27 K, below the 400 K kink
+      in the Al2O3 law; ceramic k_max/k_min - 1 = 0.3227 (k 18.07-23.91 W/(m K)).'
+    - 'Source vs finite differences: 1400 points (seed 61530, 200 per region), max |q_sym - q_fd| / sum_a|d_a(k
+      d_a T)| = 1.02e-8 (gate 1e-6). The finite-difference side uses only the lambdified T* and the stack''s
+      numeric k_at: 6th-order Fornberg stencils on the Kirchhoff potential.'
+    - 'Interface continuity over 6 interfaces x 500 points: T 5.8e-16, k dT/dz 4.2e-13 (gate 1e-10).'
+    - 'Global balance through the public source, flux and T_inf callables: 3.3e-12 relative to Q_out =
+      64.648 W (gate 1e-10). Per-region balance max 7.9e-13. Cubature does not change between Gauss-Legendre
+      n = 12 and 18.'
+    - 'Own FV check: k(T) solve error vs T* at the 9 reported points is 0.1436 K at 0.5 mm and 0.0359
+      K at 0.25 mm (ratio 4.0, second order); energy balance <= 1.3e-13.'
+    - 'F3: constant k at each layer''s mean T* moves the points by up to |T_constk - T_kT| = 2.512 K (0.5
+      mm grid) and 2.514 K (0.25 mm); |T_constk - T*| = 2.540 K. Thresholds are A1 1.007 K and A2 0.05
+      K.'
+    - 'The emitted payload sha256 is the same across two independent --emit runs (ca05847b...): the output
+      is deterministic.'
+    - DoD string check exit 0; mfos gate --fast exit 0; ruff clean.
+    files_written:
+    - experiments/runners/e006_mms.py
+    - research/e006_refs/mms_values.json
+    - research/notes/o006-manufactured-solution.md
+    recommended_actions:
+    - The objective does not define '30 %'. I gate on k_max/k_min - 1 (0.323 in the ceramic). Under the
+      other reading, (k_max - k_min)/k_max, it is 0.244, and 30 % on that reading cannot be reached by
+      the cited Al2O3 law within a 60-110 K field. The founder or critic should confirm the reading before
+      E006 registration.
+    - 'The case does not exercise the Al2O3 law above 400 K (kept out on purpose: the law''s kink would
+      make the source singular). Rely on the k(T) layouts of A3 for that branch, or add a second manufactured
+      case under a new id with a smooth explicitly manufactured ceramic law.'
+    - 'When building E006: put grid lines on every box edge (XB, YB) and on Z; pass case.flux, case.source,
+      case.h, case.T_inf and case.materials directly; check the energy balance against the 64.648 W total.'
+    - My own FV error at 0.25 mm lateral is 0.036 K, close to A2's 0.05 K. If the frozen grid rule's finest
+      lateral cell is coarser than about 0.3 mm, expect A2/A4 to fail on this case from discretisation
+      alone. Check the grid rule (T0150) against this before registration.
+    - Freeze the payload sha256 (ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b) in
+      the E006 spec. Any change after the first solver comparison needs a new experiment id (F1).
+    alternative_explanations:
+    - explanation: 'My reading of the contract''s conventions could be wrong: inflow positive, faces identified
+        by outward (axis, sign), flux additive to Robin on z = 0, flux taken by the region below or above
+        a plane according to the sign. My own FV shares this reading, so its convergence to T* cannot
+        detect a misreading.'
+      how_to_discriminate: 'The first E006 dev row on the finest grid: the solver''s energy balance should
+        be Q_in = 64.648 W, and its error should fall about 4x per refinement. A sign misreading gives
+        an O(1 K) or larger, non-converging error and an imbalance of hundreds of watts.'
+    - explanation: The F3 shift of 2.5 K comes from my own coarse FV, not from the production solver.
+        A different layer-mean definition (from the solver's k(T) solution rather than from T*) could
+        change it.
+      how_to_discriminate: E006's dT_const_k column. The layer means differ from T*'s by at most about
+        0.04 K (my FV error), which changes k by less than 0.02 %. So I expect E006's value to land within
+        about 0.1 K of 2.5 K.
+    discriminating_tests:
+    - 'E006 dev run on the manufactured case at three grid levels: energy balance against 64.648 W; error
+      at the reported points falling with observed order about 2; dT_const_k about 2.5 K at die_max.'
+    - Rerun `e006_mms.py --selfcheck` with a different FD_SEED to confirm the 1e-8 finite-difference agreement
+      does not depend on the seed.
+    affects_acceptance_criteria: false
