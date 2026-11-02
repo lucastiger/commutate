@@ -1,0 +1,42 @@
+id: T0172
+objective: O006
+title: 'scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review
+  T0171)'
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: T0152's benchmark (benchmarks/thermal_fem_convergence.py) hard-codes zrefine=False and h0=0.5
+  mm, so its GCI covers lateral refinement only; review T0171 measured the z error at 0.026 K (level 0)
+  growing to 0.036 K (level 1), the size of A3's 0.025 K limit. Add command-line options --zrefine (refine
+  z with the same ratio 2 as lateral, so the three-grid GCI covers all three directions), --h0 (finest-level
+  lateral size), and --mem-gb (memory budget; default from the host's RAM), keeping the current defaults
+  for local runs. Size a run for an n2-highmem-32 (251 GB) at the 7.7 kB/DOF bound and document the expected
+  DOF, memory and wall time per level. Never tune on anything but the two A3 layouts' convergence; do
+  not change thresholds. Add a smoke test of the new options. In the PR summary give the exact command
+  for scripts/burst_gcp.sh --cmd ... benchmarks/results (on-demand VM, MF_GCP_MAX_HOURS sized from your
+  estimate).
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T03:24:30+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
