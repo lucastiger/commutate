@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T10:30:17+00:00 from repository state — do not edit_
+_generated 2026-11-02T10:33:07+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0080** [budget_increase] daily LLM budget reached
-- **I0085** [decision] [O006] replan limit reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -15,7 +14,7 @@ _generated 2026-11-02T10:30:17+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | needs_founder | - | 0/1 | $94.52/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $94.52/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -35,7 +34,6 @@ cancelled: 30, done: 150, failed: 3, needs_founder: 1, running: 1, todo: 1
 - T0185 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T10:20:17+00:00 run_started {"run": "T0186-planner-20261102T022017-a8ca", "task": "T0186", "role": "planner", "session": "d8f37bdb-a5a5-416f-acd8-4b3507dcbcad"}
 - 2026-11-02T10:21:26+00:00 run_finished {"run": "T0186-planner-20261102T022017-a8ca", "status": "completed", "cost": 0.401656, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T10:21:26+00:00 inbox_opened {"id": "I0083", "kind": "decision", "subject": "[O006] [O006] Update T0165's E006 design brief to match D0012 before you release it with `mfos task retry T0165`
 - 2026-11-02T10:21:26+00:00 plan_applied {"objective": "O006", "created": [], "dropped": 0}
@@ -50,3 +48,4 @@ cancelled: 30, done: 150, failed: 3, needs_founder: 1, running: 1, todo: 1
 - 2026-11-02T10:29:41+00:00 inbox_resolved {"id": "I0084", "status": "approved", "note": "Pilots P1+P2 notes and data (research/ only, no protected paths). Findings feed the O002 re-derivation (25/45 W) 
 - 2026-11-02T10:30:16+00:00 merged {"task": "T0167"}
 - 2026-11-02T10:30:16+00:00 inbox_opened {"id": "I0085", "kind": "decision", "subject": "[O006] replan limit reached"}
+- 2026-11-02T10:32:57+00:00 inbox_resolved {"id": "I0085", "status": "approved", "note": "Founder (2026-11-02): no replan. T0186 confirmed the remaining O006 path (T0165 held, then T0166); T0167's findin
