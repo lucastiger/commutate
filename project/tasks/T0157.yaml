@@ -3,7 +3,7 @@ objective: O006
 title: Verify every k(T) law and citation in geometry/stack.py against primary sources
 type: research
 agent: scout
-status: running
+status: review
 depends_on: []
 description: Open each cited source (Incropera Tables A.1/A.2, Slack 1973, Hirosaki 2002, CRC tin resistivity
   coefficient, Levinshtein 2001 / TCAD SiC models) and confirm the numbers and laws in src/moduleforge/geometry/stack.py;
@@ -161,3 +161,88 @@ history:
 
     ...[truncated; full reviews: project/reviews/T0157/]'
   at: '2026-11-02T03:41:40+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Partial verification only. I rewrote research/notes/o006-kT-citations.md, but I opened no
+    primary document: Incropera, Slack 1973, Hirosaki 2002, the CRC, Levinshtein and the TCAD manuals
+    were all unreachable or unreadable. PDF fetches returned binary, and the Ioffe page failed on a TLS
+    error, which I did not bypass. The note fixes the main error from attempt 1. The SiC exponent -1.49
+    is a 6H, normal-to-c value from Burgemeister 1979, applied to a 4H die whose heat flows along c. That
+    origin comes from the review; my search confirmed only the paper''s identity and its 6H subject. The
+    note drops attempt 1''s "corrected" SiC values (-1.26 and 280 W/(m K)) because they are normal-to-c
+    data. It records that 3.7 W/(cm K) at 300 K is supported by the Ioffe/Goldberg 2001 table. The Hirosaki
+    1/T cla'
+  report:
+    summary: 'Partial verification only. I rewrote research/notes/o006-kT-citations.md, but I opened no
+      primary document: Incropera, Slack 1973, Hirosaki 2002, the CRC, Levinshtein and the TCAD manuals
+      were all unreachable or unreadable. PDF fetches returned binary, and the Ioffe page failed on a
+      TLS error, which I did not bypass. The note fixes the main error from attempt 1. The SiC exponent
+      -1.49 is a 6H, normal-to-c value from Burgemeister 1979, applied to a 4H die whose heat flows along
+      c. That origin comes from the review; my search confirmed only the paper''s identity and its 6H
+      subject. The note drops attempt 1''s "corrected" SiC values (-1.26 and 280 W/(m K)) because they
+      are normal-to-c data. It records that 3.7 W/(cm K) at 300 K is supported by the Ioffe/Goldberg 2001
+      table. The Hirosaki 1/T claim is marked unverified, since I could not read the paper''s k(T) result.
+      No primary SAC305 k(T) was found. A weak patent datum (about -13 % from 25 to 150 C) and secondary
+      tin coefficients of 4.6-4.7e-3 /K suggest the code''s 4.2e-3 /K slope is too shallow; I recommend
+      sweeping 4.2-4.7e-3. I also corrected attempt 1''s arithmetic and its Al2O3 OCR column reading.
+      I edited the INDEX.md line to match. I had no shell tool in this session, so I did not run `mfos
+      gate --fast` or any command (no exit codes to report); the orchestrator must run the DoD checks.'
+    notes_file: research/notes/o006-kT-citations.md
+    key_findings:
+    - claim: stack.py's 4H-SiC exponent -1.49 traces to Burgemeister et al. 1979, a 6H-SiC study measured
+        normal to the c axis. It is applied to a 4H die with vertical heat flow along c. My search confirmed
+        the paper's identity and 6H subject but not the exponent.
+      source: J. Appl. Phys. 50, 5790 (1979), DOI 10.1063/1.326720 (https://scilit.com/publications/e8055c143caf231b8e8a91a70c738915);
+        exponent and c-axis details from the attempt-1 review, not read by me
+      confidence: medium
+    - claim: 3.7 W/(cm K) for 4H-SiC at 300 K is supported by the Ioffe NSM table (Goldberg et al. 2001).
+        Direction is not stated. The Ioffe temperature fit 611/(T-115) gives about 3.3 W/(cm K) at 300
+        K, so it does not reproduce 3.7.
+      source: https://www.ioffe.ru/SVA/NSM/Semicond/SiC/thermal.html (via search summary; page itself
+        failed TLS)
+      confidence: medium
+    - claim: The n-type 4H-SiC data (about 280 W/(m K), T^-1.26) and semi-insulating data (about 347 W/(m
+        K), T^-1.256) are for heat flow normal to the c axis, so they must not replace the through-thickness
+        law. Direction-correct cross-plane data exist in Qian et al. 2017 but their numbers were not read.
+      source: https://scispace.com/papers/thermal-conductivity-of-4h-sic-single-crystals-1px5ne0guc ;
+        https://arxiv.org/abs/1712.00830
+      confidence: medium
+    - claim: Hirosaki 2002 is a Green-Kubo molecular-dynamics paper on ideal single crystals. Its abstract
+        says temperature dependence was calculated, but I could not read the result. The claim that it
+        finds k~1/T for beta-Si3N4 is unverified, and ideal-crystal MD values exceed experiment by more
+        than 2x per other work.
+      source: https://data.zhenzhi.com/details/1/865259830 ; https://arxiv.org/pdf/1612.08480
+      confidence: medium
+    - claim: No primary SAC305 k(T) source was found. The code's slope (-7.0 % at 423 K, -8.9 % at 480
+        K) looks shallow against a weak patent datum of about -13 % from 25 to 150 C and secondary tin
+        resistivity coefficients of 4.6-4.7e-3 /K versus the code's 4.2e-3 /K. With 4.7e-3 /K the formula
+        gives -10.6 % at 423 K.
+      source: https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/11411150 (scan not readable
+        by me; summary only); https://machinemfg.com/metal-resistivity-and-temperature-coefficient-table;
+        https://www.goodfellow.com/usa/tin-spooled-wire-1000186095
+      confidence: low
+    - claim: Cu values 401/393/379 W/(m K) and Al2O3 values 36.0/26.4/15.8 W/(m K) match scanned Incropera
+        tables. The Al2O3 column-to-temperature mapping is inferred because the OCR has no headers. The
+        exponents -1.078 and -1.266 recompute correctly (-1.0787 and -1.26609).
+      source: https://es.scribd.com/document/398809124/App-AThermophysical-Properties-of-Matter-pdf (attempt
+        1 scan; not re-opened)
+      confidence: medium
+    - claim: The Slack 1973 wording overstates. Secondary sources describe 1/T as the Umklapp limit above
+        the Debye temperature for fairly perfect crystals, not an exact 300-480 K law for sintered ceramics.
+        I did not read the paper.
+      source: https://scilit.net/publications/1030314b23f5bd72f70c209e8643ff7d (bibliographic record only)
+      confidence: low
+    open_questions:
+    - Read page images of Incropera Tables A.1/A.2, plus Slack 1973, Hirosaki 2002, Burgemeister 1979
+      and the CRC tin coefficient (needs founder or library access).
+    - What is the cross-plane (along c) 4H-SiC k(T) at 250-450 K? Qian et al. 2017 has it but I could
+      not read the numbers.
+    - 'What does a measured SAC305 k(T) look like over 300-480 K? Candidates: Metall. Mater. Trans. B
+      2014 (DOI 10.1007/s11663-014-0109-9) and J. Mater. Sci. (s10854-019-01081-x).'
+    - Do Silvaco or Sentaurus SiC models really use 3.7 (T/300)^-1.49 W/(cm K)? If not, drop the TCAD
+      claim.
+    - What is measured k(T) over 300-480 K for AMB Si3N4 substrates? The 90 W/(m K) default is only supported
+      as a high-end grade.
+    - The 300 K values for Cu 385, Al2O3 24 and SAC305 58 W/(m K) and the DBC/AMB datasheets were not
+      opened; verify them.
+    thesis_impact: none
