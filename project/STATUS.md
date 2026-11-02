@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T06:49:44+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:49:58+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
+- **I0080** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,13 +28,10 @@ _generated 2026-11-02T06:49:44+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 143, failed: 3, merge: 1, todo: 5
+cancelled: 30, done: 144, failed: 3, todo: 5
 
-- T0170 `merge` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 
 ## Recent events
-- 2026-11-02T05:36:02+00:00 loop_started {"pid": 30673}
-- 2026-11-02T06:35:14+00:00 inbox_resolved {"id": "I0074", "status": "approved", "note": "Approved as a secondary-source screen (review T0177); primary verification deferred.", "by": "human"}
 - 2026-11-02T06:35:32+00:00 inbox_resolved {"id": "I0075", "status": "approved", "note": "Approved; gate matches frozen F1 (Case 3 only), payload hash unchanged.", "by": "human"}
 - 2026-11-02T06:35:34+00:00 inbox_resolved {"id": "I0076", "status": "approved", "note": "P4 note accepted: FastHenry not usable at module scale locally; D0009 band uses the doubled l2_layout estimate.",
 - 2026-11-02T06:35:43+00:00 inbox_resolved {"id": "I0078", "status": "approved", "note": "Approved; VM-ready scikit-fem benchmark (review T0180, minor caveats).", "by": "human"}
@@ -47,3 +45,5 @@ cancelled: 30, done: 143, failed: 3, merge: 1, todo: 5
 - 2026-11-02T06:38:31+00:00 merged {"task": "T0172"}
 - 2026-11-02T06:38:50+00:00 inbox_resolved {"id": "I0077", "status": "approved", "note": "Approved; A4 estimator flaw at low observed order (T0178/T0179) goes to a founder criteria decision.", "by": "hum
 - 2026-11-02T06:39:26+00:00 inbox_resolved {"id": "I0079", "status": "approved", "note": "Daily cap raised to 90 USD.", "by": "human"}
+- 2026-11-02T06:49:56+00:00 merged {"task": "T0170"}
+- 2026-11-02T06:49:58+00:00 inbox_opened {"id": "I0080", "kind": "budget_increase", "subject": "daily LLM budget reached"}
