@@ -1,11 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T05:36:05+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:35:38+00:00 from repository state — do not edit_
 
-## Founder inbox (6 open)
+## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
-- **I0074** [protected_change] T0157: merge needs founder approval
-- **I0075** [protected_change] T0164: merge needs founder approval
-- **I0076** [protected_change] T0155: merge needs founder approval
 - **I0077** [protected_change] T0170: merge needs founder approval
 - **I0078** [protected_change] T0172: merge needs founder approval
 
@@ -32,18 +29,15 @@ _generated 2026-11-02T05:36:05+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 139, failed: 3, needs_founder: 5, todo: 3
+cancelled: 30, done: 139, failed: 3, merge: 3, needs_founder: 2, todo: 3
 
-- T0155 `needs_founder` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
-- T0157 `needs_founder` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
-- T0164 `needs_founder` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
+- T0155 `merge` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
+- T0157 `merge` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
+- T0164 `merge` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
 - T0170 `needs_founder` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 - T0172 `needs_founder` builder/implement: scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review T0171) (attempt 1)
 
 ## Recent events
-- 2026-11-02T05:07:40+00:00 verified {"task": "T0155"}
-- 2026-11-02T05:08:15+00:00 inbox_opened {"id": "I0076", "kind": "protected_change", "subject": "T0155: merge needs founder approval"}
-- 2026-11-02T05:08:19+00:00 run_started {"run": "T0179-critic-20261101T210819-d6fa", "task": "T0179", "role": "critic", "session": "19e1b94e-5ea2-49df-8ddc-7f0f5aa6261f"}
 - 2026-11-02T05:10:47+00:00 run_finished {"run": "T0178-critic-20261101T210358-a9cd", "status": "completed", "cost": 1.432937, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:10:50+00:00 run_started {"run": "T0172-builder-20261101T211050-be48", "task": "T0172", "role": "builder", "session": "f6bcdb11-2d4e-4ab4-b932-fe1351785bb3"}
 - 2026-11-02T05:14:27+00:00 run_finished {"run": "T0179-critic-20261101T210819-d6fa", "status": "completed", "cost": 1.98682, "subtype": "success", "report": "structured_output"}
@@ -56,3 +50,6 @@ cancelled: 30, done: 139, failed: 3, needs_founder: 5, todo: 3
 - 2026-11-02T05:34:55+00:00 inbox_opened {"id": "I0078", "kind": "protected_change", "subject": "T0172: merge needs founder approval"}
 - 2026-11-02T05:35:27+00:00 loop_started {"pid": 30559}
 - 2026-11-02T05:36:02+00:00 loop_started {"pid": 30673}
+- 2026-11-02T06:35:14+00:00 inbox_resolved {"id": "I0074", "status": "approved", "note": "Approved as a secondary-source screen (review T0177); primary verification deferred.", "by": "human"}
+- 2026-11-02T06:35:32+00:00 inbox_resolved {"id": "I0075", "status": "approved", "note": "Approved; gate matches frozen F1 (Case 3 only), payload hash unchanged.", "by": "human"}
+- 2026-11-02T06:35:34+00:00 inbox_resolved {"id": "I0076", "status": "approved", "note": "P4 note accepted: FastHenry not usable at module scale locally; D0009 band uses the doubled l2_layout estimate.",
