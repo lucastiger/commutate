@@ -48,8 +48,8 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   f_lv0, f_lv1, f_lv2, gci, a4_branch, p_obs, dT_const_k. gci and a4_branch are reported with mfos.metrics.gci_capped
 
-  (branches as in A4). dT_const_k is the constant-k solve at the layer-mean temperature: the same units
-  and datum as
+  (branches as in A4, floor 1e-3 K). Report d1 and d2 too. dT_const_k is the constant-k solve at the layer-mean
+  temperature: the same units and datum as
 
   T_l2, and identical to it on constant-k cases.
 
@@ -60,16 +60,23 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   (= f_lv2), f_lv0, f_lv1, f_lv2, gci, a4_branch, tj_skfem (= skfem_lv2), skfem_lv0, skfem_lv1, skfem_lv2,
   skfem_gci,
 
-  skfem_a4_branch, skfem_z, detectable_bias. Both solvers use three grids of their own refinement by r
-  = 2 (scikit-fem
+  skfem_a4_branch, skfem_z0, skfem_z1, detectable_bias, l2_direction, skfem_direction. Both solvers use
+  three grids of their own refinement by r = 2 (scikit-fem
 
-  laterally, zrefine=False, as in its benchmark). skfem_z = 1.25 |dTj_z|: the change in the die''s Tj
-  max when every
+  laterally, zrefine=False, as in its benchmark). skfem_z0 and skfem_z1 are the die''s Tj max on scikit-fem''s
+  level-1
 
-  layer''s through-thickness cell count is doubled on scikit-fem''s level-1 lateral grid (one extra solve
-  per layout).
+  lateral grid with the base and with doubled through-thickness cell counts (one extra solve per layout);
+  the
 
-  detectable_bias = gci + skfem_gci + skfem_z - |tj_l2 - tj_skfem|. A3 runs on five layouts: the two development
+  evaluator forms 2.5 |skfem_z1 - skfem_z0| itself (mfos.metrics two_grid_term). detectable_bias = gci
+  + skfem_gci +
+
+  2.5 |skfem_z1 - skfem_z0| - |tj_l2 - tj_skfem|. l2_direction and skfem_direction are ''from_above''
+  or ''from_below''
+
+  (sign of each solver''s finest step); same-side pairs are flagged in the note as weak for A3. A3 runs
+  on five layouts: the two development
 
   layouts and the three fresh layouts below. The fresh layouts get one cross-check row per die. Do not
   add separate
@@ -121,11 +128,13 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - A3: max_gci_consistency, params {pred_levels: [f_lv0, f_lv1, f_lv2], ref_levels: [skfem_lv0, skfem_lv1,
 
-  skfem_lv2], ref_extra: skfem_z}, where {kind: crosscheck}.
+  skfem_lv2], ref_zpair: [skfem_z0, skfem_z1], floor: 0.001}, where {kind: crosscheck}.
 
 
-  - A4: max_gci_capped, params {levels: [f_lv0, f_lv1, f_lv2]}, where {is_finest: true} (case and cross-check
-  rows).
+  - A4: max_gci_capped, params {levels: [f_lv0, f_lv1, f_lv2], floor: 0.001}, where {is_finest: true}
+  (case and
+
+  cross-check rows).
 
 
   A diverging sequence gives +inf, which means the criterion is not met. That is a legitimate outcome,
@@ -138,6 +147,12 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
 
   (5) Gated sanity checks, the full lists of F1 and F2:
+
+  - the five A3 layout fingerprints equal to the spec''s list (two frozen dev fingerprints; the three
+  fresh ones
+
+  recorded at run time from the sealed seed);
+
 
   - reference sha256 equal to the config values (series befc5efa…, mms from its JSON), checked before
   any solve;
@@ -163,11 +178,11 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - Picard max|dT| < 1e-4 K;
 
-  - skfem GCI reported; F5: scikit-fem''s own estimate (mfos.metrics.gci_capped on skfem_lv0..2 plus skfem_z)
-  at most
+  - skfem GCI reported; F5: scikit-fem''s own estimate (mfos.metrics.gci_capped on skfem_lv0..2 with floor
+  1e-3 K, plus
 
-  0.5 K on every A3 die of all five layouts, a gated sanity check (INVALID if missed, never a verdict
-  on the L2).
+  two_grid_term(skfem_z0, skfem_z1)) at most 0.25 K on every die of all five layouts, a gated sanity check
+  (INVALID if missed, never a verdict on the L2).
 
   Case 1a/1b converged values against scikit-fem: INFO only, not gated.
 
@@ -196,8 +211,8 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   (9) research/notes/o006-e006-design.md: secondary values reported per reference-case point, GCI / |T_L2
   - T_ref|
 
-  (the estimator against a known error). How each metric maps to A1-A4/K1/K2 and F5, the operating-point
-  powers,
+  (the estimator against a known error), the count of oscillatory values, and every value with p_obs outside
+  [0.5, 2]. How each metric maps to A1-A4/K1/K2 and F5, the operating-point powers,
 
   the fresh-layout rule, the point list, F1-F3 coverage, and the runtime/memory plan. Treat any refcheck
   failure as an F1 reference problem: report it and do not loosen it. Founder amendment 2026-11-02 (review
@@ -257,7 +272,7 @@ definition_of_done:
 - cmd: uv run ruff check .
   exists: null
   timeout_s: 300
-- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_conservative_gci_K','max_gci_capped','max_gci_consistency','f_lv0','sealed_seed','skfem_z','ref_extra']);
+- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_conservative_gci_K','max_gci_capped','max_gci_consistency','f_lv0','sealed_seed','skfem_z0','skfem_z1','ref_zpair','floor']);
     assert 'max_skfem_gci_K' not in s"
   exists: null
   timeout_s: 120
@@ -307,3 +322,6 @@ history:
 - outcome: founder_brief_amended
   summary: A3 on five layouts, skfem_z term, F5 with z, secondary GCI/error (D0013 addendum)
   at: '2026-11-02T11:41:21+00:00'
+- outcome: founder_brief_amended
+  summary: 'D0013 addendum 2: floor, Fs 3 oscillatory, z pair, F5 0.25 K, fingerprints, directions'
+  at: '2026-11-02T11:56:40+00:00'

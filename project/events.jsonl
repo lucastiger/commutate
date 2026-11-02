@@ -1358,3 +1358,5 @@
 {"ts": "2026-11-02T11:50:16+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0191-critic-20261102T034141-a374", "status": "completed", "cost": 2.303154, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-02T11:55:56+00:00", "event": "objective_approved", "actor": "founder", "objective": "O006", "criteria_hash": "sha256:76caaac481581134a4cacbd333e297dfc61f7aef780edae4ca7ae0aa7a64bc54"}
 {"ts": "2026-11-02T11:56:01+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0086", "kind": "decision", "subject": "[O006] replan limit reached"}
+{"ts": "2026-11-02T11:56:40+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0086", "status": "approved", "note": "Founder (2026-11-02, same decision as I0085): no replan after the O006 re-approval. The remaining path is complete: T0189 (solver_tol alignment), then T0165 (E006 design, brief amended to D0013 addendum 2), then T0166 (E006 run).", "by": "session"}
+{"ts": "2026-11-02T11:56:40+00:00", "event": "task_amended", "actor": "founder", "task": "T0165", "reason": "D0013 addendum 2"}
