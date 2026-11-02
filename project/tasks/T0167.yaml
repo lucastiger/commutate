@@ -107,12 +107,13 @@ model: null
 budget_usd: 5.0
 max_turns: 100
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0167-pilots-p1-p2-thermal-envelope-175-c-powe
 pr: null
 runs:
 - T0167-scientist-20261101T225031-83e1
+- T0167-scientist-20261102T011832-311a
 created_by: planner:T0162
 created_at: '2026-11-02T02:16:01+00:00'
 protected_approved: false
@@ -130,3 +131,8 @@ history:
   summary: SiC sensitivity now taken from T0157's final, direction-correct ranges (review T0174), replacing
     hard-coded in-plane values
   at: '2026-11-02T03:42:23+00:00'
+- attempt: 1
+  outcome: agent_error
+  summary: agent ended with error_max_budget_usd
+  failure_output: ''
+  at: '2026-11-02T09:18:29+00:00'
