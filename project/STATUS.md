@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T01:19:36+00:00 from repository state — do not edit_
+_generated 2026-11-02T01:19:47+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0062** [protected_change] T0154: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,18 +23,17 @@ _generated 2026-11-02T01:19:36+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 16 | $27.87 | 535242 | 325895 | 22 | 0 |
+| O006 | 17 | $27.87 | 535242 | 325895 | 22 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 119, failed: 3, merge: 1, running: 1, todo: 6
+cancelled: 29, done: 119, failed: 3, needs_founder: 1, running: 2, todo: 5
 
 - T0149 `running` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
-- T0154 `merge` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
+- T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 1)
+- T0154 `needs_founder` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-01T23:50:34+00:00 verified {"task": "T0149"}
-- 2026-11-01T23:50:39+00:00 run_started {"run": "T0158-critic-20261101T155039-10fb", "task": "T0158", "role": "critic", "session": "8bc7e921-cb22-49db-8682-be4d16e4f13f"}
 - 2026-11-01T23:59:05+00:00 run_finished {"run": "T0158-critic-20261101T155039-10fb", "status": "completed", "cost": 1.732983, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T23:59:09+00:00 run_started {"run": "T0159-critic-20261101T155909-04e5", "task": "T0159", "role": "critic", "session": "bb25986f-ebcd-4566-b365-c7206fdc0cbc"}
 - 2026-11-02T00:10:27+00:00 run_finished {"run": "T0159-critic-20261101T155909-04e5", "status": "completed", "cost": 1.86505, "subtype": "success", "report": "structured_output"}
@@ -48,3 +47,5 @@ cancelled: 29, done: 119, failed: 3, merge: 1, running: 1, todo: 6
 - 2026-11-02T00:30:01+00:00 run_started {"run": "T0149-builder-20261101T163001-621c", "task": "T0149", "role": "builder", "session": "52e3ed90-fcc9-41a3-b0c4-c8fadc196c7c"}
 - 2026-11-02T01:18:28+00:00 run_finished {"run": "T0154-scientist-20261101T163001-c8f4", "status": "completed", "cost": 1.270733, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:19:04+00:00 verified {"task": "T0154"}
+- 2026-11-02T01:19:44+00:00 inbox_opened {"id": "I0062", "kind": "protected_change", "subject": "T0154: merge needs founder approval"}
+- 2026-11-02T01:19:47+00:00 run_started {"run": "T0151-scientist-20261101T171947-55ab", "task": "T0151", "role": "scientist", "session": "805d7720-c3f5-4741-9d39-d94522c974a3"}
