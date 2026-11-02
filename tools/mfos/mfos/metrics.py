@@ -15,7 +15,7 @@ Definitions (each function's docstring repeats its own):
   max_rel_err               max |pred / ref - 1|
   max_abs_err               max |pred - ref|
   max_gci_capped            max of the order-capped three-grid GCI (O006 A4; +inf if a sequence diverges)
-  max_gci_consistency       max |p2 - r2| / (GCI(p) + GCI(r)) over two solvers' three-grid sequences (O006 A3)
+  max_gci_consistency       max |p2 - r2| / (GCI(p) + GCI(r) [+ extra terms]) over two solvers' sequences (O006 A3)
   topk_recall               share of the predicted best k_frac that lie in the reference best within_frac
   within_strata_spearman    Spearman of log values centred on their stratum means
   discordance_by_gap        per gap bin: (pairs, discordant pairs), gap = |ref_i - ref_j| / min(ref_i, ref_j)
@@ -128,8 +128,13 @@ def gci_capped(f0: float, f1: float, f2: float) -> float:
 
       d1 = d2 = 0                          0 (grid-independent)
       |rho| >= 1, or d1 = 0 < |d2|         +inf: divergent or stagnant, a criterion on it is not met
-      -1 < rho < 0, or 0 <= rho < 1/4      1.25 max(|d1|, |d2|): oscillatory, or observed order above 2 (a possibly lucky grid)
+      -1 < rho < 0                         1.25 max(|d1|, |d2|): oscillatory
+      0 <= rho < 1/4                       1.25 max(|d2|, |d1| / 4): observed order above 2 (a possibly lucky grid) is
+                                           credited with order 2 from the coarser step; equal to the next branch at 1/4
       1/4 <= rho < 1                       1.25 |d2| / (2^p - 1), p = min(p_obs, 1), p_obs = log2(1 / rho)
+
+    The value is continuous in rho on [0, 1) and never below the order-1-capped form 1.25 |d2| / (2^min(p_obs, 1) - 1)
+    that T0181 found conservative at the singular corners (D0013 addendum, re-reviews T0187/T0188).
 
     The safety factor 1.25 and the form |d2| / (r^p - 1) are Roache's (Verification and Validation in Computational
     Science and Engineering, Hermosa 1998, ch. 5); the order cap at 1 and the branches are O006's rule."""
@@ -141,8 +146,10 @@ def gci_capped(f0: float, f1: float, f2: float) -> float:
     rho = d2 / d1
     if abs(rho) >= 1.0:
         return math.inf
-    if rho < 0.25:
+    if rho < 0.0:
         return 1.25 * max(abs(d1), abs(d2))
+    if rho < 0.25:
+        return 1.25 * max(abs(d2), abs(d1) / 4.0)
     p = min(math.log2(1.0 / rho), 1.0)
     return 1.25 * abs(d2) / (2.0 ** p - 1.0)
 
@@ -156,15 +163,23 @@ def max_gci_capped(f0: Sequence[float], f1: Sequence[float], f2: Sequence[float]
 
 
 def max_gci_consistency(p0: Sequence[float], p1: Sequence[float], p2: Sequence[float],
-                        r0: Sequence[float], r1: Sequence[float], r2: Sequence[float]) -> float:
-    """max over rows of |p2 - r2| / (gci_capped(p0, p1, p2) + gci_capped(r0, r1, r2)) (O006 A3: two independent solvers'
-    finest values agree within their summed conservative estimates when this is at most 1). A divergent sequence on either
-    side gives +inf, as does a zero summed GCI with unequal values; a zero summed GCI with equal values gives 0."""
+                        r0: Sequence[float], r1: Sequence[float], r2: Sequence[float],
+                        p_extra: Optional[Sequence[float]] = None, r_extra: Optional[Sequence[float]] = None) -> float:
+    """max over rows of |p2 - r2| / (gci_capped(p0, p1, p2) + p_extra + gci_capped(r0, r1, r2) + r_extra) (O006 A3: two
+    independent solvers' finest values agree within their summed conservative estimates when this is at most 1). The
+    optional extra columns are non-negative error terms a three-grid sequence leaves out (O006: scikit-fem's
+    through-thickness term, D0013 addendum). A divergent sequence on either side gives +inf, as does a zero summed
+    estimate with unequal values; a zero summed estimate with equal values gives 0."""
+    n = len(_arr(p0))
+    pe = _arr(p_extra) if p_extra is not None else np.zeros(n)
+    re_ = _arr(r_extra) if r_extra is not None else np.zeros(n)
     cols = [_arr(x) for x in (p0, p1, p2, r0, r1, r2)]
-    _finite_rows(*cols)
+    _finite_rows(*cols, pe, re_)
+    if np.any(pe < 0) or np.any(re_ < 0):
+        raise ValueError("extra error terms must be non-negative")
     worst = 0.0
-    for a0, a1, a2, b0, b1, b2 in zip(*cols, strict=True):
-        g = gci_capped(a0, a1, a2) + gci_capped(b0, b1, b2)
+    for a0, a1, a2, b0, b1, b2, ea, eb in zip(*cols, pe, re_, strict=True):
+        g = gci_capped(a0, a1, a2) + ea + gci_capped(b0, b1, b2) + eb
         diff = abs(a2 - b2)
         if math.isinf(g) or (g == 0.0 and diff > 0.0):
             return math.inf
@@ -306,7 +321,9 @@ METRICS: dict[str, Callable[..., float]] = {
     "max_col": lambda rows, pred, **_: max_col(_col(rows, pred)),  # the column is named by ``pred``
     "max_gci_capped": lambda rows, params=None, **_: max_gci_capped(*_levels(rows, params, "levels")),
     "max_gci_consistency": lambda rows, params=None, **_: max_gci_consistency(
-        *_levels(rows, params, "pred_levels"), *_levels(rows, params, "ref_levels")),
+        *_levels(rows, params, "pred_levels"), *_levels(rows, params, "ref_levels"),
+        p_extra=_col(rows, params["pred_extra"]) if (params or {}).get("pred_extra") else None,
+        r_extra=_col(rows, params["ref_extra"]) if (params or {}).get("ref_extra") else None),
     "topk_recall": lambda rows, pred, ref, params=None, **_: topk_recall(_col(rows, pred), _col(rows, ref),
                                                                           **(params or {})),
     "within_strata_spearman": lambda rows, pred, ref, strata, **_: within_strata_spearman(

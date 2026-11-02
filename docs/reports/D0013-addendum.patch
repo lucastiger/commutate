@@ -1,0 +1,36 @@
+--- a/project/decisions/D0013-o006-restatement-corrections.md	2026-11-02 02:58:26
++++ b/project/decisions/D0013-o006-restatement-corrections.md	2026-11-02 03:16:07
+@@ -69,3 +69,33 @@
+   different rates), so it would need research first.
+ - Loads of 85 K or 110 K: these are stricter than the decision O006 feeds. At 110 K, u_shaped_2 is about 0.55 K.
+ - Keeping A3b as a criterion: a non-converged cross-check would decide against the solver under test.
++
++## Addendum (2026-11-02, after re-reviews T0187/T0188)
++Both re-reviews of the D0013 text rejected it (project/reviews/OBJ-O006/T0187.json, T0188.json). Their common blocker
++was a jump in the lucky-grid branch. For a fixed coarse step d1, the GCI fell from 1.25|d1| to 0.3125|d1| at rho = 1/4,
++so faster convergence got a bound four times larger. On the development data at 60 K that jump, not the discretisation
++error, decided A4: side_by_side_6 die 11 came out at 0.49 K and T0181's u_shaped #B dies at 0.93 K.
++
++Founder answers of 2026-11-02 (texts: docs/reports/o006-criteria-change-D0013-addendum.patch and
++docs/reports/metrics-o006-D0013-addendum.patch):
++- **Estimator:** for 0 ≤ rho < 1/4, GCI = 1.25 max(|d2|, |d1|/4), which credits order 2 from the coarser step. It is
++  continuous in rho on [0, 1) and never below the order-1-capped form T0181 found conservative. On 52 development Tj max
++  sequences (T0170 benchmark and T0181 pairs, scaled to a 60 K rise) the maximum is 0.306 K, against 0.932 K with the
++  jump; the order-1 cap alone also gives 0.306 K.
++- **A3 coverage:** A3 also runs on A4's three fresh sealed-seed layouts, so it predicts on unseen geometry in all three
++  families. A scikit-fem finest-level solve takes about 2 minutes and 6.5 GB on this Mac.
++- **scikit-fem z error:** scikit-fem's estimate adds 1.25 |dTj_z|, the change in each die's Tj max when every layer's
++  through-thickness cell count is doubled on its level-1 lateral grid. Its benchmark refines only laterally; the
++  measured z sensitivity is about 0.02 K. The evaluator adds it (mfos.metrics max_gci_consistency, ref_extra).
++- **Review:** one more critic round before re-approval.
++
++Changes made by the founder session with these answers, which follow from the re-reviews:
++- dies_per_switch is written explicitly. The 30 % k variation is defined as k_max/k_min − 1 ≥ 0.30 within one layer
++  (T0173). The 0.5 K is stated as a discretisation bound on generator geometry, where accuracy is checked by the
++  cross-check.
++- meta['solver_tol'] (thermal_layout.gci_three_grid) must compute A4's estimator before E006 registration. That way
++  code_must_match carries the verified estimator to O003. Done by a builder task before T0165.
++- An A2 miss confined to the manufactured case, below K2 and within that case's own GCI, goes to a founder decision on
++  refinement, not straight to the fallback (T0188: a smooth-case discretisation shortfall is not a model error).
++- No kill criterion on A3 (T0187 suggested one). A gross disagreement cannot tell which solver is wrong, so it stays
++  INCONCLUSIVE and goes to diagnosis.

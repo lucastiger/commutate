@@ -168,7 +168,7 @@ def test_o006_gci_capped_branches_by_hand():
     assert mx.gci_capped(410.0, 410.5, 411.0) == math.inf  # stagnant: p_obs = 0 (D0012 divided by zero)
     assert mx.gci_capped(410.0, 410.0, 410.5) == math.inf  # d1 = 0 < |d2|
     assert mx.gci_capped(410.0, 410.5, 410.0) == math.inf  # oscillating with equal amplitude: rho = -1
-    assert mx.gci_capped(410.0, 410.3, 410.31) == pytest.approx(1.25 * 0.3)  # lucky grid: p_obs 4.9 (D0012 gave 0.0125 K)
+    assert mx.gci_capped(410.0, 410.3, 410.31) == pytest.approx(1.25 * 0.3 / 4)  # lucky grid, p_obs 4.9: order 2 from d1
     assert mx.gci_capped(410.0, 410.4, 410.2) == pytest.approx(1.25 * 0.4)  # oscillatory
     assert mx.gci_capped(410.0, 410.4, 410.5) == pytest.approx(1.25 * 0.1)  # rho 1/4: p_obs 2, capped at 1
     assert mx.gci_capped(410.0, 410.4, 410.6) == pytest.approx(1.25 * 0.2)  # rho 1/2: p_obs 1, 2^1 - 1 = 1
@@ -209,3 +209,32 @@ def test_o006_gci_recompute_functions_by_hand():
 def test_o006_gci_recompute_fail_closed(call):
     with pytest.raises(ValueError):
         call()
+
+
+def test_o006_gci_capped_continuous_and_never_below_order1_cap():
+    """D0013 addendum (re-reviews T0187/T0188): no jump at rho = 1/4, and never below the order-1-capped form T0181
+    found conservative; the side_by_side_6 die-11 case (rho 0.210) no longer sits at the 0.5 K threshold."""
+    d1 = 0.4
+    below = mx.gci_capped(410.0, 410.0 + d1, 410.0 + d1 + d1 * (0.25 - 1e-12))
+    at = mx.gci_capped(410.0, 410.0 + d1, 410.0 + d1 + d1 * 0.25)
+    assert below == pytest.approx(at, rel=1e-9) == pytest.approx(1.25 * d1 / 4)
+    for rho in np.linspace(0.0, 0.999, 200):
+        for d in (0.05, 0.4, -0.3):
+            f0, f1 = 400.0, 400.0 + d
+            f2 = f1 + rho * d
+            d2, r = f2 - f1, (f2 - f1) / (f1 - f0)  # the rounded differences gci_capped sees
+            p = min(math.log2(1 / r), 1.0) if r > 0 else 1.0
+            assert mx.gci_capped(f0, f1, f2) >= 1.25 * abs(d2) / (2.0 ** p - 1.0) * (1 - 1e-12)
+    assert mx.gci_capped(410.0, 410.396, 410.396 + 0.210 * 0.396) == pytest.approx(1.25 * 0.396 / 4)  # 0.124 K, not 0.495
+
+
+def test_o006_gci_consistency_extra_terms():
+    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65, "z": 0.025}]
+    params = {"pred_levels": ["a0", "a1", "a2"], "ref_levels": ["b0", "b1", "b2"]}
+    base = mx.compute("max_gci_consistency", rows, params=params)
+    with_z = mx.compute("max_gci_consistency", rows, params={**params, "ref_extra": "z"})
+    assert with_z == pytest.approx(0.05 / (0.25 + 1.25 * 0.05 + 0.025)) and with_z < base
+    with pytest.raises(ValueError):
+        mx.compute("max_gci_consistency", [{**rows[0], "z": -0.01}], params={**params, "ref_extra": "z"})
+    with pytest.raises(ValueError):
+        mx.compute("max_gci_consistency", [{**rows[0], "z": math.nan}], params={**params, "ref_extra": "z"})

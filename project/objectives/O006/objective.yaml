@@ -12,13 +12,14 @@ hypothesis:
     to LayerStack, on grids from its frozen grid rule: (a) reproduces frozen, converged reference solutions (the
     single- and two-layer rectangular flux-channel series of Muzychka, Culham & Yovanovich 2003, Cases 1a, 1b, 2 and 3; an
     N-layer Fourier series for the default stack with die attach and SiC die and several die-sized sources; a 3D
-    manufactured solution on the default stack geometry with patterned top copper and k varying by at least 30 %) within
-    1 % of each case's scale and within 0.05 K; (b) agrees with an independent scikit-fem solution on two generator
-    layouts with discrete die islands, die-attach footprints and patterned copper, at O003's operating point (hottest die
-    60 K above the coolant), within the two solvers' combined conservative discretisation estimates; and (c) has a
-    conservative discretisation estimate (grid convergence index with assumed order at most 1, D0012 and D0013) of at
-    most 0.5 K for every reported value, on those two layouts and on three fresh layouts, one per generator family, at
-    the same operating point.
+    manufactured solution on the default stack geometry with patterned top copper and k varying by at least 30 % within
+    one layer, k_max/k_min - 1 >= 0.30) within
+    1 % of each case's scale and within 0.05 K; (b) agrees with an independent scikit-fem solution on five generator
+    layouts with discrete die islands, die-attach footprints and patterned copper (two development layouts and three
+    fresh layouts, one per generator family), at O003's operating point (hottest die 60 K above the coolant), within the
+    two solvers' combined conservative discretisation estimates; and (c) has a conservative discretisation estimate (grid
+    convergence index with assumed order at most 1, D0012 and D0013) of at most 0.5 K for every reported value on those
+    layouts. On generator geometry the 0.5 K bounds the discretisation error; accuracy there is checked by (b).
   null_hypothesis: >-
     The in-house thermal L2 cannot be verified on generator geometry at O003's operating point to 0.5 K per Tj value (at
     most 1 K on a two-layout difference); D0006's fallback (scikit-fem) or another reference is required.
@@ -34,7 +35,7 @@ hypothesis:
     criteria.
   decision_if_pass: >-
     Use the verified thermal L2 (code_must_match on this evaluation) and its grid rule as the thermal reference of O003,
-    each run carrying its own GCI (meta['solver_tol']) into O003's Tj check; re-derive O002 against this verified
+    each run carrying its own GCI (meta['solver_tol'], computed with A4's estimator) into O003's Tj check; re-derive O002 against this verified
     precision before it uses the L2 as its reference; finalise O002 and O004 from the pilot notes and run one final
     draft review of each.
   decision_if_fail: >-
@@ -42,14 +43,19 @@ hypothesis:
     findings still inform O002, O003 and O004.
   decision_if_inconclusive: >-
     If A1, A2 and A4 are met and only A3 is not: diagnose which solver is wrong (mf-diagnosis, e.g. a finer scikit-fem
-    grid or a third method on the worst die) before any switch; founder decision. Otherwise same as fail.
+    grid or a third method on the worst die) before any switch; founder decision. If only A2 is missed, only on the
+    manufactured case, by less than K2's 0.25 K, and that case's own GCI is at least the miss: a discretisation shortfall
+    on a smooth case rather than a model error; founder decision on refining that case under a new experiment id
+    instead of the fallback. Otherwise same as fail.
 scope_in:
   - steady-state conduction; laterally uniform multilayer stacks and the default DBC stack plus die attach and SiC die
     with patterned top copper, die islands and die-attach footprints; constant and temperature-dependent k
   - the reference solutions named in the hypothesis, each implemented independently of the solver (own code, converged,
     frozen before the first solver comparison)
   - grids produced by the solver's grid rule (cells per layer thickness, lateral cell size relative to sources and copper
-    features), frozen in the solver before E006 registration and reused unchanged by O002 and O003
+    features), frozen in the solver before E006 registration and reused unchanged by O002 and O003; the solver's own
+    meta['solver_tol'] computes A4's estimator (thermal_layout.gci_three_grid identical to mfos.metrics.gci_capped,
+    tested) before E006 registration, so that code_must_match carries the verified estimator
   - O003's operating point on every generator layout (the A3 layouts and A4's fresh layouts), namely 65 °C coolant,
     h = 5000 W/(m² K), k(T), equal power per die fixed per layout before the comparison from an L2 level-0 solve so that
     the hottest die rises 60 K (+/- 1 K) above the coolant, then used unchanged by both solvers and on every grid
@@ -65,9 +71,9 @@ acceptance:
     - {id: A2, metric: E006.max_abs_err_K, comparator: "<=", threshold: 0.05, uncertainty: {use: point},
        description: "max over the same cases and points of |T_L2 - T_ref| in K, the N-layer and manufactured cases at O002-like rises of 60-110 K. These fields are corner-free (laterally uniform series, smooth manufactured solution), so A1/A2 measure the solver's accuracy where the exact answer is known; the corner-dominated error on generator geometry is bounded by A3 and A4"}
     - {id: A3, metric: E006.max_skfem_consistency, comparator: "<=", threshold: 1.0, uncertainty: {use: point},
-       description: "max over two generator layouts and every die of |Tj max (L2) - Tj max (scikit-fem)| / (GCI_L2 + GCI_skfem), each GCI by the A4 estimator from that solver's own three grids and recomputed from the grid values in the rows (recompute: mfos.metrics max_gci_consistency, params pred_levels and ref_levels naming the three grid columns of each solver, coarsest first; a divergent sequence on either side, or a zero summed GCI with a nonzero difference, gives +inf, A3 not met): the two independent solvers agree within their combined conservative error estimates; at O003's operating point (scope_in), with k(T); layouts by rule: the first DRC-valid side_by_side layout with 6 dies and the first u_shaped layout with 2 dies from dev seed 20261101; scikit-fem builds its mesh, materials and boundary conditions from the Layout with its own code (not the FV grid builder), on a refined conforming hexahedral grid, with its own Picard loop; its convergence is a sanity check (F5), not a criterion; covers die islands, die-attach footprints, copper edges and the baseplate overhang the analytic cases lack"}
+       description: "max over two generator layouts and every die of |Tj max (L2) - Tj max (scikit-fem)| / (GCI_L2 + GCI_skfem), each GCI by the A4 estimator from that solver's own three grids and recomputed from the grid values in the rows (recompute: mfos.metrics max_gci_consistency, params pred_levels and ref_levels naming the three grid columns of each solver, coarsest first, and ref_extra naming scikit-fem's through-thickness term; a divergent sequence on either side, or a zero summed estimate with a nonzero difference, gives +inf, A3 not met): the two independent solvers agree within their combined conservative error estimates; at O003's operating point (scope_in), with k(T); scikit-fem's estimate is its lateral three-grid GCI plus 1.25 |dTj_z|, the change in each die's Tj max when every layer's through-thickness cell count is doubled on its level-1 lateral grid (column skfem_z); layouts: the two development layouts (the first DRC-valid side_by_side layout with dies_per_switch = 6 and the first u_shaped layout with dies_per_switch = 2 from dev seed 20261101) and A4's three fresh sealed-seed layouts; per die, the detectable bias (summed estimate - |difference|) is reported; scikit-fem builds its mesh, materials and boundary conditions from the Layout with its own code (not the FV grid builder), on a refined conforming hexahedral grid, with its own Picard loop; its convergence is a sanity check (F5), not a criterion; covers die islands, die-attach footprints, copper edges and the baseplate overhang the analytic cases lack"}
     - {id: A4, metric: E006.max_conservative_gci_K, comparator: "<=", threshold: 0.5, uncertainty: {use: point},
-       description: "max over every reported L2 value of its grid convergence index, recomputed from the three grid values in the rows (recompute: mfos.metrics max_gci_capped, params levels naming the three grid columns, coarsest first); reported values: the finest-grid values of the reference cases, the dies of the two A3 layouts, and the dies of three fresh layouts (the first DRC-valid layout of each generator family from E006's sealed seed, dies per switch as drawn) at O003's operating point; with f0, f1, f2 the values at levels 0 (coarsest), 1 and 2 (finest) of the frozen rule (r = 2), d1 = f1 - f0, d2 = f2 - f1: if d1 = d2 = 0, GCI = 0; otherwise, with rho = d2 / d1 (rho = +inf when d1 = 0), (i) |rho| >= 1 (divergent or stagnant): GCI = +inf, A4 not met (not INVALID); (ii) -1 < rho < 0 (oscillatory) or 0 <= rho < 1/4 (observed order p_obs = ln(1/rho)/ln 2 above 2, a possibly lucky grid): GCI = 1.25 max(|d1|, |d2|); (iii) 1/4 <= rho < 1 (monotone convergence, p_obs <= 2): GCI = 1.25 |d2| / (2^p - 1), p = min(p_obs, 1). D0012: the order is capped at 1 because the bimaterial die-attach and copper-on-ceramic corners (exponents 0.84 and 0.52) make the observed order drift toward 1 under refinement; on every 2D corner case with a 21 M-cell reference (T0181) this estimator bounded the true error, where the previous rule did not. D0013: branches (i) and (ii) close the cases the D0012 wording left undefined (re-reviews T0184/T0185); 0.5 K per value bounds O003's two-layout difference by up to 1.0 K, half its +2 K budget, which O003 deducts in its Tj check. A solver that cannot meet A4 on affordable grids does not meet it (INCONCLUSIVE, the decision is then the fallback), rather than an INVALID run"}
+       description: "max over every reported L2 value of its grid convergence index, recomputed from the three grid values in the rows (recompute: mfos.metrics max_gci_capped, params levels naming the three grid columns, coarsest first); reported values: the finest-grid values of the reference cases, the dies of the two A3 layouts, and the dies of three fresh layouts (the first DRC-valid layout of each generator family from E006's sealed seed, dies per switch as drawn) at O003's operating point; with f0, f1, f2 the values at levels 0 (coarsest), 1 and 2 (finest) of the frozen rule (r = 2), d1 = f1 - f0, d2 = f2 - f1: if d1 = d2 = 0, GCI = 0; otherwise, with rho = d2 / d1 (rho = +inf when d1 = 0), (i) |rho| >= 1 (divergent or stagnant): GCI = +inf, A4 not met (not INVALID); (ii) -1 < rho < 0 (oscillatory): GCI = 1.25 max(|d1|, |d2|); (iii) 0 <= rho < 1/4 (observed order p_obs = ln(1/rho)/ln 2 above 2, a possibly lucky grid): GCI = 1.25 max(|d2|, |d1|/4), order 2 credited from the coarser step; (iv) 1/4 <= rho < 1 (monotone convergence, p_obs <= 2): GCI = 1.25 |d2| / (2^p - 1), p = min(p_obs, 1). The value is continuous in rho on [0, 1) and never below the order-1-capped form. D0012: the order is capped at 1 because the bimaterial die-attach and copper-on-ceramic corners (exponents 0.84 and 0.52) make the observed order drift toward 1 under refinement; on every 2D corner case with a 21 M-cell reference (T0181) this estimator bounded the true error, where the previous rule did not. D0013: branches (i)-(iii) close the cases the D0012 wording left undefined (re-reviews T0184/T0185), branch (iii) made continuous by the D0013 addendum (re-reviews T0187/T0188); 0.5 K per value bounds O003's two-layout difference by up to 1.0 K, half its +2 K budget, which O003 deducts in its Tj check. A solver that cannot meet A4 on affordable grids does not meet it (INCONCLUSIVE, the decision is then the fallback), rather than an INVALID run"}
   fail_any:
     - {id: K1, metric: E006.max_case_scaled_err, comparator: ">", threshold: 0.05, uncertainty: {use: point},
        description: "the solver misses some reference case by more than 5 % of its scale: a model or implementation error"}
@@ -93,7 +99,7 @@ failure_modes:
     response: "a leaked layout or seed is excluded from O002, O003 and O004 evaluation"
   - id: F5
     description: "The scikit-fem cross-check is itself not converged, so A3 cannot tell which solver is wrong"
-    detection: "gated sanity check: scikit-fem's own GCI by the A4 estimator (mfos.metrics max_gci_capped on its three grid columns) at most 0.5 K on every A3 die"
+    detection: "gated sanity check: scikit-fem's own estimate (mfos.metrics max_gci_capped on its three grid columns, plus its through-thickness term skfem_z as in A3) at most 0.5 K on every A3 die"
     response: "experimental failure (INVALID): refine the cross-check under a new experiment id, on this Mac first (docs/INFRASTRUCTURE.md memory rule), a burst VM only if it cannot fit; a failed cross-check is never a verdict on the L2"
 budget: {usd: 90, cpu_hours: 80, wall_days: 14}
 require_plan_approval: true
@@ -132,4 +138,12 @@ notes: >-
   by the evaluator from the grid values (new mfos.metrics functions max_gci_capped and max_gci_consistency: protected
   path, founder approval); A4 adds three fresh sealed-seed layouts, one per family; scikit-fem's convergence moved from
   A3b to sanity check F5 (INVALID, not a verdict); an A3-only failure leads to diagnosis, not an automatic switch;
-  F1's scikit-fem checks require scikit-fem's own GCI <= 0.01 K.
+  F1's scikit-fem checks require scikit-fem's own GCI <= 0.01 K. D0013 addendum (2026-11-02, after
+  re-reviews T0187/T0188, both reject): A4's lucky-grid branch made continuous (1.25 max(|d2|, |d1|/4); on 52
+  development Tj max sequences at 60 K the maximum is 0.306 K, against 0.932 K with the jump); A3 extended to A4's three
+  fresh sealed-seed layouts and scikit-fem's estimate includes its measured through-thickness term; dies_per_switch
+  written explicitly; meta['solver_tol'] aligned with A4's estimator before registration; the 30 % k variation defined;
+  0.5 K stated as a discretisation bound on generator geometry; an A2 miss confined to the manufactured case within its
+  own GCI is routed to a founder decision on refinement. No kill criterion on A3 (T0187 suggested one): a gross
+  cross-check disagreement cannot tell which solver is wrong, so it leads to diagnosis (INCONCLUSIVE), not to the
+  fallback. E006 also reports, as secondary values, GCI / |T_L2 - T_ref| per reference-case point.
