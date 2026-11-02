@@ -4,7 +4,7 @@ title: 'Thermal L2 core: steady finite-volume conduction on a non-uniform rectil
   (solvers/thermal_fv.py)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0148
 description: 'D0006 primary L2, steady part only (transient is out of scope). Implement src/moduleforge/solvers/thermal_fv.py;
@@ -157,3 +157,94 @@ history:
 - attempt: 2
   outcome: resumed
   summary: T0149-builder-20261101T162535-8e18
+- attempt: 2
+  outcome: agent_finished
+  summary: 'The full test suite now finishes in 676 s, under the 900 s gate timeout; attempt 1 failed
+    because it ran past 900 s. All DoD commands and `mfos gate --fast` pass. The repair is committed on
+    top of attempt 1 as da208fc.
+
+
+    **What caused the timeout.** I timed every test at a load average of about 7. The suite took about
+    956 s in total; T0149''s tests accounted for about 45 s. Without them it still took about 911 s, which
+    is already over the limit. Most of that comes from existing L2 EM tests: the slowest took 286 s and
+    the next 112 s. I didn''t touch those tests. Instead I cut T0149''s own cost:
+
+
+    - **Faster linear solver.** The thin, layer-conforming cells (10 µm solder cells under 0.4 mm lateral
+    cells) made pyamg''s default settings weak. A strength threshold of 0.05 with filtered prolongation
+    s'
+  report:
+    status: completed
+    summary: "The full test suite now finishes in 676 s, under the 900 s gate timeout; attempt 1 failed\
+      \ because it ran past 900 s. All DoD commands and `mfos gate --fast` pass. The repair is committed\
+      \ on top of attempt 1 as da208fc.\n\n**What caused the timeout.** I timed every test at a load average\
+      \ of about 7. The suite took about 956 s in total; T0149's tests accounted for about 45 s. Without\
+      \ them it still took about 911 s, which is already over the limit. Most of that comes from existing\
+      \ L2 EM tests: the slowest took 286 s and the next 112 s. I didn't touch those tests. Instead I\
+      \ cut T0149's own cost:\n\n- **Faster linear solver.** The thin, layer-conforming cells (10 µm solder\
+      \ cells under 0.4 mm lateral cells) made pyamg's default settings weak. A strength threshold of\
+      \ 0.05 with filtered prolongation smoothing cuts CG iterations from 50–130 to 15–25 per solve. I\
+      \ checked this on four different systems: layered at 0.3M and 1.2M cells, a module-like die-on-copper\
+      \ case at 0.5M, and an isotropic case. The 1e6-cell k(T) test went from 42 s to 11–13 s against\
+      \ its 60 s limit, and the whole thermal test file from about 49 s to 15–17 s. Results are unchanged\
+      \ (Tmax identical to 1e-9 K on the 1e6 case).\n- **Errors instead of silent garbage**, which both\
+      \ reviewers asked for:\n  - A group of cells with no conduction path to the cooled bottom face now\
+      \ raises `ValueError`. Before, it returned NaN or temperatures around 1e24 K.\n  - A linear solve\
+      \ that misses its tolerance now raises `RuntimeError`.\n  - Invalid flux keys such as `(2, 0)` are\
+      \ rejected instead of silently meaning zero flux.\n- **Rounding-floor acceptance.** On stiff systems\
+      \ (high conductivity contrast or extreme cell shapes) the residual stalls at the floating-point\
+      \ limit, about 2e-12 against the 1e-12 target, with both old and new settings. A strict check would\
+      \ wrongly raise on those, so the solver accepts the larger of the target and a cited rounding bound\
+      \ (Higham §3.5). It reports the threshold it actually met as `meta['linear_residual_accepted']`.\n\
+      \n**New tests** (18 in the file, 17 of them in the fast set):\n- An exact two-material field with\
+      \ fluxes on the box sides, the top, an open pocket and an enclosed void. It runs with both input\
+      \ forms and both solver paths, and it fails if one lateral flux sign is flipped, so it really checks\
+      \ signs and areas.\n- Floating-island and starved-solver error cases.\n- A stiff system with a 1e7\
+      \ conductivity contrast that is accepted at the rounding floor and still conserves energy to 1e-9.\n\
+      - Input-validation cases that each trigger their own check; one of attempt 1's cases never reached\
+      \ the check it was meant to test."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fv.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: 'uv run pytest -q tests --durations=12 (full suite after repair: 569 passed, 1 env-only failure,
+        675.6 s)'
+      exit_code: 1
+    - cmd: env -u UV_OFFLINE uv run pytest -q tests/mfos/test_sandbox.py
+      exit_code: 0
+    - cmd: 'uv run pytest -q tests/regression tests/mfos/ --durations=15 (pre-repair timing: 166.6 s,
+        same env-only failure)'
+      exit_code: 1
+    - cmd: 'uv run pytest -q -m slow tests/unit --durations=0 (pre-repair timing: 744.8 s)'
+      exit_code: 0
+    - cmd: 'uv run pytest -q -m ''not slow'' tests/unit --durations=15 (pre-repair timing: 44.3 s)'
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/thermal_fv.py
+    - tests/unit/solvers/test_thermal_fv.py
+    concerns:
+    - 'The full-suite margin depends on machine load, not on this task. The suite took 676 s now, but
+      before the repair the existing tests alone took about 911 s at a similar load average of about 7:
+      the slowest test varied between 157 s and 286 s across my runs, and test_solver_tol_usable_at_every_refinement[2]
+      between 81 s and 112 s. If the full gate runs while another agent is busy, it can time out again
+      whatever T0149 does. The founder may want to raise the full-gate timeout or rebalance the slow L2
+      EM tests.'
+    - In this sandbox, tests/mfos/test_sandbox.py::test_with_the_sandbox_disabled_nothing_changes fails
+      only because the session sets UV_OFFLINE=1. With it unset, the file passes 6/6. T0149 does not touch
+      tests/mfos.
+    - 'The new AMG threshold (0.05) was the best of the values I tried (0, 0.02, 0.05, 0.1, 0.25), and
+      the response is not monotone: 0.1 was worse than 0.05. It was best on all four systems I tried,
+      but grids very different from these (for example much more extreme cell shapes) may need re-tuning.
+      A solve that fails to converge now raises an error instead of returning a wrong field.'
+    - On stiff systems the residual check accepts the floating-point rounding bound. That bound is pessimistic,
+      roughly 10–40 times the actual floor, so a stiff solve can be accepted at a residual above 1e-12.
+      In the stiff test the energy balance was 4.6e-12, still far inside the 1e-9 target.
+    - 'Reviewer findings not addressed here, because they are about how the experiment (E006) reports
+      results rather than about this code: the energy balance reflects only linear-solve error, not discretisation
+      error; die-on-copper corners converge at about order 1.3–1.5; and source-mean values converge at
+      about order 1.7.'

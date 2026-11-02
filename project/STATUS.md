@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T01:19:47+00:00 from repository state — do not edit_
+_generated 2026-11-02T01:29:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0062** [protected_change] T0154: merge needs founder approval
@@ -13,7 +13,7 @@ _generated 2026-11-02T01:19:47+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $27.87/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $30.58/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,20 +23,18 @@ _generated 2026-11-02T01:19:47+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 17 | $27.87 | 535242 | 325895 | 22 | 0 |
+| O006 | 18 | $30.58 | 585506 | 350484 | 23 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 119, failed: 3, needs_founder: 1, running: 2, todo: 5
+cancelled: 29, done: 119, failed: 3, needs_founder: 1, review: 1, running: 2, todo: 6
 
-- T0149 `running` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
+- T0149 `review` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
 - T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 1)
 - T0154 `needs_founder` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
+- T0160 `running` critic/review: Review T0149 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-01T23:59:05+00:00 run_finished {"run": "T0158-critic-20261101T155039-10fb", "status": "completed", "cost": 1.732983, "subtype": "success", "report": "structured_output"}
-- 2026-11-01T23:59:09+00:00 run_started {"run": "T0159-critic-20261101T155909-04e5", "task": "T0159", "role": "critic", "session": "bb25986f-ebcd-4566-b365-c7206fdc0cbc"}
-- 2026-11-02T00:10:27+00:00 run_finished {"run": "T0159-critic-20261101T155909-04e5", "status": "completed", "cost": 1.86505, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T00:25:33+00:00 task_failed_attempt {"task": "T0149", "signal": "gate_failed", "action": "repair"}
 - 2026-11-02T00:25:35+00:00 run_started {"run": "T0149-builder-20261101T162535-8e18", "task": "T0149", "role": "builder", "session": "52e3ed90-fcc9-41a3-b0c4-c8fadc196c7c"}
 - 2026-11-02T00:25:59+00:00 sleep_detected {"gap_s": 933, "runs_extended": 2}
@@ -49,3 +47,6 @@ cancelled: 29, done: 119, failed: 3, needs_founder: 1, running: 2, todo: 5
 - 2026-11-02T01:19:04+00:00 verified {"task": "T0154"}
 - 2026-11-02T01:19:44+00:00 inbox_opened {"id": "I0062", "kind": "protected_change", "subject": "T0154: merge needs founder approval"}
 - 2026-11-02T01:19:47+00:00 run_started {"run": "T0151-scientist-20261101T171947-55ab", "task": "T0151", "role": "scientist", "session": "805d7720-c3f5-4741-9d39-d94522c974a3"}
+- 2026-11-02T01:28:23+00:00 run_finished {"run": "T0149-builder-20261101T163001-621c", "status": "completed", "cost": 2.713318, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T01:29:32+00:00 verified {"task": "T0149"}
+- 2026-11-02T01:29:35+00:00 run_started {"run": "T0160-critic-20261101T172935-b7f4", "task": "T0160", "role": "critic", "session": "984b6a20-027c-4d02-a666-57168b664548"}
