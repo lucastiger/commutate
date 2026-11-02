@@ -1305,3 +1305,5 @@
 {"ts": "2026-11-02T06:51:40+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0081", "kind": "decision", "subject": "[O006] O006: hold T0165 (E006 design) until your A3/A4 decision on T0181 is recorded"}
 {"ts": "2026-11-02T06:51:40+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O006", "created": [], "dropped": 0}
 {"ts": "2026-11-02T06:51:43+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0181-scientist-20261101T225143-8880", "task": "T0181", "role": "scientist", "session": "466b062b-2750-461d-bed7-35e9eb1d2fa2"}
+{"ts": "2026-11-02T06:52:19+00:00", "event": "task_held", "actor": "founder", "task": "T0165", "reason": "I0081: hold until A3/A4 decision"}
+{"ts": "2026-11-02T06:52:20+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0081", "status": "answered", "note": "Founder (2026-11-02): option 2 - hold T0165 until the A3/A4 decision is recorded after reading research/notes/o006-gci-differences.md (T0181). T0165 set to needs_founder; release with mfos task retry T0165.", "by": "session"}

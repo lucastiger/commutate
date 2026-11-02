@@ -4,7 +4,7 @@ title: 'E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity chec
   full-resolution F1 reference pre-check, smoke dev rows'
 type: design_experiment
 agent: scientist
-status: todo
+status: needs_founder
 depends_on:
 - T0164
 - T0150
@@ -191,3 +191,7 @@ history:
 - outcome: founder_dependency_added
   summary: waits for T0181 (GCI of differences, estimator check) and the founder's A3/A4 decision
   at: '2026-11-02T06:36:44+00:00'
+- outcome: founder_hold
+  summary: Held until the founder records the O006 A3/A4 decision after T0181's note (I0081, option 2).
+    Release with `uv run mfos task retry T0165`.
+  at: '2026-11-02T06:52:19+00:00'

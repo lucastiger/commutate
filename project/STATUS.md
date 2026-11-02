@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T06:51:43+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:52:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -29,14 +29,13 @@ _generated 2026-11-02T06:51:43+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 145, failed: 3, running: 2, todo: 2
+cancelled: 30, done: 145, failed: 3, needs_founder: 1, running: 2, todo: 1
 
+- T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
 - T0167 `running` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 1)
 - T0181 `running` scientist/investigate: Before E006: GCI of Tj differences between same-stratum layouts, and estimator conservativeness at the singular die-attach corner (attempt 1)
 
 ## Recent events
-- 2026-11-02T06:36:36+00:00 inbox_opened {"id": "I0079", "kind": "budget_increase", "subject": "daily LLM budget reached"}
-- 2026-11-02T06:36:44+00:00 task_amended {"task": "T0181", "reason": "DoD/touches/depends_on set"}
 - 2026-11-02T06:36:44+00:00 task_amended {"task": "T0165", "reason": "depends on T0181"}
 - 2026-11-02T06:38:31+00:00 merged {"task": "T0172"}
 - 2026-11-02T06:38:50+00:00 inbox_resolved {"id": "I0077", "status": "approved", "note": "Approved; A4 estimator flaw at low observed order (T0178/T0179) goes to a founder criteria decision.", "by": "hum
@@ -50,3 +49,5 @@ cancelled: 30, done: 145, failed: 3, running: 2, todo: 2
 - 2026-11-02T06:51:40+00:00 inbox_opened {"id": "I0081", "kind": "decision", "subject": "[O006] O006: hold T0165 (E006 design) until your A3/A4 decision on T0181 is recorded"}
 - 2026-11-02T06:51:40+00:00 plan_applied {"objective": "O006", "created": [], "dropped": 0}
 - 2026-11-02T06:51:43+00:00 run_started {"run": "T0181-scientist-20261101T225143-8880", "task": "T0181", "role": "scientist", "session": "466b062b-2750-461d-bed7-35e9eb1d2fa2"}
+- 2026-11-02T06:52:19+00:00 task_held {"task": "T0165", "reason": "I0081: hold until A3/A4 decision"}
+- 2026-11-02T06:52:20+00:00 inbox_resolved {"id": "I0081", "status": "answered", "note": "Founder (2026-11-02): option 2 - hold T0165 until the A3/A4 decision is recorded after reading research/notes/o00
