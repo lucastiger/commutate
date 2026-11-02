@@ -14,8 +14,19 @@ description: 'Review T0160 of T0149: (1) a prescribed flux on the z=0 Robin face
   before the E006 experiment runs.'
 context_files: []
 deliverables: []
-touches: []
-definition_of_done: []
+touches:
+- src/moduleforge/solvers/thermal_fv.py
+- tests/unit/solvers/test_thermal_fv.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fv.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
 experiment: null
 risk: medium
 model: null
@@ -35,4 +46,7 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- outcome: founder_dod_added
+  summary: DoD and touches added per I0067 (planner T0162 suggestion)
+  at: '2026-11-02T02:17:33+00:00'

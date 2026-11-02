@@ -10,9 +10,15 @@ description: Open each cited source (Incropera Tables A.1/A.2, Slack 1973, Hiros
   find a primary SAC305 k(T) source. Write research/notes/o006-kT-citations.md; list every discrepancy
   with the corrected value. Must finish before pilot P1 (thermal envelope) relies on the laws.
 context_files: []
-deliverables: []
-touches: []
-definition_of_done: []
+deliverables:
+- research/notes/o006-kT-citations.md
+touches:
+- research/notes/o006-kT-citations.md
+- project/memory/literature/**
+definition_of_done:
+- cmd: null
+  exists: research/notes/o006-kT-citations.md
+  timeout_s: 900
 experiment: null
 risk: medium
 model: null
@@ -32,4 +38,7 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- outcome: founder_dod_added
+  summary: DoD and touches added per I0067 (planner T0162 suggestion)
+  at: '2026-11-02T02:17:33+00:00'
