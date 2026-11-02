@@ -34,66 +34,86 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   No hand-built or tuned grids.
 
 
-  (2) Rows.
+  (2) Rows. Every reported value carries its three grid values (levels 0, 1, 2 of the frozen rule, coarsest
+  first)
 
-  - Case rows: kind=case, case, point, grid_level, is_finest, T_l2, T_ref, case_scale, rich_est, conv_type,
+  in the shared columns f_lv0, f_lv1, f_lv2, with is_finest=true on the row that reports it (the evaluator
+  recomputes
 
-  p_obs, dT_const_k. rich_est is A4''s order-capped GCI (D0012), from the three grids of the frozen rule
-  (r = 2),
-
-  with f0, f1, f2 the values at levels 0 (coarsest), 1 and 2 (finest): GCI = 1.25 |f2 - f1| / (2^p - 1),
-
-  p = min(p_obs, 1), when the sequence is monotone; GCI = 1.25 max(|f2 - f1|, |f1 - f0|) when it is oscillatory
-
-  or non-monotone. conv_type records which (monotone / oscillatory / nonmonotone). dT_const_k is the constant-k
-
-  solve at the layer-mean temperature: the same units and datum as T_l2, and identical to it on constant-k
-  cases.
+  each GCI from them; the runner must not supply its own GCI for judging).
 
 
-  - Cross-check rows: kind=crosscheck, is_finest=true, layout, die, tj_l2, tj_skfem, rich_est (L2), conv_type,
+  - Case rows: kind=case, case, point, grid_level, is_finest, T_l2 (= f_lv2 on finest rows), T_ref, case_scale,
 
-  skfem_rich_est, skfem_conv_type, gci_sum (= rich_est + skfem_rich_est). Both GCIs by the same A4 estimator,
-  each
+  f_lv0, f_lv1, f_lv2, gci, a4_branch, p_obs, dT_const_k. gci and a4_branch are reported with mfos.metrics.gci_capped
 
-  from three grids of its own solver; tj_l2 and tj_skfem are the finest-level values.
+  (branches as in A4). dT_const_k is the constant-k solve at the layer-mean temperature: the same units
+  and datum as
 
-
-  - A3 layouts follow A3''s rule (generate_layouts dev seed 20261101), with fingerprints frozen in config.
-  Use 65 C coolant, h = 5000 W/(m2 K), k(T), and the power per die recorded by T0150''s benchmark, the
-  same for both solvers.
+  T_l2, and identical to it on constant-k cases.
 
 
-  (3) Metrics, exactly the five of the objective as restated by D0012 (project/decisions/D0012-o006-a3-a4-criteria-change.md):
+  - Cross-check rows (A3): kind=crosscheck, is_finest=true, layout, die, power_w, tj_l2 (= f_lv2), f_lv0,
+  f_lv1, f_lv2,
 
-  max_case_scaled_err (A1, K1), max_abs_err_K (A2, K2), max_skfem_consistency (A3), max_skfem_gci_K (A3b)
-  and
+  gci, a4_branch, tj_skfem (= skfem_lv2), skfem_lv0, skfem_lv1, skfem_lv2, skfem_gci, skfem_a4_branch.
+  Both solvers
 
-  max_conservative_gci_K (A4). All are point values, written without a CI, at level 0.0. Recompute entries
-  use the
-
-  existing mfos.metrics functions:
+  use three grids of their own refinement by r = 2.
 
 
-  - A1: max_scaled_abs_err, pred T_l2, ref T_ref, scale case_scale, where {kind: case, is_finest: true}.
+  - Fresh-layout rows (A4): kind=fresh, is_finest=true, layout, family, dies_per_switch, die, power_w,
+  tj_l2 (= f_lv2),
+
+  f_lv0, f_lv1, f_lv2, gci, a4_branch. Layouts: the first DRC-valid layout of each generator family from
+  the run''s
+
+  sealed seed (spec sealed_seed: true); development rows use a dev seed, never the sealed one.
+
+
+  - Operating point for every generator layout (A3 and fresh), per O006 scope_in: 65 C coolant, h = 5000
+  W/(m2 K), k(T),
+
+  equal power per die fixed per layout from an L2 level-0 solve so that the hottest die rises 60 K (+/-
+  1 K) above the
+
+  coolant, then used unchanged by both solvers and on every grid; record power_w. A3 layouts follow A3''s
+  rule
+
+  (generate_layouts dev seed 20261101), with fingerprints frozen in config.
+
+
+  (3) Metrics, exactly the four of O006 as restated by D0012 and D0013
+
+  (project/decisions/D0013-o006-restatement-corrections.md): max_case_scaled_err (A1, K1), max_abs_err_K
+  (A2, K2),
+
+  max_skfem_consistency (A3) and max_conservative_gci_K (A4). All are point values, written without a
+  CI, at level 0.0.
+
+  The runner computes them with the same mfos.metrics functions the evaluator uses. Recompute entries:
+
+
+  - A1: max_scaled_abs_err, pred T_l2, ref T_ref, params {scale: case_scale}, where {kind: case, is_finest:
+  true}.
 
 
   - A2: max_abs_err, pred T_l2, ref T_ref, where {kind: case, is_finest: true}.
 
 
-  - A3: max_scaled_abs_err, pred tj_l2, ref tj_skfem, scale gci_sum, where {kind: crosscheck}.
+  - A3: max_gci_consistency, params {pred_levels: [f_lv0, f_lv1, f_lv2], ref_levels: [skfem_lv0, skfem_lv1,
+
+  skfem_lv2]}, where {kind: crosscheck}.
 
 
-  - A3b: max_col on skfem_rich_est, where {kind: crosscheck}.
+  - A4: max_gci_capped, params {levels: [f_lv0, f_lv1, f_lv2]}, where {is_finest: true} (case, cross-check
+  and fresh rows).
 
 
-  - A4: max_col on rich_est, where {is_finest: true} (every reported L2 value: the finest case rows and
-  the
+  A diverging sequence gives +inf, which means the criterion is not met. That is a legitimate outcome,
+  not an error: do
 
-  cross-check rows).
-
-
-  There is no 0.025 K gate and no new mfos.metrics function to wait for (max_abs_err_gated is not used).
+  not catch it, clip it or replace it.
 
 
   (4) Null baseline: kind=column, column dT_const_k, applies_to the A1 and A2 metrics (F3).
@@ -113,6 +133,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - N-layer against scikit-fem on the laterally uniform default stack within 0.02 K at a 60-110 K rise;
 
+
+  - in both scikit-fem agreement checks (Case 2, uniform stack), scikit-fem''s own GCI at most 0.01 K
+  (refine until it is).
+
   - the manufactured case''s numeric check;
 
   - constant refinement ratio;
@@ -121,7 +145,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - Picard max|dT| < 1e-4 K;
 
-  - skfem GCI reported.
+  - skfem GCI reported; F5: scikit-fem''s own GCI (mfos.metrics.gci_capped on skfem_lv0..2) at most 0.5
+  K on every
+
+  A3 die, a gated sanity check (INVALID if missed, never a verdict on the L2).
 
   Case 1a/1b converged values against scikit-fem: INFO only, not gated.
 
@@ -144,12 +171,15 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   - timeout_min and cpu_hours_est from the T0150/T0152 benchmark timings (objective cap 80 CPU-h).
 
 
-  (9) research/notes/o006-e006-design.md: how each metric maps to A1-A4/K1/K2, the point list, F1-F3 coverage,
-  and the runtime/memory plan. Treat any refcheck failure as an F1 reference problem: report it and do
-  not loosen it. Founder amendment 2026-11-02 (review T0173 of T0153): define O006''s ''k varying by at
-  least 30 %'' as k_max/k_min - 1 >= 0.30 within one layer of the manufactured case (T0153 reaches 0.3227
-  in Al2O3); record this reading, the measured value and its margin in the E006 spec, and report the k_max-normalised
-  value (0.244) alongside. This fixes the interpretation before registration.'
+  (9) research/notes/o006-e006-design.md: how each metric maps to A1-A4/K1/K2 and F5, the operating-point
+  powers,
+
+  the fresh-layout rule, the point list, F1-F3 coverage, and the runtime/memory plan. Treat any refcheck
+  failure as an F1 reference problem: report it and do not loosen it. Founder amendment 2026-11-02 (review
+  T0173 of T0153): define O006''s ''k varying by at least 30 %'' as k_max/k_min - 1 >= 0.30 within one
+  layer of the manufactured case (T0153 reaches 0.3227 in Al2O3); record this reading, the measured value
+  and its margin in the E006 spec, and report the k_max-normalised value (0.244) alongside. This fixes
+  the interpretation before registration.'
 context_files:
 - project/objectives/O006/objective.yaml
 - experiments/specs/E001.yaml
@@ -165,6 +195,10 @@ context_files:
 - research/notes/o006-manufactured-solution.md
 - benchmarks/results/thermal_l2_convergence.json
 - benchmarks/results/thermal_fem_convergence.json
+- project/decisions/D0012-o006-a3-a4-criteria-change.md
+- project/decisions/D0013-o006-restatement-corrections.md
+- project/reviews/OBJ-O006/T0184.json
+- project/reviews/OBJ-O006/T0185.json
 deliverables:
 - experiments/drafts/E006.yaml
 - experiments/runners/e006_run.py
@@ -198,7 +232,8 @@ definition_of_done:
 - cmd: uv run ruff check .
   exists: null
   timeout_s: 300
-- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_skfem_gci_K','max_conservative_gci_K','gci_sum'])"
+- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_conservative_gci_K','max_gci_capped','max_gci_consistency','f_lv0','sealed_seed']);
+    assert 'max_skfem_gci_K' not in s"
   exists: null
   timeout_s: 120
 experiment: E006
@@ -238,3 +273,6 @@ history:
 - outcome: founder_brief_amended
   summary: metrics, rows and GCI estimator aligned with D0012 (I0083 option 1)
   at: '2026-11-02T10:26:50+00:00'
+- outcome: founder_brief_amended
+  summary: rows, metrics, operating point, fresh layouts and F5 aligned with D0013
+  at: '2026-11-02T11:02:45+00:00'

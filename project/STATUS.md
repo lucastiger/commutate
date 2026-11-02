@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T11:01:55+00:00 from repository state — do not edit_
+_generated 2026-11-02T11:03:06+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -24,19 +24,17 @@ _generated 2026-11-02T11:01:55+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 52 | $96.03 | 1885522 | 1024861 | 82 | 0 |
+| O006 | 54 | $96.03 | 1885522 | 1024861 | 82 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 151, failed: 3, needs_founder: 1, todo: 1
+cancelled: 30, done: 151, failed: 3, needs_founder: 1, running: 2, todo: 1
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
+- T0187 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
+- T0188 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T10:21:26+00:00 plan_applied {"objective": "O006", "created": [], "dropped": 0}
-- 2026-11-02T10:21:29+00:00 run_started {"run": "T0184-critic-20261102T022129-b97a", "task": "T0184", "role": "critic", "session": "16ce9aac-cda2-4256-ae51-a301171e3f38"}
-- 2026-11-02T10:24:54+00:00 run_finished {"run": "T0167-scientist-20261102T011832-311a", "status": "completed", "cost": 2.298063, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T10:26:19+00:00 verified {"task": "T0167"}
 - 2026-11-02T10:26:50+00:00 task_amended {"task": "T0165", "reason": "D0012 alignment (I0083)"}
 - 2026-11-02T10:26:57+00:00 inbox_resolved {"id": "I0083", "status": "approved", "note": "Founder (2026-11-02): option 1. T0165's brief amended in place to D0012: section (3) lists the five metrics with 
 - 2026-11-02T10:27:54+00:00 inbox_opened {"id": "I0084", "kind": "protected_change", "subject": "T0167: merge needs founder approval"}
@@ -48,3 +46,7 @@ cancelled: 30, done: 151, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-02T10:32:57+00:00 inbox_resolved {"id": "I0085", "status": "approved", "note": "Founder (2026-11-02): no replan. T0186 confirmed the remaining O006 path (T0165 held, then T0166); T0167's findin
 - 2026-11-02T10:33:41+00:00 run_finished {"run": "T0185-critic-20261102T022756-a99b", "status": "completed", "cost": 1.516586, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T11:01:54+00:00 budget_override {"objective": "O006", "usd": 140.0}
+- 2026-11-02T11:02:45+00:00 task_amended {"task": "T0165", "reason": "D0013 alignment"}
+- 2026-11-02T11:02:45+00:00 objective_draft_review {"objective": "O006", "ref": "842f361ba6ca6edf91bbe341d0487a186767f857", "tasks": ["T0187", "T0188"]}
+- 2026-11-02T11:03:05+00:00 run_started {"run": "T0187-critic-20261102T030305-5888", "task": "T0187", "role": "critic", "session": "aea205b3-2cb5-4fba-8dfd-e85e8ee095a7"}
+- 2026-11-02T11:03:06+00:00 run_started {"run": "T0188-critic-20261102T030306-c32e", "task": "T0188", "role": "critic", "session": "6270f107-875e-4bd9-9cd2-8ff99cf96510"}
