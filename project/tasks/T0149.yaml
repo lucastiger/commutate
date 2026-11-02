@@ -4,7 +4,7 @@ title: 'Thermal L2 core: steady finite-volume conduction on a non-uniform rectil
   (solvers/thermal_fv.py)'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on:
 - T0148
 description: 'D0006 primary L2, steady part only (transient is out of scope). Implement src/moduleforge/solvers/thermal_fv.py;
@@ -57,12 +57,13 @@ model: null
 budget_usd: 8.0
 max_turns: 110
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0149-thermal-l2-core-steady-finite-volume-con
 pr: null
 runs:
 - T0149-builder-20261101T150648-59a5
+- T0149-builder-20261101T162535-8e18
 created_by: planner:T0147
 created_at: '2026-11-01T21:49:21+00:00'
 protected_approved: false
@@ -145,3 +146,10 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- attempt: 1
+  outcome: gate_failed
+  summary: the full gate fails before merge (high/critical risk)
+  failure_output: 'FAIL uv run pytest -q tests
+
+    TIMEOUT after 900s'
+  at: '2026-11-02T00:25:33+00:00'

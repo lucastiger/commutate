@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Linear solve failure is reported in meta but never raised",
+      "detail": "The docstring says the relative residual <= linear_tol is 'verified on the true residual'. In practice `_Solver.solve` returns after 6 CG restarts whatever residual it has reached, and `solve_steady` polishes once more and then returns. There is no exception or warning. Because energy_balance equals the sum of the residual, it can stay tiny while the residual norm is many orders above tolerance, so a caller who checks only energy_balance (the F2 gate) will not see the failure.",
+      "evidence": "24^3 cells, k contrast 1e9 across random materials, cell aspect ratios about 1e4: the solver returned linear_residual = 4.2e-9 (tolerance 1e-12) and energy_balance = 9e-12 after 3600 CG iterations, with no error.",
+      "suggested_check": "Raise, or at least warn, when the final residual exceeds linear_tol; E006 should gate on meta['linear_residual'], not only on energy_balance.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Observed order is about 4/3, not 2, on die-on-copper geometry with re-entrant corners",
+      "detail": "The scheme is second order on smooth problems, but where a die sits on copper with a void around it, the die mean, max and centroid converge at p_obs of about 1.2 to 1.5. Control runs place the cause in the r^(2/3) re-entrant-corner singularity, not in the implementation: removing the corner restores order 2 at the centroid, and the constant-k corner case gives about 1.34. This is not a defect of this deliverable. It does mean that O006 A4's GCI will often fall into the Fs=3 branch (p_obs outside [1.5, 2.5]) on generator layouts, and that 'second order' should not be assumed for per-die values.",
+      "evidence": "Die-on-copper, k(T), r = 1, 2, 4, 8: die-mean p_obs 1.39, 1.40; max 1.20, 1.64. Constant-k corner case: mean p_obs 1.34, 1.34. No-void control: centroid 1.98, copper point 1.93.",
+      "suggested_check": "Use grids fine enough, or graded toward die edges, that the GCI stays at or below 0.025 K under Fs=3.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Energy balance is tautological for discretisation errors",
+      "detail": "The docstring states it openly: energy_balance equals the sum of the linear-system residual, so it can expose only linear-solve error, never assembly or discretisation error. O006 F2 lists energy balance as a gate. It is a genuine check only of the linear solve, and q_in comes from the same F array as the right-hand side.",
+      "evidence": "Every run I made gave energy_balance between 1e-16 and 1e-14, including coarse grids with errors of 0.5 K.",
+      "suggested_check": "In E006, also compare q_in with an independently integrated source and flux, as test_volumetric_gauss_integration does for volumetric power.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "One validation test is vacuous for its flux-array branch",
+      "detail": "In test_input_validation, the second pytest.raises case passes n_gauss=2, which raises before the flux dict is examined. Its flux array is also on an exposed face, so it would not raise anyway. Only the n_gauss guard is exercised there. The third case does cover the non-exposed flux-array check.",
+      "evidence": "Lines 696-698 of the test file.",
+      "suggested_check": "Split the case so that each guard is triggered on its own.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Invalid flux-dict keys are silently ignored",
+      "detail": "flux.get((axis, sign)) ignores keys outside {0,1,2}x{-1,+1}. A typo such as ('z', 1) or (2, 0) quietly gives zero flux.",
+      "evidence": "Code inspection, lines 346-352.",
+      "suggested_check": "Reject unknown keys.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: tests/unit/solvers/test_thermal_fv.py gave 11 passed, including the slow 1M-cell test; the fast unit suite gave 361 passed; ruff check: all checks passed.",
+    "My own sympy manufactured solution, independent of the author's: k(T) = 150 (T/300)^-1.49 with about 40% k variation, h(x,y) varying in space, fluxes on all six outer faces through the 5-argument callable form, an interior void pocket open to the top (re-entrant corners, fluxes on void faces), and piecewise non-uniform grids with abrupt spacing jumps. Cell max-norm error orders were 1.92, 1.96, 1.98 without the void and 1.88, 1.95, 1.97 with it; the pocket-floor surface reached order 2.00; surface area mean and max orders were 2.00 and 2.08-2.15. That covers the AMG path up to 737k cells.",
+    "1D two-material k(T) case (SiC law plus a second power law) checked against an exact Kirchhoff transform with flux continuity at the interface: top and cell max errors were exactly second order (2.00) on non-uniform grids.",
+    "Recomputed the author's Kirchhoff test: signed errors 1.36e-3, 3.40e-4, 8.5e-5, 2.1e-5 K, order 2.00; the Picard tolerance contributes under 3e-7 K. The author's test bound (3e-4) is looser than the real behaviour, which is confirmed second order.",
+    "Compared against an independent analytic method: a 3000x3000-term cosine-series spreading solution for a finite plate (rectangular top source, Robin bottom, adiabatic sides), with truncation verified by halving the terms. The FV centroid error went 0.19, 0.051, 0.013, 0.0033 K (order 1.87, 1.95, 1.98); source-mean order was 1.59-1.73, rising toward 2 with the log factor expected from the flux jump.",
+    "Die-on-copper geometry with a level change, plus control runs (no void; constant-k corner): the reduced order of about 1.3-1.4 traces to the re-entrant-corner singularity, not to the surface reconstruction or the k(T) handling.",
+    "Realistic 7-layer default stack with die attach, SiC die, patterned copper, voids and k(T) at 353k cells: 5 Picard iterations, linear residual 7.5e-13, energy balance 7.5e-15, 6.2 s.",
+    "Adversarial conditioning (k contrast 1e9, aspect ratio about 1e4): the solver returned an unconverged residual without raising.",
+    "Code review of face conductance (series half-cells), the Robin conductance and T_inf_eff, the exposed-face slicing, the Gauss weights and points for volume, face and Robin integrals, the surface reconstruction T_c + q dz/2k, and the exactness of the bilinear mean and max in SurfaceField.mean_max."
+  ],
+  "caveats": [
+    "I could not see the task's own definition of done or the planner's scope. The packet names only the deliverables and three commands. D0006 also asks for things not in this file: a fixed-temperature sink, transient conduction, per-die max/mean/spread reports, meta['solver_tol'], and a frozen grid rule. The module docstring scopes transient out; I take 'completely' to mean the steady core only.",
+    "Second-order convergence holds for smooth fields, including k(T), voids, varying h and non-uniform grids. On module geometry with re-entrant die-on-copper corners, per-die values converge at about order 4/3, so Richardson/GCI estimates there will use the conservative branch.",
+    "energy_balance checks only the linear solve, not the discretisation. Callers should also check meta['linear_residual'], because a failed linear solve is not raised.",
+    "At level changes (die top next to copper), surface point values in the die's outer half-cells use zero-order extrapolation, so they are only first-order accurate. Area means and the die-centre maximum are unaffected to leading order."
+  ]
+}
