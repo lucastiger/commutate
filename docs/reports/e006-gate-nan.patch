@@ -1,0 +1,35 @@
+diff --git a/experiments/runners/e006_run.py b/experiments/runners/e006_run.py
+index 2e42e90..916ff4b 100644
+--- a/experiments/runners/e006_run.py
++++ b/experiments/runners/e006_run.py
+@@ -57,6 +57,15 @@ NAN = float("nan")
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ config / helpers
++
++def _gate_max(values) -> float:
++    """Maximum for a sanity gate; +inf if any value is NaN or infinite, so the gate fails instead of Python's max()
++    silently skipping a NaN that is not the first entry (review T0197 of T0196)."""
++    vals = [float(v) for v in values]
++    if not vals or not all(math.isfinite(v) for v in vals):
++        return math.inf
++    return max(vals)
++
+ def load_config() -> dict:
+     env = os.environ.get("MFOS_SPEC_JSON")
+     if env:
+@@ -802,10 +811,10 @@ def full() -> int:
+         run.metric("n_oscillatory_values", sec["n_oscillatory"], level=0.0)
+         run.metric("n_non_asymptotic_values", sec["n_non_asymptotic"], level=0.0)
+         xc = [r for r in rows if r["kind"] == "crosscheck"]
+-        f5 = max(r["skfem_estimate"] for r in xc)
+-        eb = max(e for _, e in st.energy)
+-        pic = max(p for _, p, _ in st.picard)
+-        cal = max(abs(r["calibration_rise_K"] - cfg["target_rise_K"]) for r in xc)
++        f5 = _gate_max(r["skfem_estimate"] for r in xc)
++        eb = _gate_max(e for _, e in st.energy)
++        pic = _gate_max(p for _, p, _ in st.picard)
++        cal = _gate_max(abs(r["calibration_rise_K"] - cfg["target_rise_K"]) for r in xc)
+         for c in ck.items:
+             run.sanity(c["name"], c["passed"], value=c["value"] if isinstance(c["value"], (int, float)) else None,
+                        threshold=c["threshold"] if isinstance(c["threshold"], (int, float)) else None,
