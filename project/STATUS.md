@@ -1,9 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T18:34:20+00:00 from repository state — do not edit_
+_generated 2026-11-02T18:40:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
-- **I0091** [budget_increase] daily LLM budget reached
+- **I0092** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -32,8 +32,6 @@ cancelled: 30, done: 161, failed: 3, todo: 2
 
 
 ## Recent events
-- 2026-11-02T15:45:56+00:00 loop_started {"pid": 30226}
-- 2026-11-02T16:38:11+00:00 run_finished {"run": "T0165-scientist-20261102T073813-270d", "status": "completed", "cost": 4.732292, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T16:41:02+00:00 verified {"task": "T0165"}
 - 2026-11-02T16:41:05+00:00 run_started {"run": "T0194-critic-20261102T084105-54db", "task": "T0194", "role": "critic", "session": "e65e66b5-a516-4a96-8ed8-c6f85937b4e2"}
 - 2026-11-02T16:41:07+00:00 run_started {"run": "T0195-critic-20261102T084107-9af4", "task": "T0195", "role": "critic", "session": "4e1636bc-0b0a-4a6c-b329-a48ef02977e3"}
@@ -47,3 +45,5 @@ cancelled: 30, done: 161, failed: 3, todo: 2
 - 2026-11-02T18:34:18+00:00 merged {"task": "T0165"}
 - 2026-11-02T18:34:18+00:00 inbox_opened {"id": "I0090", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
 - 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-02T18:40:13+00:00 inbox_resolved {"id": "I0091", "status": "approved", "note": "Daily cap raised to 120 in policy", "by": "human"}
+- 2026-11-02T18:40:34+00:00 inbox_opened {"id": "I0092", "kind": "budget_increase", "subject": "daily LLM budget reached"}
