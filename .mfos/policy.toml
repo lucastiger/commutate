@@ -53,7 +53,7 @@ experiments = 1                  # simultaneous experiment processes (each may u
 local_cpu_hours_max = 6.0
 # Registered experiments that always run on burst compute, whatever their estimate (founder, 2026-10-05: E001
 # needs level-5 bar solves and three-frequency C1 solves beyond this Mac's 17 GB and its 240-minute timeout, T0071).
-burst_experiments = ["E001"]
+burst_experiments = ["E001", "E006"]  # E006 (founder, 2026-11-02): Case 1a/1b and N-layer level-2 solves need 17-30 GB, beyond this Mac
 
 [budgets]                        # USD, from Claude Code's client-side cost estimates
 daily_usd = 110.0
