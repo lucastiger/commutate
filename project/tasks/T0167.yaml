@@ -4,7 +4,7 @@ title: 'Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/
   predictors per stratum (research notes, not evidence)'
 type: investigate
 agent: scientist
-status: running
+status: merge
 depends_on:
 - T0150
 - T0157
@@ -144,3 +144,121 @@ history:
   summary: 'memory cap: <= 2 parallel solves, < 5 M unknowns, < 8 GB total (10 shards had used ~50 GB
     and were killed)'
   at: '2026-11-02T09:31:07+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'P1+P2 pilots finished (research notes, never evidence; O006 F4). All 10 pre-registered finest-grid
+    (level-2) layouts are now solved, results.json is regenerated, and both notes are updated. Envelope,
+    the highest power per die keeping Tj max <= 175 C on >= 95 % of layouts at level 0 with k(T), n =
+    30 per die size: 45.6 [44.0, 48.6] / 51.5 [50.5, 55.3] / 56.6 [55.9, 57.8] / 60.2 [58.0, 64.2] W for
+    4.0 / 4.5 / 5.0 / 5.5 mm (constant k: 51.0 / 57.8 / 63.2 / 67.2 W). The T0157 law ranges were varied
+    one at a time (SiC c-axis 270 (T/300)^-1.50 and 390 (T/300)^-1.25; SAC305 alpha 4.0e-3 and 5.0e-3)
+    and move the envelope by -1.2 % to +0.5 %; combined corners were not solved, only estimated by adding
+    the shifts. The recommended load levels do not change. O002 load levels by the frozen rule: 25 W an'
+  report:
+    summary: 'P1+P2 pilots finished (research notes, never evidence; O006 F4). All 10 pre-registered finest-grid
+      (level-2) layouts are now solved, results.json is regenerated, and both notes are updated. Envelope,
+      the highest power per die keeping Tj max <= 175 C on >= 95 % of layouts at level 0 with k(T), n
+      = 30 per die size: 45.6 [44.0, 48.6] / 51.5 [50.5, 55.3] / 56.6 [55.9, 57.8] / 60.2 [58.0, 64.2]
+      W for 4.0 / 4.5 / 5.0 / 5.5 mm (constant k: 51.0 / 57.8 / 63.2 / 67.2 W). The T0157 law ranges were
+      varied one at a time (SiC c-axis 270 (T/300)^-1.50 and 390 (T/300)^-1.25; SAC305 alpha 4.0e-3 and
+      5.0e-3) and move the envelope by -1.2 % to +0.5 %; combined corners were not solved, only estimated
+      by adding the shifts. The recommended load levels do not change. O002 load levels by the frozen
+      rule: 25 W and 45 W per die; at 45 W, 88 % of layouts rise 60-110 K, at 25 W only 1 %. O002''s current
+      60 W level fails its own F1 check (>= 90 % of layouts <= 175 C) for 4.0-5.0 mm dies. O003 operating
+      point: 24.8-54.6 W per die for a 60 K hottest-die rise, common development value 25 W. Level bias
+      (level 0 minus level 2, 10 layouts, 80 dies, all three families, 2-6 dies per switch): +0.14 to
+      +0.49 K at 25 W and +0.25 to +0.92 K at 45 W, positive on every die, so the envelope is 0.5-1.3
+      % conservative. P2 null predictors (10 layouts per stratum x 15 strata): the die-position lookup
+      p95 error is 0.97-2.66 K (25 W) and 1.85-5.18 K (45 W), or 3.2-8.8 % of the local rise. The stratum
+      mean is 1.3-11.4 K. The die-size cell mean equals the stratum mean up to leave-one-layout-out training
+      noise, because O002 fixes one die size per stratum.'
+    failure_class: none
+    root_cause: 'No failure in the deliverables. Attempt 1 stopped on budget while its level-bias phase
+      was stalled. Cause: each level-2 grid has 4.5-12.4 M cells and needs about 6 GB, so parallel processes
+      exhausted memory on a machine shared with other sessions. In this attempt, 7 parallel processes
+      I started by mistake were killed after about 11 minutes with no output; the same 7 layouts then
+      finished in one sequential process in about 45 minutes (exit 0, Picard <= 6 iterations, energy balance
+      <= 1.5e-13). That rules out a solver hang.'
+    confidence: 0.8
+    affects_acceptance_criteria: true
+    evidence:
+    - 'Commands and exit codes: pkill/pgrep/kill on the parallel bias processes were refused by the sandbox
+      (pkill exit 3, ''operation not permitted''). ''thermal_envelope.py bias --shard k --nshards 10''
+      x10: 3 shards had nothing to run, 7 ended after about 11 min with no output files. ''uv run python
+      research/scripts/o006_p1/thermal_envelope.py bias --shard 0 --nshards 1'' exit 0 (7 layouts, 76-985
+      CPU-s each). ''thermal_envelope.py report'' exit 0. DoD JSON assertion exit 0. ''uv run ruff check
+      .'' exit 0 (''All checks passed!''). ''uv run mfos gate --fast'' exit 0 (''all gates passed'').
+      git commit f4a2914 exit 0.'
+    - 'Pre-registration verified: sha256 of the first 45 lines of the P1 note = 33f0bbc9... and of the
+      first 49 lines of the P2 note = b08f7648..., both equal to research/o006_p1/raw/prereg.json (written
+      2026-11-02T07:11:01Z, before the first solve). Checked again after every edit.'
+    - 'Sanity (results.json): 2256 solves, max energy balance 1.54e-13, max Picard iterations 6. P_lim
+      with k(T) < P_lim with constant k on 120/120 layouts. Each variant moves all 120 limits in the expected
+      direction. The quadratic-fit interpolation agrees with direct solves within 0.077 K (n = 60). Grid
+      reuse vs solve_layout_level: 1.4e-10 K. Variant code at the coded values reproduces the coded laws:
+      1.9e-10 K.'
+    - Envelope at 4.0 mm (45.64 W) is set by side_by_side_6_s916705_i000, which is not in the bias set;
+      the finest-grid shift for 4.0 mm (45.9-46.2 W) is therefore an estimate.
+    - 'Level bias at 45 W: per-die +0.25 to +0.92 K (mean +0.56); SD across layouts 0.19 K; layout spread
+      bias mean +0.12, SD 0.05, max 0.22 K; three-level GCI max 0.25 K; envelope-power bias -0.23 to -0.57
+      W. It is largest on 4.0 mm dies (0.69-0.92 K).'
+    - 'Seeds: 916700 (die size per stratum), 916701-916715 (generator stream per stratum), 916799 (bootstrap).
+      None appears in O003/O004 (grep of project/objectives and experiments/specs for 9167xx: no hits;
+      O003/O004 name no numeric seed).'
+    - 'Spot checks: note tables match results.json (e.g. side_by_side/3 at 45 W: SM 5.12, CM 5.21, DP
+      2.54 K, DP rel 5.4 %, pair p95 4.83 K). O002 objective text confirmed: 30 and 60 W levels; F1 ''>=
+      90 % at 60 W''; A3 3 %.'
+    - 'Compute: 8840 CPU-s (2.46 CPU-h) recorded; failed/killed runs not counted (stated in the P1 note,
+      section 6).'
+    alternative_explanations:
+    - explanation: The attempt-1 level-bias stall was a solver problem at level 2 (Picard or CG not converging
+        on large grids), not memory exhaustion.
+      how_to_discriminate: 'Run the same 7 layouts in one process with the machine otherwise unchanged.
+        Done: all 7 completed (Picard <= 6, energy balance <= 1.5e-13); only the parallel runs failed.
+        Refuted.'
+    - explanation: The level-0 grid bias, not the physics, drives the envelope and the P2 null errors.
+      how_to_discriminate: 'Compare the level-0 minus level-2 bias with the reported quantities on the
+        10-layout bias set. The bias SD across layouts is 0.10-0.19 K against within-stratum Tj max SDs
+        of 0.66-3.60 K and null p95 errors >= 0.97 K, so the P2 Tj max and pair conclusions stand. The
+        switch-spread null is the exception: its p95 error is 0.24-0.44 K in 5 strata, comparable to the
+        spread bias (up to 0.22 K). The envelope shift is <= 1.3 %.'
+    - explanation: The k(T) law uncertainty (T0157) is large enough to change the recommended load levels.
+      how_to_discriminate: 'Recompute the envelope per variant by secant. Done: the minimum envelope stays
+        >= 45.08 W, so P_hi = 45 W is unchanged. Only the additive pessimistic corner (estimated, not
+        solved) would give 44.97 W, i.e. 44 W.'
+    discriminating_tests:
+    - Sequential single-process level-2 run of the 7 open bias layouts (completed; separates memory exhaustion
+      from a solver hang)
+    - Sign and magnitude of level-0 minus level-2 Tj max on 10 layouts across all families, die counts
+      and sizes (all 80 dies positive; largest on 4.0 mm dies)
+    - One-at-a-time T0157 k(T) variants on all 120 balanced-set layouts (all 120 limits move in the physically
+      required direction)
+    - Fit interpolation vs direct solves at 25 and 45 W on 30 overlap layouts (max 0.077 K)
+    recommended_actions:
+    - 'Founder decision for O002 (objective is protected): O002''s 60 W top level fails its own F1 check
+      (>= 90 % of layouts <= 175 C) for 4.0, 4.5 and 5.0 mm dies on this generator space (27/50/73 % pass).
+      Options: the frozen-rule common levels 25/45 W, or per-stratum powers that keep both levels inside
+      60-110 K.'
+    - 'O002 planning: null (b), the die-size cell mean, is redundant with null (d), the stratum mean,
+      when each stratum has one die size. The die-position lookup reaches 3.2-8.8 % relative error, so
+      A3 (3 %) is narrowly discriminating in side_by_side/2, interleaved/2 and interleaved/3.'
+    - 'E007 design: compute the switch-spread statistics (A4/A5) at the GCI levels, not at level 0; level-0
+      spread bias (up to 0.22 K) is comparable to the stratum-mean-spread null''s p95 error in 5 strata.'
+    - 'If P_hi must be known to 1 W: solve the two 4.0 mm order-statistic layouts (side_by_side_6_s916705_i003,
+      side_by_side_6_s916705_i000) at level 2, one process at a time (about 6 GB each).'
+    - 'Infrastructure: level-2 thermal solves need about 6 GB each, and agents in the sandbox cannot list
+      or stop processes. The orchestrator should cap concurrent heavy jobs per machine or give agents
+      a way to stop their own processes.'
+    files_written:
+    - research/notes/o006-p1-thermal-envelope.md
+    - research/notes/o006-p2-thermal-nulls.md
+    - research/o006_p1/results.json
+    - research/o006_p1/raw/bias/interleaved_5_s916709_i005.json
+    - research/o006_p1/raw/bias/side_by_side_2_s916701_i003.json
+    - research/o006_p1/raw/bias/side_by_side_4_s916703_i003.json
+    - research/o006_p1/raw/bias/side_by_side_6_s916705_i005.json
+    - research/o006_p1/raw/bias/u_shaped_2_s916711_i002.json
+    - research/o006_p1/raw/bias/u_shaped_4_s916713_i001.json
+    - research/o006_p1/raw/bias/u_shaped_6_s916715_i000.json
+    - research/o006_p1/run_bias2.log
+    experiment_drafts: []

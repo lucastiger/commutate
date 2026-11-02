@@ -36,27 +36,64 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   (2) Rows.
 
-  - Case rows: kind=case, case, point, grid_level, is_finest, T_l2, T_ref, case_scale, rich_est (A4''s
-  GCI, exactly as defined there), p_obs, dT_const_k. dT_const_k is the constant-k solve at the layer-mean
-  temperature: the same units and datum as T_l2, and identical to it on constant-k cases.
+  - Case rows: kind=case, case, point, grid_level, is_finest, T_l2, T_ref, case_scale, rich_est, conv_type,
 
-  - Cross-check rows: kind=crosscheck, layout, die, tj_l2, tj_skfem, rich_est (L2), skfem_rich_est.
+  p_obs, dT_const_k. rich_est is A4''s order-capped GCI (D0012), from the three grids of the frozen rule
+  (r = 2),
+
+  with f0, f1, f2 the values at levels 0 (coarsest), 1 and 2 (finest): GCI = 1.25 |f2 - f1| / (2^p - 1),
+
+  p = min(p_obs, 1), when the sequence is monotone; GCI = 1.25 max(|f2 - f1|, |f1 - f0|) when it is oscillatory
+
+  or non-monotone. conv_type records which (monotone / oscillatory / nonmonotone). dT_const_k is the constant-k
+
+  solve at the layer-mean temperature: the same units and datum as T_l2, and identical to it on constant-k
+  cases.
+
+
+  - Cross-check rows: kind=crosscheck, is_finest=true, layout, die, tj_l2, tj_skfem, rich_est (L2), conv_type,
+
+  skfem_rich_est, skfem_conv_type, gci_sum (= rich_est + skfem_rich_est). Both GCIs by the same A4 estimator,
+  each
+
+  from three grids of its own solver; tj_l2 and tj_skfem are the finest-level values.
+
 
   - A3 layouts follow A3''s rule (generate_layouts dev seed 20261101), with fingerprints frozen in config.
   Use 65 C coolant, h = 5000 W/(m2 K), k(T), and the power per die recorded by T0150''s benchmark, the
   same for both solvers.
 
 
-  (3) Metrics: max_case_scaled_err, max_abs_err_K, max_abs_diff_vs_skfem_K, max_richardson_est_K. All
-  are point values, written without a CI, at level 0.0. Recompute entries:
+  (3) Metrics, exactly the five of the objective as restated by D0012 (project/decisions/D0012-o006-a3-a4-criteria-change.md):
 
-  - A2: the existing max_abs_err with where {kind: case, is_finest: true}.
+  max_case_scaled_err (A1, K1), max_abs_err_K (A2, K2), max_skfem_consistency (A3), max_skfem_gci_K (A3b)
+  and
 
-  - A1, A3 and A4: the functions the founder adds to mfos.metrics (requested in this plan: a scale-normalised
-  max error, a GCI-gated max error so that skfem_rich_est > 0.025 K fails A3, and a column max).
+  max_conservative_gci_K (A4). All are point values, written without a CI, at level 0.0. Recompute entries
+  use the
 
-  - If those functions are not in mfos.metrics when you start, stop and report as blocked. Do not substitute
-  workarounds.
+  existing mfos.metrics functions:
+
+
+  - A1: max_scaled_abs_err, pred T_l2, ref T_ref, scale case_scale, where {kind: case, is_finest: true}.
+
+
+  - A2: max_abs_err, pred T_l2, ref T_ref, where {kind: case, is_finest: true}.
+
+
+  - A3: max_scaled_abs_err, pred tj_l2, ref tj_skfem, scale gci_sum, where {kind: crosscheck}.
+
+
+  - A3b: max_col on skfem_rich_est, where {kind: crosscheck}.
+
+
+  - A4: max_col on rich_est, where {is_finest: true} (every reported L2 value: the finest case rows and
+  the
+
+  cross-check rows).
+
+
+  There is no 0.025 K gate and no new mfos.metrics function to wait for (max_abs_err_gated is not used).
 
 
   (4) Null baseline: kind=column, column dT_const_k, applies_to the A1 and A2 metrics (F3).
@@ -161,6 +198,9 @@ definition_of_done:
 - cmd: uv run ruff check .
   exists: null
   timeout_s: 300
+- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_skfem_gci_K','max_conservative_gci_K','gci_sum'])"
+  exists: null
+  timeout_s: 120
 experiment: E006
 risk: high
 model: null
@@ -195,3 +235,6 @@ history:
   summary: Held until the founder records the O006 A3/A4 decision after T0181's note (I0081, option 2).
     Release with `uv run mfos task retry T0165`.
   at: '2026-11-02T06:52:19+00:00'
+- outcome: founder_brief_amended
+  summary: metrics, rows and GCI estimator aligned with D0012 (I0083 option 1)
+  at: '2026-11-02T10:26:50+00:00'
