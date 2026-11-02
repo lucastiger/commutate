@@ -1,0 +1,84 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Summary understates the k(480 K) spread; Si3N4 is 18 %, not \u226412 %",
+      "detail": "The Relevance section says the SiC, Si3N4 and SAC305 slopes are 'uncertain by up to ~10-12 % in k at 480 K', and Thesis impact says 'of order 10 %'. The note's own Si3N4 sweep (-0.65 to -1.0) gives f(480 K) = 0.737 vs 0.625, an 18 % spread. The SiC k(300 K) range of 270-390 reaches 27 % below the nominal 370. The sweep table is correct; only the summary sentences are wrong. The thesis-impact conclusion probably still holds, because the die and ceramic are only part of the total resistance.",
+      "evidence": "Scratch script: 1.6**-0.65/1.6**-1.0 = 1.179; SiC 1.6**-1.25/1.6**-1.5 = 1.125; SAC 0.930/0.842 = 1.105; 270/370 = 0.73.",
+      "suggested_check": "Change the Relevance sentence to 'up to ~18 % (Si3N4)' and add that SiC k(300 K) is uncertain by up to ~27 %.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Treating -1.0 as the steep end of the Si3N4 range is physically doubtful",
+      "detail": "The note sets the steep end of the Si3N4 exponent sweep at -1.0 and calls it the 'pure-lattice Umklapp limit'. 1/T is the Umklapp law well above the Debye temperature. Si3N4 has a high Debye temperature, so over 300-480 K Umklapp scattering can make k fall faster than 1/T. The note's own data for other ceramics show this: Al2O3 -1.08 to -1.27, SiC -1.45 to -1.49. High-conductivity AMB grades (90 W/(m K) class) are the ones most likely to be steeper than -1.0, and the sweep excludes that case. The only support for a shallower slope is a snippet about 'some grades' (S14).",
+      "evidence": "Note \u00a7P1 table row 'Si3N4 exponent \u2026 Upper: -1.0 pure-lattice Umklapp limit (assumed)'; same note gives Al2O3 exponents -1.0781/-1.2661 and SiC -1.49.",
+      "suggested_check": "Widen the Si3N4 sweep to about -0.65 to -1.3, or label -1.0 as a nominal value rather than a limit, until a measured AMB-grade k(T) is obtained.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Applying the pure-alumina k(T) law to 96 % DBC alumina is not screened, and Al2O3 is missing from the P1 sweep",
+      "detail": "stack.py states 'The 96 % DBC grade follows the same relative law' as polycrystalline (high-purity) Al2O3 from Incropera Table A.2. The note classes the Al2O3 law 'S' only because the table numbers match. It does not question whether the law carries over to the 96 % grade, which contains a glassy grain-boundary phase and usually varies less with T. The note flags the matching gap for Cu (pure Cu vs DBC copper) but not for Al2O3. Al2O3 is also absent from the P1 sensitivity table, although default_dbc_stack uses it and the ceramic is a major resistance in DBC stacks.",
+      "evidence": "stack.py docstring Al2O3 bullet; note source-class table rows 'Al2O3 k(T) law' (S) and 'Al2O3 k(300 K)' (N); P1 table has no Al2O3 row. A search for a 96 % alumina k(T) datasheet curve returned only single 20-100 \u00b0C values (24 W/(m K), Keramo).",
+      "suggested_check": "Add an Al2O3 (96 %) row to the P1 table, for example an exponent of -0.8 to -1.1 on 300-400 K, marked as inference, and list a 96 % grade k(T) source under Open questions.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "SAC305 alpha is taken from pure-tin TCR without a Matthiessen correction; the sweep floor of 4.0e-3 may be too high",
+      "detail": "The 'no correction' conclusion compares the code's alpha with pure-tin coefficients. SAC305 has extra residual resistivity from Ag and Cu, about 13 \u00b5\u03a9 cm against roughly 11.5-12.9 \u00b5\u03a9 cm for Sn near room temperature. By Matthiessen's rule d\u03c1/dT is about the same, so the alloy's relative coefficient is lower by \u03c1_Sn/\u03c1_SAC. That gives about 3.6-4.2e-3 /K depending on which Sn reference value is used, and the lower part of that span is below the 4.0e-3 floor of the sweep. The conclusion also assumes the 0-100 \u00b0C table values are referenced to 0 \u00b0C. The note flags that assumption; if they are 20 \u00b0C values, alpha_300 is about 4.5e-3, which the sweep does cover.",
+      "evidence": "Scratch script: 4.2e-3\u00d711.5/13 = 3.7e-3, 4.2e-3\u00d712/13 = 3.9e-3. Wikipedia data page (CRC/LNG) lists Sn 11.5\u00d710^-8 \u03a9 m (column unclear). Code \u03c1_SAC = 13 \u00b5\u03a9 cm (stack.py).",
+      "suggested_check": "Lower the SAC305 alpha sweep floor to about 3.5e-3 /K, or state that a Matthiessen-reduced alloy alpha was considered and why it is excluded.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The S11 equation as written does not give the stated result",
+      "detail": "Finding 1 sub-bullet: '1.41/(1+123 alpha) = 0.87 x 1.5166 gives alpha = 5.0e-3'. Solved as written, this equation gives alpha = 5.6e-4. 1.5166 appears to be 1+123\u00d74.2e-3, the code's denominator. The stated result is correct: solving k(423.15)/k(298.15) = 0.87 under the code law gives alpha = 5.004e-3.",
+      "evidence": "Scratch script: (1.41/(0.87*1.5166)-1)/123 = 5.58e-4; brentq on the code law gives 5.0038e-3.",
+      "suggested_check": "Rewrite the equation as 1.419(1-1.85\u03b1)/(1+123.15\u03b1) = 0.87.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The stated 273.15-523.15 K validity range of the laws is not screened",
+      "detail": "stack.py claims every law is valid over K_T_MIN..K_T_MAX (273.15-523.15 K). The note screens the Al2O3 extension below 300 K but not the others. The Cu table starts at 300 K, and Burgemeister's T^-1.49 covers 300-500 K according to the review, so 273-300 K and 500-523 K are extrapolations. The Si3N4 and SAC305 laws have no stated source range at all. This matters little for the 290-480 K working range but is part of the 'every k(T) law' scope.",
+      "evidence": "stack.py docstring and K_T_MIN/K_T_MAX; note's source-class table has only one validity row (Al2O3 below 300 K).",
+      "suggested_check": "Add one row per material giving the source temperature range against the code's 273.15-523.15 K.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The recomputed Al2O3 exponent has a wrong digit",
+      "detail": "The note says the exponents were 'recomputed: -1.0787 and -1.2661, as in code'. ln(26.4/36)/ln(4/3) = -1.07812, so the value is -1.0781. The code docstring's -1.078 and the code itself are correct.",
+      "evidence": "Scratch script: -1.0781169840; -1.2660869206.",
+      "suggested_check": "Change -1.0787 to -1.0781.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Format departs from mf-research",
+      "detail": "'Confidence: low-medium' is not one of the allowed high/medium/low. The Sources table uses 'how seen' in place of the 'type' column. The skill says 'Never cite a source you did not open', but the note cites search summaries and bibliographic records. It labels every one of them and the re-scoped claim allows a secondary screen, so this is a transparency-compliant departure, not a hidden one.",
+      "evidence": "Note line 2; mf-research SKILL.md format block.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read src/moduleforge/geometry/stack.py and listed every K_LAWS entry (Cu, Al2O3, Si3N4, SAC305, 4H-SiC) and every 300 K Layer.k value (385, 24, 90, 58, 370, die-attach 58). All of them, plus the sintered-Ag and 'c-axis 330-490' docstring claims, appear in the note's source-class table, so the claim's completeness holds for laws and values.",
+    "Scratch-script recomputation of every number in the note. Correct: Cu slope -1.995e-4 and the 12 % shallower 400-600 K slope; alpha_300 re-referencing (4.094e-3, 4.173e-3); S11 alpha = 5.004e-3 (but the displayed equation gives 5.6e-4); resistivity +27 % \u2192 4.46e-3; Si3N4 -0.663 and 0.406 ratio; Ioffe 611/185 = 3.30 and effective exponent -1.446; all f(480 K) values for SiC, SAC305 and Si3N4; W-F 56.3; 0.7\u00d7387 = 270.9. Wrong: Al2O3 exponent -1.0787 (actually -1.0781); spread summary (Si3N4 18 %, not \u226412 %).",
+    "From memory of Incropera Tables A.1/A.2 (not opened): Cu 401/393/379 and polycrystalline Al2O3 36.0/26.4/15.8 at 300/400/600 K agree with the note.",
+    "WebSearch: Burgemeister et al. 1979 abstract summary confirms T^-1.49 normal to c, 3.87 W/(cm K) at room temperature, and parallel-to-c about 30 % lower. This independently supports the note's central SiC finding, which it had taken from the review.",
+    "WebSearch/WebFetch on Qian et al. 2017 (arXiv 1712.00830): abstract has no numbers. A search snippet gives n-type 4H (about 1e19 cm^-3) best-fit k_z \u2248 302 and k_r \u2248 444 W/(m K), temperature not stated. 302 lies inside the note's 270-390 c-axis sweep. The full-text PDF could not be read: no PDF tools, and a local extraction attempt was denied.",
+    "Checked the Ioffe page directly: TLS error (self-signed certificate), same as the note reports. Ioffe 3.7 W/(cm K) for 4H agrees with the code's Levinshtein citation.",
+    "Physics checks (Matthiessen's rule for an alloy TCR; Umklapp below the Debye temperature) against the note's SAC305 and Si3N4 sweep bounds.",
+    "Checked against the mf-research skill format; the Answer section has 5 sentences as required."
+  ],
+  "caveats": [
+    "The note is a secondary screen. No k(T) law or 300 K value in stack.py is verified against an opened primary. The note says so itself, and the claim's wording ('primary check deferred') allows it. It must not be cited as verifying the k(T) laws.",
+    "The P1 sweep ranges are inferences. The Si3N4 steep end (-1.0), the SAC305 alpha floor (4.0e-3) and the missing Al2O3 (96 %) row may make the ranges too narrow; P1 results should not be called bracketing until these are widened or sourced.",
+    "Several key numbers (the Burgemeister range, the Ioffe 6H attribution, Hirosaki values, the S11 patent figures) rest on search summaries or earlier reviews. I independently confirmed only the Burgemeister abstract figures and, via a snippet, a Qian n-type 4H k_z of about 302 W/(m K)."
+  ]
+}
