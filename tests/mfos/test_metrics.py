@@ -133,3 +133,29 @@ def test_e002_regression_anchors(e002_rows):
     assert point == pytest.approx(recorded["value"], abs=1e-12)
     assert ci == pytest.approx(tuple(recorded["ci"]), abs=1e-12)
     assert ci == pytest.approx((0.9897220464162575, 0.9975624829898619), abs=1e-12)
+
+
+def test_o006_recompute_metrics_by_hand():
+    """I0064 (2026-11-02): A1/K1, A3 and A4 of O006 need these to be recomputed from E006's rows."""
+    assert mx.max_scaled_abs_err([1.1, 2.0], [1.0, 2.3], [5.0, 10.0]) == pytest.approx(0.03)  # max(0.1/5, 0.3/10)
+    assert mx.max_abs_err_gated([1.0, 2.04], [1.02, 2.0], [0.01, 0.02], 0.025) == pytest.approx(0.04)
+    assert mx.max_abs_err_gated([1.0, 2.04], [1.02, 2.0], [0.01, 0.03], 0.025) == math.inf  # gate missed: not met
+    assert mx.max_col([0.004, 0.019, 0.011]) == pytest.approx(0.019)
+    rows = [{"p": 1.1, "r": 1.0, "s": 5.0, "g": 0.01}, {"p": 2.0, "r": 2.3, "s": 10.0, "g": 0.02}]
+    assert mx.compute("max_scaled_abs_err", rows, pred="p", ref="r", params={"scale": "s"}) == pytest.approx(0.03)
+    assert mx.compute("max_abs_err_gated", rows, pred="p", ref="r",
+                      params={"gate": "g", "gate_max": 0.025}) == pytest.approx(0.3)
+    assert mx.compute("max_col", rows, pred="g") == pytest.approx(0.02)
+
+
+@pytest.mark.parametrize("call", [
+    lambda: mx.max_scaled_abs_err([], [], []),
+    lambda: mx.max_scaled_abs_err([1.0], [math.nan], [1.0]),
+    lambda: mx.max_scaled_abs_err([1.0], [1.0], [0.0]),
+    lambda: mx.max_abs_err_gated([1.0], [1.0], [math.nan], 0.025),
+    lambda: mx.max_col([]),
+    lambda: mx.max_col([0.01, math.inf]),
+])
+def test_o006_recompute_metrics_fail_closed(call):
+    with pytest.raises(ValueError):
+        call()

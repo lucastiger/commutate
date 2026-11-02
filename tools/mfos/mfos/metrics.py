@@ -85,6 +85,41 @@ def max_abs_err(pred: Sequence[float], ref: Sequence[float]) -> float:
     return float(np.max(np.abs(_arr(pred) - _arr(ref))))
 
 
+def _finite_rows(*cols: np.ndarray) -> None:
+    """Fail closed: no rows, or a NaN/inf anywhere, raises (the recomputation fails, so the evidence is INVALID rather
+    than a value that could pass a criterion or fire a kill)."""
+    if not cols[0].size:
+        raise ValueError("no rows")
+    if not all(np.all(np.isfinite(c)) for c in cols):
+        raise ValueError("non-finite value in a metric column")
+
+
+def max_scaled_abs_err(pred: Sequence[float], ref: Sequence[float], scale: Sequence[float]) -> float:
+    """max over rows of |pred - ref| / scale, each row in units of its own scale (O006 A1/K1: the case scale)."""
+    p, r, s = _arr(pred), _arr(ref), _arr(scale)
+    _finite_rows(p, r, s)
+    if np.any(s <= 0):
+        raise ValueError("scale must be positive")
+    return float(np.max(np.abs(p - r) / s))
+
+
+def max_abs_err_gated(pred: Sequence[float], ref: Sequence[float], gate: Sequence[float], gate_max: float) -> float:
+    """max |pred - ref| if every row's gate value is at most gate_max, otherwise +inf: a criterion on it is then not met
+    (O006 A3: the scikit-fem cross-check counts only when scikit-fem's own convergence index is within its bound)."""
+    p, r, g = _arr(pred), _arr(ref), _arr(gate)
+    _finite_rows(p, r, g)
+    if np.any(g > gate_max):
+        return math.inf
+    return float(np.max(np.abs(p - r)))
+
+
+def max_col(values: Sequence[float]) -> float:
+    """max of one column (O006 A4: the largest grid convergence index)."""
+    v = _arr(values)
+    _finite_rows(v)
+    return float(np.max(v))
+
+
 def topk_recall(pred: Sequence[float], ref: Sequence[float], k_frac: float = 0.1, within_frac: float = 0.2,
                 lower_is_better: bool = True) -> float:
     """Share of the predicted best ``k_frac`` that lie inside the reference best ``within_frac``.
@@ -205,6 +240,11 @@ METRICS: dict[str, Callable[..., float]] = {
     "mean_signed_rel_err": lambda rows, pred, ref, **_: mean_signed_rel_err(_col(rows, pred), _col(rows, ref)),
     "max_rel_err": lambda rows, pred, ref, **_: max_rel_err(_col(rows, pred), _col(rows, ref)),
     "max_abs_err": lambda rows, pred, ref, **_: max_abs_err(_col(rows, pred), _col(rows, ref)),
+    "max_scaled_abs_err": lambda rows, pred, ref, params=None, **_: max_scaled_abs_err(
+        _col(rows, pred), _col(rows, ref), _col(rows, (params or {}).get("scale"))),
+    "max_abs_err_gated": lambda rows, pred, ref, params=None, **_: max_abs_err_gated(
+        _col(rows, pred), _col(rows, ref), _col(rows, (params or {}).get("gate")), float((params or {})["gate_max"])),
+    "max_col": lambda rows, pred, **_: max_col(_col(rows, pred)),  # the column is named by ``pred``
     "topk_recall": lambda rows, pred, ref, params=None, **_: topk_recall(_col(rows, pred), _col(rows, ref),
                                                                           **(params or {})),
     "within_strata_spearman": lambda rows, pred, ref, strata, **_: within_strata_spearman(
