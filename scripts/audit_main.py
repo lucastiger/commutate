@@ -24,6 +24,13 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
 
 
+def shallow_boundary() -> set[str]:
+    """Commits whose parents a shallow clone does not have: `git show` lists their whole tree as added, so auditing
+    them would report every protected file as touched (2026-11-02, 63 false lines at fetch-depth 200)."""
+    p = Path(git("rev-parse", "--git-path", "shallow").strip())
+    return set(p.read_text().split()) if p.exists() else set()
+
+
 def inbox() -> dict[str, dict]:
     out = {}
     for p in Path("project/inbox").glob("I*.yaml"):
@@ -39,10 +46,14 @@ def main() -> int:
     protected = tomllib.loads(Path(".mfos/policy.toml").read_text()).get("protected_paths", [])
     items = inbox()
     bad = []
+    boundary = shallow_boundary()
     for line in git("log", f"--since={a.since}", "--format=%H%x09%ae", "main").splitlines():
         sha, email = line.split("\t")
         if email != BOT_EMAIL:
             continue
+        if sha in boundary:
+            print(f"audit: cannot audit {sha[:10]}: the clone is too shallow to see its parent (use fetch-depth: 0)")
+            return 2
         body = git("show", "-s", "--format=%B", sha)
         approval = re.search(r"Founder-Approved:\s*(I\d+)", body)
         for f in git("show", "--name-only", "--format=", sha).split():
