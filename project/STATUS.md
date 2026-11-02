@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T03:03:14+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:03:30+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
+- **I0069** [protected_change] T0150: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,18 +24,17 @@ _generated 2026-11-02T03:03:14+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 25 | $47.07 | 960687 | 550899 | 39 | 0 |
+| O006 | 26 | $47.07 | 960687 | 550899 | 39 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 126, failed: 3, merge: 1, running: 1, todo: 8
+cancelled: 30, done: 126, failed: 3, needs_founder: 1, running: 2, todo: 7
 
-- T0150 `merge` builder/implement: Thermal L2 on Layouts and box stacks: conforming grid builder, frozen grid rule, three-grid GCI in meta['solver_tol'], A4 convergence/cost benchmark (attempt 1)
+- T0150 `needs_founder` builder/implement: Thermal L2 on Layouts and box stacks: conforming grid builder, frozen grid rule, three-grid GCI in meta['solver_tol'], A4 convergence/cost benchmark (attempt 1)
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
+- T0153 `running` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 
 ## Recent events
-- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0067", "kind": "question", "subject": "[O006] Founder tasks T0157 and T0163 have no definition_of_done, touches or context files"}
-- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0068", "kind": "plan_approval", "subject": "[O006] approve initial plan (4 tasks)"}
 - 2026-11-02T02:16:01+00:00 plan_applied {"objective": "O006", "created": ["T0164", "T0165", "T0166", "T0167"], "dropped": 0}
 - 2026-11-02T02:16:06+00:00 run_started {"run": "T0150-builder-20261101T181606-2b15", "task": "T0150", "role": "builder", "session": "5e652892-238b-4bc1-abee-80d02d831cbf"}
 - 2026-11-02T02:17:46+00:00 inbox_resolved {"id": "I0067", "status": "answered", "note": "Founder (2026-11-02): suggested DoDs and touches added to T0157 and T0163 (deliverable research/notes/o006-kT-cit
@@ -48,3 +48,5 @@ cancelled: 30, done: 126, failed: 3, merge: 1, running: 1, todo: 8
 - 2026-11-02T02:42:42+00:00 run_finished {"run": "T0168-critic-20261101T183641-0f78", "status": "completed", "cost": 1.561986, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T02:42:48+00:00 run_started {"run": "T0169-critic-20261101T184248-428c", "task": "T0169", "role": "critic", "session": "47a21803-efda-425b-8edb-4770e6e774c5"}
 - 2026-11-02T02:49:03+00:00 run_finished {"run": "T0169-critic-20261101T184248-428c", "status": "completed", "cost": 2.12731, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T03:03:26+00:00 inbox_opened {"id": "I0069", "kind": "protected_change", "subject": "T0150: merge needs founder approval"}
+- 2026-11-02T03:03:30+00:00 run_started {"run": "T0153-scientist-20261101T190330-2c7a", "task": "T0153", "role": "scientist", "session": "08a8f217-d72a-4b63-804c-8c8b3c112f94"}
