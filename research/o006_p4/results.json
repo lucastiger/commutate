@@ -1,0 +1,1689 @@
+{
+ "note": "research note, not evidence (O006 F4); see research/notes/o006-p4-fasthenry-feasibility.md",
+ "fasthenry_version": "FastHenry 3.0wr (29Sep96, mod 031424), fasthenry-3.0wr-031424 pinned by D0002",
+ "binary": {
+  "path": "/Users/lukeskywalker/.local/bin/fasthenry",
+  "sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+  "selftest_L_nH_1kHz": 5.704256399862311,
+  "selftest_pass": true
+ },
+ "usable": false,
+ "usable_criteria": {
+  "U1_levels_completed": true,
+  "U2_direct_vs_multipole_1e-3": true,
+  "U3_fh_est_le_l2_est": false
+ },
+ "direct_vs_multipole": [
+  {
+   "geometry": "case4_base",
+   "level": "d0",
+   "freq": "1e+07",
+   "rel": -0.0003335000833750588
+  },
+  {
+   "geometry": "case4_base",
+   "level": "d0",
+   "freq": "2e+07",
+   "rel": -0.0003304131399440123
+  },
+  {
+   "geometry": "case4_base",
+   "level": "d1",
+   "freq": "1e+07",
+   "rel": -0.00013709385944140603
+  },
+  {
+   "geometry": "case4_base",
+   "level": "d1",
+   "freq": "2e+07",
+   "rel": -0.00013397850735478336
+  }
+ ],
+ "levels": {
+  "k0": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 4.0,
+   "nh_trace": 3,
+   "nh_plane": 3,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 1
+  },
+  "k1": {
+   "cell_mm": 0.5,
+   "plane_cell_mm": 2.0,
+   "nh_trace": 3,
+   "nh_plane": 3,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 2
+  },
+  "k2": {
+   "cell_mm": 0.25,
+   "plane_cell_mm": 1.0,
+   "nh_trace": 3,
+   "nh_plane": 3,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 4
+  },
+  "k0_nh1": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 4.0,
+   "nh_trace": 1,
+   "nh_plane": 1,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 1
+  },
+  "k0_nh5": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 4.0,
+   "nh_trace": 5,
+   "nh_plane": 5,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 1
+  },
+  "k0_nh9": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 4.0,
+   "nh_trace": 9,
+   "nh_plane": 9,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 1
+  },
+  "k0_p2": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 2.0,
+   "nh_trace": 3,
+   "nh_plane": 3,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 2,
+   "wire_sub": 1
+  },
+  "d0": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 4.0,
+   "nh_trace": 1,
+   "nh_plane": 1,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 1,
+   "wire_sub": 1
+  },
+  "d1": {
+   "cell_mm": 1.0,
+   "plane_cell_mm": 2.0,
+   "nh_trace": 1,
+   "nh_plane": 1,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 1,
+   "wire_sub": 1
+  },
+  "d2": {
+   "cell_mm": 0.5,
+   "plane_cell_mm": 2.0,
+   "nh_trace": 1,
+   "nh_plane": 1,
+   "rh": 2.0,
+   "nw_trace": 1,
+   "wire_n": 1,
+   "wire_sub": 2
+  }
+ },
+ "geometries": [
+  {
+   "name": "case4_base",
+   "runs": [
+    {
+     "mode": "direct",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 47.652352791978046,
+     "peak_mem_mb": 936.046875,
+     "cpu_s": 46.990482,
+     "n_filaments": 8344,
+     "L_H": 2.57702092304966e-08
+    },
+    {
+     "mode": "direct",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 47.652352791978046,
+     "peak_mem_mb": 936.046875,
+     "cpu_s": 46.990482,
+     "n_filaments": 8344,
+     "L_H": 2.5770129653025057e-08
+    },
+    {
+     "mode": "multipole_o2",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 15.69733204098884,
+     "peak_mem_mb": 109.796875,
+     "cpu_s": 15.407326999999999,
+     "n_filaments": 8344,
+     "L_H": 2.5568082452769892e-08
+    },
+    {
+     "mode": "multipole_o2",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 15.69733204098884,
+     "peak_mem_mb": 109.796875,
+     "cpu_s": 15.407326999999999,
+     "n_filaments": 8344,
+     "L_H": 2.5568002875298346e-08
+    },
+    {
+     "mode": "direct",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 218.06685058400035,
+     "peak_mem_mb": 2562.625,
+     "cpu_s": 214.566991,
+     "n_filaments": 14364,
+     "L_H": 2.554023033772881e-08
+    },
+    {
+     "mode": "direct",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 218.06685058400035,
+     "peak_mem_mb": 2562.625,
+     "cpu_s": 214.566991,
+     "n_filaments": 14364,
+     "L_H": 2.5540150760257265e-08
+    },
+    {
+     "mode": "multipole_o2",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 280.6169207919738,
+     "peak_mem_mb": 234.796875,
+     "cpu_s": 275.885445,
+     "n_filaments": 14364,
+     "L_H": 2.552988526642784e-08
+    },
+    {
+     "mode": "multipole_o2",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 280.6169207919738,
+     "peak_mem_mb": 234.796875,
+     "cpu_s": 275.885445,
+     "n_filaments": 14364,
+     "L_H": 2.5529805688956292e-08
+    },
+    {
+     "mode": "direct",
+     "refinement": "d2",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 34048,
+     "L_H": null,
+     "reason": "estimated dense memory 13.9 GB > cap 5.9 GB"
+    },
+    {
+     "mode": "direct",
+     "refinement": "d2",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 34048,
+     "L_H": null,
+     "reason": "estimated dense memory 13.9 GB > cap 5.9 GB"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 68.87995420803782,
+     "peak_mem_mb": 163.21875,
+     "cpu_s": 67.457931,
+     "n_filaments": 8344,
+     "L_H": 2.5761614863569636e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "d0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 68.87995420803782,
+     "peak_mem_mb": 163.21875,
+     "cpu_s": 67.457931,
+     "n_filaments": 8344,
+     "L_H": 2.5761614863569636e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 172.30823212501127,
+     "peak_mem_mb": 689.65625,
+     "cpu_s": 169.280368,
+     "n_filaments": 25056,
+     "L_H": 2.4630818992901724e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 172.30823212501127,
+     "peak_mem_mb": 689.65625,
+     "cpu_s": 169.280368,
+     "n_filaments": 25056,
+     "L_H": 2.4616256315608816e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 74.39712416694965,
+     "peak_mem_mb": 169.671875,
+     "cpu_s": 73.175502,
+     "n_filaments": 8416,
+     "L_H": 2.5786602189635066e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 74.39712416694965,
+     "peak_mem_mb": 169.671875,
+     "cpu_s": 73.175502,
+     "n_filaments": 8416,
+     "L_H": 2.5786602189635066e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "crash",
+     "wall_s": 4.0565957090002485,
+     "peak_mem_mb": 672.15625,
+     "cpu_s": 3.67759,
+     "n_filaments": 41696,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "crash",
+     "wall_s": 4.0565957090002485,
+     "peak_mem_mb": 672.15625,
+     "cpu_s": 3.67759,
+     "n_filaments": 41696,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 110.47896537499037,
+     "peak_mem_mb": 1150.15625,
+     "cpu_s": 108.97428099999999,
+     "n_filaments": 41696,
+     "L_H": 2.442407672182535e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 110.47896537499037,
+     "peak_mem_mb": 1150.15625,
+     "cpu_s": 108.97428099999999,
+     "n_filaments": 41696,
+     "L_H": 2.4351104180417714e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 438.875946959015,
+     "peak_mem_mb": 309.875,
+     "cpu_s": 433.193132,
+     "n_filaments": 14364,
+     "L_H": 2.553672892898079e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "d1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 1,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 438.875946959015,
+     "peak_mem_mb": 309.875,
+     "cpu_s": 433.193132,
+     "n_filaments": 14364,
+     "L_H": 2.553672892898079e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 292.02976154198404,
+     "peak_mem_mb": 2406.65625,
+     "cpu_s": 285.38987099999997,
+     "n_filaments": 74976,
+     "L_H": 2.4315533050636676e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 292.02976154198404,
+     "peak_mem_mb": 2406.65625,
+     "cpu_s": 285.38987099999997,
+     "n_filaments": 74976,
+     "L_H": 2.4224337268245022e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 1246.0066015409539,
+     "peak_mem_mb": 2427.40625,
+     "cpu_s": 1222.806116,
+     "n_filaments": 102192,
+     "L_H": 2.365090200828492e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 1246.0066015409539,
+     "peak_mem_mb": 2427.40625,
+     "cpu_s": 1222.806116,
+     "n_filaments": 102192,
+     "L_H": 2.3633792851902545e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 412584,
+     "L_H": null,
+     "reason": "projected peak memory 9.6 GB > cap 5.9 GB (linear in filaments)"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 412584,
+     "L_H": null,
+     "reason": "projected peak memory 9.6 GB > cap 5.9 GB (linear in filaments)"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_p2",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 919.7379556249944,
+     "peak_mem_mb": 1798.734375,
+     "cpu_s": 855.792656,
+     "n_filaments": 43116,
+     "L_H": 2.4435695032671057e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_p2",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 919.7379556249944,
+     "peak_mem_mb": 1798.734375,
+     "cpu_s": 855.792656,
+     "n_filaments": 43116,
+     "L_H": 2.442041615813424e-08
+    }
+   ],
+   "L_extrap_H": {
+    "1e+07": 2.235569908140307e-08,
+    "2e+07": 2.2259410340832478e-08
+   },
+   "abs_est_H": {
+    "1e+07": 3.089724178628922e-09,
+    "2e+07": 3.0925454307185033e-09
+   },
+   "diff_vs_l2_abs_H": {
+    "1e+07": 1.7500689009864522e-10,
+    "2e+07": 2.2388159228422918e-10
+   },
+   "diff_vs_l2_rel": {
+    "1e+07": 0.007890055395442248,
+    "2e+07": 0.010160028145409445
+   },
+   "diff_vs_l2_rel_unc": {
+    "1e+07": 0.21841146628395744,
+    "2e+07": 0.2223109233391367
+   },
+   "estimates": {
+    "1e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=0.930",
+     "f_ext_lateral_H": 2.267098502366812e-08,
+     "gci_lateral_H": 2.9397509538504077e-09,
+     "thickness_corr_H": -3.1528594226504816e-10,
+     "thickness_term_H": 1.4997322477851455e-10,
+     "l2_L_extrap_H": 2.2180692191304426e-08,
+     "l2_abs_est_H": 1.754793326067003e-09
+    },
+    "2e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=1.065",
+     "f_ext_lateral_H": 2.2651329388196273e-08,
+     "gci_lateral_H": 2.947390391118815e-09,
+     "thickness_corr_H": -3.9191904736379455e-10,
+     "thickness_term_H": 1.4515503959968822e-10,
+     "l2_L_extrap_H": 2.203552874854825e-08,
+     "l2_abs_est_H": 1.8061933116373496e-09
+    }
+   }
+  },
+  {
+   "name": "case4_die_shift",
+   "runs": [
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 135.1728807920008,
+     "peak_mem_mb": 783.5625,
+     "cpu_s": 132.472808,
+     "n_filaments": 25056,
+     "L_H": 2.432842460102712e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 135.1728807920008,
+     "peak_mem_mb": 783.5625,
+     "cpu_s": 132.472808,
+     "n_filaments": 25056,
+     "L_H": 2.431394150120576e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 59.72080112504773,
+     "peak_mem_mb": 165.796875,
+     "cpu_s": 58.76017,
+     "n_filaments": 8416,
+     "L_H": 2.547274864185785e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 59.72080112504773,
+     "peak_mem_mb": 165.796875,
+     "cpu_s": 58.76017,
+     "n_filaments": 8416,
+     "L_H": 2.5472589486914756e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 99.83355979196494,
+     "peak_mem_mb": 1143.90625,
+     "cpu_s": 98.231492,
+     "n_filaments": 41696,
+     "L_H": 2.412184148489384e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 99.83355979196494,
+     "peak_mem_mb": 1143.90625,
+     "cpu_s": 98.231492,
+     "n_filaments": 41696,
+     "L_H": 2.4049505563258574e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 270.3025429159752,
+     "peak_mem_mb": 2106.078125,
+     "cpu_s": 263.872681,
+     "n_filaments": 74976,
+     "L_H": 2.401409358842063e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 270.3025429159752,
+     "peak_mem_mb": 2106.078125,
+     "cpu_s": 263.872681,
+     "n_filaments": 74976,
+     "L_H": 2.392353442580134e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 1212.550946708012,
+     "peak_mem_mb": 2657.625,
+     "cpu_s": 1192.197071,
+     "n_filaments": 102192,
+     "L_H": 2.3355669588849455e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 1212.550946708012,
+     "peak_mem_mb": 2657.625,
+     "cpu_s": 1192.197071,
+     "n_filaments": 102192,
+     "L_H": 2.3338799164881716e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 412584,
+     "L_H": null,
+     "reason": "projected peak memory 11.1 GB > cap 5.9 GB (linear in filaments)"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 412584,
+     "L_H": null,
+     "reason": "projected peak memory 11.1 GB > cap 5.9 GB (linear in filaments)"
+    }
+   ],
+   "L_extrap_H": {
+    "1e+07": 2.2068583564065296e-08,
+    "2e+07": 2.1973249753153253e-08
+   },
+   "abs_est_H": {
+    "1e+07": 3.065095402701192e-09,
+    "2e+07": 3.0686829792270177e-09
+   },
+   "diff_vs_l2_abs_H": {
+    "1e+07": 2.0661953143768667e-10,
+    "2e+07": 2.531961876661468e-10
+   },
+   "diff_vs_l2_rel": {
+    "1e+07": 0.009451096485627732,
+    "2e+07": 0.011657254292801211
+   },
+   "diff_vs_l2_rel_unc": {
+    "1e+07": 0.22078527680805188,
+    "2e+07": 0.22466440568148915
+   },
+   "estimates": {
+    "1e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=0.939",
+     "f_ext_lateral_H": 2.2382914576671788e-08,
+     "gci_lateral_H": 2.9182650365329994e-09,
+     "thickness_corr_H": -3.1433101260649227e-10,
+     "thickness_term_H": 1.468303661681926e-10,
+     "l2_L_extrap_H": 2.186196403262761e-08,
+     "l2_abs_est_H": 1.7617043778101685e-09
+    },
+    "2e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=1.070",
+     "f_ext_lateral_H": 2.2363656828557674e-08,
+     "gci_lateral_H": 2.925427008972129e-09,
+     "thickness_corr_H": -3.90407075404421e-10,
+     "thickness_term_H": 1.4325597025488872e-10,
+     "l2_L_extrap_H": 2.1720053565487106e-08,
+     "l2_abs_est_H": 1.8110399464332518e-09
+    }
+   }
+  },
+  {
+   "name": "case4_trace_width",
+   "runs": [
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "crash",
+     "wall_s": 2.5354786249808967,
+     "peak_mem_mb": 386.640625,
+     "cpu_s": 2.039036,
+     "n_filaments": 25440,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "crash",
+     "wall_s": 2.5354786249808967,
+     "peak_mem_mb": 386.640625,
+     "cpu_s": 2.039036,
+     "n_filaments": 25440,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 44.057212249957956,
+     "peak_mem_mb": 555.71875,
+     "cpu_s": 43.20405,
+     "n_filaments": 25440,
+     "L_H": 2.3719338633814436e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 44.057212249957956,
+     "peak_mem_mb": 555.71875,
+     "cpu_s": 43.20405,
+     "n_filaments": 25440,
+     "L_H": 2.3704537224106893e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "crash",
+     "wall_s": 1.0123658329830505,
+     "peak_mem_mb": 139.1875,
+     "cpu_s": 0.802176,
+     "n_filaments": 8544,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "crash",
+     "wall_s": 1.0123658329830505,
+     "peak_mem_mb": 139.1875,
+     "cpu_s": 0.802176,
+     "n_filaments": 8544,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 10000000.0,
+     "status": "crash",
+     "wall_s": 1.0161029170267284,
+     "peak_mem_mb": 139.140625,
+     "cpu_s": 0.861228,
+     "n_filaments": 8544,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh1",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 2,
+     "freq_hz": 20000000.0,
+     "status": "crash",
+     "wall_s": 1.0161029170267284,
+     "peak_mem_mb": 139.140625,
+     "cpu_s": 0.861228,
+     "n_filaments": 8544,
+     "L_H": null
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 101.9067002920201,
+     "peak_mem_mb": 1095.109375,
+     "cpu_s": 100.006432,
+     "n_filaments": 42336,
+     "L_H": 2.3621299188869828e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh5",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 5,
+      "nh_plane": 5,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 101.9067002920201,
+     "peak_mem_mb": 1095.109375,
+     "cpu_s": 100.006432,
+     "n_filaments": 42336,
+     "L_H": 2.354800833757601e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 268.38119195896434,
+     "peak_mem_mb": 1789.65625,
+     "cpu_s": 263.31273600000003,
+     "n_filaments": 76128,
+     "L_H": 2.35668681983324e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_nh9",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 4.0,
+      "nh_trace": 9,
+      "nh_plane": 9,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 268.38119195896434,
+     "peak_mem_mb": 1789.65625,
+     "cpu_s": 263.31273600000003,
+     "n_filaments": 76128,
+     "L_H": 2.3478059740087126e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 1203.4145776249934,
+     "peak_mem_mb": 2868.4375,
+     "cpu_s": 1165.907594,
+     "n_filaments": 103728,
+     "L_H": 2.293104420068028e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k1",
+     "params": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 1203.4145776249934,
+     "peak_mem_mb": 2868.4375,
+     "cpu_s": 1165.907594,
+     "n_filaments": 103728,
+     "L_H": 2.291449208659872e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 418728,
+     "L_H": null,
+     "reason": "projected peak memory 11.3 GB > cap 5.9 GB (linear in filaments)"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k2",
+     "params": {
+      "cell_mm": 0.25,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 4
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "not_run",
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "cpu_s": null,
+     "n_filaments": 418728,
+     "L_H": null,
+     "reason": "projected peak memory 11.3 GB > cap 5.9 GB (linear in filaments)"
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_p2",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 10000000.0,
+     "status": "ok",
+     "wall_s": 761.7304060830502,
+     "peak_mem_mb": 1682.84375,
+     "cpu_s": 753.676698,
+     "n_filaments": 43500,
+     "L_H": 2.3699603420871044e-08
+    },
+    {
+     "mode": "multipole",
+     "refinement": "k0_p2",
+     "params": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 3,
+      "nh_plane": 3,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "attempt": 1,
+     "freq_hz": 20000000.0,
+     "status": "ok",
+     "wall_s": 761.7304060830502,
+     "peak_mem_mb": 1682.84375,
+     "cpu_s": 753.676698,
+     "n_filaments": 43500,
+     "L_H": 2.3684961166106586e-08
+    }
+   ],
+   "L_extrap_H": {
+    "1e+07": 2.1990279332064087e-08,
+    "2e+07": 2.189796946507078e-08
+   },
+   "abs_est_H": {
+    "1e+07": 2.449807563835863e-09,
+    "2e+07": 2.4407751381595395e-09
+   },
+   "diff_vs_l2_abs_H": {
+    "1e+07": 4.915365369188722e-10,
+    "2e+07": 5.422479644133323e-10
+   },
+   "diff_vs_l2_rel": {
+    "1e+07": 0.022863501442971335,
+    "2e+07": 0.02539122662732977
+   },
+   "diff_vs_l2_rel_unc": {
+    "1e+07": 0.19317829853423135,
+    "2e+07": 0.1964676468667714
+   },
+   "estimates": {
+    "1e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=0.849",
+     "f_ext_lateral_H": 2.2142749767546123e-08,
+     "gci_lateral_H": 2.3648832994024704e-09,
+     "thickness_corr_H": -1.5247043548203616e-10,
+     "thickness_term_H": 8.492426443339236e-11,
+     "l2_L_extrap_H": 2.1498742795145214e-08,
+     "l2_abs_est_H": 1.7032829899553548e-09
+    },
+    "2e+07": {
+     "lateral": "two-level, assumed p=1",
+     "thickness": "monotone p=1.162",
+     "f_ext_lateral_H": 2.2124446949090547e-08,
+     "gci_lateral_H": 2.370135412524518e-09,
+     "thickness_corr_H": -2.2647748401976708e-10,
+     "thickness_term_H": 7.063972563502156e-11,
+     "l2_L_extrap_H": 2.1355721500657448e-08,
+     "l2_abs_est_H": 1.7549332122167455e-09
+    }
+   }
+  }
+ ],
+ "ratio_diff": {
+  "die_shift@1e+07": {
+   "R_fh": 0.9871913080222666,
+   "R_fh_est": 0.0006260090929192874,
+   "R_l2_extrap": 0.9856749905291123,
+   "R_l2_est": 0.001718202461920536,
+   "diff": 0.0015163174931542844,
+   "kinds": {
+    "lateral": "two-level, assumed p=1",
+    "thickness": "monotone p=2.113"
+   },
+   "R_fh_per_level": {
+    "k0": 0.9877229258206254,
+    "k1": 0.9875170756983371,
+    "k2": null,
+    "k0_nh5": 0.9876255204905481,
+    "k0_nh9": 0.9876030082668431
+   }
+  },
+  "die_shift@2e+07": {
+   "R_fh": 0.9871811077074467,
+   "R_fh_est": 0.0006199167212131196,
+   "R_l2_extrap": 0.9857283176539455,
+   "R_l2_est": 0.0017738635831325948,
+   "diff": 0.001452790053501185,
+   "kinds": {
+    "lateral": "two-level, assumed p=1",
+    "thickness": "monotone p=1.706"
+   },
+   "R_fh_per_level": {
+    "k0": 0.9877188955734361,
+    "k1": 0.9875181402803452,
+    "k2": null,
+    "k0_nh5": 0.9876145814610873,
+    "k0_nh9": 0.9875826182936284
+   }
+  },
+  "trace_width@1e+07": {
+   "R_fh": 0.9823481977614791,
+   "R_fh_est": 0.022330324469487874,
+   "R_l2_extrap": 0.9692484205825228,
+   "R_l2_est": 0.0010738536878701632,
+   "diff": 0.013099777178956273,
+   "kinds": {
+    "lateral": "two-level, assumed p=1",
+    "thickness": "monotone p=0.993"
+   },
+   "R_fh_per_level": {
+    "k0": 0.9629943137761694,
+    "k1": 0.9695631985895306,
+    "k2": null,
+    "k0_nh5": 0.9671317142466164,
+    "k0_nh9": 0.9692104281347568
+   }
+  },
+  "trace_width@2e+07": {
+   "R_fh": 0.9823970888557376,
+   "R_fh_est": 0.0229378823626567,
+   "R_l2_extrap": 0.9691434663184263,
+   "R_l2_est": 0.0008833221777803102,
+   "diff": 0.013253622537311327,
+   "kinds": {
+    "lateral": "two-level, assumed p=1",
+    "thickness": "monotone p=0.901"
+   },
+   "R_fh_per_level": {
+    "k0": 0.9629627235021998,
+    "k1": 0.9695647342848772,
+    "k2": null,
+    "k0_nh5": 0.9670201467296287,
+    "k0_nh9": 0.9691930672903828
+   }
+  }
+ }
+}

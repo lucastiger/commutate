@@ -1,0 +1,25 @@
+{
+ "wall_s": 0.5086760420235805,
+ "peak_mem_mb": 2.015625,
+ "cpu_s": 0.002245,
+ "log_tail": " nonzero 0 recalls 0\nReorder and factor time 1e-06\nconductor 0 from node n1\nCalling gmres...\n1 \nFrequency = 2000\nForming sparse matrix preconditioner.\nBlock A runtime=5e-06, block B runtime=1e-06\n\nPrecond build time 1.6e-05, matsize 0, nonzero 0 recalls 0\nconductor 0 from node n1\nCalling gmres...\n1 \n\nAll impedance matrices dumped to file Zc.mat\n\nTimes:  Read geometry   0.000225\n        Multipole setup 7.3e-05\n        Scanning graph  2e-06\n        Form A M and Z  3e-06\n        form M'ZM       2e-06\n        Form precond    5.1e-05\n        GMRES time      6.2e-05\n   Total:               0.000418\n",
+ "status": "ok",
+ "Z": {
+  "1000": [
+   0.000172414,
+   3.58409e-05
+  ],
+  "2000": [
+   0.000172414,
+   7.16818e-05
+  ]
+ },
+ "L_H": {
+  "1000": 5.704256399862312e-09,
+  "2000": 5.704256399862312e-09
+ },
+ "binary": "/Users/lukeskywalker/.local/bin/fasthenry",
+ "binary_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+ "L_nH_1kHz": 5.704256399862311,
+ "pass": true
+}
