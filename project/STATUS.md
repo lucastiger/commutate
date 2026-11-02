@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T18:40:39+00:00 from repository state — do not edit_
+_generated 2026-11-02T18:42:57+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
-- **I0092** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,7 +32,6 @@ cancelled: 30, done: 161, failed: 3, running: 1, todo: 1
 - T0196 `running` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
 
 ## Recent events
-- 2026-11-02T16:41:07+00:00 run_started {"run": "T0195-critic-20261102T084107-9af4", "task": "T0195", "role": "critic", "session": "4e1636bc-0b0a-4a6c-b329-a48ef02977e3"}
 - 2026-11-02T16:50:03+00:00 run_finished {"run": "T0195-critic-20261102T084107-9af4", "status": "completed", "cost": 2.482747, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T16:50:03+00:00 run_finished {"run": "T0194-critic-20261102T084105-54db", "status": "completed", "cost": 2.625167, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T17:32:36+00:00 loop_started {"pid": 25076}
@@ -48,3 +46,4 @@ cancelled: 30, done: 161, failed: 3, running: 1, todo: 1
 - 2026-11-02T18:40:34+00:00 inbox_opened {"id": "I0092", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-02T18:40:36+00:00 loop_started {"pid": 85666}
 - 2026-11-02T18:40:39+00:00 run_started {"run": "T0196-scientist-20261102T104039-19d7", "task": "T0196", "role": "scientist", "session": "46daa03b-08ae-48aa-b8e5-71eebf2a9c4f"}
+- 2026-11-02T18:42:54+00:00 inbox_resolved {"id": "I0092", "status": "approved", "note": "Stale: cap already 120 (b1233a2); raised by the pre-restart loop", "by": "human"}
