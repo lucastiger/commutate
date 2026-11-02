@@ -94,8 +94,11 @@ place to work.
 **Memory budget on 16 GB** (estimates; B1 measures the agent part): macOS and background ~4–5 GB,
 browser and editor ~2–4 GB, two agents 0.5–2 GB, orchestrator 0.04 GB, one experiment 0.3–2.5 GB
 (four FastHenry workers at ≤ 0.6 GB each, or one 3M-unknown thermal solve at 2.1 GB). Total
-≈ 9–14 GB — it fits, and macOS compresses memory before swapping. Rules: never run a 3D thermal mesh
-above ~5M unknowns locally, and keep `concurrency.agents = 2`.
+≈ 9–14 GB — it fits, and macOS compresses memory before swapping. Rules (revised 2026-11-02, founder: prefer
+longer local runs to paid VMs): run heavy jobs one at a time, keep each agent's processes at or below 5 GB, let a
+single process reach 10 GB only when the machine is otherwise quiet (at least 50 % free, swap under 4 GB), use
+memory-lean methods and checkpoint-and-resume before asking for a burst VM, and keep `concurrency.agents = 2`.
+The agent definitions (`.claude/agents/`) carry the operational rule.
 
 **Tier C — heavy autonomous workloads — is rented, not owned.**
 

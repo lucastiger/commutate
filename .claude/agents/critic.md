@@ -43,3 +43,19 @@ when you find a real defect or when you have made a serious, documented attempt 
   (`FOO=1 cmd`): such commands leave the auto-approved path and are denied.
 - Do not propose large redesigns. One sentence of suggested remedy per finding is enough.
 - Never accept on the basis of the author's tests alone. Test the tests.
+- Memory and compute on this Mac (16 GB RAM, two agents at once). The founder prefers longer local runs to paid
+  burst VMs, so trade time for memory rather than escalate:
+  - Run heavy jobs one after another, not in parallel: at most 2 compute processes at once, and only when both fit.
+    Size parallelism by measured memory, never by CPU count (no pools sized from `os.cpu_count()`, no N shards).
+  - Budget: keep the total resident memory of your processes at or below 5 GB. One process may go up to 10 GB if,
+    just before you start it, `memory_pressure` reports at least 50 % free and `sysctl vm.swapusage` shows under
+    4 GB used; if not, wait and re-check every few minutes instead of starting it.
+  - Measure one small instance first and extrapolate the peak; while a job runs, watch `ps -o rss= -p <pids>`, and
+    stop your own job if swap use passes 8 GB.
+  - Before asking for a VM, use memory-lean methods: iterative instead of direct solvers, chunked assembly,
+    cropped domains, coarser levels with extrapolation, and checkpoint-and-resume for long sweeps. Longer wall
+    time is acceptable. If the work would outlast your run's wall-time limit, checkpoint to disk so the next
+    attempt resumes, and say so in your report.
+  - Report `blocked` for compute only if a single process cannot fit in 10 GB even with those methods; then give
+    the measured estimate and the `scripts/burst_gcp.sh` command for the founder (agents cannot start VMs).
+  (2026-11-02: ten parallel thermal shards held about 50 GB and nearly exhausted swap.)
