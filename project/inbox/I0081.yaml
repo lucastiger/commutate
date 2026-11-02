@@ -1,0 +1,27 @@
+id: I0081
+kind: decision
+subject: '[O006] O006: hold T0165 (E006 design) until your A3/A4 decision on T0181 is recorded'
+summary: T0165's history says it waits for T0181 and for your decision on A3/A4. Its depends_on lists
+  only T0181, so the orchestrator will start it as soon as T0181 merges, even if you haven't decided.
+  E006 has max_evaluations = 1. If T0165 designs and registers E006 under the current A4 rule and you
+  later change A3/A4, the design work is wasted or the single evaluation is spent under criteria you meant
+  to revise. T0181 checks the frozen A4 GCI rule (Fs = 3, p = 2 when p_obs is outside [1.5, 2.5]) at the
+  singular die-attach corner, where reviews T0178/T0179 found that rule understates the error and that
+  0.025 K may be unreachable in 16 GB. Its result is the input to that decision.
+refs:
+- O006
+- T0182
+options:
+- Keep the frozen A3/A4 and let T0165 start as soon as T0181 merges
+- Hold T0165 until you record an A3/A4 decision (a criteria_change, or an explicit 'unchanged') after
+  reading research/notes/o006-gci-differences.md
+- Accept the fallback without spending the evaluation if T0181 shows 0.025 K cannot be reached by either
+  solver
+recommendation: Hold T0165 until you have read T0181's note and recorded the A3/A4 decision. If T0181
+  shows that neither the L2 solver nor scikit-fem can meet A4 or scikit-fem's own GCI gate within 16 GB,
+  decide that before E006 registration rather than learning it from the single evaluation.
+status: open
+response: ''
+created_at: '2026-11-02T06:51:40+00:00'
+resolved_at: null
+resolved_by: null
