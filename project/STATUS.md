@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T06:49:58+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:50:31+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -24,17 +24,16 @@ _generated 2026-11-02T06:49:58+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 43 | $76.07 | 1662235 | 900810 | 73 | 0 |
+| O006 | 45 | $76.07 | 1662235 | 900810 | 73 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 144, failed: 3, todo: 5
+cancelled: 30, done: 144, failed: 3, running: 2, todo: 3
 
+- T0167 `running` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 1)
+- T0182 `running` planner/plan: Plan O006 (founder answered I0072: Founder (2026-11-02): re-scoped T0157 to a secondary-source screen with the T0174/T0175 fixes and explicit P1 sensitivity ranges; primary verification deferred until the founder supplies PDFs; retried as attempt 3. (no replan)) (attempt 1)
 
 ## Recent events
-- 2026-11-02T06:35:32+00:00 inbox_resolved {"id": "I0075", "status": "approved", "note": "Approved; gate matches frozen F1 (Case 3 only), payload hash unchanged.", "by": "human"}
-- 2026-11-02T06:35:34+00:00 inbox_resolved {"id": "I0076", "status": "approved", "note": "P4 note accepted: FastHenry not usable at module scale locally; D0009 band uses the doubled l2_layout estimate.",
-- 2026-11-02T06:35:43+00:00 inbox_resolved {"id": "I0078", "status": "approved", "note": "Approved; VM-ready scikit-fem benchmark (review T0180, minor caveats).", "by": "human"}
 - 2026-11-02T06:35:44+00:00 merged {"task": "T0155"}
 - 2026-11-02T06:36:04+00:00 task_added {"task": "T0181"}
 - 2026-11-02T06:36:09+00:00 merged {"task": "T0157"}
@@ -47,3 +46,6 @@ cancelled: 30, done: 144, failed: 3, todo: 5
 - 2026-11-02T06:39:26+00:00 inbox_resolved {"id": "I0079", "status": "approved", "note": "Daily cap raised to 90 USD.", "by": "human"}
 - 2026-11-02T06:49:56+00:00 merged {"task": "T0170"}
 - 2026-11-02T06:49:58+00:00 inbox_opened {"id": "I0080", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-02T06:50:27+00:00 loop_started {"pid": 55509}
+- 2026-11-02T06:50:31+00:00 run_started {"run": "T0182-planner-20261101T225031-ccac", "task": "T0182", "role": "planner", "session": "f93d3e7c-7b1f-44ad-8012-b000bbf667ac"}
+- 2026-11-02T06:50:31+00:00 run_started {"run": "T0167-scientist-20261101T225031-83e1", "task": "T0167", "role": "scientist", "session": "4bd4b819-b9ab-4fbe-9ab2-e0fff61a1c31"}
