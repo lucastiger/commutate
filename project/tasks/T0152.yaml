@@ -4,7 +4,7 @@ title: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback),
   GCI, A3 convergence/cost benchmark
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0148
 description: 'Implement src/moduleforge/solvers/thermal_fem.py with scikit-fem trilinear hexahedra and
@@ -74,11 +74,12 @@ model: null
 budget_usd: 6.0
 max_turns: 100
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0152-scikit-fem-hexahedral-cross-check-built-
 pr: null
-runs: []
+runs:
+- T0152-builder-20261101T175343-7282
 created_by: planner:T0147
 created_at: '2026-11-01T21:49:21+00:00'
 protected_approved: false

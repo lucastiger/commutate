@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T01:53:30+00:00 from repository state — do not edit_
+_generated 2026-11-02T01:53:43+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0063** [protected_change] T0149: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,19 +23,18 @@ _generated 2026-11-02T01:53:30+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 19 | $38.61 | 781186 | 459608 | 27 | 0 |
+| O006 | 21 | $38.61 | 781186 | 459608 | 27 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 121, failed: 3, merge: 2, todo: 6
+cancelled: 29, done: 121, failed: 3, merge: 1, needs_founder: 1, running: 2, todo: 4
 
-- T0149 `merge` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
+- T0149 `needs_founder` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
+- T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 2)
+- T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 - T0154 `merge` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-02T00:30:01+00:00 run_interrupted {"run": "T0149-builder-20261101T162535-8e18", "cost": 1.509883}
-- 2026-11-02T00:30:01+00:00 run_started {"run": "T0149-builder-20261101T163001-621c", "task": "T0149", "role": "builder", "session": "52e3ed90-fcc9-41a3-b0c4-c8fadc196c7c"}
-- 2026-11-02T01:18:28+00:00 run_finished {"run": "T0154-scientist-20261101T163001-c8f4", "status": "completed", "cost": 1.270733, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:19:04+00:00 verified {"task": "T0154"}
 - 2026-11-02T01:19:44+00:00 inbox_opened {"id": "I0062", "kind": "protected_change", "subject": "T0154: merge needs founder approval"}
 - 2026-11-02T01:19:47+00:00 run_started {"run": "T0151-scientist-20261101T171947-55ab", "task": "T0151", "role": "scientist", "session": "805d7720-c3f5-4741-9d39-d94522c974a3"}
@@ -48,3 +47,6 @@ cancelled: 29, done: 121, failed: 3, merge: 2, todo: 6
 - 2026-11-02T01:43:43+00:00 task_failed_attempt {"task": "T0151", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T01:43:43+00:00 run_finished {"run": "T0161-critic-20261101T173737-63fe", "status": "completed", "cost": 1.515283, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:45:46+00:00 inbox_resolved {"id": "I0062", "status": "approved", "note": "P3 research note accepted; 0.25/0.125 mm levels to be run on a burst VM by the founder.", "by": "human"}
+- 2026-11-02T01:53:41+00:00 inbox_opened {"id": "I0063", "kind": "protected_change", "subject": "T0149: merge needs founder approval"}
+- 2026-11-02T01:53:42+00:00 run_started {"run": "T0151-scientist-20261101T175342-05bc", "task": "T0151", "role": "scientist", "session": "22f9d281-fc2b-4d92-930f-75c80553a6ad"}
+- 2026-11-02T01:53:43+00:00 run_started {"run": "T0152-builder-20261101T175343-7282", "task": "T0152", "role": "builder", "session": "2da7fe1e-e5e3-40cc-8acf-1a8b1877bd0e"}
