@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T19:28:30+00:00 from repository state — do not edit_
+_generated 2026-11-02T19:28:44+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
+- **I0094** [experiment_registration] register E006 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,13 +28,10 @@ _generated 2026-11-02T19:28:30+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 162, failed: 3, merge: 1, todo: 1
+cancelled: 30, done: 163, failed: 3, todo: 1
 
-- T0196 `merge` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
 
 ## Recent events
-- 2026-11-02T18:33:53+00:00 inbox_resolved {"id": "I0089", "status": "approved", "note": "T0165: E006 design merged (reviews T0194/T0195 accept with caveats; fixes in T0196 before registration)", "by": "
-- 2026-11-02T18:34:18+00:00 merged {"task": "T0165"}
 - 2026-11-02T18:34:18+00:00 inbox_opened {"id": "I0090", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
 - 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-02T18:40:13+00:00 inbox_resolved {"id": "I0091", "status": "approved", "note": "Daily cap raised to 120 in policy", "by": "human"}
@@ -47,3 +45,5 @@ cancelled: 30, done: 162, failed: 3, merge: 1, todo: 1
 - 2026-11-02T19:11:34+00:00 run_finished {"run": "T0197-critic-20261102T110358-0958", "status": "completed", "cost": 2.534383, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T19:11:37+00:00 inbox_opened {"id": "I0093", "kind": "protected_change", "subject": "T0196: merge needs founder approval"}
 - 2026-11-02T19:28:09+00:00 inbox_resolved {"id": "I0093", "status": "approved", "note": "T0196: E006 pre-registration fixes (review T0197 accept with caveats); NaN-safe gate patch follows before registr
+- 2026-11-02T19:28:43+00:00 merged {"task": "T0196"}
+- 2026-11-02T19:28:43+00:00 inbox_opened {"id": "I0094", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
