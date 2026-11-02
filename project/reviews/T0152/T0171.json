@@ -1,0 +1,58 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The A3 GCI covers lateral refinement only; the z discretisation error is about the size of the 0.025 K limit, grows with level, and a3_gci_met ignores it",
+      "detail": "The benchmark uses zrefine=False, so gci_K and a3_gci_met cover lateral refinement only. The module and benchmark docstrings claim the z error is level-independent and was measured separately (z_sensitivity_K, at level 0 only). My own measurement on u_shaped_2 at 66 W contradicts this. Going from nz to 2nz changes Tj max by 0.0262 K at level 0 but by 0.0359 K at level 1, 37% more. A z-only three-grid study at level 0 (nz x1, x2, x4) gives p_obs \u2248 1.99. Richardson extrapolation therefore puts the z error of the rule's z counts at about 0.035 K (level 0) and about 0.048 K (level 1), and likely more at level 2. That is above the 0.025 K A3 GCI limit and close to the 0.05 K A3 agreement threshold. Today a3_gci_met is already false, so the decision does not change. But a rerun of this benchmark with a finer lateral level (the burst VM the docstring proposes) could report a3_gci_met = true while the true discretisation error is above 0.025 K. That would be a false pass on the reference that A3 relies on.",
+      "evidence": "level 0 tj_max nz x1/x2/x4: [423.0488, 423.07104, 423.07663] (die 0); level 1 nz x1/x2: 423.35398/423.38276; max over dies |\u0394| level0 = 0.02616 K, level1 = 0.03588 K",
+      "suggested_check": "For A3, either refine z with the level (zrefine=True), or add a level-matched z-GCI to the lateral GCI before setting a3_gci_met; also correct the docstring claim that the z error is level-independent.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Below p_obs 1.5 the frozen GCI rule can understate the error; observed orders here are 0.6\u20131.7",
+      "detail": "For p_obs outside [1.5, 2.5] the rule sets Fs = 3 and p = 2, which gives GCI = |f2 - f1|. With the observed p_obs of 0.64\u20130.9 for most side_by_side dies, Richardson extrapolation at that order gives an error of about 1.1\u20132.1 |f2 - f1|. So the reported gci_K values (0.03\u20130.15 K) are probably too small rather than conservative. The implementation copies the objective's A4 definition correctly, so this is a limit of the frozen metric, not a coding error. It matters for reading the numbers: the low order points to singularities at re-entrant die and copper edges, and suggests a finer mesh alone may not reach 0.025 K cheaply.",
+      "evidence": "JSON p_obs: side_by_side_6 dies 0.64\u20131.67; GCI recomputed from the JSON tj_max triples matches gci_K to 1e-12.",
+      "suggested_check": "Report the Richardson estimate at p_obs alongside gci_K when p_obs < 1.5.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The energy-balance check can only detect linear-solver non-convergence",
+      "detail": "q_out is computed as h\u00b7ones_b\u1d40\u03b8 = 1\u1d40 M_b \u03b8. Because Galerkin stiffness rows sum to zero, this equals \u03a3 P up to the CG residual by construction. So 'status: ok' (energy_balance \u2264 1e-6) cannot catch a wrong source area, a wrong h scaling or a wrong material map. The docstring admits this. Source-area and region-volume checks cover part of the gap, and the 1D slab and Kirchhoff tests cover the Robin and conduction scaling.",
+      "evidence": "",
+      "suggested_check": "Optionally compare q_out against an independently integrated face flux, for example a facet-basis integral using skfem's own boundary assembly.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The 7.7 kB/DOF skip estimate is exceeded at small DOF counts",
+      "detail": "Measured bytes per DOF is 8.8 kB at 0.096 M DOF and 8.1 kB at 0.06 M DOF, against the assumed 7.7 kB. The estimate is safe at the sizes where the skip actually binds (4.4\u20136.4 kB/DOF measured at 0.9\u20131.5 M DOF), so the skip logic is not affected in practice.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "layout_grid assumes a fixed stack layer order",
+      "detail": "Material ids 0\u20134 are assigned from zb[1..5] by position in st.layers, while materials are looked up by name. A LayerStack with a different order or an extra layer would put the wrong material in a slab without raising an error. This is fine for default_dbc_stack.",
+      "evidence": "",
+      "suggested_check": "Assert that [la.name for la in st.layers] == ['baseplate','solder','backside_cu','ceramic','top_cu'].",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command. tests/unit/solvers/test_thermal_fem.py: 12 passed. The independence grep (no thermal_fv or thermal_layout) passes, and imports cover only moduleforge.geometry. benchmarks/thermal_fem_convergence.py --smoke runs (power 44/65 W, max GCI 0.74 K). The JSON structure assertion passes. Fast unit tests: 363 passed. ruff check: clean.",
+    "Derived my own Fourier cosine-series solution of a 3D two-layer rectangular flux channel (k 390/25, h 3000, off-centre 4x4 mm source, 30 W) using a stable impedance recursion through the layers, and compared it with solve_box_stack at levels 0\u20133. Series: centre 396.2633 K (M=1600), mean 387.7764 K. FEM centre: 396.43 \u2192 396.42 \u2192 396.31 \u2192 396.274 K. FEM mean: 384.84 \u2192 386.81 \u2192 387.48 \u2192 387.69 K, converging monotonically to the series value at order \u22481.6. Energy balance \u2248 2e-13. This confirms the core assembly (hex corner order, unit scaling, Robin mass matrix, flux load) independently of the author's tests.",
+    "Reproduced level 0 of both benchmark layouts at the committed powers (45 W, 66 W). Layout fingerprints match, DOF counts match exactly (95703, 60283), and Tj max agrees with the JSON to 6e-13 K. Recomputed every per-die gci_K from the JSON tj_max triples with F.gci (finest first), and all agree to 1e-12.",
+    "Ran a z-refinement study on u_shaped_2 (66 W, full rule). At level 0 with nz x1/x2/x4: p_obs \u2248 1.99 and a nz to 2nz difference of 0.026 K. At level 1 the nz to 2nz difference is 0.036 K. This falsifies the claim that the z error is level-independent and shows a z error the lateral-only GCI leaves out, of the size of the 0.025 K limit.",
+    "Code inspection: unit scaling (mm internal: k\u00b71e-3, h\u00b71e-6, flux P/area_mm2) and the Q1 face mass matrix for corner order (0,0),(1,0),(0,1),(1,1). The GCI branch logic matches the O006 A4 text. generate_layouts returns only DRC-checked layouts (check(lay) filter). scikit-fem and pyamg are declared in pyproject. Picard contraction (5 iterations to 5e-5 K) makes the Picard error negligible."
+  ],
+  "caveats": [
+    "The benchmark's GCI and a3_gci_met cover lateral refinement only. On top of that there is a z discretisation error of about 0.035\u20130.05 K, which grows with the lateral level and which a3_gci_met does not account for. The current conclusion (A3 GCI not met on this machine) holds, and including z would only make it worse. A future 'met' from this benchmark would not be trustworthy without a z term.",
+    "Observed lateral orders are 0.6\u20131.7, outside the asymptotic range for most dies. By the frozen Roache rule the reported GCI then equals |f2 - f1|, which may understate the true error.",
+    "I could not check region-volume conformity for the two benchmark layouts under the full rule (near_margin set): the sandbox refused further shell commands. Conformity was checked by the author's test on two generated layouts with the coarse rule, and I inspected the code.",
+    "The FEM agrees with an independent analytic series in box mode and its JSON results reproduce. It has not yet been compared with the FV solver; that comparison, A3 itself, is outside this claim."
+  ]
+}

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:15:13+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:22:01+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -13,7 +13,7 @@ _generated 2026-11-02T03:15:13+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $50.10/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $51.48/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,18 +23,16 @@ _generated 2026-11-02T03:15:13+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 27 | $50.10 | 1077972 | 608957 | 40 | 0 |
+| O006 | 27 | $51.48 | 1102824 | 621951 | 45 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 127, failed: 3, review: 1, running: 2, todo: 8
+cancelled: 30, done: 128, failed: 3, merge: 1, running: 1, todo: 8
 
-- T0152 `review` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
+- T0152 `merge` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 - T0153 `running` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
-- T0171 `running` critic/review: Review T0152 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-02T02:42:48+00:00 run_started {"run": "T0169-critic-20261101T184248-428c", "task": "T0169", "role": "critic", "session": "47a21803-efda-425b-8edb-4770e6e774c5"}
 - 2026-11-02T02:49:03+00:00 run_finished {"run": "T0169-critic-20261101T184248-428c", "status": "completed", "cost": 2.12731, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:03:26+00:00 inbox_opened {"id": "I0069", "kind": "protected_change", "subject": "T0150: merge needs founder approval"}
 - 2026-11-02T03:03:30+00:00 run_started {"run": "T0153-scientist-20261101T190330-2c7a", "task": "T0153", "role": "scientist", "session": "08a8f217-d72a-4b63-804c-8c8b3c112f94"}
@@ -49,3 +47,4 @@ cancelled: 30, done: 127, failed: 3, review: 1, running: 2, todo: 8
 - 2026-11-02T03:13:44+00:00 run_finished {"run": "T0152-builder-20261101T175343-7282", "status": "completed", "cost": 3.034979, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:15:09+00:00 verified {"task": "T0152"}
 - 2026-11-02T03:15:13+00:00 run_started {"run": "T0171-critic-20261101T191513-eaaf", "task": "T0171", "role": "critic", "session": "196ab881-ef12-4b0f-a641-e8e680684c32"}
+- 2026-11-02T03:21:39+00:00 run_finished {"run": "T0171-critic-20261101T191513-eaaf", "status": "completed", "cost": 1.378192, "subtype": "success", "report": "structured_output"}
