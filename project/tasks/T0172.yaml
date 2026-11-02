@@ -5,7 +5,8 @@ title: 'scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, hos
 type: implement
 agent: builder
 status: todo
-depends_on: []
+depends_on:
+- T0152
 description: T0152's benchmark (benchmarks/thermal_fem_convergence.py) hard-codes zrefine=False and h0=0.5
   mm, so its GCI covers lateral refinement only; review T0171 measured the z error at 0.026 K (level 0)
   growing to 0.036 K (level 1), the size of A3's 0.025 K limit. Add command-line options --zrefine (refine
@@ -18,8 +19,29 @@ description: T0152's benchmark (benchmarks/thermal_fem_convergence.py) hard-code
   estimate).
 context_files: []
 deliverables: []
-touches: []
-definition_of_done: []
+touches:
+- benchmarks/thermal_fem_convergence.py
+- tests/unit/solvers/test_thermal_fem.py
+- src/moduleforge/solvers/thermal_fem.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --zrefine
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --h0
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --mem-gb
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
 experiment: null
 risk: medium
 model: null
@@ -39,4 +61,7 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- outcome: founder_dod_added
+  summary: DoD, touches and depends_on T0152 set (founder session)
+  at: '2026-11-02T03:24:51+00:00'

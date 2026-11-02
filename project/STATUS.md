@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:24:42+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:24:54+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -27,15 +27,12 @@ _generated 2026-11-02T03:24:42+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 128, failed: 3, merge: 1, running: 2, todo: 8
+cancelled: 30, done: 129, failed: 3, running: 2, todo: 8
 
-- T0152 `merge` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 - T0153 `running` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:06:05+00:00 budget_override {"objective": "O006", "usd": 115.0}
-- 2026-11-02T03:06:23+00:00 budget_override {"objective": "O006", "usd": 115.0}
 - 2026-11-02T03:06:47+00:00 inbox_resolved {"id": "I0069", "status": "approved", "note": "Approved; grid-rule refinement and GCI honesty follow-up before E006 design (reviews T0168/T0169).", "by": "human
 - 2026-11-02T03:06:48+00:00 task_added {"task": "T0170"}
 - 2026-11-02T03:07:04+00:00 merged {"task": "T0150"}
@@ -49,3 +46,5 @@ cancelled: 30, done: 128, failed: 3, merge: 1, running: 2, todo: 8
 - 2026-11-02T03:22:17+00:00 run_started {"run": "T0155-scientist-20261101T192217-0866", "task": "T0155", "role": "scientist", "session": "77fcf8f6-3a0f-4e35-b3c0-f053d1bc5d77"}
 - 2026-11-02T03:24:29+00:00 inbox_resolved {"id": "I0070", "status": "approved", "note": "Approved; A3 needs a 3D-refined scikit-fem benchmark on a burst VM (review T0171).", "by": "human"}
 - 2026-11-02T03:24:30+00:00 task_added {"task": "T0172"}
+- 2026-11-02T03:24:51+00:00 task_amended {"task": "T0172", "reason": "DoD/touches/depends_on set"}
+- 2026-11-02T03:24:52+00:00 merged {"task": "T0152"}
