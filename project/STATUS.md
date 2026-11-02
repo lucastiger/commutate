@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-02T10:15:14+00:00 from repository state — do not edit_
+_generated 2026-11-02T10:15:22+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0080** [budget_increase] daily LLM budget reached
+- **I0082** [protected_change] T0181: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -28,14 +29,13 @@ _generated 2026-11-02T10:15:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 146, failed: 3, merge: 1, needs_founder: 1, running: 1, todo: 1
+cancelled: 30, done: 146, failed: 3, needs_founder: 2, running: 1, todo: 1
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
 - T0167 `running` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 2)
-- T0181 `merge` scientist/investigate: Before E006: GCI of Tj differences between same-stratum layouts, and estimator conservativeness at the singular die-attach corner (attempt 2)
+- T0181 `needs_founder` scientist/investigate: Before E006: GCI of Tj differences between same-stratum layouts, and estimator conservativeness at the singular die-attach corner (attempt 2)
 
 ## Recent events
-- 2026-11-02T06:52:19+00:00 task_held {"task": "T0165", "reason": "I0081: hold until A3/A4 decision"}
 - 2026-11-02T06:52:20+00:00 inbox_resolved {"id": "I0081", "status": "answered", "note": "Founder (2026-11-02): option 2 - hold T0165 until the A3/A4 decision is recorded after reading research/notes/o00
 - 2026-11-02T09:10:29+00:00 run_finished {"run": "T0181-scientist-20261101T225143-8880", "status": "error", "cost": 3.555881, "subtype": "error_max_budget_usd", "report": "missing"}
 - 2026-11-02T09:10:30+00:00 task_failed_attempt {"task": "T0181", "signal": "agent_error", "action": "repair"}
@@ -50,3 +50,4 @@ cancelled: 30, done: 146, failed: 3, merge: 1, needs_founder: 1, running: 1, tod
 - 2026-11-02T10:06:58+00:00 verified {"task": "T0181"}
 - 2026-11-02T10:07:03+00:00 run_started {"run": "T0183-critic-20261102T020703-fb5e", "task": "T0183", "role": "critic", "session": "2b19f067-1d7f-4b69-b805-e7ded69d3944"}
 - 2026-11-02T10:12:56+00:00 run_finished {"run": "T0183-critic-20261102T020703-fb5e", "status": "completed", "cost": 2.189017, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T10:15:20+00:00 inbox_opened {"id": "I0082", "kind": "protected_change", "subject": "T0181: merge needs founder approval"}
