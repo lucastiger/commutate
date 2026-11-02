@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T03:34:08+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:36:40+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
-- **I0071** [protected_change] T0153: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +13,7 @@ _generated 2026-11-02T03:34:08+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $57.50/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $57.98/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -24,19 +23,17 @@ _generated 2026-11-02T03:34:08+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 30 | $57.50 | 1253793 | 717866 | 49 | 0 |
+| O006 | 30 | $57.98 | 1265722 | 718751 | 49 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 130, failed: 3, needs_founder: 1, running: 2, todo: 7
+cancelled: 30, done: 130, failed: 3, merge: 1, running: 1, todo: 7, verify: 1
 
-- T0153 `needs_founder` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
+- T0153 `merge` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
-- T0157 `running` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 1)
+- T0157 `verify` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:15:09+00:00 verified {"task": "T0152"}
-- 2026-11-02T03:15:13+00:00 run_started {"run": "T0171-critic-20261101T191513-eaaf", "task": "T0171", "role": "critic", "session": "196ab881-ef12-4b0f-a641-e8e680684c32"}
 - 2026-11-02T03:21:39+00:00 run_finished {"run": "T0171-critic-20261101T191513-eaaf", "status": "completed", "cost": 1.378192, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:22:15+00:00 inbox_opened {"id": "I0070", "kind": "protected_change", "subject": "T0152: merge needs founder approval"}
 - 2026-11-02T03:22:17+00:00 run_started {"run": "T0155-scientist-20261101T192217-0866", "task": "T0155", "role": "scientist", "session": "77fcf8f6-3a0f-4e35-b3c0-f053d1bc5d77"}
@@ -50,3 +47,5 @@ cancelled: 30, done: 130, failed: 3, needs_founder: 1, running: 2, todo: 7
 - 2026-11-02T03:33:15+00:00 run_finished {"run": "T0173-critic-20261101T192646-ddef", "status": "completed", "cost": 1.939778, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:34:05+00:00 inbox_opened {"id": "I0071", "kind": "protected_change", "subject": "T0153: merge needs founder approval"}
 - 2026-11-02T03:34:08+00:00 run_started {"run": "T0157-scout-20261101T193408-f88c", "task": "T0157", "role": "scout", "session": "91562875-800c-43b1-bb33-021a87a2615f"}
+- 2026-11-02T03:35:53+00:00 run_finished {"run": "T0157-scout-20261101T193408-f88c", "status": "completed", "cost": 0.47754, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T03:36:38+00:00 inbox_resolved {"id": "I0071", "status": "approved", "note": "Approved; E006 design to pin the k(T) variation reading k_max/k_min - 1 >= 0.30 (review T0173).", "by": "human"}

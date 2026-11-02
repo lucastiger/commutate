@@ -3,7 +3,7 @@ objective: O006
 title: Verify every k(T) law and citation in geometry/stack.py against primary sources
 type: research
 agent: scout
-status: running
+status: review
 depends_on: []
 description: Open each cited source (Incropera Tables A.1/A.2, Slack 1973, Hirosaki 2002, CRC tin resistivity
   coefficient, Levinshtein 2001 / TCAD SiC models) and confirm the numbers and laws in src/moduleforge/geometry/stack.py;
@@ -43,3 +43,70 @@ history:
 - outcome: founder_dod_added
   summary: DoD and touches added per I0067 (planner T0162 suggestion)
   at: '2026-11-02T02:17:33+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I wrote research/notes/o006-kT-citations.md and added an INDEX line. Most of the stack.py
+    citations could not be checked against primary sources. I could not open the Incropera book, Slack
+    1973, Hirosaki 2002, the CRC or Levinshtein, and several pages failed (Ioffe TLS error, Springer auth
+    redirect, ResearchGate 403). I did not work around these. What I could confirm: the Cu values (401/393/379)
+    and Al2O3 values (36.0/26.4/15.8) match scanned copies of Incropera''s tables. The Al2O3 column-to-temperature
+    mapping is inferred from the table layout, because the OCR text has no headers. The exponent and WF
+    arithmetic in the docstring recomputes correctly. Discrepancies: (1) Hirosaki 2002 is an ideal-crystal
+    molecular-dynamics paper, and I found no k~1/T claim in it; it is also challenged by 202'
+  report:
+    summary: 'I wrote research/notes/o006-kT-citations.md and added an INDEX line. Most of the stack.py
+      citations could not be checked against primary sources. I could not open the Incropera book, Slack
+      1973, Hirosaki 2002, the CRC or Levinshtein, and several pages failed (Ioffe TLS error, Springer
+      auth redirect, ResearchGate 403). I did not work around these. What I could confirm: the Cu values
+      (401/393/379) and Al2O3 values (36.0/26.4/15.8) match scanned copies of Incropera''s tables. The
+      Al2O3 column-to-temperature mapping is inferred from the table layout, because the OCR text has
+      no headers. The exponent and WF arithmetic in the docstring recomputes correctly. Discrepancies:
+      (1) Hirosaki 2002 is an ideal-crystal molecular-dynamics paper, and I found no k~1/T claim in it;
+      it is also challenged by 2023 first-principles work. (2) Slack''s 1/T is a high-temperature (T>Debye)
+      limit for perfect crystals, so the Si3N4 exponent -1.0 is an unsupported assumption. (3) I found
+      no primary SAC305 k(T); the nearest is Sn-3.5Ag. (4) The SiC exponent -1.49 and the 3.7 W/(cm K)
+      TCAD form are unconfirmed. A measured n-type 4H-SiC gives k≈280 W/(m K) and T^-1.26, which makes
+      the code''s 370 W/(m K) likely optimistic for doped substrates. I had no shell tool, so I did not
+      run `mfos gate --fast`. The orchestrator must run it.'
+    notes_file: research/notes/o006-kT-citations.md
+    key_findings:
+    - claim: Cu k = 401/393/379 W/(m K) at 300/400/600 K match scanned Incropera appendix tables; slope
+        -1.995e-4/K is correct arithmetic. A different dataset gives 398/392/383.
+      source: https://es.scribd.com/document/398809124/App-AThermophysical-Properties-of-Matter-pdf ;
+        https://zenodo.org/records/7239588
+      confidence: medium
+    - claim: Al2O3 values 36.0, 26.4, 15.8 appear in the Incropera Table A.2 OCR row. The assignment of
+        26.4 and 15.8 to 400 and 600 K is inferred from the standard table layout, not shown by headers.
+        36 W/(m K) at 27 C agrees with Lienhard.
+      source: https://www.scribd.com/document/548223971/Table-A-2
+      confidence: medium
+    - claim: Hirosaki 2002 (PRB 65, 134110) is a molecular-dynamics calculation of ideal single-crystal
+        Si3N4 (beta ~170 and 450 W/(m K) along a and c at 300 K). No k~1/T statement was found, and the
+        classical-MD limits are disputed by later first-principles work. It does not support the 1/T law
+        for commercial AMB Si3N4.
+      source: https://data.zhenzhi.com/details/1/865259830 ; https://feng.mech.utah.edu/wp-content/uploads/sites/152/2023/05/182203_1_5.0149298.pdf
+      confidence: medium
+    - claim: Slack 1973 gives 1/T as the high-temperature (T>Debye) Umklapp limit for fairly perfect crystals,
+        per secondary sources. The paper itself was not opened. The Si3N4 exponent -1.0 for 300-480 K
+        sintered ceramic is therefore an assumption.
+      source: https://scilit.net/publications/1030314b23f5bd72f70c209e8643ff7d
+      confidence: low
+    - claim: No primary SAC305 k(T) source was found. The nearest is Sn-3.5Ag, with resistivity measured
+        293-476 K and k derived via Wiedemann-Franz; the numbers were not readable. The CRC tin alpha
+        was not verified.
+      source: https://link.springer.com/article/10.1007/s10854-011-0350-9
+      confidence: low
+    - claim: Measured n-type 4H-SiC (normal to c-axis) has k≈280 W/(m K) at room temperature and k∝T^-1.26;
+        V-doped SI has ≈347 W/(m K) and T^-1.256. The code's exponent -1.49 and 370 W/(m K) were not confirmed
+        in Levinshtein, Sentaurus or Silvaco. That gives f(480 K)=0.490 against 0.553 with -1.26.
+      source: https://scispace.com/papers/thermal-conductivity-of-4h-sic-single-crystals-1px5ne0guc
+      confidence: medium
+    open_questions:
+    - Clean page images of Incropera Tables A.1/A.2 are needed to confirm the temperature headers.
+    - Full text of Hirosaki 2002 and Slack 1973 is paywalled; a founder or library copy is needed.
+    - A measured SAC305 thermal diffusivity/Cp/density set over 300-480 K is needed.
+    - A Sentaurus/Silvaco SiC thermal-conductivity parameter listing should be found, or the TCAD claim
+      dropped.
+    - Measured 300-480 K k(T) for sintered Si3N4 AMB substrates is needed.
+    - '`mfos gate --fast` was not run by me; the orchestrator must run it.'
+    thesis_impact: none
