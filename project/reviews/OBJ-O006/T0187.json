@@ -1,0 +1,66 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A4's lucky-grid branch is discontinuous and penalises faster convergence; on a rule-fixed A3 layout it straddles the 0.5 K threshold",
+      "detail": "D0013 branch (ii) gives GCI = 1.25 max(|d1|,|d2|) = 1.25|d1| for 0 <= rho < 1/4, while branch (iii) gives 1.25|d2| at rho = 1/4: a >4x jump exactly where convergence is best (p_obs just above 2). In the committed L2 benchmark of the A3 layout side_by_side_6 (seed 20261101), die 11 has p_obs 2.25 (rho 0.210); scaled to the allowed 59/60/61 K hottest-die rise its D0013 GCI is 0.487/0.495/0.503 K against the 0.5 K threshold. The order-1-capped value would be 0.10 K, and every other die on the layout is 0.10-0.15 K. On T0181's 9 dev layouts, 34 of 36 die values are <= 0.29 K at 60 K, but the two with p_obs 2.11/2.23 (u_shaped fit B) come out at 0.93/0.95 K. In T0181's 2D corner series, a p_obs > 2 window (strip_dieonly die1, levels 0-2) has GCI 0.22 K against a true error of 0.0034 K (about 64x). So A4's verdict for a solver whose order-capped GCIs are 0.1-0.3 K is decided by whether any die's three-grid sequence lands at p_obs > 2 and by the +/-1 K load tolerance. That is an estimator artifact, not solver precision. An A4 failure maps to INCONCLUSIVE and then to the fallback decision (switch to scikit-fem, which runs on coarser grids and is judged by the same estimator). The criteria therefore cannot reliably resolve the decision.",
+      "evidence": "tools/mfos/mfos/metrics.py gci_capped (matches the D0013 text); benchmarks/results/thermal_l2_convergence.json side_by_side_6 die 11 tj_max_K = [407.7252, 407.1704, 407.0540], hottest rise 84.04 K; research/o006_gci/results.json pairs (u_shaped fit B dies 2,3: rho 0.231/0.213) and strip_dieonly die1.tj_max series.",
+      "suggested_check": "Make branch (ii) continuous at rho = 1/4 (e.g. 1.25 max(|d2|, |d1|/4)) or adjudicate p_obs > 2 values with a fourth level, then re-check it against T0181's 2D series and the A3 benchmark before freezing.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A3's outcome is already known on its two rule-fixed layouts, and it covers only two of three families",
+      "detail": "Both solvers have already been run on exactly the two A3 layouts (seed 20261101). Recomputed with max_gci_consistency at 60 K, the A3 metric is 0.12 (side_by_side_6) and 0.16 (u_shaped_2) against a threshold of 1.0. scikit-fem's largest GCI is 0.11/0.15 K, so F5 also passes. A3 is therefore a near-certain pass whose result was available when the criteria were set, not a blind test. The interleaved family's Layout-to-grid code is never cross-checked by an independent solver; A4 tests only self-convergence there.",
+      "evidence": "benchmarks/results/thermal_fem_convergence.json and thermal_l2_convergence.json (same fingerprints 1f66b68a27..., 6aaf383a9b...), rise-scaled to 60 K.",
+      "suggested_check": "Add at least one interleaved layout drawn from a sealed seed to A3, or state that A3 is a confirmation on development layouts.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Only A3 tests decision-relevant geometry; A1/A2/A4 are each met by a solver that mishandles die islands and footprints",
+      "detail": "A1/A2 are corner-free by design, and A4 is met by any grid-independent predictor (GCI = 0). Footprint, island and copper-edge errors are therefore guarded only by A3. A3's tolerance is GCI_L2 + GCI_skfem, so an error confined to one die can pass up to that sum: about 0.5 K on dies whose GCI branch (ii) inflates (side_by_side_6 die 11: sum 0.55 K, observed difference 0.035 K). 'Verified to 0.5 K per value' is thus a bound on discretisation error, not on accuracy, for generator geometry; O003 deducts only the GCIs.",
+      "evidence": "",
+      "suggested_check": "State in the hypothesis and null that the 0.5 K is a discretisation bound, and report A3's per-die detectable bias (sum of GCIs minus |diff|).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The kill criteria can fire only on corner-free analytic cases",
+      "detail": "K1/K2 apply only to the reference cases. Any disagreement with scikit-fem on generator geometry, however large, gives INCONCLUSIVE (an A3-only failure leads to diagnosis), never FAIL. The claim that 'the kill criteria can actually fire' holds only for analytic-case errors.",
+      "evidence": "",
+      "suggested_check": "Consider a K3 on max_gci_consistency (e.g. > 3) so that gross geometry disagreement is a FAIL.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "scikit-fem GCI omits vertical discretisation error",
+      "detail": "thermal_fem's benchmark refines laterally only (zrefine=False, nz fixed; DOF ratio about 3.9x per level). GCI_skfem, which feeds both F5 and A3's denominator, therefore excludes the z error, recorded separately as z_sensitivity of about 0.02 K. The objective does not require refinement in all directions or adding the z part.",
+      "evidence": "src/moduleforge/solvers/thermal_fem.py docstring lines 20-24; thermal_fem_convergence.json grid_rule.zrefine=false.",
+      "suggested_check": "Require skfem's GCI to include z refinement or to add the measured z sensitivity.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 layout rule is ambiguous about dies per switch",
+      "detail": "'side_by_side layout with 6 dies' and 'u_shaped layout with 2 dies' could mean total or per switch. The benchmark used dies_per_switch = 6 (12 dies) and 2.",
+      "evidence": "",
+      "suggested_check": "Write dies_per_switch explicitly.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos.metrics gci_capped / max_gci_capped / max_gci_consistency and compared every branch with the D0013 text (consistent)",
+    "Ran gci_capped over every 3-level window of T0181's 2D strip series (constant k, k(T) L5/L6, die-only), comparing against the finest and the tail-extrapolated value: absolute Tj values always bounded; only the difference series diff_tj_max were under-bounded (not used by A4); a p_obs > 2 window was overestimated about 64x",
+    "Recomputed the D0013 GCI for all 36 die Tj max sequences on T0181's 9 dev 3D layouts, rescaled to a 60 K hottest-die rise: 34 values <= 0.29 K, 2 at 0.93/0.95 K via branch (ii)",
+    "Recomputed A3 (max_gci_consistency), A4 (L2 GCI) and F5 (skfem GCI) on the two rule-fixed A3 layouts from the committed benchmarks at 60 K: A3 0.12/0.16; skfem max GCI 0.11/0.15 K; L2 max GCI 0.495/0.31 K",
+    "Load-band sensitivity: side_by_side_6 die 11 GCI 0.487/0.495/0.503 K at 59/60/61 K; order-1-capped alternative 0.10 K",
+    "Checked thermal_fem.py imports (independent grid builder, no FV grid code) and its refinement scheme (lateral only)"
+  ],
+  "caveats": [
+    "60 K values are linear rescalings of committed runs at 84-88 K rises (k(T) makes the true scaling slightly nonlinear); the threshold proximity of die 11 (0.495 K) is therefore approximate.",
+    "I could not confirm that the committed benchmarks used the exact grid rule E006 will freeze (single snapshot commit); a changed rule changes the specific numbers but not the branch-(ii) discontinuity.",
+    "The per-layout rate at which p_obs > 2 occurs (1 of 9 dev layouts in T0181, 1 of 2 A3 layouts) is estimated from very few layouts."
+  ]
+}
