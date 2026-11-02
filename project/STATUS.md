@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T18:34:07+00:00 from repository state — do not edit_
+_generated 2026-11-02T18:34:20+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (2 open)
+- **I0090** [experiment_registration] register E006 (pre-registration)
+- **I0091** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,14 +28,10 @@ _generated 2026-11-02T18:34:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 160, failed: 3, merge: 1, todo: 2
+cancelled: 30, done: 161, failed: 3, todo: 2
 
-- T0165 `merge` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 2)
 
 ## Recent events
-- 2026-11-02T15:38:13+00:00 run_started {"run": "T0165-scientist-20261102T073813-270d", "task": "T0165", "role": "scientist", "session": "9e93c34b-8f75-42b6-978d-06343151e0fd"}
-- 2026-11-02T15:38:47+00:00 loop_stopped {"reason": "STOP file"}
-- 2026-11-02T15:39:44+00:00 loop_started {"pid": 24274}
 - 2026-11-02T15:45:56+00:00 loop_started {"pid": 30226}
 - 2026-11-02T16:38:11+00:00 run_finished {"run": "T0165-scientist-20261102T073813-270d", "status": "completed", "cost": 4.732292, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T16:41:02+00:00 verified {"task": "T0165"}
@@ -47,3 +44,6 @@ cancelled: 30, done: 160, failed: 3, merge: 1, todo: 2
 - 2026-11-02T17:42:14+00:00 inbox_opened {"id": "I0089", "kind": "protected_change", "subject": "T0165: merge needs founder approval"}
 - 2026-11-02T17:42:48+00:00 sleep_detected {"gap_s": 612, "runs_extended": 0}
 - 2026-11-02T18:33:53+00:00 inbox_resolved {"id": "I0089", "status": "approved", "note": "T0165: E006 design merged (reviews T0194/T0195 accept with caveats; fixes in T0196 before registration)", "by": "
+- 2026-11-02T18:34:18+00:00 merged {"task": "T0165"}
+- 2026-11-02T18:34:18+00:00 inbox_opened {"id": "I0090", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
+- 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
