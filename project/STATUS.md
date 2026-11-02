@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T17:42:11+00:00 from repository state — do not edit_
+_generated 2026-11-02T17:42:15+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0089** [protected_change] T0165: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,12 +27,11 @@ _generated 2026-11-02T17:42:11+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 160, failed: 3, merge: 1, todo: 2
+cancelled: 30, done: 160, failed: 3, needs_founder: 1, todo: 2
 
-- T0165 `merge` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 2)
+- T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 2)
 
 ## Recent events
-- 2026-11-02T15:09:01+00:00 run_started {"run": "T0165-scientist-20261102T070901-2e60", "task": "T0165", "role": "scientist", "session": "2938413c-5412-409e-ba8d-9bdddfc8ea58"}
 - 2026-11-02T15:36:04+00:00 run_finished {"run": "T0165-scientist-20261102T070901-2e60", "status": "completed", "cost": 6.209536, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T15:38:11+00:00 task_failed_attempt {"task": "T0165", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T15:38:13+00:00 run_started {"run": "T0165-scientist-20261102T073813-270d", "task": "T0165", "role": "scientist", "session": "9e93c34b-8f75-42b6-978d-06343151e0fd"}
@@ -47,3 +46,4 @@ cancelled: 30, done: 160, failed: 3, merge: 1, todo: 2
 - 2026-11-02T16:50:03+00:00 run_finished {"run": "T0194-critic-20261102T084105-54db", "status": "completed", "cost": 2.625167, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T17:32:36+00:00 loop_started {"pid": 25076}
 - 2026-11-02T17:33:12+00:00 task_added {"task": "T0196", "objective": "O006", "reason": "E006 pre-registration fixes"}
+- 2026-11-02T17:42:14+00:00 inbox_opened {"id": "I0089", "kind": "protected_change", "subject": "T0165: merge needs founder approval"}
