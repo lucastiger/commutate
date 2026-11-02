@@ -4,7 +4,7 @@ title: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) 
   (D0013 addendum)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Make the thermal L2''s own discretisation estimate (meta[''solver_tol'']) use O006''s A4
   estimator, so that
@@ -231,3 +231,82 @@ history:
 - outcome: founder_brief_amended
   summary: 'D0013 addendum 2: floor 1e-3 K and oscillatory factor 3'
   at: '2026-11-02T12:13:44+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I changed this branch from the earlier A4 rule (oscillatory factor 1.25, no floor) to the
+    rule as amended in D0013 addendum 2. Every definition-of-done command and the fast gate exit 0. Commit:
+    17f8c84.
+
+
+    What changed:
+
+    - **`thermal_layout.gci_three_grid`** now has a keyword `floor`, default `GCI_FLOOR` = 1e-3 K (ten
+    times the Picard tolerance). Any grid step smaller than the floor counts as zero. Oscillatory sequences
+    now use Roache''s factor 3. A negative `floor` raises `ValueError`, as in the evaluator, and `r` other
+    than 2 still raises `ValueError`.
+
+    - **Same arithmetic as the evaluator:** the result is computed exactly as `mfos.metrics.gci_capped`
+    does it, including `p_obs = math.log2(1.0 / rho)` (the T0192 review point). The keys are unchanged
+    (`gci`, `p_obs`, `monotone`, `Fs`, `p`) plus'
+  report:
+    status: completed
+    summary: "I changed this branch from the earlier A4 rule (oscillatory factor 1.25, no floor) to the\
+      \ rule as amended in D0013 addendum 2. Every definition-of-done command and the fast gate exit 0.\
+      \ Commit: 17f8c84.\n\nWhat changed:\n- **`thermal_layout.gci_three_grid`** now has a keyword `floor`,\
+      \ default `GCI_FLOOR` = 1e-3 K (ten times the Picard tolerance). Any grid step smaller than the\
+      \ floor counts as zero. Oscillatory sequences now use Roache's factor 3. A negative `floor` raises\
+      \ `ValueError`, as in the evaluator, and `r` other than 2 still raises `ValueError`.\n- **Same arithmetic\
+      \ as the evaluator:** the result is computed exactly as `mfos.metrics.gci_capped` does it, including\
+      \ `p_obs = math.log2(1.0 / rho)` (the T0192 review point). The keys are unchanged (`gci`, `p_obs`,\
+      \ `monotone`, `Fs`, `p`) plus `branch`. `Fs` is 3 on the oscillatory branch. The code has no division-by-zero\
+      \ path the evaluator lacks. Product code does not import `mfos`. The docstring cites O006 A4, D0012/D0013\
+      \ and Roache (1998, ch. 5).\n- **`thermal_fem._gci`** still calls `gci_three_grid`, so the scikit-fem\
+      \ cross-check gives the same estimate. I updated its module docstring.\n- **Tests in `test_thermal_layout.py`:**\n\
+      \  - Hand-computed values for every branch, including the packet's examples: (410, 410.25, 410.75)\
+      \ gives inf, (410, 410.3, 410.31) gives 1.25·0.3/4, and (410, 410.4, 410.2) gives 3·0.4.\n  - Noise\
+      \ below the floor of both signs, (410, 410.4, 410.4 ∓ 4e-5), gives 1.25·0.4/4. With the floor removed,\
+      \ the two signs fall in different branches.\n  - Tests at the floor boundary, an invalid floor,\
+      \ and a check that the result is never below the order-1-capped form.\n  - The box test again asserts\
+      \ `max(solver_tol) == 0.0` for the exactly grid-independent case.\n- **`test_thermal_gci_matches_evaluator.py`:**\n\
+      \  - More than 3000 sequences, including step sizes just below, at and just above the floor, plus\
+      \ 2000 seeded random ones.\n  - Asserts that every branch, with both signs, is covered, and that\
+      \ the floor actually changes some results.\n  - `gci_three_grid` (default floor and `floor=1e-3`),\
+      \ `thermal_fem.gci` and `thermal_fem._gci` all equal `gci_capped(..., floor=1e-3)` to rel 1e-12,\
+      \ with inf == inf. The same comparison also passes with `floor=0`.\n  - `p_obs` is bit-identical\
+      \ to the evaluator's on the monotone branch.\n- **`docs/thermal_model.md`** now states the amended\
+      \ rule (floor and factor 3) and cites D0012/D0013 with addenda 1 and 2.\n\nI did not touch `tools/mfos`,\
+      \ the objective, or any benchmark result file. Local `main`'s `metrics.py` is identical to this\
+      \ branch's: none of main's 5 newer commits touch the evaluator or the solvers."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_layout.py -m 'not slow'
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_gci_matches_evaluator.py tests/unit/solvers/test_thermal_layout.py
+      exit_code: 0
+    - cmd: uv run python -c "import math; from moduleforge.solvers import thermal_layout as tl; assert
+        tl.gci_three_grid(410.0, 410.25, 410.75)['gci'] == math.inf; assert abs(tl.gci_three_grid(410.0,
+        410.3, 410.31)['gci'] - 1.25 * 0.3 / 4) < 1e-12"
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py -m 'not slow'
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/thermal_layout.py
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_layout.py
+    - tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+    - docs/thermal_model.md
+    concerns:
+    - The floor applies to every value in meta['solver_tol'], all of which are in kelvin (Tj values and
+      spreads). A caller passing non-temperature quantities to gci_three_grid would have to set floor
+      explicitly.
+    - For the 'fast' branch the 'monotone' flag is now rho > 0, as the docstring states. It is therefore
+      False when the finest step is floored to zero (rho = 0); before, it was always True on this branch.
+      No caller depends on it.
+    - The benchmark scripts (benchmarks/thermal_l2_convergence.py, thermal_fem_convergence.py) would now
+      compute the new estimator if re-run. As instructed, the committed benchmark JSONs were not regenerated
+      and keep the values recorded under the old rule.
