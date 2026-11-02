@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T20:52:57+00:00 from repository state — do not edit_
+_generated 2026-11-02T23:00:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0095** [decision] E006 needs burst compute (~3 CPU-h)
@@ -32,8 +32,6 @@ cancelled: 30, done: 163, failed: 3, needs_founder: 1
 - T0166 `needs_founder` none/experiment: Run E006: thermal L2 against frozen references, scikit-fem cross-check and GCI (attempt 0)
 
 ## Recent events
-- 2026-11-02T18:42:54+00:00 inbox_resolved {"id": "I0092", "status": "approved", "note": "Stale: cap already 120 (b1233a2); raised by the pre-restart loop", "by": "human"}
-- 2026-11-02T19:01:47+00:00 run_finished {"run": "T0196-scientist-20261102T104039-19d7", "status": "completed", "cost": 3.36292, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T19:03:55+00:00 verified {"task": "T0196"}
 - 2026-11-02T19:03:58+00:00 run_started {"run": "T0197-critic-20261102T110358-0958", "task": "T0197", "role": "critic", "session": "3e74a854-2db3-4e8a-b75c-34fdbd8b62ca"}
 - 2026-11-02T19:11:34+00:00 run_finished {"run": "T0197-critic-20261102T110358-0958", "status": "completed", "cost": 2.534383, "subtype": "success", "report": "structured_output"}
@@ -47,3 +45,5 @@ cancelled: 30, done: 163, failed: 3, needs_founder: 1
 - 2026-11-02T19:31:43+00:00 inbox_opened {"id": "I0095", "kind": "decision", "subject": "E006 needs burst compute (~3 CPU-h)"}
 - 2026-11-02T19:31:43+00:00 burst_requested {"task": "T0166", "experiment": "E006", "cpu_hours": 3.0}
 - 2026-11-02T19:33:12+00:00 experiment_minted {"id": "E006", "run": "E006-20261102T113312-b41e"}
+- 2026-11-02T22:59:27+00:00 experiment_run_abandoned {"id": "E006", "run": "E006-20261102T113312-b41e", "reason": "Complete run, all 26 sanity checks passed, but result.json is unreadable: mfos wrote A4 (+inf) as 
+- 2026-11-02T22:59:40+00:00 experiment_minted {"id": "E006", "run": "E006-20261102T145940-2815"}

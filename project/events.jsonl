@@ -1419,3 +1419,5 @@
 {"ts": "2026-11-02T19:31:43+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0095", "kind": "decision", "subject": "E006 needs burst compute (~3 CPU-h)"}
 {"ts": "2026-11-02T19:31:43+00:00", "event": "burst_requested", "actor": "orchestrator", "task": "T0166", "experiment": "E006", "cpu_hours": 3.0}
 {"ts": "2026-11-02T19:33:12+00:00", "event": "experiment_minted", "actor": "orchestrator", "id": "E006", "run": "E006-20261102T113312-b41e"}
+{"ts": "2026-11-02T22:59:27+00:00", "event": "experiment_run_abandoned", "actor": "founder", "id": "E006", "run": "E006-20261102T113312-b41e", "reason": "Complete run, all 26 sanity checks passed, but result.json is unreadable: mfos wrote A4 (+inf) as null. Fixed in the mfos inf/NaN commit. Runner-reported values: A1 0.0206, A2 0.143 K, A3 0.70, A4 unreadable. Re-run under a new mint."}
+{"ts": "2026-11-02T22:59:40+00:00", "event": "experiment_minted", "actor": "orchestrator", "id": "E006", "run": "E006-20261102T145940-2815"}
