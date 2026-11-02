@@ -4,7 +4,7 @@ title: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback),
   GCI, A3 convergence/cost benchmark
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0148
 description: 'Implement src/moduleforge/solvers/thermal_fem.py with scikit-fem trilinear hexahedra and
@@ -89,4 +89,106 @@ lens: null
 trigger: null
 rationale: A3 (independent FEM on generator layouts, its own GCI <= 0.025 K) and F1's scikit-fem agreement
   checks; also the decision_if_fail fallback.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I built the scikit-fem cross-check and its benchmark. Every DoD command exits 0, but A3''s
+    kill shot is not met: the per-die GCI is 0.03–0.15 K against the 0.025 K limit. `src/moduleforge/solvers/thermal_fem.py`
+    has the box-stack mode and the layout mode, with its own mesh, boundary conditions, Picard loop (stops
+    at max |dT| < 1e-4 K), per-die Tj max and mean, energy balance and Roache GCI (`gci()`). It never
+    imports thermal_fv or thermal_layout. Tests: 12 pass (1D slab, Kirchhoff k(T), energy balance, mirror
+    symmetry, mesh conformity, GCI formula, refinement ratio). Energy balance is about 1e-14 and Picard
+    converges in 5-6 iterations.
+
+
+    Benchmark result, committed as `benchmarks/results/thermal_fem_convergence.json` with mode ''full'':
+
+    - **Layouts:** the first DRC-valid side_by_side layout wi'
+  report:
+    status: partial
+    summary: 'I built the scikit-fem cross-check and its benchmark. Every DoD command exits 0, but A3''s
+      kill shot is not met: the per-die GCI is 0.03–0.15 K against the 0.025 K limit. `src/moduleforge/solvers/thermal_fem.py`
+      has the box-stack mode and the layout mode, with its own mesh, boundary conditions, Picard loop
+      (stops at max |dT| < 1e-4 K), per-die Tj max and mean, energy balance and Roache GCI (`gci()`).
+      It never imports thermal_fv or thermal_layout. Tests: 12 pass (1D slab, Kirchhoff k(T), energy balance,
+      mirror symmetry, mesh conformity, GCI formula, refinement ratio). Energy balance is about 1e-14
+      and Picard converges in 5-6 iterations.
+
+
+      Benchmark result, committed as `benchmarks/results/thermal_fem_convergence.json` with mode ''full'':
+
+      - **Layouts:** the first DRC-valid side_by_side layout with 6 dies per switch (45 W per die, max
+      Tj rise 85.4 K) and the first u_shaped layout with 2 dies per switch (66 W per die, 86.2 K). Both
+      used `generate_layouts(1, 20261101, family=…, dies_per_switch=…)`, and the JSON records the fingerprints.
+      I read "first … from dev seed 20261101" as the first result of that restricted call; if E006 means
+      the first entry of an unrestricted stream, the layouts may differ.
+
+      - **Levels:** all three levels fit in memory and none was skipped. The finest has 1.48 M DOF for
+      side_by_side and 0.93 M for u_shaped. Lateral cells are 0.5, 0.25 and 0.125 mm within 1.5 mm of
+      a die, with a constant ratio of 2. z is held fixed, and a z-doubling check shifts Tj max by 0.02–0.026
+      K.
+
+      - **GCI:** per-die GCI is 0.03–0.08 K for side_by_side (max 0.081) and 0.07–0.15 K for u_shaped
+      (max 0.151). Observed orders are 0.6–1.7. So A3 is not met on this machine.
+
+      - **Why:** the Tj error is dominated by lateral spreading in the 0.3 mm copper films and near the
+      die perimeters, converging slowly. Reaching 0.025 K needs a finer finest level than this Mac can
+      hold, so a burst VM per D0006 is the likely route.
+
+      - **Grading tried and dropped:** I tried grading the mesh toward region edges. It did not help Tj
+      max, so I removed it.
+
+      - **Memory:** this Mac has 17.2 GB. With 70% of RAM (12.0 GB) as the budget, the D0006 figure of
+      7.7 kB/DOF gives 1.56 M DOF. Measured peak RSS was 4.4–8.9 kB/DOF; the 1.48 M-DOF level peaked at
+      5.7–6.5 GB. All of this is in the module docstring and the JSON.
+
+
+      Smoke mode (`--smoke`, mode ''smoke'') uses a coarse rule and writes no file.'
+    concerns:
+    - 'A3 kill shot not met: scikit-fem''s own per-die GCI is up to 0.151 K (u_shaped_2) and 0.081 K (side_by_side_6)
+      against the 0.025 K limit. The finest level that fits in this Mac''s memory is about 1.5 M DOF,
+      and the observed order is only 0.6-1.7. The JSON reports a_gci_met=false; I did not tune anything
+      to hide it. By O006''s A3 text this means A3 is not met; the orchestrator and founder decide what
+      follows, and a burst VM is the route D0006 names.'
+    - 'The three-level study refines the lateral grid by a constant ratio of 2 but holds z at fixed counts,
+      because refining z too puts the finest level out of memory. The GCI does not include the z error.
+      The JSON records it separately as z_sensitivity_K: 0.020 K (side_by_side_6) and 0.026 K (u_shaped_2),
+      measured by doubling the z counts at level 0.'
+    - Lateral cell size is h0 within 1.5 mm of a die and 2x and 4x coarser farther out (near_margin).
+      This is my own rule, not part of docs/thermal_model.md. It does not change the continuum problem.
+    - 'Layout choice: I read ''the first DRC-valid side_by_side layout with 6 dies per switch'' as the
+      first result of generate_layouts(1, 20261101, family=..., dies_per_switch=...). If E006 means the
+      first entry of an unrestricted stream, the layouts may differ. The fingerprints are in the JSON
+      for cross-checking.'
+    - Peak RSS per DOF varies from run to run (for example 3.8 kB vs 4.4 kB at 1.48 M DOF). The 7.7 kB/DOF
+      used for the skip rule is a conservative upper bound.
+    - A bad shell command (an unquoted zsh variable) started four large benchmark jobs in parallel, which
+      put the machine under heavy memory pressure for a while. I did not run killall (the permission system
+      denied it). The jobs ended by themselves and nothing was lost.
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem.py
+    - benchmarks/thermal_fem_convergence.py
+    - benchmarks/results/thermal_fem_convergence.json
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py
+      exit_code: 0
+    - cmd: uv run python -c "s=open('src/moduleforge/solvers/thermal_fem.py').read(); assert 'thermal_fv'
+        not in s and 'thermal_layout' not in s"
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py --smoke
+      exit_code: 0
+    - cmd: uv run python -c "import json; d=json.load(open('benchmarks/results/thermal_fem_convergence.json'));
+        assert d['mode']=='full'; L=d['layouts']; assert len(L)==2; assert all(len(x['levels'])==3 and
+        x['dies'] for x in L); assert all(all(k in dd for k in ('tj_max_K','gci_K','p_obs')) for x in
+        L for dd in x['dies']); assert all(all(k in lv for k in ('dofs','wall_s','peak_rss_mb','status'))
+        for x in L for lv in x['levels'])"
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py (full run, writes the JSON)
+      exit_code: 0
