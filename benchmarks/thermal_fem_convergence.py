@@ -16,6 +16,29 @@ null when a level was skipped. A3 requires ``max gci_K <= 0.025 K``; ``--check``
 
 Run: ``uv run python benchmarks/thermal_fem_convergence.py`` (full, writes the JSON); ``--smoke`` runs a coarse rule in a
 few seconds and writes nothing unless ``--out`` is given.
+
+Options (T0172, review T0171; defaults reproduce the local run): ``--zrefine`` refines z with the same ratio 2 as lateral
+(z counts x2 per level), so the three-grid GCI covers all three directions (the default holds z and reports
+``z_sensitivity_K``, 0.020-0.026 K at level 0, which is the size of the A3 limit); ``--h0 MM`` is the lateral size of the
+FINEST level near the dies (default 0.125 mm, i.e. 0.5 / 0.25 / 0.125 mm); ``--mem-gb GB`` is the per-solve memory budget
+(default 70 % of the host's RAM; levels above DOFs x 7.7 kB are recorded as ``skipped: memory``).
+
+Sizing for an n2-highmem-32 (251 GB), ``--zrefine --h0 0.0625 --mem-gb 235`` (estimate_dofs; 7.7 kB/DOF bound; the
+measured peak was 4.4 kB/DOF at 1.5 M DOF; wall from the measured ~70 us/DOF of the lateral-only run, one process per level,
+assumed to degrade up to 2x with size, so a range):
+
+    layout          level  DOFs        bound @7.7 kB   expected @4.4 kB   wall
+    side_by_side_6  0      0.33 M      2.5 GB          1.4 GB             < 1 min
+                    1      2.48 M      19 GB           11 GB              3-6 min
+                    2      19.36 M     149 GB          85 GB              25-50 min
+    u_shaped_2      0      0.20 M      1.6 GB          0.9 GB             < 1 min
+                    1      1.54 M      12 GB           6.8 GB             2-4 min
+                    2      11.96 M     92 GB           53 GB              15-30 min
+
+Total about 1-1.7 h including power calibration (level 0 solves); every level fits the 235 GB budget at the bound.
+The same run lateral-only (no ``--zrefine``) is 5.1 M / 3.2 M DOF at level 2. Exact command for the burst VM::
+
+    MF_GCP_MAX_HOURS=4 scripts/burst_gcp.sh --cmd "uv run python benchmarks/thermal_fem_convergence.py --zrefine --h0 0.0625 --mem-gb 235 --out benchmarks/results/thermal_fem_convergence_zrefine.json" benchmarks/results
 """
 from __future__ import annotations
 
@@ -40,9 +63,16 @@ MEMORY_FRACTION = 0.7  # of physical memory a single solve may use (the machine 
 DEFAULT_OUT = Path(__file__).resolve().parent / "results" / "thermal_fem_convergence.json"
 
 
-def _rule(smoke: bool):
-    from moduleforge.solvers.thermal_fem import GridRule
-    return GridRule(**(SMOKE_RULE if smoke else FULL_RULE))
+def _rule(smoke: bool, h0_finest_mm: float | None = None, zrefine: bool = False):
+    """Grid rule of the study. ``h0_finest_mm`` is the lateral size [mm] of the FINEST level (level 2) near the dies; the
+    level-0 ``GridRule.h0`` is ``REFINEMENT_RATIO**2`` times larger. ``zrefine`` doubles the z counts with the level too."""
+    from dataclasses import replace
+
+    from moduleforge.solvers.thermal_fem import LEVELS, REFINEMENT_RATIO, GridRule
+    rule = GridRule(**(SMOKE_RULE if smoke else FULL_RULE))
+    if h0_finest_mm is not None:
+        rule = replace(rule, h0=h0_finest_mm * 1e-3 * REFINEMENT_RATIO ** (len(LEVELS) - 1))
+    return replace(rule, zrefine=bool(zrefine))
 
 
 # The rule of the full run (thermal_fem.GridRule): lateral cells halve at each level (at most 0.5, 0.25, 0.125 mm within
@@ -58,11 +88,12 @@ def get_layout(family: str, dies: int):
     return generate_layouts(1, seed=SEED, family=family, dies_per_switch=dies)[0]
 
 
-def run_child(family: str, dies: int, level: int, power: float, smoke: bool, out: Path) -> None:
+def run_child(family: str, dies: int, level: int, power: float, smoke: bool, out: Path,
+              h0_mm: float | None = None, zrefine: bool = False) -> None:
     from moduleforge.solvers import thermal_fem as F
     lay = get_layout(family, dies)
     t0 = time.perf_counter()
-    r = F.solve_layout(lay, power, H_W_M2K, T_COOLANT_K, rule=_rule(smoke), level=level)
+    r = F.solve_layout(lay, power, H_W_M2K, T_COOLANT_K, rule=_rule(smoke, h0_mm, zrefine), level=level)
     wall = time.perf_counter() - t0
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1.0 if sys.platform == "darwin" else 1024.0)
     out.write_text(json.dumps(dict(dofs=int(r.dofs), wall_s=wall, peak_rss_mb=rss / 1e6, energy_balance=r.energy_balance,
@@ -70,35 +101,40 @@ def run_child(family: str, dies: int, level: int, power: float, smoke: bool, out
                                    tj_max_K=[float(v) for v in r.tj_max], tj_mean_K=[float(v) for v in r.tj_mean])))
 
 
-def solve_in_subprocess(family: str, dies: int, level: int, power: float, smoke: bool, tmp: Path) -> dict:
+def solve_in_subprocess(family: str, dies: int, level: int, power: float, smoke: bool, tmp: Path,
+                        h0_mm: float | None = None, zrefine: bool = False) -> dict:
     f = tmp / f"{family}_{dies}_{level}.json"
     f.unlink(missing_ok=True)
     cmd = [sys.executable, str(Path(__file__).resolve()), "--child", family, str(dies), str(level), repr(power), str(f)]
     if smoke:
         cmd.append("--smoke")
+    if h0_mm is not None:
+        cmd += ["--h0", repr(h0_mm)]
+    if zrefine:
+        cmd.append("--zrefine")
     print("solve", family, dies, "level", level, "P =", power, flush=True)
     subprocess.run(cmd, check=True)
     return json.loads(f.read_text())
 
 
-def z_sensitivity(family: str, dies: int, power: float, smoke: bool) -> float:
+def z_sensitivity(family: str, dies: int, power: float, smoke: bool, h0_mm: float | None = None) -> float:
     """Max over dies of |Tj max(z counts doubled) - Tj max(rule)| [K] at level 0 (the z error is level-independent)."""
     from dataclasses import replace
 
     from moduleforge.solvers import thermal_fem as F
     lay = get_layout(family, dies)
-    rule = _rule(smoke)
+    rule = _rule(smoke, h0_mm)
     fine = replace(rule, nz={k: 2 * v for k, v in rule.nz.items()})
     a = F.solve_layout(lay, power, H_W_M2K, T_COOLANT_K, rule=rule, level=0)
     b = F.solve_layout(lay, power, H_W_M2K, T_COOLANT_K, rule=fine, level=0)
     return float(abs(a.tj_max - b.tj_max).max())
 
 
-def calibrate_power(family: str, dies: int, smoke: bool) -> float:
+def calibrate_power(family: str, dies: int, smoke: bool, h0_mm: float | None = None, zrefine: bool = False) -> float:
     """Per-die power [W] (rounded to 1 W) giving ``TARGET_RISE_K`` for the hottest die on the level-0 mesh, k(T)."""
     from moduleforge.solvers import thermal_fem as F
     lay = get_layout(family, dies)
-    rule = _rule(smoke)
+    rule = _rule(smoke, h0_mm, zrefine)
     p = 40.0
     for _ in range(4):  # the rise is nearly linear in P; the secant-free fixed point converges in a few steps
         r = F.solve_layout(lay, p, H_W_M2K, T_COOLANT_K, rule=rule, level=0)
@@ -110,28 +146,37 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--smoke", action="store_true", help="coarse rule, a few seconds; mode = 'smoke'")
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--zrefine", action="store_true",
+                    help="refine z with the same ratio 2 as lateral (z counts x2 per level), so the GCI covers all three "
+                    "directions; default: lateral only, z held (its error is reported as z_sensitivity_K)")
+    ap.add_argument("--h0", type=float, default=None, metavar="MM",
+                    help="lateral cell size [mm] of the FINEST level (level 2) within the near-die margin; levels 1 and 0 "
+                    "are 2x and 4x coarser. Default: 0.125 (full) i.e. the current 0.5 mm level 0")
+    ap.add_argument("--mem-gb", type=float, default=None, metavar="GB",
+                    help="memory budget [GB] of one solve: a level whose DOFs x 7.7 kB exceeds it is skipped. Default: "
+                    f"{MEMORY_FRACTION * 100:.0f}%% of the host's RAM")
     ap.add_argument("--check", action="store_true", help="exit 1 unless the A3 GCI limit is met by every die")
     ap.add_argument("--child", nargs=5, metavar=("FAMILY", "DIES", "LEVEL", "POWER", "FILE"))
     a = ap.parse_args()
     if a.child:
-        run_child(a.child[0], int(a.child[1]), int(a.child[2]), float(a.child[3]), a.smoke, Path(a.child[4]))
+        run_child(a.child[0], int(a.child[1]), int(a.child[2]), float(a.child[3]), a.smoke, Path(a.child[4]), a.h0, a.zrefine)
         return 0
     from moduleforge.solvers import thermal_fem as F
     mem = F.physical_memory_bytes()
-    budget = MEMORY_FRACTION * mem
-    rule = _rule(a.smoke)
+    budget = MEMORY_FRACTION * mem if a.mem_gb is None else a.mem_gb * 1e9
+    rule = _rule(a.smoke, a.h0, a.zrefine)
     mode = "smoke" if a.smoke else "full"
     res = dict(mode=mode, seed=SEED, coolant_K=T_COOLANT_K, h_W_m2K=H_W_M2K, k_of_T=True,
                grid_rule=dict(h0_m=rule.h0, nz=rule.nz, zrefine=rule.zrefine, near_margin_m=rule.near_margin,
                           min_cells=rule.min_cells,
                           lateral_ratio=F.REFINEMENT_RATIO),
-               physical_memory_gb=mem / 1e9, memory_budget_gb=budget / 1e9, bytes_per_dof_assumed=F.BYTES_PER_DOF,
+               physical_memory_gb=mem / 1e9, mem_gb_option=a.mem_gb, memory_budget_gb=budget / 1e9, bytes_per_dof_assumed=F.BYTES_PER_DOF,
                max_dofs_this_machine=F.max_dofs(budget), target_rise_K=TARGET_RISE_K, rise_band_K=list(RISE_BAND_K),
                gci_limit_K=GCI_LIMIT_K, layouts=[])
     with tempfile.TemporaryDirectory() as td:
         for name, family, dies in LAYOUT_RULES:
             lay = get_layout(family, dies)
-            P = calibrate_power(family, dies, a.smoke)
+            P = calibrate_power(family, dies, a.smoke, a.h0, a.zrefine)
             print(name, "fingerprint", lay.fingerprint()[:12], "power per die", P, "W", flush=True)
             levels, vals, mean_vals = [], [], []
             for lv in F.LEVELS:
@@ -144,7 +189,7 @@ def main() -> int:
                     vals.append(None)
                     mean_vals.append(None)
                     continue
-                c = solve_in_subprocess(family, dies, lv, P, a.smoke, Path(td))
+                c = solve_in_subprocess(family, dies, lv, P, a.smoke, Path(td), a.h0, a.zrefine)
                 levels.append(dict(level=lv, dofs=c["dofs"], estimated_dofs=int(est), estimated_memory_mb=est_mb,
                                    wall_s=c["wall_s"], peak_rss_mb=c["peak_rss_mb"], energy_balance=c["energy_balance"],
                                    picard_iters=c["picard_iters"], picard_residual_K=c["picard_residual_K"],
@@ -166,7 +211,7 @@ def main() -> int:
             fine = [d["tj_max_K"][2] for d in dies_out if d["tj_max_K"][2] is not None]
             rise = (max(fine) - T_COOLANT_K) if fine else None
             res["layouts"].append(dict(name=name, family=family, dies_per_switch=dies, fingerprint=lay.fingerprint(),
-                                       power_per_die_W=P, z_sensitivity_K=z_sensitivity(family, dies, P, a.smoke),
+                                       power_per_die_W=P, z_sensitivity_K=None if a.zrefine else z_sensitivity(family, dies, P, a.smoke, a.h0),
                                        tj_rise_max_K_finest=rise,
                                        rise_in_band=None if rise is None else bool(RISE_BAND_K[0] <= rise <= RISE_BAND_K[1]),
                                        levels=levels, dies=dies_out))

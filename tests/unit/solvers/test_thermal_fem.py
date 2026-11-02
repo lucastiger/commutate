@@ -231,3 +231,50 @@ def test_dof_numbering_matches_nodes_and_volume():
 
     assert f.assemble(basis).sum() == pytest.approx(vol[g.mat >= 0].sum() * F.MM**3, rel=1e-12)
     assert emat.size == int((g.mat >= 0).sum())
+
+
+# ------------------------------------------------------------------------------------------ A3 benchmark options (T0172)
+def _bench():
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[3] / "benchmarks" / "thermal_fem_convergence.py"
+    spec = importlib.util.spec_from_file_location("thermal_fem_convergence_bench", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_benchmark_rule_options_h0_finest_and_zrefine():
+    B = _bench()
+    default = B._rule(False)
+    assert default.h0 == pytest.approx(0.5e-3) and default.zrefine is False  # local defaults unchanged
+    assert B._rule(False, 0.125).h0 == pytest.approx(default.h0)  # --h0 is the finest level: level 0 is 4x coarser
+    r = B._rule(False, 0.0625, True)
+    assert r.h0 == pytest.approx(0.25e-3) and r.zrefine is True
+    lay = B.get_layout("u_shaped", 2)
+    # zrefine doubles the z cells per level (ratio 2 like lateral): the node count grows faster than lateral-only
+    lat = B._rule(True, None, False)
+    zr = B._rule(True, None, True)
+    assert F.estimate_dofs(lay, zr, 0) == F.estimate_dofs(lay, lat, 0)
+    assert F.estimate_dofs(lay, zr, 1) > F.estimate_dofs(lay, lat, 1)
+
+
+def test_benchmark_smoke_run_with_new_options(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+    script = Path(__file__).resolve().parents[3] / "benchmarks" / "thermal_fem_convergence.py"
+    out = tmp_path / "o.json"
+    base = [sys.executable, str(script), "--smoke", "--out", str(out)]
+    subprocess.run(base + ["--zrefine", "--h0", "8"], check=True, capture_output=True)
+    d = json.loads(out.read_text())
+    assert d["grid_rule"]["zrefine"] is True and d["grid_rule"]["h0_m"] == pytest.approx(32e-3)
+    assert all(lv["status"] == "ok" for x in d["layouts"] for lv in x["levels"])
+    assert all(x["z_sensitivity_K"] is None for x in d["layouts"])
+    # a tiny memory budget skips every level and records it, without solving
+    subprocess.run(base + ["--mem-gb", "1e-6"], check=True, capture_output=True)
+    d = json.loads(out.read_text())
+    assert d["memory_budget_gb"] == pytest.approx(1e-6)
+    assert all(lv["status"] == "skipped: memory" for x in d["layouts"] for lv in x["levels"])
+    assert d["max_gci_K"] is None
