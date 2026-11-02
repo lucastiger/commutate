@@ -1,0 +1,1718 @@
+{
+ "powersynth_commit": "a1de7ced949c0fd0105d166767b1de8705eb65ab",
+ "powersynth_repo": "e3da/PowerSynth2-pkg",
+ "sources_sha256": {
+  "work/Sample_Designs/2D_Case_4/README.txt": "624a2251f18fa90f2502abeaed4d6fbb33bf633333c5b69ebdd20d28ce71ce41",
+  "work/Sample_Designs/2D_Case_4/layout_geometry_script.txt": "14ae3d2018dedfdfa1494c71b10afd59afbebbd759d06b0ba448c2962471b312",
+  "work/Sample_Designs/2D_Case_4/layer_stack.csv": "bc47fe942b59247672b31252c13550c047d0fb1dcc1608c02f70ff8e899ec678",
+  "work/Sample_Designs/2D_Case_4/bond_wires_setup.txt": "ad2c2e93c559e3b8c5c38b54befbbd740c0f6843df2cb541cd2dce53c0aef678",
+  "work/Sample_Designs/2D_Case_4/constraint.csv": "670d9c7ff7ed147841c110c68f7b2442c5933e5d90c3a642a18daf43975abbba",
+  "work/Sample_Designs/2D_Case_4/macro_script.txt": "5492a038f08ab76cc3bc12834ac867eeda317742f1ac0dc2d1daf17951daf566",
+  "work/Sample_Designs/2D_Case_4/Trace_ori.txt": "f808683b16ee2a7eba3fc2018822e5a790d25e352fe9430f2418aaa4b2f269eb",
+  "work/Sample_Designs/2D_Case_4/Part_Lib/MOSFET.part": "ae226bc07c737c25a13f28212b2c711633a375df408e6d6114d4fc8c26ec1533",
+  "work/Sample_Designs/2D_Case_4/Part_Lib/power_lead.part": "416ec39693c0535f2424da7ffc61cc8b3c40a479d0ba81d0a1a307164caf53ee",
+  "work/Sample_Designs/2D_Case_4/Part_Lib/signal_lead.part": "aee35aed62b5917ae066b05cf1c1142014d3451f178cd037068d63a1fef2e232",
+  "work/Sample_Designs/2D_Case_4/Wire_Lib/bond_wire_info.wire": "b03a77ca662fa66d28f0e8074e9ca6d2fdaf588c5ba13af369e56269100e3ed1",
+  "work/Sample_Designs/2D_Case_4/Figs/initial_layout_I1.png": "ee6e1e260268b15ba04cb04e94582a780d2a360bcba856286e2dbf8c08e0a63a"
+ },
+ "note": "research note, not evidence (O006 F4); see research/notes/o006-p3-em-convergence.md",
+ "solver": "moduleforge.solvers.l2_layout.loop_inductance",
+ "freqs_hz": [
+  10000000.0,
+  20000000.0
+ ],
+ "perturbations": {
+  "die_shift": "high-side dies D3, D4 and their source-wire start points moved -1.0 mm in y; wire feet fixed (16 -> 15 mm)",
+  "trace_width": "DC- trace T4 widened 5 -> 7 mm (lower edge y 45 -> 43 mm); wire feet fixed"
+ },
+ "levels_def": {
+  "lat1.0": {
+   "cell_mm": 1.0,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "lat0.5": {
+   "cell_mm": 0.5,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "lat0.25": {
+   "cell_mm": 0.25,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "lat0.125": {
+   "cell_mm": 0.125,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "thk_c": {
+   "cell_mm": 0.5,
+   "layers": [
+    5,
+    3,
+    3
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "thk_f": {
+   "cell_mm": 0.5,
+   "layers": [
+    20,
+    12,
+    12
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "fil_f": {
+   "cell_mm": 0.5,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.175,
+    0.35,
+    0.475,
+    0.6,
+    0.7,
+    0.8,
+    0.865,
+    0.93,
+    0.965,
+    1
+   ]
+  },
+  "fil_f_phi12": {
+   "cell_mm": 0.5,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.175,
+    0.35,
+    0.475,
+    0.6,
+    0.7,
+    0.8,
+    0.865,
+    0.93,
+    0.965,
+    1
+   ],
+   "phi": 12
+  }
+ },
+ "estimator_formulas": "(fixed before the first solve; see research/notes/o006-p3-em-convergence.md):\n  three levels, constant ratio r, f1 finest: e21 = f2 - f1, e32 = f3 - f2.  Monotone iff e21 e32 > 0 and |e21| < |e32|.\n    monotone: p_obs = ln(e32 / e21) / ln r, f_ext = f1 + (f1 - f2) / (r^p_obs - 1), GCI = 1.25 |e21| / (r^p_obs - 1)\n    otherwise: p_obs = None, f_ext = None, GCI = 3 max(|e21|, |e32|)\n  two levels (f1 fine, f2 coarse): p_obs = None, f_ext = None, GCI = 3 |f2 - f1| / (r - 1)  (Fs = 3, assumed order 1)\n  thickness term (production 10/6/6 is the MIDDLE of thk_c / lat0.5 / thk_f): error of the middle value,\n    monotone: 1.25 |e21| r^p / (r^p - 1);  otherwise 3 max(|e21|, |e32|)\n  filament term (two levels, production is the coarse one): 3 |f_E1 - f_E0|\n  abs_est = GCI_lateral (at the finest lateral level run) + thickness term + filament term (linear sum, conservative).\n  pair ratio R = L_pert / L_base per level: the same formulas applied to R.",
+ "geometries": [
+  {
+   "name": "case4_base",
+   "fingerprint": "98a9d52a245ba5499b7540f7bab3ce0fcbc00b6c5d28b6e2237bf5dddf5d17f1",
+   "levels": [
+    {
+     "level": "lat1.0",
+     "cell_mm": 1.0,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.3465884447820753e-08,
+      "20000000": 2.3323431987880625e-08
+     },
+     "wall_s": 57.46475120802643,
+     "peak_mem_mb": 1827.30752,
+     "status": "ok",
+     "cpu_s": 83.086053,
+     "n_unknowns": 251660,
+     "gmres_iters": [
+      120,
+      131
+     ],
+     "solver_tol_rel_L_max": 2.9361005056855683e-05,
+     "R_ohm": {
+      "10000000": 0.03328612840477497,
+      "20000000": 0.04429063514615421
+     }
+    },
+    {
+     "level": "lat0.5",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.296092912296755e-08,
+      "20000000": 2.281741151094484e-08
+     },
+     "wall_s": 206.3554989170516,
+     "peak_mem_mb": 3892.035584,
+     "status": "ok",
+     "cpu_s": 316.581179,
+     "n_unknowns": 1020260,
+     "gmres_iters": [
+      171,
+      186
+     ],
+     "solver_tol_rel_L_max": 2.950096372132435e-05,
+     "R_ohm": {
+      "10000000": 0.03357666951406722,
+      "20000000": 0.04471174090739037
+     }
+    },
+    {
+     "level": "lat0.25",
+     "cell_mm": 0.25,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 4081040,
+      "peak_mem_mb_est": [
+       6887.549613093062,
+       26318.666368709873
+      ],
+      "wall_s_est": [
+       595.1438429507424,
+       5451.1981336698245
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       15568.142336,
+       22046.639883530992
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "lat0.125",
+     "cell_mm": 0.125,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 16324160,
+      "peak_mem_mb_est": [
+       20912.194992697383,
+       84698.55256244495
+      ],
+      "wall_s_est": [
+       3022.858890563498,
+       29350.146397114866
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       62272.569344,
+       88186.55953412397
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "thk_c",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       5,
+       3,
+       3
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.3234602197907198e-08,
+      "20000000": 2.301079618402776e-08
+     },
+     "wall_s": 102.10722433397314,
+     "peak_mem_mb": 2756.100096,
+     "status": "ok",
+     "cpu_s": 164.39925599999998,
+     "n_unknowns": 510180,
+     "gmres_iters": [
+      162,
+      171
+     ],
+     "solver_tol_rel_L_max": 3.095617975947568e-05,
+     "R_ohm": {
+      "10000000": 0.0373638736124037,
+      "20000000": 0.062915515062903
+     }
+    },
+    {
+     "level": "thk_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       20,
+       12,
+       12
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2944383868330886e-08,
+      "20000000": 2.2802017735521675e-08
+     },
+     "wall_s": 856.1298236249713,
+     "peak_mem_mb": 8080.26112,
+     "status": "ok",
+     "cpu_s": 1117.773729,
+     "n_unknowns": 2040420,
+     "gmres_iters": [
+      171,
+      186
+     ],
+     "solver_tol_rel_L_max": 2.9566811888484e-05,
+     "R_ohm": {
+      "10000000": 0.03268014560655667,
+      "20000000": 0.044650798085562306
+     }
+    },
+    {
+     "level": "fil_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 55,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.3033567455747004e-08,
+      "20000000": 2.29064866686337e-08
+     },
+     "wall_s": 433.4248300420004,
+     "peak_mem_mb": 4003.67616,
+     "status": "ok",
+     "cpu_s": 600.504497,
+     "n_unknowns": 1020380,
+     "gmres_iters": [
+      211,
+      228
+     ],
+     "solver_tol_rel_L_max": 2.427194245156135e-05,
+     "R_ohm": {
+      "10000000": 0.031927801419519106,
+      "20000000": 0.04262262488708036
+     }
+    },
+    {
+     "level": "fil_f_phi12",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 109,
+      "wire_phi": 12
+     },
+     "L_H": {
+      "10000000": 2.2959244064464097e-08,
+      "20000000": 2.2818809125319576e-08
+     },
+     "wall_s": 850.1912549169501,
+     "peak_mem_mb": 4528.832512,
+     "status": "ok",
+     "cpu_s": 1059.169048,
+     "n_unknowns": 1020596,
+     "gmres_iters": [
+      215,
+      230
+     ],
+     "solver_tol_rel_L_max": 2.4824933365842678e-05,
+     "R_ohm": {
+      "10000000": 0.03360256762055131,
+      "20000000": 0.045032075045503356
+     }
+    }
+   ],
+   "p_obs": {
+    "10000000": null,
+    "20000000": null
+   },
+   "L_extrap_H": {
+    "10000000": 2.2180692191304426e-08,
+    "20000000": 2.203552874854825e-08
+   },
+   "L_extrap_kind": {
+    "10000000": "assumed-order p=0.72 (two levels)",
+    "20000000": "assumed-order p=0.72 (two levels)"
+   },
+   "abs_est_H": {
+    "10000000": 1.754793326067003e-09,
+    "20000000": 1.8061933116373496e-09
+   },
+   "abs_est_posthoc_phi12_H": {
+    "10000000": 1.54193350323901e-09,
+    "20000000": 1.543160681694979e-09
+   },
+   "estimates": {
+    "10000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.2180692191304426e-08,
+     "extrap_p1": 2.245597379811435e-08,
+     "extrap_p2": 2.2792610681349818e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.5148659745596046e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -5.049553248532015e-10,
+      "rel_change": -0.021518699880076153
+     },
+     "p_thickness": 4.047964103066876,
+     "thickness_term": 2.2012353169040263e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.6545254636665845e-11,
+     "thickness_change_c": -2.736730749396465e-10,
+     "filament_term": 2.17914998338358e-10,
+     "filament_change": 7.263833277945267e-11,
+     "abs_est": 1.754793326067003e-09,
+     "filament_change_phi12": -1.6850585034550527e-12,
+     "filament_term_phi12_posthoc": 5.055175510365158e-12,
+     "abs_est_posthoc_phi12": 1.54193350323901e-09
+    },
+    "20000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.203552874854825e-08,
+     "extrap_p1": 2.2311391034009054e-08,
+     "extrap_p2": 2.264873801863291e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.5180614308073564e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -5.060204769357855e-10,
+      "rel_change": -0.02169579833699964
+     },
+     "p_thickness": 3.651054446465721,
+     "thickness_term": 2.0906407763411798e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.539377542316394e-11,
+     "thickness_change_c": -1.9338467308291985e-10,
+     "filament_term": 2.6722547306658146e-10,
+     "filament_change": 8.907515768886049e-11,
+     "abs_est": 1.8061933116373496e-09,
+     "filament_change_phi12": 1.3976143747369047e-12,
+     "filament_term_phi12_posthoc": 4.192843124210714e-12,
+     "abs_est_posthoc_phi12": 1.543160681694979e-09
+    }
+   }
+  },
+  {
+   "name": "case4_die_shift",
+   "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf",
+   "levels": [
+    {
+     "level": "lat1.0",
+     "cell_mm": 1.0,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.315949596293239e-08,
+      "20000000": 2.3020132212750545e-08
+     },
+     "wall_s": 58.75315179198515,
+     "peak_mem_mb": 1659.764736,
+     "status": "ok",
+     "cpu_s": 84.349479,
+     "n_unknowns": 251660,
+     "gmres_iters": [
+      120,
+      130
+     ],
+     "solver_tol_rel_L_max": 2.85344158658308e-05,
+     "R_ohm": {
+      "10000000": 0.0325649307789586,
+      "20000000": 0.04332836779774335
+     }
+    },
+    {
+     "level": "lat0.5",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2649692348685257e-08,
+      "20000000": 2.2509327986896356e-08
+     },
+     "wall_s": 198.89802695799153,
+     "peak_mem_mb": 4112.072704,
+     "status": "ok",
+     "cpu_s": 310.051716,
+     "n_unknowns": 1020260,
+     "gmres_iters": [
+      170,
+      185
+     ],
+     "solver_tol_rel_L_max": 2.80276355605208e-05,
+     "R_ohm": {
+      "10000000": 0.032842876546753094,
+      "20000000": 0.04373132947499928
+     }
+    },
+    {
+     "level": "lat0.25",
+     "cell_mm": 0.25,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 4081040,
+      "peak_mem_mb_est": [
+       6887.549613093062,
+       26318.666368709873
+      ],
+      "wall_s_est": [
+       595.1438429507424,
+       5451.1981336698245
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       15568.142336,
+       22046.639883530992
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "lat0.125",
+     "cell_mm": 0.125,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 16324160,
+      "peak_mem_mb_est": [
+       20912.194992697383,
+       84698.55256244495
+      ],
+      "wall_s_est": [
+       3022.858890563498,
+       29350.146397114866
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       62272.569344,
+       88186.55953412397
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "thk_c",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       5,
+       3,
+       3
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2922328103849552e-08,
+      "20000000": 2.2701981359187515e-08
+     },
+     "wall_s": 129.68829875002848,
+     "peak_mem_mb": 2551.087104,
+     "status": "ok",
+     "cpu_s": 204.352484,
+     "n_unknowns": 510180,
+     "gmres_iters": [
+      161,
+      171
+     ],
+     "solver_tol_rel_L_max": 2.9390732649839e-05,
+     "R_ohm": {
+      "10000000": 0.03660552157711745,
+      "20000000": 0.061855407408997816
+     }
+    },
+    {
+     "level": "thk_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       20,
+       12,
+       12
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2633095975736985e-08,
+      "20000000": 2.2493867071781093e-08
+     },
+     "wall_s": 793.3393293340341,
+     "peak_mem_mb": 8159.55968,
+     "status": "ok",
+     "cpu_s": 1016.6083980000001,
+     "n_unknowns": 2040420,
+     "gmres_iters": [
+      170,
+      186
+     ],
+     "solver_tol_rel_L_max": 2.8103240528866937e-05,
+     "R_ohm": {
+      "10000000": 0.03195163100107954,
+      "20000000": 0.04367205546269067
+     }
+    },
+    {
+     "level": "fil_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 55,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2719760133969292e-08,
+      "20000000": 2.259519959478975e-08
+     },
+     "wall_s": 441.78111608402105,
+     "peak_mem_mb": 4241.948672,
+     "status": "ok",
+     "cpu_s": 622.2602840000001,
+     "n_unknowns": 1020380,
+     "gmres_iters": [
+      209,
+      226
+     ],
+     "solver_tol_rel_L_max": 2.3087551007823588e-05,
+     "R_ohm": {
+      "10000000": 0.03125571111616783,
+      "20000000": 0.04171998257246536
+     }
+    },
+    {
+     "level": "fil_f_phi12",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 109,
+      "wire_phi": 12
+     },
+     "L_H": {
+      "10000000": 2.2647969579133875e-08,
+      "20000000": 2.2510525330096363e-08
+     },
+     "wall_s": 1074.7700697499677,
+     "peak_mem_mb": 4634.411008,
+     "status": "ok",
+     "cpu_s": 1190.995531,
+     "n_unknowns": 1020596,
+     "gmres_iters": [
+      214,
+      230
+     ],
+     "solver_tol_rel_L_max": 2.3621300613642126e-05,
+     "R_ohm": {
+      "10000000": 0.03287221798152456,
+      "20000000": 0.04404297601499322
+     }
+    }
+   ],
+   "p_obs": {
+    "10000000": null,
+    "20000000": null
+   },
+   "L_extrap_H": {
+    "10000000": 2.186196403262761e-08,
+    "20000000": 2.1720053565487106e-08
+   },
+   "L_extrap_kind": {
+    "10000000": "assumed-order p=0.72 (two levels)",
+    "20000000": "assumed-order p=0.72 (two levels)"
+   },
+   "abs_est_H": {
+    "10000000": 1.7617043778101685e-09,
+    "20000000": 1.8110399464332518e-09
+   },
+   "abs_est_posthoc_phi12_H": {
+    "10000000": 1.55666933061221e-09,
+    "20000000": 1.5570171523530881e-09
+   },
+   "estimates": {
+    "10000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.186196403262761e-08,
+     "extrap_p1": 2.2139888734438124e-08,
+     "extrap_p2": 2.247975781060288e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.5294108427414002e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -5.098036142471334e-10,
+      "rel_change": -0.022012724934216688
+     },
+     "p_thickness": 4.038034891063665,
+     "thickness_term": 2.209017921666283e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.6596372948272176e-11,
+     "thickness_change_c": -2.726357551642944e-10,
+     "filament_term": 2.1020335585210533e-10,
+     "filament_change": 7.006778528403511e-11,
+     "abs_est": 1.7617043778101685e-09,
+     "filament_change_phi12": -1.7227695513823215e-12,
+     "filament_term_phi12_posthoc": 5.1683086541469644e-12,
+     "abs_est_posthoc_phi12": 1.55666933061221e-09
+    },
+    "20000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.1720053565487106e-08,
+     "extrap_p1": 2.1998523761042167e-08,
+     "extrap_p2": 2.2339059911611627e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.532412677562568e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -5.108042258541893e-10,
+      "rel_change": -0.022189456651828476
+     },
+     "p_thickness": 3.639309821299594,
+     "thickness_term": 2.1012445190500173e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.5460915115263388e-11,
+     "thickness_change_c": -1.9265337229115926e-10,
+     "filament_term": 2.576148236801835e-10,
+     "filament_change": 8.58716078933945e-11,
+     "abs_est": 1.8110399464332518e-09,
+     "filament_change_phi12": 1.197343200006615e-12,
+     "filament_term_phi12_posthoc": 3.5920296000198452e-12,
+     "abs_est_posthoc_phi12": 1.5570171523530881e-09
+    }
+   }
+  },
+  {
+   "name": "case4_trace_width",
+   "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64",
+   "levels": [
+    {
+     "level": "lat1.0",
+     "cell_mm": 1.0,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.274000310857456e-08,
+      "20000000": 2.2599790705303023e-08
+     },
+     "wall_s": 61.360742500051856,
+     "peak_mem_mb": 1383.153664,
+     "status": "ok",
+     "cpu_s": 87.76668400000001,
+     "n_unknowns": 252940,
+     "gmres_iters": [
+      120,
+      130
+     ],
+     "solver_tol_rel_L_max": 3.063287760734725e-05,
+     "R_ohm": {
+      "10000000": 0.03274846489309891,
+      "20000000": 0.04360486168390457
+     }
+    },
+    {
+     "level": "lat0.5",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2252308756529467e-08,
+      "20000000": 2.2110992732714485e-08
+     },
+     "wall_s": 219.7843349170289,
+     "peak_mem_mb": 3887.546368,
+     "status": "ok",
+     "cpu_s": 337.662911,
+     "n_unknowns": 1025380,
+     "gmres_iters": [
+      172,
+      186
+     ],
+     "solver_tol_rel_L_max": 3.076150151952819e-05,
+     "R_ohm": {
+      "10000000": 0.03303858727797407,
+      "20000000": 0.04402771341348896
+     }
+    },
+    {
+     "level": "lat0.25",
+     "cell_mm": 0.25,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 4081040,
+      "peak_mem_mb_est": [
+       6887.549613093062,
+       26318.666368709873
+      ],
+      "wall_s_est": [
+       595.1438429507424,
+       5451.1981336698245
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       15568.142336,
+       22046.639883530992
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "lat0.125",
+     "cell_mm": 0.125,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": null,
+      "20000000": null
+     },
+     "wall_s": null,
+     "peak_mem_mb": null,
+     "status": "not_run",
+     "cost_estimate": {
+      "n_unknowns_est": 16324160,
+      "peak_mem_mb_est": [
+       20912.194992697383,
+       84698.55256244495
+      ],
+      "wall_s_est": [
+       3022.858890563498,
+       29350.146397114866
+      ],
+      "peak_mem_mb_case4_bytes_per_unknown": [
+       62272.569344,
+       88186.55953412397
+      ],
+      "generator_layouts_used": [
+       "solve_s11_d2",
+       "solve_s11_d6",
+       "solve_s3_d6",
+       "solve_s7_d2",
+       "solve_s7_d6"
+      ],
+      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     }
+    },
+    {
+     "level": "thk_c",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       5,
+       3,
+       3
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2513161232184158e-08,
+      "20000000": 2.2295969393458378e-08
+     },
+     "wall_s": 129.8761642500176,
+     "peak_mem_mb": 2680.99584,
+     "status": "ok",
+     "cpu_s": 204.500649,
+     "n_unknowns": 512740,
+     "gmres_iters": [
+      161,
+      171
+     ],
+     "solver_tol_rel_L_max": 3.212514224313805e-05,
+     "R_ohm": {
+      "10000000": 0.0366419361713171,
+      "20000000": 0.06129525114459904
+     }
+    },
+    {
+     "level": "thk_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       20,
+       12,
+       12
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.35,
+       0.6,
+       0.8,
+       0.93,
+       1
+      ],
+      "filaments_per_wire": 25,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.2235664085482105e-08,
+      "20000000": 2.209547836739584e-08
+     },
+     "wall_s": 1268.364578000037,
+     "peak_mem_mb": 8086.028288,
+     "status": "ok",
+     "cpu_s": 1476.969886,
+     "n_unknowns": 2050660,
+     "gmres_iters": [
+      171,
+      187
+     ],
+     "solver_tol_rel_L_max": 3.0795739252310956e-05,
+     "R_ohm": {
+      "10000000": 0.03218430893731834,
+      "20000000": 0.04396428831107016
+     }
+    },
+    {
+     "level": "fil_f",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 55,
+      "wire_phi": 6
+     },
+     "L_H": {
+      "10000000": 2.232496742800964e-08,
+      "20000000": 2.2200116366739026e-08
+     },
+     "wall_s": 445.29938929202035,
+     "peak_mem_mb": 4111.679488,
+     "status": "ok",
+     "cpu_s": 633.029808,
+     "n_unknowns": 1025500,
+     "gmres_iters": [
+      211,
+      229
+     ],
+     "solver_tol_rel_L_max": 2.530918740808528e-05,
+     "R_ohm": {
+      "10000000": 0.03138664017092988,
+      "20000000": 0.041931738798583244
+     }
+    },
+    {
+     "level": "fil_f_phi12",
+     "cell_mm": 0.5,
+     "params": {
+      "layers_top_back_base": [
+       10,
+       6,
+       6
+      ],
+      "wire_annulus_edges_r": [
+       0,
+       0.175,
+       0.35,
+       0.475,
+       0.6,
+       0.7,
+       0.8,
+       0.865,
+       0.93,
+       0.965,
+       1
+      ],
+      "filaments_per_wire": 109,
+      "wire_phi": 12
+     },
+     "L_H": {
+      "10000000": 2.2250615746132432e-08,
+      "20000000": 2.2112404234911627e-08
+     },
+     "wall_s": 782.0452064159908,
+     "peak_mem_mb": 5413.830656,
+     "status": "ok",
+     "cpu_s": 974.610325,
+     "n_unknowns": 1025716,
+     "gmres_iters": [
+      215,
+      230
+     ],
+     "solver_tol_rel_L_max": 2.5886119175237552e-05,
+     "R_ohm": {
+      "10000000": 0.033063104214755806,
+      "20000000": 0.0443430751769439
+     }
+    }
+   ],
+   "p_obs": {
+    "10000000": null,
+    "20000000": null
+   },
+   "L_extrap_H": {
+    "10000000": 2.1498742795145214e-08,
+    "20000000": 2.1355721500657448e-08
+   },
+   "L_extrap_kind": {
+    "10000000": "assumed-order p=0.72 (two levels)",
+    "20000000": "assumed-order p=0.72 (two levels)"
+   },
+   "abs_est_H": {
+    "10000000": 1.7032829899553548e-09,
+    "20000000": 1.7549332122167455e-09
+   },
+   "abs_est_posthoc_phi12_H": {
+    "10000000": 1.4903860067059473e-09,
+    "20000000": 1.4917968167345503e-09
+   },
+   "estimates": {
+    "10000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.1498742795145214e-08,
+     "extrap_p1": 2.1764614404484374e-08,
+     "extrap_p2": 2.2089743972514435e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.46308305613528e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -4.876943520450934e-10,
+      "rel_change": -0.021446538495027645
+     },
+     "p_thickness": 3.9701018619740487,
+     "thickness_term": 2.2223919379561236e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.6644671047362005e-11,
+     "thickness_change_c": -2.6085247565469065e-10,
+     "filament_term": 2.1797601444051348e-10,
+     "filament_change": 7.265867148017116e-11,
+     "abs_est": 1.7032829899553548e-09,
+     "filament_change_phi12": -1.6930103970353093e-12,
+     "filament_term_phi12_posthoc": 5.079031191105928e-12,
+     "abs_est_posthoc_phi12": 1.4903860067059473e-09
+    },
+    "20000000": {
+     "lateral_levels_used": [
+      "lat1.0",
+      "lat0.5"
+     ],
+     "ladder": "1.0/0.5 mm",
+     "p_assumed": 0.72,
+     "extrap_assumed_p": 2.1355721500657448e-08,
+     "extrap_p1": 2.1622194760125946e-08,
+     "extrap_p2": 2.1948060075184972e-08,
+     "p_obs": null,
+     "extrap": null,
+     "gci_lateral": 1.4663939177656156e-09,
+     "lateral_kind": "two-level",
+     "finest_level": "lat0.5",
+     "supp_1.0_0.5": {
+      "change": -4.887979725885385e-10,
+      "rel_change": -0.021628429172746433
+     },
+     "p_thickness": 3.5756666679492164,
+     "thickness_term": 2.116839237750804e-11,
+     "thickness_kind": "monotone",
+     "thickness_change_f": -1.551436531864526e-11,
+     "thickness_change_c": -1.8497666074389296e-10,
+     "filament_term": 2.673709020736218e-10,
+     "filament_change": 8.91236340245406e-11,
+     "abs_est": 1.7549332122167455e-09,
+     "filament_change_phi12": 1.4115021971422132e-12,
+     "filament_term_phi12_posthoc": 4.23450659142664e-12,
+     "abs_est_posthoc_phi12": 1.4917968167345503e-09
+    }
+   }
+  }
+ ],
+ "pair_ratios": [
+  {
+   "pert": "die_shift",
+   "freq_hz": 10000000.0,
+   "ratio_per_level": {
+    "lat1.0": 0.9869432372954169,
+    "lat0.5": 0.9864449398970111,
+    "lat0.25": null,
+    "lat0.125": null,
+    "thk_c": 0.9865599552168888,
+    "thk_f": 0.9864329373854507,
+    "fil_f": 0.9863760868836053,
+    "fil_f_phi12": 0.9864423025228428
+   },
+   "ratio_est": 0.001718202461920536,
+   "ratio_est_posthoc_phi12": 0.0015195555442081054,
+   "estimates": {
+    "lateral_levels_used": [
+     "lat1.0",
+     "lat0.5"
+    ],
+    "ladder": "1.0/0.5 mm",
+    "p_assumed": 0.72,
+    "extrap_assumed_p": 0.9856749905291123,
+    "extrap_p1": 0.9859466424986053,
+    "extrap_p2": 0.9862788407642091,
+    "p_obs": null,
+    "extrap": null,
+    "gci_lateral": 0.0014948921952173677,
+    "lateral_kind": "two-level",
+    "finest_level": "lat0.5",
+    "supp_1.0_0.5": {
+     "change": -0.0004982973984057892,
+     "rel_change": -0.0005048896223974753
+    },
+    "p_thickness": 3.2604178082393154,
+    "thickness_term": 1.67512264858993e-05,
+    "thickness_kind": "monotone",
+    "thickness_change_f": -1.2002511560416096e-05,
+    "thickness_change_c": -0.00011501531987767599,
+    "filament_term": 0.000206559040217269,
+    "filament_change": -6.885301340575634e-05,
+    "abs_est": 0.001718202461920536,
+    "filament_change_phi12": -2.6373741682794716e-06,
+    "filament_term_phi12_posthoc": 7.912122504838415e-06,
+    "abs_est_posthoc_phi12": 0.0015195555442081054
+   }
+  },
+  {
+   "pert": "die_shift",
+   "freq_hz": 20000000.0,
+   "ratio_per_level": {
+    "lat1.0": 0.9869959200135006,
+    "lat0.5": 0.9864978758041549,
+    "lat0.25": null,
+    "lat0.125": null,
+    "thk_c": 0.9865795680266554,
+    "thk_f": 0.9864858159784458,
+    "fil_f": 0.9864105273607846,
+    "fil_f_phi12": 0.986489926203855
+   },
+   "ratio_est": 0.0017738635831325948,
+   "ratio_est_posthoc_phi12": 0.001535667053921396,
+   "estimates": {
+    "lateral_levels_used": [
+     "lat1.0",
+     "lat0.5"
+    ],
+    "ladder": "1.0/0.5 mm",
+    "p_assumed": 0.72,
+    "extrap_assumed_p": 0.9857283176539455,
+    "extrap_p1": 0.9859998315948093,
+    "extrap_p2": 0.9863318610677064,
+    "p_obs": null,
+    "extrap": null,
+    "gci_lateral": 0.0014941326280368816,
+    "lateral_kind": "two-level",
+    "finest_level": "lat0.5",
+    "supp_1.0_0.5": {
+     "change": -0.0004980442093456272,
+     "rel_change": -0.0005046061480565855
+    },
+    "p_thickness": 2.759989675983007,
+    "thickness_term": 1.768562498473045e-05,
+    "thickness_kind": "monotone",
+    "thickness_change_f": -1.2059825709176408e-05,
+    "thickness_change_c": -8.169222250042907e-05,
+    "filament_term": 0.00026204533011098263,
+    "filament_change": -8.734844337032754e-05,
+    "abs_est": 0.0017738635831325948,
+    "filament_change_phi12": -7.949600299927972e-06,
+    "filament_term_phi12_posthoc": 2.3848800899783917e-05,
+    "abs_est_posthoc_phi12": 0.001535667053921396
+   }
+  },
+  {
+   "pert": "trace_width",
+   "freq_hz": 10000000.0,
+   "ratio_per_level": {
+    "lat1.0": 0.9690665254548458,
+    "lat0.5": 0.9691379925157619,
+    "lat0.25": null,
+    "lat0.125": null,
+    "thk_c": 0.96894971734063,
+    "thk_f": 0.9691114049121626,
+    "fil_f": 0.9692362015090039,
+    "fil_f_phi12": 0.9691353810978269
+   },
+   "ratio_est": 0.0010738536878701632,
+   "ratio_est_posthoc_phi12": 0.0007870609619492486,
+   "estimates": {
+    "lateral_levels_used": [
+     "lat1.0",
+     "lat0.5"
+    ],
+    "ladder": "1.0/0.5 mm",
+    "p_assumed": 0.72,
+    "extrap_assumed_p": 0.9692484205825228,
+    "extrap_p1": 0.969209459576678,
+    "extrap_p2": 0.9691618148694007,
+    "p_obs": null,
+    "extrap": null,
+    "gci_lateral": 0.00021440118274829167,
+    "lateral_kind": "two-level",
+    "finest_level": "lat0.5",
+    "supp_1.0_0.5": {
+     "change": 7.146706091609722e-05,
+     "rel_change": 7.37483537391892e-05
+    },
+    "p_thickness": null,
+    "thickness_term": 0.00056482552539594,
+    "thickness_kind": "oscillatory",
+    "thickness_change_f": -2.658760359930401e-05,
+    "thickness_change_c": 0.00018827517513198,
+    "filament_term": 0.00029462697972593155,
+    "filament_change": 9.820899324197718e-05,
+    "abs_est": 0.0010738536878701632,
+    "filament_change_phi12": -2.6114179350056332e-06,
+    "filament_term_phi12_posthoc": 7.8342538050169e-06,
+    "abs_est_posthoc_phi12": 0.0007870609619492486
+   }
+  },
+  {
+   "pert": "trace_width",
+   "freq_hz": 20000000.0,
+   "ratio_per_level": {
+    "lat1.0": 0.9689736363433297,
+    "lat0.5": 0.9690403629749367,
+    "lat0.25": null,
+    "lat0.125": null,
+    "thk_c": 0.9689351561392058,
+    "thk_f": 0.969014173380579,
+    "fil_f": 0.9691628702335255,
+    "fil_f_phi12": 0.9690428678145115
+   },
+   "ratio_est": 0.0008833221777803102,
+   "ratio_est_posthoc_phi12": 0.0005233149207383159,
+   "estimates": {
+    "lateral_levels_used": [
+     "lat1.0",
+     "lat0.5"
+    ],
+    "ladder": "1.0/0.5 mm",
+    "p_assumed": 0.72,
+    "extrap_assumed_p": 0.9691434663184263,
+    "extrap_p1": 0.9691070896065437,
+    "extrap_p2": 0.9690626051854724,
+    "p_obs": null,
+    "extrap": null,
+    "gci_lateral": 0.0002001798948210176,
+    "lateral_kind": "two-level",
+    "finest_level": "lat0.5",
+    "supp_1.0_0.5": {
+     "change": 6.672663160700587e-05,
+     "rel_change": 6.886320649424071e-05
+    },
+    "p_thickness": null,
+    "thickness_term": 0.0003156205071926932,
+    "thickness_kind": "oscillatory",
+    "thickness_change_f": -2.6189594357628465e-05,
+    "thickness_change_c": 0.00010520683573089773,
+    "filament_term": 0.0003675217757665994,
+    "filament_change": 0.00012250725858886646,
+    "abs_est": 0.0008833221777803102,
+    "filament_change_phi12": 2.504839574868356e-06,
+    "filament_term_phi12_posthoc": 7.514518724605068e-06,
+    "abs_est_posthoc_phi12": 0.0005233149207383159
+   }
+  }
+ ],
+ "cost_projection_not_run": {
+  "lat0.25": {
+   "n_unknowns_est": 4081040,
+   "peak_mem_mb_est": [
+    6887.549613093062,
+    26318.666368709873
+   ],
+   "wall_s_est": [
+    595.1438429507424,
+    5451.1981336698245
+   ],
+   "peak_mem_mb_case4_bytes_per_unknown": [
+    15568.142336,
+    22046.639883530992
+   ],
+   "generator_layouts_used": [
+    "solve_s11_d2",
+    "solve_s11_d6",
+    "solve_s3_d6",
+    "solve_s7_d2",
+    "solve_s7_d6"
+   ],
+   "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+  },
+  "lat0.125": {
+   "n_unknowns_est": 16324160,
+   "peak_mem_mb_est": [
+    20912.194992697383,
+    84698.55256244495
+   ],
+   "wall_s_est": [
+    3022.858890563498,
+    29350.146397114866
+   ],
+   "peak_mem_mb_case4_bytes_per_unknown": [
+    62272.569344,
+    88186.55953412397
+   ],
+   "generator_layouts_used": [
+    "solve_s11_d2",
+    "solve_s11_d6",
+    "solve_s3_d6",
+    "solve_s7_d2",
+    "solve_s7_d6"
+   ],
+   "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+  }
+ }
+}
