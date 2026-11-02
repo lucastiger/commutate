@@ -1,8 +1,7 @@
 # ModuleForge status
-_generated 2026-11-02T02:18:00+00:00 from repository state — do not edit_
+_generated 2026-11-02T02:20:28+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
-- **I0064** [external_action] [O006] New mfos.metrics functions so E006 can recompute A1, A3 and A4 (protected path tools/mfos)
+## Founder inbox (2 open)
 - **I0065** [budget_increase] [O006] O006 budget: +$25 (to $115)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 
@@ -35,7 +34,6 @@ cancelled: 30, done: 124, failed: 3, running: 2, todo: 8
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 
 ## Recent events
-- 2026-11-02T02:08:52+00:00 sleep_detected {"gap_s": 832, "runs_extended": 2}
 - 2026-11-02T02:08:53+00:00 run_finished {"run": "T0151-scientist-20261101T175342-05bc", "status": "completed", "cost": 2.027862, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T02:10:15+00:00 task_failed_attempt {"task": "T0151", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T02:10:18+00:00 run_started {"run": "T0162-planner-20261101T181018-498e", "task": "T0162", "role": "planner", "session": "61ff613e-63cd-4e22-aa4f-badd5fce13fb"}
@@ -50,3 +48,4 @@ cancelled: 30, done: 124, failed: 3, running: 2, todo: 8
 - 2026-11-02T02:16:06+00:00 run_started {"run": "T0150-builder-20261101T181606-2b15", "task": "T0150", "role": "builder", "session": "5e652892-238b-4bc1-abee-80d02d831cbf"}
 - 2026-11-02T02:17:46+00:00 inbox_resolved {"id": "I0067", "status": "answered", "note": "Founder (2026-11-02): suggested DoDs and touches added to T0157 and T0163 (deliverable research/notes/o006-kT-cit
 - 2026-11-02T02:17:47+00:00 inbox_resolved {"id": "I0068", "status": "approved", "note": "Founder (2026-11-02): plan approved as proposed.", "by": "session"}
+- 2026-11-02T02:20:12+00:00 inbox_resolved {"id": "I0064", "status": "approved", "note": "metrics added (max_scaled_abs_err, max_abs_err_gated, max_col; NaN/empty raise)", "by": "human"}
