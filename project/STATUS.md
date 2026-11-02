@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T03:22:01+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:22:17+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
+- **I0070** [protected_change] T0152: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,18 +24,17 @@ _generated 2026-11-02T03:22:01+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 27 | $51.48 | 1102824 | 621951 | 45 | 0 |
+| O006 | 28 | $51.48 | 1102824 | 621951 | 45 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 128, failed: 3, merge: 1, running: 1, todo: 8
+cancelled: 30, done: 128, failed: 3, needs_founder: 1, running: 2, todo: 7
 
-- T0152 `merge` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
+- T0152 `needs_founder` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 - T0153 `running` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
+- T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-02T02:49:03+00:00 run_finished {"run": "T0169-critic-20261101T184248-428c", "status": "completed", "cost": 2.12731, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T03:03:26+00:00 inbox_opened {"id": "I0069", "kind": "protected_change", "subject": "T0150: merge needs founder approval"}
 - 2026-11-02T03:03:30+00:00 run_started {"run": "T0153-scientist-20261101T190330-2c7a", "task": "T0153", "role": "scientist", "session": "08a8f217-d72a-4b63-804c-8c8b3c112f94"}
 - 2026-11-02T03:03:53+00:00 sleep_detected {"gap_s": 892, "runs_extended": 2}
 - 2026-11-02T03:06:05+00:00 budget_override {"objective": "O006", "usd": 115.0}
@@ -48,3 +48,5 @@ cancelled: 30, done: 128, failed: 3, merge: 1, running: 1, todo: 8
 - 2026-11-02T03:15:09+00:00 verified {"task": "T0152"}
 - 2026-11-02T03:15:13+00:00 run_started {"run": "T0171-critic-20261101T191513-eaaf", "task": "T0171", "role": "critic", "session": "196ab881-ef12-4b0f-a641-e8e680684c32"}
 - 2026-11-02T03:21:39+00:00 run_finished {"run": "T0171-critic-20261101T191513-eaaf", "status": "completed", "cost": 1.378192, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T03:22:15+00:00 inbox_opened {"id": "I0070", "kind": "protected_change", "subject": "T0152: merge needs founder approval"}
+- 2026-11-02T03:22:17+00:00 run_started {"run": "T0155-scientist-20261101T192217-0866", "task": "T0155", "role": "scientist", "session": "77fcf8f6-3a0f-4e35-b3c0-f053d1bc5d77"}
