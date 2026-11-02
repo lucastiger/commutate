@@ -1,0 +1,59 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The z-doubled scikit-fem solve, whose value enters A3 and F5, is not covered by the energy-balance and Picard gates",
+      "detail": "In run_layout the extra solve `rz = FEM.solve_layout(..., rule=rule_z, level=levels[1])` gives skfem_z1. That value enters the A3 denominator (2.5|z1 - z0|) and the F5 estimate. The runner reads only rz.tj_max, rz.dofs and rz.wall_s. rz.energy_balance and rz.picard_residual are never appended to st.energy or st.picard. The spec says `energy_balance` covers every L2 and scikit-fem solve and `picard_converged` covers every k(T) solve in both solvers, so for these five solves the spec overstates what is checked. A bad z-doubled solve could only make the A3 tolerance looser. F5 caps the total scikit-fem estimate at 0.25 K, which limits the harm, so this is not a blocker.",
+      "evidence": "experiments/runners/e006_run.py lines 566-569 (grep 'rz'): only tj_max, dofs and wall_s are used. The three lateral levels are appended to st.energy and st.picard at lines ~765-766.",
+      "suggested_check": "Append (f'{name}/skfem/L1z2', rz.energy_balance) to st.energy and the Picard residual to st.picard before `del rz`.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The F1 N-layer check against scikit-fem uses only one centred source on a square box, so the kernel is exercised only on even modes",
+      "detail": "The uniform-stack case is a single 5.5 mm die centred on a 16.5 mm box, and scikit-fem solves a quarter of it. With a centred source every odd cosine mode is zero, and the 'max' point is the centroid. So the scikit-fem comparison cannot detect an error in the N-layer kernel's eccentric-source or odd-mode terms. The frozen nlayer_dbc values (four eccentric sources, 86 x 56 mm) are never compared with scikit-fem directly. They rely on the shared Field summation, the two-layer reduction and Case 2. My independent transfer-matrix solution (below) does confirm those frozen values, so this is a limit of the evidence and not an error in it.",
+      "evidence": "refcheck rerun: centroid ref 423.10957 and max point at the same location. uniform_stack_case builds Source('die', a/2, a/2, ...).",
+      "suggested_check": "Optionally add an off-centre source, or a full-domain scikit-fem solve of a reduced nlayer_dbc box, to the F1 N-layer check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Only the coarsened smoke rule has been run; F5 feasibility and frozen-rule memory are not demonstrated",
+      "detail": "The dev rows come from a smoke rule with 4x coarser lateral cells and one z cell per layer, and the scikit-fem smoke rule uses h0 = 2 mm. A3 and A4 are +inf there (divergent scikit-fem sequences; the MMS overhang point diverges in the L2). Nothing has been run on the frozen scikit-fem rule (h0 0.5 mm) to show that F5 (<= 0.25 K including the z term) can pass. The thermal_fem docstring reports GCI 0.03-0.15 K at this resolution, under an earlier estimator that is not order-capped. The design note projects 17, 30 and 21 GB peaks for the level-2 FV runs of Case 1a, Case 1b and N-layer, so the registered run needs a burst VM. These are risks of an INVALID or INCONCLUSIVE registered run, not defects in the design deliverables.",
+      "evidence": "mfos exp check on dev_rows: A3 inf, A4 inf (expected for smoke). Design note section 7. thermal_fem.py docstring lines 42-46.",
+      "suggested_check": "Before registration, run the frozen scikit-fem rule on one dev layout and record the F5 estimate.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "calibrate_power can return a power whose rise was never computed",
+      "detail": "If the secant loop uses all 10 iterations without reaching the 0.25 K tolerance, p has already been updated after the last solve. The function then returns the new p together with the rise of the previous p, so the operating_point sanity check would test a rise at a different power. This is unlikely in practice because the rise is nearly linear in P. Also, run_mms computes q_ok and never uses it, and smoke() contains a no-op cfg copy.",
+      "evidence": "e006_run.py calibrate_power: `p *= tgt / rise` after the tolerance test, with no re-solve after the loop.",
+      "suggested_check": "Recompute the rise at the returned p, or raise if the loop exhausts without converging.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The series_converged gate shows exactly zero change when modes are doubled",
+      "detail": "For four of the five cases, doubling the modes changes nothing at all (0.0e+00), so the gate cannot fail. This fits an accelerated series that has converged to machine precision, and my independent transfer-matrix check confirms the frozen values. On its own, though, the gate tells you little.",
+      "evidence": "refcheck rerun log: 'convergence_doubling_case1a: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Wrote my own rectangular flux-channel solver: cosine modes with a per-mode transfer (quadrupole) matrix through the layers and a Robin condition at the bottom. It does not use e006_series. I compared it with all 51 frozen series values. Case 2 and Case 3 agree to at most 6.1e-6 K at M = 4000 modes per direction (2.4e-5 K at M = 2000, so the gap shrinks about 1/M^2). Cases 1a and 1b agree to at most 3.3e-4 K. nlayer_dbc (7 layers, 4 eccentric sources) agrees to at most 3.3e-4 K at M = 2500, which is truncation of my sum. All differences are below 6e-6 of the case scale. The frozen references are correct.",
+    "Reran `--refcheck` from scratch (one process, peak about 3.8 GB, about 4.5 min). all_passed = True, and it reproduces case2_skfem_gci 0.00457 K, case2_vs_skfem 0.00108 K, nlayer_uniform_skfem_gci 0.00058 K, nlayer_uniform_vs_skfem 0.0001 K and energy balances of at most 5e-12. I checked by hand that every Case 2 Q2 sequence converges and that GCI >= |err| on each value (for example, s2.mean extrapolated with p = 2 gives 375.50314 against a reference of 375.50310).",
+    "Reran `--smoke --rows-out` into scratch. All 196 rows match the committed research/e006/dev_rows.json to at most 1.7e-8 (the largest difference is in a derived ratio column), and the metrics are identical.",
+    "Ran `uv run mfos exp check E006 --rows research/e006/dev_rows.json`: it runs, and the F3 null on the manufactured case gives A1 0.0254 (> 0.01) and A2 2.56 K (> 0.05 K), so the null fails A1 by 2.5x and A2 by about 50x.",
+    "Ran `uv run ruff check .`: all checks pass.",
+    "Read the code paths: mfos.metrics gci_capped, max_gci_consistency and two_grid_term, and compute's mapping of ref_zpair to r_extra match the spec. The thermal_fem GridRule with zrefine=False holds z fixed, so skfem_z0/z1 is a valid z-doubling on the level-1 lateral grid. The Q2 solver's units (mm), layer assignment, Robin assembly, source-face coverage check and exact Galerkin means are consistent. Smoke's setattr on the TL constants takes effect because the grid builders read those globals when called."
+  ],
+  "caveats": [
+    "This accepts the design deliverables and the F1 reference pre-check. The registered E006 run has not been executed on the frozen rule. It needs a machine with more than 30 GB (Case 1b level 2 is about 23 M cells), and whether F5 passes on the frozen scikit-fem rule has not been shown.",
+    "The scikit-fem side of the F1 N-layer check uses only a centred source. The frozen nlayer_dbc values were confirmed here by an independent transfer-matrix series, not by scikit-fem.",
+    "The dev rows come from a coarsened smoke rule and say nothing about A1-A4 on the frozen rule.",
+    "The energy-balance and Picard gates do not cover the z-doubled scikit-fem solve (major finding), so the spec's 'every scikit-fem solve' wording is not yet true."
+  ]
+}

@@ -1,0 +1,121 @@
+id: T0196
+objective: O006
+title: 'E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power
+  pairing, F5 dev feasibility'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0165
+description: 'Pre-registration fixes to E006''s draft (reviews T0194 and T0195 of T0165, project/reviews/T0165/).
+  E006 is not
+
+  registered yet; nothing here may loosen a gate, a threshold or the frozen grid rule.
+
+
+  (1) Gate the z-doubled scikit-fem solve. Its value (skfem_z1) enters A3''s denominator and F5. Append
+  its energy balance
+
+  and Picard residual to the same F2 gates as every other solve, in the runner and in the spec''s sanity-check
+  list.
+
+
+  (2) calibrate_power must return a power and the rise computed at that same power. If the secant loop
+  runs out of
+
+  iterations without meeting its tolerance, re-solve at the returned power or raise. That way operating_point
+  and
+
+  calibration_rise_K describe the power both solvers use.
+
+
+  (3) Remove the dead code: run_mms''s unused q_ok, and the no-op cfg rebuild in smoke().
+
+
+  (4) F5 feasibility on development geometry only (never the sealed seed). Run scikit-fem on its frozen
+  rule (levels 0-2
+
+  plus the z-doubled level-1 solve) for the two development A3 layouts (dev seed 20261101) at O003''s
+  operating point.
+
+  Run one solve at a time, about 7 GB or less each, under the agent memory rule. Write each die''s scikit-fem
+  estimate
+
+  (mfos.metrics.gci_capped with floor 1e-3 K plus two_grid_term) to research/e006/f5_dev_check.json, as
+
+  {dies: [{layout, die, skfem_gci, z_term, estimate}], max_estimate, f5_limit: 0.25}, and summarise it
+  in the design note.
+
+  Do not compute, print or record any L2 value, L2-vs-scikit-fem difference, or A3/A4 value on these layouts:
+  this checks
+
+  only scikit-fem''s own convergence. If the maximum exceeds 0.25 K, stop and report it. Do not change
+  the rule, the
+
+  estimator or the threshold.
+
+
+  (5) If it fits the memory rule: add an off-centre source to F1''s N-layer scikit-fem check, so the odd
+  series modes are
+
+  exercised (review T0194). If it does not fit, record the limitation in the design note.
+
+
+  Keep every existing check and DoD passing: smoke, mfos exp check, refcheck all_passed.'
+context_files:
+- project/objectives/O006/objective.yaml
+- project/reviews/T0165/T0194.json
+- project/reviews/T0165/T0195.json
+- experiments/drafts/E006.yaml
+- experiments/runners/e006_run.py
+- experiments/runners/e006_skfem_q2.py
+- research/notes/o006-e006-design.md
+- tools/mfos/mfos/metrics.py
+- src/moduleforge/solvers/thermal_fem.py
+deliverables:
+- research/e006/f5_dev_check.json
+touches:
+- experiments/drafts/E006.yaml
+- experiments/runners/e006_run.py
+- experiments/runners/e006_skfem_q2.py
+- research/e006/**
+- research/notes/o006-e006-design.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e006_run.py --smoke --rows-out research/e006/dev_rows.json
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E006 --rows research/e006/dev_rows.json
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "import json; d=json.load(open('research/e006/refcheck.json')); assert d['all_passed']
+    is True"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d=json.load(open('research/e006/f5_dev_check.json')); assert d['dies']
+    and 'max_estimate' in d and d['f5_limit'] == 0.25"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+experiment: E006
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T17:33:12+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Close T0194's major finding and the calibrate_power defect before registration; show F5 is
+  attainable before the single evaluation.
+history: []

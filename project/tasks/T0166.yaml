@@ -9,6 +9,7 @@ depends_on:
 - T0150
 - T0152
 - T0163
+- T0196
 description: The orchestrator runs the registered E006 spec on merged main once n2's draft is registered
   and T0150, T0152 and T0163 have merged (T0163 must merge before E006 runs). It feeds A1-A4, K1 and K2,
   using the objective's single evaluation (max_evaluations 1).
@@ -35,4 +36,7 @@ target: null
 lens: null
 trigger: null
 rationale: The required experiment task for E006; the only evidence for the objective's verdict.
-history: []
+history:
+- outcome: founder_dependency_added
+  summary: waits for T0196 (pre-registration fixes)
+  at: '2026-11-02T17:33:12+00:00'

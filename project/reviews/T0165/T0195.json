@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "calibrate_power can return a rise that does not belong to the returned power",
+      "detail": "The loop solves at power p, then updates p *= tgt/rise when the rise is out of tolerance. If all 10 iterations run out without a break, the returned (p, rise) pair is mismatched: rise was computed at the previous p. The operating_point sanity check and the calibration_rise_K column would then describe a different power from the one both solvers use. The docstring and design note call this a secant method, but it is proportional scaling. In the smoke run calibration converged in a few iterations (rises 60.089 K and 59.950 K), so this is unlikely to matter.",
+      "evidence": "experiments/runners/e006_run.py calibrate_power: for _ in range(10): rise = ...; if abs(rise - tgt) <= tol: break; p *= tgt / rise; return float(p), float(rise)",
+      "suggested_check": "After the loop, recompute the rise at the returned p, or raise if the loop did not converge.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Dead code in run_mms and smoke",
+      "detail": "run_mms computes q_ok and never uses it. The manufactured case's balance against the reference outflow is still gated, because the same quantity is appended to st.energy. smoke() rebuilds cfg with an unchanged fv_bytes_per_cell, which does nothing.",
+      "evidence": "e006_run.py run_mms: q_ok &= abs(res.meta['q_out']/q_ref - 1.0) <= cfg['energy_tol'] or False (never read); smoke: cfg = {**cfg, 'fv_bytes_per_cell': cfg['fv_bytes_per_cell']}",
+      "suggested_check": "Remove q_ok or gate on it explicitly.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The registered frozen-rule run has not been executed and does not fit this Mac",
+      "detail": "Only the coarsened smoke rule has been run. Level 2 of Cases 1a, 1b and nlayer_dbc on the frozen rule is projected at about 17, 30 and 21 GB per solve. The design note says so and gives the larger-machine command. A1-A4 on the frozen rule remain unknown until that run.",
+      "evidence": "research/notes/o006-e006-design.md section 7; dev_rows meta mode 'smoke (coarsened rule, dev seed; not evidence)'",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F5 (scikit-fem estimate <= 0.25 K) has a moderate margin",
+      "detail": "I recomputed the earlier scikit-fem benchmark (same grid rule, dev layouts, 85 K rise) with the current mfos.metrics.gci_capped (floor 1e-3 K). The worst die GCI is 0.215 K (u_shaped_2), plus 2.5 x 0.026 K for the through-thickness term. Scaled to the 60 K operating point that is about 0.15 K + 0.05 K, roughly 0.2 K. The fresh sealed-seed layouts, likely with 5 dies per switch, have not been measured and could exceed 0.25 K. That would make the run INVALID, not a verdict on the L2.",
+      "evidence": "benchmarks/results/thermal_fem_convergence.json: worst gci_capped 0.162 K (side_by_side_6), 0.215 K (u_shaped_2) at 85 K; z_sensitivity_K 0.020 and 0.026",
+      "suggested_check": "Optionally run the scikit-fem rule at 60 K on one dev-seed 5-dies-per-switch layout before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F4: only the two dev fingerprints can be pre-asserted in the spec",
+      "detail": "The objective's F4 says the spec asserts the five A3 layout fingerprints. The three fresh ones depend on the sealed seed, so the spec asserts the two dev fingerprints. The runner checks one fresh layout per family and five distinct fingerprints, and records them in the detail and the domain. This is a reasonable reading of the objective.",
+      "evidence": "E006.yaml layout_fingerprints sanity description; e006_run.py full()",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: `mfos exp check E006 --rows research/e006/dev_rows.json` (runs, no errors), `ruff check .` (clean), the refcheck.json assertion and both E006.yaml spec-text assertions (all pass).",
+    "Re-ran `e006_run.py --smoke` with rows written to $TMPDIR (repository file untouched): 196 rows, every metric matches the committed dev_rows.json to about 1e-13; dev fingerprints match.",
+    "Wrote my own Fourier-series solution for layered plates with a convective base (bottom-up layer recursion), with no code shared with e006_series. It reproduces all 51 frozen series values (case1a, case1b, case2, case3, nlayer_dbc): source means within 1e-6 to 7e-5 K, point values within my own truncation (at most about 8e-4 K on nlayer_dbc, 1e-5 K or less elsewhere).",
+    "Re-ran the three-level scikit-fem Q2 Case 2 F1 check from the code at this commit (peak 4.3 GB): values reproduce refcheck.json exactly (max GCI 0.004569 K against 0.01 K, max error 0.001081 K against 0.02 K, ratio 2 exact, energy balance 1.7e-12); GCI >= |error| on all 12 values.",
+    "Ran the Q2 F1 solver on Case 3, which its mesh was not tuned on, at levels 0-1 with the Case 2 mesh settings: max error against the frozen series 2.5e-4 K at level 1.",
+    "Read mfos.metrics gci_capped, max_gci_consistency, two_grid_term and the recompute wrappers: the spec's recompute entries (pred_levels, ref_levels, ref_zpair, floor 1e-3) match the objective's A3/A4/F5 definitions; skfem_z0 = level-1 base and skfem_z1 = level-1 with doubled nz, as A3 specifies.",
+    "Checked that smoke mode really coarsens the grid: thermal_layout reads H0_MAX, LAT_FRAC, EDGE_FRAC and Z_CELLS as module variables at call time, so setattr takes effect.",
+    "Tested whether series_converged is vacuous (exact 0.0 changes): it recomputes with doubled knobs against the frozen values, and the added modes contribute less than one rounding step of T near 370 K; my independent series confirms the values.",
+    "Recomputed F5-style scikit-fem estimates from benchmarks/results/thermal_fem_convergence.json with the current estimator to judge whether the registered run is feasible (about 0.2 K expected at 60 K against the 0.25 K limit).",
+    "Recomputed per-case errors from dev_rows: the F3 null on the manufactured case gives 0.0254 scaled / 2.56 K, so it misses A1 and A2 as F3 requires."
+  ],
+  "caveats": [
+    "All smoke metrics come from a coarsened grid rule and the dev seed. They say nothing about A1-A4 on the frozen rule; A3 and A4 are infinite there by construction.",
+    "The registered run needs a larger machine (about 17-30 GB per FV solve at level 2 for Cases 1a, 1b and nlayer_dbc). Whether the frozen-rule L2 meets A1-A4 and F5 is still open.",
+    "F5 has a moderate margin (about 0.2 K expected against 0.25 K, from the earlier dev-layout benchmark rescaled to 60 K). The three fresh sealed-seed layouts were never measured and could make the run INVALID.",
+    "F1 validates the frozen references and the new Q2 scikit-fem solver. It does not validate the older scikit-fem layout solver used for the A3 cross-check; that relies on F5 in the registered run.",
+    "I could not read swap usage (sysctl is blocked by the sandbox); I gated my 4.3 GB check on 77 % free memory from memory_pressure."
+  ]
+}
