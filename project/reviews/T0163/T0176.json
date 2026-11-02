@@ -1,0 +1,47 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "No test pins the Picard re-check: deleting it leaves the whole suite green",
+      "detail": "I made a mutant with only the re-check removed: the three lines that recompute dT after the polish solve and `continue`, plus the post-loop RuntimeError. The Robin-flux change stayed in. All 17 tests in test_thermal_fv.py still pass, including `test_picard_stop_holds_for_returned_field`. The mutant passes for three reasons. (1) In the main solve of that test (picard_tol 1e-6), the re-check never fires: the polished dT is 3.7e-7, below the stop. (2) The 'fixed point' comparison does not re-solve from the returned field, despite what its comment says. `T_init=float(np.mean(res.T))` is a scalar mean, and the tolerance is 1e-5, ten times picard_tol. (3) `test_observed_order_3d_k_of_T_with_robin_flux` asserts `picard_dT < 1e-9`. The mutant passes this trivially because it reports picard_dT = 0.0: the warm-started inexact CG solve leaves u unchanged, which is exactly the false stop the re-check exists to catch. The code itself is correct (see checks), but the test evidence for this part of the deliverable is empty.",
+      "evidence": "Mutant run: all 17 tests pass. Instrumented run: the `continue` branch does fire inside the 3D k(T) test (N=16: polished dT 3.18e-8 vs stop 1e-9; N=32: 5.95e-8), but no assertion depends on it. At N=16 with tol 1e-9, the mutant reports meta picard_dT = 0.00 and returns a field 2.87e-9 K from a 1e-13-converged reference. The real code reports 5.57e-10 and lands 5.5e-11 K from the reference.",
+      "suggested_check": "In the 3D k(T) test at N=16, assert `picard_dT > 0`, or assert that max|T - T_ref| < picard_tol against a picard_tol=1e-13 reference. Both fail on the mutant and pass on the real code.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "energy_balance blows up when the Robin-face flux cancels the source",
+      "detail": "When the prescribed Robin-face extraction exactly cancels the volumetric power, q_in comes out as rounding noise (5.6e-17) rather than exactly 0.0. The `q_in != 0.0` guard then misses, and `energy_balance` reports 2.0 (a 200 % error) for a field that conserves energy exactly. The same fragility existed before this change for cancelling +z flux, so it is not a regression. The change does make it easier to hit, because the Robin flux now enters both q_in and q_out as a large term.",
+      "evidence": "source 1e8 W/m3 over 1 mm, flux {(2,-1): -1e5}: q_in = 5.55e-17, q_out = -5.55e-17, energy_balance = 2.0.",
+      "suggested_check": "Normalise the balance by the total absolute power (|Qv| + |F| + |q_rob|) instead of the signed q_in.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Small unrequested extra: 0-d numpy array flux specs",
+      "detail": "The change also accepts 0-d numpy arrays as dict flux specs; before, they were rejected by the shape check. This is harmless and covered by the new slab test. It falls outside the stated title, and it is why the old solver fails that test on input handling rather than on order (I re-ran the order comparison with plain floats).",
+      "evidence": "Old solver on `_slab_with_robin_flux`: ValueError 'flux array for face (2, 1) must have shape (1, 1, 8)'.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three definition-of-done commands. tests/unit/solvers/test_thermal_fv.py: 22 passed. Fast unit suite (`-m 'not slow' tests/unit`): 402 passed, 33 deselected. `ruff check .`: clean.",
+    "Rebuilt the pre-change solver in $TMPDIR by reversing the diff hunks, then ran the new tests against it. The Robin second-order test fails (on 0-d input handling; see the next check for the order), the shifted-ambient test fails, and the 3D k(T) test fails (orders 1.66 and 1.59). The Picard test passes on the old code too.",
+    "Slab manufactured-solution convergence with plain-float specs, N = 8 to 128, q0 = 4e5 W/m2. Old code: errors 1.91 to 0.135 K, orders 0.89/0.96/0.98/0.99 (first order, as expected from an O(dz) error in the boundary heat flow). New code: orders 1.95/1.99/2.00/2.00. The new errors are bit-identical to the q0 = 0 case, as the exact equivalence T_inf -> T_inf + q/h predicts.",
+    "Checked the combined face condition by hand. h(T_inf - T_f) + q = G_h(T_f - T_c) gives heat into the cell g(T_inf + q/h - T_c) with g = 1/(1/G_h + 1/h). With Gauss averaging this becomes T_inf_eff = (<h T_inf> + <q>)/<h>, which matches the code.",
+    "Robin-face flux through the other input forms. Callable flux(x, y, z, axis, sign) and a per-face array both match a shifted ambient to 4.5e-12 K.",
+    "Void pocket: -z faces above a void at k > 0 plus Robin faces. q_in = 0.575 W matches the hand count (6 Robin faces + 2 void-roof faces). Robin outflow rebuilt independently from the face balance, h(T_f - T_inf): 0.5750000000000124 W vs meta q_out 0.5750000000000123. Energy balance 2e-14.",
+    "3D k(T) problem out to N=64. Errors 0.696, 0.192, 0.0493, 0.0124 K; observed orders 1.86, 1.96, 1.99.",
+    "Mutation test: removed only the Picard re-check and post-loop raise; all 17 thermal_fv tests still pass.",
+    "Instrumented the re-check branch across the suite. It fires in the 3D k(T) test, and in the picard_tol 1e-10 reference solve of the Picard test, not in that test's main solve. Measured distance to a 1e-13 fixed point: real code 5.5e-11 K at tol 1e-9; mutant 2.9e-9 K while reporting picard_dT = 0.",
+    "Traced every exit from the Picard loop. For nonlinear k, the loop only breaks with dT >= tol when the polish solve happens at max_picard, and the new post-loop RuntimeError catches exactly that case. No exit path was found that hangs, or that returns an unchecked field.",
+    "Searched for other users of the flux contract. The E006 manufactured reference passes 0 flux on z = 0, and thermal_layout only uses (2, +1) flux, so neither is affected by the Robin-face change."
+  ],
+  "caveats": [
+    "The Robin-face flux part is correct and well tested: the new tests fail on the old code and pass on the new code with large margins.",
+    "The Picard re-check code is correct and has a measurable effect: it removes a false stop where picard_dT = 0. But no test would catch its removal, so the 'tests' part of the claim covers the re-check only nominally.",
+    "The second-order behaviour was verified with spatially uniform h on the Robin face. With non-uniform h(x, y) inside a face, the Gauss-averaged combination assumes a uniform face temperature, the same assumption as the existing h\u00b7T_inf averaging."
+  ]
+}
