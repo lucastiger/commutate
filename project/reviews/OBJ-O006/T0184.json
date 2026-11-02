@@ -1,0 +1,101 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "Hypothesis (b) still says 'agrees within 0.05 K' with scikit-fem, but A3 only requires |dTj| <= GCI_L2 + GCI_skfem (up to 1.0 K)",
+      "detail": "D0012 rewrote A3 as a ratio against the summed GCIs but left the hypothesis words '(b) agrees within 0.05 K with an independent scikit-fem solution' unchanged (they are unchanged context lines in docs/reports/o006-criteria-change-D0012.patch). So all pass criteria can hold while hypothesis (b) is false. The claim 'if every pass criterion is met, the hypothesis is established' fails as written, and a claim generated from the statement would overstate the L2/FEM agreement several times over. On the committed benchmarks for exactly the A3 layouts, the expected outcome is an A3 pass with every die above 0.05 K.",
+      "evidence": "benchmarks/results/thermal_l2_convergence.json and thermal_fem_convergence.json (seed 20261101, side_by_side_6 and u_shaped_2). After linear power normalisation (L2 at 44.2/63.9 W, FEM at 45/66 W per die), finest-grid |Tj_L2 - Tj_FEM| = 0.105-0.141 K (12 dies) and 0.112-0.184 K (4 dies). The A3 ratio under the D0012 estimator is 0.25-0.65, so A3 passes.",
+      "suggested_check": "Restate (b) as 'agrees with an independent scikit-fem solution within the two solvers' combined conservative GCIs, each at most 0.5 K', or reinstate an absolute bound in A3.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "0.5 K per value is half, not a quarter, of O003's +2 K budget on the quantity O003 tests",
+      "detail": "O003 (objective.yaml lines 15-16) judges a difference: candidate Tj max at most 2 K above the reference's. D0012's own Consequences bound a difference by GCI_A + GCI_B, so A4 at 0.5 K per value allows a 1.0 K conservative reference error on O003's difference. D0012 rejected that outcome as alternative (c) ('leaves O003's +2 K check with a reference error of half its budget'). A consistent derivation gives 0.25 K per value. The u_shaped_2 benchmark (0.42-0.43 K under the D0012 estimator) would fail that. So the threshold sits where it can be passed, not where the stated decision puts it. Mitigation: L2 errors look strongly correlated across dies (near-constant L2-FEM offsets), so real difference errors are probably smaller, but the criteria are defined on conservative bounds.",
+      "evidence": "O003 objective.yaml lines 15-16; D0012 Consequences and Alternatives (c). Recomputed D0012 GCI for u_shaped_2 dies 2/3 = 0.423/0.431 K.",
+      "suggested_check": "Either set A4 to 0.25 K per value or state that O003 budgets a 1.0 K difference error (or measures the correlated difference error) and drop the 'quarter of the budget' rationale.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Null hypothesis, why_it_matters and A2's text are still keyed to O002's precision, which D0012 concedes is not verifiable",
+      "detail": "The null reads 'cannot be verified to the precision O002 needs'. why_it_matters cites O002's 0.5 K pair differences and 1 K spreads, and A2's description calls 0.05 K 'O002's per-Tj allowance'. D0012 states that O002's draft A2 (0.5 K pair differences) cannot be verified against a reference with a 0.14-0.63 K difference bound. A pass at A3/A4 = 0.5 K therefore does not reject the null as stated, and decision_if_pass ('thermal reference of O002') conflicts with D0012. Because O002 will be re-derived from this objective's output, the null is also circular.",
+      "evidence": "Packet: null_hypothesis, why_it_matters, A2 description; D0012 Consequences bullet 2.",
+      "suggested_check": "Restate the null against a fixed precision (for example 'cannot be verified to 0.5 K per Tj max on O002/O003 geometry') that does not depend on O002's not-yet-written criteria.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A4 estimator is wrong or undefined for monotone-divergent and stagnant sequences",
+      "detail": "A4 defines GCI for 'monotone convergence' and for 'oscillatory or non-monotone' sequences. A same-sign sequence with a growing step (|f2-f1| > |f1-f0|) fits neither branch. Applied literally, p = min(p_obs, 1) < 0 gives 2^p - 1 < 0 and a negative GCI, which passes '<= 0.5' and is hidden by max_col. With |f2-f1| = |f1-f0|, p_obs = 0 and the formula divides by zero. Encoding the non-convergent case as +inf makes metrics._finite_rows raise, so the evidence is INVALID. That contradicts A4's own promise ('does not meet A4 (the decision is then the fallback), rather than an INVALID run'). A3's summed-GCI scale <= 0 likewise raises in max_scaled_abs_err.",
+      "evidence": "Scratch computation of the literal A4 formula: (400.0, 400.1, 400.3) gives p = -1.0, GCI = -0.50 K; (400.0, 400.05, 401.0) gives p = -4.25, GCI = -1.25 K; (400.6, 400.2, 400.0) gives 0.25 K. tools/mfos/mfos/metrics.py lines 88-103: _finite_rows raises on inf, and max_scaled_abs_err raises on scale <= 0.",
+      "suggested_check": "Define GCI for divergent or stagnant sequences explicitly as a finite value that fails A4 (for example 1.25 x max step / (2^0.1 - 1), or a fixed large sentinel) and add it to the E006 spec.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A3/A4 evaluation layouts are the development layouts the rule, estimator and threshold were tuned on, and they cover only part of the scope",
+      "detail": "The A3 layouts (first side_by_side with 6 dies and first u_shaped with 2 dies from seed 20261101) are the ones benchmarked in T0170 (D0012 quotes 0.168 and 0.334 K on them). The estimator and the 0.5 K threshold were chosen after those data. Recomputed under the D0012 estimator, the outcome is largely known before registration: max L2 GCI 0.43 K against a 0.5 K threshold, max FEM GCI 0.22 K, A3 ratio <= 0.65. The sample adds little evidence that the frozen rule meets 0.5 K on unseen geometry. It also covers 2 of 3 generator families (no interleaved) and die counts 2 and 6 only, while decision_if_pass adopts the grid rule for all O002 layouts and O003's reconstructed public references.",
+      "evidence": "src/moduleforge/generate/halfbridge.py:40 FAMILIES = (side_by_side, interleaved, u_shaped). The benchmark JSONs carry seed 20261101 and the layout names side_by_side_6 and u_shaped_2. Recomputed D0012 GCIs: L2 0.123-0.431 K, FEM 0.071-0.215 K.",
+      "suggested_check": "Select the A3 layouts by the same rule from a fresh development seed not used in T0170/T0181, and add one interleaved layout. Keep seed 20261101 for development only.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The registered recomputations do not recompute the convergence estimator",
+      "detail": "A4 and A3b take max_col of a GCI column the runner computes, and A3 uses the runner's GCIs as its scale. A wrong p cap, a wrong branch classification or a swapped f-index convention would pass the deterministic recompute. The coarse-to-fine order of f0/f1/f2 is only implied by the oscillatory formula. The planned row schema (notes item 5) has no L2 GCI per cross-check die (only skfem_rich_est), and it uses 'rich_est' names from the superseded estimator. So A3 is not recomputable from the per-die rows as listed.",
+      "evidence": "Packet A3/A3b/A4 recompute entries; notes item 5 row columns; metrics.max_col only checks finiteness and takes the max.",
+      "suggested_check": "Store f0, f1, f2 per value and add a gated sanity check (or a founder-approved metrics function) that recomputes the GCI from the three grid values in rows.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 tests only the summed GCI, the cross-check is no tighter than the solver under test, and A3 has no null baseline",
+      "detail": "A3b lets scikit-fem's GCI be as large as L2's own bound (0.5 K). The benchmark shows the two solvers bracketing the answer (L2 converges from above, FEM from below), so A3 is a fair test of the summed bound. It cannot show that GCI_L2 alone bounds the L2 error: a pass is consistent with |e_L2| up to GCI_L2 + GCI_skfem. Unlike F3 for k(T), no null shows that an L2 missing a layout-only feature (die-attach footprint, baseplate overhang, island gaps) would fail A3 at a tolerance of 0.2-0.65 K per die.",
+      "evidence": "Benchmark side_by_side_6 die 0: L2 [409.609, 409.146, 408.978], FEM [409.955, 410.085, 410.148]; u_shaped_2 die 0: L2 [421.718, 421.085, 420.894], FEM [423.049, 423.354, 423.474].",
+      "suggested_check": "Add an F3-style null column for A3 (for example L2 with the die attach as a full layer, or without the overhang) that must fail A3, or require GCI_skfem <= GCI_L2 / 2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F1's 0.02 K scikit-fem agreement gate makes no allowance for scikit-fem's own discretisation error",
+      "detail": "F1 requires the converged Case 2 series and the N-layer series to agree with scikit-fem within 0.02 K at a 60-110 K rise. scikit-fem's error is not budgeted, and D0006's own scratch Case 2 run reached 0.023 K. A sanity failure caused by FEM discretisation would make the run INVALID and be attributed to the reference.",
+      "evidence": "D0006 Context (0.023 K scratch result); packet F1 detection.",
+      "suggested_check": "State the gate as |series - skfem| <= max(0.02 K, GCI_skfem), or require a scikit-fem GCI below 0.01 K on those cases.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The analysis behind D0012's estimator choice is not in this commit",
+      "detail": "D0012 and A4 rest the order-1 cap's conservativeness on T0181's 24 corner values in research/o006_gci/results.json, but that file is not tracked at this commit. The estimator was also chosen on the same 24 values it is said to have bounded, which is optimistic selection.",
+      "evidence": "git ls-files shows no research/o006_gci/ path.",
+      "suggested_check": "Commit T0181's results and validate the chosen estimator on corner cases not used in the choice.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "A4/A3b are met alone by any grid-insensitive predictor; kill criteria can fire",
+      "detail": "A grid-independent output (for example the 1D series-resistance solution) gives GCI = 0 and passes A4 and A3b, but fails A1/A2 (its error is the whole spreading rise) and A3, so pass_all is discriminating jointly. K1 and K2 can fire on the analytic cases. There is no kill for A3/A4, but INCONCLUSIVE maps to the fail decision, so no decision gap results.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the D0012 A4 estimator (order capped at 1, oscillatory branch) from the per-grid Tj max values in benchmarks/results/thermal_l2_convergence.json and thermal_fem_convergence.json for the two A3 layouts: L2 GCI 0.123-0.431 K (max on u_shaped_2 dies 2/3), FEM GCI 0.071-0.215 K.",
+    "Power-normalised the FEM results to the L2 power per die (linear rise scaling) and computed |Tj_L2 - Tj_FEM| = 0.105-0.184 K and A3 ratios of 0.25-0.65: A3 would pass while hypothesis (b)'s 0.05 K fails.",
+    "Checked convergence direction: L2 decreases and FEM increases under refinement, so the two solvers bracket the answer and A3 tests the summed bound.",
+    "Evaluated the literal A4 formula on monotone-divergent sequences: negative GCIs (-0.50 K, -1.25 K) that pass '<= 0.5'.",
+    "Read tools/mfos/mfos/metrics.py: _finite_rows raises on inf (INVALID), max_scaled_abs_err raises on scale <= 0, max_col does not recompute the GCI.",
+    "Confirmed in the D0012 patch that the '(b) agrees within 0.05 K' wording was left unchanged.",
+    "Confirmed in O003 objective.yaml lines 15-16 that the +2 K Tj limit is a candidate-minus-reference difference.",
+    "Confirmed the generator has three families (halfbridge.py:40) while A3 samples two.",
+    "Checked that research/o006_gci/results.json, cited by D0012, is not tracked at this commit."
+  ],
+  "caveats": [
+    "The power normalisation of the benchmark FEM results is linear while conductivity varies with temperature, so the L2-FEM differences are approximate (probably within a few hundredths of a K at a 1.8-3.2 % power mismatch).",
+    "The committed benchmarks may predate T0170's final grid rule; the GCI values on the frozen rule could differ, but the blocker is a text/criterion mismatch and does not depend on the exact values.",
+    "No solver was run; the review is limited to the criteria text, the committed benchmark data and the metrics code."
+  ]
+}
