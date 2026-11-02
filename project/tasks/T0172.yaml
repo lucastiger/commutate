@@ -4,7 +4,7 @@ title: 'scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, hos
   T0171)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0152
 description: T0152's benchmark (benchmarks/thermal_fem_convergence.py) hard-codes zrefine=False and h0=0.5
@@ -66,3 +66,103 @@ history:
 - outcome: founder_dod_added
   summary: DoD, touches and depends_on T0152 set (founder session)
   at: '2026-11-02T03:24:51+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I added `--zrefine`, `--h0` and `--mem-gb` to `benchmarks/thermal_fem_convergence.py`, and
+    the defaults still reproduce the current local run. I did not run the VM-scale configuration, so its
+    DOF, memory and wall-time figures are estimates. The wall times in particular are extrapolated from
+    the one local run of about 70 µs/DOF.
+
+
+    - **`--zrefine`:** z counts double per level, the same ratio 2 as lateral, so the three-grid GCI covers
+    all three directions. The z-sensitivity pass is skipped in that mode and recorded as null, because
+    the z error is no longer level-independent.
+
+    - **`--h0 MM`:** this is the lateral size of the finest level (level 2), default 0.125 mm. Level 0
+    is 4× that, so the default is the current 0.5/0.25/0.125 mm.
+
+    - **`--mem-gb GB`:** the per-solve memory budget. Default is 7'
+  report:
+    status: completed
+    summary: 'I added `--zrefine`, `--h0` and `--mem-gb` to `benchmarks/thermal_fem_convergence.py`, and
+      the defaults still reproduce the current local run. I did not run the VM-scale configuration, so
+      its DOF, memory and wall-time figures are estimates. The wall times in particular are extrapolated
+      from the one local run of about 70 µs/DOF.
+
+
+      - **`--zrefine`:** z counts double per level, the same ratio 2 as lateral, so the three-grid GCI
+      covers all three directions. The z-sensitivity pass is skipped in that mode and recorded as null,
+      because the z error is no longer level-independent.
+
+      - **`--h0 MM`:** this is the lateral size of the finest level (level 2), default 0.125 mm. Level
+      0 is 4× that, so the default is the current 0.5/0.25/0.125 mm.
+
+      - **`--mem-gb GB`:** the per-solve memory budget. Default is 70 % of host RAM, as before. A level
+      over DOFs × 7.7 kB is recorded as `skipped: memory`.
+
+      - **Smoke tests:** I added two tests to `tests/unit/solvers/test_thermal_fem.py`, one for the rule
+      options and one that runs the smoke benchmark. The smoke run covers `--zrefine --h0 8` and a tiny
+      `--mem-gb`.
+
+      - **Thresholds:** no thresholds or existing tests were changed.
+
+
+      **Sizing for the n2-highmem-32.** I used `--zrefine --h0 0.0625 --mem-gb 235`. The sizing table
+      is in the benchmark docstring.
+
+
+      | Layout | Level 2 DOFs | Memory at 7.7 kB/DOF bound | Memory at measured 4.4 kB/DOF | Wall time
+      at level 2 |
+
+      |---|---|---|---|---|
+
+      | `side_by_side_6` | 19.36 M | 149 GB | about 85 GB | about 25–50 min |
+
+      | `u_shaped_2` | 11.96 M | 92 GB | about 53 GB | about 15–30 min |
+
+
+      Every level fits the 235 GB budget at the bound. Total wall time is about 1–1.7 h, including the
+      power calibration.
+
+
+      **Command for the PR summary:**
+
+      `MF_GCP_MAX_HOURS=4 scripts/burst_gcp.sh --cmd "uv run python benchmarks/thermal_fem_convergence.py
+      --zrefine --h0 0.0625 --mem-gb 235 --out benchmarks/results/thermal_fem_convergence_zrefine.json"
+      benchmarks/results`
+
+
+      The script''s default is the on-demand n2-highmem-32; `MF_GCP_SPOT` is unset. `MF_GCP_MAX_HOURS=4`
+      is about 2.4× my upper estimate of 1.7 h.
+
+
+      Commit `b9946da` has the changes.'
+    concerns:
+    - 'The packet calls --h0 the ''finest-level lateral size'', while the old FULL_RULE h0=0.5 mm was
+      the level-0 (coarsest) size. I followed the packet: --h0 is the finest-level size, default 0.125
+      mm, and level 0 is 4x that. If you wanted --h0 to be the level-0 size, the semantics need changing.'
+    - The wall-time estimates are extrapolated from the one local lateral-only run (about 70 us/DOF, with
+      2x allowed for degradation at size). They are not measured at 19 M DOF.
+    - The memory estimate uses the 7.7 kB/DOF bound. The local run measured 4.4 kB/DOF at 1.5 M DOF, and
+      I don't know how that figure scales to 19 M DOF.
+    - The final `uv run pytest -q -m 'not slow' tests/unit` passed (404 passed) before my last edit. That
+      edit only escaped a '%' in the --help text, and I re-ran only test_thermal_fem.py, ruff and the
+      gate afterwards.
+    files_changed:
+    - benchmarks/thermal_fem_convergence.py
+    - tests/unit/solvers/test_thermal_fem.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --zrefine
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --h0
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py --help | grep -q -- --mem-gb
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
