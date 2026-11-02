@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T06:36:00+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:36:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -28,16 +28,13 @@ _generated 2026-11-02T06:36:00+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 140, failed: 3, merge: 3, needs_founder: 1, todo: 3
+cancelled: 30, done: 141, failed: 3, merge: 2, needs_founder: 1, todo: 4
 
-- T0157 `merge` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
 - T0164 `merge` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
 - T0170 `needs_founder` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 - T0172 `merge` builder/implement: scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review T0171) (attempt 1)
 
 ## Recent events
-- 2026-11-02T05:14:27+00:00 run_finished {"run": "T0179-critic-20261101T210819-d6fa", "status": "completed", "cost": 1.98682, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T05:24:03+00:00 inbox_opened {"id": "I0077", "kind": "protected_change", "subject": "T0170: merge needs founder approval"}
 - 2026-11-02T05:24:27+00:00 sleep_detected {"gap_s": 601, "runs_extended": 1}
 - 2026-11-02T05:24:28+00:00 run_finished {"run": "T0172-builder-20261101T211050-be48", "status": "completed", "cost": 0.321806, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:27:59+00:00 verified {"task": "T0172"}
@@ -51,3 +48,5 @@ cancelled: 30, done: 140, failed: 3, merge: 3, needs_founder: 1, todo: 3
 - 2026-11-02T06:35:34+00:00 inbox_resolved {"id": "I0076", "status": "approved", "note": "P4 note accepted: FastHenry not usable at module scale locally; D0009 band uses the doubled l2_layout estimate.",
 - 2026-11-02T06:35:43+00:00 inbox_resolved {"id": "I0078", "status": "approved", "note": "Approved; VM-ready scikit-fem benchmark (review T0180, minor caveats).", "by": "human"}
 - 2026-11-02T06:35:44+00:00 merged {"task": "T0155"}
+- 2026-11-02T06:36:04+00:00 task_added {"task": "T0181"}
+- 2026-11-02T06:36:09+00:00 merged {"task": "T0157"}
