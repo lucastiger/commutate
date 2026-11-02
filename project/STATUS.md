@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T19:11:38+00:00 from repository state — do not edit_
+_generated 2026-11-02T19:28:30+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
-- **I0093** [protected_change] T0196: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -28,12 +27,11 @@ _generated 2026-11-02T19:11:38+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 162, failed: 3, needs_founder: 1, todo: 1
+cancelled: 30, done: 162, failed: 3, merge: 1, todo: 1
 
-- T0196 `needs_founder` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
+- T0196 `merge` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
 
 ## Recent events
-- 2026-11-02T17:42:48+00:00 sleep_detected {"gap_s": 612, "runs_extended": 0}
 - 2026-11-02T18:33:53+00:00 inbox_resolved {"id": "I0089", "status": "approved", "note": "T0165: E006 design merged (reviews T0194/T0195 accept with caveats; fixes in T0196 before registration)", "by": "
 - 2026-11-02T18:34:18+00:00 merged {"task": "T0165"}
 - 2026-11-02T18:34:18+00:00 inbox_opened {"id": "I0090", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
@@ -48,3 +46,4 @@ cancelled: 30, done: 162, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-02T19:03:58+00:00 run_started {"run": "T0197-critic-20261102T110358-0958", "task": "T0197", "role": "critic", "session": "3e74a854-2db3-4e8a-b75c-34fdbd8b62ca"}
 - 2026-11-02T19:11:34+00:00 run_finished {"run": "T0197-critic-20261102T110358-0958", "status": "completed", "cost": 2.534383, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T19:11:37+00:00 inbox_opened {"id": "I0093", "kind": "protected_change", "subject": "T0196: merge needs founder approval"}
+- 2026-11-02T19:28:09+00:00 inbox_resolved {"id": "I0093", "status": "approved", "note": "T0196: E006 pre-registration fixes (review T0197 accept with caveats); NaN-safe gate patch follows before registr
