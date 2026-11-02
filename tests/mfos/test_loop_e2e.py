@@ -365,10 +365,16 @@ def test_a_plans_own_cancellations_free_room_for_its_tasks(sandbox):
 def test_a_founder_listed_experiment_goes_to_burst_whatever_its_estimate(sandbox):
     """E001 (2026-10-05) was registered at 2 CPU-h but needs more memory and time than this machine has; listing it
     in policy compute.burst_experiments routes it to burst compute without re-registering its estimate."""
+    import re
+    import tomllib
     pol = sandbox / ".mfos" / "policy.toml"
     text = pol.read_text()
-    assert "local_cpu_hours_max = 6.0" in text and 'burst_experiments = ["E001"]' in text
-    pol.write_text(text.replace('burst_experiments = ["E001"]', 'burst_experiments = ["E000"]'))
+    compute = tomllib.loads(text)["compute"]
+    assert compute["local_cpu_hours_max"] == 6.0 and "E000" not in compute["burst_experiments"]
+    # Replace the founder's list (E001, later E006, with a comment) by structure, not by its exact text (2026-11-02)
+    text, n = re.subn(r"(?m)^burst_experiments = \[[^\]]*\].*$", 'burst_experiments = ["E000"]', text)
+    assert n == 1
+    pol.write_text(text)
     setup_objective()
     s = _tick_until(lambda s: any("burst compute" in i.subject for i in s.inbox("open")))
     item = next(i for i in s.inbox("open") if "burst compute" in i.subject)
