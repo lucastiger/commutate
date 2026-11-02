@@ -4,7 +4,7 @@ title: 'E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity chec
   full-resolution F1 reference pre-check, smoke dev rows'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0164
 - T0150
@@ -495,3 +495,85 @@ history:
     \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
     \ in <module>\nAssertionError\n"
   at: '2026-11-02T15:38:11+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'E006 design is complete and the F1 reference pre-check now passes: research/e006/refcheck.json
+    has all_passed = true. Every definition-of-done command exits 0, the fast gate passes, and the work
+    is committed as 7159164. Attempt 1 failed only on scikit-fem''s own GCI (0.0155 K and 0.044 K against
+    0.01 K) with trilinear (Q1) elements. Attempt 2 keeps the 0.01 K gate unloosened and adds a scikit-fem
+    triquadratic (ElementHex2) box solver in experiments/runners/e006_skfem_q2.py, with chunked assembly
+    and AMG-CG on the diagonally scaled matrix. Results: Case 2 GCI 0.0046 K and error 0.0011 K at 0.59
+    M DOF; uniform default stack GCI 0.00058 K and error 0.0001 K at 0.51 M DOF; refcheck peak 4.93 GB
+    and 202 s. GCI >= |err| on all 15 F1 values, with a ratio of 4.2 or more. New gated checks: Q2 self-t'
+  report:
+    summary: 'E006 design is complete and the F1 reference pre-check now passes: research/e006/refcheck.json
+      has all_passed = true. Every definition-of-done command exits 0, the fast gate passes, and the work
+      is committed as 7159164. Attempt 1 failed only on scikit-fem''s own GCI (0.0155 K and 0.044 K against
+      0.01 K) with trilinear (Q1) elements. Attempt 2 keeps the 0.01 K gate unloosened and adds a scikit-fem
+      triquadratic (ElementHex2) box solver in experiments/runners/e006_skfem_q2.py, with chunked assembly
+      and AMG-CG on the diagonally scaled matrix. Results: Case 2 GCI 0.0046 K and error 0.0011 K at 0.59
+      M DOF; uniform default stack GCI 0.00058 K and error 0.0001 K at 0.51 M DOF; refcheck peak 4.93
+      GB and 202 s. GCI >= |err| on all 15 F1 values, with a ratio of 4.2 or more. New gated checks: Q2
+      self-test (exact triquadratic point evaluation, exact two-layer 1D solution) and energy balance
+      with r = 2 for both checks. The Case 1a/1b INFO comparison runs on the same solver (0.0084 K and
+      0.00009 K). A blind frozen-rule check of the manufactured-case energy balance printed no temperatures
+      and gave 1.5e-7, 1.8e-9 and 3.1e-11 at levels 0-2, which retires attempt 1''s INVALID risk. The
+      spec config, sanity-check list (21 declared, all emitted), code_under_test and design note are updated.
+      The registered run still needs more than 10 GB per process for FV Cases 1a, 1b and the N-layer case
+      (inferred 17-30 GB in attempt 1, not re-measured), so it needs a burst VM or a founder decision.
+      Commands and exit codes: final e006_run.py --refcheck 0 (two earlier runs exited 1 on the INFO-only
+      Case 1b solver; fixed); --smoke --rows-out research/e006/dev_rows.json 0; mfos exp check E006 --rows
+      research/e006/dev_rows.json 0; refcheck assertion 0; both yaml assertions 0; note exists 0; ruff
+      check . 0; mfos gate --fast 0; blind manufactured-case energy script 0. Two exploratory background
+      jobs (Case 1b AMG variants) were stopped at their time limits.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - 'research/e006/refcheck.json: all_passed=true; case2_skfem_gci 0.004569 K <= 0.01; case2_vs_skfem
+      0.00108 K <= 0.02; nlayer_uniform_skfem_gci 0.000576 K <= 0.01; nlayer_uniform_vs_skfem 0.0000999
+      K <= 0.02; energy balances <= 1.7e-12 / 5.0e-12; constant ratio 2 true'
+    - 'skfem_q2_selftest: triquadratic point evaluation max err 4.9e-15; two-layer 1D conduction exact
+      to 2.5e-11 K'
+    - GCI/|err| >= 4.2 on all 15 F1 values (all in the order-2-credited branch, 0 <= rho < 1/4); GCI >=
+      |err| everywhere
+    - Attempt-1 Q1 values (errors 0.003-0.011 K at 1.8 M / 0.74 M DOF) are consistent with the Q2 values;
+      the two scikit-fem discretisations agree
+    - Blind frozen-rule manufactured-case balance |Q_out/Q_ref - 1| = 1.47e-7 / 1.85e-9 / 3.07e-11 at
+      levels 0/1/2 (14.6k / 117k / 933k cells); Picard max|dT| <= 3.7e-6 K
+    - 'Smoke: 196 dev rows, exit 0; mfos exp check exits 0 (dev values on coarsened grids, not evidence)'
+    - Declared and emitted sanity-check names identical (21)
+    alternative_explanations:
+    - explanation: Q2 scikit-fem and the series could agree because both inherit the same wrong case parameters
+        (shared input error), not because the series is correct.
+      how_to_discriminate: The series' independent checks (the paper's printed Case 3 values at 50 terms,
+        the N-layer to two-layer reduction at 2e-16) and the Q2 self-test against an exact 1D solution
+        are independent of the shared parameters. The L2 is built from the same frozen JSON, so a parameter
+        error would show up as an A1/A2 miss on the cases in the registered run, not as a false pass.
+    - explanation: The small GCIs could come from lucky grids in the fast branch (p_obs > 2), understating
+        the error.
+      how_to_discriminate: 'The reference is known: GCI >= |T_fe - T_series| on all 15 values with a ratio
+        of 4.2 or more, so the estimator bounds the actual error here.'
+    discriminating_tests:
+    - 'Re-run `uv run python experiments/runners/e006_run.py --refcheck` (about 3.5 min, 4.9 GB peak):
+      it must reproduce all_passed=true and the same values to 1e-9 K'
+    - 'Compare Q2 against the attempt-1 Q1 values per point (Case 2 errors 0.0033 K at Q1 level 2): both
+      must agree with the series within their own GCIs'
+    recommended_actions:
+    - 'Founder: confirm that the scikit-fem F1 checks may use Q2 elements (e006_skfem_q2.py) before E006
+      registration. F1 asks for an independent scikit-fem run refined until its GCI <= 0.01 K, so F1 validates
+      the series; thermal_fem''s Q1 path stays the A3 cross-check and is gated by F5.'
+    - 'Registered run: FV level-2 Cases 1a, 1b and the N-layer case are projected at 17-30 GB per process
+      (attempt-1 inference). Run on a VM with `scripts/burst_gcp.sh E006 n2-highmem-16` (not Spot), or
+      take a founder decision on those cases.'
+    - 'Reviewer (physics/numerics lens): check experiments/runners/e006_skfem_q2.py (Robin and flux assembly,
+      exact source means, point evaluation via mapping inverse, diagonal-scaled SA-AMG CG).'
+    experiment_drafts:
+    - experiments/drafts/E006.yaml
+    files_written:
+    - experiments/runners/e006_skfem_q2.py
+    - experiments/runners/e006_run.py
+    - experiments/drafts/E006.yaml
+    - research/e006/refcheck.json
+    - research/e006/dev_rows.json
+    - research/notes/o006-e006-design.md
+    affects_acceptance_criteria: false
