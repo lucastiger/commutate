@@ -1307,3 +1307,6 @@
 {"ts": "2026-11-02T06:51:43+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0181-scientist-20261101T225143-8880", "task": "T0181", "role": "scientist", "session": "466b062b-2750-461d-bed7-35e9eb1d2fa2"}
 {"ts": "2026-11-02T06:52:19+00:00", "event": "task_held", "actor": "founder", "task": "T0165", "reason": "I0081: hold until A3/A4 decision"}
 {"ts": "2026-11-02T06:52:20+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0081", "status": "answered", "note": "Founder (2026-11-02): option 2 - hold T0165 until the A3/A4 decision is recorded after reading research/notes/o006-gci-differences.md (T0181). T0165 set to needs_founder; release with mfos task retry T0165.", "by": "session"}
+{"ts": "2026-11-02T09:10:29+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0181-scientist-20261101T225143-8880", "status": "error", "cost": 3.555881, "subtype": "error_max_budget_usd", "report": "missing"}
+{"ts": "2026-11-02T09:10:30+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0181", "signal": "agent_error", "action": "repair"}
+{"ts": "2026-11-02T09:10:35+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0181-scientist-20261102T011035-a531", "task": "T0181", "role": "scientist", "session": "ea3c7ace-3df2-42d5-9f06-c7c46600519e"}
