@@ -1,0 +1,70 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The three-grid GCI from the frozen rule starting at level 0 understates the true error 2\u20133\u00d7 on analytic box cases, and errs toward a false A4 pass",
+      "detail": "I compared box-stack mode with an exact Fourier-series solution. The case: one Cu layer, 10x10x2 mm, k=385, h=5000, a centred 2x2 mm source of 10 W, adiabatic sides. With the default level0=0, the three levels give tj_centroid/tj_max rises of 28.606, 26.517 and 26.508 K. p_obs is 7.8, so Fs=3, p=2 and GCI = 0.0094 K, but the true error at the finest level is -0.0285 K. For tj_mean the GCI is 0.0131 K against a true error of +0.029 K. The max GCI over all values is 0.013 K, below the 0.025 K A4 threshold, while the true error is above it. So in this case A4 would pass when it should not. A second case (k=24, t=0.5 mm, off-centre 3x3 mm source) also fails to cover at level0=0: tj_max GCI 0.145 K vs true error 0.166 K. The cause is that level 0 puts about one cell across the smallest feature, which is outside the asymptotic range; the author's own test admits this and starts at level 1. The code follows the registered Roache rule exactly, so this is not an implementation error. It limits how far solver_tol can be trusted. The two layouts in the benchmark fail A4 by 18\u201327\u00d7 anyway, so the current decision (fallback) does not change.",
+      "evidence": "Case 1 analytic (M=1500 and 3000 modes agree to 3e-5 K): centroid rise 26.53642 K, mean 25.37226 K. Box levels 3 and 4 converge to it (26.534 and 25.3767 at level 4), which confirms the reference. Case 2 analytic max is 114.912 K; levels 1\u20134 give 115.223, 115.078, 114.937 and 114.925.",
+      "suggested_check": "Before using solver_tol for any A4 pass, add an analytic partial-source box case that checks |f_fine \u2212 exact| \u2264 GCI at the default level0.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'frozen' rule leaves level0 as a free per-case parameter",
+      "detail": "The module docstring says no tuning is made per case, but solve_layout and solve_box_stack both accept level0. The unit test picks level0=1 for box mode because level 0 is 'too coarse to be in the asymptotic range'. When the smallest feature is the source itself, the default level0=0 gives one cell across the source. Whatever later uses this rule (E006, O002, O003) could choose a different level0 for each case.",
+      "evidence": "tests/unit/solvers/test_thermal_layout.py::test_box_symmetric_sources_give_equal_values_and_converge uses level0=1 with a comment explaining why.",
+      "suggested_check": "Fix level0 as a module constant, or require that each source/die gets at least N cells at level 0.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "No test checks the GCI against a true error for a spreading (partial-source) case",
+      "detail": "The GCI tests check the formula with hand-computed values, which is correct and independent. The 1D full-source test is exact. But the only multi-level physics test checks symmetry and 1 < p_obs < 3. No test compares a partial-source result with an analytic spreading solution, so whether solver_tol is a credible error bound is never tested. My analytic check found under-coverage that this suite would not catch.",
+      "evidence": "test_box_symmetric_sources_give_equal_values_and_converge only asserts monotone, 1<p_obs<3 and |d21|<|d32|.",
+      "suggested_check": "Add a Fourier-series rectangular-source case (Muzychka/Yovanovich flux-channel form) as a regression test.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Material assignment is exact only for rectilinear polygons",
+      "detail": "The docstring says the cell-centre contains_xy test is exact because every region edge is a grid line. That holds only for axis-aligned polygons. On the benchmark layouts the cell areas match the trace and die areas to \u22647e-16 relative. Chamfered or diagonal customer geometry would be staircased with no warning.",
+      "evidence": "side_by_side_6 and u_shaped_2 at level 0: top-Cu area relative error 0 and 2.8e-16, die area 0 and 6.8e-16.",
+      "suggested_check": "Raise an error when an input polygon has a non-axis-aligned edge.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Known blind spot of the registered GCI rule when f2 \u2248 f1",
+      "detail": "If f2 == f1 the GCI is 0 whatever f3 is, and a near-crossing (tiny d21, large d32, p_obs \u226b 2.5) gives GCI = |d21|. This matches the A4 formula, but it is the mechanism behind the under-coverage in the first finding (p_obs 7.8).",
+      "evidence": "gci_three_grid(2.5, 2.0, 2.0) returns 0, as the unit test asserts. Case 1 at level0=0 has p_obs 7.795.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Grid cost depends on f_min, which nothing bounds",
+      "detail": "h0 = f_min, so a layout with a 0.5 mm feature interval would need about 4\u00d7 the lateral cells of the benchmark layouts (\u22487M cells at level 2). Level 2 already takes 73\u201377 s and 1.5\u20131.7 GB. Whether the rule stays affordable for later objectives depends on the geometry.",
+      "evidence": "Benchmark level 2: 1.72M cells, 73\u201377 s, 1485\u20131741 MB peak RSS.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran tests/unit/solvers/test_thermal_layout.py: 19 passed, including the slow test.",
+    "Ran benchmarks/thermal_l2_convergence.py --smoke: exit 0; levels 0 and 1 ok for both layouts; it wrote to a temp file, not to the results file.",
+    "Ran pytest -m 'not slow' tests/unit (386 passed) and ruff check . (clean).",
+    "Provenance: regenerated both layouts from the dev seed; fingerprints match the JSON. Re-solved level 0 at the calibrated powers: n_cells match exactly, tj_max matches to within 2.4e-12 K, q_in = 526.8 and 253.6 W as expected.",
+    "Recomputed every GCI and max_gci_K in the JSON from the stored three-level values with gci_three_grid: exact match (0.4479 and 0.6680 K).",
+    "Re-derived the Roache rule by hand against the A4 text in O006/objective.yaml: the p_obs formula, the Fs/p branches and the GCI expression all match.",
+    "Checked constant ratio and conformity on u_shaped_2 (the tests only cover side_by_side_2): every spacing ratio is 2 to within 1e-13 on x, y and z at levels 0\u21921\u21922, coarse lines are kept, and all die and trace x-coordinates are grid lines.",
+    "Material map: cell-area sums of top-Cu and die cells equal the polygon areas to \u22647e-16 relative on both benchmark layouts.",
+    "Analytic check: built an independent Fourier-series flux-channel solution (adiabatic sides, Robin base) for two single-layer box cases. Levels 3 and 4 of box-stack mode converge to it, so the solver is correct. The level0=0 three-grid GCI under-covers the true error by 2\u20133\u00d7, and in one case it would pass A4 (0.013 K < 0.025 K) while the true error is 0.029 K."
+  ],
+  "caveats": [
+    "solver_tol is the registered Roache estimate, not a guaranteed error bound. When it starts at level 0 of the frozen rule it can be 2\u20133\u00d7 below the true discretization error when the smallest feature gets about one level-0 cell. An A4 pass based on it should not be accepted without an analytic coverage check.",
+    "The benchmark result (max GCI 0.45 K and 0.67 K against the 0.025 K threshold) supports 'A4 is not met on affordable grids' for these two dev-seed layouts only. The GCI's tendency to under-cover only strengthens that conclusion.",
+    "Layout mode is verified only on rectilinear generator geometry from the dev seed. The sandbox would not run checks on other seeds, so the area and conformity checks cover the two benchmark layouts plus the test layout.",
+    "I could not check true-error coverage for layout mode itself: level 3 is about 14M cells, which is unaffordable here."
+  ]
+}
