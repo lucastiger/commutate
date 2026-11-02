@@ -3,7 +3,7 @@ objective: O006
 title: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred)
 type: research
 agent: scout
-status: running
+status: review
 depends_on: []
 description: 'Re-scoped by the founder on 2026-11-02 after reviews T0174 and T0175: agents cannot open
   paywalled primaries, so this task is a secondary-source screen, not a primary verification. Revise research/notes/o006-kT-citations.md
@@ -266,3 +266,63 @@ history:
   summary: 'I0072: re-scoped to a secondary-source screen with review fixes and P1 ranges; primary check
     deferred'
   at: '2026-11-02T03:55:33+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'I revised research/notes/o006-kT-citations.md as a secondary-source screen and updated the
+    INDEX.md line. No primary document was opened by any attempt. I opened only stack.py and the arXiv
+    1712.00830 abstract page, and the other sources are search summaries or scans carried over from earlier
+    attempts. The note has one source-class row for each k(T) law and each 300 K value in stack.py. It
+    fixes the four review errors: SAC305 alpha, the Si3N4 hint sign, the Burgemeister origin of the SiC
+    exponent, and the Ioffe fit being 6H. It also gives P1 sensitivity ranges and lists the primaries
+    the founder should obtain. I did not run `mfos gate --fast` or any other command, and I did not edit
+    src/. The orchestrator re-runs the definition of done.'
+  report:
+    summary: 'I revised research/notes/o006-kT-citations.md as a secondary-source screen and updated the
+      INDEX.md line. No primary document was opened by any attempt. I opened only stack.py and the arXiv
+      1712.00830 abstract page, and the other sources are search summaries or scans carried over from
+      earlier attempts. The note has one source-class row for each k(T) law and each 300 K value in stack.py.
+      It fixes the four review errors: SAC305 alpha, the Si3N4 hint sign, the Burgemeister origin of the
+      SiC exponent, and the Ioffe fit being 6H. It also gives P1 sensitivity ranges and lists the primaries
+      the founder should obtain. I did not run `mfos gate --fast` or any other command, and I did not
+      edit src/. The orchestrator re-runs the definition of done.'
+    notes_file: research/notes/o006-kT-citations.md
+    key_findings:
+    - claim: SAC305 alpha=4.2e-3 /K at a 300 K reference is consistent with tin 4.6-4.7e-3 /K (0-100 C
+        tables) once re-referenced (about 4.09-4.17e-3 /K), assuming the tables are referenced to 0 C.
+        No correction is proposed. The weak patent datum implies about 5.0e-3 /K and only bounds the sweep.
+      source: S12 tin tables (search snippets); S11 patent summary; arithmetic in the note
+      confidence: medium
+    - claim: The 'Si3N4 -1.0 too shallow' hint had the wrong sign. A 45 % loss over 0-400 C implies an
+        exponent of about -0.66, so -1.0 is too steep for those grades. The hint is a weak snippet.
+      source: S14 Springer chapter snippet (not opened); arithmetic in the note
+      confidence: low
+    - claim: The SiC exponent -1.49 originates in Burgemeister et al. 1979 (6H-SiC, normal to c, about
+        30 % lower parallel to c). The code applies it to a 4H die heated along c. I confirmed only the
+        paper's identity and 6H subject; the numbers come from the review.
+      source: J. Appl. Phys. 50, 5790 (1979), DOI 10.1063/1.326720, bibliographic record; reviews T0174/T0175
+      confidence: medium
+    - claim: The Ioffe 611/(T-115) W/(cm K) fit is a 6H fit, per review. It gives 3.30 W/(cm K) at 300
+        K, which matches neither the 4H (3.7) nor the 6H (4.9) table value, and an effective exponent
+        of about -1.45 over 300-480 K.
+      source: Ioffe NSM SiC thermal page, search summary; review T0175; arithmetic
+      confidence: low
+    - claim: Qian et al. 2017 measured k_r and k_z on 4H-SiC by TDTR over 250-450 K. The abstract has
+        no numbers, so cross-plane k(T) is still unread.
+      source: https://arxiv.org/abs/1712.00830 (abstract page opened via WebFetch)
+      confidence: high
+    - claim: 'P1 sweep ranges (inference): 4H-SiC k(300 K) 270-390 W/(m K); exponent -1.25 to -1.50; SAC305
+        alpha 4.0-5.0e-3 /K; Si3N4 exponent -0.65 to -1.0. These span roughly 10-12 % in k at 480 K.'
+      source: Derived in the note from S2-S4, S11, S12 and S14
+      confidence: low
+    open_questions:
+    - Incropera et al. Tables A.1/A.2 page images (Cu 401/393/379 and the Al2O3 36.0/26.4/15.8 column
+      mapping)
+    - Slack, J. Phys. Chem. Solids 34, 321 (1973)
+    - 'Hirosaki et al., Phys. Rev. B 65, 134110 (2002): does it report k~1/T for beta-Si3N4?'
+    - 'Burgemeister et al., J. Appl. Phys. 50, 5790 (1979): confirm the -1.49 exponent, 3.87 W/(cm K),
+      300-500 K range and the c-axis reduction'
+    - 'Cross-plane 4H-SiC TDTR data: the full text of Qian et al., Mater. Today Phys. 3, 70 (2017)'
+    - No source was found for Cu 385, Al2O3 24, SAC305 58 (300 K), Si3N4 90 (only a weak vendor hint)
+      or sintered-Ag 100-250; K_LAWS has no sintered-Ag law
+    - Measured SAC305 k(T) and AMB Si3N4 k(T) over 300-480 K
+    thesis_impact: none
