@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T04:00:59+00:00 from repository state — do not edit_
+_generated 2026-11-02T04:02:13+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
-- **I0073** [protected_change] T0163: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -28,14 +27,13 @@ _generated 2026-11-02T04:00:59+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 134, failed: 3, needs_founder: 1, running: 2, todo: 6
+cancelled: 30, done: 134, failed: 3, merge: 1, running: 2, todo: 6
 
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 - T0157 `running` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
-- T0163 `needs_founder` builder/implement: thermal_fv: second-order prescribed flux on the Robin face, Picard re-check of the returned field, tests (review T0160) (attempt 1)
+- T0163 `merge` builder/implement: thermal_fv: second-order prescribed flux on the Robin face, Picard re-check of the returned field, tests (review T0160) (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:43:52+00:00 run_finished {"run": "T0157-scout-20261101T194143-6678", "status": "completed", "cost": 0.514512, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:44:38+00:00 verified {"task": "T0157"}
 - 2026-11-02T03:44:43+00:00 run_started {"run": "T0175-critic-20261101T194443-b676", "task": "T0175", "role": "critic", "session": "ebd4f43b-7705-43af-bc53-5c9805c697e6"}
 - 2026-11-02T03:48:22+00:00 run_finished {"run": "T0175-critic-20261101T194443-b676", "status": "completed", "cost": 1.030551, "subtype": "success", "report": "structured_output"}
@@ -50,3 +48,4 @@ cancelled: 30, done: 134, failed: 3, needs_founder: 1, running: 2, todo: 6
 - 2026-11-02T04:00:53+00:00 run_finished {"run": "T0176-critic-20261101T195605-47f8", "status": "completed", "cost": 1.129733, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T04:00:57+00:00 inbox_opened {"id": "I0073", "kind": "protected_change", "subject": "T0163: merge needs founder approval"}
 - 2026-11-02T04:00:59+00:00 run_started {"run": "T0157-scout-20261101T200059-95a3", "task": "T0157", "role": "scout", "session": "7fb43da6-16f0-4177-9e5d-14ddc282fd13"}
+- 2026-11-02T04:01:57+00:00 inbox_resolved {"id": "I0073", "status": "approved", "note": "Approved; Picard re-check test gap (review T0176) to be closed in the later thermal cleanup task.", "by": "human"
