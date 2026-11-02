@@ -1,8 +1,7 @@
 # ModuleForge status
-_generated 2026-11-02T19:28:44+00:00 from repository state — do not edit_
+_generated 2026-11-02T19:31:06+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0090** [experiment_registration] register E006 (pre-registration)
+## Founder inbox (1 open)
 - **I0094** [experiment_registration] register E006 (pre-registration)
 
 ## Objectives
@@ -32,7 +31,6 @@ cancelled: 30, done: 163, failed: 3, todo: 1
 
 
 ## Recent events
-- 2026-11-02T18:34:18+00:00 inbox_opened {"id": "I0090", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
 - 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-02T18:40:13+00:00 inbox_resolved {"id": "I0091", "status": "approved", "note": "Daily cap raised to 120 in policy", "by": "human"}
 - 2026-11-02T18:40:34+00:00 inbox_opened {"id": "I0092", "kind": "budget_increase", "subject": "daily LLM budget reached"}
@@ -47,3 +45,4 @@ cancelled: 30, done: 163, failed: 3, todo: 1
 - 2026-11-02T19:28:09+00:00 inbox_resolved {"id": "I0093", "status": "approved", "note": "T0196: E006 pre-registration fixes (review T0197 accept with caveats); NaN-safe gate patch follows before registr
 - 2026-11-02T19:28:43+00:00 merged {"task": "T0196"}
 - 2026-11-02T19:28:43+00:00 inbox_opened {"id": "I0094", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
+- 2026-11-02T19:30:43+00:00 inbox_resolved {"id": "I0090", "status": "rejected", "note": "Superseded by I0094: register after T0196 and the NaN-gate fix", "by": "human"}
