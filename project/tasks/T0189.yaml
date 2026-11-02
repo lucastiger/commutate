@@ -4,7 +4,7 @@ title: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) 
   (D0013 addendum)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Make the thermal L2''s own discretisation estimate (meta[''solver_tol'']) use O006''s A4
   estimator, so that
@@ -125,4 +125,58 @@ lens: null
 trigger: null
 rationale: O006 decision_if_pass hands meta['solver_tol'] to O003; it must be the estimator E006 verifies
   (T0188).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: gci_three_grid now implements O006's A4 rule, with a 'branch' key added. r other than 2 raises
+    ValueError. thermal_fem._gci calls it, so both solvers report the same estimator. The new test file
+    compares gci_three_grid and thermal_fem._gci with mfos.metrics.gci_capped on 2000+ sequences (rel
+    1e-12, inf == inf), covering every branch and both signs. Layout tests have hand-computed values for
+    every branch, including the two re-review examples. test_thermal_fem.py::test_gci_formula was also
+    rewritten for the new rule. docs/thermal_model.md states A4 and cites D0012/D0013. I did not touch
+    tools/mfos, O006's objective or any benchmark JSON.
+  report:
+    status: completed
+    summary: gci_three_grid now implements O006's A4 rule, with a 'branch' key added. r other than 2 raises
+      ValueError. thermal_fem._gci calls it, so both solvers report the same estimator. The new test file
+      compares gci_three_grid and thermal_fem._gci with mfos.metrics.gci_capped on 2000+ sequences (rel
+      1e-12, inf == inf), covering every branch and both signs. Layout tests have hand-computed values
+      for every branch, including the two re-review examples. test_thermal_fem.py::test_gci_formula was
+      also rewritten for the new rule. docs/thermal_model.md states A4 and cites D0012/D0013. I did not
+      touch tools/mfos, O006's objective or any benchmark JSON.
+    files_changed:
+    - src/moduleforge/solvers/thermal_layout.py
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_layout.py
+    - tests/unit/solvers/test_thermal_fem.py
+    - tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+    - docs/thermal_model.md
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_gci_matches_evaluator.py tests/unit/solvers/test_thermal_layout.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run python -c "import math; from moduleforge.solvers import thermal_layout as tl; assert
+        tl.gci_three_grid(410.0, 410.25, 410.75)['gci'] == math.inf; assert abs(tl.gci_three_grid(410.0,
+        410.3, 410.31)['gci'] - 1.25 * 0.3 / 4) < 1e-12"
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'I changed the assertion in test_box_three_levels_full_source_gci_zero. It used to require solver_tol
+      < 1e-8 for a full-source 1D case. Under A4 the three levels differ only by round-off of about 1e-13
+      K, so rho is arbitrary and the rule returns +inf for three of the four values. The old assertion
+      cannot hold under the frozen rule (the evaluator gives the same inf). The test now asserts the grid
+      independence on the values themselves: max minus min over the three levels is below 1e-9 K. This
+      is a rule consequence, so please confirm it is acceptable. In real use a round-off-flat value would
+      report GCI = inf.'
+    - The slow tests (test_gci_is_conservative_against_fourier_series_on_partial_source_boxes, and the
+      benchmark/regression checks) were not re-run. They should be at least as conservative as before,
+      since the new rule is never below the order-1-capped form. The committed benchmark JSONs keep their
+      old recorded values.
+    - meta['convergence'] p_obs is now -log2(rho) whenever rho > 0, so it can be negative for a divergent
+      but same-sign sequence. 'monotone' there means rho > 0.
+    - I also edited tests/unit/solvers/test_thermal_fem.py, which is not in the deliverables list but
+      is inside the allowed scope. test_gci_formula asserted the superseded Fs=3 and order-cap-2 rule.
