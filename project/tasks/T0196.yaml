@@ -4,7 +4,7 @@ title: 'E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled sc
   pairing, F5 dev feasibility'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0165
 description: 'Pre-registration fixes to E006''s draft (reviews T0194 and T0195 of T0165, project/reviews/T0165/).
@@ -119,4 +119,140 @@ lens: null
 trigger: null
 rationale: Close T0194's major finding and the calibrate_power defect before registration; show F5 is
   attainable before the single evaluation.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All five E006 pre-registration fixes are done, and every definition-of-done command exits
+    0. No gate, threshold, estimator or frozen grid rule was changed. E006 is still a draft.
+
+
+    (1) The z-doubled level-1 scikit-fem solve, whose value skfem_z1 enters A3 and F5, now goes through
+    the same energy-balance and Picard gates as every other solve. The runner adds its results under the
+    tag `<layout>/skfem/L1z2`, and the spec''s energy_balance and picard_converged descriptions now name
+    it.
+
+
+    (2) calibrate_power now returns the rise computed at the power it returns. If the 0.25 K tolerance
+    is not met within 10 level-0 solves, it raises an error (an error result, never a verdict). Its docstring
+    now calls the update proportional rather than secant.
+
+
+    (3) The unused q_ok in run_mms and the no-op cfg rebui'
+  report:
+    summary: 'All five E006 pre-registration fixes are done, and every definition-of-done command exits
+      0. No gate, threshold, estimator or frozen grid rule was changed. E006 is still a draft.
+
+
+      (1) The z-doubled level-1 scikit-fem solve, whose value skfem_z1 enters A3 and F5, now goes through
+      the same energy-balance and Picard gates as every other solve. The runner adds its results under
+      the tag `<layout>/skfem/L1z2`, and the spec''s energy_balance and picard_converged descriptions
+      now name it.
+
+
+      (2) calibrate_power now returns the rise computed at the power it returns. If the 0.25 K tolerance
+      is not met within 10 level-0 solves, it raises an error (an error result, never a verdict). Its
+      docstring now calls the update proportional rather than secant.
+
+
+      (3) The unused q_ok in run_mms and the no-op cfg rebuild in smoke() are removed.
+
+
+      (4) F5 feasibility on the two development layouts (dev seed 20261101), at O003''s operating point,
+      on scikit-fem''s frozen rule (levels 0–2 plus the z-doubled level-1 solve):
+
+      - The largest per-die estimate is **0.2001 K**, at u_shaped_2 die 3 (GCI 0.1414 K + z term 0.0587
+      K). The limit is 0.25 K, so it is met with 0.050 K to spare.
+
+      - All 16 sequences converge monotonically; energy balance ≤ 1.2e-13 and Picard ≤ 2.3e-5 K on these
+      10 solves.
+
+      - No L2 value, L2-vs-scikit-fem difference or A3/A4 value was computed, printed or recorded. The
+      only L2 computation was the level-0 calibration that defines the operating point; only the power
+      was kept (31.842 and 46.168 W per die).
+
+
+      (5) The off-centre source fit the memory rule, so I added it to F1''s N-layer check. A 5×4 mm source
+      sits off-centre in both directions on a 12×10 mm box with the frozen N-layer stack, solved by scikit-fem
+      over the full domain. The odd modes carry +9.30 K (x) and +7.66 K (y) of the centroid temperature,
+      which is zero for a centred source.
+
+      - scikit-fem''s own GCI is 0.0081 K against the 0.01 K limit, the tightest margin of the F1 scikit-fem
+      checks.
+
+      - The largest difference from the series is 0.00035 K against the 0.02 K limit.
+
+      - The mesh was fixed by DOF count before any solve, and it is the only mesh tried.
+
+      - The refcheck now has 19 gated checks and all pass.
+
+
+      The changes are committed on the task branch as f4127d6.'
+    failure_class: none
+    confidence: 0.88
+    evidence:
+    - 'Fact. research/e006/f5_dev_check.json: max_estimate 0.2001152613883761, f5_limit 0.25, f5_met true,
+      margin 0.0499 K. The worst die is u_shaped_2 die 3. side_by_side_6 dies range 0.088-0.132 K and
+      u_shaped_2 dies 0.148-0.200 K. All 16 sequences converge monotonically, p_obs 0.75-1.73. Maximum
+      energy balance 1.19e-13, maximum Picard residual 2.30e-5 K.'
+    - 'Fact. F5 memory: each solve ran in its own subprocess, one at a time. Level-2 peaks were 7.456
+      GB (side_by_side_6, 1,484,787 DOF) and 6.102 GB (u_shaped_2, 933,811 DOF); the z-doubled solves
+      peaked at 5.825 GB and 3.965 GB. Before each solve estimated above 5 GB, memory_pressure showed
+      70-74 % free and the swap files totalled 0 GB.'
+    - 'Fact. research/e006/refcheck.json: all_passed true, 19 gated checks, 198.3 s, peak 4.81 GB. New
+      results: nlayer_offcentre_rise_in_band 85.08 K; nlayer_offcentre_series_converged 0.0; nlayer_offcentre_skfem_gci
+      0.00806 K (limit 0.01 K); nlayer_offcentre_vs_skfem 0.00035 K (limit 0.02 K); nlayer_offcentre_skfem_energy_and_ratio
+      1.2e-12 with refinement ratio 2. The odd-mode signal at the centroid is +9.297 K in x and +7.661
+      K in y.'
+    - 'Fact. The off-centre mesh (s0 0.5 mm, hmax 2 mm) was chosen by DOF count before any solve: 514,865
+      Q2 DOF at level 2. The finer alternative (s0 0.25 mm, hmax 1 mm) needed 1,215,825 DOF, above skfem_max_dofs
+      of 700,000.'
+    - 'Fact. Smoke reproduces the T0165 dev metrics: powers 31.204 and 45.566 W, level-0 rises 60.089
+      and 59.950 K, A1 0.0627, A2 0.435 K, A3 and A4 +inf (expected on the coarsened rule), F3 null 0.0627
+      and 2.56 K.'
+    - 'Fact. Commands and exit codes: `uv run python experiments/runners/e006_f5_dev.py` 0; `uv run python
+      experiments/runners/e006_run.py --refcheck --out research/e006/refcheck.json` 0; `uv run python
+      experiments/runners/e006_run.py --smoke --rows-out research/e006/dev_rows.json` 0; `uv run mfos
+      exp check E006 --rows research/e006/dev_rows.json` 0; `uv run ruff check .` 0; refcheck all_passed
+      assertion 0; f5_dev_check assertion 0; `uv run mfos gate --fast` 0 (''all gates passed'').'
+    - Inference. The measured 0.200 K agrees with T0195's projection of about 0.2 K, which rescaled the
+      85 K benchmark to 60 K.
+    alternative_explanations:
+    - explanation: The development layouts may understate F5 on the three fresh sealed-seed layouts. On
+        dev seed 7 the fresh rule drew 5 dies per switch, and the 20 % margin is moderate, so the registered
+        run could still be INVALID on F5 (speculation).
+      how_to_discriminate: Run the same F5 check on extra development-seed layouts drawn by the fresh
+        rule, e.g. dev seed 7 with 5 dies per switch per family, never the sealed seed. It costs about
+        2 min and at most 7.5 GB per layout.
+    - explanation: The off-centre series convergence gate reads exactly 0.0, so on its own it cannot fail.
+        Agreement could then come from luck rather than a converged series.
+      how_to_discriminate: Agreement with the independent full-domain scikit-fem solve (0.00035 K, against
+        an odd-mode signal of about 9 K) already separates the two. Reviewers' independent series codes
+        on the frozen nlayer_dbc case are a second check.
+    discriminating_tests:
+    - 'Before registration, optionally run e006_f5_dev.py on development-seed layouts drawn by the fresh
+      rule (e.g. seed 7: side_by_side, interleaved and u_shaped, each with 5 dies per switch) to measure
+      F5 on 5-dies-per-switch geometry without the sealed seed.'
+    recommended_actions:
+    - 'Request a review of the T0196 changes, then register E006. The registered run still needs the burst
+      VM described in the design note, section 7: `scripts/burst_gcp.sh E006 n2-highmem-16`, because level
+      2 of Cases 1a, 1b and nlayer_dbc needs about 17-30 GB.'
+    - Optionally measure F5 on 5-dies-per-switch development layouts first, since the margin on the development
+      layouts is 0.05 K.
+    - Decide whether to unblock `sysctl vm.swapusage` in the agent sandbox. Without it, the memory rule's
+      swap condition was checked through the total size of /private/var/vm/swapfile*, which bounds the
+      swap in use from above.
+    - Note that the side_by_side_6 level-2 scikit-fem solve peaked at 7.46 GB, slightly above the packet's
+      'about 7 GB'. It stayed within the 10 GB single-process allowance, whose free-memory and swap preconditions
+      were met.
+    files_written:
+    - experiments/runners/e006_run.py
+    - experiments/runners/e006_f5_dev.py
+    - experiments/drafts/E006.yaml
+    - research/e006/f5_dev_check.json
+    - research/e006/refcheck.json
+    - research/e006/dev_rows.json
+    - research/notes/o006-e006-design.md
+    experiment_drafts:
+    - experiments/drafts/E006.yaml
+    affects_acceptance_criteria: false
+    root_cause: ''
