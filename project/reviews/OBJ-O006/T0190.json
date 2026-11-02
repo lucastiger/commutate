@@ -1,0 +1,95 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A3's layout set is stated inconsistently (two vs five), and F4 contradicts it",
+      "detail": "A3 begins \"max over two generator layouts and every die\" but then lists five layouts (two dev plus A4's three fresh sealed-seed layouts). F4 says \"pilots and A3 use dev seeds \u2026 only\", which contradicts the sealed-seed layouts. In D0013 the main text says \"A3 stays on its two rule-fixed layouts\" and the addendum extends it to five. Hypothesis (b) says five. Under the literal 'two' reading, every pass criterion could be met with A3 run only on the two dev layouts. The estimator and threshold were revised three times on those layouts (T0170 benchmark, D0012, D0013 and its addendum). A pass would then not establish hypothesis (b) on unseen geometry. Remedy: delete 'two' from A3's first clause and change F4 to say that A3's fresh layouts come from E006's sealed seed.",
+      "evidence": "O006 draft: A3 description (first clause vs the 'layouts:' list); F4 detection text; D0013 Decision 'Coverage' bullet vs Addendum 'A3 coverage' bullet; hypothesis (b) 'five generator layouts'.",
+      "suggested_check": "Before E006 registration, grep the final objective and E006 spec for the A3 layout count. Confirm that the A3 recompute rows cover all five layouts' dies.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3 tests the summed error, so a pass bounds the L2 error by G_L2+G_skfem (up to 1.0 K), not by 0.5 K. Its power depends on the two solvers converging from opposite sides, which is not a criterion",
+      "detail": "A3 checks |T_L2 \u2212 T_sk| \u2264 G_L2 + G_sk. In the committed dev benchmarks the FV L2 converges from above (side_by_side_6 die 0: 409.61\u2192409.15\u2192408.98 K) and the Galerkin scikit-fem from below (409.95\u2192410.09\u2192410.15 K). When the two bracket the true value, A3 tests e_L2 + e_sk \u2264 G_L2 + G_sk, and the L2 error is bounded by |T_L2 \u2212 T_sk| \u2264 G_L2 + G_sk. That is up to 0.5 + 0.5 = 1.0 K under A4 and F5, not 0.5 K. Slack in the scikit-fem estimate can absorb an L2 GCI that understates its error by about 1.5x (dev G_sk \u2248 0.1 K, G_L2 \u2248 0.2 K). If both solvers converged from the same side on some die, A3 would have essentially no power against a GCI that understates both errors by the same factor. The pass therefore establishes 'GCI \u2264 0.5 K and consistent with an independent FEM'. It does not establish 'error \u2264 0.5 K per Tj'. The null's 'verified to 0.5 K per Tj value' should be read in that sense. This is unlikely to change O003's decision, given the about 3x conservatism seen in dev and in the T0181 2D checks.",
+      "evidence": "benchmarks/results/thermal_l2_convergence.json and thermal_fem_convergence.json (side_by_side_6). Hand-computed with the A4 estimator after scaling L2 from 44.2 to 45 W: die 0 diff 0.112 K, G_L2 0.214, G_sk 0.104 (z term included), ratio 0.35; die 1 ratio 0.37. The p=1 Richardson extrapolations (L2 410.09, FEM 410.21) imply an L2 true error near 0.06 K against G_L2 0.21 K.",
+      "suggested_check": "Have E006 report each die's convergence direction for both solvers, and flag same-side pairs as weak for A3. Alternatively, state the established bound as G_L2 + G_sk.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The GCI's conservatism is validated only on default-DBC-stack generator layouts, but O003 will rely on per-run GCIs on other geometry",
+      "detail": "decision_if_pass makes each O003 run carry its own GCI. On public benchmarks, O003's references are PowerSynth 2D_Case_2R and 2D_Case_6, otherwise customer layouts. Their stacks, die sizes and copper patterns can differ from the default DBC stack and the generator families. A3 checks whether the estimator bounds the error only on five generator layouts of one stack. Whether the GCI is conservative on O003's geometry is an extrapolation.",
+      "evidence": "O006 scope_in (default DBC stack); D0010 (O003 reference set); decision_if_pass.",
+      "suggested_check": "In O003's revision, require a scikit-fem consistency spot-check (the A3 metric) on at least one O003 reference per stack type.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The A4 estimator jumps by a factor of 4 at rho = 0 (oscillatory vs lucky-grid branch)",
+      "detail": "The claim 'continuous in rho on [0, 1)' is true; I checked it analytically at rho = 1/4 and 1/2, and as rho \u2192 1 the GCI \u2192 +inf. But at rho \u2192 0\u2212 the GCI is 1.25|d1|, and at rho \u2192 0+ it is 0.3125|d1|. If d2 \u2248 0, its sign alone moves the value fourfold. At 60 K the dev |d1| for Tj max is about 0.3\u20130.6 K, so a sign flip of a near-zero d2 can move a die between about 0.15 K (pass) and about 0.6 K (fail). This is the same kind of defect as the jump at rho = 1/4 that T0187/T0188 rejected. It should not bind here: the dev L2 Tj max sequences have p_obs 1.14\u20131.92, i.e. rho 0.26\u20130.45. Remedy: use 1.25 max(|d2|, |d1|/4) for \u22121/4 < rho < 0 as well, or record the limitation.",
+      "evidence": "tools/mfos/mfos/metrics.py lines 149-152; research/o006_gci/pair_tables.md p_obs column.",
+      "suggested_check": "Run gci_capped(0, d1, d1 \u00b1 1e-6) for d1 = 0.5: it returns 0.625 or 0.156.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "A1 and K1 are inert for the frozen reference cases",
+      "detail": "The frozen case scales are 5.1 K (Case 3) to 81 K (N-layer), and at least 60 K for the manufactured case. So 1 % of scale is at least 0.051 K, above A2's 0.05 K, and 5 % is at least 0.255 K, above K2's 0.25 K. A1 cannot fail unless A2 fails, and K1 cannot fire unless K2 fires. 'A1 guards cases with small rises' guards nothing in this set. The only active kill criterion is K2, and it applies only to corner-free cases. K2 can fire, so the 'kill criteria can fire' part of the claim holds.",
+      "evidence": "research/notes/o006-reference-series.md, lines 444-446 (1 % of scale = 0.56, 0.069, 0.069, 0.051, 0.81 K).",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "No FAIL path on generator geometry",
+      "detail": "Suppose a solver bug affects only die islands, die-attach footprints or copper edges, features absent from the A1/A2 cases. With A4 met, it ends INCONCLUSIVE and goes to diagnosis and a founder decision; no kill criterion fires. This is a documented choice (D0013 addendum). It is not a false-pass route, because INCONCLUSIVE does not adopt the L2. It does mean that the null on generator geometry can be rejected but never confirmed by a kill.",
+      "evidence": "O006 decision_if_inconclusive; fail_any (K1/K2 cover reference cases only).",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The scikit-fem z term (ref_extra) cannot be recomputed from rows, and where its 1.25 factor is applied is unspecified",
+      "detail": "max_gci_consistency adds r_extra unchanged. A3 defines the term as 1.25|dTj_z|, but the rows are described as carrying the column skfem_z, which could hold either |dTj_z| or 1.25|dTj_z|. Unlike the three-grid GCIs, the evaluator cannot recompute it from grid values. The magnitude is about 0.025 K, so the decision impact is small.",
+      "evidence": "tools/mfos/mfos/metrics.py lines 165-187; A3 description.",
+      "suggested_check": "Store both z-level Tj max values per die, and have the metric apply 1.25|difference| itself.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The divergent branch has no noise floor, so a converged value can return +inf",
+      "detail": "|rho| \u2265 1 gives +inf whatever the step size. A reported value whose steps sit at the Picard (1e-4 K) or solver-noise level can come out 'divergent' and fail A4, which leads to INCONCLUSIVE and the fallback, even though its discretisation error is negligible. This is a false-negative route, not a false pass. It is unlikely on Tj max, where dev steps are 0.1\u20130.3 K, but possible on fast-converging reference-case points such as the k(T) manufactured case.",
+      "evidence": "metrics.py line 147; F2 Picard tolerance 1e-4 K.",
+      "suggested_check": "In E006, report d1 and d2 for every reference-case point and check that none is within 10x of the Picard tolerance.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Forking paths: estimator and threshold were set after the data, mitigated",
+      "detail": "A4's estimator and threshold were revised three times after seeing dev data (D0012, D0013 and its addendum, all acknowledged). The mitigations are three fresh sealed-seed layouts in A3 and A4, max_evaluations: 1, and thresholds derived from O003's +2 K budget. The dev maximum of 0.306 K against 0.5 K is a margin of about 1.6x. thermal_layout.gci_three_grid still implements the superseded rule, a precondition that must be closed before registration. The manufactured-case escape clause ('missed by less than K2's 0.25 K') is also ambiguous about whether the miss means |err| or |err| \u2212 0.05.",
+      "evidence": "src/moduleforge/solvers/thermal_layout.py lines 69, 75-86 (FS_OTHER = 3, P_RANGE (1.5, 2.5)).",
+      "suggested_check": "Verify the precondition: thermal_layout.gci_three_grid equals mfos.metrics.gci_capped on a grid of rho values before E006 registration.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos.metrics.gci_capped, max_gci_capped and max_gci_consistency and compared them branch by branch with the A3/A4 text: they match.",
+    "Checked the estimator analytically. It is continuous at rho = 1/4 (0.3125|d1|) and at rho = 1/2 (0.625|d1|), tends to +inf as rho \u2192 1, and is never below the order-1-capped form. It jumps by a factor of 4 at rho = 0.",
+    "Ran gci_capped on T0181's 2D corner strips (constant k, k(T) to level 6 or 7, die-only), levels 0-2, against the finest level as a lower bound on the true error. Every per-die Tj max, mean and centroid value was bounded, with ratios from 2.15 to 16. Only the difference quantities gave inf or oscillatory results.",
+    "Read p_obs for the 3D dev Tj max sequences from research/o006_gci/pair_tables.md: 1.14\u20131.92, i.e. rho 0.26\u20130.45, so every value falls in branch (iv) with p capped at 1 and none lies near the rho = 0 or rho = 1/4 transitions.",
+    "Hand-computed approximate A3 ratios for side_by_side_6 dies 0 and 1 from the committed L2 and scikit-fem benchmark JSONs, scaling L2 power from 44.2 to 45 W. The ratios are about 0.35 and 0.37. The L2 converges from above and scikit-fem from below, so the two bracket the true value.",
+    "Checked the frozen reference-case scales in research/notes/o006-reference-series.md: A1 never binds before A2, and K1 never binds before K2.",
+    "Checked the L2 grid rule (thermal_layout.z_counts = Z_CELLS \u00b7 2^level). The L2 refines z with each level, so its three-grid GCI needs no separate z term. The scikit-fem benchmark uses zrefine=False, which is why A3 adds the ref_extra term.",
+    "Confirmed that thermal_layout.gci_three_grid still implements the superseded Fs = 3 / p in [1.5, 2.5] rule. Aligning it with A4's estimator is a precondition that must be met before E006 registration."
+  ],
+  "caveats": [
+    "A pass establishes that every reported L2 value at O003's operating point has a conservative GCI \u2264 0.5 K, and that L2 and scikit-fem agree within their summed estimates. When the two solvers bracket the true value, the L2 error is bounded by G_L2 + G_skfem (\u2264 1.0 K under A4 and F5), not by 0.5 K directly.",
+    "A3's power to detect a GCI that understates the error relies on the FV solver converging from above and the Galerkin solver from below. I saw this on dev data, but it is not enforced.",
+    "Validity is limited to the default DBC stack and the three generator families. Using per-run GCIs on O003's PowerSynth or customer references is an extrapolation.",
+    "A3 must be run on all five layouts (the two dev layouts plus three fresh sealed-seed layouts), as hypothesis (b) states. The 'two layouts' wording and F4 must be fixed before registration.",
+    "A1 and K1 are redundant with A2 and K2 for the frozen reference cases. The effective kill criterion is K2, on corner-free cases only.",
+    "Bash was denied intermittently during the review, so the A3 dev ratios were computed by hand for two dies of side_by_side_6 rather than by script over all dies and layouts."
+  ]
+}

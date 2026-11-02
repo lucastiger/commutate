@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T11:41:41+00:00 from repository state — do not edit_
+_generated 2026-11-02T11:49:07+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -14,7 +14,7 @@ _generated 2026-11-02T11:41:41+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $100.32/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $102.25/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -24,19 +24,17 @@ _generated 2026-11-02T11:41:41+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 56 | $100.32 | 1978652 | 1093523 | 88 | 0 |
+| O006 | 57 | $102.25 | 2021724 | 1124415 | 95 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 153, failed: 3, needs_founder: 1, running: 2, todo: 2
+cancelled: 30, done: 154, failed: 3, needs_founder: 1, running: 2, todo: 1
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
-- T0190 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
+- T0189 `running` builder/implement: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) with O006's A4 estimator (D0013 addendum) (attempt 1)
 - T0191 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T10:30:16+00:00 inbox_opened {"id": "I0085", "kind": "decision", "subject": "[O006] replan limit reached"}
-- 2026-11-02T10:32:57+00:00 inbox_resolved {"id": "I0085", "status": "approved", "note": "Founder (2026-11-02): no replan. T0186 confirmed the remaining O006 path (T0165 held, then T0166); T0167's findin
 - 2026-11-02T10:33:41+00:00 run_finished {"run": "T0185-critic-20261102T022756-a99b", "status": "completed", "cost": 1.516586, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T11:01:54+00:00 budget_override {"objective": "O006", "usd": 140.0}
 - 2026-11-02T11:02:45+00:00 task_amended {"task": "T0165", "reason": "D0013 alignment"}
@@ -50,3 +48,5 @@ cancelled: 30, done: 153, failed: 3, needs_founder: 1, running: 2, todo: 2
 - 2026-11-02T11:41:21+00:00 objective_draft_review {"objective": "O006", "ref": "3401f861f67f3606d63589e6e8456e748a9249e6", "tasks": ["T0190", "T0191"]}
 - 2026-11-02T11:41:40+00:00 run_started {"run": "T0190-critic-20261102T034140-97d7", "task": "T0190", "role": "critic", "session": "68f66dba-0d9c-4dc4-baf1-cc248f6b56a0"}
 - 2026-11-02T11:41:41+00:00 run_started {"run": "T0191-critic-20261102T034141-a374", "task": "T0191", "role": "critic", "session": "f5b333e1-0322-4518-a9af-eeaef9dab31b"}
+- 2026-11-02T11:49:04+00:00 run_finished {"run": "T0190-critic-20261102T034140-97d7", "status": "completed", "cost": 1.923906, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T11:49:07+00:00 run_started {"run": "T0189-builder-20261102T034907-970e", "task": "T0189", "role": "builder", "session": "2f237262-a932-4334-b771-3052f025d56c"}
