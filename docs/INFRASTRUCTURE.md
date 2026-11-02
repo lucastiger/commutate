@@ -455,7 +455,7 @@ scripts/bootstrap.sh <your-github-username>        # expect: 25 passed ... boots
 scripts/provision_compute.sh                       # expect: FastHenry self-test ... PASS
 ```
 Then continue with `gh auth login …` and step 3. If you already created the GitHub repository in the
-meantime, use `git remote add origin git@github.com:<you>/moduleforge.git && git push -u origin main`
+meantime, use `git remote add origin git@github.com:<you>/commutate.git && git push -u origin main`
 instead of `gh repo create`.
 
 7. **Power:** System Settings → Battery → Options → enable preventing automatic sleep on the power

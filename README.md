@@ -4,7 +4,7 @@
 returns manufacturable re-layouts with lower loop inductance and bounded junction temperature, plus decks the customer
 can verify in their own Ansys Q3D/Icepak flow.
 
-> The codebase and Python package are still called `moduleforge` (the working name before Commutate).
+> The Python package and internal tooling are still called `moduleforge` (the working name before Commutate).
 
 ---
 

@@ -923,7 +923,7 @@ gh repo create <you>/moduleforge --private --source . --push
 ssh-keygen -t ed25519 -f ~/.ssh/mfos_deploy -N "" -C mfos-forge
 gh repo deploy-key add ~/.ssh/mfos_deploy.pub --allow-write --title "mfos forge box"
 printf 'Host github.com\n  IdentityFile ~/.ssh/mfos_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-git remote set-url origin git@github.com:<you>/moduleforge.git && git push -u origin main
+git remote set-url origin git@github.com:<you>/commutate.git && git push -u origin main
 ```
 
 **Step 3 — Protect `main`** (rulesets on private repositories need GitHub Pro or a Team organization):
