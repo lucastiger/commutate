@@ -1,0 +1,78 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The doc says GCI is conservative on the layouts, but the committed JSON contradicts it",
+      "detail": "docs/thermal_model.md \u00a78 says that for the layouts 'the Richardson extrapolation at p_obs about 1.5 puts the level-2 error at about half of the level 1-2 change, so GCI ... is conservative there too'. When p_obs falls outside [1.5, 2.5], the frozen A4 rule (Fs=3, p=2) gives GCI = |f2-f1| exactly. The Richardson error estimate is |f2-f1|/(2^p_obs - 1), and that is larger than |f2-f1| whenever p_obs < 1. On the u_shaped A3 layout this happens for the value that sets that layout's max GCI. A4 already fails by about 13x, so the O006 decision does not change. But the 'prove GCI is conservative' part of the claim does not hold for layout values, which is where meta['solver_tol'] gets used.",
+      "evidence": "Recomputed from benchmarks/results/thermal_l2_convergence.json. u_shaped die2.tj_max (= layout tj_max): p_obs 0.966, GCI 0.3224 K vs Richardson estimate 0.3383 K (ratio 0.95). die3.tj_max: p_obs 0.977, GCI 0.3337 vs 0.3446 (0.97). spread_mean: p_obs 0.578, GCI 0.0567 vs 0.1153 (0.49). spread_max is oscillatory. side_by_side spread_max: p_obs 1.06, ratio only 1.09.",
+      "suggested_check": "Restrict the conservativeness statement to the box cases, or report the Richardson estimate next to the GCI for every value with p_obs < 1.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The conservativeness proof skips the regime that limits the layouts",
+      "detail": "The three Fourier-series box cases put the die attach and the die in as full lateral layers (the STACK in the tests). That leaves out the attach-footprint bimaterial corner, which the doc names as the cause of the slow layout convergence. In the box cases the source means converge in the asymptotic range (p_obs about 1.9-1.95, Fs=1.25, GCI/error about 1.3). The layouts sit at p_obs 0.97-1.5. 'GCI >= |error|' is therefore shown only where the GCI estimator is well behaved, not where the A3/A4 values live.",
+      "evidence": "My own runs against box_series at 2400 modes. centred: mean p_obs 1.890, GCI 0.00196 vs error 0.00148; centroid non-monotone, Fs=3, GCI 0.0095 vs 0.0032. Adversarial boxes I built (all conservative): off-grid near-corner 11.3x9.7 mm (mean p_obs 1.955, GCI 0.0095 vs 0.0074); elongated 1.4x10 mm (1.949, 0.0064 vs 0.0051); 2 mm die (1.923, 0.0131 vs 0.0102). In all of them the centroid starts far from asymptotic (p_obs about 4.9; level-0 error 0.28-0.36 K).",
+      "suggested_check": "Add a reference case that contains a die-attach footprint step, for example a scikit-fem or much finer FV solution of a single-die box with an attach footprint, and check GCI against error there.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'Refine thin layers' was not implemented, and the reason was tested on one dev layout only",
+      "detail": "Z_CELLS stays at 2 and thin layers get no z refinement. The docstring and doc say 4 z-cells, 6 z-cells under 0.2 mm, and z grading changed no value by more than 0.02 K. That comparison was made only on the dev side_by_side layout with 2 dies (seed 7). The slowest-converging value, u_shaped tj_max at p_obs about 1, was not checked under z refinement, and the doc says its slow part is 'not localised'.",
+      "evidence": "thermal_layout.py docstring (z bullet); docs \u00a78 'Tried and not adopted' is limited to side_by_side 2 dies seed 7.",
+      "suggested_check": "Repeat the z-refinement comparison on the u_shaped dev layout (seed 5).",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Test name says it checks GCI at the coarser level pair, but it checks no GCI",
+      "detail": "test_gci_conservative_at_the_coarser_level_pair_too only asserts e0 > e1 > e2, i.e. that the error falls with level for one value. Its comment contradicts the test's name. It adds no evidence that the GCI is conservative.",
+      "evidence": "tests/unit/solvers/test_thermal_layout.py, last slow test.",
+      "suggested_check": "Rename the test to describe what it checks, or make it assert something about the GCI.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The doc gives the wrong p for the Fs=3 branch",
+      "detail": "docs \u00a78 reads 'Fs = 1.25 for monotone p_obs in [1.5, 2.5], else Fs = 3, p = min(p_obs, 2)'. The code (gci_three_grid) and O006 A4 use p = 2 in the else branch. With the doc's reading, u_shaped tj_max would get GCI about 1.0 K instead of 0.32 K.",
+      "evidence": "thermal_layout.gci_three_grid lines 82-86 vs docs/thermal_model.md \u00a78 line 1.",
+      "suggested_check": "Change the doc to: else Fs = 3, p = 2.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Edge grading leaves sliver cells in short gaps",
+      "detail": "edge_graded_nodes stops each geometric run below half the interval, then fills what is left with uniform cells. In a 1 mm gap between two die edges this leaves a 0.05 mm cell between two 0.225 mm cells (size jump 4.5x). In a 0.52 mm one-sided interval, a 0.15 mm cell is followed by a 0.27 mm cell. This does not break nesting or the R=2 ratio, but it is an uncontrolled size jump next to die edges.",
+      "evidence": "edge_graded_nodes([0,1,2] mm, edges at all lines, h0=1 mm, s=0.1 mm, grow=1.5) gives cells 0.1, 0.15, 0.225, 0.05, 0.225, 0.15, 0.1 mm.",
+      "suggested_check": "Rescale the geometric run when the leftover is smaller than the last geometric cell.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "A4 is not met, the cell budget is exceeded, and the A4 rule jumps at p_obs = 2.5",
+      "detail": "These are disclosed or come from the objective, so they are not defects of this change. The max GCI is 0.168 / 0.334 K against the 0.025 K limit. Level 2 has 7.26 M cells, above the doc's 5 M-cell budget. The frozen Fs switch makes two near-identical u_shaped centroids get GCI 0.074 K (p_obs 2.4957) and 0.177 K (p_obs 2.50001).",
+      "evidence": "JSON u_shaped die2/die3 tj_centroid.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran uv run pytest -q tests/unit/solvers/test_thermal_layout.py with the slow tests: 28 passed in 40.5 s.",
+    "Ran uv run pytest -q -m 'not slow' tests/unit: 407 passed, 37 deselected. uv run ruff check .: all checks passed.",
+    "Ran the benchmark smoke run: P/die 44.2 W and 63.9 W and level-0/1 cell counts 113428/907424 and 70066/560528 match the committed JSON exactly. Level 2 was not re-run.",
+    "Recomputed p_obs, the Richardson error estimate and GCI/estimate for every die and layout value in the JSON. GCI is below the Richardson estimate for u_shaped tj_max (die2, die3) and spread_mean.",
+    "Re-derived the singular exponent equation k1 tan(lambda pi/2) + k2 tan(lambda pi) = 0 for the attach (90 deg) / copper (180 deg) wedge with adiabatic faces. Root about 0.835, consistent with the stated 0.83.",
+    "Checked the Fourier series independently: exact reciprocity (mean over B due to A = mean over A due to B, both 1.01423 K/W) and truncation convergence (600 vs 2400 modes: 3.5e-5 K for the mean, 1.1e-4 K for the centroid).",
+    "Re-ran the centred box case against the series at 2400 modes and built three adversarial box cases (off-grid near-corner, elongated 1.4x10 mm, 2 mm die). GCI >= true error in all of them, with mean p_obs 1.89-1.95.",
+    "Checked edge_graded_nodes on short gaps and found sliver cells.",
+    "Read gci_three_grid against the O006 A4 definition: the code matches the objective; the doc wording does not."
+  ],
+  "caveats": [
+    "'GCI is conservative' holds on laterally uniform partial-source box stacks (three in the tests and three more of mine, p_obs about 1.9). It is not shown on layouts with die-attach footprints, and for values with p_obs < 1 the committed JSON contradicts it.",
+    "The thin-layer z refinement in the claim title was not implemented; it was rejected on the strength of tests on one dev layout.",
+    "Level-2 values in the JSON were not re-run (6.4 GB, about 88 s per layout); provenance was checked only through the smoke run's power calibration and level-0/1 cell counts.",
+    "The rule still fails A4 by 7-13x and exceeds the 5 M-cell budget at level 2, so it cannot support O006 passing; it only makes the GCI evidence for the fallback decision more honest."
+  ]
+}

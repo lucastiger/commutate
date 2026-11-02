@@ -4,7 +4,7 @@ title: 'Thermal grid rule: refine thin layers and edges, fix level0, prove GCI i
   T0168/T0169)'
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on:
 - T0150
 description: 'T0150''s frozen rule (LAT_FRAC 1, Z_CELLS 2, level0 per case) gives GCI 0.45-0.67 K on the
@@ -151,3 +151,6 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- outcome: full_gate_passed
+  summary: 5f3928105ab3bd2f5dc799af1ecfcf92d693da88
+  at: '2026-11-02T05:24:01+00:00'
