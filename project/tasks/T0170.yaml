@@ -4,7 +4,7 @@ title: 'Thermal grid rule: refine thin layers and edges, fix level0, prove GCI i
   T0168/T0169)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0150
 description: 'T0150''s frozen rule (LAT_FRAC 1, Z_CELLS 2, level0 per case) gives GCI 0.45-0.67 K on the
@@ -48,11 +48,12 @@ model: null
 budget_usd: 3.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0170-thermal-grid-rule-refine-thin-layers-and
 pr: null
-runs: []
+runs:
+- T0170-builder-20261101T201927-4128
 created_by: founder
 created_at: '2026-11-02T03:06:48+00:00'
 protected_approved: false
