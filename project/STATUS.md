@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T19:33:34+00:00 from repository state — do not edit_
+_generated 2026-11-02T20:52:57+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0095** [decision] E006 needs burst compute (~3 CPU-h)
