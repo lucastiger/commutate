@@ -4,7 +4,7 @@ title: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) 
   (D0013 addendum)
 type: implement
 agent: builder
-status: review
+status: todo
 depends_on: []
 description: 'Make the thermal L2''s own discretisation estimate (meta[''solver_tol'']) use O006''s A4
   estimator, so that
@@ -180,3 +180,23 @@ history:
       but same-sign sequence. 'monotone' there means rho > 0.
     - I also edited tests/unit/solvers/test_thermal_fem.py, which is not in the deliverables list but
       is inside the allowed scope. test_gci_formula asserted the superseded Fs=3 and order-cap-2 rule.
+- attempt: 1
+  outcome: dod_failed
+  summary: the fast gate fails once current main is merged into the branch
+  failure_output: "main changed after this task was verified; make the branch work with it.\nFAIL uv run\
+    \ pytest -q -x -m 'not slow' tests/unit\n.............................. [ 52%]\n........................................................................\
+    \ [ 69%]\n........................................................................ [ 87%]\n....F\n\
+    =================================== FAILURES ===================================\n____________________\
+    \ test_thermal_layout_matches_evaluator _____________________\n\n    def test_thermal_layout_matches_evaluator():\n\
+    \        for s in _sequences():\n            got, ref = tl.gci_three_grid(*s)[\"gci\"], gci_capped(*s)\n\
+    \            if math.isinf(ref):\n                assert got == math.inf, s\n            else:\n>\
+    \               assert got == pytest.approx(ref, rel=1e-12, abs=0.0), s\nE               AssertionError:\
+    \ (0.0, -2.5, -2.499999999)\nE               assert 3.125 == 7.5 ± 7.5e-12\nE                 \nE\
+    \                 comparison failed\nE                 Obtained: 3.125\nE                 Expected:\
+    \ 7.5 ± 7.5e-12\n\ntests/unit/solvers/test_thermal_gci_matches_evaluator.py:52: AssertionError\n===========================\
+    \ short test summary info ============================\nFAILED tests/unit/solvers/test_thermal_gci_matches_evaluator.py::test_thermal_layout_matches_evaluator\n\
+    !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 364 passed,\
+    \ 37 deselected in 78.42s (0:01:18)\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does\
+    \ not match the project environment path `.venv` and will be ignored; use `--active` to target the\
+    \ active environment instead\n"
+  at: '2026-11-02T12:12:58+00:00'

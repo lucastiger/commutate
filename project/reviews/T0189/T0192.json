@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Solver GCI is not bit-identical to gci_capped: -log2(rho) vs log2(1/rho)",
+      "detail": "thermal_layout.gci_three_grid computes p_obs = -log2(rho), but mfos.metrics.gci_capped computes log2(1/rho). In the monotone branch with 1/2 < rho < 1, where p < 1 is actually used, the two disagree by an amount that grows as 1/(1-rho). The new equality test asserts rel=1e-12, yet on legitimate inputs the gap exceeds that. The test passes only because its sample set has no rho close enough to 1. The docs and docstring claim the solver reports 'exactly this value' / 'identical'. That holds for branch selection, but not to the last bit. It has no practical effect: wherever the GCI is near the 0.5 K threshold at about 410 K, the gap is about 1e-10 relative or smaller.",
+      "evidence": "400k fuzzed sequences: zero branch or inf mismatches, worst finite relative difference 1.19e-12 at (0.0, 1.04592, 2.09164), 7032.505258709 vs 7032.505258701. A 410 K survey restricted to GCI < 5 K gave worst rel diff 1.47e-12 (0.0034498106519256 vs 0.0034498106519205). Both are above the test's own rel=1e-12.",
+      "suggested_check": "Compute p_obs as math.log2(1.0 / rho), exactly as gci_capped does. The test can then assert == instead of approx.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "ZeroDivisionError path that the evaluator does not have",
+      "detail": "For rho equal to the largest double below 1 (1 - 2^-53), gci_three_grid and thermal_fem.gci raise ZeroDivisionError, because 2**(-log2(rho)) - 1 == 0. gci_capped returns about 5.6e15 instead. This cannot happen at physical temperatures: with values near 410 K it needs |d1| of roughly 2^53 ulp(410), which is about 512 K. It is still a divergence from the claimed identity, and it would crash combine_levels rather than report inf.",
+      "evidence": "Sequence (-1.0, 0.0, 1-2^-53): tl gives ZeroDivisionError, gci_capped gives 5629499534213119.0, F.gci gives ZeroDivisionError. For k = 2, 3, 5 and 1001 ulps below 1, all three agree.",
+      "suggested_check": "The log2(1/rho) change above removes this path too.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "On exactly grid-independent cases solver_tol is now +inf (the A4 rule's behaviour), and the box test was changed to stop asserting it",
+      "detail": "test_box_three_levels_full_source_gci_zero used to assert max(solver_tol) < 1e-8. It now checks only that the three level values agree to 1e-9 K. I recomputed the case: solver_tol is +inf for tj_max, tj_mean and tj_centroid. The round-off differences grow with refinement (d1 = 1.03e-11 K, d2 = 5.4e-11 K, |rho| about 5.2), which lands in the divergent branch. This faithfully reproduces gci_capped (the evaluator gives inf as well), so the alignment claim holds. The changed assertion is justified and its comment is honest. Still, O006 A4 includes 'the finest-grid values of the reference cases'. Any reference value that is grid-independent to round-off would get GCI = +inf and fail A4 (INCONCLUSIVE) for a reason that has nothing to do with discretisation. The same applies to an inter-die spread on a symmetric layout that is non-zero only at round-off level.",
+      "evidence": "solve_box_stack(4e-3, 4e-3, STACK, full source, h=5000, T_c=338.15): solver_tol src0.tj_max = inf, values minus level 0 = [0, 1.03e-11, 6.45e-11]; spread_max = 0.0 (exact branch).",
+      "suggested_check": "Before E006 registration, the founder should confirm that no A4-reported reference value is grid-independent to round-off (for example the full-source 1D box), or that such values are excluded from A4's rows.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Edits outside the listed deliverables, all in scope",
+      "detail": "docs/thermal_model.md and tests/unit/solvers/test_thermal_fem.py were changed in addition to the three listed deliverables. Both edits only rewrite the documentation and tests to the new rule. Removed tests (r=3 argument, Fs=3 branches, (2.5, 2.0, 2.0) giving 0) tested the superseded rule. They were replaced by hand-computed values that I checked against the A4 text: (2.5, 2.0, 2.0) is now the fast branch at 0.15625. A stale benchmark docstring (benchmarks/thermal_fem_convergence.py, 'A3 requires max gci_K <= 0.025 K') was left as it is.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD: pytest test_thermal_gci_matches_evaluator.py + test_thermal_layout.py: 32 passed",
+    "Ran DoD: pytest -m 'not slow' tests/unit: 413 passed, 37 deselected",
+    "Ran DoD inline assertion (410.0, 410.25, 410.75) -> inf, (410.0, 410.3, 410.31) -> 1.25*0.3/4: ok",
+    "Ran DoD: ruff check .: all checks passed",
+    "Read mfos.metrics.gci_capped (the evaluator) and confirmed it matches O006 A4 (i)-(iv) in objective.yaml and the D0013 addendum patch; confirmed the solver's branch logic is line-for-line the same apart from the p_obs expression",
+    "Fuzzed 400k sequences, separate from the author's grid and seed (rho near 1 with 1-rho down to 1e-12, plus general sign and magnitude mixes from 1e-14 to 1e2 K): tl.gci_three_grid and thermal_fem.gci against gci_capped gave 0 branch/inf mismatches and worst rel diff 1.19e-12",
+    "Built adversarial inputs rho = 1 - k*2^-53: found a ZeroDivisionError in the solver path that the evaluator does not have (k=1); NaN/inf inputs propagate NaN identically; numpy float32 and int inputs agree",
+    "Checked the argument ordering in thermal_fem._gci (finest, middle, coarsest), which becomes gci_three_grid(coarse, mid, fine), and in combine_levels (levels LEVEL0..LEVEL0+2, coarse to fine) for solve_layout and solve_box_stack",
+    "Grepped every caller of gci_three_grid / thermal_fem.gci (benchmarks, research scripts): none passes r != 2, so the new ValueError breaks nothing; no E006 runner consumes thermal solver_tol yet",
+    "Recomputed solver_tol on the grid-independent full-source box case: +inf from round-off growth, which explains why the old assertion was replaced"
+  ],
+  "caveats": [
+    "'Identical to mfos.metrics.gci_capped' holds for branch selection and to about 1e-12 relative in general. It is not bit-for-bit, and the gap grows as rho approaches 1. Any downstream code_must_match check that compares solver_tol to the evaluator with == will not hold everywhere.",
+    "Under the aligned rule, values that are grid-independent to round-off (the 1D full-source box, or a spread that is non-zero only at round-off on a symmetric layout) report solver_tol = +inf. This is what the founder-approved A4 rule does, not a defect of this change. E006's choice of A4 rows has to account for it.",
+    "Not checked: the slow tests (for example test_layout_study_returns_solver_tol_and_levels) and full generator-layout solves. The change touches only the GCI post-processing, so the solver fields themselves are unchanged."
+  ]
+}
