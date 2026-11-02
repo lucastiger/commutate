@@ -1,0 +1,51 @@
+{
+  "verdict": "accept",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "energy_balance is ill-conditioned when the net inflow nearly cancels",
+      "detail": "energy_balance = |Q_out/Q_in - 1| is a relative measure and falls back to |Q_out| only when Q_in == 0 exactly. When positive and negative inflows cancel to round-off level (zero-mean manufactured sources, prescribed outflow balancing a heat input), it reports large numbers even though the linear system is solved to 1e-13. It behaves as documented and is harmless for power-module loads, where all power enters. But the F2 'failed energy balance is INVALID' rule would misfire on such a case.",
+      "evidence": "3D manufactured k(T) case with a zero-mean source (cos-modulated field, all net boundary and volume inflows integrate to ~0): linear_residual 3.8e-13 to 5.9e-13, but energy_balance 2.5e2, 2.8e1 and 2.4e1 at N = 16, 32, 64.",
+      "suggested_check": "Normalise by the total absolute inflow (sum of |contributions|) instead of the net, or document that the metric is only meaningful for net-heated cases.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Area-mean over an isoflux source converges at observed order of about 1.5\u20131.7, not 2",
+      "detail": "The surface interpolant and the point values converge at second order. The area-mean from surface_stats over a grid-conforming isoflux source converges at order 1.47, 1.59, 1.67 (rising) against an independent Fourier-series solution. This fits the h^2 log h edge singularity of a discontinuous surface flux, so it is physics, not a code defect. Downstream, O006 A4 uses Fs = 1.25 only for p_obs in [1.5, 2.5], so coarse grid triplets for the source mean may fall into the Fs = 3 branch.",
+      "evidence": "Plate 10x8x2 mm, k = 200, h = 5000, 2x2 mm source, q = 1e6 W/m2, stepped non-uniform grids f = 1, 2, 4, 8 (750 to 384k cells). Mean errors 0.440, 0.158, 0.0526, 0.0165 K (rise 14.06 K); centre-point errors 0.321, 0.0832, 0.0225, 0.00577 K (orders 1.95, 1.89, 1.96).",
+      "suggested_check": "When designing the frozen grid rule for E006, grade the grid toward source edges, or expect p_obs below 2 for source means.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The Picard stop is not re-checked after the final polishing solve, and intermediate linear-solve failures are deferred",
+      "detail": "Intermediate Picard solves (tolerance 1e-8) that fail to meet their threshold do not raise; only the final residual is checked. dT is measured from a possibly unconverged inner solve. In principle a stagnated inner CG solve could make dT < picard_tol spuriously, and a successful polish would then return a field that is not Picard-converged; meta['picard_dT'] would report the pre-polish value. This needs 6x300 CG iterations to fail and then succeed in the polish, so it is very unlikely in practice. In normal runs the polish changes T by roughly the inner tolerance only.",
+      "evidence": "Code inspection of the solve_steady Picard loop (lines ~480-500): `if not nonlinear or dT < picard_tol:` breaks on dT computed from u returned by solver.solve regardless of whether res <= accepted.",
+      "suggested_check": "Treat an intermediate res > accepted as 'not converged' (do not let it end the Picard loop), or recompute dT after the polish.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Patankar equation citation is the midway special case",
+      "detail": "The general series form G = A/(d_a/2k_a + d_b/2k_b) corresponds to Patankar (1980) Eq. 4.8 (general interface position). Eq. 4.9 is the special case of an interface midway between nodes, which does not hold on non-uniform grids. This is cosmetic: the implemented formula is the correct general one.",
+      "evidence": "Module docstring cites 'Sec. 4.2.3, Eq. 4.9'; the code implements the general non-midway series form, which my non-uniform tests confirm.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. `uv run pytest -q tests/unit/solvers/test_thermal_fv.py`: 18 passed. `uv run pytest -q -m 'not slow' tests/unit`: 368 passed, 32 deselected. `uv run ruff check .`: all checks passed. Also ran the slow test `test_million_cells_under_60_s`: passed in 9.6 s.",
+    "Independent 3D manufactured solution with strongly nonlinear k(T) = 150 (T/300)^-1.49, built through the Kirchhoff transform (theta field, source = -lap theta, top flux = theta_z, Robin T_inf = T(x,y,0) - theta_z/h). Used a spatially varying h(x,y) (the author's tests use constant h only) on smooth non-uniform grids N = 8, 16, 32, 64, with T spanning 260\u2013535 K. Max cell error 5.49, 1.79, 0.480, 0.122 K; observed orders 1.61, 1.90, 1.98. The reconstructed surface temperature also converges at second order (0.111 K at N = 64). Picard took 10\u201315 iterations.",
+    "Picard stopping accuracy on a 1D SiC-like slab with callable k(T): at q = 5e6 and 1e7 W/m2 the picard_tol = 1e-4 result differs from the picard_tol = 1e-12 result by 7.4e-7 and 3.0e-7 K. Discretisation error against the Kirchhoff closed form is 2.4e-5 and 3.4e-4 K at nz = 50. At unphysical loads (T > 800 K) Picard at tol 1e-4 still converged in 10\u201321 iterations; a 1e-12 K tolerance is unreachable there because of round-off, not a defect.",
+    "Comparison against an independent method: a double Fourier-series (cosine-mode) solution for a rectangular plate with a centred rectangular isoflux source, adiabatic sides and Robin bottom (1500x1500 modes). Used stepped, non-smooth non-uniform grids refined by 2x. The centre surface temperature converges at second order (errors 0.32 down to 0.0058 K, orders 1.95, 1.89, 1.96). The source-area mean converges at order 1.5\u20131.7 (edge singularity). Energy balance 1e-14.",
+    "Gauss integration of prescribed flux on side faces with integrands that vary across the face (degree-5 polynomial in x and z on the y = 0 face, x\u00b7y^4 on the x = Lx face), including faces exposed by a top-layer pocket. q_in matches the exact integral to 0.0 relative error, for both the dict and the global callable flux forms. The author's tests only exercise side faces with integrands that are constant across each face.",
+    "Code review of the half-cell series conductance broadcasting, Robin conductance, matrix symmetry and SPD structure, the energy-balance identity (sum of the residual = Q_in - Q_out, verified by derivation), residual-floor acceptance, NaN propagation into the final `not res <= accepted` guard, connectivity check, and surface reconstruction and interpolation level logic."
+  ],
+  "caveats": [
+    "Verified on single-material and layered problems with interfaces on grid lines; accuracy for material interfaces that do not fall on grid lines is not claimed and was not tested.",
+    "The wall-time assertion in the slow test depends on the machine (9.6 s here against a 60 s limit).",
+    "The energy_balance metric is only meaningful for net-heated cases (see finding).",
+    "Observed order for area means over isoflux sources is about 1.5\u20131.7 on practical grids, which matters for the downstream O006 A4 GCI branch, not for the correctness of this core."
+  ]
+}

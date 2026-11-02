@@ -4,7 +4,7 @@ title: 'E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1
   series, with F1 self-checks'
 type: research
 agent: scientist
-status: running
+status: todo
 depends_on:
 - T0148
 description: 'Write the series references in experiments/runners/e006_series.py with your own code. The
@@ -77,4 +77,157 @@ lens: null
 trigger: null
 rationale: A1/A2 analytic cases (hypothesis part a) and failure mode F1; independent of the solver by
   construction.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'T0151 deliverables are written and committed (11b1bd2): experiments/runners/e006_series.py,
+    research/e006_refs/series_values.json (payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151)
+    and research/notes/o006-reference-series.md. The runner implements the Muzychka 2003 flux-channel
+    series (Cases 1a, 1b, 2 and 3; Case 2 Tf fixed at 25 C) and an N-layer Fourier series for the laterally
+    uniform default DBC stack plus die attach and SiC die, with four die-sized sources whose peak rises
+    are 81-101 K. Every value is accelerated by splitting the kernel: the infinite-depth part 1/(k beta)
+    is summed exactly through 1/beta = (2/sqrt(pi)) int exp(-beta^2 s^2) ds, which makes the double sum
+    a product of 1D heat-kernel sums (erf images or cosine series); the remainder converg'
+  report:
+    summary: 'T0151 deliverables are written and committed (11b1bd2): experiments/runners/e006_series.py,
+      research/e006_refs/series_values.json (payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151)
+      and research/notes/o006-reference-series.md. The runner implements the Muzychka 2003 flux-channel
+      series (Cases 1a, 1b, 2 and 3; Case 2 Tf fixed at 25 C) and an N-layer Fourier series for the laterally
+      uniform default DBC stack plus die attach and SiC die, with four die-sized sources whose peak rises
+      are 81-101 K. Every value is accelerated by splitting the kernel: the infinite-depth part 1/(k beta)
+      is summed exactly through 1/beta = (2/sqrt(pi)) int exp(-beta^2 s^2) ds, which makes the double
+      sum a product of 1D heat-kernel sums (erf images or cosine series); the remainder converges exponentially.
+      The definition of done is NOT met: `--selfcheck` exits 1 with 23 of 26 gates passing. All three
+      failures come from one packet-specific gate, that the 50-term sums reproduce the printed Case 1a
+      and Case 1b centroids to their printed digits. My 50-term values are 84.9386 vs 84.97, 108.3842
+      vs 108.43 and 59.9475 vs 59.94 C, and no truncation convention I scanned reproduces all six gated
+      printed values. All other gates pass: convergence under doubling (max relative change about 1e-15,
+      required < 1e-7); N-layer equal to two-layer (2.2e-16, required 1e-9); full-top uniform source equal
+      to 1D (3.3e-16); the Case 3 printed values 80.61 and 78.87 at 50 terms; the Case 1b s1 centroid;
+      plus kernel, reciprocity, symmetry and raw-partial-sum consistency checks. I did not weaken the
+      gate. The planner or founder must decide it; I recommend aligning it with the frozen objective''s
+      F1, which gates only Case 3.'
+    failure_class: planning
+    root_cause: The packet extends F1's frozen paper-reproduction gate (the printed Case 3 values only)
+      to the printed Case 1a and Case 1b centroids at 50 terms. Those printed values are truncation artefacts
+      that a correct implementation does not reproduce to 0.005 K. At 50 terms the Case 1a centroids are
+      0.48 and 0.72 K below the converged values and move by 0.02-0.1 K when the term count changes by
+      one. No rectangular truncation (single sums N1 = 10-100, double sums N2 = 5-100) and no triangular
+      truncation reproduces all six gated values; the best worst-case deviation is 0.0086 K. The objective's
+      own notes already record that the paper's Case 2 table cannot be reproduced at 50 terms.
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    evidence:
+    - 'Command: `uv run python experiments/runners/e006_series.py --selfcheck --emit research/e006_refs/series_values.json`
+      exited 1 after 70 s with 23/26 gates passed; failed: paper50_case1a_s1_centroid, paper50_case1a_s2_centroid,
+      paper50_case1b_s2_centroid.'
+    - 'Command: the DoD import assert (no ''moduleforge.solvers'', ''skfem'' or ''thermal_fv'' in the
+      runner) exited 0. `uv run mfos gate --fast` exited 0 (''all gates passed''). `uv run ruff check
+      experiments/runners/e006_series.py` exited 0.'
+    - '50-term values from the literal M03 eqs. (20)-(25)/(27): Case 3 centre 80.6147 C (printed 80.61,
+      PASS), Case 3 cross mean 78.8712 C (printed 78.87, PASS), Case 1b s1 centroid 56.5480 C (printed
+      56.55, PASS), Case 1a s1 84.9386 C (printed 84.97, FAIL), Case 1a s2 108.3842 C (printed 108.43,
+      FAIL), Case 1b s2 59.9475 C (printed 59.94, FAIL). The computed T_1d of 53.0556 and 53.0571 C both
+      round to the printed T_b of 53.06 C.'
+    - 'Truncation scan (temporary script, not a deliverable): over single-sum N1 = 10-100 and double-sum
+      N2 = 5-100, rectangular and triangular, no convention puts all six gated printed values within 0.005
+      K; the minimum worst-case deviation is 0.0086 K at N1 = 70-73, N2 = 47-48.'
+    - 'Kernel checks: M03 eq. (30) at kappa = 1 equals eq. (18) to 0 relative difference; the N-layer
+      recursion equals eq. (30) to 1.0e-13; the N-layer recursion equals an explicit 14x14 boundary-value
+      solve for the 7-layer stack to 1.7e-12; Z(beta -> 0) tends to R1D.'
+    - Raw M03 partial sums at N = 100, 200, 400 and 800 converge monotonically to the accelerated values
+      (Case 1b and Case 2 centroids and means, Case 3 centre); the worst relative error at N = 800 is
+      1.9e-6.
+    - Converged Case 2 centroids (97.3876 / 103.7958 / 101.2631 / 99.9204 C) agree to <= 0.0012 K with
+      the scikit-fem scratch run S59 in project/memory/literature/thermal-l2-reference.md (97.388 / 103.797
+      / 101.264 / 99.921 C). That run is non-admissible but an independent method.
+    - Doubling each knob (remainder modes, s-quadrature, images and cosine terms) separately and together
+      changes every reported value by <= 1.1e-15 relative to its rise; the gate requires < 1e-7.
+    - 'N-layer equals two-layer when layers share conductivities: 2.2e-16 for Case 1b split into 5 sublayers
+      and for the 7-layer stack collapsed to k = 370 / 24. A full-top uniform source equals the 1D value
+      to 3.3e-16 for all 5 stacks; reciprocity holds to 2.5e-15; the face mean equals T_1d to 1.2e-15;
+      the heat-kernel images and cosine series agree to 6.5e-14.'
+    - 'Case A1 scales: case1a 56.102 K, case1b 6.920 K, case2 6.943 K, case3 5.112 K, nlayer_dbc 81.052
+      K. N-layer peak rises above the coolant: 81.4, 100.6, 88.2 and 91.5 K.'
+    alternative_explanations:
+    - explanation: My Muzychka implementation has a subtle error that affects only Cases 1a and 1b, for
+        example a misread layer order or parameter.
+      how_to_discriminate: 'The same code reproduces Case 3 (both values), the Case 1b s1 centroid and
+        T_b. The compound kernel equals two independently derived forms to 1e-13. Case 1b''s layer order
+        (spreader on top) is quoted from the paper text. A converged independent FE run of Case 1a/1b
+        (E006''s scikit-fem) would settle it: it should match the converged values (85.4506 / 109.1522
+        / 56.5659 / 59.9743 C), not the printed ones.'
+    - explanation: The paper used a summation convention other than m, n = 1..50.
+      how_to_discriminate: 'I scanned rectangular truncations (N1 single, N2 double, 10-100 by 5-100)
+        and triangular ones (m + n <= N2): none reproduces all six gated values. The only remaining test
+        is the authors'' Maple worksheet, which is not available.'
+    - explanation: The printed Table 1/2 values contain rounding, transcription or Maple-precision slips.
+      how_to_discriminate: This cannot be tested without the original computation. It is consistent with
+        the objective's note that the Case 2 table is also not reproducible at 50 terms.
+    discriminating_tests:
+    - 'Truncation scan over (N1, N2) and triangular truncation against the six gated printed values: done;
+      none matches (best worst-case 0.0086 K).'
+    - 'Raw partial sums converge to the accelerated values (included in the selfcheck): done; worst 1.9e-6
+      relative at N = 800.'
+    - 'Compound kernel against the N-layer recursion and an explicit linear system (included in the selfcheck):
+      done; 1e-13 and 1.7e-12.'
+    - 'Pending (E006 scope): run scikit-fem on Case 1a/1b and compare the converged centroids against
+      both the printed values and these references.'
+    recommended_actions:
+    - 'Planner or founder: decide the packet''s Case 1a/1b 50-term gate. Recommended: align it with frozen
+      F1 (gate Case 3, report Case 1a/1b as INFO). In a new attempt that is a one-line change to GATED_PRINTED;
+      series_values.json would be byte-identical. Alternative: a converged-value comparison whose tolerance
+      is justified before anyone looks at the numbers again.'
+    - Do not treat series_values.json as frozen until that decision is made; after it, freeze the payload
+      sha256 (befc5efa...) in the E006 spec.
+    - 'In E006''s F1 scikit-fem check on Case 2, integrate the FE field exactly over each source when
+      forming source means: the S59 scratch FE means differ from these references by 0.008-0.021 K while
+      its centroids agree to 0.0012 K.'
+    - In E006, expect slower than second-order convergence where a maximum sits on a source edge (Case
+      3 arm sources at (40, 50) mm and the symmetric points); A4's GCI will likely use Fs = 3 there.
+    files_written:
+    - experiments/runners/e006_series.py
+    - research/e006_refs/series_values.json
+    - research/notes/o006-reference-series.md
+    experiment_drafts: []
+- attempt: 1
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: 'FAIL uv run python experiments/runners/e006_series.py --selfcheck
+
+    /s4/mean: 2.2e-05,5.4e-06,1.4e-06,3.4e-07; case3/centre/centroid: 1.3e-05,3.3e-06,8.3e-07,2.1e-07;
+    case3/centre/mean: 1.5e-07,1.8e-08,2.2e-09,2.8e-10; worst at N=800 1.9e-06 (<= 1e-4, decreasing)
+
+    [PASS] nlayer_equals_two_layer: max rel diff case1b_split: 2.2e-16; nl_split: 2.2e-16 (<= 1e-9)
+
+    [PASS] max_dominates_samples_and_scale_positive: violations: none
+
+    [PASS] case3_symmetry_and_centre_max: arm means spread rel 0.0e+00 (<= 1e-10); centre max at 0.0e+00
+    m from (50, 50) mm (<= 1e-7 m)
+
+    [PASS] nlayer_rises_in_O002_band: max rises above coolant 81.37, 100.58, 88.16, 91.52 K (60-110 K)
+
+    [PASS] convergence_doubling_case1a: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case1b: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case2: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case3: max rel change modes=0.0e+00, quad=1.1e-15, images=1.1e-15, all=1.1e-15
+    (< 1e-7)
+
+    [PASS] convergence_doubling_nlayer_dbc: max rel change modes=0.0e+00, quad=8.0e-16, images=6.4e-16,
+    all=8.0e-16 (< 1e-7)
+
+    selfcheck: 23/26 gates passed; failed: [''paper50_case1a_s1_centroid'', ''paper50_case1a_s2_centroid'',
+    ''paper50_case1b_s2_centroid'']; 60 s
+
+
+    warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path
+    `.venv` and will be ignored; use `--active` to target the active environment instead
+
+    '
+  at: '2026-11-02T01:43:43+00:00'
