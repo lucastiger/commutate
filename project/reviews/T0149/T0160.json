@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A prescribed flux on the z = 0 Robin face is injected at the cell centre, which makes that path first order",
+      "detail": "Contract item (b) says a prescribed flux is supported on every exposed face, including z = 0, where it is 'additive to the Robin condition'. The code adds q\u00b7A straight into the bottom cell's right-hand side (F) instead of applying it at the face, where it meets the Robin condition. So the flux bypasses the half-cell resistance, and the cell and surface temperatures are too high by q\u00b7dz0/(2k). That error is first order in the bottom cell height. The correct combined face balance gives G\u00b7(T_inf + q/h \u2212 T_c), with G = A/(dz/2k + 1/h). The callable form of `flux` is applied to every exposed face, the bottom one included, so any callable that is nonzero at z = 0 hits this silently. The author's tests avoid it on purpose: test_piecewise_linear zeros the flux at z = 0. The E006/O002 cases (top flux or volumetric source, plain Robin bottom) do not use this path, and if they did it would show up as a failed convergence check, not hide one. That is why this is not a blocker.",
+      "evidence": "1-D check: q = 1e4 W/m2 into the z = 0 face, h = 1e3, k = 10, L = 1 mm. The exact field is uniform at T_inf + q/h = 310 K. Solver cell errors for nz = 1, 2, 4, 8, 16: 0.5, 0.25, 0.125, 0.0625, 0.03125 K. Observed order is exactly 1.00. The callable form gives 310.125 K at nz = 4.",
+      "suggested_check": "Fold the Robin-face flux into the Robin term (add g_rob\u00b7q/h instead of q\u00b7A on z = 0 faces) and add a test that the uniform 1-D field T_inf + q/h is reproduced exactly.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Picard convergence is not re-verified for the field actually returned",
+      "detail": "After the dT < picard_tol stop, the polish solve reuses A assembled with k(T_{n-1}). meta['picard_dT'] is the pre-polish change, and the returned field's self-consistency with k(T) is never re-checked. Intermediate Picard solves whose residual exceeds `accepted` are not raised either. A stagnating CG pass could therefore produce a small dT and stop Picard early, and only the final linear residual would be checked. I did not trigger this in practice: every k(T) case I ran converged consistently, and changing T_init (420 K versus the default) changed the result by only 3.5e-8 K.",
+      "evidence": "Code inspection of the Picard loop in solve_steady (polish branch and final check).",
+      "suggested_check": "Recompute k at the returned field and report or check max|T(k(T_final)) \u2212 T_final|, or raise when an intermediate solve misses its tolerance.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "No test covers the defective Robin-face flux path or 3-D k(T) convergence",
+      "detail": "The k(T) tests are a 1-D Kirchhoff slab, a mirror-symmetry case and an energy-balance case. None measures the observed order of accuracy in 3-D with lateral k(T) variation. The flux-on-Robin-face path has no test at all, which is how the first-order error above went unnoticed. My own 3-D k(T) manufactured check passes, so this is a gap in the tests, not a defect in the code.",
+      "evidence": "See the checks performed: 3-D SiC k(T) manufactured solution, orders 1.89 and 1.97.",
+      "suggested_check": "Add a 3-D k(T) manufactured observed-order test and a z = 0 flux test.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "A 0-d numpy array flux spec is rejected with a misleading shape error",
+      "detail": "flux={(2, 1): np.array(1e4)} raises 'must have shape (nx, ny, nz)', while np.float64(1e4) and plain floats work. This is cosmetic and causes no silent misbehaviour.",
+      "evidence": "Scratch run: ValueError 'flux array for face (2, 1) must have shape (1, 1, 1)'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition of done. tests/unit/solvers/test_thermal_fv.py: 18 passed. `uv run pytest -q -m 'not slow' tests/unit`: 368 passed. `uv run ruff check .`: clean. I also ran the slow 1.18 M-cell test: it passes in 9.0 s.",
+    "Wrote my own Fourier-cosine series for a single-layer rectangular flux channel: adiabatic sides, Robin bottom (h = 4000), off-centre 2x3 mm patch at 2e6 W/m2, k = 150. The series converges to 5e-6 K by M = 4000 terms. Solver patch-centroid errors on cosine-clustered grids that conform to the patch edges: 0.181, 0.0359, 0.0081 K (orders 2.33, 2.14). Patch-mean errors: 0.440, 0.123, 0.032 K (orders about 1.85, 1.94). Surface-maximum errors on uniform grids: 0.160, 0.048, 0.0067 K (converging, pre-asymptotic order).",
+    "3-D manufactured solution with a SiC Layer k(T) = k0 (T/300)^-1.49, with k varying 72 % over the field. I derived the source and boundary data by hand and solved on smoothly non-uniform grids N = 8, 16, 32. Max cell errors: 0.468, 0.127, 0.032 K (orders 1.89, 1.97). Surface-field orders: 1.90, 1.98. Picard took 6 iterations, with energy balance about 1e-15.",
+    "Die-on-copper k(T) geometry built from the default DBC stack plus die attach and die, with voids around the copper and dies (6120 cells). A true sparse direct solve and the forced AMG-CG path differ by at most 4.4e-10 K. Changing T_init to 420 K changes the result by 3.5e-8 K. q_in = 67.5 W, equal to the exact patch power.",
+    "Stiff case (conductivity contrast 1e7, cell aspect ratio up to 100): the AMG solution, accepted at the rounding-floor residual of 4.3e-9, matches a direct solve to 6.8e-8 K. So the floor-acceptance logic does not hide an unconverged field.",
+    "Flux on the Robin face at z = 0 (adversarial use of documented contract item (b)): exactly first-order error q\u00b7dz/(2k) (0.5 K down to 0.031 K, order 1.00), against the exact uniform field.",
+    "Adversarial inputs: a negative callable h raises ValueError; a 0-d array flux spec raises a shape error; an np.float64 flux works, and its top-surface value of 311.0 K matches the closed form exactly."
+  ],
+  "caveats": [
+    "A prescribed flux on the z = 0 Robin face (contract item (b), 'additive to Robin') is only first-order accurate, with error q\u00b7dz0/(2k). The claim of correctness holds for the configurations O006/E006 use: flux on faces without Robin (top or sides, including faces next to voids), volumetric sources, and a plain Robin bottom.",
+    "Pointwise surface errors next to flux-patch edges converge at about first order (the largest column error over all columns went 0.67, 0.34, 0.17 K). That is the expected effect of the flux discontinuity at the patch edge, not a defect, but it means interior points (centroid, mean, maximum) are the ones second-order convergence applies to.",
+    "The surface maximum converges irregularly on coarse grids (orders 1.3 to 2.8 across levels). E006's three-grid GCI on maxima may land in the Fs = 3 branch.",
+    "Scope: this is the steady core only. Transient, the fixed-temperature sink of D0006, the frozen grid rule, and meta['solver_tol'] are not part of this deliverable.",
+    "The returned field's Picard self-consistency is inferred from the pre-polish dT, not re-checked after the polish solve."
+  ]
+}
