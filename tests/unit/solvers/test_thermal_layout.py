@@ -8,6 +8,7 @@ import pytest
 
 from moduleforge.generate.halfbridge import generate_layouts
 from moduleforge.solvers import thermal_layout as tl
+from moduleforge.solvers.thermal_series import box_series
 
 T_C, H = 338.15, 5000.0
 
@@ -197,9 +198,7 @@ def test_box_symmetric_sources_give_equal_values_and_converge():
     a = b = 12e-3
     s = 2e-3
     srcs = [(2e-3, 2e-3 + s, 2e-3, 2e-3 + s, 5.0), (8e-3, 8e-3 + s, 2e-3, 2e-3 + s, 5.0)]  # mirror images in x
-    # level 0 puts a single 2 mm cell across each 2 mm source (the rule's f_min = source side): too coarse to be in
-    # the asymptotic range, so the three-level study starts at level 1
-    out = tl.solve_box_stack(a, b, STACK[:5], srcs, h=H, T_c=T_C, level0=1)
+    out = tl.solve_box_stack(a, b, STACK[:5], srcs, h=H, T_c=T_C)
     v = out["values"]
     assert v["src0.tj_max"] == pytest.approx(v["src1.tj_max"], rel=1e-10)
     assert v["spread_max"] == pytest.approx(0.0, abs=1e-9)
@@ -219,3 +218,93 @@ def test_layout_study_returns_solver_tol_and_levels(layout):
     assert set(m["solver_tol"]) == set(out["values"])
     assert {"die0.tj_max", "die0.tj_mean", "die0.tj_centroid", "spread_max", "tj_max"} <= set(m["solver_tol"])
     assert max(m["energy_balance"]) < 1e-9 and m["r"] == 2.0 and m["picard_iters"] == [1, 1, 1]
+
+
+# ---------------------------------------------------------------------------------------------------- Fourier reference
+def test_series_full_source_is_1d_series_resistance():
+    a, b, P = 10e-3, 6e-3, 25.0
+    ref = box_series(a, b, STACK, [(0.0, a, 0.0, b, P)], h=H, T_c=T_C, n_modes=4)
+    rise = P / (a * b) * (sum(t / k for t, k in STACK) + 1.0 / H)
+    assert ref["src0.tj_mean"] - T_C == pytest.approx(rise, rel=1e-12)
+    assert ref["src0.tj_centroid"] - T_C == pytest.approx(rise, rel=1e-12)
+
+
+def test_series_linear_symmetric_and_converged():
+    a, b = 14e-3, 12e-3
+    s1, s2 = (2e-3, 6e-3, 3e-3, 7e-3), (8e-3, 12e-3, 3e-3, 7e-3)  # mirror images about x = a / 2
+    r = box_series(a, b, STACK, [(*s1, 10.0), (*s2, 10.0)], h=H, T_c=T_C, n_modes=300)
+    assert r["src0.tj_mean"] == pytest.approx(r["src1.tj_mean"], rel=1e-12)
+    assert r["src0.tj_centroid"] == pytest.approx(r["src1.tj_centroid"], rel=1e-12)
+    r2 = box_series(a, b, STACK, [(*s1, 20.0), (*s2, 20.0)], h=H, T_c=T_C, n_modes=300)
+    assert r2["src0.tj_mean"] - T_C == pytest.approx(2 * (r["src0.tj_mean"] - T_C), rel=1e-12)
+    r3 = box_series(a, b, STACK, [(*s1, 10.0), (*s2, 10.0)], h=H, T_c=T_C, n_modes=600)
+    assert abs(r3["src0.tj_mean"] - r["src0.tj_mean"]) < 1e-3 and abs(r3["src0.tj_centroid"] - r["src0.tj_centroid"]) < 5e-3
+
+
+def test_series_total_power_balance_through_mean_sink_temperature():
+    # the (0,0) mode alone carries the whole heat flow: its rise at the bottom face is P / (h A), so the
+    # source-mean temperature exceeds T_c + P / (h A) (all other modes add positive terms)
+    a, b, P = 14e-3, 12e-3, 30.0
+    r = box_series(a, b, STACK, [(4e-3, 9e-3, 3e-3, 8e-3, P)], h=H, T_c=T_C, n_modes=200)
+    assert r["src0.tj_mean"] - T_C > P / (H * a * b)
+
+
+BOX_CASES = {
+    "centred": (14e-3, 14e-3, [(4.5e-3, 9.5e-3, 4.5e-3, 9.5e-3, 30.0)]),
+    "near_wall": (16e-3, 12e-3, [(1e-3, 6e-3, 2e-3, 7e-3, 25.0)]),
+    "two_unequal": (16e-3, 12e-3, [(2e-3, 6.5e-3, 3e-3, 7.5e-3, 20.0), (9e-3, 13.5e-3, 3e-3, 7.5e-3, 40.0)]),
+}
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("case", sorted(BOX_CASES))
+def test_gci_is_conservative_against_fourier_series_on_partial_source_boxes(case):
+    """Frozen rule, levels 0-2: GCI >= |true error| of the finest level for every reported source value, where the
+    true error is against the converged Fourier series (``thermal_series``)."""
+    a, b, srcs = BOX_CASES[case]
+    out = tl.solve_box_stack(a, b, STACK, srcs, h=H, T_c=T_C)
+    ref = box_series(a, b, STACK, srcs, h=H, T_c=T_C, n_modes=600)
+    checked = 0
+    for name, ref_val in ref.items():
+        err = abs(out["values"][name] - ref_val)
+        gci = out["meta"]["solver_tol"][name]
+        assert gci >= err, f"{case} {name}: GCI {gci:.5f} K < true error {err:.5f} K"
+        assert err < 0.05  # the rule is accurate here, not only conservative
+        checked += 1
+    assert checked == 2 * len(srcs)
+
+
+@pytest.mark.slow
+def test_gci_conservative_at_the_coarser_level_pair_too():
+    # the same estimate computed from levels 0-2 must also bound the error of the middle level (it is an estimate of
+    # the finest, so the bound is only required for the finest; the middle level error is larger than the finest)
+    a, b, srcs = BOX_CASES["centred"]
+    runs = [tl.solve_box_level(a, b, STACK, [(*s[:4], s[4]) for s in srcs], h=H, T_c=T_C, level=lv)["values"]
+            for lv in range(3)]
+    ref = box_series(a, b, STACK, srcs, h=H, T_c=T_C, n_modes=600)["src0.tj_mean"]
+    e = [abs(r["src0.tj_mean"] - ref) for r in runs]
+    assert e[0] > e[1] > e[2]
+
+
+def test_rule_has_fixed_level0_and_no_per_case_knob():
+    import inspect
+
+    assert tl.LEVEL0 == 0
+    assert "level0" not in inspect.signature(tl.solve_layout).parameters
+    assert "level0" not in inspect.signature(tl.solve_box_stack).parameters
+
+
+def test_edge_graded_nodes_geometric_and_nested():
+    lines = np.array([0.0, 4e-3, 10e-3])
+    n0 = tl.edge_graded_nodes(lines, [4e-3], 1e-3, 0.1e-3, 2.0, 0)
+    d = np.diff(n0)
+    assert np.all(d <= 1e-3 + 1e-15) and np.all(d > 0)
+    i = int(np.searchsorted(n0, 4e-3))
+    np.testing.assert_allclose(n0[i], 4e-3, atol=1e-15)  # the edge is a node
+    # growth away from the edge on both sides: 0.1, 0.2, 0.4, 0.8 mm
+    np.testing.assert_allclose(d[i - 1], 0.1e-3, rtol=1e-12)
+    np.testing.assert_allclose(d[i], 0.1e-3, rtol=1e-12)
+    np.testing.assert_allclose(d[i + 1] / d[i], 2.0, rtol=1e-12)
+    n1 = tl.edge_graded_nodes(lines, [4e-3], 1e-3, 0.1e-3, 2.0, 1)
+    np.testing.assert_allclose(n1[::2], n0, atol=1e-15)
+    np.testing.assert_allclose(np.diff(n1)[0::2], np.diff(n0) / 2, rtol=1e-12)

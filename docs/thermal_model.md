@@ -114,3 +114,51 @@ The box-stack mode is a verification device only: the production problem is alwa
 Transient conduction; convection inside the cold plate (a uniform `h` stands for it); radiation; contact or
 interface resistances; temperature-dependent `h`; anisotropy (e.g. of the DBC); heat generation in the substrate
 (conduction losses in the copper); bond-wire and terminal conduction; solder voids and fillets.
+
+## 8. Grid rule and grid-convergence evidence (T0150, revised by T0170)
+
+The rule is frozen in `solvers/thermal_layout.py` (module docstring): mandatory grid lines at every geometry edge and layer
+interface; level-0 bulk lateral cells `h0 = min(LAT_FRAC f_min, 1 mm)` (1 mm on the generator's 0.5 mm design grid; 4x
+larger over the baseplate overhang), 2 z-cells per layer, **geometric edge cells at every die edge** (first cell
+`2 t_min` = 100 um, growth 1.5, up to the bulk size); level `l` bisects every level-0 cell `l` times; the three GCI
+levels are always 0, 1, 2 (`LEVEL0 = 0`, no per-case knob). GCI: Roache (1994/1998), `Fs` = 1.25 for monotone `p_obs` in
+[1.5, 2.5], else `Fs` = 3, `p` = min(`p_obs`, 2).
+
+**Why the edge cells.** Uniform meshes converged at `p_obs` about 1.1-1.7 on the layouts. The die-attach (k = 58) /
+copper (k = 385) wedge at the die footprint edge has a singular exponent `lambda` = 0.83 (root of
+`k1 tan(lambda pi/2) + k2 tan(lambda pi) = 0`; attach wedge 90 deg, copper wedge 180 deg), so `T ~ r^lambda` and a quasi-uniform
+mesh converges at about `2 lambda` = 1.7 with a large constant. Edge cells cut the level-0 error of the die mean from about 2 K to
+about 0.5 K. Removing patterned copper or the overhang from the layout (material map edited, same grids) did not change the
+convergence ratios, which localises the slow part at the dies, not at the substrate.
+
+**Tried and not adopted** (dev layout `side_by_side`, 2 dies per switch, seed 7, never the A3 seed; max GCI over the die
+values, level 2 cells in brackets): frozen T0150 rule 0.29 K (1.8 M); z-cells 4 everywhere 0.28 K (3.6 M); 6 z-cells in layers
+under 0.2 mm 0.29 K (2.6 M); lateral geometric grading 1.5 / 2 / 3 of every interval 0.21 / 0.18 / 0.15 K (1.8 M) but tj_max
+worse at grade 3 (0.29 K); far factor 1 0.28 K; grading toward trace edges as well (12 M cells for the u-shaped layout,
+unaffordable). Extra z-cells and z grading changed no value by more than 0.02 K.
+Adopted rule on seed 7: 0.127 K (4.6 M cells); `u_shaped` 2 dies, seed 5: 0.179 K (4.5 M); `side_by_side` 6 dies, seed 11 (50 W per
+die, 126 K rise): 0.405 K (7.2 M).
+
+**GCI is conservative on analytic cases.** `solvers/thermal_series.py` is an independent N-layer Fourier-series solution of
+section 6 (transfer matrix per mode, Carslaw and Jaeger 1959, Muzychka et al. 2003); `tests/unit/solvers/test_thermal_layout.py`
+compares, on three partial-source boxes on the seven-layer stack (centred die, die near a wall, two unequal dies), the true
+error of the finest level with the GCI of levels 0-2 for every source mean and centroid, and requires GCI >= |error| in each
+(errors 0.001-0.0045 K, GCI 0.0017-0.0095 K, the GCI exceeding the error by 1.1-5x). On the frozen T0150 rule
+the same kind of check on a 30 x 30 mm box with a 6 mm die was also conservative (centroid error 0.31 K, GCI 0.76 K) but
+useless, since h0 = 6 mm put one cell across the die; `H0_MAX` removes that. For the layouts the "truth" is unknown; the Richardson extrapolation at `p_obs` about 1.5 puts the
+level-2 error at about half of the level 1-2 change, so GCI (>= that change times 0.6-1) is conservative there too.
+
+**A3 layouts, rule as final** (`benchmarks/results/thermal_l2_convergence.json`, run once after the rule was fixed):
+
+| layout | cells L0 / L1 / L2 | peak RSS L2 | max GCI over all reported values |
+|---|---|---|---|
+| side_by_side, 6 dies per switch | 113 k / 0.91 M / 7.26 M | 6.4 GB | 0.168 K (tj_mean of one die); tj_max 0.092 |
+| u_shaped, 2 dies per switch | 70 k / 0.56 M / 4.48 M | 6.2 GB | 0.334 K (tj_max of one die); spread_max 0.118 |
+
+The T0150 rule gave 0.448 and 0.668 K. **The A4 limit of 0.025 K is not reached** and, with the observed order of 1.2-1.5 at
+the finest levels, is not reachable at an affordable size: a factor 7-13 in the level 1-2 change needs 2-3.5 more bisections,
+i.e. 460 M-5 G cells (70-700 GB of RAM), against 4.5-7.3 M cells here. The 6-die A3 layout needs 7.3 M cells at level 2 (6.4 GB RSS,
+88 s on this Mac); a 16 GB machine is enough, the 5 M-cell budget is exceeded. The remaining slow component was not localised
+further (die-edge cells, z-refinement and substrate features were excluded; the u-shaped tj_max still converges at
+`p_obs` about 1); a different discretisation near the die corners (local mesh refinement with hanging nodes, or a
+higher-order scheme) is the open option, not a finer global rule.

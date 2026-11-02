@@ -7,17 +7,27 @@ Frozen grid rule (O006; O002 and O003 reuse it unchanged)
 ---------------------------------------------------------
 Mandatory grid lines: every vertex coordinate of the baseplate outline, substrate outline, backside-Cu footprint, every
 trace and every die footprint (x and y), and every layer interface in z (including the die-attach top and die top of each
-die).  Each interval ``i`` between two consecutive mandatory lines is cut into ``n_i(level) = n_i(0) * 2**level`` equal
-cells, so **every spacing scales by exactly the constant ratio ``R = 2`` between consecutive levels** and every mandatory
-line is a grid line at every level.  The level-0 counts are
+die).  The **level-0 grid** is built from these lines as below; level ``l`` bisects every level-0 cell ``l`` times, so
+**every spacing scales by exactly the constant ratio ``R = 2`` between consecutive levels** and every coarse line is a fine
+line.  The three GCI levels are fixed: ``LEVEL0 = 0`` (levels 0, 1, 2); there is no per-case level or constant.
 
-* z: ``Z_CELLS`` = 2 cells in every layer (substrate layers, die attach, die), no grading;
-* lateral: ``n_i(0) = ceil(len_i / (m_i h0))`` with ``h0 = LAT_FRAC * f_min``, ``f_min`` the smallest interval between
-  consecutive feature lines (the smaller of the x and y values) (die, trace and box-source edges and box walls; the outline / baseplate / inset
-  lines are not feature lines), ``LAT_FRAC = 1``, and ``m_i = FAR_FACTOR = 4`` for intervals that lie wholly outside the
-  substrate outline (the baseplate overhang; smooth far field) and 1 elsewhere.  The generator geometry lies on a 0.5 mm
-  design grid, so ``f_min`` is typically 1 mm (the 0.5 mm spacing of the inset lines is not a feature), ``h0`` = 1 mm, and the
-  level 0 / 1 / 2 cells are 1 / 0.5 / 0.25 mm (finer where intervals are shorter than ``h0``).
+* z: ``Z_CELLS`` = 2 cells in every layer (substrate layers, die attach, die), no grading.  (Tried and rejected, see
+  docs/thermal_model.md section 8: 4 cells everywhere, extra cells in layers thinner than 0.2 mm, geometric z grading;
+  none changed a reported value by more than 0.02 K at twice the cell count.)
+* lateral, bulk: ``n_i(0) = ceil(len_i / (m_i h0))`` cells per interval with ``h0 = min(LAT_FRAC * f_min, H0_MAX)``,
+  ``f_min`` the smallest interval between consecutive feature lines (the smaller of the x and y values) (die, trace and
+  box-source edges and box walls; the outline / baseplate / inset lines are not feature lines), ``LAT_FRAC = 1``,
+  ``H0_MAX`` = 1 mm, and ``m_i = FAR_FACTOR = 4`` for intervals that lie wholly outside the substrate outline (the
+  baseplate overhang; smooth far field) and 1 elsewhere.  The generator geometry lies on a 0.5 mm design grid, so ``h0`` is
+  1 mm and the level 0 / 1 / 2 bulk cells are 1 / 0.5 / 0.25 mm.
+* lateral, edges: at every die edge (and every box-source edge), both sides of the line carry **geometric cells**
+  ``s_k = EDGE_FRAC * t_min * GROW**k`` (k = 0, 1, ...) until the size reaches the bulk size; ``t_min`` is the thinnest layer
+  of the stack (the 50 um die attach), ``EDGE_FRAC`` = 2, ``GROW`` = 1.5.  Each end of an interval takes less than half of
+  it, so the grid is mirror-symmetric.  The reason is the bimaterial corner where the die attach (k = 58) meets the copper
+  (k = 385) at the die footprint edge: the temperature there behaves like ``r**lambda`` with ``lambda`` about 0.83
+  (root of ``k1 tan(lambda pi/2) + k2 tan(lambda pi) = 0`` for the 90 deg attach and 180 deg copper wedges), which limits
+  uniform meshes to order ``2 lambda`` about 1.7 and a large error constant; the edge cells cut the level-0 error of the die
+  mean 2-4 times.
 
 The constants are frozen at module level.  No other tuning is made per case.
 
@@ -48,6 +58,10 @@ from moduleforge.solvers.thermal_fv import ThermalResult, solve_steady
 
 R = 2  # constant refinement ratio between consecutive levels (every spacing scales by exactly 1/R)
 Z_CELLS = 2  # level-0 cells per layer thickness
+EDGE_FRAC = 2.0  # level-0 first lateral cell at a die / source edge = EDGE_FRAC * thinnest layer thickness
+GROW = 1.5  # growth ratio of the geometric edge cells
+H0_MAX = 1.0e-3  # m, cap of the level-0 lateral cell size h0
+LEVEL0 = 0  # the first of the three GCI levels (fixed by the rule)
 LAT_FRAC = 1.0  # level-0 lateral cell = LAT_FRAC * smallest feature interval
 FAR_FACTOR = 4  # level-0 lateral cells outside the substrate outline are this many times larger
 MERGE_TOL = 1e-9  # m, grid lines closer than this are one line
@@ -82,6 +96,41 @@ def _merge(vals) -> np.ndarray:
     return np.array(out)
 
 
+def edge_graded_nodes(lines: np.ndarray, edge_lines, h0: float, s_edge: float, grow: float, level: int,
+                      far_mask=None, far_factor: float = 1.0) -> np.ndarray:
+    """Level-``level`` nodes: each interval of ``lines`` gets, at each end that is an ``edge_lines`` line, geometric
+    cells ``s_edge * grow**k`` until the size reaches ``h0`` (``far_factor * h0`` for far intervals), the rest uniform
+    cells of size <= that; then every cell is bisected ``level`` times."""
+    edge = np.array([np.min(np.abs(np.asarray(edge_lines) - v)) < MERGE_TOL if len(edge_lines) else False for v in lines])
+    out = []
+    for i in range(len(lines) - 1):
+        a, b = lines[i], lines[i + 1]
+        L = b - a
+        hmax = h0 * (far_factor if (far_mask is not None and far_mask[i]) else 1.0)
+        sizes_l, sizes_r = [], []
+        for flag, acc in ((edge[i], sizes_l), (edge[i + 1], sizes_r)):
+            if flag:
+                s = s_edge
+                while s < hmax and sum(acc) + s < 0.5 * L * (1.0 - 1e-9):  # each end takes < half: mirror-symmetric
+                    acc.append(s)
+                    s *= grow
+        rem = L - sum(sizes_l) - sum(sizes_r)
+        if rem <= 1e-12 * L:  # edge cells fill the interval: rescale
+            sz = np.array(sizes_l + sizes_r[::-1])
+            sz = sz / sz.sum() * L
+        else:
+            n_mid = max(1, int(np.ceil(rem / hmax - 1e-9)))
+            sz = np.array(sizes_l + [rem / n_mid] * n_mid + sizes_r[::-1])
+        nodes = a + np.concatenate([[0.0], np.cumsum(sz)])
+        nodes[-1] = b
+        if level:
+            m = R**int(level)
+            t = np.arange(m) / m
+            nodes = np.concatenate([(nodes[:-1, None] + np.diff(nodes)[:, None] * t[None, :]).ravel(), [b]])
+        out.append(nodes[:-1])
+    return np.concatenate(out + [[lines[-1]]])
+
+
 def _subdivide(lines: np.ndarray, counts: np.ndarray) -> np.ndarray:
     parts = [np.linspace(lines[i], lines[i + 1], int(c) + 1)[:-1] for i, c in enumerate(counts)]
     return np.concatenate(parts + [[lines[-1]]])
@@ -92,11 +141,16 @@ def feature_size(feature_x, feature_y) -> float:
     return min(float(np.diff(_merge(f)).min()) for f in (feature_x, feature_y) if len(_merge(f)) > 1)
 
 
+def level0_cell(f_min: float) -> float:
+    """Level-0 lateral cell size ``h0 = min(LAT_FRAC * f_min, H0_MAX)``."""
+    return min(LAT_FRAC * f_min, H0_MAX)
+
+
 def lateral_counts(lines, f_min: float, far_mask, level: int) -> np.ndarray:
     """Cells per interval of the mandatory lines ``lines`` at ``level`` (module docstring rule)."""
     if level < 0 or int(level) != level:
         raise ValueError("level must be a non-negative integer")
-    h0 = LAT_FRAC * f_min
+    h0 = level0_cell(f_min)
     ln = np.diff(lines)
     m = np.where(far_mask, FAR_FACTOR, 1)
     n0 = np.maximum(1, np.ceil(ln / (m * h0) - 1e-9)).astype(int)
@@ -158,8 +212,11 @@ def build_layout_grid(layout: Layout, level: int) -> LayoutGrid:
     ox0, oy0, ox1, oy1 = layout.outline.bounds
     far = lambda lines, lo, hi: (0.5 * (lines[:-1] + lines[1:]) < lo) | (0.5 * (lines[:-1] + lines[1:]) > hi)  # noqa: E731
     fmin = feature_size(fx, fy)
-    x = _subdivide(xl, lateral_counts(xl, fmin, far(xl, ox0, ox1), level))
-    y = _subdivide(yl, lateral_counts(yl, fmin, far(yl, oy0, oy1), level))
+    h0, s_edge = level0_cell(fmin), EDGE_FRAC * min(la.thickness for la in (*st.layers, st.die_attach))
+    dx = [v for d in layout.dies for v in (d.bounds[0], d.bounds[2])]
+    dy = [v for d in layout.dies for v in (d.bounds[1], d.bounds[3])]
+    x = edge_graded_nodes(xl, dx, h0, s_edge, GROW, level, far(xl, ox0, ox1), FAR_FACTOR)
+    y = edge_graded_nodes(yl, dy, h0, s_edge, GROW, level, far(yl, oy0, oy1), FAR_FACTOR)
 
     zs = [0.0]
     for la in st.layers:
@@ -268,14 +325,14 @@ def combine_levels(levels_meta: list[dict], levels_values: list[dict]) -> dict:
     }
 
 
-def solve_layout(layout: Layout, *, power_W, h: float, T_c: float, level0: int = 0, constant_k: bool = False) -> dict:
-    """Three consecutive levels ``level0..level0+2``.  Returns the finest-level values (``values``), the finest
+def solve_layout(layout: Layout, *, power_W, h: float, T_c: float, constant_k: bool = False) -> dict:
+    """Three consecutive levels ``LEVEL0..LEVEL0+2``.  Returns the finest-level values (``values``), the finest
     ThermalResult (``result``) and ``meta`` with ``solver_tol`` (GCI per value, K), ``convergence`` (module docstring),
     ``r``, ``n_cells``, ``energy_balance`` and ``picard_iters`` per level."""
     runs = []
-    for lv in range(level0, level0 + 3):
+    for lv in range(LEVEL0, LEVEL0 + 3):
         runs.append(solve_layout_level(layout, level=lv, power_W=power_W, h=h, T_c=T_c, constant_k=constant_k))
-        if lv < level0 + 2:
+        if lv < LEVEL0 + 2:
             runs[-1].pop("result")
     meta = combine_levels([r_["meta"] for r_ in runs], [r_["values"] for r_ in runs])
     meta["levels"] = [r_["meta"]["level"] for r_ in runs]
@@ -288,10 +345,9 @@ def build_box_grid(a: float, b: float, thicknesses, sources, level: int):
     fx = [0.0, a] + [s[0] for s in sources] + [s[1] for s in sources]
     fy = [0.0, b] + [s[2] for s in sources] + [s[3] for s in sources]
     xl, yl = _merge(fx), _merge(fy)
-    never = lambda lines: np.zeros(len(lines) - 1, bool)  # noqa: E731
-    fmin = feature_size(fx, fy)
-    x = _subdivide(xl, lateral_counts(xl, fmin, never(xl), level))
-    y = _subdivide(yl, lateral_counts(yl, fmin, never(yl), level))
+    h0, s_edge = level0_cell(feature_size(fx, fy)), EDGE_FRAC * min(thicknesses)
+    x = edge_graded_nodes(xl, [s[0] for s in sources] + [s[1] for s in sources], h0, s_edge, GROW, level)
+    y = edge_graded_nodes(yl, [s[2] for s in sources] + [s[3] for s in sources], h0, s_edge, GROW, level)
     zl = np.concatenate([[0.0], np.cumsum(thicknesses)])
     z = _subdivide(zl, z_counts(len(zl) - 1, level))
     layer_of = np.searchsorted(zl, 0.5 * (z[:-1] + z[1:])) - 1
@@ -323,10 +379,10 @@ def solve_box_level(a, b, layers, sources, *, h, T_c, level, picard_tol: float =
     return {"values": vals, "meta": meta, "result": res}
 
 
-def solve_box_stack(a, b, layers, sources, *, h, T_c, level0: int = 0) -> dict:
+def solve_box_stack(a, b, layers, sources, *, h, T_c) -> dict:
     """Box-stack mode at three consecutive levels, same output structure as ``solve_layout``."""
     runs = []
-    for lv in range(level0, level0 + 3):
+    for lv in range(LEVEL0, LEVEL0 + 3):
         runs.append(solve_box_level(a, b, layers, sources, h=h, T_c=T_c, level=lv))
     meta = combine_levels([r_["meta"] for r_ in runs], [r_["values"] for r_ in runs])
     meta["levels"] = [r_["meta"]["level"] for r_ in runs]
@@ -334,8 +390,8 @@ def solve_box_stack(a, b, layers, sources, *, h, T_c, level0: int = 0) -> dict:
 
 
 __all__ = [
-    "FAR_FACTOR", "LAT_FRAC", "MAT_NAMES", "R", "Z_CELLS", "LayoutGrid", "build_box_grid", "build_layout_grid",
-    "combine_levels", "feature_size", "gci_three_grid", "lateral_counts", "solve_box_level", "solve_box_stack", "solve_layout",
+    "EDGE_FRAC", "FAR_FACTOR", "GROW", "H0_MAX", "LAT_FRAC", "LEVEL0", "MAT_NAMES", "R", "Z_CELLS", "LayoutGrid", "build_box_grid", "build_layout_grid",
+    "combine_levels", "edge_graded_nodes", "feature_size", "gci_three_grid", "lateral_counts", "level0_cell", "solve_box_level", "solve_box_stack", "solve_layout",
     "solve_layout_level", "summarize_values", "z_counts",
 ]
 
