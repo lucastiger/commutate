@@ -5,7 +5,8 @@ title: 'Before E006: GCI of Tj differences between same-stratum layouts, and est
 type: investigate
 agent: scientist
 status: todo
-depends_on: []
+depends_on:
+- T0170
 description: 'Inputs for a founder decision on O006 A3/A4 (reviews T0178/T0179 of T0170: the frozen A4
   rule (Fs=3, p=2 outside p_obs [1.5, 2.5]) gives GCI = |f2-f1|, which understates the Richardson error
   when p_obs < 1, e.g. 0.966 for u_shaped tj_max; 0.025 K is unreachable at affordable size). Using the
@@ -21,9 +22,22 @@ description: 'Inputs for a founder decision on O006 A3/A4 (reviews T0178/T0179 o
   or the objective; this is a research note, not evidence.'
 context_files: []
 deliverables:
-- research/diagnoses/T0181.md
-touches: []
-definition_of_done: []
+- research/notes/o006-gci-differences.md
+- research/o006_gci/results.json
+touches:
+- research/notes/o006-gci-differences.md
+- research/o006_gci/**
+- research/scripts/o006_gci/**
+definition_of_done:
+- cmd: null
+  exists: research/notes/o006-gci-differences.md
+  timeout_s: 900
+- cmd: null
+  exists: research/o006_gci/results.json
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
 experiment: null
 risk: medium
 model: null
@@ -43,4 +57,7 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- outcome: founder_dod_added
+  summary: DoD, touches, deliverables, depends_on T0170 set (founder session)
+  at: '2026-11-02T06:36:44+00:00'

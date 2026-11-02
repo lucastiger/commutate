@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T06:36:36+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:38:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -35,8 +35,6 @@ cancelled: 30, done: 142, failed: 3, merge: 1, needs_founder: 1, todo: 5
 - T0172 `merge` builder/implement: scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review T0171) (attempt 1)
 
 ## Recent events
-- 2026-11-02T05:27:59+00:00 verified {"task": "T0172"}
-- 2026-11-02T05:28:02+00:00 run_started {"run": "T0180-critic-20261101T212802-fd08", "task": "T0180", "role": "critic", "session": "b6b3ae32-2543-4ebf-9af6-2c3b742b2119"}
 - 2026-11-02T05:34:52+00:00 run_finished {"run": "T0180-critic-20261101T212802-fd08", "status": "completed", "cost": 1.307507, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:34:55+00:00 inbox_opened {"id": "I0078", "kind": "protected_change", "subject": "T0172: merge needs founder approval"}
 - 2026-11-02T05:35:27+00:00 loop_started {"pid": 30559}
@@ -50,3 +48,5 @@ cancelled: 30, done: 142, failed: 3, merge: 1, needs_founder: 1, todo: 5
 - 2026-11-02T06:36:09+00:00 merged {"task": "T0157"}
 - 2026-11-02T06:36:34+00:00 merged {"task": "T0164"}
 - 2026-11-02T06:36:36+00:00 inbox_opened {"id": "I0079", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-02T06:36:44+00:00 task_amended {"task": "T0181", "reason": "DoD/touches/depends_on set"}
+- 2026-11-02T06:36:44+00:00 task_amended {"task": "T0165", "reason": "depends on T0181"}
