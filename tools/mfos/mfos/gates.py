@@ -41,8 +41,12 @@ def run_cmd(cmd: str, cwd: Path, timeout_s: int = 900) -> CheckResult:
 
 
 def run_gate(store: Store, cwd: Path, tier: str = "fast") -> list[CheckResult]:
-    cmds = store.policy.get("gates", {}).get(tier, [])
-    return [run_cmd(c, cwd) for c in cmds]
+    # Per-tier timeout from policy ([gates] <tier>_timeout_s). The full gate runs the whole suite, slow tests included,
+    # often beside a running agent: at the fixed 900 s it timed out on T0149 (2026-11-02) and the timeout was sent back
+    # to the builder as a code failure.
+    gates = store.policy.get("gates", {})
+    timeout_s = int(gates.get(f"{tier}_timeout_s", 900))
+    return [run_cmd(c, cwd, timeout_s) for c in gates.get(tier, [])]
 
 
 def run_dod(store: Store, t: m.Task, cwd: Path, include_gate: bool = True) -> list[CheckResult]:

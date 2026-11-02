@@ -69,3 +69,19 @@ def test_a_killed_run_is_billed_from_its_session_transcript(sandbox, tmp_path, m
     resumed = RunRecord(run_id="r2", task_id="T1", role="builder", session_id="s1", cwd=".",
                         started="2026-10-05T09:08:53+00:00", resumed_from="s1")
     assert abs(runner._net_of_session(resumed, 4.8149814) - 0.3318156) < 1e-6  # the resume's own share
+
+
+class _Policy:
+    def __init__(self, gates):
+        self.policy = {"gates": gates}
+
+
+def test_gate_tiers_take_their_timeout_from_policy(tmp_path):
+    """2026-11-02: T0149's full gate hit the fixed 900 s on the whole suite and went back to the builder as a code
+    failure; each tier now reads [gates] <tier>_timeout_s."""
+    from mfos.gates import run_gate
+    slow = _Policy({"fast": ["sleep 3"], "fast_timeout_s": 1})
+    (r,) = run_gate(slow, tmp_path, "fast")
+    assert not r.ok and r.output.startswith("TIMEOUT after 1s")
+    (r,) = run_gate(_Policy({"full": ["true"]}), tmp_path, "full")  # no key: the 900 s default
+    assert r.ok

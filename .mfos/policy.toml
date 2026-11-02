@@ -111,6 +111,8 @@ full = [
   "uv run python scripts/check_licenses.py",
   "uv run mfos doctor --ci",
 ]
+fast_timeout_s = 900               # per command
+full_timeout_s = 2700              # per command; the full suite took 411 s alone on the M5 (2026-10-31), longer beside agents
 
 [planning]
 max_new_tasks = 8

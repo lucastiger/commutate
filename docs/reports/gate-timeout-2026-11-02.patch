@@ -1,0 +1,50 @@
+--- a/tools/mfos/mfos/gates.py
++++ b/tools/mfos/mfos/gates.py
+@@ -41,8 +41,12 @@
+ 
+ 
+ def run_gate(store: Store, cwd: Path, tier: str = "fast") -> list[CheckResult]:
+-    cmds = store.policy.get("gates", {}).get(tier, [])
+-    return [run_cmd(c, cwd) for c in cmds]
++    # Per-tier timeout from policy ([gates] <tier>_timeout_s). The full gate runs the whole suite, slow tests included,
++    # often beside a running agent: at the fixed 900 s it timed out on T0149 (2026-11-02) and the timeout was sent back
++    # to the builder as a code failure.
++    gates = store.policy.get("gates", {})
++    timeout_s = int(gates.get(f"{tier}_timeout_s", 900))
++    return [run_cmd(c, cwd, timeout_s) for c in gates.get(tier, [])]
+ 
+ 
+ def run_dod(store: Store, t: m.Task, cwd: Path, include_gate: bool = True) -> list[CheckResult]:
+--- a/.mfos/policy.toml
++++ b/.mfos/policy.toml
+@@ -111,6 +111,8 @@
+   "uv run python scripts/check_licenses.py",
+   "uv run mfos doctor --ci",
+ ]
++fast_timeout_s = 900               # per command
++full_timeout_s = 2700              # per command; the full suite took 411 s alone on the M5 (2026-10-31), longer beside agents
+ 
+ [planning]
+ max_new_tasks = 8
+--- a/tests/mfos/test_gates.py
++++ b/tests/mfos/test_gates.py
+@@ -69,3 +69,19 @@
+     resumed = RunRecord(run_id="r2", task_id="T1", role="builder", session_id="s1", cwd=".",
+                         started="2026-10-05T09:08:53+00:00", resumed_from="s1")
+     assert abs(runner._net_of_session(resumed, 4.8149814) - 0.3318156) < 1e-6  # the resume's own share
++
++
++class _Policy:
++    def __init__(self, gates):
++        self.policy = {"gates": gates}
++
++
++def test_gate_tiers_take_their_timeout_from_policy(tmp_path):
++    """2026-11-02: T0149's full gate hit the fixed 900 s on the whole suite and went back to the builder as a code
++    failure; each tier now reads [gates] <tier>_timeout_s."""
++    from mfos.gates import run_gate
++    slow = _Policy({"fast": ["sleep 3"], "fast_timeout_s": 1})
++    (r,) = run_gate(slow, tmp_path, "fast")
++    assert not r.ok and r.output.startswith("TIMEOUT after 1s")
++    (r,) = run_gate(_Policy({"full": ["true"]}), tmp_path, "full")  # no key: the 900 s default
++    assert r.ok
