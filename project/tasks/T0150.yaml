@@ -4,7 +4,7 @@ title: 'Thermal L2 on Layouts and box stacks: conforming grid builder, frozen gr
   in meta[''solver_tol''], A4 convergence/cost benchmark'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0149
 description: 'Implement src/moduleforge/solvers/thermal_layout.py on top of thermal_fv; do not edit solvers/__init__.py.
@@ -91,4 +91,82 @@ lens: null
 trigger: null
 rationale: Grid rule frozen before E006 registration (scope_in), GCI estimator of A4 and F2, A3's L2 side,
   and the cheapest early falsifier of A4.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "I implemented `thermal_layout.py`, the tests and the A4 benchmark. All DoD commands pass.\
+    \ The A4 numbers are bad: the frozen rule gives a GCI of 0.45 K and 0.67 K against the 0.025 K threshold.\n\
+    \n**Implementation.** `solvers/thermal_layout.py` covers both modes:\n- **Layout mode:** builds docs/thermal_model.md's\
+    \ model on a conforming grid. Lines sit on every layer interface and on every outline, backside-Cu,\
+    \ trace and die edge.\n- **Box-stack mode:** a uniform N-layer box with rectangular isoflux sources,\
+    \ adiabatic sides and h at the bottom.\n- **Grid rule:** frozen at module level.\n  - Each interval\
+    \ between mandatory lines is cut into n0·2^level equal cells, so every spacing scales by exactly r\
+    \ = 2.\n  - z: 2 cells per layer, no grading.\n  - Lateral: level-0 cell = f_min (smallest feature\
+    \ inte"
+  report:
+    status: completed
+    summary: "I implemented `thermal_layout.py`, the tests and the A4 benchmark. All DoD commands pass.\
+      \ The A4 numbers are bad: the frozen rule gives a GCI of 0.45 K and 0.67 K against the 0.025 K threshold.\n\
+      \n**Implementation.** `solvers/thermal_layout.py` covers both modes:\n- **Layout mode:** builds\
+      \ docs/thermal_model.md's model on a conforming grid. Lines sit on every layer interface and on\
+      \ every outline, backside-Cu, trace and die edge.\n- **Box-stack mode:** a uniform N-layer box with\
+      \ rectangular isoflux sources, adiabatic sides and h at the bottom.\n- **Grid rule:** frozen at\
+      \ module level.\n  - Each interval between mandatory lines is cut into n0·2^level equal cells, so\
+      \ every spacing scales by exactly r = 2.\n  - z: 2 cells per layer, no grading.\n  - Lateral: level-0\
+      \ cell = f_min (smallest feature interval, 1 mm for both benchmark layouts), 4× coarser over the\
+      \ baseplate overhang. That gives 1, 0.5 and 0.25 mm cells at levels 0, 1 and 2.\n- **GCI:** implemented\
+      \ exactly as the packet defines it (monotone with p_obs in [1.5, 2.5]: Fs 1.25, p = min(p_obs, 2);\
+      \ otherwise Fs 3, p 2). `solve_layout` and `solve_box_stack` put it in `meta['solver_tol']`. `meta['convergence']`\
+      \ has the three values, p_obs, r, cell counts, energy balance and Picard iterations per level.\n\
+      \n**Benchmark.** Each level runs in its own subprocess, so wall time and peak RSS are per level.\n\
+      - **Power:** a level-0 calibration set 43.9 W per die for side_by_side_6 and 63.4 W for u_shaped_2.\
+      \ The hottest Tj max rise is about 83.5 K and 83.1 K at the finest level, inside the 60–110 K window.\n\
+      - **Levels:** level 2 has 1.72 M cells and takes about 75 s and 1.5–1.7 GB. Energy balance is below\
+      \ 1e-13 at every level, with 5–6 Picard iterations.\n\n| Layout | Max GCI over all reported values\
+      \ | Tj max GCI | Tj max p_obs |\n|---|---|---|---|\n| side_by_side_6 | 0.448 K | 0.12–0.29 K | 1.5–1.9\
+      \ |\n| u_shaped_2 | 0.668 K | 0.19–0.48 K | about 1.1–1.7 |\n\nThe Tj max rise falls by about 1\
+      \ K, then 0.3 K, between levels. I did not tune the rule to this benchmark.\n\n**Tests.** `test_thermal_layout.py`\
+      \ has 19 tests. They cover edge-on-grid-line at levels 0–2, constant ratio, material assignment\
+      \ at sample points, energy balance, linear scaling, and the GCI function against hand-computed monotone,\
+      \ oscillatory, out-of-range-p and converged cases. The box stack with a full-top source matches\
+      \ 1D series resistance to 1e-9. One layout three-level study is marked slow, about 20 s."
+    concerns:
+    - 'A4 as measured: the frozen rule (1/0.5/0.25 mm lateral, 2 z-cells per layer) gives a max GCI of
+      0.448 K (side_by_side_6) and 0.668 K (u_shaped_2) against the 0.025 K threshold, about 18-27x too
+      large. Observed orders are only about 1.1-1.9, and monotone convergence is not clean for some values,
+      such as the spread. Reported as-is in benchmarks/results/thermal_l2_convergence.json; I did not
+      tune the rule to the benchmark. As things stand A4 is not met.'
+    - Level 2 is cheap (1.7 M cells, about 75 s, about 1.7 GB), so the founder could afford a finer rule,
+      for example LAT_FRAC 0.5 (about 14 M cells at the finest level, which probably needs a burst VM)
+      or more z-cells in the thin layers. I did not do this because the task says not to tune the rule
+      beyond what it documents. The current constants (LAT_FRAC 1, Z_CELLS 2) are the ones to revisit.
+    - The rule defines the lateral feature size as the smallest interval between consecutive feature lines
+      (die, trace and box-source edges, box walls). For a box stack whose source side equals f_min, level
+      0 puts a single cell across the source. My box test therefore runs its three-level study from level
+      1 (`level0=1`), where convergence is monotone and about second order. E006 box cases should pick
+      `level0` accordingly.
+    - peak_rss_mb is the child process's ru_maxrss, which is bytes on macOS and is converted accordingly.
+      The values are not comparable to Linux runs without the same conversion, which the script does.
+    - --smoke runs levels 0 and 1 only and writes to a temporary file, so it never overwrites the committed
+      full result.
+    files_changed:
+    - src/moduleforge/solvers/thermal_layout.py
+    - tests/unit/solvers/test_thermal_layout.py
+    - benchmarks/thermal_l2_convergence.py
+    - benchmarks/results/thermal_l2_convergence.json
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_layout.py
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_l2_convergence.py --smoke
+      exit_code: 0
+    - cmd: uv run python benchmarks/thermal_l2_convergence.py
+      exit_code: 0
+    - cmd: uv run python -c "import json; d=json.load(open('benchmarks/results/thermal_l2_convergence.json'));
+        assert d['mode']=='full'; ... (DoD schema assertion)"
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
