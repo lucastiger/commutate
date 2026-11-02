@@ -21,14 +21,18 @@ description: 'Write the series references in experiments/runners/e006_series.py 
   changes every reported value by less than 1e-7 relative. (4) `--selfcheck` runs F1''s gates for these
   references and exits non-zero on any failure: convergence under doubling; the Muzychka implementation
   truncated at the paper''s 50 terms reproduces the printed Case 3 values (80.61 C maximum at the centre,
-  78.87 C source mean), and the printed Case 1a/1b centroids, to their printed digits; the N-layer series
-  equals the two-layer series (relative 1e-9) when layers share a conductivity; the full-top uniform source
-  equals the 1D series resistance. (5) `--emit PATH` writes every reference value (case, source, point
-  type, x, y, T) plus each case scale to JSON with its sha256; write research/e006_refs/series_values.json.
-  (6) research/notes/o006-reference-series.md: formulas with equation numbers and citations, parameters,
-  the acceleration method, gate results, and the A1/A2 point list per case. Out of scope: any comparison
-  with the L2 or with scikit-fem. F1 requires the references to be frozen before the first solver comparison,
-  and the scikit-fem agreement checks belong to E006.'
+  78.87 C source mean) to their printed digits (this is O006''s F1 gate); the 50-term comparison with
+  the printed Case 1a/1b centroids is reported in the note and in --selfcheck output as informational,
+  not gated, together with attempt 2''s diagnosis that the printed equations truncated at 50 terms cannot
+  reproduce those tables (founder decision 2026-11-02 aligning this brief with the frozen O006 F1, which
+  names Case 3 only; no other gate is relaxed); the N-layer series equals the two-layer series (relative
+  1e-9) when layers share a conductivity; the full-top uniform source equals the 1D series resistance.
+  (5) `--emit PATH` writes every reference value (case, source, point type, x, y, T) plus each case scale
+  to JSON with its sha256; write research/e006_refs/series_values.json. (6) research/notes/o006-reference-series.md:
+  formulas with equation numbers and citations, parameters, the acceleration method, gate results, and
+  the A1/A2 point list per case. Out of scope: any comparison with the L2 or with scikit-fem. F1 requires
+  the references to be frozen before the first solver comparison, and the scikit-fem agreement checks
+  belong to E006.'
 context_files:
 - project/objectives/O006/objective.yaml
 - project/memory/literature/thermal-l2-reference.md
@@ -410,3 +414,7 @@ history:
 
     '
   at: '2026-11-02T02:10:15+00:00'
+- outcome: founder_brief_amended
+  summary: Case 1a/1b 50-term paper reproduction made informational to match O006 F1 (Case 3 only); attempt
+    2 showed the printed equations cannot reproduce those tables at 50 terms.
+  at: '2026-11-02T02:11:07+00:00'

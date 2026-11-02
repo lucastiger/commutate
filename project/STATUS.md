@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T02:10:18+00:00 from repository state — do not edit_
+_generated 2026-11-02T02:11:11+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 29, done: 123, failed: 3, running: 2, todo: 6
 - T0162 `running` planner/plan: Plan O006 (periodic) (attempt 1)
 
 ## Recent events
-- 2026-11-02T01:43:43+00:00 task_failed_attempt {"task": "T0151", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T01:43:43+00:00 run_finished {"run": "T0161-critic-20261101T173737-63fe", "status": "completed", "cost": 1.515283, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:45:46+00:00 inbox_resolved {"id": "I0062", "status": "approved", "note": "P3 research note accepted; 0.25/0.125 mm levels to be run on a burst VM by the founder.", "by": "human"}
 - 2026-11-02T01:53:41+00:00 inbox_opened {"id": "I0063", "kind": "protected_change", "subject": "T0149: merge needs founder approval"}
@@ -48,3 +47,4 @@ cancelled: 29, done: 123, failed: 3, running: 2, todo: 6
 - 2026-11-02T02:08:53+00:00 run_finished {"run": "T0151-scientist-20261101T175342-05bc", "status": "completed", "cost": 2.027862, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T02:10:15+00:00 task_failed_attempt {"task": "T0151", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T02:10:18+00:00 run_started {"run": "T0162-planner-20261101T181018-498e", "task": "T0162", "role": "planner", "session": "61ff613e-63cd-4e22-aa4f-badd5fce13fb"}
+- 2026-11-02T02:11:07+00:00 task_amended {"task": "T0151", "reason": "align brief with O006 F1 (Case 3 only)"}
