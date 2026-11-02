@@ -1,0 +1,46 @@
+id: T0181
+objective: O006
+title: 'Before E006: GCI of Tj differences between same-stratum layouts, and estimator conservativeness
+  at the singular die-attach corner'
+type: investigate
+agent: scientist
+status: todo
+depends_on: []
+description: 'Inputs for a founder decision on O006 A3/A4 (reviews T0178/T0179 of T0170: the frozen A4
+  rule (Fs=3, p=2 outside p_obs [1.5, 2.5]) gives GCI = |f2-f1|, which understates the Richardson error
+  when p_obs < 1, e.g. 0.966 for u_shaped tj_max; 0.025 K is unreachable at affordable size). Using the
+  merged T0170 grid rule (levels 0-2) on development layouts only (seeds other than 20261101): (1) for
+  at least 3 pairs of same-stratum layouts (same family, dies per switch and die size), report per-die
+  and per-layout Tj max, the pairwise differences of Tj max, and for each the observed order, the Richardson
+  error estimate and the GCI under the frozen O006 rule and under a candidate corrected rule (Fs = 3 with
+  p = p_obs clipped to [0.5, 2] when p_obs is outside [1.5, 2.5]); (2) build one case that contains the
+  bimaterial die-attach-on-copper corner and compare those estimators with the true error against a much
+  finer reference (further levels on a cropped domain, or local refinement), to see which rule is conservative
+  in the singular regime; (3) state the absolute and difference accuracies reachable within 16 GB. Write
+  research/notes/o006-gci-differences.md and research/o006_gci/results.json. Do not change src/, thresholds
+  or the objective; this is a research note, not evidence.'
+context_files: []
+deliverables:
+- research/diagnoses/T0181.md
+touches: []
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T06:36:04+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

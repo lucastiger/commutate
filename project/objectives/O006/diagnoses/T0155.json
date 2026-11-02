@@ -1,0 +1,51 @@
+{
+  "summary": "FastHenry 3.0wr is NOT usable at module scale on the hardware agents may use. results.json has usable=false, so under D0009 band component (b) becomes l2_layout's discretisation estimate doubled.\n\nThe verdict follows a criterion written into run_fh.py before the first ladder run:\n- **U1 (levels completed): passes.**\n- **U2 (multipole agrees with direct LU within 1e-3): passes.** Multipole order 4 is \u22123.3e-4 and \u22121.4e-4 against direct LU on the d0 and d1 decks.\n- **U3 (FastHenry's own discretisation estimate \u2264 l2_layout's from P3): fails.** FastHenry's estimate is 2.44\u20133.09 nH (11\u201314% of L) against l2_layout's 1.70\u20131.81 nH. Only two lateral levels fit in a 6 GB per-run cap on this 16 GB Mac. The third level (0.25 mm traces, 413k filaments) projects to about 9.8 GB and 2.4 h per run, so it was recorded as not_run.\n\nWhat FastHenry measured (two-level extrapolation plus a thickness correction):\n- **L vs l2_layout:** within the estimates, FastHenry is +0.8% / +1.0% (base, 10 / 20 MHz), +0.9% / +1.2% (die_shift) and +2.3% / +2.5% (trace_width) above P3's extrapolated l2_layout values. The combined estimate is about \u00b119\u201322%.\n- **die_shift ratio:** differs by +0.0015, inside the combined estimate of 0.0024.\n- **trace_width ratio:** differs by +0.013 (\u00b10.022), because FastHenry's value is not converged. A post-hoc check, labelled as such in the note and not used in any estimate, traces this to the 4 mm plane cell at the coarsest level. With 2 mm planes the ratio is 0.9699, against l2_layout's 0.9692.\n\nOutputs (research note, not evidence, F4):\n- the exporter: decks in metres, `--selftest` exits 0;\n- the runner and summariser;\n- runs.jsonl, results.json, binary_check.json, d0_solver_diag.json, crash_repeat.json;\n- the note.\n\nCommands and exit codes:\n- `uv run python research/scripts/o006_p4/fh_export.py --selftest`: 0\n- `run_fh.py --binary-check`: 0\n- `run_fh.py --plan solver --only-geometry case4_base`: stopped by the background job's 600 s limit during the optional order-2 d2 run; all needed records were saved\n- `run_fh.py --plan main`: 0 for the base run and for the die_shift + trace_width run\n- `run_fh.py --plan solver_o4 --only-geometry case4_base`: 0\n- inline d0 tolerance/order diagnostic and crash-repeat loop: 0\n- `run_fh.py --plan posthoc`: 0\n- `run_fh.py --summarise`: 0\n- the results.json schema check from the definition of done: 0\n- `uv run ruff check research/scripts/o006_p4/`: 0\n- `uv run mfos gate --fast`: 0, run twice\n\nNothing was committed.",
+  "failure_class": "none",
+  "root_cause": "FastHenry's own discretisation uncertainty is larger than the error it is meant to check. Multipole memory grows at about 23.7 kB per filament and the thickness-resolved Case 4 decks grow about 4x in filaments per lateral halving, so only two lateral levels fit in the 6 GB per-run cap. The two-level GCI (safety factor 3, assumed order 1) on a \u22124.0% k0\u2192k1 change then dominates. A direct LU solve stops at about 15\u201320k filaments on 16 GB, so it can run only thin decks as a solver check. Agents may not launch burst VMs, so the third level was not run.",
+  "confidence": 0.8,
+  "evidence": [
+    "Binary self-test (D0002 bar, 1 kHz) gives 5.704256 nH, matching D0002's 5.704 nH. But the binary's sha256 is eaa6d6fc\u20262d14, not D0002's recorded 15bfbcd1\u20267365: the binary was rebuilt 2026-10-31 (research/o006_p4/binary_check.json).",
+    "FastHenry's default multipole order (2) reads L 0.78% low against direct LU on d0 (25.5681 vs 25.7702 nH). Tightening the GMRES tolerance from 1e-4 to 1e-6 changes nothing. Orders 4 and 6 agree to 2e-5 and are \u22123.3e-4 from LU. GMRES with the direct matvec equals LU (d0_solver_diag.json).",
+    "Ladder, L at 10 MHz (base / die_shift / trace_width): k0 (1 mm traces, 4 mm planes, nh=3, 25k filaments) 24.631 / 24.328 / 23.719 nH; k1 (102k filaments, 1203\u20131246 s, 2.4\u20132.9 GB) 23.651 / 23.356 / 22.931 nH; k2 not run (projected 9.6 GB > 6 GB cap).",
+    "Thickness study at k0, nh 3\u21925\u21929: \u22120.21 then \u22120.11 nH (base), monotone with p 0.85\u20131.16. nh 1\u21923 lowers L by 4.5%.",
+    "Extrapolated FastHenry L (base, 10 MHz) is 22.36 \u00b1 3.09 nH against l2_layout's 22.18 \u00b1 1.75 nH: a difference of +0.18 nH (+0.8%).",
+    "Crashes: 8 of 32 order-4 multipole attempts ended in SIGSEGV 1\u20134 s in, during preconditioner formation (Wilson 95% CI 13\u201342%). The same deck both crashes and succeeds, and no run crashed after the preconditioner was formed (k1: 3 of 3 completed).",
+    "Post-hoc: k0 with 2 mm planes gives a trace_width ratio of 0.96988 (k0 0.96299, k1 0.96956, l2_layout 0.9692). Base L moves \u22120.195 nH from the plane pitch alone."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "FastHenry's large k0\u2192k1 change comes from a defect in the exporter (contacts snapped to the nearest cell, wire ends overlapping the copper, dropped die-internal segments) rather than ordinary discretisation, and the deck would converge faster if built differently.",
+      "how_to_discriminate": "The k2 burst run: a contracting sequence with k1\u2192k2 at about half of k0\u2192k1 means ordinary first-order discretisation. Also an export using bilinear-equivalent contacts (split each foot over its 4 surrounding cells with resistive ties) compared at k0/k1."
+    },
+    {
+      "explanation": "The \u22120.78% d0 discrepancy is a GMRES tolerance effect, not multipole expansion error.",
+      "how_to_discriminate": "Already run: -t 1e-6 at order 2 reproduced the -t 1e-4 value exactly, while order 4/6 moved it to \u22123.3e-4 of LU. This alternative is refuted."
+    },
+    {
+      "explanation": "The crashes depend on the geometry (trace_width deck) rather than being intermittent.",
+      "how_to_discriminate": "Already run: the same k0_nh1 deck crashed 1 of 6 times (trace_width) and 3 of 6 times (base). This alternative is refuted."
+    }
+  ],
+  "discriminating_tests": [
+    "Founder burst run of k2 for all three geometries (scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o006_p4/run_fh.py --plan ladder --mem-cap-mb 60000 --timeout-s 20000\" research/o006_p4, about 3 h on n2-highmem-32), then --summarise. If FastHenry's three-level estimate is \u2264 l2_layout's 1.75 nH, U3 passes; if k1\u2192k2 is much more than half of k0\u2192k1, the verdict stands.",
+    "Thickness study at k1 (nh 5, 9; about 170k and 300k filaments, a burst VM) to test whether the thickness correction separates from the lateral one, which is doubtful for the trace_width ratio."
+  ],
+  "recommended_actions": [
+    "Under D0009, use l2_layout's discretisation estimate doubled (2 \u00d7 P3's abs_est_H, about 2 \u00d7 7.9\u20138.2% of L) as band component (b), and record that FastHenry was judged not usable under P4's pre-stated criterion U3.",
+    "Founder: decide whether to run the k2 burst job before 2026-11-27 (about 3 h, about 10 GB per geometry). If it passes U3, band (b) could become the measured FH\u2212l2 difference (+0.8 to +2.5%). Any new ladder should use a plane pitch \u2264 2 mm (post-hoc \u00a73.4).",
+    "Founder: note that ~/.local/bin/fasthenry no longer has D0002's recorded binary sha256 (it was rebuilt 2026-10-31). The self-test matches to 7 digits, but D0002 says any change of build is a new decision; either re-record the hash or rebuild from the pin.",
+    "Any future FastHenry use at module scale should run multipole at -o 4 or higher (the default order 2 was 0.78% low), never parse output from a crashed run (8 of 32 early crashes seen), and retry crashed runs (they fail within seconds)."
+  ],
+  "files_written": [
+    "research/scripts/o006_p4/fh_export.py",
+    "research/scripts/o006_p4/run_fh.py",
+    "research/o006_p4/results.json",
+    "research/o006_p4/runs.jsonl",
+    "research/o006_p4/binary_check.json",
+    "research/o006_p4/d0_solver_diag.json",
+    "research/o006_p4/crash_repeat.json",
+    "research/notes/o006-p4-fasthenry-feasibility.md"
+  ],
+  "affects_acceptance_criteria": false,
+  "experiment_drafts": []
+}
