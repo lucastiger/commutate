@@ -1,11 +1,12 @@
 # ModuleForge status
-_generated 2026-11-02T05:23:50+00:00 from repository state — do not edit_
+_generated 2026-11-02T05:24:05+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (5 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0074** [protected_change] T0157: merge needs founder approval
 - **I0075** [protected_change] T0164: merge needs founder approval
 - **I0076** [protected_change] T0155: merge needs founder approval
+- **I0077** [protected_change] T0170: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -30,16 +31,15 @@ _generated 2026-11-02T05:23:50+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 138, failed: 3, merge: 1, needs_founder: 3, running: 1, todo: 3
+cancelled: 30, done: 138, failed: 3, needs_founder: 4, running: 1, todo: 3
 
 - T0155 `needs_founder` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 - T0157 `needs_founder` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
 - T0164 `needs_founder` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
-- T0170 `merge` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
+- T0170 `needs_founder` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 - T0172 `running` builder/implement: scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review T0171) (attempt 1)
 
 ## Recent events
-- 2026-11-02T04:09:41+00:00 run_started {"run": "T0164-scientist-20261101T200941-306f", "task": "T0164", "role": "scientist", "session": "948820b8-8023-4c11-b4fc-11ed3b22783c"}
 - 2026-11-02T04:17:05+00:00 run_finished {"run": "T0164-scientist-20261101T200941-306f", "status": "completed", "cost": 1.118278, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T04:19:22+00:00 verified {"task": "T0164"}
 - 2026-11-02T04:19:25+00:00 inbox_opened {"id": "I0075", "kind": "protected_change", "subject": "T0164: merge needs founder approval"}
@@ -54,3 +54,4 @@ cancelled: 30, done: 138, failed: 3, merge: 1, needs_founder: 3, running: 1, tod
 - 2026-11-02T05:10:47+00:00 run_finished {"run": "T0178-critic-20261101T210358-a9cd", "status": "completed", "cost": 1.432937, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:10:50+00:00 run_started {"run": "T0172-builder-20261101T211050-be48", "task": "T0172", "role": "builder", "session": "f6bcdb11-2d4e-4ab4-b932-fe1351785bb3"}
 - 2026-11-02T05:14:27+00:00 run_finished {"run": "T0179-critic-20261101T210819-d6fa", "status": "completed", "cost": 1.98682, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T05:24:03+00:00 inbox_opened {"id": "I0077", "kind": "protected_change", "subject": "T0170: merge needs founder approval"}
