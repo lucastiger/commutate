@@ -99,3 +99,29 @@ Changes made by the founder session with these answers, which follow from the re
   refinement, not straight to the fallback (T0188: a smooth-case discretisation shortfall is not a model error).
 - No kill criterion on A3 (T0187 suggested one). A gross disagreement cannot tell which solver is wrong, so it stays
   INCONCLUSIVE and goes to diagnosis.
+
+## Addendum 2 (2026-11-02, after reviews T0190/T0191)
+Both reviews accepted with caveats (project/reviews/OBJ-O006/T0190.json, T0191.json). Founder answers of
+2026-11-02: fix the estimator now, tighten F5 to 0.25 K, and approve without a further review round. Texts:
+docs/reports/o006-criteria-change-D0013-addendum2.patch and docs/reports/metrics-o006-D0013-addendum2.patch.
+- **Text fix (both reviews, major):** A3's first clause still said "two generator layouts", and F4 still said A3 uses
+  dev seeds only. Every clause now names the five layouts. F4 covers the three sealed-seed fresh layouts, and E006's
+  spec asserts the five fingerprints.
+- **Estimator:**
+  - Grid steps below 1e-3 K (ten times the Picard tolerance) count as zero. Before, a ±4e-5 K finest step could flip
+    the GCI fourfold at rho = 0.
+  - The oscillatory branch uses Roache's factor 3 instead of 1.25. T0191's two-term error scan found 1.25
+    understating the error by up to 1.6x. The test suite checks that factor 3 bounds it.
+  - The development maximum at 60 K is unchanged at 0.306 K (52 sequences, none oscillatory).
+- **F5:** scikit-fem's own estimate must be at most 0.25 K (was 0.5 K), so that a 1.0 K L2/scikit-fem disagreement
+  cannot pass A3 (T0191). On the development layouts scikit-fem's estimate is about 0.13-0.17 K at 60 K. This tightens
+  a check; nothing is loosened.
+- **scikit-fem z term:** 2.5 |dTj_z|, Roache's 1.25 times the first-order error of the undoubled grid. The evaluator
+  recomputes it from two columns (mfos.metrics two_grid_term), instead of taking a runner-computed column.
+- **Wording:**
+  - A4 is a precision criterion and A3 the only accuracy criterion on generator geometry.
+  - The convergence direction of both solvers is reported per A3 die; same-side pairs are flagged as weak for A3.
+  - The manufactured-case route is defined: max |T_L2 − T_ref| < 0.25 K, and the excess over 0.05 K is at most the
+    case's own GCI.
+- **For O003's revision:** deduct GCI_ref + GCI_best per run, and spot-check the A3 metric on at least one O003
+  reference per stack type. The estimator's conservatism is shown here on the default DBC stack only (T0190).

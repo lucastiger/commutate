@@ -169,7 +169,7 @@ def test_o006_gci_capped_branches_by_hand():
     assert mx.gci_capped(410.0, 410.0, 410.5) == math.inf  # d1 = 0 < |d2|
     assert mx.gci_capped(410.0, 410.5, 410.0) == math.inf  # oscillating with equal amplitude: rho = -1
     assert mx.gci_capped(410.0, 410.3, 410.31) == pytest.approx(1.25 * 0.3 / 4)  # lucky grid, p_obs 4.9: order 2 from d1
-    assert mx.gci_capped(410.0, 410.4, 410.2) == pytest.approx(1.25 * 0.4)  # oscillatory
+    assert mx.gci_capped(410.0, 410.4, 410.2) == pytest.approx(3.0 * 0.4)  # oscillatory: Roache's Fs = 3
     assert mx.gci_capped(410.0, 410.4, 410.5) == pytest.approx(1.25 * 0.1)  # rho 1/4: p_obs 2, capped at 1
     assert mx.gci_capped(410.0, 410.4, 410.6) == pytest.approx(1.25 * 0.2)  # rho 1/2: p_obs 1, 2^1 - 1 = 1
     assert mx.gci_capped(410.0, 410.4, 410.7) == pytest.approx(1.25 * 0.3 / (4.0 / 3.0 - 1.0))  # rho 3/4, p_obs < 1
@@ -228,13 +228,34 @@ def test_o006_gci_capped_continuous_and_never_below_order1_cap():
     assert mx.gci_capped(410.0, 410.396, 410.396 + 0.210 * 0.396) == pytest.approx(1.25 * 0.396 / 4)  # 0.124 K, not 0.495
 
 
-def test_o006_gci_consistency_extra_terms():
-    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65, "z": 0.025}]
-    params = {"pred_levels": ["a0", "a1", "a2"], "ref_levels": ["b0", "b1", "b2"]}
+def test_o006_gci_noise_floor_and_oscillatory_factor():
+    """D0013 addendum 2 (reviews T0190/T0191): iteration noise below the floor cannot pick the branch, and the
+    oscillatory branch carries Roache's factor 3 (1.25 understated a two-term error by up to 1.6x)."""
+    for noise in (-4e-5, 4e-5):  # below the 1e-4 K Picard tolerance
+        assert mx.gci_capped(410.0, 410.4, 410.4 + noise, floor=1e-3) == pytest.approx(1.25 * 0.4 / 4)
+    assert mx.gci_capped(410.0, 410.4, 410.4 - 4e-5) == pytest.approx(3.0 * 0.4)  # without the floor the sign decides
+    assert mx.gci_capped(410.0, 410.0005, 410.0009, floor=1e-3) == 0.0  # both steps below the floor
+    assert mx.gci_capped(410.0, 410.0005, 410.0105, floor=1e-3) == math.inf  # d1 floored to 0 < |d2|: divergent
+    with pytest.raises(ValueError):
+        mx.gci_capped(410.0, 410.4, 410.5, floor=-1.0)
+    # two-term error e(h) = h + t h^2 sampled at h = 4, 2, 1 (T0191's scan): the oscillatory branch now bounds it
+    for t in np.linspace(-5.0, 5.0, 2001):
+        e = [h + t * h * h for h in (4.0, 2.0, 1.0)]
+        g = mx.gci_capped(*e)
+        if math.isfinite(g) and (e[2] - e[1]) * (e[1] - e[0]) < 0:
+            assert g >= abs(e[2]), t
+
+
+def test_o006_gci_consistency_two_grid_terms():
+    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65, "z0": 410.65, "z1": 410.66}]
+    params = {"pred_levels": ["a0", "a1", "a2"], "ref_levels": ["b0", "b1", "b2"], "floor": 1e-3}
     base = mx.compute("max_gci_consistency", rows, params=params)
-    with_z = mx.compute("max_gci_consistency", rows, params={**params, "ref_extra": "z"})
+    with_z = mx.compute("max_gci_consistency", rows, params={**params, "ref_zpair": ["z0", "z1"]})
+    assert mx.two_grid_term([410.65], [410.66]) == pytest.approx([0.025])
     assert with_z == pytest.approx(0.05 / (0.25 + 1.25 * 0.05 + 0.025)) and with_z < base
     with pytest.raises(ValueError):
-        mx.compute("max_gci_consistency", [{**rows[0], "z": -0.01}], params={**params, "ref_extra": "z"})
+        mx.compute("max_gci_consistency", rows, params={**params, "ref_zpair": ["z0"]})
     with pytest.raises(ValueError):
-        mx.compute("max_gci_consistency", [{**rows[0], "z": math.nan}], params={**params, "ref_extra": "z"})
+        mx.compute("max_gci_consistency", [{**rows[0], "z1": math.nan}], params={**params, "ref_zpair": ["z0", "z1"]})
+
+
