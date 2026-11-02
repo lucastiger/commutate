@@ -1,0 +1,70 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "On the u_shaped A3 layout the GCI comes out below the Richardson error estimate for the headline tj_max value and for spread_mean",
+      "detail": "docs/thermal_model.md section 8 says that on the layouts 'the Richardson extrapolation at p_obs about 1.5 puts the level-2 error at about half of the level 1-2 change, so GCI ... is conservative there too', and that the observed order is 1.2-1.5. The committed results do not support this. For u_shaped, tj_max (the layout value with the largest GCI) has p_obs = 0.966. Outside [1.5, 2.5] the code uses Fs = 3 and p = 2, so GCI = |f3 - f2| = 0.322 K. The Richardson error at the observed order is |f3 - f2| / (2^p_obs - 1) = 0.338 K, so the GCI is 0.95x of it. die3.tj_max gives 0.97x. spread_mean (p_obs = 0.58) gives GCI 0.057 K against a Richardson estimate of 0.115 K (0.49x). The general weakness: whenever p_obs < 1, the A4 estimator (Fs = 3, p = 2) gives exactly |delta|, which is less than the Richardson estimate. Decision impact is nil: A4 fails by more than 10x either way (0.33 K vs 0.025 K). But the statement that GCI is conservative on the layouts is false for the values that matter most.",
+      "evidence": "From benchmarks/results/thermal_l2_convergence.json, u_shaped die2 tj_max = 422.7176, 422.0881, 421.7657 gives p_obs 0.966, GCI 0.3224, Richardson 0.3383. spread_mean = 1.9372, 1.8525, 1.7957 gives p_obs 0.578, GCI 0.0567, Richardson 0.1153. All side_by_side values have GCI/Richardson between 1.09 and 1.77.",
+      "suggested_check": "Remove or limit the claim that GCI is conservative on the layouts, and list the values with p_obs < 1 where GCI < Richardson error.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The analytic proof that GCI is conservative skips the singular die-attach/copper corner that drives the layout convergence",
+      "detail": "The new Fourier-series reference and the box cases use laterally uniform layer stacks with a uniform-flux patch on top. They contain no die or die-attach footprint, so the bimaterial wedge singularity (lambda about 0.83) is absent. The docs name that singularity as the cause of slow convergence, and it is the reason for the edge cells. In every box case, the author's and mine, the means converge at p_obs about 1.9 or the centroids oscillate, so Fs = 3 applies. The regime where GCI fails on the layouts (p_obs < 1) is never tested. tj_max, the value A4 and O002 care about, is not compared with the reference at all; only the source mean and centroid are. So the proof holds only for well-behaved sources on a uniform stack.",
+      "evidence": "BOX_CASES and box_series output only src{i}.tj_mean and src{i}.tj_centroid. In my runs p_obs for the means was 1.89-1.97.",
+      "suggested_check": "Add one analytic or independent-reference case with a finite die-attach footprint, or state the limit explicitly in the claim.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The 'refine thin layers' part of the title is not implemented",
+      "detail": "Z_CELLS stays at 2 cells per layer and there is no thin-layer z refinement. The docs give the reason: 4 z-cells, 6 z-cells under 0.2 mm, and z grading were tried and changed no value by more than 0.02 K. However, the 'tried and not adopted' numbers come from no committed script or result file, so they cannot be reproduced from the repository. The title's 'refine thin layers and edges' is therefore only half delivered: edges yes, thin layers rejected.",
+      "evidence": "In the diff of thermal_layout.py the z bullet still reads 'Z_CELLS = 2 cells in every layer ... no grading'. The section 8 'Tried and not adopted' paragraph has no linked artifact.",
+      "suggested_check": "Record the z-refinement comparison as a committed script or result, or narrow the claim to edge refinement.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The documented GCI formula does not match the code and O006 A4",
+      "detail": "docs/thermal_model.md section 8 says 'Fs = 1.25 for monotone p_obs in [1.5, 2.5], else Fs = 3, p = min(p_obs, 2)'. gci_three_grid uses p = P_CAP = 2 in the 'else' branch, which matches the O006 A4 definition. The JSON confirms it: GCI = |delta| exactly for p_obs = 0.966. A reader of the doc would expect a GCI about 3x larger for p_obs about 1 values. That matters for exactly the values in the first finding.",
+      "evidence": "thermal_layout.py lines 82-86: else branch 'fs, p = FS_OTHER, P_CAP'. Reported u_shaped tj_max gci_K 0.32236 equals |f3 - f2| = 0.32236.",
+      "suggested_check": "Fix the doc text to say p = 2.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "test_gci_conservative_at_the_coarser_level_pair_too does not test the GCI",
+      "detail": "Despite its name and comment, the test only asserts that errors fall from level to level (e0 > e1 > e2) for one value in one case. It never computes or compares a GCI. It cannot fail in the way its name promises.",
+      "evidence": "tests/unit/solvers/test_thermal_layout.py: its only assertion is 'assert e[0] > e[1] > e[2]'.",
+      "suggested_check": "Rename it (e.g. test_error_decreases_monotonically_with_level), or make it assert what its name says.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The level-2 grid exceeds the 5 M-cell budget, and A4 is not met",
+      "detail": "side_by_side needs 7.26 M cells and 6.4 GB RSS at level 2. Max GCI is 0.168 K (side_by_side) and 0.334 K (u_shaped), against the 0.025 K A4 limit. The docs disclose both openly, so the claim does not overstate them.",
+      "evidence": "Committed JSON n_cells [113428, 907424, 7259392] and max_gci_K values.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran uv run pytest -q tests/unit/solvers/test_thermal_layout.py, including the slow tests: 28 passed in 56 s.",
+    "Ran uv run pytest -q -m 'not slow' tests/unit: 407 passed. Ran uv run ruff check .: clean.",
+    "Recomputed GCI against the Fourier-series truth on the author's centred case, using n_modes=1200 instead of 600. tj_mean: error 0.00149 K, GCI 0.00196 K (1.32x). tj_centroid oscillates: error 0.0032 K, GCI 0.0095 K. The series changes by only 2e-5 to 1e-4 K between 600 and 1200 modes, so truncation is far below the margins.",
+    "Built four new adversarial box cases: an off-design-grid 3.2x2.9 mm die, a source in a box corner, a close pair 0.5 mm apart, and a 3 mm die in a 30 mm box. GCI >= |true error| held for every mean and centroid, with ratios 1.27-2.92 and errors up to 0.0072 K.",
+    "Recomputed p_obs, GCI and the Richardson error from the committed layout JSON for every die and layout value. On u_shaped, GCI < Richardson estimate for tj_max (0.95x), die2/die3 tj_max (0.95x, 0.97x) and spread_mean (0.49x). All side_by_side ratios are 1.09-1.77.",
+    "Provenance: ran benchmarks/thermal_l2_convergence.py --smoke to a scratch file. Layout fingerprints, power per die (44.2 / 63.9 W) and L0/L1 cell counts (113428/907424, 70066/560528) match the committed JSON. Calibration rise reproduces to about 1e-10 K.",
+    "Checked the level-0 grids of both A3 layouts for sliver cells from edge_graded_nodes. Smallest cell is 100 um, largest neighbour ratio is 4 (at the overhang far-factor boundary), and no degenerate cells.",
+    "Checked the singular exponent by hand: the root of 58 tan(lambda pi/2) + 385 tan(lambda pi) = 0 lies between 0.83 and 0.84, consistent with the stated 0.83.",
+    "Searched src, benchmarks, experiments and tests for remaining callers of the removed level0 keyword: none found. The previously level0=1 symmetric-box test keeps all its assertions."
+  ],
+  "caveats": [
+    "The proof that GCI is conservative holds only for laterally uniform box stacks with uniform-flux sources, and only for source means and centroids. It does not cover tj_max or the die-attach/copper corner singularity on real layouts.",
+    "On the A3 layouts GCI is not shown to be conservative. For u_shaped tj_max (p_obs about 0.97) and spread_mean (p_obs about 0.58), the A4 estimator gives less than the Richardson error at the observed order, so the reported max GCI of 0.334 K may slightly understate the discretisation error.",
+    "Only edges are refined. Thin layers keep 2 z-cells, and the evidence for rejecting z refinement is not committed.",
+    "None of this changes the A4 outcome: the 0.025 K limit is missed by 7-13x and the level-2 grid exceeds the 5 M-cell budget, both of which the work states openly."
+  ]
+}
