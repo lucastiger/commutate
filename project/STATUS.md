@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:41:43+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:42:36+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -33,7 +33,6 @@ cancelled: 30, done: 132, failed: 3, running: 2, todo: 7
 - T0157 `running` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 2)
 
 ## Recent events
-- 2026-11-02T03:26:42+00:00 verified {"task": "T0153"}
 - 2026-11-02T03:26:46+00:00 run_started {"run": "T0173-critic-20261101T192646-ddef", "task": "T0173", "role": "critic", "session": "50843921-5415-4a32-9f10-30c20e4b2476"}
 - 2026-11-02T03:33:15+00:00 run_finished {"run": "T0173-critic-20261101T192646-ddef", "status": "completed", "cost": 1.939778, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:34:05+00:00 inbox_opened {"id": "I0071", "kind": "protected_change", "subject": "T0153: merge needs founder approval"}
@@ -48,3 +47,4 @@ cancelled: 30, done: 132, failed: 3, running: 2, todo: 7
 - 2026-11-02T03:41:38+00:00 run_finished {"run": "T0174-critic-20261101T193651-8590", "status": "completed", "cost": 1.209264, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:41:40+00:00 task_failed_attempt {"task": "T0157", "signal": "review_rejected", "action": "repair"}
 - 2026-11-02T03:41:43+00:00 run_started {"run": "T0157-scout-20261101T194143-6678", "task": "T0157", "role": "scout", "session": "94462071-f3c7-437f-abcd-51aa8e6f124c"}
+- 2026-11-02T03:42:23+00:00 task_amended {"task": "T0167", "reason": "SiC range from T0157 final note (T0174)"}

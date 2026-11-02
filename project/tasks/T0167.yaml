@@ -56,11 +56,14 @@ description: 'Pilots P1 and P2 of the O006 notes, merged into one task because P
   Write research/o006_p1/results.json {seeds, layouts: [...], power_limit_W_by_die_size, recommended_load_levels_W,
   o003_operating_point, level_bias_K, nulls: [{stratum, predictor, p95_abs_err_K, n_layouts}]}, research/notes/o006-p1-thermal-envelope.md
   and research/notes/o006-p2-thermal-nulls.md. Keep the total compute to about 3 CPU-hours and state every
-  sample size. Founder amendment 2026-11-02 (T0157 citation check, research/notes/o006-kT-citations.md):
-  the 4H-SiC and SAC305 laws are not confirmed by primary sources. Report the P1 envelope (the highest
-  power per die keeping Tj max <= 175 C) also with the 4H-SiC exponent -1.26 instead of -1.49 and k(300
-  K) of 280 and 370 W/(m K), and with the SAC305 slope halved and doubled; state whether the recommended
-  load levels change. Do not edit geometry/stack.py; vary the laws locally in the pilot script only.'
+  sample size. Founder amendment 2026-11-02 (T0157 citation check, revised after review T0174): the 4H-SiC
+  and SAC305 k(T) laws are not settled. Report the P1 envelope (the highest power per die keeping Tj max
+  <= 175 C) also at the low and high ends of the ranges given in T0157''s final note, research/notes/o006-kT-citations.md:
+  for 4H-SiC use the c-axis (through-die) conductivity and exponent range it states, not in-plane values
+  (review T0174: the coded -1.49 is a 6H in-plane exponent, Burgemeister 1979, and k along c is about
+  30 % lower); for SAC305 use its slope range, or the coded slope halved and doubled if it gives none.
+  State whether the recommended load levels change. Do not edit geometry/stack.py; vary the laws locally
+  in the pilot script only.'
 context_files:
 - project/objectives/O006/objective.yaml
 - project/objectives/O002/objective.yaml
@@ -122,3 +125,7 @@ history:
 - outcome: founder_brief_amended
   summary: added SiC/SAC305 k(T) sensitivity per T0157
   at: '2026-11-02T03:36:58+00:00'
+- outcome: founder_brief_amended
+  summary: SiC sensitivity now taken from T0157's final, direction-correct ranges (review T0174), replacing
+    hard-coded in-plane values
+  at: '2026-11-02T03:42:23+00:00'
