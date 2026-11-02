@@ -1,5 +1,9 @@
 # O006 / E006 design: thermal L2 against frozen references and scikit-fem (T0165)
 Date: 2026-11-02 · Task: T0165 · Status: draft spec `experiments/drafts/E006.yaml`, runner `experiments/runners/e006_run.py`.
+Update T0196 (pre-registration fixes after reviews T0194/T0195): see section 8. The F5 feasibility check on the two
+development layouts gives a maximum scikit-fem estimate of 0.200 K against the 0.25 K limit (`research/e006/f5_dev_check.json`).
+An off-centre source was added to F1's N-layer check, and the refcheck still passes (19 gated checks).
+
 Bottom line (attempt 2): the F1 reference pre-check now passes (`research/e006/refcheck.json`, all_passed = true). Attempt 1
 failed only on scikit-fem's own GCI; with triquadratic (Q2) scikit-fem elements it is 0.0046 K (Case 2) and 0.0006 K (uniform
 stack), against the 0.01 K threshold, which was not loosened. The registered run still does not fit this Mac (section 7).
@@ -38,7 +42,7 @@ evaluator recomputes the GCIs from f_lv0..2.
   returns only DRC-valid layouts; dies per switch as drawn). These give one cross-check row per die, with `layout_set=fresh`, `family`,
   `dies_per_switch`. The dev rows never use the sealed seed. On dev seed 7, the fresh rule drew side_by_side/5,
   interleaved/5 and u_shaped/5 (smoke metadata; not solved).
-- **Operating point [F]**: 65 °C coolant, h = 5000 W/(m² K), k(T). Equal power per die is found by secant on L2
+- **Operating point [F]**: 65 °C coolant, h = 5000 W/(m² K), k(T). Equal power per die is found by proportional updates (p <- p x 60 K / rise; T0196: not a secant) on L2
   level-0 solves until the hottest die rises 60 ± 0.25 K, and the gate allows ±1 K. That power is then used unchanged by both
   solvers on every grid and recorded as `power_w`. Smoke (coarse rule): side_by_side_6 31.20 W, u_shaped_2 45.57 W. The
   registered run recomputes these on the frozen rule.
@@ -104,7 +108,8 @@ Attempt 1, Q1 meshes (each a full refcheck run; peak RSS at most 6.9 GB; 40–55
 The F1 uniform-stack check uses the frozen N-layer stack (layers, h and Tf of nlayer_dbc), laterally uniform, with one centred
 5.5 mm die on a 16.5 mm box. The power, 68.8 W, is set from the series alone for an 85 K rise. Scikit-fem solves the symmetric quarter. Reasons [F]:
 - The 86 × 56 mm four-source case needs several million DOF to reach a 0.01 K GCI.
-- Eccentric sources are covered by Case 2 (the same Field summation), reciprocity and the two-layer reduction.
+- Eccentric sources are covered by Case 2 (the same Field summation), reciprocity and the two-layer reduction. Since
+  T0196 they are also covered by a full-domain off-centre N-layer check against scikit-fem (section 8.5).
 
 ## 4. Secondary values (smoke dev rows only: coarsened rule, not the frozen rule, not evidence) [F]
 GCI / |T_L2 − T_ref| ranges over 2.3–3.6 at every reference point, and no error exceeds its GCI. Per case (max |err|, max GCI,
@@ -122,7 +127,7 @@ The registered run reports these columns on the frozen rule, and the note will b
   values, the two-layer reduction, the Q2 solver's self-test, Case 2 and the uniform stack against scikit-fem Q2 with its own GCI,
   energy balance and constant ratio, and the MMS self-checks with the generator hash and the k ratio. The full run repeats them
   before the first solve (`reference_checks`).
-- F2: `constant_refinement_ratio`, `energy_balance` (every L2 and scikit-fem solve; the MMS also against the
+- F2: `constant_refinement_ratio`, `energy_balance` (every L2 and scikit-fem solve, since T0196 including the z-doubled level-1 solve; the MMS also against the
   integrated reference 64.648 W), `picard_converged` (< 1e-4 K, both solvers), and per-row branch, d1, d2 and p_obs, plus the counts.
 - F3: `dT_const_k` uses constant k at each layer's volume-mean temperature of the finest k(T) L2 solution, solved on the
   finest grid. It equals T_l2 on the constant-k cases. Dev rows: the null gives A1 0.063 and A2 2.56 K, both failing (manufactured
@@ -162,3 +167,93 @@ The registered run reports these columns on the frozen rule, and the note will b
 - Smoke: 60 s and 2.9 GB peak.
 - Refcheck (attempt 2, measured): 202 s wall time and 4.93 GB peak RSS, one process. The gated part (self-test, Case 2 and the uniform stack) takes
   about 75 s. The INFO-only Case 1b level 2 takes 110 s (CG on the ill-conditioned 300 mm plate).
+
+## 8. T0196 pre-registration fixes (reviews T0194 and T0195 of T0165)
+No gate, threshold, estimator or frozen grid rule was changed. E006 is still a draft.
+
+### 8.1 z-doubled scikit-fem solve gated (T0194, major) [F]
+`run_layout` now appends the z-doubled level-1 solve's energy balance and Picard residual to `st.energy` / `st.picard`
+(tag `<layout>/skfem/L1z2`), so `energy_balance` and `picard_converged` cover it like every other solve. Its value
+`skfem_z1` enters A3's denominator and F5. The spec's two descriptions now name this solve. In smoke, both z-doubled
+solves have balance <= 2e-14 and Picard <= 4e-5 K. In the F5 dev check (8.3) the figures are 1.6e-14 and 1.8e-5 K.
+
+### 8.2 calibrate_power pairing (T0194/T0195, minor) [F]
+`calibrate_power` returns as soon as a level-0 rise is within 0.25 K of 60 K, and it returns that rise together with
+the power it was computed at. If the tolerance is not met in 10 solves it raises a `RuntimeError` (an error result,
+never a verdict), so it can no longer return a power whose rise was never computed. `operating_point` and
+`calibration_rise_K` therefore describe the power both solvers use. The docstring and section 2 now call the update
+proportional (p <- p x 60 / rise), which it is, not a secant. Smoke powers and rises are unchanged (31.204 W / 60.089 K,
+45.566 W / 59.950 K), and every smoke metric equals the T0165 dev rows.
+
+### 8.3 Dead code removed (T0195) [F]
+Removed `q_ok` in `run_mms`. The manufactured-case balance against the reference outflow was already gated through
+`st.energy`, and still is. Also removed the no-op `cfg` rebuild in `smoke()`.
+
+### 8.4 F5 feasibility on development geometry (`research/e006/f5_dev_check.json`) [F]
+- **What was run.** `experiments/runners/e006_f5_dev.py` ran on the two development A3 layouts only (dev seed 20261101:
+  side_by_side_6 and u_shaped_2, fingerprints asserted), never the sealed seed. It used scikit-fem's frozen E006 rule
+  (`skfem_rule`: h0 0.5 mm, near margin 1.5 mm, nz as in config, z held), levels 0-2 plus the z-doubled level-1 solve,
+  exactly as `run_layout` builds them. The operating point was O003's: 65 °C coolant, h = 5000 W/(m² K), k(T), and
+  equal power from `e006_run.calibrate_power`: 31.842 W per die (side_by_side_6) and 46.168 W (u_shaped_2).
+- **Estimate.** For each die, `mfos.metrics.gci_capped(skfem_lv0..2, floor 1e-3 K) + mfos.metrics.two_grid_term(lv1, z1)`.
+- **Blindness.** No L2 Tj value, no L2-vs-scikit-fem difference and no A3/A4 value was computed, printed or written.
+  The only L2 computation was the level-0 calibration inside `calibrate_power`, which is how scope_in defines the
+  operating point. The child process keeps the power and discards the rise.
+- **Result.** Maximum estimate **0.2001 K**, at u_shaped_2 die 3 (GCI 0.1414 K + z term 0.0587 K), against the
+  **0.25 K** limit: met, margin 0.050 K.
+  - Maximum GCI 0.141 K and maximum z term 0.059 K.
+  - side_by_side_6 dies: 0.088-0.132 K. u_shaped_2 dies: 0.148-0.200 K.
+  - All 16 sequences are in the monotone branch, with p_obs between 0.75 and 1.73.
+  - F2 on these 10 solves: energy balance <= 1.2e-13, Picard <= 2.3e-5 K.
+- **Agreement with T0195's projection [I].** T0195 projected about 0.2 K by rescaling the 85 K benchmark to 60 K. The
+  measured value agrees.
+- **Memory [F].** Each solve ran in its own subprocess, one at a time. The level-2 peaks were 7.46 GB (side_by_side_6,
+  1.48 M DOF) and 6.10 GB (u_shaped_2). The z-doubled solves peaked at 5.83 GB (0.72 M DOF) and 3.97 GB. Wall time was
+  about 4 min in total. Before every solve estimated above 5 GB, the script checked that memory_pressure showed >= 50 %
+  free (it showed 70-74 %) and that the swap files totalled < 4 GB (they totalled 0 GB).
+  - The side_by_side_6 level-2 peak is 0.46 GB above the packet's "about 7 GB". It stayed inside the agent rule's 10 GB
+    single-process allowance, whose preconditions were met.
+  - `sysctl vm.swapusage` is blocked by the sandbox. The total size of `/private/var/vm/swapfile*` was used instead; it
+    bounds the swap in use from above.
+- **What this does not show [I/S].**
+  - The three fresh sealed-seed layouts are unmeasured. On dev seed 7 the fresh rule drew 5 dies per switch. With a 20 %
+    margin on the development layouts, F5 could still fail on a fresh layout [S]. That would make the registered run
+    INVALID, never a verdict on the L2.
+  - u_shaped_2 is the binding layout, with a 2-dies-per-switch geometry. Its die GCIs are about twice those of
+    side_by_side_6.
+
+### 8.5 Off-centre source in F1's N-layer check (T0194, minor) [F]
+- **Case.** The frozen N-layer stack (nlayer_dbc layers, h and Tf), laterally uniform, on a 12 x 10 mm box. One
+  5 x 4 mm source is centred at (4.0, 3.5) mm, off-centre in both x and y and with a != b and c != d. scikit-fem Q2
+  solves the full domain, with no symmetry used.
+- **Reported points (5).** The centroid, the source mean, the source maximum, and the centroid's mirror images about
+  x = a/2 and y = b/2.
+- **Power.** 35.9 W, set from the series alone for an 85 K maximum rise. The measured rise is 85.08 K.
+- **Odd modes carry the answer.** The series' odd-mode signal at the centroid, [T(x,y) - T(a-x,y)]/2, is +9.30 K in x
+  and +7.66 K in y. It is identically zero for the centred source of the uniform check. An odd-mode error larger than
+  about 0.2 % of that signal would therefore exceed the 0.02 K agreement limit [I].
+- **Mesh.** It was fixed before any solve, by DOF count alone: the uniform check's family (grow 2) with s0 and hmax
+  doubled (0.5 mm / 2 mm). That is the finest member that keeps level 2 at the passing uniform check's 514 865 Q2 DOF.
+  s0 0.25 mm / hmax 1 mm would need 1.22 M DOF, above `skfem_max_dofs` (700 000). It is the first and only mesh tried.
+- **Results (refcheck, gated).**
+  - `nlayer_offcentre_rise_in_band`: 85.08 K.
+  - `nlayer_offcentre_series_converged`: doubling every series knob changed nothing (0.0). As T0194 noted for the frozen
+    cases, this gate on its own is weak. The independent check is scikit-fem.
+  - `nlayer_offcentre_skfem_gci`: **0.0081 K** (<= 0.01 K). This is the smallest margin of the F1 scikit-fem checks
+    and is set by the maximum point.
+  - `nlayer_offcentre_vs_skfem`: **0.00035 K** (<= 0.02 K).
+  - `nlayer_offcentre_skfem_energy_and_ratio`: 1.2e-12, r = 2.
+- **Bound check.** GCI >= |err| holds on 4 of the 5 values. The exception is the x-mirror point: both of its steps are
+  below the 1e-3 K floor, so its GCI is 0, and its error is 1e-5 K. This is an artefact of the floor and is not gated.
+- **Cost.** Peak RSS 4.81 GB. The refcheck took 198 s and its 19 gated checks all pass.
+- **Interpretation [I].** The N-layer kernel's eccentric and odd-mode terms now agree with an independent full-domain
+  FE solution to 3.5e-4 K. Before this, two reviewers' own series codes were the only direct confirmation.
+
+### 8.6 Commands run in T0196 (exit codes)
+- `e006_f5_dev.py`: 0.
+- `--refcheck`: 0.
+- `--smoke --rows-out research/e006/dev_rows.json`: 0.
+- `mfos exp check E006 --rows research/e006/dev_rows.json`: 0.
+- `ruff check .`: 0.
+- Both JSON assertions of the DoD: 0.
+- `mfos gate --fast`: 0.

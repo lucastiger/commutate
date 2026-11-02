@@ -53,21 +53,21 @@
   },
   {
    "name": "case2_skfem_gci",
-   "value": 0.0045688851735015135,
+   "value": 0.004568885173892312,
    "threshold": 0.01,
    "passed": true,
-   "detail": "scikit-fem Q2 own A4 GCI (gci_capped, floor 1e-3 K), max over 12 values; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 10647, 'elements': 1083, 'cg_iters': 31, 'rel_residual': 9.508071644750022e-12, 'wall_s': 0.26, 'energy_balance': 1.176836406102666e-14, 'rss_gb': 2.34}, {'level': 1, 'dofs': 77077, 'elements': 8664, 'cg_iters': 46, 'rel_residual': 1.7541251159644647e-11, 'wall_s': 1.94, 'energy_balance': 2.4136248555350903e-13, 'rss_gb': 2.45}, {'level': 2, 'dofs': 585225, 'elements': 69312, 'cg_iters': 59, 'rel_residual': 1.7861561530914942e-11, 'wall_s': 21.08, 'energy_balance': 1.6933121571582888e-12, 'rss_gb': 4.93}]"
+   "detail": "scikit-fem Q2 own A4 GCI (gci_capped, floor 1e-3 K), max over 12 values; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 10647, 'elements': 1083, 'cg_iters': 31, 'rel_residual': 9.501519829884877e-12, 'wall_s': 0.24, 'energy_balance': 3.1086244689504383e-15, 'rss_gb': 2.35}, {'level': 1, 'dofs': 77077, 'elements': 8664, 'cg_iters': 46, 'rel_residual': 1.7617567971737883e-11, 'wall_s': 1.7, 'energy_balance': 2.5002222514558525e-13, 'rss_gb': 2.46}, {'level': 2, 'dofs': 585225, 'elements': 69312, 'cg_iters': 59, 'rel_residual': 1.7864198301292935e-11, 'wall_s': 16.05, 'energy_balance': 1.6577850203702837e-12, 'rss_gb': 4.81}]"
   },
   {
    "name": "case2_vs_skfem",
-   "value": 0.0010810708785129464,
+   "value": 0.0010810708811277436,
    "threshold": 0.02,
    "passed": true,
    "detail": "max |T_fe(level 2) - T_series|; levels 0/1/2: s1.centroid fe 370.53258/370.53750/370.53763 ref 370.53764 err -0.00001 gci 0.00154 (fast); s1.mean fe 369.99852/370.00434/370.00569 ref 370.00612 err -0.00043 gci 0.00182 (fast); s1.max fe 370.57986/370.57566/370.57581 ref 370.57581 err -0.00000 gci 0.00131 (fast); s2.centroid fe 376.93315/376.94549/376.94583 ref 376.94585 err -0.00002 gci 0.00386 (fast); s2.mean fe 375.48404/375.49866/375.50202 ref 375.50310 err -0.00108 gci 0.00457 (fast); s2.max fe 376.96203/376.96025/376.95987 ref 376.95987 err +0.00000 gci 0.00056 (fast); s3.centroid fe 374.40291/374.41278/374.41305 ref 374.41307 err -0.00002 gci 0.00308 (fast); s3.mean fe 373.25831/373.27001/373.27269 ref 373.27356 err -0.00086 gci 0.00365 (fast); s3.max fe 374.41200/374.41630/374.41624 ref 374.41623 err +0.00001 gci 0.00135 (fast); s4.centroid fe 373.06282/373.07021/373.07041 ref 373.07042 err -0.00001 gci 0.00231 (fast); s4.mean fe 372.22425/372.23300/372.23501 ref 372.23566 err -0.00065 gci 0.00274 (fast); s4.max fe 373.07332/373.07503/373.07492 ref 373.07492 err +0.00000 gci 0.00053 (fast)"
   },
   {
    "name": "case2_skfem_energy_and_ratio",
-   "value": 1.6933121571582888e-12,
+   "value": 1.6577850203702837e-12,
    "threshold": 1e-06,
    "passed": true,
    "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
@@ -84,21 +84,59 @@
   },
   {
    "name": "nlayer_uniform_skfem_gci",
-   "value": 0.0005761518305646973,
+   "value": 0.0005761518303337709,
    "threshold": 0.01,
    "passed": true,
-   "detail": "quarter-symmetric scikit-fem Q2, own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 80, 'rel_residual': 1.1042600530765217e-11, 'wall_s': 0.29, 'energy_balance': 4.71955807768154e-13, 'rss_gb': 4.93}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 101, 'rel_residual': 9.788562027508217e-12, 'wall_s': 2.54, 'energy_balance': 2.0037305148434825e-12, 'rss_gb': 4.93}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 140, 'rel_residual': 1.0324468619509976e-11, 'wall_s': 29.68, 'energy_balance': 5.0136561569047444e-12, 'rss_gb': 4.93}]"
+   "detail": "quarter-symmetric scikit-fem Q2, own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 80, 'rel_residual': 1.1009227725821987e-11, 'wall_s': 0.27, 'energy_balance': 4.5419223937415154e-13, 'rss_gb': 4.81}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 101, 'rel_residual': 9.815049691529262e-12, 'wall_s': 2.24, 'energy_balance': 2.00317540333117e-12, 'rss_gb': 4.81}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 140, 'rel_residual': 1.0375533079914504e-11, 'wall_s': 23.37, 'energy_balance': 5.020428517354958e-12, 'rss_gb': 4.81}]"
   },
   {
    "name": "nlayer_uniform_vs_skfem",
-   "value": 9.989884983951924e-05,
+   "value": 9.989885006689292e-05,
    "threshold": 0.02,
    "passed": true,
    "detail": "centroid ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast); mean ref 415.92189 fe 415.91961/415.92145/415.92179 err -0.00010 gci 0.00058 (fast); max ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast)"
   },
   {
    "name": "nlayer_uniform_skfem_energy_and_ratio",
-   "value": 5.0136561569047444e-12,
+   "value": 5.020428517354958e-12,
+   "threshold": 1e-06,
+   "passed": true,
+   "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+  },
+  {
+   "name": "nlayer_offcentre_rise_in_band",
+   "value": 85.07823305857659,
+   "threshold": [
+    60.0,
+    110.0
+   ],
+   "passed": true,
+   "detail": "5.00 x 4.00 mm die centred at (4.00, 3.50) mm, 35.9 W on a 12.0 x 10.0 mm box; series odd-mode signal at the centroid: x +9.2971 K, y +7.6606 K (zero for a centred source); maximum offset from the centroid (-0.337, -0.239) mm"
+  },
+  {
+   "name": "nlayer_offcentre_series_converged",
+   "value": 0.0,
+   "threshold": 1e-07,
+   "passed": true,
+   "detail": "max |T(all Acc knobs doubled) - T(default)| / rise over the five points"
+  },
+  {
+   "name": "nlayer_offcentre_skfem_gci",
+   "value": 0.008056193097101165,
+   "threshold": 0.01,
+   "passed": true,
+   "detail": "full-domain scikit-fem Q2 (no symmetry), own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: False; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 113, 'rel_residual': 9.112238355119365e-12, 'wall_s': 0.34, 'energy_balance': 9.880984919163893e-14, 'rss_gb': 4.81}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 149, 'rel_residual': 1.1626953549361645e-11, 'wall_s': 2.98, 'energy_balance': 1.0226264279822317e-12, 'rss_gb': 4.81}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 212, 'rel_residual': 1.2312756920096706e-11, 'wall_s': 32.6, 'energy_balance': 1.1675105326958146e-12, 'rss_gb': 4.81}]"
+  },
+  {
+   "name": "nlayer_offcentre_vs_skfem",
+   "value": 0.00034734100768218923,
+   "threshold": 0.02,
+   "passed": true,
+   "detail": "centroid ref 423.04161 fe 423.04794/423.04120/423.04158 err -0.00002 gci 0.00211 (fast); mean ref 418.88641 fe 418.88018/418.88499/418.88606 err -0.00035 gci 0.00150 (fast); max ref 423.22823 fe 423.23297/423.23021/423.22812 err -0.00011 gci 0.00806 (monotone); centroid_xmirror ref 404.44732 fe 404.44730/404.44716/404.44731 err -0.00001 gci 0.00000 (exact); centroid_ymirror ref 407.72048 fe 407.71664/407.72095/407.72049 err +0.00002 gci 0.00135 (fast)"
+  },
+  {
+   "name": "nlayer_offcentre_skfem_energy_and_ratio",
+   "value": 1.1675105326958146e-12,
    "threshold": 1e-06,
    "passed": true,
    "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
@@ -187,16 +225,16 @@
   },
   {
    "name": "case1a_vs_skfem_info",
-   "value": 0.008417699250344413,
-   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.4369 K; levels [{'level': 0, 'dofs': 6627, 'elements': 529, 'cg_iters': 35, 'rel_residual': 1.1173389034750296e-08, 'wall_s': 0.17, 'energy_balance': 2.1291413077051402e-11, 'rss_gb': 4.93}, {'level': 1, 'dofs': 43245, 'elements': 4232, 'cg_iters': 43, 'rel_residual': 1.0432377737897313e-08, 'wall_s': 1.03, 'energy_balance': 6.80762113347555e-11, 'rss_gb': 4.93}, {'level': 2, 'dofs': 308025, 'elements': 33856, 'cg_iters': 54, 'rel_residual': 1.3469727452707581e-08, 'wall_s': 8.87, 'energy_balance': 7.141711666491801e-10, 'rss_gb': 4.93}]"
+   "value": 0.008417699244546384,
+   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.4369 K; levels [{'level': 0, 'dofs': 6627, 'elements': 529, 'cg_iters': 35, 'rel_residual': 1.1173386974152015e-08, 'wall_s': 0.14, 'energy_balance': 2.1293189433890802e-11, 'rss_gb': 4.81}, {'level': 1, 'dofs': 43245, 'elements': 4232, 'cg_iters': 43, 'rel_residual': 1.044050073186878e-08, 'wall_s': 0.85, 'energy_balance': 6.821121445454992e-11, 'rss_gb': 4.81}, {'level': 2, 'dofs': 308025, 'elements': 33856, 'cg_iters': 54, 'rel_residual': 1.346540629095675e-08, 'wall_s': 7.19, 'energy_balance': 7.138082347424302e-10, 'rss_gb': 4.81}]"
   },
   {
    "name": "case1b_vs_skfem_info",
-   "value": 9.010417340959975e-05,
-   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.0014 K; levels [{'level': 0, 'dofs': 11045, 'elements': 1058, 'cg_iters': 198, 'rel_residual': 1.2028529674064528e-08, 'wall_s': 0.67, 'energy_balance': 1.3611112237299494e-11, 'rss_gb': 4.93}, {'level': 1, 'dofs': 77841, 'elements': 8464, 'cg_iters': 277, 'rel_residual': 1.555706018138204e-08, 'wall_s': 7.32, 'energy_balance': 4.193534408614141e-12, 'rss_gb': 4.93}, {'level': 2, 'dofs': 581825, 'elements': 67712, 'cg_iters': 580, 'rel_residual': 1.4591290574845702e-08, 'wall_s': 109.53, 'energy_balance': 2.7003954627957683e-12, 'rss_gb': 4.93}]"
+   "value": 9.01041702263683e-05,
+   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.0014 K; levels [{'level': 0, 'dofs': 11045, 'elements': 1058, 'cg_iters': 198, 'rel_residual': 1.2029050225696557e-08, 'wall_s': 0.58, 'energy_balance': 1.3706591417417258e-11, 'rss_gb': 4.81}, {'level': 1, 'dofs': 77841, 'elements': 8464, 'cg_iters': 277, 'rel_residual': 1.5558546791421447e-08, 'wall_s': 5.56, 'energy_balance': 4.14934753223406e-12, 'rss_gb': 4.81}, {'level': 2, 'dofs': 581825, 'elements': 67712, 'cg_iters': 580, 'rel_residual': 1.4576253681514306e-08, 'wall_s': 86.73, 'energy_balance': 2.578937063901776e-12, 'rss_gb': 4.81}]"
   }
  ],
  "all_passed": true,
- "wall_s": 201.5,
- "peak_rss_gb": 4.93
+ "wall_s": 198.3,
+ "peak_rss_gb": 4.81
 }

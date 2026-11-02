@@ -49,6 +49,12 @@ config:
   skfem_uniform: {box_m: 0.0165, die_m: 0.0055, target_rise_K: 85.0, s0_m: 0.00025, grow: 2.0, hmax_m: 0.001,
     nz: {baseplate: 2}}
   skfem_case1: {s0_m: 0.005, grow: 2.0, hmax_m: 0.03, nz: {plate: 1, spreader: 1}}
+  # F1 off-centre N-layer check (T0196, review T0194 of T0165): frozen N-layer stack, 12 x 10 mm box, 5 x 4 mm source
+  # centred at (4.0, 3.5) mm, full domain (no symmetry), so the series' odd cosine modes carry the answer.  Mesh fixed
+  # before any solve by DOF count: the uniform-stack family (grow 2) with s0 and hmax doubled is the finest that keeps
+  # level 2 at the passing uniform check's size (514 865 Q2 DOF; s0 0.25 / hmax 1 mm would be 1.22 M > skfem_max_dofs).
+  skfem_offcentre: {box_m: [0.012, 0.010], die_m: [0.005, 0.004], centre_m: [0.004, 0.0035], target_rise_K: 85.0,
+    s0_m: 0.0005, grow: 2.0, hmax_m: 0.002, nz: {baseplate: 2}}
   fv_bytes_per_cell: 1500.0
   memory_fraction: 0.85
   smoke_rule: {H0_MAX: 0.004, LAT_FRAC: 4.0, EDGE_FRAC: 8.0, Z_CELLS: 1}
@@ -123,6 +129,18 @@ sanity_checks:
   description: F1. |T_skfem(level 2) - T_series| <= 0.02 K on the laterally uniform default stack
 - name: nlayer_uniform_skfem_energy_and_ratio
   description: F1/F2. |Q_out/Q_in - 1| <= 1e-6 in the three uniform-stack scikit-fem solves and their lines bisect
+- name: nlayer_offcentre_rise_in_band
+  description: F1. the off-centre check case (frozen N-layer stack, 12 x 10 mm box, 5 x 4 mm source centred at (4.0,
+    3.5) mm) has a 60-110 K maximum rise; the series' odd-mode signal at the centroid is reported
+- name: nlayer_offcentre_series_converged
+  description: F1. doubling every series knob changes the off-centre case's five reported values by < 1e-7 of its rise
+- name: nlayer_offcentre_skfem_gci
+  description: F1. scikit-fem's own A4 GCI <= 0.01 K for the off-centre values (full domain, no symmetry; centroid,
+    mean, maximum and the centroid's mirror images about x = a/2 and y = b/2)
+- name: nlayer_offcentre_vs_skfem
+  description: F1. |T_skfem(level 2) - T_series| <= 0.02 K on the off-centre case (odd modes exercised)
+- name: nlayer_offcentre_skfem_energy_and_ratio
+  description: F1/F2. |Q_out/Q_in - 1| <= 1e-6 in the three off-centre scikit-fem solves and their lines bisect
 - name: mms_geometry_matches_reference
   description: the frozen rule's grid of the manufactured geometry (built as a Layout) has the reference region map
     and interfaces at every level
@@ -132,12 +150,16 @@ sanity_checks:
 - name: constant_refinement_ratio
   description: F2. every L2 grid at level l+1 bisects every level-l cell (ratio exactly 2, coarse lines kept)
 - name: energy_balance
-  description: F2. |Q_out/Q_in - 1| <= 1e-6 for every L2 and scikit-fem solve; manufactured case also against the
-    integrated reference source and boundary fluxes (64.648 W)
+  description: F2. |Q_out/Q_in - 1| <= 1e-6 for every L2 and scikit-fem solve, including each layout's z-doubled
+    level-1 scikit-fem solve (skfem_z1, which enters A3 and F5); manufactured case also against the integrated
+    reference source and boundary fluxes (64.648 W)
 - name: picard_converged
-  description: F2. last Picard max|dT| < 1e-4 K in every k(T) solve (both solvers)
+  description: F2. last Picard max|dT| < 1e-4 K in every k(T) solve (both solvers), including each layout's
+    z-doubled level-1 scikit-fem solve
 - name: operating_point
-  description: O003 point. every layout's level-0 hottest-die rise within 60 +/- 1 K at the recorded equal power
+  description: O003 point. every layout's level-0 hottest-die rise within 60 +/- 1 K at the recorded equal power;
+    the rise is the one computed at exactly that power (calibrate_power raises if its 0.25 K tolerance is not met
+    in 10 level-0 solves, so it never returns a power whose rise was not computed)
 - name: skfem_gci_f5
   description: 'F5. scikit-fem estimate gci_capped(skfem_lv0..2, 1e-3 K) + 2.5|skfem_z1 - skfem_z0| <= 0.25 K on
     every die of the five layouts (INVALID if missed; never a verdict on the L2)'

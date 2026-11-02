@@ -289,6 +289,49 @@ def uniform_stack_case(ser: dict, cfg: dict) -> tuple[SER.Case, list[dict]]:
     return case, rows
 
 
+def offcentre_stack_case(ser: dict, cfg: dict) -> tuple[SER.Case, list[dict], dict]:
+    """F1's off-centre N-layer check case (review T0194 of T0165): the frozen N-layer stack (layers, h, Tf of
+    nlayer_dbc), laterally uniform, on a non-square box with one rectangular die-sized source off-centre in x AND y,
+    so the series' odd cosine modes (and the a != b, c != d terms) carry the answer.  Power set from the series alone
+    so that the source's maximum rises cfg target.  Reported points: the source centroid, mean and maximum, and the
+    centroid's mirror images about x = a/2 and y = b/2 (off-source points).  Also returns the series' odd-mode signal
+    at the centroid, [T(x, y) - T(a - x, y)] / 2 (odd in x) and [T(x, y) - T(x, b - y)] / 2 (odd in y), which vanishes
+    identically for a centred source, and the series' own doubling check on these points (every Acc knob doubled)."""
+    c = ser["cases"]["nlayer_dbc"]
+    u = cfg["skfem_offcentre"]
+    base = series_case("nlayer_offcentre", c)
+    (a, b), (cw, dw), (xc, yc) = u["box_m"], u["die_m"], u["centre_m"]
+    s1 = SER.Source("die", xc, yc, cw, dw, 1.0)
+    case1 = replace(base, a=a, b=b, sources=(s1,), kernel="nlayer")
+    _, _, T1, _ = SER.maximize_on_source(SER.Field(case1), s1)
+    P = round(u["target_rise_K"] / (T1 - case1.Tf), 1)
+    case = replace(case1, sources=(replace(s1, Q=P),))
+    s = case.sources[0]
+
+    def points(fld, xm=None, ym=None):
+        if xm is None:
+            xm, ym, Tm, _ = SER.maximize_on_source(fld, s)
+        else:
+            Tm = fld.T_point(xm, ym)
+        return [{"source": "die", "point": "centroid", "x": s.xc, "y": s.yc, "T": fld.T_point(s.xc, s.yc)},
+                {"source": "die", "point": "mean", "x": s.xc, "y": s.yc, "T": float(fld.T([SER.Target.patch(s)])[0])},
+                {"source": "die", "point": "max", "x": xm, "y": ym, "T": Tm},
+                {"source": "die", "point": "centroid_xmirror", "x": a - s.xc, "y": s.yc,
+                 "T": fld.T_point(a - s.xc, s.yc)},
+                {"source": "die", "point": "centroid_ymirror", "x": s.xc, "y": b - s.yc,
+                 "T": fld.T_point(s.xc, b - s.yc)}]
+
+    fld = SER.Field(case)
+    rows = points(fld)
+    dbl = points(SER.Field(case, SER.Acc().doubled("all")), rows[2]["x"], rows[2]["y"])
+    rise = rows[2]["T"] - case.Tf
+    conv = max(abs(p["T"] - q["T"]) for p, q in zip(rows, dbl, strict=True)) / rise
+    info = {"power_W": P, "rise_K": rise, "series_doubling_rel": conv,
+            "odd_x_K": 0.5 * (rows[0]["T"] - rows[3]["T"]), "odd_y_K": 0.5 * (rows[0]["T"] - rows[4]["T"]),
+            "max_offset_m": [rows[2]["x"] - s.xc, rows[2]["y"] - s.yc]}
+    return case, rows, info
+
+
 def skfem_checks(ser: dict, cfg: dict, ck: Checks) -> None:
     """F1's two scikit-fem agreement checks, each with scikit-fem's own A4 GCI <= 0.01 K, on the Q2 box solver
     (e006_skfem_q2: ElementHex2, exact Galerkin source means), preceded by that solver's own exactness self-test;
@@ -331,6 +374,31 @@ def skfem_checks(ser: dict, cfg: dict, ck: Checks) -> None:
                f"{o['err']:+.5f} gci {o['gci']:.5f} ({o['branch']})" for o in res["rows"]))
     ck.add("nlayer_uniform_skfem_energy_and_ratio", res["max_energy_balance"] <= cfg["energy_tol"] and res["ratio_ok"],
            value=res["max_energy_balance"], threshold=cfg["energy_tol"],
+           detail=f"max |Q_out/Q_in - 1| over the three solves; constant ratio 2: {res['ratio_ok']}")
+    # off-centre source (review T0194): the odd modes of the N-layer kernel against a full-domain scikit-fem solve
+    case, rows, info = offcentre_stack_case(ser, cfg)
+    u = cfg["skfem_offcentre"]
+    ck.add("nlayer_offcentre_rise_in_band", 60.0 <= info["rise_K"] <= 110.0, value=info["rise_K"],
+           threshold=[60.0, 110.0],
+           detail=f"{u['die_m'][0] * 1e3:.2f} x {u['die_m'][1] * 1e3:.2f} mm die centred at ({u['centre_m'][0] * 1e3:.2f}, "
+                  f"{u['centre_m'][1] * 1e3:.2f}) mm, {info['power_W']} W on a {u['box_m'][0] * 1e3:.1f} x "
+                  f"{u['box_m'][1] * 1e3:.1f} mm box; series odd-mode signal at the centroid: x {info['odd_x_K']:+.4f} K,"
+                  f" y {info['odd_y_K']:+.4f} K (zero for a centred source); maximum offset from the centroid "
+                  f"({info['max_offset_m'][0] * 1e3:+.3f}, {info['max_offset_m'][1] * 1e3:+.3f}) mm")
+    ck.add("nlayer_offcentre_series_converged", info["series_doubling_rel"] < 1e-7, value=info["series_doubling_rel"],
+           threshold=1e-7, detail="max |T(all Acc knobs doubled) - T(default)| / rise over the five points")
+    res = skfem_vs_series(case, rows, u, False, cfg["skfem_max_dofs"])
+    ck.add("nlayer_offcentre_skfem_gci", res["max_gci"] <= cfg["skfem_f1_gci_K"], value=res["max_gci"],
+           threshold=cfg["skfem_f1_gci_K"],
+           detail=f"full-domain scikit-fem Q2 (no symmetry), own A4 GCI; ratio 2 between levels: {res['ratio_ok']}; "
+                  f"GCI >= |err| on every value: {res['gci_bounds_err']}; levels {res['levels']}")
+    ck.add("nlayer_offcentre_vs_skfem", res["max_err"] <= cfg["skfem_f1_agree_K"], value=res["max_err"],
+           threshold=cfg["skfem_f1_agree_K"], detail="; ".join(
+               f"{o['point']} ref {o['T_ref']:.5f} fe {o['fe'][0]:.5f}/{o['fe'][1]:.5f}/{o['fe'][2]:.5f} err "
+               f"{o['err']:+.5f} gci {o['gci']:.5f} ({o['branch']})" for o in res["rows"]))
+    ck.add("nlayer_offcentre_skfem_energy_and_ratio",
+           res["max_energy_balance"] <= cfg["energy_tol"] and res["ratio_ok"], value=res["max_energy_balance"],
+           threshold=cfg["energy_tol"],
            detail=f"max |Q_out/Q_in - 1| over the three solves; constant ratio 2: {res['ratio_ok']}")
     for name in ("case1a", "case1b"):  # INFO only (F1): coarse scikit-fem Q2 on the 300 mm plates
         c = series_case(name, ser["cases"][name])
@@ -448,7 +516,7 @@ def run_mms(mms: dict, levels, cfg, st: Stats, ck: Checks | None) -> list[dict]:
     pts = mms["payload"]["reported_points"]
     zref = np.array(mms["payload"]["geometry"]["z_interfaces_m"])
     vals = {p["id"]: [] for p in pts}
-    lines, geo_ok, q_ok = [], True, True
+    lines, geo_ok = [], True
     q_ref = -mms["balance"]["robin_W"]
     res = None
     for lv in levels:
@@ -463,7 +531,7 @@ def run_mms(mms: dict, levels, cfg, st: Stats, ck: Checks | None) -> list[dict]:
         res = solve_steady(g.x, g.y, g.z, mat, list(case.materials), h=case.h, T_inf=case.T_inf, flux=case.flux,
                            source=case.source)
         st.solve(f"mms/L{lv}", res, kT=True)
-        q_ok &= abs(res.meta["q_out"] / q_ref - 1.0) <= cfg["energy_tol"] or False
+        # gated through st.energy (energy_balance sanity check, threshold energy_tol)
         st.energy.append((f"mms/L{lv}/vs_reference_integral", abs(res.meta["q_out"] / q_ref - 1.0)))
         for p in pts:
             if p["kind"] == "area_mean":
@@ -517,17 +585,27 @@ def fresh_layouts(seed: int) -> list[tuple[str, Layout]]:
     return [(f"fresh_{fam}", generate_layouts(1, seed, family=fam)[0]) for fam in FAMILIES]
 
 
+CALIBRATION_MAX_ITERS = 10
+
+
 def calibrate_power(lay: Layout, cfg: dict) -> tuple[float, float]:
     """Equal power per die from L2 level-0 solves so that the hottest die's Tj max rises target +/- tol above the
-    coolant (secant on the rise); returned unrounded with the realised level-0 rise."""
-    Tc, h, tgt = cfg["coolant_K"], cfg["h_W_m2K"], cfg["target_rise_K"]
-    p, rise = cfg["power_start_W"], None
-    for _ in range(10):
-        rise = TL.solve_layout_level(lay, level=0, power_W=p, h=h, T_c=Tc)["values"]["tj_max"] - Tc
-        if abs(rise - tgt) <= cfg["calibration_tol_K"]:
-            break
+    coolant.  Proportional update p <- p * target / rise (a fixed-point iteration on P, exact if the rise were linear in
+    P; k(T) makes it slightly nonlinear).  Returns (p, rise) with ``rise`` computed AT the returned ``p`` (the pair
+    that operating_point and calibration_rise_K describe, and the power both solvers then use), unrounded.  If the
+    tolerance is not met within CALIBRATION_MAX_ITERS solves it raises (an error result, never a verdict) instead of
+    returning a power whose rise was never computed (reviews T0194/T0195 of T0165)."""
+    Tc, h, tgt, tol = cfg["coolant_K"], cfg["h_W_m2K"], cfg["target_rise_K"], cfg["calibration_tol_K"]
+    p = float(cfg["power_start_W"])
+    hist = []
+    for _ in range(CALIBRATION_MAX_ITERS):
+        rise = float(TL.solve_layout_level(lay, level=0, power_W=p, h=h, T_c=Tc)["values"]["tj_max"] - Tc)
+        hist.append(p)
+        if abs(rise - tgt) <= tol:
+            return p, rise  # rise was computed at exactly this p
         p *= tgt / rise
-    return float(p), float(rise)
+    raise RuntimeError(f"power calibration did not reach {tgt} +/- {tol} K in {CALIBRATION_MAX_ITERS} level-0 "
+                       f"solves (powers tried {hist}); refusing to return a power whose rise was not computed")
 
 
 def run_layout(name, lay, layout_set, cfg, skrule: dict, st: Stats, levels) -> list[dict]:
@@ -563,9 +641,14 @@ def run_layout(name, lay, layout_set, cfg, skrule: dict, st: Stats, levels) -> l
             fe[i].append(float(r.tj_max[i]))
         del r
         gc.collect()
+    # z-doubled level-1 solve: skfem_z1 enters A3's denominator and F5, so it passes the same F2 gates (energy balance,
+    # Picard) as every other solve (review T0194 of T0165)
     rz = FEM.solve_layout(lay, P, h, Tc, rule=rule_z, level=levels[1])
     z1 = [float(v) for v in rz.tj_max]
-    fe_meta.append({"level": f"{levels[1]}z2", "dofs": int(rz.dofs), "wall_s": round(rz.wall_s, 1)})
+    fe_meta.append({"level": f"{levels[1]}z2", "dofs": int(rz.dofs), "wall_s": round(rz.wall_s, 1),
+                    "eb": rz.energy_balance, "picard": rz.picard_residual})
+    st.energy.append((f"{name}/skfem/L{levels[1]}z2", float(rz.energy_balance)))
+    st.picard.append((f"{name}/skfem/L{levels[1]}z2", float(rz.picard_residual), int(rz.picard_iters)))
     del rz
     gc.collect()
     log(f"{name}: scikit-fem {fe_meta}")
@@ -644,7 +727,6 @@ def smoke(rows_out: str) -> int:
     ser, mms = load_refs(cfg, ck)
     for k, v in cfg["smoke_rule"].items():  # coarsened copy of the frozen rule, smoke only (module docstring)
         setattr(TL, k, v)
-    cfg = {**cfg, "fv_bytes_per_cell": cfg["fv_bytes_per_cell"]}
     st = Stats()
     lays = [(n, lay, "dev") for n, lay in dev_layouts(cfg)]
     fps = {n: lay.fingerprint() for n, lay, _ in lays}
