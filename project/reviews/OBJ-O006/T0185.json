@@ -1,0 +1,85 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "Passing the criteria does not establish hypothesis (b) or refute the stated null: (b) still says '0.05 K', but A3 allows up to 1.0 K",
+      "detail": "The claim says that if every pass criterion is met, the hypothesis is established against its null. Hypothesis (b) still says the L2 'agrees within 0.05 K with an independent scikit-fem solution \u2026 within the two solvers' combined conservative discretisation estimates'. D0012's patch added the second clause and left the 0.05 K in place. No criterion tests 0.05 K agreement on the generator layouts. A3 only requires |Tj_L2 - Tj_skfem| <= GCI_L2 + GCI_skfem, and A4 and A3b allow each GCI up to 0.5 K, so a pass permits up to 1.0 K disagreement: 20 times what (b) states. The null is 'cannot be verified to the precision O002 needs on the geometry O002 uses'. The objective's own A2 calls 0.05 K 'O002's per-Tj allowance', and why_it_matters says O006 verifies the reference 'at that resolution' (O002's 0.5 K pair differences). A pass with absolute GCIs of 0.5 K and difference bounds up to 1 K on O002's geometry refutes neither. D0012 itself says O002 must be re-derived, yet the objective's null, why_it_matters and decision_if_pass ('use \u2026 as the thermal reference of O002') are unchanged. A supported claim recorded from this objective would therefore state a 0.05 K cross-solver agreement that was never tested.",
+      "evidence": "docs/reports/o006-criteria-change-D0012.patch, hunk at line 14: '(b) agrees within 0.05 K with an independent scikit-fem solution \u2026' is kept as context, and only ', within the two solvers' combined conservative discretisation estimates' is added. project/objectives/O006/objective.yaml line 16 has the same text. A2's description: 'O002's per-Tj allowance'. D0012 Consequences: 'O002 must be re-derived \u2026 cannot be verified against a reference whose conservative difference bound is \u2026 0.14-0.63 K'.",
+      "suggested_check": "Remove 'within 0.05 K' from (b). Restate the null, why_it_matters and decision_if_pass at the precision the criteria actually test (0.5 K absolute, at most 1 K on differences), and drop or qualify the use as O002's reference until O002 is re-derived.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A4 estimator gives a negative or infinite GCI for monotone non-converging sequences",
+      "detail": "A4 sets p = min(p_obs, 1) 'for monotone convergence' and uses the max formula 'for oscillatory or non-monotone sequences'. A sequence with differences of the same sign whose finest step is the largest (|f2-f1| > |f1-f0|, pre-asymptotic or diverging) fits neither branch as worded. The repository's convention, used in thermal_layout.gci_three_grid and thermal_fem._gci, calls any same-sign sequence monotone. Applying the A4 formula under that convention gives p_obs < 0, so r^p - 1 < 0 and the GCI is negative; p_obs = 0 divides by zero. A negative GCI passes A4 silently, because max_col only takes the column maximum. In A3, a non-positive summed GCI makes max_scaled_abs_err raise ValueError, which crashes the evaluation instead of failing the criterion. The least trustworthy sequences are exactly the ones that slip through.",
+      "evidence": "Scratch implementation of A4 as written: (410.0, 410.1, 410.3) gives GCI = -0.50 K (p_obs = -1); (410.0, 410.2, 410.6) gives -1.0 K; (410.0, 410.1, 410.2) gives 2.2e11 (p_obs about 0). tools/mfos/mfos/metrics.py:101-102 raises 'scale must be positive'. thermal_layout.py:80 defines monotone = d32*d21 > 0.",
+      "suggested_check": "Define convergence as 0 < (f2-f1)/(f1-f0) < 1. Otherwise set GCI = +inf (A4 not met), or apply the max formula, and make the evaluator recompute the GCI from the three grid values in the rows rather than trusting the runner's GCI column.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The 0.5 K absolute thresholds are not tied to a pinned load on the A3 layouts",
+      "detail": "A3, A3b and A4 are absolute bounds in K. For constant k the discretisation error scales linearly with dissipated power, and roughly so with k(T). A2 pins the N-layer and manufactured cases to 60-110 K rises, and F1 pins its scikit-fem checks, but A3 (the only criterion on die islands, die-attach corners and copper edges) names no power per die or target rise. The existing benchmark used 85 K and O003 uses 60 K for the reference's hottest die, but the objective leaves the load to E006 design, which comes after T0181's data has been seen. A low-power A3 run would pass A3b and A4 without saying anything about O003's operating point.",
+      "evidence": "benchmarks/results/thermal_fem_convergence.json: target_rise_K 85, power_per_die_W 45. O003 objective.yaml line 43: 'reference's hottest die rises 60 K above coolant'. The A3 description has no load term.",
+      "suggested_check": "Pin the A3 load in the objective, e.g. equal power per die such that the hottest die rises 60-110 K above the 65 \u00b0C coolant at h = 5000 W/(m\u00b2 K).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The threshold derivation treats O003's +2 K as an absolute Tj error; O003 judges a difference of two layouts",
+      "detail": "A4 justifies 0.5 K as 'a quarter of O003's +2 K Tj budget'. O003's criterion is Tj_best - Tj_ref <= 2 K, a difference between two separately solved layouts. With independent GCIs of up to 0.5 K each, the reference error on that quantity is up to 1.0 K, half the budget. That is exactly the outcome D0012 rejected in alternative (c) ('leaves O003's +2 K check with a reference error of half its budget'). The errors may be correlated (same grid rule, same corner types), which would make the difference error much smaller, but no criterion measures or relies on that. So the claim that the thresholds follow from the decision is only half true.",
+      "evidence": "O003 objective.yaml lines 15-16: 'at most 2 K above the reference's'. D0012 Alternatives (c). D0012 Consequences: 'conservative difference bound is GCI_A + GCI_B = 0.14-0.63 K'.",
+      "suggested_check": "State the difference bound (GCI_A + GCI_B <= 1 K) as what O003 inherits, or add a paired-difference criterion (e.g. GCI of Tj differences between dies or layouts of the A3 set).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "A symmetric cross-check failure is mapped to an asymmetric decision: if scikit-fem fails A3b or A3, the decision is to adopt scikit-fem",
+      "detail": "A3 cannot tell which solver is wrong, and A3b fails exactly when scikit-fem itself is not converged to 0.5 K. In both cases decision_if_fail switches the reference to scikit-fem. On this Mac scikit-fem holds about 9 times fewer unknowns per byte than the FV solver (D0006, and 7.7 kB/DOF in the benchmark), so it is the solver more likely to miss 0.5 K. D0012 also says the fallback 'faces the same corner singularity'. The fail branch includes outcomes in which the fallback is the cause of failure. This is partly mitigated because the fallback must be verified under a new experiment id, so nothing unverified is adopted, but the mapping can waste the single evaluation and the schedule.",
+      "evidence": "decision_if_fail: 'Switch the thermal reference to D0006's fallback (scikit-fem)'. A3b: 'the cross-check is itself converged to the A4 bound'. D0012 (a): 'the fallback (scikit-fem) faces the same corner singularity'.",
+      "suggested_check": "Give an A3b failure (or an A3 failure with A1, A2 and A4 met) its own outcome, e.g. INCONCLUSIVE with refinement of scikit-fem on a burst VM, rather than adopting the fallback.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The order cap at 1 is only marginally justified asymptotically, and was validated on 2D cases only",
+      "detail": "I re-derived the corner exponents from the bimaterial wedge eigen-equation k1 tan(\u03bb \u03b11) + k2 tan(\u03bb \u03b12) = 0 with Neumann outer faces. D0012's 0.52 and 0.84 are correct for Cu (k 390) on Al2O3 (k 24) and SAC305 (k 57) on Cu. For a smooth point functional, the pollution order from an edge singularity is about 2\u03bb = 1.04 at the Cu/Al2O3 edge, so a cap at p = 1 is conservative only by a hair asymptotically. Pre-asymptotic orders below 1 are possible, though monotone sequences with p_obs < 1 inflate the GCI, so the cap is harmless there. The conservatism claim rests on 24 values from three 2D cases. 3D vertices and the Tj-max (max, not linear) functional were not tested, and A3's consistency check cannot show conservatism if both solvers converge from the same side.",
+      "evidence": "Scratch eigen-solve: homogeneous 270\u00b0 gives 0.667. Cu on Al2O3: 0.518; on Si3N4: 0.560; on AlN: 0.598. SAC305 on Cu: 0.837; sintered Ag (k 150-250) on Cu: 0.71-0.76.",
+      "suggested_check": "Report p_obs per value with the GCI and flag values with p_obs > 2 or < 0.5 as non-asymptotic.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Lucky-grid sequences get a small GCI with no penalty",
+      "detail": "For a monotone sequence with p_obs far above 1 near order-1 singularities (e.g. differences 0.3 K, then 0.01 K, p_obs about 4.9), the rule gives GCI = 1.25|f2-f1| = 0.0125 K, although the coarser step suggests an order-1 error of order 0.3 K. The new rule removed the range test on p_obs that previously flagged such sequences.",
+      "evidence": "Scratch: (410.0, 410.3, 410.31) gives GCI 0.0125 K, p_obs 4.9.",
+      "suggested_check": "Use the max formula (or Fs = 3) when p_obs exceeds about 2 at singular-corner quantities.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "A1 and A2 never exercise the corner singularities; only A3 does, at a consistency level of up to 1 K",
+      "detail": "The manufactured solution has continuous T and normal flux by construction, and void faces receive inhomogeneous Neumann data, so its exact field is smooth. The Muzychka and N-layer cases are laterally uniform. The 0.05 K accuracy in (a) therefore applies only to corner-free fields. The F3 null does discriminate: dT_const_k is off by about 2.5 K against A1's 1.007 K and A2's 0.05 K. The '30 %' k-variation is undefined (min- versus max-normalised, flagged in T0153), but this does not affect discrimination.",
+      "evidence": "research/notes/o006-manufactured-solution.md \u00a73 and \u00a76; research/notes/o006-reference-series.md lines 173-186.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Compared the D0012 criteria patch with project/objectives/O006/objective.yaml: hypothesis (b) still contains 'agrees within 0.05 K', while A3 only tests |dTj| <= GCI_L2 + GCI_skfem with each GCI up to 0.5 K.",
+    "Implemented the A4 estimator literally in a scratch script. Monotone non-converging sequences give a negative GCI, (410.0, 410.1, 410.3) -> -0.50 K. p_obs = 0 gives an effectively infinite GCI. A lucky-grid sequence, (410.0, 410.3, 410.31), gives 0.0125 K.",
+    "Read tools/mfos/mfos/metrics.py: max_scaled_abs_err raises on a non-positive scale (A3), and max_col takes the runner's GCI column unrecomputed (A4, A3b).",
+    "Read the repository's GCI implementations (thermal_layout.gci_three_grid, thermal_fem._gci): 'monotone' means same-sign differences, and both still implement the old Fs = 3 rule.",
+    "Solved the bimaterial-wedge eigen-equation for the corner exponents. It confirms 0.518 (Cu on Al2O3) and 0.837 (SAC305 on Cu), gives 0.71-0.76 for sintered Ag, and gives a pollution order 2\u03bb of about 1.04 at the Cu/ceramic edge.",
+    "Read benchmarks/results/thermal_fem_convergence.json: target rise 85 K, 45 W per die, p_obs 0.89-1.05, old-rule GCIs of about 0.06 K, so A3b is likely passable at 85 K. The A3 load is not pinned in the objective.",
+    "Read the O003 objective: the Tj criterion is a two-layout difference (<= 2 K) at a 60 K rise, so the reference error on it is up to GCI_ref + GCI_best <= 1 K.",
+    "Read the manufactured-solution and reference-series notes: the MMS is smooth by construction (interface flux continuity, Neumann data on void faces), the F3 null error is 2.5 K (it fails A1 and A2), the case scales make A2 bind first, and the N-layer rises are 81-101 K."
+  ],
+  "caveats": [
+    "Even after the hypothesis text is fixed, a pass verifies 0.05 K accuracy only on corner-free fields (the series cases and the smooth manufactured case). On generator geometry with die-attach and copper corners it verifies cross-solver consistency within 0.5 K per solver, on two layouts (side_by_side with 6 dies, u_shaped with 2 dies) at an unpinned load.",
+    "The 0.5 K bound applies to E006's reported values only. Other families, die counts and powers used by O002 and O003 need their own per-run GCI from meta['solver_tol'].",
+    "The estimator's conservatism was shown on three 2D corner cases (T0181). 3D vertex effects and the max functional were not tested against a known true error.",
+    "I could not inspect T0181's research/o006_gci/results.json, which is not in this snapshot, so D0012's 24-value validation was taken as reported."
+  ]
+}
