@@ -63,7 +63,11 @@ description: 'Pilots P1 and P2 of the O006 notes, merged into one task because P
   (review T0174: the coded -1.49 is a 6H in-plane exponent, Burgemeister 1979, and k along c is about
   30 % lower); for SAC305 use its slope range, or the coded slope halved and doubled if it gives none.
   State whether the recommended load levels change. Do not edit geometry/stack.py; vary the laws locally
-  in the pilot script only.'
+  in the pilot script only. Founder amendment 2026-11-02 (memory): this Mac has 16 GB. Run at most 2 solver
+  processes at a time, keep each below 5 M unknowns (docs/INFRASTRUCTURE.md), and keep the total resident
+  memory of your processes under 8 GB; check with `ps` before adding a parallel job. A 10-shard parallel
+  run used about 50 GB and was killed by the founder session on 2026-11-02; results already written to
+  disk are kept, so resume from them.'
 context_files:
 - project/objectives/O006/objective.yaml
 - project/objectives/O002/objective.yaml
@@ -136,3 +140,7 @@ history:
   summary: agent ended with error_max_budget_usd
   failure_output: ''
   at: '2026-11-02T09:18:29+00:00'
+- outcome: founder_brief_amended
+  summary: 'memory cap: <= 2 parallel solves, < 5 M unknowns, < 8 GB total (10 shards had used ~50 GB
+    and were killed)'
+  at: '2026-11-02T09:31:07+00:00'

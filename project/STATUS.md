@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T09:18:32+00:00 from repository state — do not edit_
+_generated 2026-11-02T09:31:36+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -35,7 +35,6 @@ cancelled: 30, done: 145, failed: 3, needs_founder: 1, running: 2, todo: 1
 - T0181 `running` scientist/investigate: Before E006: GCI of Tj differences between same-stratum layouts, and estimator conservativeness at the singular die-attach corner (attempt 2)
 
 ## Recent events
-- 2026-11-02T06:50:27+00:00 loop_started {"pid": 55509}
 - 2026-11-02T06:50:31+00:00 run_started {"run": "T0182-planner-20261101T225031-ccac", "task": "T0182", "role": "planner", "session": "f93d3e7c-7b1f-44ad-8012-b000bbf667ac"}
 - 2026-11-02T06:50:31+00:00 run_started {"run": "T0167-scientist-20261101T225031-83e1", "task": "T0167", "role": "scientist", "session": "4bd4b819-b9ab-4fbe-9ab2-e0fff61a1c31"}
 - 2026-11-02T06:51:40+00:00 run_finished {"run": "T0182-planner-20261101T225031-ccac", "status": "completed", "cost": 0.555722, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 145, failed: 3, needs_founder: 1, running: 2, todo: 1
 - 2026-11-02T09:18:29+00:00 run_finished {"run": "T0167-scientist-20261101T225031-83e1", "status": "error", "cost": 5.051754, "subtype": "error_max_budget_usd", "report": "missing"}
 - 2026-11-02T09:18:29+00:00 task_failed_attempt {"task": "T0167", "signal": "agent_error", "action": "repair"}
 - 2026-11-02T09:18:32+00:00 run_started {"run": "T0167-scientist-20261102T011832-311a", "task": "T0167", "role": "scientist", "session": "e12d2edb-2b22-4ace-aba2-de47149eefa4"}
+- 2026-11-02T09:31:07+00:00 task_amended {"task": "T0167", "reason": "memory cap after 50 GB parallel run"}
