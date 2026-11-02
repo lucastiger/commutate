@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T00:30:04+00:00 from repository state — do not edit_
+_generated 2026-11-02T01:19:36+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-02T00:30:04+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $26.60/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $27.87/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,18 +23,16 @@ _generated 2026-11-02T00:30:04+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 16 | $26.60 | 517348 | 321966 | 22 | 0 |
+| O006 | 16 | $27.87 | 535242 | 325895 | 22 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 119, failed: 3, running: 2, todo: 6
+cancelled: 29, done: 119, failed: 3, merge: 1, running: 1, todo: 6
 
 - T0149 `running` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
-- T0154 `running` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
+- T0154 `merge` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-01T23:06:48+00:00 run_started {"run": "T0149-builder-20261101T150648-59a5", "task": "T0149", "role": "builder", "session": "cfdd279b-60d9-4f48-ae4e-4f21dc9d906f"}
-- 2026-11-01T23:48:38+00:00 run_finished {"run": "T0149-builder-20261101T150648-59a5", "status": "completed", "cost": 1.114816, "subtype": "success", "report": "structured_output"}
 - 2026-11-01T23:50:34+00:00 verified {"task": "T0149"}
 - 2026-11-01T23:50:39+00:00 run_started {"run": "T0158-critic-20261101T155039-10fb", "task": "T0158", "role": "critic", "session": "8bc7e921-cb22-49db-8682-be4d16e4f13f"}
 - 2026-11-01T23:59:05+00:00 run_finished {"run": "T0158-critic-20261101T155039-10fb", "status": "completed", "cost": 1.732983, "subtype": "success", "report": "structured_output"}
@@ -48,3 +46,5 @@ cancelled: 29, done: 119, failed: 3, running: 2, todo: 6
 - 2026-11-02T00:30:01+00:00 run_started {"run": "T0154-scientist-20261101T163001-c8f4", "task": "T0154", "role": "scientist", "session": "053741d7-4b95-4b01-83e9-0138a62040e7"}
 - 2026-11-02T00:30:01+00:00 run_interrupted {"run": "T0149-builder-20261101T162535-8e18", "cost": 1.509883}
 - 2026-11-02T00:30:01+00:00 run_started {"run": "T0149-builder-20261101T163001-621c", "task": "T0149", "role": "builder", "session": "52e3ed90-fcc9-41a3-b0c4-c8fadc196c7c"}
+- 2026-11-02T01:18:28+00:00 run_finished {"run": "T0154-scientist-20261101T163001-c8f4", "status": "completed", "cost": 1.270733, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T01:19:04+00:00 verified {"task": "T0154"}
