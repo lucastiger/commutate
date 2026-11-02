@@ -1,0 +1,52 @@
+{
+  "summary": "The three deliverables are written and committed in bde77ab: the Case 4 layout script, results.json and the research note. The requested 0.5 / 0.25 / 0.125 mm lateral ladder could not be completed on this Mac. Only 0.5 mm ran, plus an extra 1.0 mm level, so the observed lateral order is not measured and every lateral estimate is a two-level (1.0 / 0.5 mm) estimate. Every definition-of-done command exited 0. This is a research note, not evidence (O006 F4).\n\n**Geometry.** PowerSynth 2D_Case_4 (e3da/PowerSynth2-pkg, commit a1de7ced949c0fd0105d166767b1de8705eb65ab) is rebuilt as a ModuleForge Layout from hand-transcribed numbers. The sha256 of all 12 files read is recorded. No GPL file was committed, copied or imported. The two perturbations were fixed before any solve:\n- **die_shift:** the high-side dies D3/D4 move \u22121 mm in y, so their wires shorten from 16.15 to 15.16 mm.\n- **trace_width:** the DC\u2212 trace T4 widens from 5 to 7 mm.\n\n**Levels.** Each solve calls loop_inductance at 10 and 20 MHz, with the mesh constants changed inside a fresh research process; `src/` is untouched. Levels run:\n- lateral cell 1.0 and 0.5 mm;\n- thickness layers (top/backside/baseplate) 5/3/3, 10/6/6 and 20/12/12 at 0.5 mm (layer count \u00d72 per step);\n- wire annuli bisected radially (25 \u2192 55 filaments per wire) at 0.5 mm.\n\nThe 0.25 mm (about 16 GB) and 0.125 mm (21\u201385 GB) levels are marked not_run, with projected memory, time and VM-hours.\n\n**Results, base geometry:**\n- **L at 0.5 mm:** 22.961 nH at 10 MHz and 22.817 nH at 20 MHz. Going from 1.0 to 0.5 mm changes L by \u22122.15 %.\n- **Absolute discretisation estimate (rules fixed before the solves):** 1.75 nH (7.6 %) at 10 MHz and 1.81 nH (7.9 %) at 20 MHz. It sums a lateral term of 3 \u00d7 the 1.0 \u2192 0.5 mm change, a thickness term of 0.02 nH (observed order about 4), and a filament term of 0.22\u20130.27 nH.\n- **Filament term is an artefact.** I added a diagnostic after seeing the filament result: the same annuli with 12 filaments per ring instead of 6. It lands within 0.008 % of production on all three geometries. So the +0.3\u20130.4 % shift from radial-only refinement is not real, and the estimate without it would be 1.54 nH (6.7 %).\n- **Pair ratios cancel most of the error.** The frozen ratio estimate is 1.7\u20131.8e-3 for die_shift and 0.9\u20131.1e-3 for trace_width (0.5\u20131.5e-3 with the corrected filament term). That is a factor of about 40\u201390 below the relative error on L.\n\n**Classification:** experimental limitation, not a solver fault. Every GMRES solve converged (flag 0), and solver_tol relative to L stayed at or below 3.2e-5.",
+  "failure_class": "experimental",
+  "root_cause": "The finer lateral levels do not fit on this machine. The 0.25 mm level needs about 16 GB, projected from Case 4's own measured memory per unknown (6.9\u201326 GB by other projection methods); the 0.125 mm level needs 21\u201385 GB. Case 4's 80 \u00d7 110 mm baseplate gives about twice the unknowns of a generator layout. Agents may not launch burst VMs: docs/INFRASTRUCTURE.md has the founder run scripts/burst*.sh with the founder's cloud credentials, and this task was not given credentials. As a result the observed order and an observed-order Richardson value cannot be measured. A separate, smaller finding: refining the wire annuli radially while keeping 6 filaments per ring is not a convergent refinement path and adds a spurious +0.3\u20130.4 % to L.",
+  "confidence": 0.6,
+  "evidence": [
+    "Commands run and exit codes: `uv run python research/scripts/o006_case4_layout.py --check --sources $TMPDIR/ps2/2D_Case_4` \u2192 0 (re-hashes the 12 downloaded files); `uv run python research/scripts/o006_case4_layout.py --check` \u2192 0; `test -f research/notes/o006-p3-em-convergence.md` \u2192 0; the results.json definition-of-done python assertion \u2192 0; `uv run mfos gate --fast` \u2192 0 ('all gates passed', run twice); `uv run ruff check` on both new scripts \u2192 0.",
+    "21 solves, all status ok, all GMRES flags 0, 120\u2013229 iterations, max solver_tol relative to L 3.2e-5. All report tool_version 0.3.0 and source_sha256 ed0288b6\u202658a8e (research/o006_p3/solves/*.json).",
+    "Base geometry, 10 / 20 MHz: lat1.0 23.4659 / 23.3234 nH; lat0.5 22.9609 / 22.8174; thk_c 23.2346 / 23.0108; thk_f 22.9444 / 22.8020; fil_f 23.0336 / 22.9065; fil_f_phi12 22.9592 / 22.8188.",
+    "Cost on this Mac: lat0.5 took 206 s, 3.9 GB, 1.02 M unknowns; thk_f took 856 s, 8.1 GB, 2.04 M unknowns. The machine was already swapping heavily at 8 GB.",
+    "Thickness refinement converges monotonically at observed order 4.05 (10 MHz) and 3.65 (20 MHz); the thickness term is 0.022 nH.",
+    "Discriminating test for the filament shift: radial-only bisection (6 per ring) moves L by +0.07 to +0.09 nH; the same annuli with 12 per ring move it by \u22120.0017 / +0.0014 nH on all three geometries. This supports the artefact explanation (Fb) over under-resolved skin effect (Fa).",
+    "Pair ratios: die_shift 0.986943 at 1.0 mm vs 0.986445 at 0.5 mm, change \u22125.0e-4; trace_width 0.969067 vs 0.969138, change +7e-5. The trace_width ratio oscillates under thickness refinement, so it gets the conservative 3 \u00d7 max term (5.7e-4 at 10 MHz).",
+    "The observed lateral order on the six earlier aligned generator ladders is 0.685, 0.713, 0.716, 0.729, 0.789, 0.803 (median 0.72), recomputed from research/l2_layout_vm*, l2_layout_diag. This is prior data, not Case 4; it is used only as a labelled assumed order.",
+    "The PowerSynth figure initial_layout_I1.png supports reading the script coordinates as absolute in the baseplate frame (an inference)."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "The 1.0 mm level is pre-asymptotic: trace gaps are only 2 cells and the near zone spans 18 mm. If so, the two-level lateral estimate could be wrong in either direction. If the true order were below 0.415, 3|\u0394| would not bound the remaining error.",
+      "how_to_discriminate": "Run lat0.25 and lat0.125 on a burst VM. A monotone sequence with order between about 0.6 and 1 confirms the two-level estimate is conservative; oscillation, or an order below 0.42, refutes it."
+    },
+    {
+      "explanation": "The filament shift comes from wire filaments under-resolving the 19 \u00b5m skin depth of the Al wire at 20 MHz (Fa).",
+      "how_to_discriminate": "Already run: with 12 filaments per ring, L returns to within 0.008 % of production, which refutes Fa at 0.5 mm. A further step (for example 24 per ring) moving L by more than 0.05 % would reopen it."
+    },
+    {
+      "explanation": "Discretisation errors cancel in pair ratios for any perturbation (a smooth multiplicative bias).",
+      "how_to_discriminate": "Partly refuted: die_shift cancels only about 40\u00d7 (its ratio estimate is about 13 % of the 1.36 % effect), while trace_width cancels about 300\u00d7. Perturbations as large as real O003 re-layouts are needed to bound the ratio band."
+    }
+  ],
+  "discriminating_tests": [
+    "lat0.25 and lat0.125 on all three geometries on a burst VM (founder): gives the observed order for Case 4, an observed-order Richardson value, and a three-level ratio estimate.",
+    "fil_f_phi12 versus fil_f versus lat0.5: already run; supports Fb (artefact of radial-only refinement).",
+    "Pair-ratio estimate on a perturbation as large as an O003 re-layout (10\u201320 % change in L): tests whether ratio errors grow with the size of the change."
+  ],
+  "recommended_actions": [
+    "Founder: run the not-run levels on a burst VM before 2026-11-27, after merging this branch or with MF_REF set to it: scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o006_p3_em_convergence.py --run lat0.25 lat0.125 --jobs 3 && uv run python research/scripts/o006_p3_em_convergence.py --assemble\" research/o006_p3. Estimated about 3\u201317 VM-hours on an n2-highmem-32; about \u20ac3\u201325 at the documented Hetzner CCX53 rate (GCP price not looked up).",
+    "D0009 / O003: use the pair-ratio estimate (headroom = 1 \u2212 L_opt/L_ref) as the discretisation part of the error band, not the absolute estimate. Measure it on perturbations as large as the actual re-layouts.",
+    "Future convergence specs (for example O004's): refine the number of filaments per ring (WIRE_PHI) together with the radial annuli. Radial-only bisection adds a spurious +0.3\u20130.4 % on single-wire loops. Production WIRE_EDGES/WIRE_PHI need no change on this evidence.",
+    "P4 (FastHenry feasibility): reuse o006_case4_layout.build() as the shared geometry."
+  ],
+  "files_written": [
+    "research/scripts/o006_case4_layout.py",
+    "research/scripts/o006_p3_em_convergence.py",
+    "research/notes/o006-p3-em-convergence.md",
+    "research/o006_p3/results.json",
+    "research/o006_p3/tables.md",
+    "research/o006_p3/solves/*.json (21 solve records)",
+    "research/o006_p3/run_*.log (uncommitted run logs)"
+  ],
+  "affects_acceptance_criteria": false
+}

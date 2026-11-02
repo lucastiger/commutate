@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T01:54:03+00:00 from repository state — do not edit_
+_generated 2026-11-02T01:54:11+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0063** [protected_change] T0149: merge needs founder approval
@@ -27,16 +27,13 @@ _generated 2026-11-02T01:54:03+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 121, failed: 3, merge: 1, needs_founder: 1, running: 2, todo: 4
+cancelled: 29, done: 122, failed: 3, needs_founder: 1, running: 2, todo: 5
 
 - T0149 `needs_founder` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
 - T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 2)
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
-- T0154 `merge` scientist/investigate: Pilot P3: l2_layout discretisation on PowerSynth 2D_Case_4 and two perturbations (research note, not evidence) (attempt 1)
 
 ## Recent events
-- 2026-11-02T01:19:04+00:00 verified {"task": "T0154"}
-- 2026-11-02T01:19:44+00:00 inbox_opened {"id": "I0062", "kind": "protected_change", "subject": "T0154: merge needs founder approval"}
 - 2026-11-02T01:19:47+00:00 run_started {"run": "T0151-scientist-20261101T171947-55ab", "task": "T0151", "role": "scientist", "session": "805d7720-c3f5-4741-9d39-d94522c974a3"}
 - 2026-11-02T01:28:23+00:00 run_finished {"run": "T0149-builder-20261101T163001-621c", "status": "completed", "cost": 2.713318, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:29:32+00:00 verified {"task": "T0149"}
@@ -50,3 +47,5 @@ cancelled: 29, done: 121, failed: 3, merge: 1, needs_founder: 1, running: 2, tod
 - 2026-11-02T01:53:41+00:00 inbox_opened {"id": "I0063", "kind": "protected_change", "subject": "T0149: merge needs founder approval"}
 - 2026-11-02T01:53:42+00:00 run_started {"run": "T0151-scientist-20261101T175342-05bc", "task": "T0151", "role": "scientist", "session": "22f9d281-fc2b-4d92-930f-75c80553a6ad"}
 - 2026-11-02T01:53:43+00:00 run_started {"run": "T0152-builder-20261101T175343-7282", "task": "T0152", "role": "builder", "session": "2da7fe1e-e5e3-40cc-8acf-1a8b1877bd0e"}
+- 2026-11-02T01:54:05+00:00 sleep_detected {"gap_s": 713, "runs_extended": 2}
+- 2026-11-02T01:54:09+00:00 merged {"task": "T0154"}
