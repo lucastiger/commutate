@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-02T10:20:17+00:00 from repository state — do not edit_
+_generated 2026-11-02T10:21:29+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0080** [budget_increase] daily LLM budget reached
+- **I0083** [decision] [O006] [O006] Update T0165's E006 design brief to match D0012 before you release it with `mfos task retry T0165`
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +15,7 @@ _generated 2026-11-02T10:20:17+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $90.24/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $90.64/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -24,21 +25,17 @@ _generated 2026-11-02T10:20:17+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 50 | $90.24 | 1765583 | 953255 | 76 | 0 |
+| O006 | 51 | $90.64 | 1771789 | 956582 | 76 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 147, failed: 3, needs_founder: 1, running: 2, todo: 3
+cancelled: 30, done: 148, failed: 3, needs_founder: 1, running: 2, todo: 2
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
 - T0167 `running` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 2)
-- T0186 `running` planner/plan: Plan O006 (founder answered I0081: Founder (2026-11-02): option 2 - hold T0165 until the A3/A4 decision is recorded after reading research/notes/o006-gci-differences.md (T0181). T0165 set to needs_founder; release with mfos task retry T0165. (no replan)) (attempt 1)
+- T0184 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T09:18:29+00:00 run_finished {"run": "T0167-scientist-20261101T225031-83e1", "status": "error", "cost": 5.051754, "subtype": "error_max_budget_usd", "report": "missing"}
-- 2026-11-02T09:18:29+00:00 task_failed_attempt {"task": "T0167", "signal": "agent_error", "action": "repair"}
-- 2026-11-02T09:18:32+00:00 run_started {"run": "T0167-scientist-20261102T011832-311a", "task": "T0167", "role": "scientist", "session": "e12d2edb-2b22-4ace-aba2-de47149eefa4"}
-- 2026-11-02T09:31:07+00:00 task_amended {"task": "T0167", "reason": "memory cap after 50 GB parallel run"}
 - 2026-11-02T09:38:42+00:00 loop_started {"pid": 94067}
 - 2026-11-02T09:39:01+00:00 deadlines_extended {"seconds": 12600, "runs": 2, "reason": "run_wall_minutes 150 -> 360 (44424d5)"}
 - 2026-11-02T10:04:40+00:00 run_finished {"run": "T0181-scientist-20261102T011035-a531", "status": "completed", "cost": 2.820786, "subtype": "success", "report": "structured_output"}
@@ -50,3 +47,7 @@ cancelled: 30, done: 147, failed: 3, needs_founder: 1, running: 2, todo: 3
 - 2026-11-02T10:18:11+00:00 inbox_resolved {"id": "I0082", "status": "approved", "note": "Accepted; findings feed D0012 (order-capped GCI; strip_dieonly and Cu-on-ceramic corner caveats per review T0183)
 - 2026-11-02T10:20:15+00:00 merged {"task": "T0181"}
 - 2026-11-02T10:20:17+00:00 run_started {"run": "T0186-planner-20261102T022017-a8ca", "task": "T0186", "role": "planner", "session": "d8f37bdb-a5a5-416f-acd8-4b3507dcbcad"}
+- 2026-11-02T10:21:26+00:00 run_finished {"run": "T0186-planner-20261102T022017-a8ca", "status": "completed", "cost": 0.401656, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T10:21:26+00:00 inbox_opened {"id": "I0083", "kind": "decision", "subject": "[O006] [O006] Update T0165's E006 design brief to match D0012 before you release it with `mfos task retry T0165`
+- 2026-11-02T10:21:26+00:00 plan_applied {"objective": "O006", "created": [], "dropped": 0}
+- 2026-11-02T10:21:29+00:00 run_started {"run": "T0184-critic-20261102T022129-b97a", "task": "T0184", "role": "critic", "session": "16ce9aac-cda2-4256-ae51-a301171e3f38"}

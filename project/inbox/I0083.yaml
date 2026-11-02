@@ -1,0 +1,43 @@
+id: I0083
+kind: decision
+subject: '[O006] [O006] Update T0165''s E006 design brief to match D0012 before you release it with `mfos
+  task retry T0165`'
+summary: 'T0165 (needs_founder, held per I0081) was written before D0012 and contradicts the revised frozen
+  objective in four ways. (1) Section (3) names the metrics max_case_scaled_err, max_abs_err_K, max_abs_diff_vs_skfem_K
+  and max_richardson_est_K. The objective now has five: max_case_scaled_err, max_abs_err_K, max_skfem_consistency
+  (A3), max_skfem_gci_K (A3b) and max_conservative_gci_K (A4). (2) Section (3) asks for new mfos.metrics
+  functions, including ''a GCI-gated max error so that skfem_rich_est > 0.025 K fails A3'', and says to
+  stop and report as blocked if they are missing. D0012 recomputes with the existing functions: A1 max_scaled_abs_err
+  with case_scale, A2 max_abs_err, A3 max_scaled_abs_err with the summed GCI as scale, A3b and A4 max_col.
+  A scientist following the brief literally would either build a 0.025 K gate the objective no longer
+  has, or block for no reason. (3) The cross-check rows have no column holding the sum (rich_est + skfem_rich_est)
+  that A3''s recompute needs. (4) The brief defines rich_est only as ''A4''s GCI, exactly as defined there''.
+  That now means the order-capped rule (p = min(p_obs, 1); 1.25 max(|f2-f1|, |f1-f0|) for non-monotone
+  sequences), and it applies to both solvers. Spelling this out, plus a per-value monotone/oscillatory
+  flag, would make the F2 report and A3b checkable. Nothing else in the brief has to change: the F1-F3
+  checks, refcheck, smoke rows and the 30 % k(T) reading all still apply. I can''t edit a task''s brief.
+  My only alternative is cancelling T0165 and re-issuing it, which gets around your hold and uses up another
+  replan (O006 is already at 5 of 3).'
+refs:
+- O006
+- T0186
+options:
+- 'Amend T0165''s brief in place (as with the earlier founder_brief_amended changes): replace section
+  (3) with the D0012 metric names and recompute functions; add a gci_sum column (rich_est + skfem_rich_est)
+  and a convergence-type flag to the rows; define rich_est as A4''s order-capped GCI for both solvers;
+  delete the ''stop if functions missing'' clause and the 0.025 K gate. Optionally add a DoD check that
+  experiments/drafts/E006.yaml contains all five metric names. Release with `mfos task retry T0165` once
+  T0184/T0185 are done and you have re-approved.'
+- Tell the planner to cancel T0165 and create a replacement design task with the corrected brief, depending
+  on T0184 and T0185 (one more replan, past the limit)
+- 'Release T0165 unchanged and rely on the scientist to follow the objective where the brief conflicts
+  (not recommended: the brief''s explicit ''stop if blocked'' clause and stale metric names make the outcome
+  unpredictable)'
+recommendation: Option 1. It is the smallest change, keeps your hold and D0012's order (re-review, then
+  re-approval, then release), uses no replan, and makes sure the E006 draft maps one-to-one to A1-A4,
+  A3b, K1 and K2 before the single evaluation.
+status: open
+response: ''
+created_at: '2026-11-02T10:21:26+00:00'
+resolved_at: null
+resolved_by: null
