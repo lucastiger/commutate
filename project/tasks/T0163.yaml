@@ -4,7 +4,7 @@ title: 'thermal_fv: second-order prescribed flux on the Robin face, Picard re-ch
   tests (review T0160)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Review T0160 of T0149: (1) a prescribed flux on the z=0 Robin face is injected at the cell
   centre, making that path first order; apply it at the face (combined Robin-plus-flux face condition)
@@ -51,3 +51,43 @@ history:
 - outcome: founder_dod_added
   summary: DoD and touches added per I0067 (planner T0162 suggestion)
   at: '2026-11-02T02:17:33+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All four review items are done in thermal_fv.py, with new tests, and the work is committed.
+    (1) A prescribed flux on the z=0 Robin face now acts at the face, as T_inf_eff = T_inf + q/h with
+    Gauss averaging, instead of at the cell centre. The energy-balance bookkeeping (q_in, q_out) was updated
+    to match. (2) After the polishing re-solve, the Picard change dT is recomputed against the iterate
+    used to assemble the system, on the returned field. Iteration continues if dT is still at or above
+    picard_tol, and it raises if it never converges. meta[''picard_dT''] now refers to the returned field.
+    (3) New tests: a 1-D Robin-face flux case (observed orders 1.95–2.0, asserted ≥1.9), a 3-D k(T) manufactured
+    case with a Robin flux (k varies by more than 30%, orders 1.8–2.3), and a test that the Picard st'
+  report:
+    status: completed
+    summary: 'All four review items are done in thermal_fv.py, with new tests, and the work is committed.
+      (1) A prescribed flux on the z=0 Robin face now acts at the face, as T_inf_eff = T_inf + q/h with
+      Gauss averaging, instead of at the cell centre. The energy-balance bookkeeping (q_in, q_out) was
+      updated to match. (2) After the polishing re-solve, the Picard change dT is recomputed against the
+      iterate used to assemble the system, on the returned field. Iteration continues if dT is still at
+      or above picard_tol, and it raises if it never converges. meta[''picard_dT''] now refers to the
+      returned field. (3) New tests: a 1-D Robin-face flux case (observed orders 1.95–2.0, asserted ≥1.9),
+      a 3-D k(T) manufactured case with a Robin flux (k varies by more than 30%, orders 1.8–2.3), and
+      a test that the Picard stop holds on the returned field. I did not run the old code against the
+      new Robin-face test, so I haven''t confirmed it would have failed before. (4) 0-d numpy flux specs
+      in a dict are accepted as scalars.'
+    files_changed:
+    - src/moduleforge/solvers/thermal_fv.py
+    - tests/unit/solvers/test_thermal_fv.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fv.py -m 'not slow'
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - I ran the DoD file test with -m 'not slow' (the million-cell test is deselected); the orchestrator's
+      exact command without that marker will also run it. I did not run it.
+    - A 0-d array is accepted only as a dict flux spec. A bare 0-d array passed as the whole `flux` argument
+      is still rejected.

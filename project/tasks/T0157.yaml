@@ -1,14 +1,25 @@
 id: T0157
 objective: O006
-title: Verify every k(T) law and citation in geometry/stack.py against primary sources
+title: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred)
 type: research
 agent: scout
-status: needs_founder
+status: todo
 depends_on: []
-description: Open each cited source (Incropera Tables A.1/A.2, Slack 1973, Hirosaki 2002, CRC tin resistivity
-  coefficient, Levinshtein 2001 / TCAD SiC models) and confirm the numbers and laws in src/moduleforge/geometry/stack.py;
-  find a primary SAC305 k(T) source. Write research/notes/o006-kT-citations.md; list every discrepancy
-  with the corrected value. Must finish before pilot P1 (thermal envelope) relies on the laws.
+description: 'Re-scoped by the founder on 2026-11-02 after reviews T0174 and T0175: agents cannot open
+  paywalled primaries, so this task is a secondary-source screen, not a primary verification. Revise research/notes/o006-kT-citations.md
+  (keep attempt 2''s work) so that: (1) every k(T) law AND every 300 K value in src/moduleforge/geometry/stack.py
+  (Cu 385, Al2O3 24, SAC305 58, Si3N4 90, sintered-Ag range, 4H-SiC 370) has one row with its source class:
+  primary opened / secondary or scan / bibliographic record only / not found; (2) the review errors are
+  fixed: SAC305 - the code''s alpha = 4.2e-3 /K is consistent once reference temperatures are matched,
+  so do not propose a ''correction'' that mixes them (T0175); Si3N4 - correct the sign of the ''too shallow''
+  hint (T0175); Burgemeister et al. 1979 (6H-SiC, normal to c, T^-1.49, about 30 % lower parallel to c)
+  is identifiable and should be reported as the exponent''s origin with its polytype and direction (T0174/T0175);
+  the Ioffe temperature fit is labelled 6H, not 4H (T0175); (3) for pilot P1, give explicit sensitivity
+  ranges: 4H-SiC through-thickness (c-axis) k(300 K) and exponent ranges with the reasoning, SAC305 slope
+  range, Si3N4 exponent range; (4) follow mf-research rules: Answer at most 5 sentences, provenance header,
+  cite only what you opened and say how you opened it. List under ''Open questions'' the primaries the
+  founder should obtain (Incropera Tables A.1/A.2 pages, Slack 1973, Hirosaki 2002, Burgemeister 1979,
+  the cross-plane 4H-SiC TDTR paper). Do not edit src/.'
 context_files: []
 deliverables:
 - research/notes/o006-kT-citations.md
@@ -250,3 +261,7 @@ history:
   outcome: review_round_cap
   summary: 2 rejected rounds
   at: '2026-11-02T03:48:25+00:00'
+- outcome: founder_rescoped
+  summary: 'I0072: re-scoped to a secondary-source screen with review fixes and P1 ranges; primary check
+    deferred'
+  at: '2026-11-02T03:55:33+00:00'

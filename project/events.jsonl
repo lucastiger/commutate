@@ -1243,3 +1243,8 @@
 {"ts": "2026-11-02T03:48:25+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0072", "kind": "decision", "subject": "T0157: 2 review rounds rejected; your call"}
 {"ts": "2026-11-02T03:48:25+00:00", "event": "review_round_cap", "actor": "orchestrator", "task": "T0157", "rounds": 2}
 {"ts": "2026-11-02T03:48:29+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0163-builder-20261101T194829-6df1", "task": "T0163", "role": "builder", "session": "5ae48dc6-7e12-429a-b196-d5632b8e8bc4"}
+{"ts": "2026-11-02T03:54:16+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0163-builder-20261101T194829-6df1", "status": "completed", "cost": 0.386469, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-02T03:55:33+00:00", "event": "task_amended", "actor": "founder", "task": "T0157", "reason": "I0072 re-scope to secondary-source screen"}
+{"ts": "2026-11-02T03:55:35+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0072", "status": "answered", "note": "Founder (2026-11-02): re-scoped T0157 to a secondary-source screen with the T0174/T0175 fixes and explicit P1 sensitivity ranges; primary verification deferred until the founder supplies PDFs; retried as attempt 3.", "by": "session"}
+{"ts": "2026-11-02T03:56:00+00:00", "event": "verified", "actor": "orchestrator", "task": "T0163"}
+{"ts": "2026-11-02T03:56:05+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0176-critic-20261101T195605-47f8", "task": "T0176", "role": "critic", "session": "7b6064a2-7508-44e2-a614-264e044a75d6"}
