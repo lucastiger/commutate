@@ -3,7 +3,7 @@ objective: O006
 title: 'Run E006: thermal L2 against frozen references, scikit-fem cross-check and GCI'
 type: experiment
 agent: none
-status: todo
+status: needs_founder
 depends_on:
 - T0165
 - T0150
@@ -40,3 +40,7 @@ history:
 - outcome: founder_dependency_added
   summary: waits for T0196 (pre-registration fixes)
   at: '2026-11-02T17:33:12+00:00'
+- outcome: awaiting_burst
+  summary: ~3 CPU-h exceeds local limit
+  at: '2026-11-02T19:31:43+00:00'
+  since: 1793647903.49541

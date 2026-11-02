@@ -1414,3 +1414,7 @@
 {"ts": "2026-11-02T19:28:43+00:00", "event": "merged", "actor": "orchestrator", "task": "T0196"}
 {"ts": "2026-11-02T19:28:43+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0094", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
 {"ts": "2026-11-02T19:30:43+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0090", "status": "rejected", "note": "Superseded by I0094: register after T0196 and the NaN-gate fix", "by": "human"}
+{"ts": "2026-11-02T19:31:17+00:00", "event": "experiment_registered", "actor": "orchestrator", "id": "E006", "hash": "sha256:6ea7ce80d70572248e8704bbc71743459c4fa44cec07ff2a1cdeb59547b08fcf", "by": "founder"}
+{"ts": "2026-11-02T19:31:17+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0094", "status": "approved", "note": "Register E006: design T0165 + fixes T0196 (reviews T0194, T0195, T0197) + NaN-safe gates", "by": "human"}
+{"ts": "2026-11-02T19:31:43+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0095", "kind": "decision", "subject": "E006 needs burst compute (~3 CPU-h)"}
+{"ts": "2026-11-02T19:31:43+00:00", "event": "burst_requested", "actor": "orchestrator", "task": "T0166", "experiment": "E006", "cpu_hours": 3.0}

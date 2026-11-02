@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-02T19:31:06+00:00 from repository state — do not edit_
+_generated 2026-11-02T19:31:43+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
-- **I0094** [experiment_registration] register E006 (pre-registration)
+- **I0095** [decision] E006 needs burst compute (~3 CPU-h)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -27,14 +27,11 @@ _generated 2026-11-02T19:31:06+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 163, failed: 3, todo: 1
+cancelled: 30, done: 163, failed: 3, needs_founder: 1
 
+- T0166 `needs_founder` none/experiment: Run E006: thermal L2 against frozen references, scikit-fem cross-check and GCI (attempt 0)
 
 ## Recent events
-- 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
-- 2026-11-02T18:40:13+00:00 inbox_resolved {"id": "I0091", "status": "approved", "note": "Daily cap raised to 120 in policy", "by": "human"}
-- 2026-11-02T18:40:34+00:00 inbox_opened {"id": "I0092", "kind": "budget_increase", "subject": "daily LLM budget reached"}
-- 2026-11-02T18:40:36+00:00 loop_started {"pid": 85666}
 - 2026-11-02T18:40:39+00:00 run_started {"run": "T0196-scientist-20261102T104039-19d7", "task": "T0196", "role": "scientist", "session": "46daa03b-08ae-48aa-b8e5-71eebf2a9c4f"}
 - 2026-11-02T18:42:54+00:00 inbox_resolved {"id": "I0092", "status": "approved", "note": "Stale: cap already 120 (b1233a2); raised by the pre-restart loop", "by": "human"}
 - 2026-11-02T19:01:47+00:00 run_finished {"run": "T0196-scientist-20261102T104039-19d7", "status": "completed", "cost": 3.36292, "subtype": "success", "report": "structured_output"}
@@ -46,3 +43,7 @@ cancelled: 30, done: 163, failed: 3, todo: 1
 - 2026-11-02T19:28:43+00:00 merged {"task": "T0196"}
 - 2026-11-02T19:28:43+00:00 inbox_opened {"id": "I0094", "kind": "experiment_registration", "subject": "register E006 (pre-registration)"}
 - 2026-11-02T19:30:43+00:00 inbox_resolved {"id": "I0090", "status": "rejected", "note": "Superseded by I0094: register after T0196 and the NaN-gate fix", "by": "human"}
+- 2026-11-02T19:31:17+00:00 experiment_registered {"id": "E006", "hash": "sha256:6ea7ce80d70572248e8704bbc71743459c4fa44cec07ff2a1cdeb59547b08fcf", "by": "founder"}
+- 2026-11-02T19:31:17+00:00 inbox_resolved {"id": "I0094", "status": "approved", "note": "Register E006: design T0165 + fixes T0196 (reviews T0194, T0195, T0197) + NaN-safe gates", "by": "human"}
+- 2026-11-02T19:31:43+00:00 inbox_opened {"id": "I0095", "kind": "decision", "subject": "E006 needs burst compute (~3 CPU-h)"}
+- 2026-11-02T19:31:43+00:00 burst_requested {"task": "T0166", "experiment": "E006", "cpu_hours": 3.0}

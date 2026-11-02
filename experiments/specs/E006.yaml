@@ -1,0 +1,327 @@
+id: E006
+title: Thermal L2 (FV, k(T)) against frozen Muzychka 2003 / N-layer series and a manufactured solution,
+  and against scikit-fem on five generator layouts at O003's operating point (O006 A1-A4)
+objective: O006
+status: registered
+runner: uv run python experiments/runners/e006_run.py
+config:
+  series_ref_path: research/e006_refs/series_values.json
+  series_sha256: befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151
+  mms_ref_path: research/e006_refs/mms_values.json
+  mms_sha256: ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b
+  mms_kvar_min: 0.3
+  mms_kvar_measured: 0.3227142963267051
+  mms_kvar_margin: 0.0227142963267051
+  mms_kvar_max_normalised: 0.244
+  gci_floor_K: 0.001
+  energy_tol: 1.0e-06
+  picard_tol_K: 0.0001
+  coolant_K: 338.15
+  h_W_m2K: 5000.0
+  target_rise_K: 60.0
+  calibration_tol_K: 0.25
+  operating_point_tol_K: 1.0
+  power_start_W: 30.0
+  dev_seed: 20261101
+  dev_layouts:
+  - - side_by_side_6
+    - side_by_side
+    - 6
+  - - u_shaped_2
+    - u_shaped
+    - 2
+  dev_fingerprints:
+    side_by_side_6: 1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b
+    u_shaped_2: 6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6
+  skfem_rule:
+    h0_m: 0.0005
+    near_margin_m: 0.0015
+    nz:
+      baseplate: 6
+      solder: 2
+      backside_cu: 2
+      ceramic: 2
+      top_cu: 2
+      die_attach: 2
+      die: 2
+  f5_max_K: 0.25
+  skfem_f1_gci_K: 0.01
+  skfem_f1_agree_K: 0.02
+  skfem_max_dofs: 700000
+  skfem_f1_element: ElementHex2 (Q2, 27-node Lagrange hexahedron), Gauss 3x3x3, exact Galerkin source
+    means
+  skfem_case2:
+    s0_m: 0.002
+    grow: 2.0
+    hmax_m: 0.005
+    z_s0_m: 0.002
+    z_hmax_m: 0.005
+    nz: {}
+  skfem_uniform:
+    box_m: 0.0165
+    die_m: 0.0055
+    target_rise_K: 85.0
+    s0_m: 0.00025
+    grow: 2.0
+    hmax_m: 0.001
+    nz:
+      baseplate: 2
+  skfem_case1:
+    s0_m: 0.005
+    grow: 2.0
+    hmax_m: 0.03
+    nz:
+      plate: 1
+      spreader: 1
+  skfem_offcentre:
+    box_m:
+    - 0.012
+    - 0.01
+    die_m:
+    - 0.005
+    - 0.004
+    centre_m:
+    - 0.004
+    - 0.0035
+    target_rise_K: 85.0
+    s0_m: 0.0005
+    grow: 2.0
+    hmax_m: 0.002
+    nz:
+      baseplate: 2
+  fv_bytes_per_cell: 1500.0
+  memory_fraction: 0.85
+  smoke_rule:
+    H0_MAX: 0.004
+    LAT_FRAC: 4.0
+    EDGE_FRAC: 8.0
+    Z_CELLS: 1
+  smoke_skfem_rule:
+    h0_m: 0.002
+    near_margin_m: 0.0015
+    nz:
+      baseplate: 3
+      solder: 1
+      backside_cu: 1
+      ceramic: 1
+      top_cu: 1
+      die_attach: 1
+      die: 1
+  smoke_fresh_dev_seed: 7
+sealed_seed: true
+metrics:
+- name: max_case_scaled_err
+  description: 'A1/K1. max over the reference cases (Muzychka 2003 Cases 1a, 1b, 2, 3; N-layer default
+    stack; manufactured case) and their points (per source: centroid, source mean, reference maximum over
+    the source; the manufactured case: its nine frozen points) of |T_L2 - T_ref| / case scale (A1 scale;
+    manufactured: field range); T_L2 = reconstructed surface temperature (T_c + q dz/2k) bilinearly interpolated
+    at the point, area mean for means, frozen-rule level 2. Point value, no CI, level 0.0 (deterministic).'
+  unit: ''
+- name: max_abs_err_K
+  description: A2/K2. max |T_L2 - T_ref| over the same rows, K. Point value, no CI, level 0.0.
+  unit: K
+- name: max_skfem_consistency
+  description: A3. max over every die of the five layouts (2 dev, 3 fresh sealed-seed) of |f_lv2 - skfem_lv2|
+    / (gci_capped(f_lv0..2) + gci_capped(skfem_lv0..2) + 2.5 |skfem_z1 - skfem_z0|), floor 1e-3 K; +inf
+    if a sequence diverges. Point value, no CI, level 0.0.
+  unit: ''
+- name: max_conservative_gci_K
+  description: A4. max over every reported L2 value (finest rows of the cases and every die of the five
+    layouts) of mfos.metrics.gci_capped(f_lv0, f_lv1, f_lv2, floor 1e-3 K); +inf if any diverges (not
+    met; never caught). Point value, no CI, level 0.0.
+  unit: K
+- name: null_dT_const_k_scaled_err
+  description: F3 null in A1 form, on dT_const_k (constant k at the layer-mean temperature); must exceed
+    0.01.
+  unit: ''
+- name: null_dT_const_k_abs_err_K
+  description: F3 null in A2 form; must exceed 0.05 K.
+  unit: K
+- name: n_oscillatory_values
+  description: F2. count of reported values in the oscillatory A4 branch (informational).
+  unit: ''
+- name: n_non_asymptotic_values
+  description: F2. count of reported values with p_obs outside [0.5, 2] or undefined (informational).
+  unit: ''
+sanity_checks:
+- name: reference_sha256
+  description: canonical sha256 of both frozen reference payloads equals config (series befc5efa..., mms
+    ca05847b...), checked before any solve; a mismatch stops the run
+- name: series_cases_match_frozen_parameters
+  description: the series generator's cases equal the frozen JSON parameters (the L2 cases are built from
+    the JSON)
+- name: series_converged
+  description: F1. doubling every series knob (modes, quadrature, images, all) changes every frozen value
+    by < 1e-7 of its rise (e006_series.check_convergence on the frozen rows)
+- name: case3_printed_values
+  description: F1. own Muzychka implementation at the paper's 50 terms reproduces the printed Case 3 values
+    (centre maximum, cross mean) to their printed digits
+- name: nlayer_reduces_to_two_layer
+  description: F1. N-layer series with layers sharing two conductivities equals the two-layer series (rel
+    1e-9)
+- name: mms_numeric_check
+  description: F1. e006_mms self-checks (k-law transcription, FD source check, interface continuity, global
+    and region balance, cubature, ranges) all pass, generator sha256 equals the frozen file, ceramic k_max/k_min
+    - 1 >= 0.30
+- name: skfem_q2_selftest
+  description: F1 support. the scikit-fem Q2 box solver evaluates a triquadratic field exactly at arbitrary
+    points (<= 1e-9) and reproduces two-layer 1D conduction exactly (<= 1e-6 K, energy balance <= 1e-6)
+- name: case2_skfem_gci
+  description: F1. scikit-fem's own A4 GCI (mfos.metrics.gci_capped, floor 1e-3 K; three grids, r = 2)
+    <= 0.01 K for all 12 Case 2 values (Q2 hexahedra)
+- name: case2_vs_skfem
+  description: F1. |T_skfem(level 2) - T_series| <= 0.02 K for all 12 Case 2 values (source means integrated
+    exactly)
+- name: case2_skfem_energy_and_ratio
+  description: F1/F2. |Q_out/Q_in - 1| <= 1e-6 in the three Case 2 scikit-fem solves and their lines bisect
+    (r = 2)
+- name: nlayer_uniform_rise_in_band
+  description: F1. the uniform-stack check case (frozen N-layer stack, centred 5.5 mm die) has a 60-110
+    K rise
+- name: nlayer_uniform_skfem_gci
+  description: F1. scikit-fem's own A4 GCI <= 0.01 K for the uniform-stack values (quarter-symmetric mesh)
+- name: nlayer_uniform_vs_skfem
+  description: F1. |T_skfem(level 2) - T_series| <= 0.02 K on the laterally uniform default stack
+- name: nlayer_uniform_skfem_energy_and_ratio
+  description: F1/F2. |Q_out/Q_in - 1| <= 1e-6 in the three uniform-stack scikit-fem solves and their
+    lines bisect
+- name: nlayer_offcentre_rise_in_band
+  description: F1. the off-centre check case (frozen N-layer stack, 12 x 10 mm box, 5 x 4 mm source centred
+    at (4.0, 3.5) mm) has a 60-110 K maximum rise; the series' odd-mode signal at the centroid is reported
+- name: nlayer_offcentre_series_converged
+  description: F1. doubling every series knob changes the off-centre case's five reported values by <
+    1e-7 of its rise
+- name: nlayer_offcentre_skfem_gci
+  description: F1. scikit-fem's own A4 GCI <= 0.01 K for the off-centre values (full domain, no symmetry;
+    centroid, mean, maximum and the centroid's mirror images about x = a/2 and y = b/2)
+- name: nlayer_offcentre_vs_skfem
+  description: F1. |T_skfem(level 2) - T_series| <= 0.02 K on the off-centre case (odd modes exercised)
+- name: nlayer_offcentre_skfem_energy_and_ratio
+  description: F1/F2. |Q_out/Q_in - 1| <= 1e-6 in the three off-centre scikit-fem solves and their lines
+    bisect
+- name: mms_geometry_matches_reference
+  description: the frozen rule's grid of the manufactured geometry (built as a Layout) has the reference
+    region map and interfaces at every level
+- name: layout_fingerprints
+  description: F4. the two dev fingerprints equal config; the three fresh sealed-seed layouts are one
+    per family and the five fingerprints are distinct (recorded in the detail and the domain)
+- name: constant_refinement_ratio
+  description: F2. every L2 grid at level l+1 bisects every level-l cell (ratio exactly 2, coarse lines
+    kept)
+- name: energy_balance
+  description: F2. |Q_out/Q_in - 1| <= 1e-6 for every L2 and scikit-fem solve, including each layout's
+    z-doubled level-1 scikit-fem solve (skfem_z1, which enters A3 and F5); manufactured case also against
+    the integrated reference source and boundary fluxes (64.648 W)
+- name: picard_converged
+  description: F2. last Picard max|dT| < 1e-4 K in every k(T) solve (both solvers), including each layout's
+    z-doubled level-1 scikit-fem solve
+- name: operating_point
+  description: O003 point. every layout's level-0 hottest-die rise within 60 +/- 1 K at the recorded equal
+    power; the rise is the one computed at exactly that power (calibrate_power raises if its 0.25 K tolerance
+    is not met in 10 level-0 solves, so it never returns a power whose rise was not computed)
+- name: skfem_gci_f5
+  description: F5. scikit-fem estimate gci_capped(skfem_lv0..2, 1e-3 K) + 2.5|skfem_z1 - skfem_z0| <=
+    0.25 K on every die of the five layouts (INVALID if missed; never a verdict on the L2)
+timeout_min: 300
+cpu_hours_est: 3.0
+registered_by: founder
+registered_at: '2026-11-02T19:31:17+00:00'
+spec_hash: sha256:6ea7ce80d70572248e8704bbc71743459c4fa44cec07ff2a1cdeb59547b08fcf
+runner_files:
+  experiments/runners/e006_run.py: a793b15584822020d29bd27b98cf4eadddb10e94381768746fddf9a892b9d488
+evidence_rules: 2
+code_under_test:
+- src/moduleforge/solvers/thermal_fv.py
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/solvers/thermal_fem.py
+- experiments/runners/e006_series.py
+- experiments/runners/e006_mms.py
+- experiments/runners/e006_skfem_q2.py
+code_must_match: []
+requires_passed: []
+rows:
+  artifact: rows.json
+recompute:
+- metric: max_case_scaled_err
+  fn: max_scaled_abs_err
+  pred: T_l2
+  ref: T_ref
+  strata: []
+  group: null
+  role: null
+  params:
+    scale: case_scale
+  where:
+    kind: case
+    is_finest: true
+  ci: null
+  rel_tol: 1.0e-09
+  abs_tol: 1.0e-15
+- metric: max_abs_err_K
+  fn: max_abs_err
+  pred: T_l2
+  ref: T_ref
+  strata: []
+  group: null
+  role: null
+  params: {}
+  where:
+    kind: case
+    is_finest: true
+  ci: null
+  rel_tol: 1.0e-09
+  abs_tol: 1.0e-15
+- metric: max_skfem_consistency
+  fn: max_gci_consistency
+  pred: null
+  ref: null
+  strata: []
+  group: null
+  role: null
+  params:
+    pred_levels:
+    - f_lv0
+    - f_lv1
+    - f_lv2
+    ref_levels:
+    - skfem_lv0
+    - skfem_lv1
+    - skfem_lv2
+    ref_zpair:
+    - skfem_z0
+    - skfem_z1
+    floor: 0.001
+  where:
+    kind: crosscheck
+  ci: null
+  rel_tol: 1.0e-09
+  abs_tol: 1.0e-15
+- metric: max_conservative_gci_K
+  fn: max_gci_capped
+  pred: null
+  ref: null
+  strata: []
+  group: null
+  role: null
+  params:
+    levels:
+    - f_lv0
+    - f_lv1
+    - f_lv2
+    floor: 0.001
+  where:
+    is_finest: true
+  ci: null
+  rel_tol: 1.0e-09
+  abs_tol: 1.0e-15
+null_baselines:
+- name: constant_k_at_layer_mean
+  kind: column
+  strata: []
+  column: dT_const_k
+  applies_to:
+  - max_case_scaled_err
+  - max_abs_err_K
+recompute_exempt: {}
+dev_rows: research/e006/dev_rows.json
