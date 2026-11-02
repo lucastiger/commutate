@@ -1,0 +1,35 @@
+id: I0068
+kind: plan_approval
+subject: '[O006] approve initial plan (4 tasks)'
+summary: 'O006 has its materials (T0148) and finite-volume core (T0149) merged. The T0149 reviews accepted,
+  and the follow-up fixes are in founder task T0163. Nothing has been compared with a reference yet, no
+  evaluation is spent, and $40.64 of $90 is gone. T0151''s analytic references are converged: doubling
+  the terms changes values by at most 1.1e-15, the printed Case 3 values are reproduced, and Case 2 agrees
+  with a scratch FE run within 0.0012 K. Its DoD still fails, because T0147''s packet also gated the printed
+  Case 1a/1b centroids at 50 terms. That goes beyond the frozen F1, and no truncation from 1 to 200 terms
+  reproduces those values. So I cancel T0151 and re-issue it with the gate matching F1 (Case 3 only, 1a/1b
+  reported as info). The payload hash stays pinned to befc5efa…, so no reference value can be retuned
+  now that the numbers have been seen. The likeliest ways the hypothesis fails are A4 and A3. For A4,
+  the GCI must be ≤ 0.025 K, and die-on-copper corners converge at order 1.3–1.5, which forces Fs = 3.
+  For A3, scikit-fem''s own GCI must reach 0.025 K on this Mac. The early kill-shot benchmarks for both,
+  T0150 and T0152 (running), stay first. The new E006 design task waits for them and for T0153/T0163.
+  Before registration it runs F1''s reference-only checks against scikit-fem at full resolution, so a
+  reference fault shows up before the single evaluation is spent. The E006 experiment task completes the
+  evidence graph. Pilots P1 and P2 are merged into one task to stay within 10 open tasks. Three items
+  are outside my authority and go to the founder: new mfos.metrics functions for recomputing A1/A3/A4
+  (protected path), a budget increase, and the P3 burst VM run plus DoDs for founder tasks T0157 and T0163.'
+refs:
+- O006
+- T0164
+- T0165
+- T0166
+- T0167
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-02T02:16:01+00:00'
+resolved_at: null
+resolved_by: null

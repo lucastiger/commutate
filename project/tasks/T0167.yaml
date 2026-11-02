@@ -1,0 +1,117 @@
+id: T0167
+objective: O006
+title: 'Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null
+  predictors per stratum (research notes, not evidence)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0150
+- T0157
+description: 'Pilots P1 and P2 of the O006 notes, merged into one task because P2 is computed on P1''s
+  data. Outputs are research notes, never evidence (F4).
+
+
+  Layouts and seeds:
+
+  - Use dev seeds only, and none named in the O003/O004 judged sets (read project/objectives/O003 and
+  O004). Record every seed used.
+
+
+  Script research/scripts/o006_p1/thermal_envelope.py, using solvers.thermal_layout at one fixed level
+  of its frozen grid rule:
+
+  - Run every generator family, 2-6 dies per switch, and die sizes 4.0-5.5 mm, with at least 20 layouts
+  per die-size bin.
+
+  - Coolant 65 C, h = 5000 W/(m2 K).
+
+  - Record Tj max against power per die with constant k (linear, one solve) and with k(T).
+
+  - On at least 10 layouts, also solve at the finest level and report the level bias.
+
+  - If research/notes/o006-kT-citations.md (T0157) lists corrections not yet in stack.py, report the sensitivity
+  of the power limit to each correction.
+
+
+  P1 outputs:
+
+  - the highest power per die keeping Tj max <= 175 C on >= 95 % of layouts per die size, with and without
+  k(T);
+
+  - two recommended load levels for O002 (60-110 K spreading-relevant rises);
+
+  - an O003 operating point.
+
+
+  P2, on the same data at those load levels and per O002 stratum ((family, dies), one die size per stratum):
+
+  - define in the note, before computing, three null predictors of per-die Tj max: stratum mean, die-size
+  cell mean and die-position lookup;
+
+  - report per stratum each predictor''s p95 absolute error and the within-stratum spread of Tj max and
+  of pairwise Tj max differences.
+
+
+  Write research/o006_p1/results.json {seeds, layouts: [...], power_limit_W_by_die_size, recommended_load_levels_W,
+  o003_operating_point, level_bias_K, nulls: [{stratum, predictor, p95_abs_err_K, n_layouts}]}, research/notes/o006-p1-thermal-envelope.md
+  and research/notes/o006-p2-thermal-nulls.md. Keep the total compute to about 3 CPU-hours and state every
+  sample size.'
+context_files:
+- project/objectives/O006/objective.yaml
+- project/objectives/O002/objective.yaml
+- project/objectives/O003/objective.yaml
+- project/objectives/O004/objective.yaml
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/generate/halfbridge.py
+- src/moduleforge/geometry/stack.py
+- benchmarks/results/thermal_l2_convergence.json
+- docs/thermal_model.md
+deliverables:
+- research/scripts/o006_p1/thermal_envelope.py
+- research/o006_p1/results.json
+- research/notes/o006-p1-thermal-envelope.md
+- research/notes/o006-p2-thermal-nulls.md
+touches:
+- research/scripts/o006_p1/**
+- research/o006_p1/**
+- research/notes/o006-p1-thermal-envelope.md
+- research/notes/o006-p2-thermal-nulls.md
+definition_of_done:
+- cmd: uv run python -c "import json; d=json.load(open('research/o006_p1/results.json')); assert d['seeds']
+    and len(d['layouts'])>=80; assert d['power_limit_W_by_die_size'] and d['recommended_load_levels_W']
+    and 'o003_operating_point' in d and 'level_bias_K' in d; N=d['nulls']; assert N and all(k in n for
+    n in N for k in ('stratum','predictor','p95_abs_err_K','n_layouts')); assert len({n['predictor'] for
+    n in N})>=3"
+  exists: null
+  timeout_s: 120
+- cmd: null
+  exists: research/notes/o006-p1-thermal-envelope.md
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-p2-thermal-nulls.md
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: low
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0162
+created_at: '2026-11-02T02:16:01+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'The objective''s pilots: decision_if_pass and decision_if_fail finalise O002/O003/O004 from
+  these notes. F4 is respected through dev seeds and research-only outputs.'
+history: []

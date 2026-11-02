@@ -3,7 +3,7 @@ objective: O006
 title: Plan O006 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,20 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O006 has its materials (T0148) and finite-volume core (T0149) merged. The T0149 reviews accepted,
+    and the follow-up fixes are in founder task T0163. Nothing has been compared with a reference yet,
+    no evaluation is spent, and $40.64 of $90 is gone. T0151''s analytic references are converged: doubling
+    the terms changes values by at most 1.1e-15, the printed Case 3 values are reproduced, and Case 2
+    agrees with a scratch FE run within 0.0012 K. Its DoD still fails, because T0147''s packet also gated
+    the printed Case 1a/1b centroids at 50 terms. That goes beyond the frozen F1, and no truncation from
+    1 to 200 terms reproduces those values. So I cancel T0151 and re-issue it with the gate matching F1
+    (Case 3 only, 1a/1b reported as info). The payload hash stays pinned to befc5efa…, so no reference
+    v'
+  created:
+  - T0164
+  - T0165
+  - T0166
+  - T0167
+  dropped_for_limits: 0

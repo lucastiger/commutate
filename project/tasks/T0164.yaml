@@ -1,0 +1,94 @@
+id: T0164
+objective: O006
+title: 'E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case
+  3 only), payload hash pinned'
+type: research
+agent: scientist
+status: proposed
+depends_on: []
+description: 'Re-issue of T0151. Its DoD could not be met because its packet gated the printed Muzychka
+  2003 Case 1a/1b centroids at 50 terms. That goes beyond frozen F1, and no truncation from 1 to 200 terms
+  reproduces those values (see T0151 history). Restore T0151''s committed work from commit 9c01c7c (branch
+  task/T0151-e006-analytic-references-muzychka-2003-f) with `git show 9c01c7c:<path> > <path>` for experiments/runners/e006_series.py,
+  research/e006_refs/series_values.json and research/notes/o006-reference-series.md.
+
+
+  The ONLY intended code change: the 50-term paper-reproduction gate in `--selfcheck` (GATED_PRINTED)
+  covers exactly F1''s printed Case 3 values (80.61 C maximum at the centre, 78.87 C source mean), to
+  their printed digits. The Case 1a/1b 50-term comparisons stay in the selfcheck output, labelled INFO
+  and not gated. The note keeps the diagnosis: no single cut-off reproduces them, and Tables 1 and 2 are
+  internally inconsistent.
+
+
+  Keep every other gate exactly as it is:
+
+  - convergence under doubling < 1e-7 relative;
+
+  - N-layer equals two-layer at 1e-9;
+
+  - full-top uniform source equals the 1D solution;
+
+  - kernel, reciprocity, symmetry and raw-partial-sum checks.
+
+
+  Do not change any reference value, parameter, the Case 2 Tf (25 C) or any material constant. A fresh
+  `--emit` must reproduce payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151,
+  which E006 will freeze. Do not add a converged-value tolerance against the printed tables: the numbers
+  have already been seen.
+
+
+  In the note (not the JSON), list the layer thicknesses and conductivities the N-layer case uses, so
+  E006 can build the L2 case from exactly those values. The runner must not import moduleforge.solvers,
+  skfem or thermal_fv.'
+context_files:
+- project/objectives/O006/objective.yaml
+- project/tasks/T0151.yaml
+- project/memory/literature/thermal-l2-reference.md
+deliverables:
+- experiments/runners/e006_series.py
+- research/e006_refs/series_values.json
+- research/notes/o006-reference-series.md
+touches:
+- experiments/runners/e006_series.py
+- research/e006_refs/series*
+- research/notes/o006-reference-series.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e006_series.py --selfcheck
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s=open('experiments/runners/e006_series.py').read(); assert 'moduleforge.solvers'
+    not in s and 'skfem' not in s and 'thermal_fv' not in s"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python experiments/runners/e006_series.py --emit /tmp/e006_sv_check.json && uv run python
+    -c "import json; h='befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151'; assert all(h
+    in json.dumps(json.load(open(p))) for p in ('research/e006_refs/series_values.json','/tmp/e006_sv_check.json'))"
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o006-reference-series.md
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: low
+model: null
+budget_usd: 2.5
+max_turns: 40
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0162
+created_at: '2026-11-02T02:16:01+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Hypothesis (a) cases for A1/A2 and F1's gates. This unblocks the frozen references E006 needs,
+  with no change to any reference value.
+history: []

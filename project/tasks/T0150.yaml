@@ -4,7 +4,7 @@ title: 'Thermal L2 on Layouts and box stacks: conforming grid builder, frozen gr
   in meta[''solver_tol''], A4 convergence/cost benchmark'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0149
 description: 'Implement src/moduleforge/solvers/thermal_layout.py on top of thermal_fv; do not edit solvers/__init__.py.
@@ -76,11 +76,12 @@ model: null
 budget_usd: 8.0
 max_turns: 110
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0150-thermal-l2-on-layouts-and-box-stacks-con
 pr: null
-runs: []
+runs:
+- T0150-builder-20261101T181606-2b15
 created_by: planner:T0147
 created_at: '2026-11-01T21:49:21+00:00'
 protected_approved: false

@@ -1,0 +1,21 @@
+id: I0066
+kind: external_action
+subject: '[O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)'
+summary: 'Pilot P3 measured only the 1.0/0.5 mm levels on the Mac. The 0.25 mm level needs about 16 GB
+  and the 0.125 mm level 21-85 GB, so the observed lateral order is unmeasured and D0009''s band input
+  rests on a two-level estimate. Agents cannot start VMs. The diagnosis gives the command: scripts/burst_gcp.sh
+  --cmd "uv run python research/scripts/o006_p3_em_convergence.py --run lat0.25 lat0.125 --jobs 3 && uv
+  run python research/scripts/o006_p3_em_convergence.py --assemble" research/o006_p3. It estimates about
+  3-17 VM-hours on n2-highmem-32.'
+refs:
+- O006
+- T0162
+options:
+- Run it before 2026-11-27
+- Skip it; D0009 uses the pair-ratio estimate with the two-level lateral term
+recommendation: Run it. It is cheap, and it is the only route to a measured lateral order for O003/O004.
+status: open
+response: ''
+created_at: '2026-11-02T02:16:01+00:00'
+resolved_at: null
+resolved_by: null

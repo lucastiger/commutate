@@ -1,0 +1,29 @@
+id: I0064
+kind: external_action
+subject: '[O006] New mfos.metrics functions so E006 can recompute A1, A3 and A4 (protected path tools/mfos)'
+summary: 'Under evidence rules v2, every criterion metric needs a recompute entry, and validate_draft
+  rejects unknown functions. Only A2 (max_abs_err with a where filter) works today. Needed:
+
+  (a) max_scaled_abs_err: max over rows of |pred-ref|/row[params.scale] (A1/K1, scale = case_scale);
+
+  (b) max_abs_err_gated: max |pred-ref| if every row''s params.gate column <= params.gate_max, otherwise
+  fail-closed (e.g. +inf). This implements A3''s ''scikit-fem''s own GCI must be at most 0.025 K, otherwise
+  A3 is not met'';
+
+  (c) max_col: maximum of one column (A4, rich_est).
+
+  All three should treat NaN as fail-closed and raise on empty input. Each needs unit tests. n2 (E006
+  design) stops as blocked if these are missing when it starts.'
+refs:
+- O006
+- T0162
+options:
+- Add (a)-(c) as specified
+- Add them under other names (n2 will use whatever is in METRICS)
+- 'Exempt A1/A3/A4 from recompute with written reasons (not recommended: weaker evidence)'
+recommendation: Add (a)-(c) with tests before T0150/T0152 finish, so n2 is not blocked.
+status: open
+response: ''
+created_at: '2026-11-02T02:16:01+00:00'
+resolved_at: null
+resolved_by: null

@@ -1,0 +1,179 @@
+id: T0165
+objective: O006
+title: 'E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check),
+  full-resolution F1 reference pre-check, smoke dev rows'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0164
+- T0150
+- T0152
+- T0153
+- T0163
+description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experiments/runners/e006_run.py
+  on mfos.evidence.ExperimentRun, following the E001 pattern.
+
+
+  (1) Cases and points, exactly as A1/A2 define them:
+
+  - Muzychka 2003 Cases 1a, 1b, 2 and 3, and the N-layer default stack: values from research/e006_refs/series_values.json.
+
+  - The manufactured case: values from research/e006_refs/mms_values.json.
+
+  - Points per source: centroid, source mean, and the reference maximum over the source. The L2 value
+  is the reconstructed surface temperature (T_c + q dz/2k), bilinearly interpolated at the reference point;
+  the mean is the area mean.
+
+  - Case scale per A1 (manufactured case: the range of the field).
+
+  - Build the analytic and manufactured L2 cases from the frozen references'' own parameters (not from
+  a later stack.py). Grids come only from thermal_layout''s frozen grid rule, at three consecutive levels.
+  No hand-built or tuned grids.
+
+
+  (2) Rows.
+
+  - Case rows: kind=case, case, point, grid_level, is_finest, T_l2, T_ref, case_scale, rich_est (A4''s
+  GCI, exactly as defined there), p_obs, dT_const_k. dT_const_k is the constant-k solve at the layer-mean
+  temperature: the same units and datum as T_l2, and identical to it on constant-k cases.
+
+  - Cross-check rows: kind=crosscheck, layout, die, tj_l2, tj_skfem, rich_est (L2), skfem_rich_est.
+
+  - A3 layouts follow A3''s rule (generate_layouts dev seed 20261101), with fingerprints frozen in config.
+  Use 65 C coolant, h = 5000 W/(m2 K), k(T), and the power per die recorded by T0150''s benchmark, the
+  same for both solvers.
+
+
+  (3) Metrics: max_case_scaled_err, max_abs_err_K, max_abs_diff_vs_skfem_K, max_richardson_est_K. All
+  are point values, written without a CI, at level 0.0. Recompute entries:
+
+  - A2: the existing max_abs_err with where {kind: case, is_finest: true}.
+
+  - A1, A3 and A4: the functions the founder adds to mfos.metrics (requested in this plan: a scale-normalised
+  max error, a GCI-gated max error so that skfem_rich_est > 0.025 K fails A3, and a column max).
+
+  - If those functions are not in mfos.metrics when you start, stop and report as blocked. Do not substitute
+  workarounds.
+
+
+  (4) Null baseline: kind=column, column dT_const_k, applies_to the A1 and A2 metrics (F3).
+
+
+  (5) Gated sanity checks, the full lists of F1 and F2:
+
+  - reference sha256 equal to the config values (series befc5efa…, mms from its JSON), checked before
+  any solve;
+
+  - series convergence and the Case 3 printed values;
+
+  - Case 2 against scikit-fem within 0.02 K, with FE source means integrated exactly over each source,
+  not nodally averaged;
+
+  - N-layer reduces to two-layer;
+
+  - N-layer against scikit-fem on the laterally uniform default stack within 0.02 K at a 60-110 K rise;
+
+  - the manufactured case''s numeric check;
+
+  - constant refinement ratio;
+
+  - energy balance <= 1e-6 (manufactured case: against the integrated source and boundary fluxes);
+
+  - Picard max|dT| < 1e-4 K;
+
+  - skfem GCI reported.
+
+  Case 1a/1b converged values against scikit-fem: INFO only, not gated.
+
+
+  (6) Pre-registration reference validation, with no L2 involved: `--refcheck` runs F1''s reference-only
+  checks at full resolution (series/manufactured self-checks; scikit-fem against Case 2 and against the
+  uniform default stack, each with its own GCI) and writes research/e006/refcheck.json {checks: [{name,
+  value, threshold, passed}], all_passed}. Commit its output.
+
+
+  (7) `--smoke`: reduced levels on all cases, writing only the dev rows (`--rows-out PATH`). It never
+  creates an evidence run. Commit research/e006/dev_rows.json and set the spec''s dev_rows to it.
+
+
+  (8) Spec fields:
+
+  - code_under_test: thermal_fv.py, thermal_layout.py, and stack.py as provenance; code_must_match as
+  decision_if_pass needs;
+
+  - timeout_min and cpu_hours_est from the T0150/T0152 benchmark timings (objective cap 80 CPU-h).
+
+
+  (9) research/notes/o006-e006-design.md: how each metric maps to A1-A4/K1/K2, the point list, F1-F3 coverage,
+  and the runtime/memory plan. Treat any refcheck failure as an F1 reference problem: report it and do
+  not loosen it.'
+context_files:
+- project/objectives/O006/objective.yaml
+- experiments/specs/E001.yaml
+- experiments/runners/e001_reference.py
+- tools/mfos/mfos/models.py
+- tools/mfos/mfos/metrics.py
+- tools/mfos/mfos/evidence.py
+- src/moduleforge/solvers/thermal_fv.py
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- docs/thermal_model.md
+- research/notes/o006-reference-series.md
+- research/notes/o006-manufactured-solution.md
+- benchmarks/results/thermal_l2_convergence.json
+- benchmarks/results/thermal_fem_convergence.json
+deliverables:
+- experiments/drafts/E006.yaml
+- experiments/runners/e006_run.py
+- research/e006/refcheck.json
+- research/e006/dev_rows.json
+- research/notes/o006-e006-design.md
+touches:
+- experiments/drafts/E006.yaml
+- experiments/runners/e006_run.py
+- research/e006/**
+- research/notes/o006-e006-design.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e006_run.py --smoke --rows-out research/e006/dev_rows.json
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E006 --rows research/e006/dev_rows.json
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "import json; d=json.load(open('research/e006/refcheck.json')); assert d['all_passed']
+    is True; n=[c['name'] for c in d['checks'] if c['passed']]; assert any('case2' in x.lower() for x
+    in n) and any('nlayer' in x.lower() for x in n)"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert 'befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151'
+    in s and 'dT_const_k' in s"
+  exists: null
+  timeout_s: 120
+- cmd: null
+  exists: research/notes/o006-e006-design.md
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+experiment: E006
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0162
+created_at: '2026-11-02T02:16:01+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: The required design_experiment for E006, which feeds A1-A4, K1, K2 and the F1-F3 detections.
+  It front-loads F1's reference validation before the single evaluation.
+history: []

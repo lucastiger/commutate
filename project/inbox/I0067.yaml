@@ -1,0 +1,34 @@
+id: I0067
+kind: question
+subject: '[O006] Founder tasks T0157 and T0163 have no definition_of_done, touches or context files'
+summary: 'Without DoD commands the orchestrator cannot verify either task, and T0163 must merge before
+  E006 runs (n2 and n3 depend on it). Suggested additions.
+
+  T0163:
+
+  - touches src/moduleforge/solvers/thermal_fv.py and tests/unit/solvers/test_thermal_fv.py;
+
+  - DoD: `uv run pytest -q tests/unit/solvers/test_thermal_fv.py`, `uv run pytest -q -m ''not slow'' tests/unit`,
+  `uv run ruff check .`.
+
+  T0157:
+
+  - touches research/notes/o006-kT-citations.md;
+
+  - DoD: exists research/notes/o006-kT-citations.md.
+
+  Also for your information: this plan replaces T0151 (n1). Its 50-term paper-reproduction gate now covers
+  only F1''s Case 3 values, and the unreproducible Case 1a/1b printed centroids are reported as info.
+  No reference value changes: the payload hash is pinned.'
+refs:
+- O006
+- T0162
+options:
+- Add the suggested DoDs
+- Let the planner cancel and re-issue them with DoDs
+recommendation: Add the suggested DoDs to the existing tasks.
+status: open
+response: ''
+created_at: '2026-11-02T02:16:01+00:00'
+resolved_at: null
+resolved_by: null

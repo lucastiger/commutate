@@ -1,8 +1,12 @@
 # ModuleForge status
-_generated 2026-11-02T02:11:11+00:00 from repository state — do not edit_
+_generated 2026-11-02T02:16:06+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (5 open)
+- **I0064** [external_action] [O006] New mfos.metrics functions so E006 can recompute A1, A3 and A4 (protected path tools/mfos)
+- **I0065** [budget_increase] [O006] O006 budget: +$25 (to $115)
+- **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
+- **I0067** [question] [O006] Founder tasks T0157 and T0163 have no definition_of_done, touches or context files
+- **I0068** [plan_approval] [O006] approve initial plan (4 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -13,7 +17,7 @@ _generated 2026-11-02T02:11:11+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $40.64/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $42.34/$90 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,24 +27,20 @@ _generated 2026-11-02T02:11:11+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 22 | $40.64 | 813311 | 475354 | 28 | 0 |
+| O006 | 23 | $42.34 | 850852 | 500662 | 28 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 123, failed: 3, running: 2, todo: 6
+cancelled: 30, done: 124, failed: 3, proposed: 4, running: 2, todo: 4
 
+- T0150 `running` builder/implement: Thermal L2 on Layouts and box stacks: conforming grid builder, frozen grid rule, three-grid GCI in meta['solver_tol'], A4 convergence/cost benchmark (attempt 1)
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
-- T0162 `running` planner/plan: Plan O006 (periodic) (attempt 1)
+- T0164 `proposed` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 0)
+- T0165 `proposed` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
+- T0166 `proposed` none/experiment: Run E006: thermal L2 against frozen references, scikit-fem cross-check and GCI (attempt 0)
+- T0167 `proposed` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 0)
 
 ## Recent events
-- 2026-11-02T01:43:43+00:00 run_finished {"run": "T0161-critic-20261101T173737-63fe", "status": "completed", "cost": 1.515283, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T01:45:46+00:00 inbox_resolved {"id": "I0062", "status": "approved", "note": "P3 research note accepted; 0.25/0.125 mm levels to be run on a burst VM by the founder.", "by": "human"}
-- 2026-11-02T01:53:41+00:00 inbox_opened {"id": "I0063", "kind": "protected_change", "subject": "T0149: merge needs founder approval"}
-- 2026-11-02T01:53:42+00:00 run_started {"run": "T0151-scientist-20261101T175342-05bc", "task": "T0151", "role": "scientist", "session": "22f9d281-fc2b-4d92-930f-75c80553a6ad"}
-- 2026-11-02T01:53:43+00:00 run_started {"run": "T0152-builder-20261101T175343-7282", "task": "T0152", "role": "builder", "session": "2da7fe1e-e5e3-40cc-8acf-1a8b1877bd0e"}
-- 2026-11-02T01:54:05+00:00 sleep_detected {"gap_s": 713, "runs_extended": 2}
-- 2026-11-02T01:54:09+00:00 merged {"task": "T0154"}
-- 2026-11-02T01:54:48+00:00 inbox_resolved {"id": "I0063", "status": "approved", "note": "Approved; Robin-face prescribed-flux path to be made second order in a follow-up before E006 (review T0160).", "b
 - 2026-11-02T01:54:49+00:00 task_added {"task": "T0163"}
 - 2026-11-02T02:08:26+00:00 merged {"task": "T0149"}
 - 2026-11-02T02:08:52+00:00 sleep_detected {"gap_s": 832, "runs_extended": 2}
@@ -48,3 +48,11 @@ cancelled: 29, done: 123, failed: 3, running: 2, todo: 6
 - 2026-11-02T02:10:15+00:00 task_failed_attempt {"task": "T0151", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T02:10:18+00:00 run_started {"run": "T0162-planner-20261101T181018-498e", "task": "T0162", "role": "planner", "session": "61ff613e-63cd-4e22-aa4f-badd5fce13fb"}
 - 2026-11-02T02:11:07+00:00 task_amended {"task": "T0151", "reason": "align brief with O006 F1 (Case 3 only)"}
+- 2026-11-02T02:16:01+00:00 run_finished {"run": "T0162-planner-20261101T181018-498e", "status": "completed", "cost": 1.700844, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0064", "kind": "external_action", "subject": "[O006] New mfos.metrics functions so E006 can recompute A1, A3 and A4 (protected path tools/mfos)"}
+- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0065", "kind": "budget_increase", "subject": "[O006] O006 budget: +$25 (to $115)"}
+- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0066", "kind": "external_action", "subject": "[O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)"}
+- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0067", "kind": "question", "subject": "[O006] Founder tasks T0157 and T0163 have no definition_of_done, touches or context files"}
+- 2026-11-02T02:16:01+00:00 inbox_opened {"id": "I0068", "kind": "plan_approval", "subject": "[O006] approve initial plan (4 tasks)"}
+- 2026-11-02T02:16:01+00:00 plan_applied {"objective": "O006", "created": ["T0164", "T0165", "T0166", "T0167"], "dropped": 0}
+- 2026-11-02T02:16:06+00:00 run_started {"run": "T0150-builder-20261101T181606-2b15", "task": "T0150", "role": "builder", "session": "5e652892-238b-4bc1-abee-80d02d831cbf"}
