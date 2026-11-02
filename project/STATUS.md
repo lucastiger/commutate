@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T12:12:59+00:00 from repository state — do not edit_
+_generated 2026-11-02T12:14:10+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -32,7 +32,6 @@ cancelled: 30, done: 156, failed: 3, todo: 3
 
 
 ## Recent events
-- 2026-11-02T11:41:21+00:00 objective_draft_review {"objective": "O006", "ref": "3401f861f67f3606d63589e6e8456e748a9249e6", "tasks": ["T0190", "T0191"]}
 - 2026-11-02T11:41:40+00:00 run_started {"run": "T0190-critic-20261102T034140-97d7", "task": "T0190", "role": "critic", "session": "68f66dba-0d9c-4dc4-baf1-cc248f6b56a0"}
 - 2026-11-02T11:41:41+00:00 run_started {"run": "T0191-critic-20261102T034141-a374", "task": "T0191", "role": "critic", "session": "f5b333e1-0322-4518-a9af-eeaef9dab31b"}
 - 2026-11-02T11:49:04+00:00 run_finished {"run": "T0190-critic-20261102T034140-97d7", "status": "completed", "cost": 1.923906, "subtype": "success", "report": "structured_output"}
@@ -47,3 +46,4 @@ cancelled: 30, done: 156, failed: 3, todo: 3
 - 2026-11-02T12:07:37+00:00 run_started {"run": "T0192-critic-20261102T040737-7ee9", "task": "T0192", "role": "critic", "session": "774ddefc-be9e-4ede-96fe-67ca1f2928ee"}
 - 2026-11-02T12:11:38+00:00 run_finished {"run": "T0192-critic-20261102T040737-7ee9", "status": "completed", "cost": 1.221328, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T12:12:58+00:00 task_failed_attempt {"task": "T0189", "signal": "dod_failed", "action": "repair"}
+- 2026-11-02T12:13:44+00:00 task_amended {"task": "T0189", "reason": "D0013 addendum 2"}
