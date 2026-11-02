@@ -170,7 +170,7 @@
  "geometries": [
   {
    "name": "case4_base",
-   "fingerprint": "98a9d52a245ba5499b7540f7bab3ce0fcbc00b6c5d28b6e2237bf5dddf5d17f1",
+   "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
    "levels": [
     {
      "level": "lat1.0",
@@ -271,34 +271,22 @@
       "wire_phi": 6
      },
      "L_H": {
-      "10000000": null,
-      "20000000": null
+      "10000000": 2.2780714701936427e-08,
+      "20000000": 2.2636490802703685e-08
      },
-     "wall_s": null,
-     "peak_mem_mb": null,
-     "status": "not_run",
-     "cost_estimate": {
-      "n_unknowns_est": 4081040,
-      "peak_mem_mb_est": [
-       6887.549613093062,
-       26318.666368709873
-      ],
-      "wall_s_est": [
-       595.1438429507424,
-       5451.1981336698245
-      ],
-      "peak_mem_mb_case4_bytes_per_unknown": [
-       15568.142336,
-       22046.639883530992
-      ],
-      "generator_layouts_used": [
-       "solve_s11_d2",
-       "solve_s11_d6",
-       "solve_s3_d6",
-       "solve_s7_d2",
-       "solve_s7_d6"
-      ],
-      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     "wall_s": 7202.313955228,
+     "peak_mem_mb": 15800.991744,
+     "status": "ok",
+     "cpu_s": 64021.356334,
+     "n_unknowns": 4108580,
+     "gmres_iters": [
+      257,
+      274
+     ],
+     "solver_tol_rel_L_max": 3.455644172819266e-05,
+     "R_ohm": {
+      "10000000": 0.033890415107885895,
+      "20000000": 0.04510016210964786
      }
     },
     {
@@ -524,40 +512,42 @@
     "20000000": null
    },
    "L_extrap_H": {
-    "10000000": 2.2180692191304426e-08,
-    "20000000": 2.203552874854825e-08
+    "10000000": 2.2502254529350567e-08,
+    "20000000": 2.235693930314591e-08
    },
    "L_extrap_kind": {
     "10000000": "assumed-order p=0.72 (two levels)",
     "20000000": "assumed-order p=0.72 (two levels)"
    },
    "abs_est_H": {
-    "10000000": 1.754793326067003e-09,
-    "20000000": 1.8061933116373496e-09
+    "10000000": 7.805706146007716e-10,
+    "20000000": 8.308940055534545e-10
    },
    "abs_est_posthoc_phi12_H": {
-    "10000000": 1.54193350323901e-09,
-    "20000000": 1.543160681694979e-09
+    "10000000": 5.677107917727787e-10,
+    "20000000": 5.678613756110838e-10
    },
    "estimates": {
     "10000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.2180692191304426e-08,
-     "extrap_p1": 2.245597379811435e-08,
-     "extrap_p2": 2.2792610681349818e-08,
+     "extrap_assumed_p": 2.2502254529350567e-08,
+     "extrap_p1": 2.2600500280905303e-08,
+     "extrap_p2": 2.2720643228259386e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.5148659745596046e-09,
+     "gci_lateral": 5.406432630933734e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -5.049553248532015e-10,
-      "rel_change": -0.021518699880076153
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.4864412908679077,
+      "extrap": 2.2680705010624558e-08,
+      "gci": 1.2501211413983673e-10,
+      "kind": "monotone"
      },
      "p_thickness": 4.047964103066876,
      "thickness_term": 2.2012353169040263e-11,
@@ -566,29 +556,31 @@
      "thickness_change_c": -2.736730749396465e-10,
      "filament_term": 2.17914998338358e-10,
      "filament_change": 7.263833277945267e-11,
-     "abs_est": 1.754793326067003e-09,
+     "abs_est": 7.805706146007716e-10,
      "filament_change_phi12": -1.6850585034550527e-12,
      "filament_term_phi12_posthoc": 5.055175510365158e-12,
-     "abs_est_posthoc_phi12": 1.54193350323901e-09
+     "abs_est_posthoc_phi12": 5.677107917727787e-10
     },
     "20000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.203552874854825e-08,
-     "extrap_p1": 2.2311391034009054e-08,
-     "extrap_p2": 2.264873801863291e-08,
+     "extrap_assumed_p": 2.235693930314591e-08,
+     "extrap_p1": 2.2455570094462532e-08,
+     "extrap_p2": 2.2576183899956633e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.5180614308073564e-09,
+     "gci_lateral": 5.427621247234613e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -5.060204769357855e-10,
-      "rel_change": -0.02169579833699964
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.4838382183471484,
+      "extrap": 2.2535806933250593e-08,
+      "gci": 1.2585483681636495e-10,
+      "kind": "monotone"
      },
      "p_thickness": 3.651054446465721,
      "thickness_term": 2.0906407763411798e-11,
@@ -597,16 +589,16 @@
      "thickness_change_c": -1.9338467308291985e-10,
      "filament_term": 2.6722547306658146e-10,
      "filament_change": 8.907515768886049e-11,
-     "abs_est": 1.8061933116373496e-09,
+     "abs_est": 8.308940055534545e-10,
      "filament_change_phi12": 1.3976143747369047e-12,
      "filament_term_phi12_posthoc": 4.192843124210714e-12,
-     "abs_est_posthoc_phi12": 1.543160681694979e-09
+     "abs_est_posthoc_phi12": 5.678613756110838e-10
     }
    }
   },
   {
    "name": "case4_die_shift",
-   "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf",
+   "fingerprint": "47bd793cb132bc40c0f4da884baa92a481bf777056436c1094e0a9f1c65c15af",
    "levels": [
     {
      "level": "lat1.0",
@@ -707,34 +699,22 @@
       "wire_phi": 6
      },
      "L_H": {
-      "10000000": null,
-      "20000000": null
+      "10000000": 2.2465568902335466e-08,
+      "20000000": 2.232450183683285e-08
      },
-     "wall_s": null,
-     "peak_mem_mb": null,
-     "status": "not_run",
-     "cost_estimate": {
-      "n_unknowns_est": 4081040,
-      "peak_mem_mb_est": [
-       6887.549613093062,
-       26318.666368709873
-      ],
-      "wall_s_est": [
-       595.1438429507424,
-       5451.1981336698245
-      ],
-      "peak_mem_mb_case4_bytes_per_unknown": [
-       15568.142336,
-       22046.639883530992
-      ],
-      "generator_layouts_used": [
-       "solve_s11_d2",
-       "solve_s11_d6",
-       "solve_s3_d6",
-       "solve_s7_d2",
-       "solve_s7_d6"
-      ],
-      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     "wall_s": 7076.047859495,
+     "peak_mem_mb": 15791.910912,
+     "status": "ok",
+     "cpu_s": 62770.560477,
+     "n_unknowns": 4108580,
+     "gmres_iters": [
+      255,
+      270
+     ],
+     "solver_tol_rel_L_max": 3.226227968816753e-05,
+     "R_ohm": {
+      "10000000": 0.03315659942427373,
+      "20000000": 0.04411952006488627
      }
     },
     {
@@ -960,40 +940,42 @@
     "20000000": null
    },
    "L_extrap_H": {
-    "10000000": 2.186196403262761e-08,
-    "20000000": 2.1720053565487106e-08
+    "10000000": 2.2181068658934793e-08,
+    "20000000": 2.2038915803536574e-08
    },
    "L_extrap_kind": {
     "10000000": "assumed-order p=0.72 (two levels)",
     "20000000": "assumed-order p=0.72 (two levels)"
    },
    "abs_est_H": {
-    "10000000": 1.7617043778101685e-09,
-    "20000000": 1.8110399464332518e-09
+    "10000000": 7.846638741181429e-10,
+    "20000000": 8.331057190612006e-10
    },
    "abs_est_posthoc_phi12_H": {
-    "10000000": 1.55666933061221e-09,
-    "20000000": 1.5570171523530881e-09
+    "10000000": 5.796288269201845e-10,
+    "20000000": 5.790829249810369e-10
    },
    "estimates": {
     "10000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.186196403262761e-08,
-     "extrap_p1": 2.2139888734438124e-08,
-     "extrap_p2": 2.247975781060288e-08,
+     "extrap_assumed_p": 2.2181068658934793e-08,
+     "extrap_p1": 2.2281445455985674e-08,
+     "extrap_p2": 2.2404194420218867e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.5294108427414002e-09,
+     "gci_lateral": 5.523703390493748e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -5.098036142471334e-10,
-      "rel_change": -0.022012724934216688
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.469268249645133,
+      "extrap": 2.2361474619546926e-08,
+      "gci": 1.3011785348567308e-10,
+      "kind": "monotone"
      },
      "p_thickness": 4.038034891063665,
      "thickness_term": 2.209017921666283e-11,
@@ -1002,29 +984,31 @@
      "thickness_change_c": -2.726357551642944e-10,
      "filament_term": 2.1020335585210533e-10,
      "filament_change": 7.006778528403511e-11,
-     "abs_est": 1.7617043778101685e-09,
+     "abs_est": 7.846638741181429e-10,
      "filament_change_phi12": -1.7227695513823215e-12,
      "filament_term_phi12_posthoc": 5.1683086541469644e-12,
-     "abs_est_posthoc_phi12": 1.55666933061221e-09
+     "abs_est_posthoc_phi12": 5.796288269201845e-10
     },
     "20000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.1720053565487106e-08,
-     "extrap_p1": 2.1998523761042167e-08,
-     "extrap_p2": 2.2339059911611627e-08,
+     "extrap_assumed_p": 2.2038915803536574e-08,
+     "extrap_p1": 2.2139675686769345e-08,
+     "extrap_p2": 2.2262893120145014e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.532412677562568e-09,
+     "gci_lateral": 5.544784501905169e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -5.108042258541893e-10,
-      "rel_change": -0.022189456651828476
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.466601570022818,
+      "extrap": 2.221970734823285e-08,
+      "gci": 1.309931107500029e-10,
+      "kind": "monotone"
      },
      "p_thickness": 3.639309821299594,
      "thickness_term": 2.1012445190500173e-11,
@@ -1033,16 +1017,16 @@
      "thickness_change_c": -1.9265337229115926e-10,
      "filament_term": 2.576148236801835e-10,
      "filament_change": 8.58716078933945e-11,
-     "abs_est": 1.8110399464332518e-09,
+     "abs_est": 8.331057190612006e-10,
      "filament_change_phi12": 1.197343200006615e-12,
      "filament_term_phi12_posthoc": 3.5920296000198452e-12,
-     "abs_est_posthoc_phi12": 1.5570171523530881e-09
+     "abs_est_posthoc_phi12": 5.790829249810369e-10
     }
    }
   },
   {
    "name": "case4_trace_width",
-   "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64",
+   "fingerprint": "4515924b6acc716d959a11780e6d6011a54836698a49707ec12b2c253ffc66e2",
    "levels": [
     {
      "level": "lat1.0",
@@ -1143,34 +1127,22 @@
       "wire_phi": 6
      },
      "L_H": {
-      "10000000": null,
-      "20000000": null
+      "10000000": 2.2083399594867386e-08,
+      "20000000": 2.194140939305165e-08
      },
-     "wall_s": null,
-     "peak_mem_mb": null,
-     "status": "not_run",
-     "cost_estimate": {
-      "n_unknowns_est": 4081040,
-      "peak_mem_mb_est": [
-       6887.549613093062,
-       26318.666368709873
-      ],
-      "wall_s_est": [
-       595.1438429507424,
-       5451.1981336698245
-      ],
-      "peak_mem_mb_case4_bytes_per_unknown": [
-       15568.142336,
-       22046.639883530992
-      ],
-      "generator_layouts_used": [
-       "solve_s11_d2",
-       "solve_s11_d6",
-       "solve_s3_d6",
-       "solve_s7_d2",
-       "solve_s7_d6"
-      ],
-      "reason": "projected peak memory exceeds what this 16 GB Mac can hold beside the agents; agents may not launch burst VMs (docs/INFRASTRUCTURE.md: the founder runs scripts/burst*.sh with the founder's cloud credentials)"
+     "wall_s": 6941.4019088899995,
+     "peak_mem_mb": 15859.634176,
+     "status": "ok",
+     "cpu_s": 61657.960826999995,
+     "n_unknowns": 4129060,
+     "gmres_iters": [
+      267,
+      283
+     ],
+     "solver_tol_rel_L_max": 3.6006171886538735e-05,
+     "R_ohm": {
+      "10000000": 0.03333396271621898,
+      "20000000": 0.04439467259597897
      }
     },
     {
@@ -1396,40 +1368,42 @@
     "20000000": null
    },
    "L_extrap_H": {
-    "10000000": 2.1498742795145214e-08,
-    "20000000": 2.1355721500657448e-08
+    "10000000": 2.1822407860473205e-08,
+    "20000000": 2.167937594556165e-08
    },
    "L_extrap_kind": {
     "10000000": "assumed-order p=0.72 (two levels)",
     "20000000": "assumed-order p=0.72 (two levels)"
    },
    "abs_est_H": {
-    "10000000": 1.7032829899553548e-09,
-    "20000000": 1.7549332122167455e-09
+    "10000000": 7.469274188063198e-10,
+    "20000000": 7.972893134396377e-10
    },
    "abs_est_posthoc_phi12_H": {
-    "10000000": 1.4903860067059473e-09,
-    "20000000": 1.4917968167345503e-09
+    "10000000": 5.340304355569122e-10,
+    "20000000": 5.341529179574425e-10
    },
    "estimates": {
     "10000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.1498742795145214e-08,
-     "extrap_p1": 2.1764614404484374e-08,
-     "extrap_p2": 2.2089743972514435e-08,
+     "extrap_assumed_p": 2.1822407860473205e-08,
+     "extrap_p1": 2.1914490433205304e-08,
+     "extrap_p2": 2.2027096540980025e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.46308305613528e-09,
+     "gci_lateral": 5.067274849862451e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -4.876943520450934e-10,
-      "rel_change": -0.021446538495027645
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.5297296824284152,
+      "extrap": 2.199390263655791e-08,
+      "gci": 1.1187119788684689e-10,
+      "kind": "monotone"
      },
      "p_thickness": 3.9701018619740487,
      "thickness_term": 2.2223919379561236e-11,
@@ -1438,29 +1412,31 @@
      "thickness_change_c": -2.6085247565469065e-10,
      "filament_term": 2.1797601444051348e-10,
      "filament_change": 7.265867148017116e-11,
-     "abs_est": 1.7032829899553548e-09,
+     "abs_est": 7.469274188063198e-10,
      "filament_change_phi12": -1.6930103970353093e-12,
      "filament_term_phi12_posthoc": 5.079031191105928e-12,
-     "abs_est_posthoc_phi12": 1.4903860067059473e-09
+     "abs_est_posthoc_phi12": 5.340304355569122e-10
     },
     "20000000": {
      "lateral_levels_used": [
-      "lat1.0",
-      "lat0.5"
+      "lat0.5",
+      "lat0.25"
      ],
-     "ladder": "1.0/0.5 mm",
+     "ladder": "0.5/0.25 mm",
      "p_assumed": 0.72,
-     "extrap_assumed_p": 2.1355721500657448e-08,
-     "extrap_p1": 2.1622194760125946e-08,
-     "extrap_p2": 2.1948060075184972e-08,
+     "extrap_assumed_p": 2.167937594556165e-08,
+     "extrap_p1": 2.1771826053388813e-08,
+     "extrap_p2": 2.1884881613164036e-08,
      "p_obs": null,
      "extrap": null,
-     "gci_lateral": 1.4663939177656156e-09,
+     "gci_lateral": 5.087500189885078e-10,
      "lateral_kind": "two-level",
-     "finest_level": "lat0.5",
-     "supp_1.0_0.5": {
-      "change": -4.887979725885385e-10,
-      "rel_change": -0.021628429172746433
+     "finest_level": "lat0.25",
+     "supp_1.0_0.5_0.25": {
+      "p_obs": 1.5272438587270103,
+      "extrap": 2.1851317943209204e-08,
+      "gci": 1.1261431230305766e-10,
+      "kind": "monotone"
      },
      "p_thickness": 3.5756666679492164,
      "thickness_term": 2.116839237750804e-11,
@@ -1469,10 +1445,10 @@
      "thickness_change_c": -1.8497666074389296e-10,
      "filament_term": 2.673709020736218e-10,
      "filament_change": 8.91236340245406e-11,
-     "abs_est": 1.7549332122167455e-09,
+     "abs_est": 7.972893134396377e-10,
      "filament_change_phi12": 1.4115021971422132e-12,
      "filament_term_phi12_posthoc": 4.23450659142664e-12,
-     "abs_est_posthoc_phi12": 1.4917968167345503e-09
+     "abs_est_posthoc_phi12": 5.341529179574425e-10
     }
    }
   }
@@ -1484,33 +1460,35 @@
    "ratio_per_level": {
     "lat1.0": 0.9869432372954169,
     "lat0.5": 0.9864449398970111,
-    "lat0.25": null,
+    "lat0.25": 0.9861661144646101,
     "lat0.125": null,
     "thk_c": 0.9865599552168888,
     "thk_f": 0.9864329373854507,
     "fil_f": 0.9863760868836053,
     "fil_f_phi12": 0.9864423025228428
    },
-   "ratio_est": 0.001718202461920536,
-   "ratio_est_posthoc_phi12": 0.0015195555442081054,
+   "ratio_est": 0.0010597865639061276,
+   "ratio_est_posthoc_phi12": 0.0008611396461936971,
    "estimates": {
     "lateral_levels_used": [
-     "lat1.0",
-     "lat0.5"
+     "lat0.5",
+     "lat0.25"
     ],
-    "ladder": "1.0/0.5 mm",
+    "ladder": "0.5/0.25 mm",
     "p_assumed": 0.72,
-    "extrap_assumed_p": 0.9856749905291123,
-    "extrap_p1": 0.9859466424986053,
-    "extrap_p2": 0.9862788407642091,
+    "extrap_assumed_p": 0.9857352844700765,
+    "extrap_p1": 0.9858872890322091,
+    "extrap_p2": 0.9860731726538098,
     "p_obs": null,
     "extrap": null,
-    "gci_lateral": 0.0014948921952173677,
+    "gci_lateral": 0.0008364762972029594,
     "lateral_kind": "two-level",
-    "finest_level": "lat0.5",
-    "supp_1.0_0.5": {
-     "change": -0.0004982973984057892,
-     "rel_change": -0.0005048896223974753
+    "finest_level": "lat0.25",
+    "supp_1.0_0.5_0.25": {
+     "p_obs": 0.8376448825610655,
+     "extrap": 0.9858118841582579,
+     "gci": 0.0004427878829402281,
+     "kind": "monotone"
     },
     "p_thickness": 3.2604178082393154,
     "thickness_term": 1.67512264858993e-05,
@@ -1519,10 +1497,10 @@
     "thickness_change_c": -0.00011501531987767599,
     "filament_term": 0.000206559040217269,
     "filament_change": -6.885301340575634e-05,
-    "abs_est": 0.001718202461920536,
+    "abs_est": 0.0010597865639061276,
     "filament_change_phi12": -2.6373741682794716e-06,
     "filament_term_phi12_posthoc": 7.912122504838415e-06,
-    "abs_est_posthoc_phi12": 0.0015195555442081054
+    "abs_est_posthoc_phi12": 0.0008611396461936971
    }
   },
   {
@@ -1531,33 +1509,35 @@
    "ratio_per_level": {
     "lat1.0": 0.9869959200135006,
     "lat0.5": 0.9864978758041549,
-    "lat0.25": null,
+    "lat0.25": 0.9862174323489411,
     "lat0.125": null,
     "thk_c": 0.9865795680266554,
     "thk_f": 0.9864858159784458,
     "fil_f": 0.9864105273607846,
     "fil_f_phi12": 0.986489926203855
    },
-   "ratio_est": 0.0017738635831325948,
-   "ratio_est_posthoc_phi12": 0.001535667053921396,
+   "ratio_est": 0.0011210613207372037,
+   "ratio_est_posthoc_phi12": 0.0008828647915260049,
    "estimates": {
     "lateral_levels_used": [
-     "lat1.0",
-     "lat0.5"
+     "lat0.5",
+     "lat0.25"
     ],
-    "ladder": "1.0/0.5 mm",
+    "ladder": "0.5/0.25 mm",
     "p_assumed": 0.72,
-    "extrap_assumed_p": 0.9857283176539455,
-    "extrap_p1": 0.9859998315948093,
-    "extrap_p2": 0.9863318610677064,
+    "extrap_assumed_p": 0.9857841022497592,
+    "extrap_p1": 0.9859369888937273,
+    "extrap_p2": 0.9861239511972032,
     "p_obs": null,
     "extrap": null,
-    "gci_lateral": 0.0014941326280368816,
+    "gci_lateral": 0.0008413303656414906,
     "lateral_kind": "two-level",
-    "finest_level": "lat0.5",
-    "supp_1.0_0.5": {
-     "change": -0.0004980442093456272,
-     "rel_change": -0.0005046061480565855
+    "finest_level": "lat0.25",
+    "supp_1.0_0.5_0.25": {
+     "p_obs": 0.8285638952693474,
+     "extrap": 0.9858559973351422,
+     "gci": 0.0004517937672485931,
+     "kind": "monotone"
     },
     "p_thickness": 2.759989675983007,
     "thickness_term": 1.768562498473045e-05,
@@ -1566,10 +1546,10 @@
     "thickness_change_c": -8.169222250042907e-05,
     "filament_term": 0.00026204533011098263,
     "filament_change": -8.734844337032754e-05,
-    "abs_est": 0.0017738635831325948,
+    "abs_est": 0.0011210613207372037,
     "filament_change_phi12": -7.949600299927972e-06,
     "filament_term_phi12_posthoc": 2.3848800899783917e-05,
-    "abs_est_posthoc_phi12": 0.001535667053921396
+    "abs_est_posthoc_phi12": 0.0008828647915260049
    }
   },
   {
@@ -1578,33 +1558,35 @@
    "ratio_per_level": {
     "lat1.0": 0.9690665254548458,
     "lat0.5": 0.9691379925157619,
-    "lat0.25": null,
+    "lat0.25": 0.9693901128128448,
     "lat0.125": null,
     "thk_c": 0.96894971734063,
     "thk_f": 0.9691114049121626,
     "fil_f": 0.9692362015090039,
     "fil_f_phi12": 0.9691353810978269
    },
-   "ratio_est": 0.0010738536878701632,
-   "ratio_est_posthoc_phi12": 0.0007870609619492486,
+   "ratio_est": 0.0016158133963705135,
+   "ratio_est_posthoc_phi12": 0.0013290206704495988,
    "estimates": {
     "lateral_levels_used": [
-     "lat1.0",
-     "lat0.5"
+     "lat0.5",
+     "lat0.25"
     ],
-    "ladder": "1.0/0.5 mm",
+    "ladder": "0.5/0.25 mm",
     "p_assumed": 0.72,
-    "extrap_assumed_p": 0.9692484205825228,
-    "extrap_p1": 0.969209459576678,
-    "extrap_p2": 0.9691618148694007,
+    "extrap_assumed_p": 0.9697796790919273,
+    "extrap_p1": 0.9696422331099277,
+    "extrap_p2": 0.9694741529118724,
     "p_obs": null,
     "extrap": null,
-    "gci_lateral": 0.00021440118274829167,
+    "gci_lateral": 0.0007563608912486419,
     "lateral_kind": "two-level",
-    "finest_level": "lat0.5",
-    "supp_1.0_0.5": {
-     "change": 7.146706091609722e-05,
-     "rel_change": 7.37483537391892e-05
+    "finest_level": "lat0.25",
+    "supp_1.0_0.5_0.25": {
+     "p_obs": null,
+     "extrap": null,
+     "gci": 0.0007563608912486419,
+     "kind": "non-contracting"
     },
     "p_thickness": null,
     "thickness_term": 0.00056482552539594,
@@ -1613,10 +1595,10 @@
     "thickness_change_c": 0.00018827517513198,
     "filament_term": 0.00029462697972593155,
     "filament_change": 9.820899324197718e-05,
-    "abs_est": 0.0010738536878701632,
+    "abs_est": 0.0016158133963705135,
     "filament_change_phi12": -2.6114179350056332e-06,
     "filament_term_phi12_posthoc": 7.8342538050169e-06,
-    "abs_est_posthoc_phi12": 0.0007870609619492486
+    "abs_est_posthoc_phi12": 0.0013290206704495988
    }
   },
   {
@@ -1625,33 +1607,35 @@
    "ratio_per_level": {
     "lat1.0": 0.9689736363433297,
     "lat0.5": 0.9690403629749367,
-    "lat0.25": null,
+    "lat0.25": 0.9692937648458737,
     "lat0.125": null,
     "thk_c": 0.9689351561392058,
     "thk_f": 0.969014173380579,
     "fil_f": 0.9691628702335255,
     "fil_f_phi12": 0.9690428678145115
    },
-   "ratio_est": 0.0008833221777803102,
-   "ratio_est_posthoc_phi12": 0.0005233149207383159,
+   "ratio_est": 0.001443347895770386,
+   "ratio_est_posthoc_phi12": 0.0010833406387283917,
    "estimates": {
     "lateral_levels_used": [
-     "lat1.0",
-     "lat0.5"
+     "lat0.5",
+     "lat0.25"
     ],
-    "ladder": "1.0/0.5 mm",
+    "ladder": "0.5/0.25 mm",
     "p_assumed": 0.72,
-    "extrap_assumed_p": 0.9691434663184263,
-    "extrap_p1": 0.9691070896065437,
-    "extrap_p2": 0.9690626051854724,
+    "extrap_assumed_p": 0.9696853113620236,
+    "extrap_p1": 0.9695471667168107,
+    "extrap_p2": 0.969378232136186,
     "p_obs": null,
     "extrap": null,
-    "gci_lateral": 0.0002001798948210176,
+    "gci_lateral": 0.0007602056128110934,
     "lateral_kind": "two-level",
-    "finest_level": "lat0.5",
-    "supp_1.0_0.5": {
-     "change": 6.672663160700587e-05,
-     "rel_change": 6.886320649424071e-05
+    "finest_level": "lat0.25",
+    "supp_1.0_0.5_0.25": {
+     "p_obs": null,
+     "extrap": null,
+     "gci": 0.0007602056128110934,
+     "kind": "non-contracting"
     },
     "p_thickness": null,
     "thickness_term": 0.0003156205071926932,
@@ -1660,10 +1644,10 @@
     "thickness_change_c": 0.00010520683573089773,
     "filament_term": 0.0003675217757665994,
     "filament_change": 0.00012250725858886646,
-    "abs_est": 0.0008833221777803102,
+    "abs_est": 0.001443347895770386,
     "filament_change_phi12": 2.504839574868356e-06,
     "filament_term_phi12_posthoc": 7.514518724605068e-06,
-    "abs_est_posthoc_phi12": 0.0005233149207383159
+    "abs_est_posthoc_phi12": 0.0010833406387283917
    }
   }
  ],

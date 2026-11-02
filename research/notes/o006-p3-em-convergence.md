@@ -280,3 +280,28 @@ Test: the ratio change across levels compared with the L change.
   re-estimated.
 - A different reading of the PowerSynth coordinates or loop height. This changes L(Case 4), but the convergence behaviour
   should change little (an inference).
+
+## Addendum (2026-11-02, founder session): the 0.25 mm level from the burst VM; 0.125 mm not obtained
+Facts:
+- The founder's burst VM (n2-highmem-32, I0066) ran the three 0.25 mm solves: 4.11–4.13 M unknowns, 6941–7202 s
+  each with two running together, peak 15.8–15.9 GB. L at 10 / 20 MHz: base 22.7807 / 22.6365 nH, die_shift
+  22.4656 / 22.3245 nH, trace_width 22.0834 / 21.9414 nH. The solve files are in `research/o006_p3/solves/*__lat0.25.json`,
+  and `--assemble` was re-run (`results.json`, `tables.md`).
+- The 0.125 mm solves did not finish. Two ran for 8.7 h and 6.8 h (RSS 64 and 35 GB), and the third never started.
+  0.5 → 0.25 mm took about 35× longer for 4× the unknowns, which puts each 0.125 mm solve well beyond the VM's
+  20 h cap. The founder stopped the VM at 10.7 h (2026-11-02, about 13:25 UTC) and kept the 0.25 mm results. The
+  VM is deleted.
+- The 0.5 → 0.25 mm step is −0.79 % (base, 10 MHz), smaller than the −1.3 % that the prior ladders predicted above.
+- The assembled estimates now use the finest two levels, 0.5 / 0.25 mm, with the assumed order p = 0.72:
+  - absolute abs_est 3.36–3.70 % (was 7.64–8.05 % on 1.0 / 0.5 mm);
+  - pair-ratio ratio_est 0.106–0.162 % (was 0.088–0.177 %);
+  - with the post-hoc phi12 filament term, ratio_est is 0.086–0.133 %.
+
+Inference (not adopted by the estimator):
+- On the 1.0 / 0.5 / 0.25 mm ladder the observed lateral order is 1.47–1.53 for all three geometries at both
+  frequencies, monotone. A Richardson error estimate from that order would be about 0.4–0.5 % at 0.25 mm.
+- The 0.5 / 0.25 / 0.125 mm ladders of earlier generator layouts fell to an order of about 0.72 at those finer
+  levels, so the order observed here may be pre-asymptotic, and the assumed-order estimate is kept as the band input.
+
+What remains unobserved:
+- The 0.5 / 0.25 / 0.125 mm observed order on Case 4 (O004's F1 ladder).
