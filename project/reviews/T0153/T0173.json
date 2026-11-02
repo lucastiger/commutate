@@ -1,0 +1,57 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "'k varying by at least 30 %' is met only under the k_max/k_min \u2212 1 reading",
+      "detail": "Only the ceramic reaches the 30 % gate: k_max/k_min \u2212 1 = 0.3227, a 7.6 % margin. Normalised by k_max the variation is 0.244. Normalised by the nominal k(300 K) = 24 it is (23.906 \u2212 18.073)/24 = 0.243. Both of those miss 30 %. My own arithmetic agrees with the author that a max-normalised 30 % in Al2O3 below 400 K needs a ceramic span of about 112 K, which exceeds the 60\u2013110 K field range. The note does flag this ambiguity. The objective text (the only place '30 %' appears in project/, research/ and docs/) does not define it, so whether the requirement is met is the founder's call. The variation's purpose, F3 discrimination, is met independently by a wide margin (dT_const_k \u2248 2.5 K against A1's 1.007 K).",
+      "evidence": "Selfcheck k_variation detail: 0.3227 min-normalised, 0.2440 max-normalised. k(301.09 K) = 23.906 and k(390.27 K) = 18.073 from Layer.k_at. A grep for '30 %' across project/, research/, docs/ and the packets finds only objective.yaml line 15.",
+      "suggested_check": "Get the founder to rule on the definition before E006 registration. If it is max- or nominal-normalised, the case must be redesigned, for example by giving the SiC die a much larger temperature span.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The note's own FV numbers imply a GCI of about 0.045 K, above A4's 0.025 K; the note warns only about A2",
+      "detail": "The own FV errors at the die centroid are 0.1436 K (0.5 mm) and 0.0359 K (0.25 mm), observed order 2. The Roache GCI is then 1.25\u00b7|f2 \u2212 f1|/(r^p \u2212 1) = 1.25\u00b70.108/3 \u2248 0.045 K, almost twice A4's limit. If the production grid rule is close to 0.25 mm, this case could push E006 to INCONCLUSIVE and the fallback through discretisation alone. That is a property of the chosen field curvature, not a defect in the reference. The decision-relevant consequence (A4) is not stated, only A2.",
+      "evidence": "Reproduced the coarse level myself: err_kT at die_centroid = \u22120.143636 K, matching the JSON to 3e-12. The fine level comes from the JSON (\u22120.035879 K).",
+      "suggested_check": "Add the implied GCI to the note's 'Discretisation warning' so the grid rule is frozen knowing it needs a lateral cell size of roughly 0.19 mm or finer on this case.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The smoothness argument in the note is physically wrong; the design choice still stands",
+      "detail": "The note says a field crossing 400 K in the ceramic 'would give a lateral flux discontinuity on the isotherm, which a pointwise source cannot represent'. The Al2O3 law in geometry.stack is continuous (C0) at 400 K, since both branches pass through 26.4/36. So k(T)\u2207T stays continuous. Only k'(T), and with it the source term k'|\u2207T|\u00b2, jumps across the isotherm. A piecewise-smooth source is representable; the real cost is lost cubature accuracy. Keeping the ceramic below 399 K is still a sensible choice.",
+      "evidence": "stack.py lines 30\u201332 and 70: AL2O3_TABLE passes through (400, 26.4) on both segments. div(k\u2207T) = k'(T)|\u2207T|\u00b2 + k\u0394T.",
+      "suggested_check": "Reword the note: the source is discontinuous across the isotherm; the flux is not.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "expected_to_fail_A2 is computed from constk_minus_kT, not from dT_const_k",
+      "detail": "In emit(), both expected_to_fail flags use worst_c (|T_constk \u2212 T_kT|), whereas F3 defines the null column as dT_const_k (relative to T_ref). Both values (2.48 K and 2.54 K) are far above both thresholds, so the conclusion is unchanged.",
+      "evidence": "e006_mms.py: expected_to_fail_A1=worst_c > 0.01*scale, expected_to_fail_A2=worst_c > 0.05.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran both definition-of-done commands. `--selfcheck` exits 0 with all 10 gates passing, numbers identical to the JSON. The independence string check exits 0. All three deliverables exist. `ruff check` on the runner is clean.",
+    "Recomputed sha256_payload from the JSON payload with canonical json.dumps: it matches. runner_sha256 matches the current file (2653c76d\u2026).",
+    "Re-implemented T* myself in numpy from the frozen JSON parameters alone (THETA_A/B/C, G_FAR/PEAK/B2, XD \u2026 S2, Z) and Layer.k_at, with no sympy. Max difference from case.T_layer over 14,000 random points in all 7 layers: 4.5e-13 K. All 7 point values agree to \u22642e-13 K. A dense 2000\u00d72000 midpoint die_mean differs by 9e-7 K and the dense die_max by \u22121.2e-6 K, consistent with grid resolution and the L-BFGS-B polish.",
+    "Densely sampled the field over every region box (121\u00d7121\u00d741 per box). Range 294.7377\u2013395.4860 K, which agrees with the JSON's 294.7377\u2013395.4864 K (the polish finds a slightly higher max). Ceramic max is 390.27 K, below the 400 K branch point.",
+    "Checked case.flux against my own 4th-order central FD of k_at(T)\u00b7\u2202T/\u2202n, using my independent T, on 14 face types. These were: die top; Cu top outside the die; island B top; ceramic top in the gap; ceramic underside margin; baseplate overhang top; baseplate sides x=0 and y=24; solder side; ceramic side; both L-notch faces at the re-entrant corner; die side; die-attach side. All relative errors were 1.7e-11 to 3.7e-10, with the correct sign and routing of layer by (z, sign).",
+    "Checked the Robin data independently: h(T* \u2212 T_inf) equals k \u2202T*/\u2202z at z=0 to 1.9e-9 relative, and flux(x, y, 0, 2, \u22121) == 0 as the solver contract requires (thermal_fv.py calls flux on every exposed face, including z = 0, additively to Robin).",
+    "Read the thermal_fv.py contract docstring (the inward-positive flux(x, y, z, axis, sign) on exposed faces, Robin with callable T_inf, callable source) and confirmed the case matches it. I deliberately did not run the production solver against the reference, to avoid a pre-registration 'first comparison' (F1).",
+    "Checked the source with a different discretisation from the author's: flux-form second-order FD with midpoint k(T), Richardson-extrapolated, from my own T. Agreement is 3e-8 to 1.9e-6 relative to \u03a3|\u2202a(k\u2202aT)| in all layers.",
+    "Tested the author's FD gate: the k'(T)|\u2207T|\u00b2 term is a median 43 % of \u03a3|terms| in the ceramic and 0.2\u20136 % elsewhere. A source that omitted it would therefore fail the 1e-6 gate by orders of magnitude.",
+    "Re-ran the coarse-level own FV (32,398 cells, 7 Picard iterations, energy balance 4e-15). err_kT at all 9 points matches the JSON to about 3e-12 K.",
+    "Verified by arithmetic that a max-normalised 30 % k variation in Al2O3 below 400 K needs about a 112 K ceramic span. The author's infeasibility claim for the ceramic holds."
+  ],
+  "caveats": [
+    "The '\u226530 % k variation' requirement holds only if it means k_max/k_min \u2212 1. Under the k_max-normalised or nominal-k(300 K)-normalised readings it is about 24 %. The founder must rule on this before E006 registration.",
+    "The case does not exercise the upper Al2O3 branch (>400 K) because the ceramic stays below 390.3 K.",
+    "The re-entrant corner and void faces are tested only as prescribed-flux bookkeeping. A smooth MMS cannot reproduce the corner singularity of a real adiabatic re-entrant corner.",
+    "The field is deliberately unphysical: 365 W of void-face inflow against a \u2212300 W volumetric sink. Its curvature implies a Roache GCI of about 0.045 K at a 0.5/0.25 mm grid pair in a Patankar FV, so A4 (0.025 K) on this case may require a lateral grid finer than about 0.2 mm.",
+    "The F3 estimate comes from the author's own FV, not the production solver. It shares the author's reading of the contract, which I confirmed independently against the thermal_fv.py docstring and by FD."
+  ]
+}
