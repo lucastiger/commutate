@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A3's layout sample is defined inconsistently (two vs five layouts; dev seeds only vs sealed seed)",
+      "detail": "Hypothesis (b) and A3's 'layouts:' clause name five layouts (two dev, three fresh from E006's sealed seed). But A3's metric definition opens with 'max over two generator layouts and every die'. F4 says 'pilots and A3 use dev seeds and geometry outside O003's and O004's judged sets only', which forbids the sealed-seed fresh layouts. A4 and F5 still refer to 'the two A3 layouts' / 'every A3 die'. A spec that follows the 'two'/'dev seeds' wording would pass every criterion without testing (b) on the fresh geometry, the very gap the D0013 addendum meant to close. So 'if every criterion is met, the hypothesis is established' is not guaranteed by the text as written.",
+      "evidence": "project/objectives/O006/objective.yaml lines 19, 74 (A3 'max over two generator layouts' vs 'and A4's three fresh sealed-seed layouts'), 76 (A4 'the dies of the two A3 layouts'), 98 (F4 'A3 use dev seeds'), 102 (F5). D0013 main text 'A3 stays on its two rule-fixed layouts' is superseded only by the addendum.",
+      "suggested_check": "Edit A3's first clause to 'max over the five generator layouts', align F4 (A3's fresh layouts come from E006's sealed seed, outside O003/O004 judged sets) and F5, and have E006's spec assert the layout fingerprint set.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3's power to detect a model error is set by scikit-fem's own GCI, which F5 lets reach 0.5 K",
+      "detail": "A3 passes when |Tj_L2 - Tj_skfem| <= GCI_L2 + GCI_skfem + z-term. With A4 at 0.5 K and F5 at 0.5 K, a 1.0 K L2/scikit-fem disagreement still passes. The L2's total error is then bounded only by GCI_L2 + 2 GCI_skfem (up to 1.5 K), while O003 deducts only GCI_ref + GCI_best. On committed dev data the realistic tolerance is smaller. At 85 K, GCI_L2 max 0.22/0.43 K and GCI_skfem+z max 0.19/0.24 K (side_by_side_6 / u_shaped_2), i.e. roughly 0.3-0.5 K at 60 K. So the threshold resolves model errors near the claimed 0.5 K in practice but not in the worst case the rules permit. The null's 'verified to 0.5 K per Tj value' is therefore established for discretisation, and for model error only to the A3 slack.",
+      "evidence": "Independent computation from benchmarks/results/thermal_l2_convergence.json and thermal_fem_convergence.json (seed 20261101, 85 K). FV converges downward (die 0: 409.609/409.146/408.978 K), FEM upward (409.955/410.085/410.148 K at 45 W vs FV 44.2 W). With FEM rise scaled to FV power (alpha 1.0-1.1), the worst A3 ratio is 0.53-0.99 (side_by_side_6) and 0.32-0.96 (u_shaped_2). The order-1 extrapolations agree within about 0.1 K.",
+      "suggested_check": "Either lower F5's cap for A3 (e.g. scikit-fem GCI+z <= 0.25 K) or have O003 also deduct the reported per-die A3 slack (summed estimate - |difference|).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "A4 estimator: factor-4 jump at rho = 0 and a non-conservative oscillatory branch",
+      "detail": "The addendum made the estimator continuous on [0,1), but it jumps from 1.25|d1| (rho -> 0-, oscillatory) to 0.3125|d1| (rho -> 0+, lucky branch). With |d1| = 0.4 K, a finest step of -4e-5 K vs +4e-5 K (below the 1e-4 K Picard tolerance) gives GCI 0.5 K vs 0.125 K, so A4 can be decided by iteration noise. Under a two-term error e(h) = A h^p + B h^2 with opposite signs, the oscillatory branch understates the true finest-grid error by up to 1/0.625 = 1.6x (p = 1), 1.53x (p = 1.04) and 1.29x (p = 1.2). At rho = 0 (B = -4A/3, p = 1) branch (iii) gives 0.156 vs a true error of 0.167. All 45 dev absolute Tj sequences are monotone with p_obs 1.14-2.23, so this does not decide A4 on dev data. It carries into O003 via meta['solver_tol'].",
+      "evidence": "Scratch scan of the verbatim gci_capped branches over B/A in [-5, 5] (200001 points) for p in {1, 1.04, 1.2, 1.5}: min GCI/|e2| = 0.625, 0.654, 0.773, 1.004, all near rho -> -1. Jump: gci(0, 0.4, 0.4 - 4e-5) = 0.5, gci(0, 0.4, 0.4 + 4e-5) = 0.125.",
+      "suggested_check": "Use 1.25 max(|d1|, |d2|) for 0 <= rho < 1/4 as well (or treat |d2| below the solver tolerance as stagnant), and report the oscillatory-branch count in E006.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "A4 alone is met by a model that ignores die-attach footprints and copper patterning",
+      "detail": "A4 measures self-convergence only. Removing the singular Cu-on-ceramic and die-attach edges would make the GCI smaller, so a physically poorer model passes A4 more easily. Discrimination on generator geometry rests entirely on A3 (see the A3 resolution finding). This is by design, but it means the packet's 'no criterion would be met by a predictor that ignores the decision-relevant information' holds only for the conjunction A3 AND A4, not for each criterion.",
+      "evidence": "T0181 strip_dieonly vs strip2d: removing the Cu-on-ceramic edges cut the level-2 error 6-16x (research/notes/o006-gci-differences.md section 3).",
+      "suggested_check": "State in the objective that A4 is a precision criterion and A3 the only accuracy criterion on generator geometry.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "scikit-fem through-thickness term is a runner-computed column, and its 1.25 factor is ambiguous",
+      "detail": "max_gci_consistency adds ref_extra unchanged and rejects negative values. A3 says the estimate is '1.25 |dTj_z| ... (column skfem_z)', so it is unclear whether the column holds dTj_z, |dTj_z| or 1.25|dTj_z|. A signed column makes the recomputation raise, and an unscaled one drops the factor. Unlike the GCIs, this term cannot be recomputed from grid values in the rows, which is the D0013 objection to runner-computed columns. A single z-doubling with factor 1.25 also understates if the z error is first order (true error ~2|d|). Magnitude about 0.02-0.03 K, so not decision-relevant.",
+      "evidence": "tools/mfos/mfos/metrics.py lines 165-187; thermal_fem_convergence.json z_sensitivity_K = 0.0204 / 0.0262.",
+      "suggested_check": "Rows carry Tj at both z resolutions, and the evaluator forms 1.25|difference| itself.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-derived gci_capped's branches from tools/mfos/mfos/metrics.py. Confirmed continuity at rho = 1/4 and the never-below-order-1-cap property. Found the factor-4 jump at rho = 0 numerically: GCI 0.5 vs 0.125 K for d1 = 0.4 K, d2 = -/+4e-5 K.",
+    "Scanned a two-term error model e(h) = h^p + t h^2 (t in [-5, 5], 200001 points, p in {1, 1.04, 1.2, 1.5}) through the estimator. Minimum GCI/true error was 0.625, 0.654, 0.773 and 1.004, in the oscillatory branch. Branch (iii) at rho = 0 gives 0.156 vs a true error of 0.167.",
+    "Solved the 90-degree-on-180-degree bimaterial wedge equation k1 tan(lam pi/2) + k2 tan(lam pi) = 0 analytically in the high-contrast limit (lam -> 1/2+) and for Cu/Al2O3 at about 400 K (380/18: lam about 0.516). The point-value order 2 lam >= 1, so the order-1 cap is asymptotically conservative with a margin of about 1.3.",
+    "Computed A3's consistency ratio with the capped estimator on the committed dev results (benchmarks/results/thermal_l2_convergence.json vs thermal_fem_convergence.json, same layout fingerprints, 85 K). Scaling FEM rises to FV power with alpha 1.0-1.1 gives worst ratios 0.53-0.99 (side_by_side_6) and 0.32-0.96 (u_shaped_2). Max GCI_L2 was 0.22/0.43 K and max GCI_skfem + 1.25 z-term 0.185/0.24 K. FV converges from above and FEM from below.",
+    "Read max_gci_consistency and max_gci_capped. They recompute GCIs from the grid columns and add extra columns raw (non-negative required), so the z-term is not recomputable from grid values.",
+    "Checked the F3 null against the manufactured-solution note (research/notes/o006-manufactured-solution.md, not recomputed): the constant-k shift of 2.51 K exceeds A1's 1.007 K (2.5x) and A2's 0.05 K (50x). The 32.3 % k variation is reached only in the ceramic, and the case keeps the ceramic below 399 K.",
+    "Read T0181 (research/notes/o006-gci-differences.md): in 2D strips the true level-2 error was 0.41-0.55 |d21|, against a capped GCI of 1.25 |d21|. The 3D case was not run."
+  ],
+  "caveats": [
+    "The 0.5 K in (c) is a grid-convergence estimate, not a strict bound. Evidence that it is conservative comes from 2D strip cases only (T0181; the 3D die3d case was not run). Asymptotically the order cap at 1 has a margin of only about 1.25(2^1.03 - 1) = 1.3: the Cu-trace-on-Al2O3 edge exponent is about 0.516-0.519, so values converge at order about 1.03-1.04.",
+    "Accuracy on generator geometry is established only to |L2 - skfem| <= GCI_L2 + GCI_skfem. The L2's total error is bounded by GCI_L2 + 2 GCI_skfem, assuming scikit-fem's GCI bounds its own error.",
+    "Scope is the default DBC stack (Al2O3) and generator-family layouts at the 60 K operating point. O003's reference layouts (PowerSynth samples or customer layouts, possibly other stacks or ceramics) are covered only by their per-run GCI, not by any accuracy cross-check.",
+    "Material k(T) laws (LayerStack Layer.k_at) are shared by both solvers and by the manufactured case, so the criteria verify the solver given those laws, not the laws. The manufactured case keeps the ceramic below 399 K, so the upper Al2O3 branch is not exercised.",
+    "K1 and K2 can fire, but only on the analytic and manufactured cases. The null on generator geometry is reached only through INCONCLUSIVE (A4 miss -> fallback; A3-only miss -> diagnosis).",
+    "The dev-data A3 comparison was at unmatched powers (FV 44.2/63.9 W vs FEM 45/66 W), so it cannot predict A3's outcome. A3 could plausibly fail, which would route to diagnosis."
+  ]
+}
