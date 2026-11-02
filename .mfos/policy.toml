@@ -137,6 +137,6 @@ provision_venv = true            # the orchestrator runs `uv sync --all-groups -
 extra_allow_write = []           # further writable paths, if a tool needs one
 
 [limits]
-run_wall_minutes = 150         # 90 cut T0071 off mid-solve (2026-10-05): its own checks take up to ~85 min
+run_wall_minutes = 360         # 90 cut T0071 off mid-solve (2026-10-05): its own checks take up to ~85 min
 backoff_minutes = 30             # pause dispatch after a rate/usage-limit error (does not count as an attempt)
 sleep_gap_seconds = 300          # a longer gap between ticks means the machine slept: extend run deadlines
