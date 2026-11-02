@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T18:40:34+00:00 from repository state — do not edit_
+_generated 2026-11-02T18:40:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
@@ -24,16 +24,15 @@ _generated 2026-11-02T18:40:34+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 64 | $125.23 | 2413524 | 1324862 | 112 | 0 |
+| O006 | 65 | $125.23 | 2413524 | 1324862 | 112 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 161, failed: 3, todo: 2
+cancelled: 30, done: 161, failed: 3, running: 1, todo: 1
 
+- T0196 `running` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
 
 ## Recent events
-- 2026-11-02T16:41:02+00:00 verified {"task": "T0165"}
-- 2026-11-02T16:41:05+00:00 run_started {"run": "T0194-critic-20261102T084105-54db", "task": "T0194", "role": "critic", "session": "e65e66b5-a516-4a96-8ed8-c6f85937b4e2"}
 - 2026-11-02T16:41:07+00:00 run_started {"run": "T0195-critic-20261102T084107-9af4", "task": "T0195", "role": "critic", "session": "4e1636bc-0b0a-4a6c-b329-a48ef02977e3"}
 - 2026-11-02T16:50:03+00:00 run_finished {"run": "T0195-critic-20261102T084107-9af4", "status": "completed", "cost": 2.482747, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T16:50:03+00:00 run_finished {"run": "T0194-critic-20261102T084105-54db", "status": "completed", "cost": 2.625167, "subtype": "success", "report": "structured_output"}
@@ -47,3 +46,5 @@ cancelled: 30, done: 161, failed: 3, todo: 2
 - 2026-11-02T18:34:20+00:00 inbox_opened {"id": "I0091", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-02T18:40:13+00:00 inbox_resolved {"id": "I0091", "status": "approved", "note": "Daily cap raised to 120 in policy", "by": "human"}
 - 2026-11-02T18:40:34+00:00 inbox_opened {"id": "I0092", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-02T18:40:36+00:00 loop_started {"pid": 85666}
+- 2026-11-02T18:40:39+00:00 run_started {"run": "T0196-scientist-20261102T104039-19d7", "task": "T0196", "role": "scientist", "session": "46daa03b-08ae-48aa-b8e5-71eebf2a9c4f"}
