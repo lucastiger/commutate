@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:06:06+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:06:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -35,7 +35,6 @@ cancelled: 30, done: 126, failed: 3, needs_founder: 1, running: 2, todo: 7
 - T0153 `running` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 
 ## Recent events
-- 2026-11-02T02:17:46+00:00 inbox_resolved {"id": "I0067", "status": "answered", "note": "Founder (2026-11-02): suggested DoDs and touches added to T0157 and T0163 (deliverable research/notes/o006-kT-cit
 - 2026-11-02T02:17:47+00:00 inbox_resolved {"id": "I0068", "status": "approved", "note": "Founder (2026-11-02): plan approved as proposed.", "by": "session"}
 - 2026-11-02T02:20:12+00:00 inbox_resolved {"id": "I0064", "status": "approved", "note": "metrics added (max_scaled_abs_err, max_abs_err_gated, max_col; NaN/empty raise)", "by": "human"}
 - 2026-11-02T02:20:31+00:00 inbox_resolved {"id": "I0065", "status": "approved", "note": "usd=25", "by": "human"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 126, failed: 3, needs_founder: 1, running: 2, todo: 7
 - 2026-11-02T03:03:30+00:00 run_started {"run": "T0153-scientist-20261101T190330-2c7a", "task": "T0153", "role": "scientist", "session": "08a8f217-d72a-4b63-804c-8c8b3c112f94"}
 - 2026-11-02T03:03:53+00:00 sleep_detected {"gap_s": 892, "runs_extended": 2}
 - 2026-11-02T03:06:05+00:00 budget_override {"objective": "O006", "usd": 115.0}
+- 2026-11-02T03:06:23+00:00 budget_override {"objective": "O006", "usd": 115.0}
