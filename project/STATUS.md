@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T15:09:01+00:00 from repository state — do not edit_
+_generated 2026-11-02T15:38:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -13,7 +13,7 @@ _generated 2026-11-02T15:09:01+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $109.18/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $115.39/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,18 +23,15 @@ _generated 2026-11-02T15:09:01+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 61 | $109.18 | 2150898 | 1188894 | 101 | 0 |
+| O006 | 62 | $115.39 | 2257754 | 1242224 | 102 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
 cancelled: 30, done: 158, failed: 3, running: 1, todo: 1
 
-- T0165 `running` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 1)
+- T0165 `running` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 2)
 
 ## Recent events
-- 2026-11-02T12:13:44+00:00 task_amended {"task": "T0189", "reason": "D0013 addendum 2"}
-- 2026-11-02T12:18:35+00:00 inbox_resolved {"id": "I0080", "status": "approved", "note": "Daily cap raised to 110 in policy; clears the stale notice", "by": "human"}
-- 2026-11-02T12:18:44+00:00 inbox_opened {"id": "I0087", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-02T12:19:19+00:00 loop_started {"pid": 9190}
 - 2026-11-02T12:19:22+00:00 run_started {"run": "T0189-builder-20261102T041922-bb6d", "task": "T0189", "role": "builder", "session": "69be085e-1d11-44c5-ad11-90a1600509e2"}
 - 2026-11-02T12:30:11+00:00 run_finished {"run": "T0189-builder-20261102T041922-bb6d", "status": "completed", "cost": 1.554871, "subtype": "success", "report": "structured_output"}
@@ -47,3 +44,6 @@ cancelled: 30, done: 158, failed: 3, running: 1, todo: 1
 - 2026-11-02T15:07:26+00:00 inbox_resolved {"id": "I0087", "status": "approved", "note": "Stale: daily cap already raised to 110 (97770c6)", "by": "human"}
 - 2026-11-02T15:08:58+00:00 merged {"task": "T0189"}
 - 2026-11-02T15:09:01+00:00 run_started {"run": "T0165-scientist-20261102T070901-2e60", "task": "T0165", "role": "scientist", "session": "2938413c-5412-409e-ba8d-9bdddfc8ea58"}
+- 2026-11-02T15:36:04+00:00 run_finished {"run": "T0165-scientist-20261102T070901-2e60", "status": "completed", "cost": 6.209536, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T15:38:11+00:00 task_failed_attempt {"task": "T0165", "signal": "dod_failed", "action": "repair"}
+- 2026-11-02T15:38:13+00:00 run_started {"run": "T0165-scientist-20261102T073813-270d", "task": "T0165", "role": "scientist", "session": "9e93c34b-8f75-42b6-978d-06343151e0fd"}

@@ -282,12 +282,13 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0165-e006-design-draft-spec-runner-rows-three
 pr: null
 runs:
 - T0165-scientist-20261102T070901-2e60
+- T0165-scientist-20261102T073813-270d
 created_by: planner:T0162
 created_at: '2026-11-02T02:16:01+00:00'
 protected_approved: false
@@ -326,3 +327,171 @@ history:
 - outcome: founder_brief_amended
   summary: 'D0013 addendum 2: floor, Fs 3 oscillatory, z pair, F5 0.25 K, fingerprints, directions'
   at: '2026-11-02T11:56:40+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Partial. The draft spec, runner, dev rows and design note are done, committed in c77c274.
+    Two things block E006 from going ahead.
+
+
+    **1. The F1 reference pre-check fails.** `research/e006/refcheck.json` has `all_passed = false`, so
+    the refcheck definition-of-done check exits 1. All reference-only checks pass:
+
+    - reference sha256 (series befc5efa…, mms ca05847b…);
+
+    - series convergence: frozen values reproduced to 1e-15 after doubling every knob;
+
+    - the printed Case 3 values at 50 terms;
+
+    - N-layer reduces to two-layer (2e-16);
+
+    - all manufactured-case self-checks; ceramic k_max/k_min − 1 = 0.3227;
+
+    - scikit-fem agrees with the series within 0.02 K: 0.0033 K on Case 2 and 0.0114 K on the uniform
+    stack.
+
+
+    What fails is scikit-fem''s own GCI, which must be ≤ 0.01 K: it is 0.0155 K (Case 2) and 0.044 K'
+  report:
+    summary: 'Partial. The draft spec, runner, dev rows and design note are done, committed in c77c274.
+      Two things block E006 from going ahead.
+
+
+      **1. The F1 reference pre-check fails.** `research/e006/refcheck.json` has `all_passed = false`,
+      so the refcheck definition-of-done check exits 1. All reference-only checks pass:
+
+      - reference sha256 (series befc5efa…, mms ca05847b…);
+
+      - series convergence: frozen values reproduced to 1e-15 after doubling every knob;
+
+      - the printed Case 3 values at 50 terms;
+
+      - N-layer reduces to two-layer (2e-16);
+
+      - all manufactured-case self-checks; ceramic k_max/k_min − 1 = 0.3227;
+
+      - scikit-fem agrees with the series within 0.02 K: 0.0033 K on Case 2 and 0.0114 K on the uniform
+      stack.
+
+
+      What fails is scikit-fem''s own GCI, which must be ≤ 0.01 K: it is 0.0155 K (Case 2) and 0.044 K
+      (uniform stack). I refined its mesh four times (uniform, then graded at source edges, then near/far
+      zones, then finer z); the best results were 0.0155 K and 0.0192 K, in different attempts. I did
+      not loosen the threshold. This is not a reference error: the order-capped GCI needs the finest grid
+      step to be ≤ 0.008 K, while scikit-fem''s actual errors are about 0.003 to 0.005 K. On the uniform
+      stack, refining laterally made the centroid worse, which points to a through-thickness error in
+      the thin layers.
+
+
+      **2. The full registered run does not fit this Mac.** I counted the cells the frozen rule gives
+      at level 2: Case 1a 11.6 M, Case 1b 23.2 M, the N-layer case 18.9 M. At the measured 1.1 to 1.5
+      kB per cell, that projects to about 17, 30 and 21 GB per solve. These cases have no axis mirror
+      symmetry to crop, the levels are frozen, and chunked assembly would need a change to production
+      code. The runner refuses any solve estimated above 0.85 × RAM, so it stops with an error instead
+      of swapping.
+
+
+      **What the deliverables do:**
+
+      - **Runner:** `e006_run.py` writes every reported value with its three grid values (f_lv0 to f_lv2)
+      in the case and cross-check rows. It computes the four metrics with the evaluator''s own `mfos.metrics`
+      functions, as point values with no CI, and lets +inf through unchanged. It also writes the constant-k
+      null column `dT_const_k`.
+
+      - **Spec:** `E006.yaml` has the F1, F2 and F5 sanity checks, `sealed_seed: true`, the five layout
+      fingerprints and the founder''s 30 % reading (0.3227, margin +0.0227; max-normalised value 0.244).
+
+      - **Smoke:** `--smoke` runs every case and both development layouts on a coarsened copy of the grid
+      rule (60 s, 2.9 GB). It writes only the dev rows and never creates an evidence run.
+
+
+      On the dev rows the null fails both A1 and A2 (0.063 and 2.56 K), so it discriminates. The fast
+      gate printed "all gates passed", but its exit code was not captured.
+
+
+      **Commands and exit codes:**
+
+      - smoke: exit 0 (re-run with the final runner);
+
+      - `mfos exp check E006 --rows research/e006/dev_rows.json`: exit 0;
+
+      - `ruff check .`: exit 0;
+
+      - both spec-content checks: exit 0;
+
+      - refcheck `all_passed`: exit 1;
+
+      - `mfos gate --fast`: "all gates passed", exit code not captured;
+
+      - refcheck runs: exit 1, four times, peak 6.9 GB.'
+    failure_class: none
+    confidence: 0.7
+    root_cause: 'Neither problem is a design error in E006 or a reference error.
+
+      (1) The F1 failure is cross-check resolution. Scikit-fem''s GCI with the order capped at 1 is 1.25·|d2|,
+      so it needs |d2| ≤ 0.008 K. Scikit-fem''s actual errors against the series are 0.003 to 0.011 K,
+      but the finest step is still too large on the meshes that fit in about 7 GB.
+
+      (2) The full-run memory problem comes from the frozen rule applied to Cases 1a and 1b (300 mm plates)
+      and the 86 × 56 mm N-layer box. With 1 mm level-0 cells and two z cells per layer, level 2 needs
+      11.6 M, 23.2 M and 18.9 M cells.'
+    evidence:
+    - 'research/e006/refcheck.json: reference checks pass; case2_vs_skfem 0.0033 K and nlayer_uniform_vs_skfem
+      0.0114 K (both <= 0.02 K); case2_skfem_gci 0.0155 K and nlayer_uniform_skfem_gci 0.0440 K (both
+      > 0.01 K)'
+    - 'Four refcheck attempts, scikit-fem GCI Case 2 / uniform stack: 0.049/0.016, 0.022/0.032, 0.022/0.019,
+      0.0155/0.044; max errors all <= 0.017 K; table in note section 3'
+    - 'FV memory measured: Case 1a level 1, 1.45 M cells, 2.13 GB; N-layer level 1, 2.36 M cells, 2.85
+      GB. Level-2 cell counts from build_box_grid: 11.6 M / 23.2 M / 18.9 M'
+    - 'Smoke dev rows (coarsened rule): 196 rows; null dT_const_k gives A1 0.063 and A2 2.56 K (fails
+      both); GCI/|err| 2.3-3.6 at every reference point, no error above its GCI'
+    - 'Smoke max energy balance 7.4e-6, above 1e-6: a risk for the energy_balance check (note section
+      5)'
+    - mfos exp check E006 --rows research/e006/dev_rows.json exit 0; ruff exit 0; both spec-content checks
+      exit 0; gate --fast printed 'all gates passed' (exit code not captured)
+    alternative_explanations:
+    - explanation: The series reference is wrong at the 0.01 K level, and scikit-fem's slow convergence
+        is hiding it.
+      how_to_discriminate: 'Refine scikit-fem further in z: if its error against the series stays at or
+        below about 0.005 K while its GCI falls, the reference is right. Two-layer reduction (2e-16) and
+        doubling convergence (1e-15) already pass.'
+    - explanation: 'The uniform-stack check is limited by through-thickness resolution in the thin layers,
+        not lateral resolution: the centroid error grew from 0.0033 to 0.0114 K as the lateral grid was
+        refined.'
+      how_to_discriminate: Double nz in the die, top Cu and ceramic with the lateral grid fixed (near-zone
+        hmax 0.25 mm), and watch whether d2 shrinks.
+    discriminating_tests:
+    - 'Uniform stack, scikit-fem z study: nz doubled in die/top_cu/ceramic, near-zone hmax 0.25 mm, levels
+      0-2, about 1 M DOF'
+    - 'Case 2: hmax 0.75 mm with z_hmax 2.5 mm (about 2 M DOF, under 9 GB)'
+    - Manufactured-case energy balance against the reference integral at frozen-rule levels 0-2, before
+      registration
+    recommended_actions:
+    - Re-run --refcheck with thin-layer z refinement for the uniform stack and a finer lateral hmax for
+      Case 2 (under 2.2 M DOF), then commit refcheck.json. Keep the 0.01 K threshold.
+    - 'Founder decision on full-run compute: Cases 1a/1b/N-layer at frozen-rule level 2 project to about
+      17/30/21 GB, more than 10 GB. Either run E006 with `scripts/burst_gcp.sh E006 n2-highmem-16` (no
+      Spot for a registered run), or change the objective''s cases (a criteria change).'
+    - Before registration, check the manufactured case's Q_out against the reference integral at frozen-rule
+      levels (the smoke showed 7.4e-6, above 1e-6).
+    - 'Before the first registered run, check that mfos stores an infinite metric value (A3/A4 = +inf)
+      correctly in result.json: pydantic v2 may serialise inf as null, which would break re-reading the
+      result. This is mfos code; I did not test it or change it.'
+    affects_acceptance_criteria: false
+    files_written:
+    - experiments/drafts/E006.yaml
+    - experiments/runners/e006_run.py
+    - research/e006/refcheck.json
+    - research/e006/dev_rows.json
+    - research/notes/o006-e006-design.md
+    experiment_drafts:
+    - experiments/drafts/E006.yaml
+- attempt: 1
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "FAIL uv run python -c \"import json; d=json.load(open('research/e006/refcheck.json'));\
+    \ assert d['all_passed'] is True; n=[c['name'] for c in d['checks'] if c['passed']]; assert any('case2'\
+    \ in x.lower() for x in n) and any('nlayer' in x.lower() for x in n)\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nAssertionError\n"
+  at: '2026-11-02T15:38:11+00:00'
