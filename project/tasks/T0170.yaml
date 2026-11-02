@@ -1,0 +1,43 @@
+id: T0170
+objective: O006
+title: 'Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews
+  T0168/T0169)'
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: 'T0150''s frozen rule (LAT_FRAC 1, Z_CELLS 2, level0 per case) gives GCI 0.45-0.67 K on the
+  A3 layouts against A4''s 0.025 K, and T0168 showed the three-grid GCI from level 0 understates the true
+  error 2-3x on an analytic box case. Before E006 is designed: (1) refine the rule in solvers/thermal_layout.py
+  (more z-cells in thin layers such as die attach and solder, geometric grading toward die and copper
+  edges, a fixed level0 inside the rule, no per-case knob) until the max GCI over every reported value
+  is <= 0.025 K on development layouts drawn from seeds other than 20261101 (the A3 layouts; never tune
+  on them), at a finest level that fits this Mac (<= 5 M cells) or else state the burst-VM size; (2) add
+  tests comparing GCI with the true error on analytic partial-source box cases (Fourier-series reference)
+  at the rule''s levels, requiring GCI >= |true error| in every case; (3) rerun benchmarks/thermal_l2_convergence.py
+  on the A3 layouts only after the rule is final, report it as-is, and update docs/thermal_model.md. If
+  0.025 K is unreachable at affordable size, say so with numbers; do not change thresholds.'
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: null
+risk: high
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T03:06:48+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
