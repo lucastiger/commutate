@@ -13,6 +13,7 @@ depends_on:
 - T0163
 - T0170
 - T0181
+- T0189
 description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experiments/runners/e006_run.py
   on mfos.evidence.ExperimentRun, following the E001 pattern.
 
@@ -53,22 +54,36 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   T_l2, and identical to it on constant-k cases.
 
 
-  - Cross-check rows (A3): kind=crosscheck, is_finest=true, layout, die, power_w, tj_l2 (= f_lv2), f_lv0,
-  f_lv1, f_lv2,
+  - Cross-check rows (A3): kind=crosscheck, is_finest=true, layout, layout_set (dev or fresh), die, power_w,
+  tj_l2
 
-  gci, a4_branch, tj_skfem (= skfem_lv2), skfem_lv0, skfem_lv1, skfem_lv2, skfem_gci, skfem_a4_branch.
-  Both solvers
+  (= f_lv2), f_lv0, f_lv1, f_lv2, gci, a4_branch, tj_skfem (= skfem_lv2), skfem_lv0, skfem_lv1, skfem_lv2,
+  skfem_gci,
 
-  use three grids of their own refinement by r = 2.
+  skfem_a4_branch, skfem_z, detectable_bias. Both solvers use three grids of their own refinement by r
+  = 2 (scikit-fem
+
+  laterally, zrefine=False, as in its benchmark). skfem_z = 1.25 |dTj_z|: the change in the die''s Tj
+  max when every
+
+  layer''s through-thickness cell count is doubled on scikit-fem''s level-1 lateral grid (one extra solve
+  per layout).
+
+  detectable_bias = gci + skfem_gci + skfem_z - |tj_l2 - tj_skfem|. A3 runs on five layouts: the two development
+
+  layouts and the three fresh layouts below. The fresh layouts get one cross-check row per die. Do not
+  add separate
+
+  fresh rows for them, so that A4 sees each value once.
 
 
-  - Fresh-layout rows (A4): kind=fresh, is_finest=true, layout, family, dies_per_switch, die, power_w,
-  tj_l2 (= f_lv2),
+  - Fresh layouts: the first DRC-valid layout of each generator family from the run''s sealed seed (spec
+  sealed_seed:
 
-  f_lv0, f_lv1, f_lv2, gci, a4_branch. Layouts: the first DRC-valid layout of each generator family from
-  the run''s
+  true), dies per switch as drawn; development rows use a dev seed, never the sealed one. They appear
+  as cross-check
 
-  sealed seed (spec sealed_seed: true); development rows use a dev seed, never the sealed one.
+  rows with layout_set=fresh, plus family and dies_per_switch.
 
 
   - Operating point for every generator layout (A3 and fresh), per O006 scope_in: 65 C coolant, h = 5000
@@ -80,7 +95,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   coolant, then used unchanged by both solvers and on every grid; record power_w. A3 layouts follow A3''s
   rule
 
-  (generate_layouts dev seed 20261101), with fingerprints frozen in config.
+  (generate_layouts dev seed 20261101; side_by_side with dies_per_switch = 6, u_shaped with dies_per_switch
+  = 2), with
+
+  fingerprints frozen in config.
 
 
   (3) Metrics, exactly the four of O006 as restated by D0012 and D0013
@@ -103,11 +121,11 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - A3: max_gci_consistency, params {pred_levels: [f_lv0, f_lv1, f_lv2], ref_levels: [skfem_lv0, skfem_lv1,
 
-  skfem_lv2]}, where {kind: crosscheck}.
+  skfem_lv2], ref_extra: skfem_z}, where {kind: crosscheck}.
 
 
-  - A4: max_gci_capped, params {levels: [f_lv0, f_lv1, f_lv2]}, where {is_finest: true} (case, cross-check
-  and fresh rows).
+  - A4: max_gci_capped, params {levels: [f_lv0, f_lv1, f_lv2]}, where {is_finest: true} (case and cross-check
+  rows).
 
 
   A diverging sequence gives +inf, which means the criterion is not met. That is a legitimate outcome,
@@ -145,10 +163,11 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
 
   - Picard max|dT| < 1e-4 K;
 
-  - skfem GCI reported; F5: scikit-fem''s own GCI (mfos.metrics.gci_capped on skfem_lv0..2) at most 0.5
-  K on every
+  - skfem GCI reported; F5: scikit-fem''s own estimate (mfos.metrics.gci_capped on skfem_lv0..2 plus skfem_z)
+  at most
 
-  A3 die, a gated sanity check (INVALID if missed, never a verdict on the L2).
+  0.5 K on every A3 die of all five layouts, a gated sanity check (INVALID if missed, never a verdict
+  on the L2).
 
   Case 1a/1b converged values against scikit-fem: INFO only, not gated.
 
@@ -163,7 +182,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   creates an evidence run. Commit research/e006/dev_rows.json and set the spec''s dev_rows to it.
 
 
-  (8) Spec fields:
+  (8) Spec fields (memory: scikit-fem''s finest level is about 6.5 GB per layout; run solves one at a
+  time on this Mac
+
+  per the agent memory rule; level-1 z-doubled solves are smaller):
 
   - code_under_test: thermal_fv.py, thermal_layout.py, and stack.py as provenance; code_must_match as
   decision_if_pass needs;
@@ -171,7 +193,10 @@ description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experim
   - timeout_min and cpu_hours_est from the T0150/T0152 benchmark timings (objective cap 80 CPU-h).
 
 
-  (9) research/notes/o006-e006-design.md: how each metric maps to A1-A4/K1/K2 and F5, the operating-point
+  (9) research/notes/o006-e006-design.md: secondary values reported per reference-case point, GCI / |T_L2
+  - T_ref|
+
+  (the estimator against a known error). How each metric maps to A1-A4/K1/K2 and F5, the operating-point
   powers,
 
   the fresh-layout rule, the point list, F1-F3 coverage, and the runtime/memory plan. Treat any refcheck
@@ -232,7 +257,7 @@ definition_of_done:
 - cmd: uv run ruff check .
   exists: null
   timeout_s: 300
-- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_conservative_gci_K','max_gci_capped','max_gci_consistency','f_lv0','sealed_seed']);
+- cmd: uv run python -c "s=open('experiments/drafts/E006.yaml').read(); assert all(k in s for k in ['max_case_scaled_err','max_abs_err_K','max_skfem_consistency','max_conservative_gci_K','max_gci_capped','max_gci_consistency','f_lv0','sealed_seed','skfem_z','ref_extra']);
     assert 'max_skfem_gci_K' not in s"
   exists: null
   timeout_s: 120
@@ -276,3 +301,9 @@ history:
 - outcome: founder_brief_amended
   summary: rows, metrics, operating point, fresh layouts and F5 aligned with D0013
   at: '2026-11-02T11:02:45+00:00'
+- outcome: founder_dependency_added
+  summary: waits for T0189 (solver_tol uses A4's estimator)
+  at: '2026-11-02T11:41:21+00:00'
+- outcome: founder_brief_amended
+  summary: A3 on five layouts, skfem_z term, F5 with z, secondary GCI/error (D0013 addendum)
+  at: '2026-11-02T11:41:21+00:00'

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T11:11:06+00:00 from repository state — do not edit_
+_generated 2026-11-02T11:41:41+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -24,20 +24,17 @@ _generated 2026-11-02T11:11:06+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 54 | $100.32 | 1978652 | 1093523 | 88 | 0 |
+| O006 | 56 | $100.32 | 1978652 | 1093523 | 88 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 153, failed: 3, needs_founder: 1, todo: 1
+cancelled: 30, done: 153, failed: 3, needs_founder: 1, running: 2, todo: 2
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
+- T0190 `running` critic/review: Review OBJ-O006 (statistics) (attempt 1)
+- T0191 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T10:27:54+00:00 inbox_opened {"id": "I0084", "kind": "protected_change", "subject": "T0167: merge needs founder approval"}
-- 2026-11-02T10:27:56+00:00 run_started {"run": "T0185-critic-20261102T022756-a99b", "task": "T0185", "role": "critic", "session": "0454ac5f-d25d-4d04-9f69-71b038e87d90"}
-- 2026-11-02T10:28:30+00:00 run_finished {"run": "T0184-critic-20261102T022129-b97a", "status": "completed", "cost": 1.575659, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T10:29:41+00:00 inbox_resolved {"id": "I0084", "status": "approved", "note": "Pilots P1+P2 notes and data (research/ only, no protected paths). Findings feed the O002 re-derivation (25/45 W) 
-- 2026-11-02T10:30:16+00:00 merged {"task": "T0167"}
 - 2026-11-02T10:30:16+00:00 inbox_opened {"id": "I0085", "kind": "decision", "subject": "[O006] replan limit reached"}
 - 2026-11-02T10:32:57+00:00 inbox_resolved {"id": "I0085", "status": "approved", "note": "Founder (2026-11-02): no replan. T0186 confirmed the remaining O006 path (T0165 held, then T0166); T0167's findin
 - 2026-11-02T10:33:41+00:00 run_finished {"run": "T0185-critic-20261102T022756-a99b", "status": "completed", "cost": 1.516586, "subtype": "success", "report": "structured_output"}
@@ -48,3 +45,8 @@ cancelled: 30, done: 153, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-02T11:03:06+00:00 run_started {"run": "T0188-critic-20261102T030306-c32e", "task": "T0188", "role": "critic", "session": "6270f107-875e-4bd9-9cd2-8ff99cf96510"}
 - 2026-11-02T11:10:27+00:00 run_finished {"run": "T0187-critic-20261102T030305-5888", "status": "completed", "cost": 2.074527, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T11:11:04+00:00 run_finished {"run": "T0188-critic-20261102T030306-c32e", "status": "completed", "cost": 2.212662, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T11:41:21+00:00 task_added {"task": "T0189", "objective": "O006", "reason": "D0013 addendum: solver_tol alignment"}
+- 2026-11-02T11:41:21+00:00 task_amended {"task": "T0165", "reason": "D0013 addendum alignment"}
+- 2026-11-02T11:41:21+00:00 objective_draft_review {"objective": "O006", "ref": "3401f861f67f3606d63589e6e8456e748a9249e6", "tasks": ["T0190", "T0191"]}
+- 2026-11-02T11:41:40+00:00 run_started {"run": "T0190-critic-20261102T034140-97d7", "task": "T0190", "role": "critic", "session": "68f66dba-0d9c-4dc4-baf1-cc248f6b56a0"}
+- 2026-11-02T11:41:41+00:00 run_started {"run": "T0191-critic-20261102T034141-a374", "task": "T0191", "role": "critic", "session": "f5b333e1-0322-4518-a9af-eeaef9dab31b"}

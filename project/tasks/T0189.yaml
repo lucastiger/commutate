@@ -1,0 +1,127 @@
+id: T0189
+objective: O006
+title: Align thermal L2's meta['solver_tol'] (gci_three_grid, thermal_fem._gci) with O006's A4 estimator
+  (D0013 addendum)
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: 'Make the thermal L2''s own discretisation estimate (meta[''solver_tol'']) use O006''s A4
+  estimator, so that
+
+  code_must_match carries the verified estimator to O003 (O006 scope_in and decision_if_pass, D0013 addendum).
+
+
+  (1) src/moduleforge/solvers/thermal_layout.py: gci_three_grid(f_coarse, f_mid, f_fine, r=2) implements
+  exactly the
+
+  branches of O006''s A4 (project/objectives/O006/objective.yaml; the reference implementation is
+
+  tools/mfos/mfos/metrics.py gci_capped): d1 = f_mid - f_coarse, d2 = f_fine - f_mid, rho = d2/d1; d1
+  = d2 = 0 -> 0;
+
+  |rho| >= 1 or d1 = 0 < |d2| -> +inf; -1 < rho < 0 -> 1.25 max(|d1|, |d2|); 0 <= rho < 1/4 -> 1.25 max(|d2|,
+  |d1|/4);
+
+  1/4 <= rho < 1 -> 1.25 |d2| / (2^p - 1), p = min(log2(1/rho), 1). Keep the returned dict keys (gci,
+  p_obs, monotone,
+
+  Fs, p) and add ''branch'' (''exact'', ''divergent'', ''oscillatory'', ''fast'', ''monotone''). r other
+  than 2 raises ValueError
+
+  (the frozen rule refines by 2). Product code must not import mfos: implement the rule in moduleforge
+  and cite O006 A4
+
+  and Roache (1998, ch. 5) in the docstring. Update the module docstring''s GCI paragraph and the FS_*/P_*
+  constants it
+
+  no longer uses.
+
+
+  (2) src/moduleforge/solvers/thermal_fem.py: _gci uses the same rule (call thermal_layout.gci_three_grid
+  or share one
+
+  helper), so the scikit-fem cross-check reports the same estimator.
+
+
+  (3) Tests (tests/unit/solvers/test_thermal_layout.py): replace the superseded-rule assertions with hand-computed
+
+  values for every branch, including the two re-review examples: (410.0, 410.25, 410.75) -> inf, and the
+  lucky grid
+
+  (410.0, 410.3, 410.31) -> 1.25 * 0.3 / 4. Add tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+  asserting
+
+  gci_three_grid(...)[''gci''] == mfos.metrics.gci_capped(...) (rel 1e-12, inf == inf) on a grid of at
+  least 2000
+
+  sequences covering every branch and both signs, and that thermal_fem''s estimator agrees too. This is
+  a change of the
+
+  decided estimator (D0013), not a weakened tolerance: the old rule was shown non-conservative (T0181).
+
+
+  (4) docs/thermal_model.md: the GCI section states the A4 rule and cites D0012/D0013.
+
+
+  Do not touch tools/mfos (protected), O006''s objective, or any benchmark result file. The committed
+  benchmark JSONs keep
+
+  their recorded values; they are not regenerated.'
+context_files:
+- project/objectives/O006/objective.yaml
+- project/decisions/D0013-o006-restatement-corrections.md
+- tools/mfos/mfos/metrics.py
+- tests/mfos/test_metrics.py
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_layout.py
+- docs/thermal_model.md
+- research/notes/o006-gci-differences.md
+deliverables:
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+touches:
+- src/moduleforge/solvers/thermal_layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_layout.py
+- tests/unit/solvers/test_thermal_fem.py
+- tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+- docs/thermal_model.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_gci_matches_evaluator.py tests/unit/solvers/test_thermal_layout.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python -c "import math; from moduleforge.solvers import thermal_layout as tl; assert tl.gci_three_grid(410.0,
+    410.25, 410.75)['gci'] == math.inf; assert abs(tl.gci_three_grid(410.0, 410.3, 410.31)['gci'] - 1.25
+    * 0.3 / 4) < 1e-12"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-02T11:41:21+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: O006 decision_if_pass hands meta['solver_tol'] to O003; it must be the estimator E006 verifies
+  (T0188).
+history: []
