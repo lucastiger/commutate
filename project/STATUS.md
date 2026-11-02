@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-02T06:36:22+00:00 from repository state — do not edit_
+_generated 2026-11-02T06:36:36+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0077** [protected_change] T0170: merge needs founder approval
+- **I0079** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -28,15 +29,12 @@ _generated 2026-11-02T06:36:22+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 141, failed: 3, merge: 2, needs_founder: 1, todo: 4
+cancelled: 30, done: 142, failed: 3, merge: 1, needs_founder: 1, todo: 5
 
-- T0164 `merge` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
 - T0170 `needs_founder` builder/implement: Thermal grid rule: refine thin layers and edges, fix level0, prove GCI is conservative (A4; reviews T0168/T0169) (attempt 1)
 - T0172 `merge` builder/implement: scikit-fem A3 benchmark for a burst VM: 3D refinement, finer levels, host memory budget (review T0171) (attempt 1)
 
 ## Recent events
-- 2026-11-02T05:24:27+00:00 sleep_detected {"gap_s": 601, "runs_extended": 1}
-- 2026-11-02T05:24:28+00:00 run_finished {"run": "T0172-builder-20261101T211050-be48", "status": "completed", "cost": 0.321806, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T05:27:59+00:00 verified {"task": "T0172"}
 - 2026-11-02T05:28:02+00:00 run_started {"run": "T0180-critic-20261101T212802-fd08", "task": "T0180", "role": "critic", "session": "b6b3ae32-2543-4ebf-9af6-2c3b742b2119"}
 - 2026-11-02T05:34:52+00:00 run_finished {"run": "T0180-critic-20261101T212802-fd08", "status": "completed", "cost": 1.307507, "subtype": "success", "report": "structured_output"}
@@ -50,3 +48,5 @@ cancelled: 30, done: 141, failed: 3, merge: 2, needs_founder: 1, todo: 4
 - 2026-11-02T06:35:44+00:00 merged {"task": "T0155"}
 - 2026-11-02T06:36:04+00:00 task_added {"task": "T0181"}
 - 2026-11-02T06:36:09+00:00 merged {"task": "T0157"}
+- 2026-11-02T06:36:34+00:00 merged {"task": "T0164"}
+- 2026-11-02T06:36:36+00:00 inbox_opened {"id": "I0079", "kind": "budget_increase", "subject": "daily LLM budget reached"}
