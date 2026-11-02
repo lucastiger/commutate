@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T03:36:40+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:36:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -23,20 +23,17 @@ _generated 2026-11-02T03:36:40+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 30 | $57.98 | 1265722 | 718751 | 49 | 0 |
+| O006 | 31 | $57.98 | 1265722 | 718751 | 49 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 130, failed: 3, merge: 1, running: 1, todo: 7, verify: 1
+cancelled: 30, done: 131, failed: 3, review: 1, running: 2, todo: 7
 
-- T0153 `merge` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
-- T0157 `verify` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 1)
+- T0157 `review` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 1)
+- T0174 `running` critic/review: Review T0157 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:21:39+00:00 run_finished {"run": "T0171-critic-20261101T191513-eaaf", "status": "completed", "cost": 1.378192, "subtype": "success", "report": "structured_output"}
-- 2026-11-02T03:22:15+00:00 inbox_opened {"id": "I0070", "kind": "protected_change", "subject": "T0152: merge needs founder approval"}
-- 2026-11-02T03:22:17+00:00 run_started {"run": "T0155-scientist-20261101T192217-0866", "task": "T0155", "role": "scientist", "session": "77fcf8f6-3a0f-4e35-b3c0-f053d1bc5d77"}
 - 2026-11-02T03:24:29+00:00 inbox_resolved {"id": "I0070", "status": "approved", "note": "Approved; A3 needs a 3D-refined scikit-fem benchmark on a burst VM (review T0171).", "by": "human"}
 - 2026-11-02T03:24:30+00:00 task_added {"task": "T0172"}
 - 2026-11-02T03:24:51+00:00 task_amended {"task": "T0172", "reason": "DoD/touches/depends_on set"}
@@ -49,3 +46,6 @@ cancelled: 30, done: 130, failed: 3, merge: 1, running: 1, todo: 7, verify: 1
 - 2026-11-02T03:34:08+00:00 run_started {"run": "T0157-scout-20261101T193408-f88c", "task": "T0157", "role": "scout", "session": "91562875-800c-43b1-bb33-021a87a2615f"}
 - 2026-11-02T03:35:53+00:00 run_finished {"run": "T0157-scout-20261101T193408-f88c", "status": "completed", "cost": 0.47754, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:36:38+00:00 inbox_resolved {"id": "I0071", "status": "approved", "note": "Approved; E006 design to pin the k(T) variation reading k_max/k_min - 1 >= 0.30 (review T0173).", "by": "human"}
+- 2026-11-02T03:36:44+00:00 verified {"task": "T0157"}
+- 2026-11-02T03:36:47+00:00 merged {"task": "T0153"}
+- 2026-11-02T03:36:51+00:00 run_started {"run": "T0174-critic-20261101T193651-8590", "task": "T0174", "role": "critic", "session": "1bb919a0-7296-4f8f-ae9e-c0f7b673357c"}
