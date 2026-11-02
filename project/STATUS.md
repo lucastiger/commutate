@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T10:28:32+00:00 from repository state — do not edit_
+_generated 2026-11-02T10:30:11+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
 - **I0080** [budget_increase] daily LLM budget reached
-- **I0084** [protected_change] T0167: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,14 +28,13 @@ _generated 2026-11-02T10:28:32+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 149, failed: 3, needs_founder: 2, running: 1, todo: 1
+cancelled: 30, done: 149, failed: 3, merge: 1, needs_founder: 1, running: 1, todo: 1
 
 - T0165 `needs_founder` scientist/design_experiment: E006 design: draft spec, runner (rows, three-grid GCI, F1/F2 sanity checks, F3 null, A3 cross-check), full-resolution F1 reference pre-check, smoke dev rows (attempt 0)
-- T0167 `needs_founder` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 2)
+- T0167 `merge` scientist/investigate: Pilots P1+P2: thermal envelope (175 C power limit, load levels for O002/O003) and thermal null predictors per stratum (research notes, not evidence) (attempt 2)
 - T0185 `running` critic/review: Review OBJ-O006 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-02T10:17:56+00:00 objective_draft_review {"objective": "O006", "ref": "c09c8ac36a92a7fdde1ef9e93a190a0dac60274f", "tasks": ["T0184", "T0185"]}
 - 2026-11-02T10:18:11+00:00 inbox_resolved {"id": "I0082", "status": "approved", "note": "Accepted; findings feed D0012 (order-capped GCI; strip_dieonly and Cu-on-ceramic corner caveats per review T0183)
 - 2026-11-02T10:20:15+00:00 merged {"task": "T0181"}
 - 2026-11-02T10:20:17+00:00 run_started {"run": "T0186-planner-20261102T022017-a8ca", "task": "T0186", "role": "planner", "session": "d8f37bdb-a5a5-416f-acd8-4b3507dcbcad"}
@@ -51,3 +49,4 @@ cancelled: 30, done: 149, failed: 3, needs_founder: 2, running: 1, todo: 1
 - 2026-11-02T10:27:54+00:00 inbox_opened {"id": "I0084", "kind": "protected_change", "subject": "T0167: merge needs founder approval"}
 - 2026-11-02T10:27:56+00:00 run_started {"run": "T0185-critic-20261102T022756-a99b", "task": "T0185", "role": "critic", "session": "0454ac5f-d25d-4d04-9f69-71b038e87d90"}
 - 2026-11-02T10:28:30+00:00 run_finished {"run": "T0184-critic-20261102T022129-b97a", "status": "completed", "cost": 1.575659, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T10:29:41+00:00 inbox_resolved {"id": "I0084", "status": "approved", "note": "Pilots P1+P2 notes and data (research/ only, no protected paths). Findings feed the O002 re-derivation (25/45 W) 
