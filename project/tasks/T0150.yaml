@@ -4,7 +4,7 @@ title: 'Thermal L2 on Layouts and box stacks: conforming grid builder, frozen gr
   in meta[''solver_tol''], A4 convergence/cost benchmark'
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on:
 - T0149
 description: 'Implement src/moduleforge/solvers/thermal_layout.py on top of thermal_fv; do not edit solvers/__init__.py.
@@ -170,3 +170,6 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- outcome: full_gate_passed
+  summary: cf75c9ef2dbb6c8c3f16d280af7ad6b7d656d734
+  at: '2026-11-02T03:03:24+00:00'

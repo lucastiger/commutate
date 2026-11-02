@@ -1,0 +1,60 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The A4 benchmark shows the frozen rule at levels 0-2 is 18-27x above A4",
+      "detail": "The benchmark is delivered and its numbers are correct. On both A3 layouts the max GCI is 0.448 K (side_by_side_6) and 0.668 K (u_shaped_2), against the A4 threshold of 0.025 K. The observed orders range from 1.09 (u_shaped low-side dies) to 2.07. spread_max is non-monotone or diverging (p_obs = -2.06 and oscillatory). So levels 0-2 are not cleanly in the asymptotic range. Level 2 already needs about 1.7 M cells, 75 s and 1.5-1.7 GB. One more level would be about 14 M cells and, by linear scaling, about 14 GB. This is not a defect in the claimed implementation, but it is decision-relevant: as frozen, the rule cannot meet A4 on affordable grids, which under O006 means the fallback route.",
+      "evidence": "benchmarks/results/thermal_l2_convergence.json: max_gci_K 0.4479 / 0.6680; die 2/3 of u_shaped_2: p_obs 1.089 / 1.088, so Fs = 3. I recomputed every GCI in the JSON with gci_three_grid and by hand (die0: 1.25*0.2591/(2^1.901-1) = 0.1184); 0 mismatches.",
+      "suggested_check": "Before E006 registration, decide whether level 0 of the frozen rule (h0 = f_min) is fine enough, or record that A4 is expected to fail.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Grid resolution jumps 2x between generator layouts; the cost benchmark covers only the coarse case",
+      "detail": "h0 = f_min depends on the single smallest gap between feature lines. In 36 of 90 generator layouts (seed 777), and in a 60-layout survey (seed 12345), f_min is 0.5 mm instead of 1 mm. Those layouts get lateral cells 2x finer at every level and up to 4x the active cells: 107,580 at level 0, about 6.9 M at level 2. Both benchmark layouts have f_min = 1 mm (26.9 k cells at level 0). So the cost figures understate the worst case for O002/O003, and the docstring's 'f_min is typically 1 mm' covers only about 60% of layouts. Because discretisation error then differs between layouts by grid class, cross-layout comparisons such as O002 spreads and pair differences carry layout-dependent discretisation error.",
+      "evidence": "Survey: unique f_min {0.5, 1.0} mm; level-0 active cells min 26,864, max 107,580.",
+      "suggested_check": "Add one f_min = 0.5 mm layout to the cost benchmark, or state the cost bound for that class.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Box-mode level 0 puts about one cell across a die-sized source; level0 is a free per-case knob",
+      "detail": "In box mode, h0 = the smallest interval among the walls and source edges. For a 5 mm source in a 15 mm box that is 5 mm, so there is a single cell across the source at level 0. Against my independent analytic series, levels 0-2 give an oscillatory tj_max with a finest-level error of 0.336 K (GCI 0.83). Only levels 2-4 reach a 0.022 K error. solve_layout and solve_box_stack take a free level0 argument, and the box test uses level0=1. That contradicts 'frozen ... no other tuning is made per case' unless E006 fixes level0 per case in its spec. The box and layout modes also use different absolute resolutions, so analytic box verification at rule levels does not exercise the layout grid resolution.",
+      "evidence": "Box 15x15 mm, default 7-layer constant-k stack, centred 5x5 mm source, 40 W. Analytic rise at the centroid 57.8094 K, mean 53.2853 K. Solver tj_max rise by level 0..4: 62.295, 56.640, 57.474, 57.722, 57.787.",
+      "suggested_check": "Fix the level set (level0) per case class in the E006 spec, or define it inside the grid rule.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Containment contract of docs/thermal_model.md section 2 is not enforced",
+      "detail": "The definition says that invalid input (a die not fully on the trace union, a trace outside the outline, overlapping dies, etc.) makes the solver raise. build_layout_grid and solve_layout_level do no containment checks. When I moved a die so that 30% of it overhangs the copper, the solve ran silently: tj_max returned, energy balance 1.4e-13. Generator layouts are DRC-valid, so the benchmark is unaffected, but externally supplied or edited Layouts would be solved on the wrong domain without warning.",
+      "evidence": "A deepcopy of the side_by_side_2 layout with die0.cx shifted 19.5 mm (supported fraction 0.70): no exception.",
+      "suggested_check": "Assert the section-2 containment and disjointness in build_layout_grid with a ValueError, and add a test.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "GCI is zero whenever f2 == f1 exactly, whatever f3 - f2 is",
+      "detail": "gci_three_grid(2.5, 2.0, 2.0) returns 0. This follows the objective's formula literally and is unlikely with float results, but it is precisely the 'lucky grid' failure that F2 is meant to catch.",
+      "evidence": "test_gci_converged_values_give_zero",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all DoD commands. tests/unit/solvers/test_thermal_layout.py: 19 passed, including the slow test. Smoke benchmark: exit 0, wrote to a temporary file, level-0/1 cell counts identical to the committed JSON. JSON assertion: ok. Fast unit suite: 386 passed. ruff: clean.",
+    "Recomputed every per-die GCI (tj_max, tj_mean, tj_centroid) in the results JSON with gci_three_grid: 0 mismatches. Hand-derived die0 side_by_side: p_obs 1.901, GCI 0.1184. Recomputed the layout-level tj_max, spread_max and hottest_rise from the per-die values; checked tj_max >= tj_centroid at every level; checked max_gci_K equals the maximum over all reported values.",
+    "Built my own N-layer Fourier series for a rectangular flux channel: per-mode surface impedance propagated bottom-up from 1/h, not taken from the repo code. Verified its 1D limit exactly against sum t/k + 1/h and its convergence to 1e-5 K at M = 4000. Compared it with solve_box_stack on the default 7-layer stack with a centred 5x5 mm source. Errors fall at about second order (0.336, 0.0875, 0.0221 K), and the GCI bounds the true error at levels 0-2 (0.83 vs 0.34), at levels 2-4 for tj_max (0.0293 vs 0.0221), and for tj_mean (0.0038 vs 0.0009).",
+    "Reproduced the u_shaped_2 level-0 benchmark entry in a fresh process: same layout fingerprint, per-die tj_max equal to 1e-12, same n_cells and picard_iters.",
+    "Surveyed the grid rule over 150 generator layouts (all families, 2-6 dies): f_min is 0.5 or 1.0 mm; level-0 active cells range from 26.9 k to 107.6 k.",
+    "Adversarial input: a die 30% off the copper is solved without error, so the containment contract is not enforced.",
+    "Box mode with k(T) Layer objects: Picard runs 5 iterations, the result is hotter than constant k, energy balance 4e-13."
+  ],
+  "caveats": [
+    "The implementation is correct as far as I could test it: the grid conforms to every geometry edge, every level doubles every spacing exactly, materials are assigned correctly, the box mode converges to an independent analytic series at second order, and the GCI matches the objective's formula. The benchmark shows the frozen rule at levels 0-2 gives GCIs of 0.45-0.67 K, far above A4's 0.025 K. Delivering the benchmark does not mean the rule meets A4.",
+    "The GCI honesty check (GCI >= true error) was done only in box mode with constant k and one centred source. Layout-mode GCI (die edges, copper islands, k(T)) has no independent reference here; the scikit-fem cross-check is separate work.",
+    "The cost numbers (wall time, peak RSS) cover two layouts with f_min = 1 mm on this machine only. About 40% of generator layouts have f_min = 0.5 mm and about 4x the cells per level.",
+    "The frozen rule's level0 is chosen per case through a function argument. E006 must fix it in the registered spec for 'frozen' to hold."
+  ]
+}
