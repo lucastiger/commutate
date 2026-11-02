@@ -1,9 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T12:14:10+00:00 from repository state — do not edit_
+_generated 2026-11-02T12:18:44+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
-- **I0080** [budget_increase] daily LLM budget reached
+- **I0087** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -32,8 +32,6 @@ cancelled: 30, done: 156, failed: 3, todo: 3
 
 
 ## Recent events
-- 2026-11-02T11:41:40+00:00 run_started {"run": "T0190-critic-20261102T034140-97d7", "task": "T0190", "role": "critic", "session": "68f66dba-0d9c-4dc4-baf1-cc248f6b56a0"}
-- 2026-11-02T11:41:41+00:00 run_started {"run": "T0191-critic-20261102T034141-a374", "task": "T0191", "role": "critic", "session": "f5b333e1-0322-4518-a9af-eeaef9dab31b"}
 - 2026-11-02T11:49:04+00:00 run_finished {"run": "T0190-critic-20261102T034140-97d7", "status": "completed", "cost": 1.923906, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T11:49:07+00:00 run_started {"run": "T0189-builder-20261102T034907-970e", "task": "T0189", "role": "builder", "session": "2f237262-a932-4334-b771-3052f025d56c"}
 - 2026-11-02T11:50:16+00:00 run_finished {"run": "T0191-critic-20261102T034141-a374", "status": "completed", "cost": 2.303154, "subtype": "success", "report": "structured_output"}
@@ -47,3 +45,5 @@ cancelled: 30, done: 156, failed: 3, todo: 3
 - 2026-11-02T12:11:38+00:00 run_finished {"run": "T0192-critic-20261102T040737-7ee9", "status": "completed", "cost": 1.221328, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T12:12:58+00:00 task_failed_attempt {"task": "T0189", "signal": "dod_failed", "action": "repair"}
 - 2026-11-02T12:13:44+00:00 task_amended {"task": "T0189", "reason": "D0013 addendum 2"}
+- 2026-11-02T12:18:35+00:00 inbox_resolved {"id": "I0080", "status": "approved", "note": "Daily cap raised to 110 in policy; clears the stale notice", "by": "human"}
+- 2026-11-02T12:18:44+00:00 inbox_opened {"id": "I0087", "kind": "budget_increase", "subject": "daily LLM budget reached"}
