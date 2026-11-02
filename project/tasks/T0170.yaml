@@ -5,7 +5,8 @@ title: 'Thermal grid rule: refine thin layers and edges, fix level0, prove GCI i
 type: implement
 agent: builder
 status: todo
-depends_on: []
+depends_on:
+- T0150
 description: 'T0150''s frozen rule (LAT_FRAC 1, Z_CELLS 2, level0 per case) gives GCI 0.45-0.67 K on the
   A3 layouts against A4''s 0.025 K, and T0168 showed the three-grid GCI from level 0 understates the true
   error 2-3x on an analytic box case. Before E006 is designed: (1) refine the rule in solvers/thermal_layout.py
@@ -19,8 +20,28 @@ description: 'T0150''s frozen rule (LAT_FRAC 1, Z_CELLS 2, level0 per case) give
   0.025 K is unreachable at affordable size, say so with numbers; do not change thresholds.'
 context_files: []
 deliverables: []
-touches: []
-definition_of_done: []
+touches:
+- src/moduleforge/solvers/thermal_layout.py
+- tests/unit/solvers/test_thermal_layout.py
+- benchmarks/thermal_l2_convergence.py
+- benchmarks/results/thermal_l2_convergence.json
+- docs/thermal_model.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_layout.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python benchmarks/thermal_l2_convergence.py --smoke
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: benchmarks/results/thermal_l2_convergence.json
+  timeout_s: 900
 experiment: null
 risk: high
 model: null
@@ -40,4 +61,7 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- outcome: founder_dod_added
+  summary: DoD, touches and depends_on T0150 set (founder session)
+  at: '2026-11-02T03:07:18+00:00'

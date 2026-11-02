@@ -11,6 +11,7 @@ depends_on:
 - T0152
 - T0153
 - T0163
+- T0170
 description: 'Draft experiments/drafts/E006.yaml (evidence rules v2) and experiments/runners/e006_run.py
   on mfos.evidence.ExperimentRun, following the E001 pattern.
 
@@ -176,4 +177,7 @@ lens: null
 trigger: null
 rationale: The required design_experiment for E006, which feeds A1-A4, K1, K2 and the F1-F3 detections.
   It front-loads F1's reference validation before the single evaluation.
-history: []
+history:
+- outcome: founder_dependency_added
+  summary: waits for T0170 (grid rule refinement) so E006 is designed against the final rule
+  at: '2026-11-02T03:07:18+00:00'
