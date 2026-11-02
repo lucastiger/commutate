@@ -3,7 +3,7 @@ objective: O006
 title: Verify every k(T) law and citation in geometry/stack.py against primary sources
 type: research
 agent: scout
-status: review
+status: running
 depends_on: []
 description: Open each cited source (Incropera Tables A.1/A.2, Slack 1973, Hirosaki 2002, CRC tin resistivity
   coefficient, Levinshtein 2001 / TCAD SiC models) and confirm the numbers and laws in src/moduleforge/geometry/stack.py;
@@ -25,12 +25,13 @@ model: null
 budget_usd: 3.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0157-verify-every-k-t-law-and-citation-in-geo
 pr: null
 runs:
 - T0157-scout-20261101T193408-f88c
+- T0157-scout-20261101T194143-6678
 created_by: founder
 created_at: '2026-11-01T23:06:43+00:00'
 protected_approved: false
@@ -110,3 +111,53 @@ history:
     - Measured 300-480 K k(T) for sintered Si3N4 AMB substrates is needed.
     - '`mfos gate --fast` was not run by me; the orchestrator must run it.'
     thesis_impact: none
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] The 4H-SiC item misdiagnoses the citation error and recommends a correction
+    measured along the wrong crystal direction: The note says the -1.49 exponent and the 3.7 W/(cm K)
+    value are ''not confirmed'' and that ''I could not find the 1.49 exponent or the 3.7 W/(cm K) prefactor
+    in any result''. Its Answer counts this item among ''citations [that] do not support what the code
+    says''. One standard search found the primary origin of the exponent: Burgemeister, von Muench & Pettenpaul,
+    J. Appl. Phys. 50, 5790 (1979), DOI 10.1063/1.326720. That paper reports k proportional to T^-1.49
+    for the purest 6H-SiC, measured normal to the c axis over 300-500 K (3.87 W/cm K at room temperature),
+    and says k parallel to c is about 30 % lower. So the real discrepancy in stack.py is a polytype and
+    direction misattribution: a 6H, in-plane exponent applied to a 4H die whose heat flows vertically
+    along c. The note does not identify it. A second search found the Ioffe NSM SiC table, which gives
+    3.7 W cm^-1 °C^-1 for 4H-SiC at 300 K from Goldberg et al. (2001). That is the SiC chapter of the
+    Levinshtein/Rumyantsev/Shur book the code cites, so the 300 K value is supported, not contradicted.
+    The note then gives a ''corrected value'' of exponent -1.26 and k = 280 W/(m K), both measured normal
+    to the c axis [S7]. It does this although its own source S8 reports that c-axis conductivity is about
+    40 % lower than in-plane. It also accepts the code''s ''c-axis conductivity of real wafers varies
+    330-490 W/(m K)'' without checking it; published values in that range are in-plane (about 340-470
+    W/(m K) for 4H). Anyone who applies the discrepancy table to stack.py or to the P1 sweep (280-370
+    W/(m K)) would be using in-plane data for a through-thickness quantity.
+
+    - [major] No law or citation was checked against a primary source, so the task as stated was not done:
+    The task was to verify every law against primary sources. The note says itself that ''Every "confirmed"
+    below therefore means "confirmed in secondary or scanned copies"'' and that no primary document (Incropera,
+    Slack, Hirosaki, Levinshtein, CRC, TCAD manuals) was opened. Saying so openly is right. But it makes
+    ''correctly and completely implements'' false as stated: the deliverable is a secondary-source screen
+    with confidence ''low-medium'', not a primary-source verification.
+
+    - [major] The 300 K value citations in the stack.py docstring are not checked: Layer.k_at returns
+    Layer.k * f(T)/f(T_REF), so the 300 K values are part of every k(T) law. The note does not check:
+    Cu 385 W/(m K) (cited to the CRC), Al2O3 96 % at 24 W/(m K) (Rogers/curamik and CeramTec datasheets),
+    SAC305 at 58 W/(m K) (''lead-free solder handbooks''), or the sintered-Ag range of 100-250 W/(m K).
+    Si3N4 at 90 W/(m K) gets only a passing snippet [S11]. The SiC 3.7 W/(cm K) value was checked but
+    wrongly reported as unconfirmed (see the blocker).
+
+    - [minor] Small arithmetic and transcription errors in the ''verified'' numbers: (a) For SiC, f(480
+    K) with exponent -1.49 is 1.6^-1.49 = 0.4964, not 0.490 as the note states. With -1.26 it is 0.5531,
+    so the gap is 11.4 %, not ''about 12 %''. (b) The note says it ''recomputed'' ln(15.8/26.4)/ln(1.5)
+    = -1.2658; the value is -1.26609, which matches the code''s -1.266. (c) In the Al2O3 OCR row, the
+    note assigns 133 and 55 to ''the 200 K and 100 K columns'' while also saying ''lower temperatures
+    first''. That reverses them: k falls with T, so 133 is the 100 K value and 55 the 200 K value. None
+    of these changes a conclusion, but they are in the arithmetic the note presents as verified.
+
+    - [minor] The curated memory entry states more than the note found about Hirosaki 2002: The note records
+    the Hirosaki 1/T claim as ''UNVERIFIED ... do not cite as primary until the PDF is read''. The new
+    INDEX.md line says ''Hirosaki 2002 ... doe
+
+    ...[truncated; full reviews: project/reviews/T0157/]'
+  at: '2026-11-02T03:41:40+00:00'
