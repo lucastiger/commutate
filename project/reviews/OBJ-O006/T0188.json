@@ -1,0 +1,82 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A4's estimator jumps by 4x at rho = 1/4, and on development data at O003's operating point that jump, not the discretisation error, decides A4",
+      "detail": "For a fixed d1, gci_capped gives 1.25|d1| for 0 <= rho < 1/4 and 0.3125|d1| at rho = 1/4. So a sequence that converges faster gets a bound four times larger. Real generator layouts land in this branch: 7 of 61 development Tj-max sequences have p_obs just above 2 (rho 0.21-0.246). Scaled to the 60 K operating point, the T0181 dev layout u_shaped #3 (seed 1181) gets A4 GCI = 0.93-0.95 K, which fails A4 by about 2x. A3 layout side_by_side_6, die 11, gets about 0.50 K, right at the threshold (dies 8 and 9 about 0.45-0.47 K). With p capped at 1 throughout, every one of the 61 values is <= 0.31 K, and u_shaped #3 is about 0.22 K. T0181's own strip evidence shows that capping at 1 already bounds the true error in this regime: the value with p_obs 2.30 had true error 0.52|d21|, below 1.25|d21|. The max-step branch is therefore not needed for conservatism at moderate p_obs. With 5 layouts and up to 12 dies each, A4 will likely go INCONCLUSIVE through this branch, and that maps to 'same as fail', i.e. a switch to scikit-fem. Such a failure is not evidence for the null (error > 0.5 K). So the claim that 'the thresholds can resolve the decision' does not hold. Remedy: make the lucky-grid guard continuous, e.g. GCI = 1.25 max(|d2|, |d1|/4) for 0 <= rho < 1/4.",
+      "evidence": "Scratch check with mfos.metrics.gci_capped: (0,-1,-1.2499) -> 1.25; (0,-1,-1.25) -> 0.3125. u_shaped#3 (423.276/422.237/421.996, hottest rise 83.85 K): 1.299 K at 85 K, 0.929 K at 60 K; capped-at-1 equivalent 0.216 K. side_by_side_6 d11 (407.725/407.170/407.054, benchmarks/results/thermal_l2_convergence.json): 0.694 K at 85 K, 0.495 K at 60 K. Sources: research/o006_gci/pairs_jobs.jsonl and research/notes/o006-gci-differences.md s.4-5.",
+      "suggested_check": "Recompute A4 on all T0170/T0181 dev sequences under the amended branch before registration, and confirm no value's verdict depends on which side of rho = 1/4 it falls.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "decision_if_pass passes meta['solver_tol'] to O003, but that value still uses the superseded, non-conservative rule",
+      "detail": "decision_if_pass ties O003 to the evaluated code (code_must_match) and has O003 deduct 'its own GCI (meta['solver_tol'])'. In that code, thermal_layout.gci_three_grid still uses Fs 1.25 / p <= 2 inside [1.5, 2.5], and otherwise |d21|. T0181 showed this rule non-conservative on 3 of 6 strip values. D0013 itself says it is only 'aligned in a later cleanup task', and any later change to it breaks code_must_match. On the A3 layouts at 85 K, meta['solver_tol'] is 0.04-0.33 K while A4's estimator gives 0.14-0.69 K, up to 13x more. O003 would deduct bounds that O006 did not verify.",
+      "evidence": "src/moduleforge/solvers/thermal_layout.py:69,75-86. Scratch comparison per die: e.g. side_by_side_6 d11 old 0.048 K vs capped 0.694 K; u_shaped_2 d2 old 0.322 K vs capped 0.423 K.",
+      "suggested_check": "Require meta['solver_tol'] to call mfos.metrics.gci_capped (or an identical rule) before E006 registration, so that code_must_match carries the verified estimator.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "A3's outcome is effectively known before registration",
+      "detail": "Three-level L2 values and three-level scikit-fem values already exist for exactly the two A3 layouts (seed 20261101, same fingerprints) at 85 K. The A3 tolerance (summed GCIs) was set by D0012 after these data. Scaling scikit-fem's rise linearly to the L2's power (44.2 vs 45.0 W; 63.9 vs 66.0 W) gives an A3 ratio of 0.14-0.52 on all 16 dies. A pass is therefore close to certain and adds little independent confirmation. The design has one strength here: L2 converges from above and FEM from below, so the summed-GCI test does probe whether the GCIs are conservative.",
+      "evidence": "benchmarks/results/thermal_l2_convergence.json and thermal_fem_convergence.json. Scratch A3 ratios: side_by_side_6 max 0.52 (die 6), u_shaped_2 max 0.35.",
+      "suggested_check": "Add at least one cross-check layout drawn after registration (e.g. from the sealed seed, or the interleaved family), so that A3 is a prediction rather than a restatement.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A2's 0.05 K on the manufactured case leaves little margin and is not derived from the decision",
+      "detail": "The MMS note estimates an own-FV error of 0.036 K at 0.25 mm lateral. That is about the frozen rule's level-2 bulk cell (1/0.5/0.25 mm), and the note warns that a slightly coarser rule would fail A2 'through discretisation alone'. A2 failing without K2 gives INCONCLUSIVE, which maps to the fallback. That fallback would be triggered by a 0.05-0.25 K miss on a smooth case, whereas the decision needs 0.5 K. A pure discretisation shortfall would be read as a model failure.",
+      "evidence": "research/notes/o006-manufactured-solution.md s.6 ('Discretisation warning'); thermal_layout.py docstring lines 17-22.",
+      "suggested_check": "Dry-run the production rule's level 2 on build_case() before registration, or define A2 relative to the solver's own GCI.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A4 is met by any grid-insensitive predictor, and A3 covers only two of three families",
+      "detail": "A grid-independent wrong model (e.g. a 1D stack) has d1 = d2 = 0, so GCI = 0 and it meets A4. On generator geometry, only A3 discriminates. A3 uses side_by_side and u_shaped, so the interleaved family's die islands and copper patterns are never compared with an independent solver. The claim that no criterion is met by an uninformed predictor holds only for the conjunction, and only for two families.",
+      "evidence": "gci_capped returns 0.0 for d1 = d2 = 0; A3 layout rule in the objective.",
+      "suggested_check": "Name the interleaved family in A3, or state the two-family scope in the hypothesis.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The scikit-fem cross-check refines laterally only, so GCI_skfem and F5 leave out z error",
+      "detail": "thermal_fem's A3 benchmark uses zrefine=False with fixed nz, and z sensitivity (0.020-0.026 K) is measured separately. The objective requires neither refinement in all directions nor that z error enter F5 or A3. F5 therefore cannot detect a z-unconverged cross-check. The effect is small at the measured sensitivity.",
+      "evidence": "src/moduleforge/solvers/thermal_fem.py docstring; benchmarks/results/thermal_fem_convergence.json grid_rule.zrefine=false, z_sensitivity_K 0.020/0.026.",
+      "suggested_check": "Require the scikit-fem three-grid sequence to refine all directions at r = 2, or add the measured z sensitivity to GCI_skfem.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "The estimator's conservatism is shown only in 2D, and no criterion checks GCI against true error where the truth is known",
+      "detail": "D0012 rests on T0181's 2D strip, and the 3D die3d case was not run. Edge singularities (2 lambda about 1.04) should dominate 3D vertex effects, so the proxy is plausible. Still, E006 could check cheaply that GCI >= |T_L2 - T_ref| on the reference cases, and does not.",
+      "evidence": "research/notes/o006-gci-differences.md s.4 ('Limitation: 2D strip ... die3d case was not run').",
+      "suggested_check": "Report GCI / |error| per reference-case point in E006.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "'k varying by at least 30 %' is ambiguous",
+      "detail": "The ceramic's variation is 32 % normalised to its minimum k and 24 % normalised to its maximum. The MMS author flagged this. F3 still resolves: dT_const_k is about 2.5 K, against A1's 1.007 K and A2's 0.05 K.",
+      "evidence": "research/notes/o006-manufactured-solution.md s.4, s.6.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-derived gci_capped branch values in a scratch script: 4x discontinuity at rho = 1/4 (1.25 vs 0.3125 for d1 = 1 K); rho >= 1 gives +inf; oscillatory branch confirmed.",
+    "Recomputed A4 GCIs for all 61 development Tj-max sequences (T0170 benchmark on the A3 layouts plus T0181 pairs_jobs.jsonl), scaled linearly to a 60 K hottest-die rise: 4 values >= ~0.45 K, all in the 0 <= rho < 1/4 branch; u_shaped#3 about 0.93 K; none above 0.31 K without the branch.",
+    "Compared L2 (thermal_l2_convergence.json) and scikit-fem (thermal_fem_convergence.json) three-level Tj max on the identical A3 fingerprints, after power-scaling FEM to the L2 power: A3 ratio 0.14-0.52; L2 converges from above, FEM from below.",
+    "Compared meta['solver_tol'] (thermal_layout.gci_three_grid, superseded rule) with mfos.metrics.gci_capped per die on the A3 layouts: old rule 0.04-0.33 K vs capped 0.14-0.69 K at 85 K.",
+    "Read the frozen grid rule (level-2 bulk lateral 0.25 mm) against the MMS note's discretisation estimate (0.036 K at 0.25 mm) to judge A2's margin.",
+    "Checked that K1/K2 thresholds lie above A1/A2 and use the same row-recomputable metrics (they can fire), and that F3's null (2.5 K) fails A1/A2 by a wide margin."
+  ],
+  "caveats": [
+    "Values at 60 K were obtained by scaling the 85 K grid steps linearly with each layout's hottest rise. k(T) makes this approximate (a few %), but rho, and so the branch each value falls in, does not change with scaling. The u_shaped#3 conclusion (0.93 K vs 0.5 K) holds well beyond that error; side_by_side_6 die 11 (0.495 K) is within it.",
+    "I did not run the production solver or scikit-fem. All numbers come from committed development artifacts (T0170 benchmark, T0181 pairs), not admissible evidence.",
+    "The FEM-vs-L2 A3 estimate scales FEM rises linearly to correct a 2-3 % power mismatch between the two benchmarks."
+  ]
+}
