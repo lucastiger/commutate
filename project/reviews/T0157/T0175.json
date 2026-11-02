@@ -1,0 +1,71 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The deliverable says the task was not done: no primary source was opened",
+      "detail": "The claim is that the change correctly and completely implements \"verify every k(T) law and citation in geometry/stack.py against primary sources\". The note contradicts this on its own first lines. It says \"No: the task as written (verify against primary sources) could not be completed. In this session I opened none of Incropera, Slack 1973, Hirosaki 2002, the CRC Handbook, Levinshtein 2001 or a TCAD manual\". The INDEX line opens with \"PARTIAL, no primary source opened\". Every law's status rests on secondary material: Scribd OCR scans, aggregator abstracts, search-engine summaries of an unreadable patent, a carried-over attempt-1 reading, or statements credited to a review in project/reviews/T0157/. That directory does not exist in this repository. Discrepancy rows #2, #4, #7 and #11 are explicitly unverified or not found. The note is honest about this, but honesty does not make the claim of complete primary-source verification true.",
+      "evidence": "research/notes/o006-kT-citations.md lines 2 and 5 (Answer) and 'Verification limits'; INDEX.md entry; `ls project/reviews` returns 'No such file or directory'.",
+      "suggested_check": "Close the task as not done (or re-scope it as partial), and get library or founder access to Incropera A.1/A.2, Slack 1973, Hirosaki 2002, Burgemeister 1979, CRC and Qian 2017.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The SAC305/tin resistivity coefficient 'correction' mixes reference temperatures; the code's 4.2e-3 /K is already consistent",
+      "detail": "The note calls the code's alpha = 4.2e-3 /K low, compared with secondary tin values of 4.6-4.7e-3 /K over 0-100 C. It then suggests sweeping 4.2-4.7e-3, and plugs 4.7e-3 straight into the code's formula to get f(480 K) = 0.867. But a 0-100 C coefficient is relative to rho(0 C), while stack.py uses rho(300 K)[1 + alpha (T - 300)]. Converted to the code's reference, alpha_300 = alpha_0 / (1 + alpha_0 x 26.85), which gives 4.09e-3 to 4.17e-3 /K. With that, f(480)/f(300) is 0.914-0.921, and the code (0.911) is already slightly steeper. Engineering Toolbox also lists tin at 4.2e-3 /C relative to 20 C. So discrepancy #6 and its proposed sweep range, which feed the P1 sensitivity ranges, are wrong. The note's claim that 4.7e-3 'moves the formula toward [S11]' rests on the same error.",
+      "evidence": "Scratch script: a0 = 4.6e-3 gives a(300 K) = 0.00409 and f480 = 0.9211; a0 = 4.7e-3 gives a(300 K) = 0.00417 and f480 = 0.9137; the code with 4.2e-3 gives f480 = 0.9112; the note's 4.7e-3 in the code's form gives 0.8667.",
+      "suggested_check": "Convert every quoted resistivity coefficient to the code's 300 K reference before comparing; drop or re-derive the 4.2-4.7e-3 sweep.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The Si3N4 'too shallow' hint has the sign backwards",
+      "detail": "The note quotes a source saying some Si3N4 grades lose up to 45 % of k between 0 and 400 C. It calls this 'a weakly sourced hint that -1.0 may be too shallow for some grades'. A 1/T law loses 59 % over 273-673 K (ratio 0.406). A loss of at most 45 % corresponds to an exponent of about -0.66, so if anything it suggests -1.0 is too steep. Any sweep built on this hint would widen in the wrong direction.",
+      "evidence": "ln(0.55)/ln(673.15/273.15) = -0.663; 273.15/673.15 = 0.406.",
+      "suggested_check": "Recompute the implied exponent for every percentage-loss datum before stating a direction.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The Burgemeister 1979 exponent was confirmable but is reported as unconfirmed",
+      "detail": "The note says its search confirmed only the paper's identity, not the T^-1.49 exponent or the roughly 30 % lower conductivity parallel to c. A sciencegate mirror of the abstract states both: purest samples, normal to c, T^-1.49, 3.87 W/(cm K), parallel to c about 30 % lower, 300-500 K. This supports discrepancy #1 (a 6H, normal-to-c exponent applied to 4H along c). But it shows the 'could not verify' status is partly an incomplete search, not a hard access limit.",
+      "evidence": "WebSearch result citing boch.sciencegate.app/works/W2047210737 (abstract mirror).",
+      "suggested_check": "Cite the abstract mirror for the exponent and the c-axis anisotropy.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The Ioffe T-fit is compared with the 4H value, but its figure is labelled 6H",
+      "detail": "The note compares 611/(T-115) (3.30 W/(cm K) at 300 K) with the 4H value of 3.7 and concludes the fit 'does not reproduce 3.7'. The Ioffe figure caption for that fit says 6H-SiC monocrystalline, so the comparison mixes polytypes.",
+      "evidence": "WebSearch summary of ioffe.ru SiC thermal page; 611/185 = 3.303.",
+      "suggested_check": "State the polytype of the Nilsson fit, or drop the comparison.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Breaks mf-research note rules (citing unopened sources, Answer length, provenance header)",
+      "detail": "mf-research says 'Never cite a source you did not open'. S2 and S6 are bibliographic records only, S5 is abstract-only with 'numbers not read', and S11 is a summary of a scan that could not be read. All four are still cited for content. The Answer runs well past 5 sentences. The header names Task T0157, attempt 2, while this review is for T0175. Several key statements are credited to a review file that is not in the repo, so they cannot be traced from this commit.",
+      "evidence": ".claude/skills/mf-research/SKILL.md; note header line 2; Sources table.",
+      "suggested_check": "Keep unread items in Open questions rather than Sources, and fix the task id.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read stack.py lines 1-125 and listed every k(T) law and citation (Cu/Incropera A.1, Al2O3/Incropera A.2, Slack 1973, Hirosaki 2002, SAC305 Wiedemann-Franz plus CRC tin coefficient, 4H-SiC Levinshtein/TCAD, datasheet values). Checked them against the note's coverage: the citations are listed, but several are marked unchecked or not found.",
+    "Recomputed every number in the note with K_LAWS imported from the repo. Cu slope -1.995e-4 and the 12.5 % shallower 400-600 K slope; Al2O3 exponents -1.0781 and -1.2661; SAC305 f(423)/f(300) = 0.9297 and f(480)/f(300) = 0.9112; Wiedemann-Franz estimate 56.3 W/(m K); 1.6^-1.49 = 0.4964 and 1.6^-1.26 = 0.5531 (the note writes 0.5530); 611/185 = 3.30. All match except trivial rounding.",
+    "Converted the 0-100 C tin coefficients (4.6-4.7e-3) to the code's 300 K reference: 4.09-4.17e-3, f(480) = 0.914-0.921. This shows the note's 'alpha appears low' correction is a reference-temperature error.",
+    "Computed the exponent implied by the quoted 'up to 45 % loss, 0-400 C' Si3N4 datum: -0.66. It is shallower than -1.0, which reverses the note's inference.",
+    "WebSearch for the Burgemeister 1979 abstract: the sciencegate mirror confirms T^-1.49, normal to c, 3.87 W/(cm K), parallel to c about 30 % lower, 6H, 300-500 K.",
+    "WebSearch for 10.1063/1.4790134: confirms the measurement is normal to the c axis and gives T^-1.26 for N-type 4H; 280 W/(m K) not confirmed.",
+    "WebFetch of arXiv 1712.00830 abstract: confirms TDTR, 250-450 K, in-plane and cross-plane for n-type 4H, SI 4H and SI 6H; no numbers in the abstract.",
+    "WebSearch for the Hirosaki 2002 abstract: confirms Green-Kubo MD on ideal crystals and the 300 K values; the T-exponent is not available. WebFetch of the MRS-J PDF returned only a JBIG2 scan, matching the note's access limit.",
+    "WebSearch for the Ioffe SiC page (direct fetch failed TLS for me too): 4H = 3.7 W/(cm K); the 611/(T-115) fit's figure is labelled 6H.",
+    "WebSearch for tin coefficient tables: Engineering Toolbox gives 4.2e-3 relative to 20 C; others give 4.5e-3.",
+    "Checked the repository for the cited review file: project/reviews/ does not exist at this commit. The diff touches only the note and one INDEX line."
+  ],
+  "caveats": [
+    "The deliverable file exists and is candid about its limits. If the task were re-scoped to 'a partial, secondary-source audit of the k(T) citations', its main SiC finding would mostly stand: a 6H, normal-to-c exponent applied to a 4H die whose heat flows along c, which I confirmed via an abstract mirror. So would its Cu/Al2O3 number checks and its Hirosaki point (ideal-crystal MD).",
+    "I could not open the primary documents either (Incropera, Slack, Hirosaki full text, CRC, Qian 2017, Levinshtein). My checks are arithmetic plus secondary or abstract sources.",
+    "As the note says, E006 pass/fail compares against references that use the same k(T) laws, so these citation issues bear on the P1 pilot sensitivity ranges, not on E006."
+  ]
+}

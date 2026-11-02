@@ -1,0 +1,61 @@
+id: I0072
+kind: decision
+subject: 'T0157: 2 review rounds rejected; your call'
+summary: 'Verify every k(T) law and citation in geometry/stack.py against primary sources
+
+  Findings of every round (project/reviews/T0157/):
+
+  - T0174 [blocker, impact correctness] The 4H-SiC item misdiagnoses the citation error and recommends
+  a correction measured along the wrong crystal direction (check: Rewrite the SiC entry: give the exponent''s
+  source as Burgemeister 1979 (6H, perpendicular to c), confirm 3.7 W/(cm K) via Goldberg/Levinshtein
+  2001, and give c-axis values for the die (for example from Qian 2017''s k_z) instead of in-plane ones.)
+
+  - T0174 [major, impact evidence] No law or citation was checked against a primary source, so the task
+  as stated was not done (check: Get library or founder copies of Incropera Tables A.1/A.2, Slack 1973,
+  Hirosaki 2002 and Burgemeister 1979, and close the open items against them.)
+
+  - T0174 [major, impact scope] The 300 K value citations in the stack.py docstring are not checked (check:
+  Add one row per 300 K value with its source, or state explicitly that these are out of scope.)
+
+  - T0174 [minor, impact correctness] Small arithmetic and transcription errors in the ''verified'' numbers
+  (check: Correct the three numbers.)
+
+  - T0174 [minor, impact maintainability] The curated memory entry states more than the note found about
+  Hirosaki 2002 (check: Reword the INDEX entry to say the 1/T claim is unverified and would come from
+  an ideal-crystal MD calculation.)
+
+  - T0174 [note, impact none] Task ID mismatch
+
+  - T0175 [blocker, impact evidence] The deliverable says the task was not done: no primary source was
+  opened (check: Close the task as not done (or re-scope it as partial), and get library or founder access
+  to Incropera A.1/A.2, Slack 1973, Hirosaki 2002, Burgemeister 1979, CRC and Qian 2017.)
+
+  - T0175 [major, impact correctness] The SAC305/tin resistivity coefficient ''correction'' mixes reference
+  temperatures; the code''s 4.2e-3 /K is already consistent (check: Convert every quoted resistivity coefficient
+  to the code''s 300 K reference before comparing; drop or re-derive the 4.2-4.7e-3 sweep.)
+
+  - T0175 [major, impact correctness] The Si3N4 ''too shallow'' hint has the sign backwards (check: Recompute
+  the implied exponent for every percentage-loss datum before stating a direction.)
+
+  - T0175 [minor, impact evidence] The Burgemeister 1979 exponent was confirmable but is reported as unconfirmed
+  (check: Cite the abstract mirror for the exponent and the c-axis anisotropy.)
+
+  - T0175 [minor, impact correctness] The Ioffe T-fit is compared with the 4H value, but its figure is
+  labelled 6H (check: State the polytype of the Nilsson fit, or drop the comparison.)
+
+  - T0175 [minor, impact maintainability] Breaks mf-research note rules (citing unopened sources, Answer
+  length, provenance header) (check: Keep unread items in Open questions rather than Sources, and fix
+  the task id.)'
+refs:
+- T0157
+- O006
+options:
+- merge as is
+- give guidance and retry
+- cancel
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-02T03:48:25+00:00'
+resolved_at: null
+resolved_by: null

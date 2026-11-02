@@ -4,7 +4,7 @@ title: 'thermal_fv: second-order prescribed flux on the Robin face, Picard re-ch
   tests (review T0160)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on: []
 description: 'Review T0160 of T0149: (1) a prescribed flux on the z=0 Robin face is injected at the cell
   centre, making that path first order; apply it at the face (combined Robin-plus-flux face condition)
@@ -33,11 +33,12 @@ model: null
 budget_usd: 3.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0163-thermal-fv-second-order-prescribed-flux-
 pr: null
-runs: []
+runs:
+- T0163-builder-20261101T194829-6df1
 created_by: founder
 created_at: '2026-11-02T01:54:49+00:00'
 protected_approved: false
