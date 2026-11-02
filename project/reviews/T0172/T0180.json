@@ -1,0 +1,52 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "New smoke test does not check that the child solves use --h0/--zrefine (a mutant that drops them passes)",
+      "detail": "test_benchmark_smoke_run_with_new_options only checks fields the parent process writes (grid_rule.zrefine, grid_rule.h0_m, z_sensitivity_K is None) and status == 'ok'. Status only reflects energy balance and the Picard residual, which pass for any mesh. I made a mutant of the benchmark whose solve_in_subprocess no longer forwards --h0 and --zrefine to the child. All of the test's first-run assertions still passed, but the child DOF counts no longer matched the parent's estimates. On a burst VM that bug would write a JSON whose recorded grid_rule is not the mesh that was actually solved. The real code forwards the flags correctly (checked separately below), so this is a gap in the test, not a bug in the code.",
+      "evidence": "Mutant run (--smoke --zrefine --h0 8): the test assertions held. (dofs, estimated_dofs) per level: (8482, 8482), (32556, 57187), (127576, 416293), (6682, 5830), (25692, 38827), (100744, 280501).",
+      "suggested_check": "Assert lv['dofs'] == lv['estimated_dofs'] for every solved level in the smoke test, and use an --h0 that actually changes the mesh (for example 2 or 1 in smoke mode, not 8).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'expected @4.4 kB' memory column is optimistic; the 7.7 kB bound is the realistic figure",
+      "detail": "The 4.4 kB/DOF point (side_by_side level 2 at 1.48 M DOF, macOS ru_maxrss) does not fit the other measurements. A line through levels 0-1 gives a slope of about 7.0 kB/DOF plus about 177 MB of baseline (side_by_side), and about 7.4 kB/DOF plus 39 MB (u_shaped). That line predicts 10.5 GB at side_by_side level 2, but 6.5 GB was measured. u_shaped level 2 measured 6.45 kB/DOF. The low value is plausibly a macOS memory-compression artifact. With zrefine, elements per DOF also rise slightly at finer levels. Realistic per-DOF use is therefore about 7-7.7 kB, i.e. about 135-149 GB at 19.36 M DOF, not 85 GB. The skip logic enforces the 7.7 kB bound, and 149 GB is still well under the 235 GB budget (about 1.6x margin), so whether the run fits does not change.",
+      "evidence": "Hand fit to benchmarks/results/thermal_fem_convergence.json: (95703, 8836 B/DOF), (375035, 7458), (1484787, 4359); (60283, 8089), (235995, 7603), (933811, 6450).",
+      "suggested_check": "Drop or relabel the 4.4 kB column, or record bytes_per_dof_measured from a Linux run, before treating 85 GB as the expected peak.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Wall-time estimate ignores the CPU change, and one failed solve loses the whole run",
+      "detail": "The 25-50 min figure for level 2 scales the Apple-silicon ~70 us/DOF measurement. It applies a size-degradation factor but no factor for the slower single-thread speed of an n2 core; pyamg and scipy sparse run single-threaded. A 1.5-2x slower core still fits inside MF_GCP_MAX_HOURS=4, but with less margin. Separately, _amg_cg raises RuntimeError when the residual exceeds 1e-8 (maxiter=400), and solve_in_subprocess uses check=True. The JSON is written only at the end, so a failure at the 19 M DOF level kills the run with no partial results. That design predates this change, but it matters more for an expensive one-shot burst run.",
+      "evidence": "benchmarks/thermal_fem_convergence.py lines 116 and 221-225; thermal_fem.py lines 253-257.",
+      "suggested_check": "Optionally write the JSON after each layout (or catch CalledProcessError per level as status 'failed: solve') before the burst run.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Help text and comments are slightly inaccurate at the edges",
+      "detail": "(a) The --h0 help says 'Default: 0.125 (full)'; in --smoke mode the implied default is 2 mm. (b) The test comment says the tiny --mem-gb budget skips levels 'without solving', but calibrate_power and, in lateral-only mode, z_sensitivity still solve level 0 in the parent with no memory check. The z_sensitivity mesh has doubled nz, about 2x the level-0 DOFs. (c) --h0 <= 0 is not validated: 0 raises ZeroDivisionError, and a negative value silently falls back to min_cells.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: pytest tests/unit/solvers/test_thermal_fem.py (14 passed); benchmark --help, which lists --zrefine, --h0 and --mem-gb (checked by reading the help output, not with the grep pipeline); pytest -m 'not slow' tests/unit (404 passed, 33 deselected); ruff check . (all checks passed).",
+    "Recomputed the docstring sizing table myself with estimate_dofs for both layouts at --h0 0.0625, with and without zrefine. All 6 zrefine rows match (0.33/2.48/19.36 M and 0.20/1.54/11.96 M DOF; bound 2.5/19.1/149.1 and 1.6/11.8/92.1 GB). The lateral-only level-2 counts 5.14 M and 3.19 M match the stated 5.1 M / 3.2 M.",
+    "Ran the real benchmark with --smoke --zrefine --h0 2. Child DOFs equal the parent's estimate_dofs at every level of both layouts (8482/57187/416293 and 6682/44787/324805). Every status is ok, energy balance is about 1e-14, z_sensitivity_K is None, and grid_rule.h0_m is 8 mm, which equals the smoke default and so confirms the 4x finest-to-level-0 mapping.",
+    "Mutation test: a copy of the benchmark whose child ignores --h0/--zrefine still passes the new smoke test's assertions (the test gap above).",
+    "Checked the facts cited in the docstring against benchmarks/results/thermal_fem_convergence.json: z_sensitivity_K 0.0204/0.0262 K; level-2 wall time 70.7 and 69.0 us/DOF; 4359 B/DOF at 1,484,787 DOF. All as stated.",
+    "Checked int overflow risk at 19.36 M DOF: the mesh builder uses int64 for corner ids and dof maps. 64 x ~19 M COO entries \u2248 1.2e9, which is below 2^31.",
+    "Fitted per-DOF memory to the measured points by hand: about 7.0-7.4 kB/DOF asymptotically, so the 7.7 kB bound is realistic and the 4.4 kB column is optimistic. The 235 GB budget still has about 1.6x margin at the bound.",
+    "Checked the burst command: scripts/burst_gcp.sh supports --cmd \"<cmd>\" <path> with n2-highmem-32 as the default and reads MF_GCP_MAX_HOURS; the '251 GB' figure matches D0005."
+  ],
+  "caveats": [
+    "The T0171 review findings and the T0172 task brief were not in the packet or the repository, so I could only check that the change implements the three named options (z refinement, a finer level via --h0, a host memory budget via --mem-gb). I could not check every point T0171 raised.",
+    "The VM sizing (memory and wall time) is still an estimate extrapolated from a 17 GB Apple-silicon laptop. No run at 2-19 M DOF on Linux exists. Whether the 19.36 M DOF solve stays under 400 AMG-CG iterations and inside 4 h is untested.",
+    "The change only enables the burst-VM A3 study; it is not evidence that A3 (max GCI <= 0.025 K) will be met. The smoke run's GCI is 0.9 K, which says nothing about the full rule."
+  ]
+}
