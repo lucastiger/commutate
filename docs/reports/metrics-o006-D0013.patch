@@ -1,0 +1,150 @@
+--- a/tools/mfos/mfos/metrics.py	2026-11-01 18:20:10
++++ b/tools/mfos/mfos/metrics.py	2026-11-02 02:57:41
+@@ -14,6 +14,8 @@
+   mean_signed_rel_err       mean (pred / ref - 1)
+   max_rel_err               max |pred / ref - 1|
+   max_abs_err               max |pred - ref|
++  max_gci_capped            max of the order-capped three-grid GCI (O006 A4; +inf if a sequence diverges)
++  max_gci_consistency       max |p2 - r2| / (GCI(p) + GCI(r)) over two solvers' three-grid sequences (O006 A3)
+   topk_recall               share of the predicted best k_frac that lie in the reference best within_frac
+   within_strata_spearman    Spearman of log values centred on their stratum means
+   discordance_by_gap        per gap bin: (pairs, discordant pairs), gap = |ref_i - ref_j| / min(ref_i, ref_j)
+@@ -118,8 +120,58 @@
+     v = _arr(values)
+     _finite_rows(v)
+     return float(np.max(v))
++
++
++def gci_capped(f0: float, f1: float, f2: float) -> float:
++    """Order-capped grid convergence index of the finest value f2 from three grids refined by r = 2 (O006 A4, D0012 and
++    D0013). f0, f1, f2 are the values at levels 0 (coarsest), 1 and 2 (finest); d1 = f1 - f0, d2 = f2 - f1, rho = d2 / d1:
++
++      d1 = d2 = 0                          0 (grid-independent)
++      |rho| >= 1, or d1 = 0 < |d2|         +inf: divergent or stagnant, a criterion on it is not met
++      -1 < rho < 0, or 0 <= rho < 1/4      1.25 max(|d1|, |d2|): oscillatory, or observed order above 2 (a possibly lucky grid)
++      1/4 <= rho < 1                       1.25 |d2| / (2^p - 1), p = min(p_obs, 1), p_obs = log2(1 / rho)
++
++    The safety factor 1.25 and the form |d2| / (r^p - 1) are Roache's (Verification and Validation in Computational
++    Science and Engineering, Hermosa 1998, ch. 5); the order cap at 1 and the branches are O006's rule."""
++    d1, d2 = float(f1) - float(f0), float(f2) - float(f1)
++    if d1 == 0.0 and d2 == 0.0:
++        return 0.0
++    if d1 == 0.0:
++        return math.inf
++    rho = d2 / d1
++    if abs(rho) >= 1.0:
++        return math.inf
++    if rho < 0.25:
++        return 1.25 * max(abs(d1), abs(d2))
++    p = min(math.log2(1.0 / rho), 1.0)
++    return 1.25 * abs(d2) / (2.0 ** p - 1.0)
++
++
++def max_gci_capped(f0: Sequence[float], f1: Sequence[float], f2: Sequence[float]) -> float:
++    """max over rows of gci_capped(f0, f1, f2) (O006 A4: every reported value's GCI recomputed from its three grid values);
++    +inf when any row's sequence diverges."""
++    a, b, c = _arr(f0), _arr(f1), _arr(f2)
++    _finite_rows(a, b, c)
++    return float(max(gci_capped(x, y, z) for x, y, z in zip(a, b, c, strict=True)))
+ 
+ 
++def max_gci_consistency(p0: Sequence[float], p1: Sequence[float], p2: Sequence[float],
++                        r0: Sequence[float], r1: Sequence[float], r2: Sequence[float]) -> float:
++    """max over rows of |p2 - r2| / (gci_capped(p0, p1, p2) + gci_capped(r0, r1, r2)) (O006 A3: two independent solvers'
++    finest values agree within their summed conservative estimates when this is at most 1). A divergent sequence on either
++    side gives +inf, as does a zero summed GCI with unequal values; a zero summed GCI with equal values gives 0."""
++    cols = [_arr(x) for x in (p0, p1, p2, r0, r1, r2)]
++    _finite_rows(*cols)
++    worst = 0.0
++    for a0, a1, a2, b0, b1, b2 in zip(*cols, strict=True):
++        g = gci_capped(a0, a1, a2) + gci_capped(b0, b1, b2)
++        diff = abs(a2 - b2)
++        if math.isinf(g) or (g == 0.0 and diff > 0.0):
++            return math.inf
++        worst = max(worst, diff / g if g > 0.0 else 0.0)
++    return float(worst)
++
++
+ def topk_recall(pred: Sequence[float], ref: Sequence[float], k_frac: float = 0.1, within_frac: float = 0.2,
+                 lower_is_better: bool = True) -> float:
+     """Share of the predicted best ``k_frac`` that lie inside the reference best ``within_frac``.
+@@ -232,6 +284,13 @@
+     return np.asarray([row[name] for row in rows], dtype=float)
+ 
+ 
++def _levels(rows: Rows, params: Optional[dict[str, Any]], key: str) -> list[np.ndarray]:
++    names = (params or {}).get(key)
++    if not isinstance(names, (list, tuple)) or len(names) != 3:
++        raise ValueError(f"params.{key} must name three columns, coarsest level first")
++    return [_col(rows, n) for n in names]
++
++
+ # name -> f(rows, pred, ref, strata, group, role, params) -> float
+ METRICS: dict[str, Callable[..., float]] = {
+     "spearman": lambda rows, pred, ref, **_: spearman(_col(rows, pred), _col(rows, ref)),
+@@ -245,6 +304,9 @@
+     "max_abs_err_gated": lambda rows, pred, ref, params=None, **_: max_abs_err_gated(
+         _col(rows, pred), _col(rows, ref), _col(rows, (params or {}).get("gate")), float((params or {})["gate_max"])),
+     "max_col": lambda rows, pred, **_: max_col(_col(rows, pred)),  # the column is named by ``pred``
++    "max_gci_capped": lambda rows, params=None, **_: max_gci_capped(*_levels(rows, params, "levels")),
++    "max_gci_consistency": lambda rows, params=None, **_: max_gci_consistency(
++        *_levels(rows, params, "pred_levels"), *_levels(rows, params, "ref_levels")),
+     "topk_recall": lambda rows, pred, ref, params=None, **_: topk_recall(_col(rows, pred), _col(rows, ref),
+                                                                           **(params or {})),
+     "within_strata_spearman": lambda rows, pred, ref, strata, **_: within_strata_spearman(
+--- a/tests/mfos/test_metrics.py	2026-11-01 18:20:10
++++ b/tests/mfos/test_metrics.py	2026-11-02 02:57:36
+@@ -159,3 +159,53 @@
+ def test_o006_recompute_metrics_fail_closed(call):
+     with pytest.raises(ValueError):
+         call()
++
++
++def test_o006_gci_capped_branches_by_hand():
++    """D0013 (re-reviews T0184/T0185): every three-grid sequence has a defined, non-negative GCI."""
++    assert mx.gci_capped(410.0, 410.0, 410.0) == 0.0
++    assert mx.gci_capped(410.0, 410.25, 410.75) == math.inf  # growing steps (the literal D0012 formula gave a negative GCI)
++    assert mx.gci_capped(410.0, 410.5, 411.0) == math.inf  # stagnant: p_obs = 0 (D0012 divided by zero)
++    assert mx.gci_capped(410.0, 410.0, 410.5) == math.inf  # d1 = 0 < |d2|
++    assert mx.gci_capped(410.0, 410.5, 410.0) == math.inf  # oscillating with equal amplitude: rho = -1
++    assert mx.gci_capped(410.0, 410.3, 410.31) == pytest.approx(1.25 * 0.3)  # lucky grid: p_obs 4.9 (D0012 gave 0.0125 K)
++    assert mx.gci_capped(410.0, 410.4, 410.2) == pytest.approx(1.25 * 0.4)  # oscillatory
++    assert mx.gci_capped(410.0, 410.4, 410.5) == pytest.approx(1.25 * 0.1)  # rho 1/4: p_obs 2, capped at 1
++    assert mx.gci_capped(410.0, 410.4, 410.6) == pytest.approx(1.25 * 0.2)  # rho 1/2: p_obs 1, 2^1 - 1 = 1
++    assert mx.gci_capped(410.0, 410.4, 410.7) == pytest.approx(1.25 * 0.3 / (4.0 / 3.0 - 1.0))  # rho 3/4, p_obs < 1
++    # T0181 section 1, u_shaped_2 (seed 20261101), levels 0/1/2 = 422.718 / 422.088 / 421.766 K: p_obs 0.966
++    rho = (421.766 - 422.088) / (422.088 - 422.718)
++    assert mx.gci_capped(422.718, 422.088, 421.766) == pytest.approx(1.25 * 0.322 / (2.0 ** math.log2(1 / rho) - 1.0))
++    assert mx.gci_capped(422.718, 422.088, 421.766) == pytest.approx(1.25 * 0.322 / (0.630 / 0.322 - 1.0), abs=1e-9)  # 0.4208 K
++    # reversing the level order is a different (here divergent) sequence: the convention is coarsest first
++    assert mx.gci_capped(421.766, 422.088, 422.718) == math.inf
++
++
++def test_o006_gci_recompute_functions_by_hand():
++    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65},
++            {"a0": 300.0, "a1": 300.0, "a2": 300.0, "b0": 300.0, "b1": 300.0, "b2": 300.0}]
++    assert mx.max_gci_capped([410.0, 300.0], [410.4, 300.0], [410.6, 300.0]) == pytest.approx(0.25)
++    assert mx.compute("max_gci_capped", rows, params={"levels": ["a0", "a1", "a2"]}) == pytest.approx(0.25)
++    g_b = 1.25 * 0.05  # rho 1/4 for b: p capped at 1
++    assert mx.compute("max_gci_consistency", rows, params={"pred_levels": ["a0", "a1", "a2"],
++                                                           "ref_levels": ["b0", "b1", "b2"]}) == pytest.approx(
++        0.05 / (0.25 + g_b))
++    diverging = rows + [{"a0": 1.0, "a1": 1.1, "a2": 1.3, "b0": 1.0, "b1": 1.0, "b2": 1.0}]
++    assert mx.compute("max_gci_capped", diverging, params={"levels": ["a0", "a1", "a2"]}) == math.inf
++    assert mx.compute("max_gci_consistency", diverging, params={"pred_levels": ["a0", "a1", "a2"],
++                                                                "ref_levels": ["b0", "b1", "b2"]}) == math.inf
++    exact_but_unequal = [{"a0": 1.0, "a1": 1.0, "a2": 1.0, "b0": 2.0, "b1": 2.0, "b2": 2.0}]
++    assert mx.compute("max_gci_consistency", exact_but_unequal, params={"pred_levels": ["a0", "a1", "a2"],
++                                                                        "ref_levels": ["b0", "b1", "b2"]}) == math.inf
++
++
++@pytest.mark.parametrize("call", [
++    lambda: mx.max_gci_capped([], [], []),
++    lambda: mx.max_gci_capped([1.0], [math.nan], [1.0]),
++    lambda: mx.max_gci_consistency([1.0], [1.0], [1.0], [1.0], [math.inf], [1.0]),
++    lambda: mx.compute("max_gci_capped", [{"a": 1.0}], params={"levels": ["a", "a"]}),
++    lambda: mx.compute("max_gci_capped", [{"a": 1.0}], params=None),
++])
++def test_o006_gci_recompute_fail_closed(call):
++    with pytest.raises(ValueError):
++        call()

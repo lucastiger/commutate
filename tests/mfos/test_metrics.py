@@ -159,3 +159,53 @@ def test_o006_recompute_metrics_by_hand():
 def test_o006_recompute_metrics_fail_closed(call):
     with pytest.raises(ValueError):
         call()
+
+
+def test_o006_gci_capped_branches_by_hand():
+    """D0013 (re-reviews T0184/T0185): every three-grid sequence has a defined, non-negative GCI."""
+    assert mx.gci_capped(410.0, 410.0, 410.0) == 0.0
+    assert mx.gci_capped(410.0, 410.25, 410.75) == math.inf  # growing steps (the literal D0012 formula gave a negative GCI)
+    assert mx.gci_capped(410.0, 410.5, 411.0) == math.inf  # stagnant: p_obs = 0 (D0012 divided by zero)
+    assert mx.gci_capped(410.0, 410.0, 410.5) == math.inf  # d1 = 0 < |d2|
+    assert mx.gci_capped(410.0, 410.5, 410.0) == math.inf  # oscillating with equal amplitude: rho = -1
+    assert mx.gci_capped(410.0, 410.3, 410.31) == pytest.approx(1.25 * 0.3)  # lucky grid: p_obs 4.9 (D0012 gave 0.0125 K)
+    assert mx.gci_capped(410.0, 410.4, 410.2) == pytest.approx(1.25 * 0.4)  # oscillatory
+    assert mx.gci_capped(410.0, 410.4, 410.5) == pytest.approx(1.25 * 0.1)  # rho 1/4: p_obs 2, capped at 1
+    assert mx.gci_capped(410.0, 410.4, 410.6) == pytest.approx(1.25 * 0.2)  # rho 1/2: p_obs 1, 2^1 - 1 = 1
+    assert mx.gci_capped(410.0, 410.4, 410.7) == pytest.approx(1.25 * 0.3 / (4.0 / 3.0 - 1.0))  # rho 3/4, p_obs < 1
+    # T0181 section 1, u_shaped_2 (seed 20261101), levels 0/1/2 = 422.718 / 422.088 / 421.766 K: p_obs 0.966
+    rho = (421.766 - 422.088) / (422.088 - 422.718)
+    assert mx.gci_capped(422.718, 422.088, 421.766) == pytest.approx(1.25 * 0.322 / (2.0 ** math.log2(1 / rho) - 1.0))
+    assert mx.gci_capped(422.718, 422.088, 421.766) == pytest.approx(1.25 * 0.322 / (0.630 / 0.322 - 1.0), abs=1e-9)  # 0.4208 K
+    # reversing the level order is a different (here divergent) sequence: the convention is coarsest first
+    assert mx.gci_capped(421.766, 422.088, 422.718) == math.inf
+
+
+def test_o006_gci_recompute_functions_by_hand():
+    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65},
+            {"a0": 300.0, "a1": 300.0, "a2": 300.0, "b0": 300.0, "b1": 300.0, "b2": 300.0}]
+    assert mx.max_gci_capped([410.0, 300.0], [410.4, 300.0], [410.6, 300.0]) == pytest.approx(0.25)
+    assert mx.compute("max_gci_capped", rows, params={"levels": ["a0", "a1", "a2"]}) == pytest.approx(0.25)
+    g_b = 1.25 * 0.05  # rho 1/4 for b: p capped at 1
+    assert mx.compute("max_gci_consistency", rows, params={"pred_levels": ["a0", "a1", "a2"],
+                                                           "ref_levels": ["b0", "b1", "b2"]}) == pytest.approx(
+        0.05 / (0.25 + g_b))
+    diverging = rows + [{"a0": 1.0, "a1": 1.1, "a2": 1.3, "b0": 1.0, "b1": 1.0, "b2": 1.0}]
+    assert mx.compute("max_gci_capped", diverging, params={"levels": ["a0", "a1", "a2"]}) == math.inf
+    assert mx.compute("max_gci_consistency", diverging, params={"pred_levels": ["a0", "a1", "a2"],
+                                                                "ref_levels": ["b0", "b1", "b2"]}) == math.inf
+    exact_but_unequal = [{"a0": 1.0, "a1": 1.0, "a2": 1.0, "b0": 2.0, "b1": 2.0, "b2": 2.0}]
+    assert mx.compute("max_gci_consistency", exact_but_unequal, params={"pred_levels": ["a0", "a1", "a2"],
+                                                                        "ref_levels": ["b0", "b1", "b2"]}) == math.inf
+
+
+@pytest.mark.parametrize("call", [
+    lambda: mx.max_gci_capped([], [], []),
+    lambda: mx.max_gci_capped([1.0], [math.nan], [1.0]),
+    lambda: mx.max_gci_consistency([1.0], [1.0], [1.0], [1.0], [math.inf], [1.0]),
+    lambda: mx.compute("max_gci_capped", [{"a": 1.0}], params={"levels": ["a", "a"]}),
+    lambda: mx.compute("max_gci_capped", [{"a": 1.0}], params=None),
+])
+def test_o006_gci_recompute_fail_closed(call):
+    with pytest.raises(ValueError):
+        call()
