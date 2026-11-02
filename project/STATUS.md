@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T03:33:56+00:00 from repository state — do not edit_
+_generated 2026-11-02T03:34:08+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
+- **I0071** [protected_change] T0153: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,18 +24,17 @@ _generated 2026-11-02T03:33:56+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 29 | $57.50 | 1253793 | 717866 | 49 | 0 |
+| O006 | 30 | $57.50 | 1253793 | 717866 | 49 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 130, failed: 3, merge: 1, running: 1, todo: 8
+cancelled: 30, done: 130, failed: 3, needs_founder: 1, running: 2, todo: 7
 
-- T0153 `merge` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
+- T0153 `needs_founder` scientist/research: E006 manufactured reference: symbolic 3D manufactured solution with k(T) on the default stack with patterned top copper (attempt 1)
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
+- T0157 `running` scout/research: Verify every k(T) law and citation in geometry/stack.py against primary sources (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:07:18+00:00 task_amended {"task": "T0165", "reason": "depends on T0170"}
-- 2026-11-02T03:13:44+00:00 run_finished {"run": "T0152-builder-20261101T175343-7282", "status": "completed", "cost": 3.034979, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T03:15:09+00:00 verified {"task": "T0152"}
 - 2026-11-02T03:15:13+00:00 run_started {"run": "T0171-critic-20261101T191513-eaaf", "task": "T0171", "role": "critic", "session": "196ab881-ef12-4b0f-a641-e8e680684c32"}
 - 2026-11-02T03:21:39+00:00 run_finished {"run": "T0171-critic-20261101T191513-eaaf", "status": "completed", "cost": 1.378192, "subtype": "success", "report": "structured_output"}
@@ -48,3 +48,5 @@ cancelled: 30, done: 130, failed: 3, merge: 1, running: 1, todo: 8
 - 2026-11-02T03:26:42+00:00 verified {"task": "T0153"}
 - 2026-11-02T03:26:46+00:00 run_started {"run": "T0173-critic-20261101T192646-ddef", "task": "T0173", "role": "critic", "session": "50843921-5415-4a32-9f10-30c20e4b2476"}
 - 2026-11-02T03:33:15+00:00 run_finished {"run": "T0173-critic-20261101T192646-ddef", "status": "completed", "cost": 1.939778, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T03:34:05+00:00 inbox_opened {"id": "I0071", "kind": "protected_change", "subject": "T0153: merge needs founder approval"}
+- 2026-11-02T03:34:08+00:00 run_started {"run": "T0157-scout-20261101T193408-f88c", "task": "T0157", "role": "scout", "session": "91562875-800c-43b1-bb33-021a87a2615f"}
