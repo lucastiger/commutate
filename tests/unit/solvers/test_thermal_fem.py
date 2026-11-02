@@ -59,25 +59,25 @@ def test_box_two_sources_symmetry_and_balance():
 
 
 def test_gci_formula():
-    """Roache GCI on a sequence with known order: f(h) = f0 + C h^2 gives p_obs = 2 and GCI = 1.25 |f2-f1|/(r^2-1)."""
-    f = [1.0 + 3.0 * h**2 for h in (0.25, 0.5, 1.0)]  # finest, middle, coarsest (r = 2)
+    """O006 A4 rule (order capped at 1) on sequences (finest, middle, coarsest); hand-computed values."""
+    f = [1.0 + 3.0 * h**2 for h in (0.25, 0.5, 1.0)]  # d1 = 2.25, d2 = 0.5625: rho = 1/4, p_obs = 2 -> p = 1
     c, p = F.gci(f)
     assert p == pytest.approx(2.0, abs=1e-12)
-    assert c == pytest.approx(1.25 * abs(f[1] - f[0]) / 3.0, rel=1e-12)
-    assert c >= 3.0 * 0.25**2  # the GCI bounds the true error of the finest value (C h^2 = 0.1875)
-    # oscillatory: Fs = 3, p = 2
-    c2, p2 = F.gci([1.0, 1.2, 1.1])
-    assert math.isnan(p2)
-    assert c2 == pytest.approx(3.0 * 0.2 / 3.0, rel=1e-12)
-    # p_obs outside [1.5, 2.5]: Fs = 3, p = 2
-    f1 = [1.0 + h**1.0 for h in (0.25, 0.5, 1.0)]
+    assert c == pytest.approx(1.25 * 0.5625, rel=1e-12)
+    assert c >= 3.0 * 0.25**2  # still bounds the true error of the finest value (C h^2 = 0.1875)
+    c2, p2 = F.gci([1.0, 1.2, 1.1])  # coarse-to-fine 1.1, 1.2, 1.0: d1 = 0.1, d2 = -0.2, rho = -2: divergent
+    assert c2 == math.inf and math.isnan(p2)
+    c5, _ = F.gci([1.0, 1.1, 1.2])  # coarse-to-fine 1.2, 1.1, 1.0 is rho = 1 (stagnant rate): inf
+    assert c5 == math.inf
+    f1 = [1.0 + h for h in (0.25, 0.5, 1.0)]  # linear: rho = 1/2, p_obs = 1: 1.25 * 0.25
     c3, p3 = F.gci(f1)
     assert p3 == pytest.approx(1.0, abs=1e-12)
-    assert c3 == pytest.approx(3.0 * 0.25 / 3.0, rel=1e-12)
-    # p_obs = 3 -> Fs = 3, p = 2 as well
-    c4, p4 = F.gci([1.0 + h**3 for h in (0.25, 0.5, 1.0)])
-    assert p4 == pytest.approx(3.0, abs=1e-12)
-    assert c4 == pytest.approx(3.0 * (0.5**3 - 0.25**3) / 3.0, rel=1e-12)
+    assert c3 == pytest.approx(1.25 * 0.25, rel=1e-12)
+    c4, p4 = F.gci([1.0 + h**3 for h in (0.25, 0.5, 1.0)])  # fast branch (rho < 1/4)
+    d1, d2 = 1.0 - 0.5**3, 0.5**3 - 0.25**3
+    assert p4 == pytest.approx(math.log2(d1 / d2), abs=1e-12)
+    assert c4 == pytest.approx(1.25 * max(d2, d1 / 4.0), rel=1e-12)
+    assert F.gci([1.0, 1.0, 1.0])[0] == 0.0
 
 
 # ------------------------------------------------------------------------------------------------ layout mode

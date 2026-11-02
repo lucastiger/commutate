@@ -34,15 +34,19 @@ The constants are frozen at module level.  No other tuning is made per case.
 Material assignment (docs/thermal_model.md section 2): a cell takes the material whose region contains the cell centre
 (shapely ``contains_xy``; all region edges are grid lines so the test is exact); everything else is void.
 
-Three-grid Richardson / Roache GCI (O006 A4)
---------------------------------------------
-For a value with coarse-to-fine values ``f3, f2, f1`` at levels ``l, l+1, l+2`` (ratio ``r = R``):
-``p_obs = ln(|f3 - f2| / |f2 - f1|) / ln r`` (monotone convergence: ``(f3 - f2)(f2 - f1) > 0``); the GCI is
-``Fs |f2 - f1| / (r**p - 1)`` (Roache, *Verification and Validation in Computational Science and Engineering*, 1998;
-J. Fluids Eng. 116:405, 1994), with ``Fs = 1.25, p = min(p_obs, 2)`` for monotone convergence with ``p_obs`` in
-[1.5, 2.5] and ``Fs = 3, p = 2`` otherwise (oscillatory, or ``p_obs`` outside the range).  ``f2 == f1`` gives GCI 0.
-``meta['solver_tol']`` maps each reported value name to its GCI in K; ``meta['convergence']`` holds the three values,
-``p_obs``, ``r``, cell counts, energy balance and Picard iterations per level.
+Three-grid conservative GCI (O006 A4, D0012, D0013 and its addenda)
+-------------------------------------------------------------------
+For a value with coarse-to-fine values ``f0, f1, f2`` at levels ``l, l+1, l+2`` (ratio exactly 2), ``d1 = f1 - f0`` and
+``d2 = f2 - f1``, each set to 0 when its magnitude is below ``GCI_FLOOR`` = 1e-3 K (ten times the Picard tolerance), and
+``rho = d2 / d1``; ``gci_three_grid`` applies O006's A4 rule: 0 if ``d1 = d2 = 0``; ``+inf`` if ``|rho| >= 1`` or
+``d1 = 0 < |d2|``; ``3 max(|d1|, |d2|)`` if ``-1 < rho < 0`` (oscillatory); ``1.25 max(|d2|, |d1|/4)`` if
+``0 <= rho < 1/4``; ``1.25 |d2| / (2**p - 1)`` with ``p = min(log2(1/rho), 1)`` if ``1/4 <= rho < 1`` (safety factors 1.25
+and 3 and the form from Roache, *Verification and Validation in Computational Science and Engineering*, 1998, ch. 5).  The
+order is capped at 1 because the material corners make the observed order unreliable; the earlier rule (Fs = 1.25 / 3 by
+the observed order, cap 2) was shown non-conservative (T0181).  The same rule is the evaluator's
+``mfos.metrics.gci_capped`` with ``floor = 1e-3``.  ``meta['solver_tol']`` maps each reported value name to its GCI in K
+(``inf`` when a sequence diverges or stagnates); ``meta['convergence']`` holds the three values, ``p_obs``, ``r``, cell
+counts, energy balance and Picard iterations per level.
 """
 from __future__ import annotations
 
@@ -65,25 +69,56 @@ LEVEL0 = 0  # the first of the three GCI levels (fixed by the rule)
 LAT_FRAC = 1.0  # level-0 lateral cell = LAT_FRAC * smallest feature interval
 FAR_FACTOR = 4  # level-0 lateral cells outside the substrate outline are this many times larger
 MERGE_TOL = 1e-9  # m, grid lines closer than this are one line
-
-FS_MONO, FS_OTHER, P_RANGE, P_CAP = 1.25, 3.0, (1.5, 2.5), 2.0
+GCI_FLOOR = 1.0e-3  # K, grid steps below this count as zero in the GCI: ten times the Picard tolerance (O006 A4, D0013)
 
 MAT_NAMES = ("baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die")
 
 
 # ---------------------------------------------------------------------------------------------------- GCI
-def gci_three_grid(f_coarse: float, f_mid: float, f_fine: float, r: float = R) -> dict:
-    """Roache GCI of the finest value from three values at constant ratio ``r`` (module docstring, O006 A4)."""
-    d32, d21 = f_mid - f_coarse, f_fine - f_mid
-    if d21 == 0.0:
-        return {"gci": 0.0, "p_obs": float("nan"), "monotone": False, "Fs": FS_OTHER, "p": P_CAP}
-    monotone = d32 * d21 > 0.0
-    p_obs = math.log(abs(d32) / abs(d21)) / math.log(r) if monotone else float("nan")
-    if monotone and P_RANGE[0] <= p_obs <= P_RANGE[1]:
-        fs, p = FS_MONO, min(p_obs, P_CAP)
-    else:
-        fs, p = FS_OTHER, P_CAP
-    return {"gci": fs * abs(d21) / (r**p - 1.0), "p_obs": p_obs, "monotone": bool(monotone), "Fs": fs, "p": p}
+def gci_three_grid(f_coarse: float, f_mid: float, f_fine: float, r: float = R, *, floor: float = GCI_FLOOR) -> dict:
+    """Order-capped grid convergence index of ``f_fine`` from three grids refined by exactly ``r = 2`` (O006 A4; D0012,
+    D0013 and its addenda).  ``d1 = f_mid - f_coarse`` and ``d2 = f_fine - f_mid``, each set to 0 when its magnitude is
+    below ``floor`` (K; default ``GCI_FLOOR`` = 1e-3 K, ten times the Picard tolerance, so iteration noise cannot pick the
+    branch); ``rho = d2 / d1``:
+
+      d1 = d2 = 0                    0                                   branch 'exact'
+      |rho| >= 1, or d1 = 0 < |d2|   +inf                                'divergent'
+      -1 < rho < 0                   3 max(|d1|, |d2|)                   'oscillatory'
+      0 <= rho < 1/4                 1.25 max(|d2|, |d1|/4)              'fast'
+      1/4 <= rho < 1                 1.25 |d2| / (2**p - 1), p = min(log2(1/rho), 1)   'monotone'
+
+    Safety factors 1.25 and 3 (Roache's factor for the less reliable, here oscillatory, estimates) and the form
+    ``|d2| / (r**p - 1)``: Roache (1998, *Verification and Validation in Computational Science and Engineering*, ch. 5).
+    The cap ``p <= 1``, the branches and the floor are O006's A4 rule; the arithmetic is that of the evaluator's
+    ``mfos.metrics.gci_capped`` (not imported here; the unit tests assert equality).  Returns ``gci``, ``p_obs``
+    (``log2(1/rho)`` when ``rho > 0``, else NaN), ``monotone`` (``rho > 0``), ``Fs`` (3 for 'oscillatory', 1.25 for
+    'fast' and 'monotone', NaN for 'exact' and 'divergent'), ``p`` (the order used: 2 for 'fast', the capped order for
+    'monotone', NaN otherwise) and ``branch``."""
+    if r != 2:
+        raise ValueError(f"the frozen rule refines by exactly 2, got r = {r!r}")
+    if floor < 0.0:
+        raise ValueError("floor must be non-negative")
+    d1, d2 = float(f_mid) - float(f_coarse), float(f_fine) - float(f_mid)
+    d1 = 0.0 if abs(d1) < floor else d1
+    d2 = 0.0 if abs(d2) < floor else d2
+    nan = float("nan")
+    if d1 == 0.0 and d2 == 0.0:
+        return {"gci": 0.0, "p_obs": nan, "monotone": False, "Fs": nan, "p": nan, "branch": "exact"}
+    if d1 == 0.0:
+        return {"gci": math.inf, "p_obs": nan, "monotone": False, "Fs": nan, "p": nan, "branch": "divergent"}
+    rho = d2 / d1
+    p_obs = math.log2(1.0 / rho) if rho > 0.0 else nan
+    if abs(rho) >= 1.0:
+        return {"gci": math.inf, "p_obs": p_obs, "monotone": rho > 0.0, "Fs": nan, "p": nan, "branch": "divergent"}
+    if rho < 0.0:
+        return {"gci": 3.0 * max(abs(d1), abs(d2)), "p_obs": nan, "monotone": False, "Fs": 3.0, "p": nan,
+                "branch": "oscillatory"}
+    if rho < 0.25:
+        return {"gci": 1.25 * max(abs(d2), abs(d1) / 4.0), "p_obs": p_obs, "monotone": rho > 0.0, "Fs": 1.25, "p": 2.0,
+                "branch": "fast"}
+    p = min(p_obs, 1.0)
+    return {"gci": 1.25 * abs(d2) / (2.0 ** p - 1.0), "p_obs": p_obs, "monotone": True, "Fs": 1.25, "p": p,
+            "branch": "monotone"}
 
 
 # ---------------------------------------------------------------------------------------------------- grid rule

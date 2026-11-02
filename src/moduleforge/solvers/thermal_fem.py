@@ -28,12 +28,10 @@ FEM reads the continuous surface field directly) and ``Tj_mean`` = area mean of 
 integral), plus the energy balance ``|Q_out / sum P - 1|`` (exact up to the linear-solver tolerance for a Galerkin
 system whose stiffness rows sum to zero) and the Picard residual.
 
-GCI (Roache; identical to the O006 A4 definition). With f1, f2, f3 the finest, middle and coarsest values at a constant
-ratio r: ``p_obs = ln((f3 - f2) / (f2 - f1)) / ln r`` when the successive differences are non-zero and of the same sign
-(monotone convergence). If monotone with ``p_obs`` in [1.5, 2.5]: ``Fs = 1.25``, ``p = min(p_obs, 2)``; otherwise
-``Fs = 3``, ``p = 2``. ``GCI = Fs |f2 - f1| / (r**p - 1)``. Reference: P. J. Roache, "Perspective: a method for uniform
-reporting of grid refinement studies", J. Fluids Eng. 116(3):405-413 (1994); Celik et al., J. Fluids Eng. 130(7)
-078001 (2008) for the p_obs formula.
+GCI: the order-capped rule of O006 A4 (D0012, D0013 and its addenda), shared with the finite-volume solver through
+``thermal_layout.gci_three_grid`` (Roache 1998, ch. 5 for the safety factors 1.25 and 3, oscillatory, and the form
+``|d2| / (2**p - 1)``; order capped at 1; grid steps below 1e-3 K count as zero; ``+inf`` for a divergent or stagnant
+sequence). With f1, f2, f3 the finest, middle and coarsest values, the arguments of that function are (f3, f2, f1).
 
 Memory. D0006 estimated about 7.7 kB per DOF for scikit-fem + pyamg; ``max_dofs(budget_bytes)`` converts a budget into
 the largest DOF count at that figure. On the 17.2 GB Apple-silicon laptop that built this, with 70 % of RAM (12.0 GB) as
@@ -65,6 +63,7 @@ from skfem.helpers import dot, grad
 
 from moduleforge.geometry.layout import Layout
 from moduleforge.geometry.stack import Layer
+from moduleforge.solvers.thermal_layout import gci_three_grid
 
 MM = 1.0e3  # the mesh is built in millimetres: k [W/(m K)] -> 1e-3 W/(mm K), h -> 1e-6 W/(mm2 K), areas in mm2
 BYTES_PER_DOF = 7.7e3  # D0006 audit figure for scikit-fem + pyamg; the benchmark records the measured value
@@ -227,21 +226,11 @@ def _face_nodes(g: _Grid, dof_of: np.ndarray, ii, jj, kplane: int):
 
 
 def _gci(f: Sequence[float], r: float = REFINEMENT_RATIO) -> tuple[float, float]:
-    """(GCI, p_obs) of values (finest, middle, coarsest) at constant ratio ``r`` (Roache; module docstring).
-
-    ``p_obs`` is NaN when the convergence is not monotone (or the differences vanish)."""
+    """(GCI, p_obs) of values (finest, middle, coarsest) at ratio ``r = 2`` by O006's A4 rule
+    (``thermal_layout.gci_three_grid``); ``p_obs`` is NaN when the convergence is not monotone."""
     f1, f2, f3 = (float(v) for v in f)
-    d21, d32 = f2 - f1, f3 - f2
-    if d21 == 0.0:
-        return 0.0, float("nan")
-    ratio = d32 / d21
-    monotone = ratio > 0.0
-    p_obs = math.log(ratio) / math.log(r) if monotone else float("nan")
-    if monotone and 1.5 <= p_obs <= 2.5:
-        fs, p = 1.25, min(p_obs, 2.0)
-    else:
-        fs, p = 3.0, 2.0
-    return fs * abs(d21) / (r**p - 1.0), p_obs
+    g = gci_three_grid(f3, f2, f1, r)
+    return g["gci"], g["p_obs"]
 
 
 def gci(values: Sequence[float], r: float = REFINEMENT_RATIO) -> tuple[float, float]:

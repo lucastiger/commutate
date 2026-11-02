@@ -86,8 +86,8 @@ For die `i`, with `S_i` the die top face (`z = z_top(die i)`, `Die.bounds`):
 * Layout-level: `Tj max = max_i Tj_max_i` ("Tj max" of the module); `Tj mean = (1/N) Σ_i Tj_mean_i`; the **inter-die
   spread** `spread = max_i Tj_max_i − min_i Tj_max_i` (and likewise `spread_mean` for the means). Dies of both switches are
   included; a restriction to a switch must be stated by the experiment.
-* Diagnostics: the energy-balance residual, the solver's discretisation error estimate (Richardson/GCI over three
-  grids), and the Picard residual.
+* Diagnostics: the energy-balance residual, the solver's discretisation error estimate (order-capped GCI over three
+  grids, section 6), and the Picard residual.
 
 ## 6. Laterally uniform box-stack ("flux-channel") mode
 
@@ -121,8 +121,17 @@ The rule is frozen in `solvers/thermal_layout.py` (module docstring): mandatory 
 interface; level-0 bulk lateral cells `h0 = min(LAT_FRAC f_min, 1 mm)` (1 mm on the generator's 0.5 mm design grid; 4x
 larger over the baseplate overhang), 2 z-cells per layer, **geometric edge cells at every die edge** (first cell
 `2 t_min` = 100 um, growth 1.5, up to the bulk size); level `l` bisects every level-0 cell `l` times; the three GCI
-levels are always 0, 1, 2 (`LEVEL0 = 0`, no per-case knob). GCI: Roache (1994/1998), `Fs` = 1.25 for monotone `p_obs` in
-[1.5, 2.5], else `Fs` = 3, `p` = min(`p_obs`, 2).
+levels are always 0, 1, 2 (`LEVEL0 = 0`, no per-case knob). GCI: O006's A4 rule (D0012; D0013 and its addenda 1 and
+2), a conservative order-capped three-grid index. With `d1 = f1 - f0`, `d2 = f2 - f1` (levels 0, 1, 2), each set to 0 when
+its magnitude is below 1e-3 K (ten times the 1e-4 K Picard tolerance, so iteration noise cannot pick the branch), and
+`rho = d2/d1`: `d1 = d2 = 0` gives 0; `|rho| >= 1` or `d1 = 0 < |d2|` (divergent or stagnant) gives `+inf`;
+`-1 < rho < 0` (oscillatory) gives `3 max(|d1|, |d2|)`; `0 <= rho < 1/4` (observed order above 2) gives
+`1.25 max(|d2|, |d1|/4)`; `1/4 <= rho < 1` gives `1.25 |d2| / (2^p - 1)` with `p = min(log2(1/rho), 1)`. The safety factors
+1.25 and 3 and the form are Roache (1998, ch. 5); the order cap, the branches and the floor are O006's. `meta['solver_tol']`
+and the scikit-fem cross-check report exactly this value (`gci_three_grid`; tested equal to `mfos.metrics.gci_capped` with
+`floor = 1e-3`). The earlier `Fs` = 1.25 / 3 rule with order cap 2 is superseded (non-conservative, T0181), as is the first
+A4 text without the floor and with factor 1.25 on oscillatory sequences (D0013 addendum 2). The committed benchmark JSONs
+keep the values recorded under the rule of their time.
 
 **Why the edge cells.** Uniform meshes converged at `p_obs` about 1.1-1.7 on the layouts. The die-attach (k = 58) /
 copper (k = 385) wedge at the die footprint edge has a singular exponent `lambda` = 0.83 (root of

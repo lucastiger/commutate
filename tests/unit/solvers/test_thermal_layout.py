@@ -133,41 +133,96 @@ def test_k_of_t_picard_runs_and_balances(layout):
 
 
 # ---------------------------------------------------------------------------------------------------- GCI
-def test_gci_monotone_order_two():
-    # d32 = -0.12, d21 = -0.03: p_obs = log2(4) = 2 -> Fs = 1.25, p = 2: GCI = 1.25 * 0.03 / (4 - 1) = 0.0125
-    g = tl.gci_three_grid(1.16, 1.04, 1.01)
-    assert g["p_obs"] == pytest.approx(2.0) and g["Fs"] == 1.25 and g["p"] == pytest.approx(2.0) and g["monotone"]
-    assert g["gci"] == pytest.approx(0.0125, rel=1e-12)
+# Hand-computed values of O006's A4 rule (d1 = f_mid - f_coarse, d2 = f_fine - f_mid, each 0 below the 1e-3 K floor,
+# rho = d2 / d1; D0013 addendum 2).
+def test_gci_exact_branch():
+    g = tl.gci_three_grid(2.0, 2.0, 2.0)
+    assert g["gci"] == 0.0 and g["branch"] == "exact"
+    g = tl.gci_three_grid(410.0, 410.0004, 409.9997)  # both steps below the floor: grid-independent
+    assert g["gci"] == 0.0 and g["branch"] == "exact"
 
 
-def test_gci_monotone_order_between_1p5_and_2():
-    ratio = 2**1.6  # p_obs = 1.6: p = 1.6, GCI = 1.25 * 0.1 / (2**1.6 - 1)
-    g = tl.gci_three_grid(1.0 + 0.1 + 0.1 * ratio, 1.1, 1.0)
-    assert g["p_obs"] == pytest.approx(1.6) and g["p"] == pytest.approx(1.6)
-    assert g["gci"] == pytest.approx(0.125 / (2**1.6 - 1.0), rel=1e-12)
+def test_gci_divergent_branches():
+    g = tl.gci_three_grid(410.0, 410.25, 410.75)  # rho = 2 -> inf (re-review example)
+    assert g["gci"] == math.inf and g["branch"] == "divergent"
+    assert tl.gci_three_grid(1.0, 1.0, 1.1)["gci"] == math.inf  # d1 = 0 < |d2|
+    assert tl.gci_three_grid(410.0, 410.0005, 410.1)["gci"] == math.inf  # d1 below the floor counts as 0 < |d2|
+    assert tl.gci_three_grid(1.2, 1.1, 1.0)["gci"] == math.inf  # rho = 1: stagnant rate
+    assert tl.gci_three_grid(1.0, 1.1, 1.0)["gci"] == math.inf  # rho = -1
+    assert tl.gci_three_grid(1.0, 1.1, 0.8)["branch"] == "divergent"  # rho = -2
 
 
-def test_gci_oscillatory():
-    g = tl.gci_three_grid(1.0, 1.2, 1.1)  # d32 = +0.2, d21 = -0.1: Fs = 3, p = 2: 3 * 0.1 / 3 = 0.1
-    assert not g["monotone"] and math.isnan(g["p_obs"]) and g["Fs"] == 3.0 and g["p"] == 2.0
-    assert g["gci"] == pytest.approx(0.1, rel=1e-12)
+def test_gci_oscillatory_branch_uses_roache_factor_three():
+    g = tl.gci_three_grid(410.0, 410.4, 410.2)  # d1 = 0.4, d2 = -0.2: 3 * 0.4 (packet example)
+    assert g["branch"] == "oscillatory" and not g["monotone"] and math.isnan(g["p_obs"]) and g["Fs"] == 3.0
+    assert g["gci"] == pytest.approx(3.0 * 0.4, rel=1e-12)
+    g = tl.gci_three_grid(1.0, 1.2, 1.1)  # d1 = 0.2, d2 = -0.1: 3 * 0.2
+    assert g["branch"] == "oscillatory" and g["gci"] == pytest.approx(0.6, rel=1e-12)
+    g = tl.gci_three_grid(1.0, 0.9, 0.98)  # d1 = -0.1, d2 = +0.08 (negative first step): 3 * 0.1
+    assert g["branch"] == "oscillatory" and g["gci"] == pytest.approx(0.3, rel=1e-12)
 
 
-def test_gci_order_out_of_range():
-    hi = tl.gci_three_grid(1.8, 1.2, 1.1)  # ratio 6: p_obs = log2 6 = 2.585 > 2.5 -> Fs = 3, p = 2: 3 * 0.1 / 3
-    assert hi["p_obs"] == pytest.approx(math.log2(6)) and hi["Fs"] == 3.0 and hi["gci"] == pytest.approx(0.1)
-    lo = tl.gci_three_grid(1.2, 1.1, 1.0)  # ratio 1: p_obs = 0 < 1.5 -> Fs = 3, p = 2: 3 * 0.1 / 3
-    assert lo["p_obs"] == pytest.approx(0.0, abs=1e-12) and lo["Fs"] == 3.0 and lo["gci"] == pytest.approx(0.1)
+def test_gci_fast_branch_lucky_grid():
+    g = tl.gci_three_grid(410.0, 410.3, 410.31)  # rho = 1/30 < 1/4: 1.25 max(0.01, 0.3 / 4) = 1.25 * 0.3 / 4
+    assert g["branch"] == "fast" and g["gci"] == pytest.approx(1.25 * 0.3 / 4.0, abs=1e-12)
+    g = tl.gci_three_grid(1.16, 1.04, 1.01)  # d1 = -0.12, d2 = -0.03, rho = 1/4 exactly: monotone branch, p_obs = 2 -> p = 1
+    assert g["branch"] == "monotone" and g["gci"] == pytest.approx(1.25 * 0.03, rel=1e-12)
+    g = tl.gci_three_grid(1.0, 1.1, 1.1)  # rho = 0: 1.25 max(0, 0.1 / 4)
+    assert g["branch"] == "fast" and g["gci"] == pytest.approx(1.25 * 0.025, rel=1e-12)
+    g = tl.gci_three_grid(1.0, 1.4, 1.5)  # d1 = 0.4, d2 = 0.1: rho = 1/4 exactly, monotone
+    assert g["branch"] == "monotone"
+    g = tl.gci_three_grid(1.0, 1.4, 1.499)  # rho = 0.2475: 1.25 max(0.099, 0.1) = 0.125
+    assert g["branch"] == "fast" and g["gci"] == pytest.approx(0.125, rel=1e-12)
 
 
-def test_gci_converged_values_give_zero():
-    assert tl.gci_three_grid(2.0, 2.0, 2.0)["gci"] == 0.0
-    assert tl.gci_three_grid(2.5, 2.0, 2.0)["gci"] == 0.0
+@pytest.mark.parametrize("noise", [-4e-5, 4e-5])
+def test_gci_finest_step_below_floor_counts_as_zero(noise):
+    # d1 = 0.4, |d2| = 4e-5 < 1e-3: d2 -> 0, rho = 0 -> 1.25 max(0, 0.4 / 4) for both signs of the noise.  Without the
+    # floor a negative d2 would select the oscillatory branch (3 * 0.4), a fourfold-or-more jump on Picard noise.
+    g = tl.gci_three_grid(410.0, 410.4, 410.4 + noise)
+    assert g["branch"] == "fast" and g["gci"] == pytest.approx(1.25 * 0.4 / 4.0, rel=1e-12)
+    raw = tl.gci_three_grid(410.0, 410.4, 410.4 + noise, floor=0.0)  # the floor is what makes the two signs agree
+    assert raw["branch"] == ("oscillatory" if noise < 0 else "fast")
 
 
-def test_gci_uses_r_argument():
-    g = tl.gci_three_grid(1.0 + 0.1 + 0.1 * 9, 1.1, 1.0, r=3.0)  # ratio 9 = 3**2 -> p_obs 2: 1.25 * 0.1 / (9 - 1)
-    assert g["p_obs"] == pytest.approx(2.0) and g["gci"] == pytest.approx(1.25 * 0.1 / 8.0)
+def test_gci_floor_boundary_and_validation():
+    assert tl.GCI_FLOOR == 1e-3
+    # |d2| = 0.002 is above the floor and is kept: rho = 0.002 / 0.4 = 1/200 < 1/4 -> 1.25 max(0.002, 0.1)
+    assert tl.gci_three_grid(0.0, 0.4, 0.402)["gci"] == pytest.approx(0.125, rel=1e-12)
+    # |d2| = 0.002 with d1 = 0.004: rho = 1/2 (monotone, p = 1) -> 1.25 * 0.002; with floor 0.003 d2 -> 0: 1.25 * 0.004 / 4
+    assert tl.gci_three_grid(0.0, 0.004, 0.006)["gci"] == pytest.approx(1.25 * 0.002, rel=1e-9)
+    assert tl.gci_three_grid(0.0, 0.004, 0.006, floor=3e-3)["gci"] == pytest.approx(1.25 * 0.001, rel=1e-9)
+    with pytest.raises(ValueError):
+        tl.gci_three_grid(1.0, 1.1, 1.15, floor=-1e-3)
+
+
+def test_gci_monotone_branch():
+    g = tl.gci_three_grid(1.0, 1.1, 1.1 + 0.1 * 0.5)  # rho = 1/2: p_obs = 1, p = 1: 1.25 * 0.05 / 1
+    assert g["branch"] == "monotone" and g["p_obs"] == pytest.approx(1.0) and g["p"] == pytest.approx(1.0)
+    assert g["Fs"] == 1.25 and g["monotone"] and g["gci"] == pytest.approx(0.0625, rel=1e-12)
+    g = tl.gci_three_grid(0.0, 1.0, 1.0 + 0.8)  # rho = 0.8: p_obs = log2(1.25), p = same: 1.25 * 0.8 / (1.25 - 1)
+    assert g["p_obs"] == pytest.approx(math.log2(1.25)) and g["gci"] == pytest.approx(1.25 * 0.8 / 0.25, rel=1e-12)
+    g = tl.gci_three_grid(1.0, 0.5, 0.5 - 0.5 * 0.3)  # negative steps, rho = 0.3: p_obs = log2(10/3) > 1 -> p = 1
+    assert g["p"] == 1.0 and g["gci"] == pytest.approx(1.25 * 0.15, rel=1e-12)
+
+
+def test_gci_never_below_order_one_cap_and_is_continuous_at_one_quarter():
+    lo = tl.gci_three_grid(0.0, 1.0, 1.0 + 0.25 - 1e-12)["gci"]
+    hi = tl.gci_three_grid(0.0, 1.0, 1.0 + 0.25)["gci"]
+    assert lo == pytest.approx(hi, rel=1e-9)
+    for rho in np.linspace(0.0, 0.999, 400):  # never below the order-1-capped form 1.25 |d2| / (2^min(p_obs, 1) - 1)
+        d2 = 0.4 * rho
+        g = tl.gci_three_grid(0.0, 0.4, 0.4 + d2)["gci"]
+        if d2 >= tl.GCI_FLOOR:
+            p = min(math.log2(1.0 / rho), 1.0)
+            assert g >= 1.25 * d2 / (2.0**p - 1.0) * (1 - 1e-12)
+
+
+def test_gci_rejects_ratio_other_than_two():
+    with pytest.raises(ValueError):
+        tl.gci_three_grid(1.0, 1.1, 1.15, r=3.0)
+    with pytest.raises(ValueError):
+        tl.gci_three_grid(1.0, 1.1, 1.15, r=1.5)
 
 
 # ---------------------------------------------------------------------------------------------------- box stack
@@ -190,7 +245,11 @@ def test_box_full_top_source_is_1d_series_resistance():
 def test_box_three_levels_full_source_gci_zero():
     a, b, P = 4e-3, 4e-3, 3.0
     out = tl.solve_box_stack(a, b, STACK, [(0.0, a, 0.0, b, P)], h=H, T_c=T_C)
-    assert max(out["meta"]["solver_tol"].values()) < 1e-8
+    # grid-independent to round-off: the three levels agree to 1e-9 K, and the 1e-3 K floor of the A4 rule turns those
+    # round-off steps into exact zeros, so every solver_tol is exactly 0.
+    for name, c in out["meta"]["convergence"].items():
+        assert max(c["values"]) - min(c["values"]) < 1e-9, name
+    assert max(out["meta"]["solver_tol"].values()) == 0.0
     assert out["meta"]["r"] == 2.0 and len(out["meta"]["n_cells"]) == 3
 
 
