@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F5 feasibility is shown only on the two dev layouts; the interleaved family and other die counts are untested, and the margin is 20 %",
+      "detail": "f5_dev_check.json covers side_by_side_6 and u_shaped_2 only. The full run's skfem_gci_f5 gate covers five layouts, three of them fresh, one per family in FAMILIES = (side_by_side, interleaved, u_shaped), with dies per switch drawn from 2..6. The worst dev die is u_shaped_2 die 3 at 0.2001 K against the 0.25 K limit, a margin of 0.050 K. It is the 2-die layout, which has the highest power per die (46.2 W against 31.8 W for 6 dies). The interleaved family is never exercised. A fresh 2-die layout, or any interleaved layout, could exceed F5 and make the registered run INVALID. The claim says 'dev feasibility', so this narrows its scope; it does not falsify it.",
+      "evidence": "f5_dev_check.json: max_estimate 0.2001152613883761, worst {u_shaped_2, die 3, gci 0.1414, z_term 0.0587}. The side_by_side_6 maximum is 0.132 K. src/moduleforge/generate/halfbridge.py:40 FAMILIES includes 'interleaved'. E006.yaml dev_layouts has only side_by_side_6 and u_shaped_2.",
+      "suggested_check": "Before registration, repeat the dev F5 estimate on a dev-seed interleaved layout and on a 2-die layout of each family, never using the sealed seed.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The operating_point sanity check can no longer fail; the RuntimeError raised by calibrate_power is now the real gate",
+      "detail": "calibrate_power now either returns a rise within calibration_tol_K = 0.25 K or raises. So cal = max|calibration_rise_K - 60| is at most 0.25 K by construction, and operating_point (threshold 1.0 K) always passes. The protection is real, because ExperimentRun.__exit__ records status 'error' on the exception. The spec text documents this. But the sanity check itself is no longer one that 'could have failed'.",
+      "evidence": "e006_run.py:601-608 (return inside the tolerance branch, raise after 10 solves); e006_run.py:808,817; tools/mfos/mfos/evidence.py:139-143.",
+      "suggested_check": "Optionally re-solve level 0 at the returned P in run_layout and gate rise_lv0_K, which is computed independently, instead of the returned calibration_rise_K.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "No test covers the new calibrate_power behaviour or the gating of the z-doubled solve",
+      "detail": "Nothing under tests/ or tools/ references calibrate_power, e006_run or e006_f5_dev. The pairing fix (return p and the rise computed at p, or raise) and the new st.energy/st.picard entries for the L1z2 solve are checked only by reading the code. I confirmed both by inspection: run_layout appends the L1z2 balance and Picard residual, full() takes the maximum over every entry for energy_balance and picard_converged, and the smoke log shows the 1z2 entry with eb 6.7e-15 and picard 2.1e-5. A stub-solver test that I tried to run for the raise path was blocked by the sandbox's permission layer.",
+      "evidence": "A grep for calibrate_power/e006_run/e006_f5 matches only the two runners and the draft spec. Smoke log: \"{'level': '1z2', 'dofs': 80675, ..., 'eb': 6.66e-15, 'picard': 2.15e-05}\".",
+      "suggested_check": "Add a unit test that stubs TL.solve_layout_level: it should check that the returned rise equals rise(p) and that a non-converging stub raises after 10 calls.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The off-centre F1 check is extra scope; it passes, though one value fails the GCI \u2265 |err| self-consistency test and another is non-asymptotic",
+      "detail": "The diff also adds five nlayer_offcentre_* F1 checks, which the claim's three-item summary does not name; the comments attribute them to review T0194. In refcheck.json they pass by wide margins against the series reference (max err 3.5e-4 K vs 0.02 K) and genuinely exercise the odd modes (odd-mode signal +9.30 K in x, +7.66 K in y). However, the detail reports 'GCI >= |err| on every value: False'. centroid_xmirror falls in the floor-zeroed 'exact' branch (GCI 0, |err| 1e-5 K). The max point is non-asymptotic: rho 0.76, p_obs about 0.4, GCI 0.0081 against the 0.01 limit, a 19 % margin.",
+      "evidence": "refcheck.json nlayer_offcentre_vs_skfem detail: 'max ... fe 423.23297/423.23021/423.22812 ... gci 0.00806 (monotone); centroid_xmirror ... gci 0.00000 (exact)'.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The max-based gates silently drop a NaN that is not the first entry",
+      "detail": "In Python, max([1e-5, nan]) is 1e-5, so a NaN energy_balance or picard_residual from a later solve (for example the newly added L1z2) would not trip energy_balance or picard_converged. A NaN temperature would still raise in two_grid_term's finite-value check, so the risk in practice is small.",
+      "evidence": "uv run python -c: max([1e-5, nan]) -> 1e-05, max([nan, 1e-5]) -> nan; e006_run.py:806-807.",
+      "suggested_check": "Gate with any(not (e <= tol) for ...) instead of max(...) <= tol.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed every die's F5 estimate in f5_dev_check.json from its recorded skfem_lv0/lv1/lv2/z1 values, using mfos.metrics.gci_capped and a hand-coded monotone-branch formula (1.25|d2|/(2^min(p_obs,1)-1)) plus 2.5|z1-lv1|. All 16 dies match to 1e-12; max 0.2001152613883761 equals the recorded max_estimate; all 16 are on the monotone branch.",
+    "Reproduced the u_shaped_2 operating point from scratch at the frozen rule with e006_run.calibrate_power: 46.16754798139042 W vs recorded 46.167547981376515 W (difference 1.4e-11 W); the level-0 rise at the returned power is 59.946 K, within the 0.25 K tolerance; 0.9 s.",
+    "Reproduced u_shaped_2 scikit-fem levels 0 and 1 at the frozen skfem_rule and the recorded power: DOF 60283/235995 match, max |Tj - recorded| 2.3e-13 K at both levels, energy balance ~1e-14, Picard residual 2.2e-5 K; peak RSS 2.0 GB.",
+    "Ran the DoD smoke command with rows written to $TMPDIR rather than the repo (exit 0). The log shows the z-doubled L1 solve's eb and picard recorded. Then ran `mfos exp check E006 --rows <scratch>` (exit 0). The scratch metrics match the committed dev_rows.json to ~1e-13 relative; fingerprints match; constant ratio True.",
+    "Ran both JSON DoD assertions (refcheck all_passed; f5_dev_check keys and f5_limit) and `ruff check .`: all pass; the working tree is clean.",
+    "Read the code paths: run_layout appends the L1z2 energy balance and Picard residual to st.energy and st.picard; full() gates the maximum over all entries; ExperimentRun.__exit__ turns the calibrate_power RuntimeError into status 'error'; every new nlayer_offcentre_* sanity name declared in the spec is emitted via ck.add and reported through run.sanity.",
+    "Inspected refcheck.json: it was regenerated with the new off-centre checks (all pass), and its detail strings expose the GCI-vs-err inconsistency noted in the findings.",
+    "Checked research/notes/o006-e006-design.md about the smoke's 7.4e-6 max energy balance. A frozen-rule blind check exists (1.5e-7 / 1.8e-9 / 3.1e-11 at levels 0-2), so this is not a defect of this change."
+  ],
+  "caveats": [
+    "The F5 result is feasibility on the two dev layouts only (side_by_side 6 dies, u_shaped 2 dies). It says nothing about the interleaved family or other die counts, and the margin is 0.05 K (worst estimate 0.200 of 0.25 K).",
+    "I could not rerun the u_shaped_2 level-2 (\u22486 GB) and z-doubled level-1 (\u22484 GB) scikit-fem solves, or either solve for side_by_side_6: the sandbox's permission layer denied those commands. research/e006/f5_dev_ckpt/ is not committed. The skfem_lv2 and skfem_z1 values are therefore taken from the deliverable, backed only by exact reproduction of the power, L0 and L1 values for the worst layout.",
+    "I did not rerun refcheck (\u22484.8 GB, ~200 s); refcheck.json was read as committed.",
+    "The gating of the z-doubled solve and the pairing fix in calibrate_power are correct by code inspection, but no test covers either."
+  ]
+}
