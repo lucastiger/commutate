@@ -4,7 +4,7 @@ title: 'Before E006: GCI of Tj differences between same-stratum layouts, and est
   at the singular die-attach corner'
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0170
 description: 'Inputs for a founder decision on O006 A3/A4 (reviews T0178/T0179 of T0170: the frozen A4
@@ -68,3 +68,150 @@ history:
   summary: agent ended with error_max_budget_usd
   failure_output: ''
   at: '2026-11-02T09:10:30+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'All three items are answered for development seed 1181 (seed 20261101 was not solved), and
+    both deliverables are written and committed (328088c). Commands run and exit codes: `uv run ruff check
+    .` exit 0; `uv run mfos gate --fast` exit 0 ("all gates passed"); `gci_study.py merge`, `pair_jobs.py
+    cells / fitcells / assemble / job ...` (27 solves), `derive.py` and `summarize_pairs.py` all exit
+    0. `pkill` exited 3 and `kill` was refused by the sandbox.
+
+
+    (1) Six same-stratum pairs were solved at levels 0-2 (family; 2 dies per switch; 4.5 mm dies). Three
+    are the outcome-blind "first" pairs (gen #0,#1). Three are memory-capped "fit" pairs (gen #1,#3).
+    The cap was chosen when gen #0 at level 2 looked too big for memory; it later fitted, and the fit
+    pairs lean toward simpler layouts. All 45 absolut'
+  report:
+    summary: 'All three items are answered for development seed 1181 (seed 20261101 was not solved), and
+      both deliverables are written and committed (328088c). Commands run and exit codes: `uv run ruff
+      check .` exit 0; `uv run mfos gate --fast` exit 0 ("all gates passed"); `gci_study.py merge`, `pair_jobs.py
+      cells / fitcells / assemble / job ...` (27 solves), `derive.py` and `summarize_pairs.py` all exit
+      0. `pkill` exited 3 and `kill` was refused by the sandbox.
+
+
+      (1) Six same-stratum pairs were solved at levels 0-2 (family; 2 dies per switch; 4.5 mm dies). Three
+      are the outcome-blind "first" pairs (gen #0,#1). Three are memory-capped "fit" pairs (gen #1,#3).
+      The cap was chosen when gen #0 at level 2 looked too big for memory; it later fitted, and the fit
+      pairs lean toward simpler layouts. All 45 absolute Tj max values (9 layouts) converge monotonically:
+
+      - observed order 1.14-2.23;
+
+      - frozen GCI 0.057-0.327 K, candidate GCI 0.057-0.691 K; none is anywhere near 0.025 K.
+
+
+      Of the 30 pairwise differences, 13 oscillate (all in the fit pairs):
+
+      - frozen GCI of the difference sequence 0.003-0.082 K (9 of 30 at or below 0.025 K);
+
+      - candidate GCI 0.005-0.394 K (5 of 30);
+
+      - bound GCI_A + GCI_B 0.14-0.63 K.
+
+
+      One case shows the hazard: the u_shaped fit pair moves +0.348 K then -0.003 K, so its frozen GCI
+      is 0.003 K even though each layout moved 0.24 K at the same step. That is cancellation, not convergence.
+
+
+      (2) The 2D strip case with the die-attach corner was compared against a 21 M-cell reference from
+      levels 5-6-7 (re-checked against the raw JSON). Both GCI rules are non-conservative for 3 of 6 per-die
+      values, and the two rules are identical there: the level 0-2 observed order (1.57-2.30) falls inside
+      [1.5, 2.5], where the candidate rule does nothing, and it keeps falling toward about 1.04 as the
+      grid is refined. The candidate is conservative where it does act, but up to 38 times too large.
+      For differences, GCI_A + GCI_B was conservative in both strip cases; the difference of the two Richardson
+      corrections was not.
+
+
+      (3) Level 2 is the finest level that fits in 16 GB: 4.7-6.5 GB peak for about 10 M active cells,
+      and level 3 would need at least 23 GB. At level 2 the absolute Tj accuracy is about 0.06-0.7 K,
+      so 0.025 K is out of reach. Difference accuracy of about 0.01-0.05 K is plausible but cannot be
+      shown with an estimator proven conservative.
+
+
+      Limitations: one die size; the 2D strip has no 3D die corners (the 3D single-die case was not run);
+      there is no fine reference for full 3D layouts, and the strip-to-3D error ratio is an inference.
+      This is a research note, not evidence.'
+    failure_class: model
+    root_cause: 'The frozen thermal grid rule refines toward die edges but not toward the edges of copper
+      traces on the Al2O3 ceramic or the inset backside-copper edges. Those corners have a field exponent
+      of 0.519, so point values converge at an order of only about 1.04. As a result the level 0-2 sequence
+      has not yet reached its asymptotic rate: the observed order from levels 0-2 (1.5-2.3) overstates
+      the true order, and the Roache GCI (Fs 1.25 inside [1.5, 2.5]) is non-conservative for 3 of 6 per-die
+      values that have a validated reference. The candidate rule only changes cases outside that range,
+      so it cannot fix these. Combined with the 16 GB limit (level 2 is the ceiling), A4''s 0.025 K target
+      cannot be reached for absolute Tj under any rule examined. Sampling the maximum Tj on the surface
+      adds a second source of irregular, oscillating behaviour, especially in differences.'
+    confidence: 0.7
+    affects_acceptance_criteria: true
+    evidence:
+    - 'Strip2d with k(T), reference from levels 5-6-7 (21.4 M cells): true level-2 errors per die 0.034-0.051
+      K; frozen GCI = candidate GCI for every per-die value; non-conservative for die0 centroid (0.040
+      vs 0.045+-0.002), die1 tj_max (0.031 vs 0.038+-0.001) and die1 centroid (0.031 vs 0.035+-0.001).'
+    - Observed order from successive triples (0-1-2 through 5-6-7) falls monotonically, e.g. die0 mean
+      1.68 -> 1.16 and diff_tj_mean 1.19 -> 1.06, toward 2 x 0.519 = 1.04. In the die-only strip (no Cu-on-ceramic
+      edges) die mean and centroid stay at 1.80-1.87 and the level-2 error is 6-16 times smaller. With
+      constant k the same drift appears, so the Picard iteration is not the cause.
+    - 'Corner exponents from k1 tan(lam pi/2) + k2 tan(lam pi) = 0: 0.835 for the die attach on Cu, 0.519
+      for Cu on Al2O3; the equal-k limit gives 2/3, as expected.'
+    - 'Dev pairs, all 27 solves: energy balance <= 4e-14, linear residual <= 3e-12, Picard <= 6 iterations.
+      45 absolute values: observed order 1.14-2.23, frozen GCI 0.057-0.327 K, candidate 0.057-0.691 K.'
+    - '30 differences: 13 oscillate; frozen GCI 0.003-0.082 K; candidate 0.005-0.394 K; GCI_A+GCI_B 0.14-0.63
+      K. u_shaped fit pair: 3.770 / 4.118 / 4.115 K gives frozen GCI 0.003 K.'
+    - 'Memory: about 10 M active cells peaked at 4.7-6.5 GB (635-888 s); 4.4-4.7 M cells at 3.2-5.7 GB.
+      Level 3 (36-81 M cells) needs at least 23 GB.'
+    - 'Strip difference check: GCI_A+GCI_B 0.102 / 0.094 K vs true 0.0072 / 0.0126 K (conservative); difference
+      of Richardson corrections 0.009 K vs 0.0126 K (non-conservative).'
+    alternative_explanations:
+    - explanation: 'H1: the singular die-attach-on-Cu corner (exponent 0.835) keeps levels 0-2 from reaching
+        the asymptotic rate.'
+      how_to_discriminate: 'Strip with only die-attach corners (every substrate layer spans the outline).
+        Ran: the observed order stays at 1.85-1.87 for mean and centroid, so H1 is not the dominant cause.'
+    - explanation: 'H3: Tj max is a sampled maximum whose location moves with the grid, so its order and
+        its differences are erratic regardless of corners.'
+      how_to_discriminate: 'Compare Tj max with centroid and mean in the die-only strip. Ran: centroid
+        and mean are regular while Tj max drifts from 1.54 to 1.23 and its difference oscillates. H3 is
+        real but secondary.'
+    - explanation: 'H4: Picard or linear-solver tolerance contaminates the level-to-level change d21.'
+      how_to_discriminate: 'Run with constant k. Ran: the same drift appears, and the residuals (<= 3e-12)
+        and energy balance are far below d21. Rejected.'
+    - explanation: 'Planning: A4 at 0.025 K was set without checking it could be reached, so even a perfect
+        estimator could not pass it at 16 GB.'
+      how_to_discriminate: Compare the level-2 error under the best-case estimator with 0.025 K. Even
+        the true strip errors (0.034-0.051 K per die) exceed it, and level 3 does not fit in memory. This
+        is a contributing cause alongside the model cause.
+    discriminating_tests:
+    - 'T1: strip2d vs strip_dieonly, sliding-triple observed order up to level 5-7 (H1 vs H2) -- run'
+    - 'T2: strip2d with constant k (H4) -- run'
+    - 'T3: Tj max vs centroid/mean in strip_dieonly (H3) -- run'
+    - Conservativeness of frozen, candidate, bare Richardson, GCI_A+GCI_B and difference-of-corrections
+      estimators against the level 5-6-7 reference -- run
+    - 'Not run: a 3D cropped-domain reference at levels 3-4 for a full layout, and a rule that also refines
+      trace and backside edges'
+    recommended_actions:
+    - 'Founder: do not adopt the candidate rule alone as the A4 correction. It is conservative where it
+      acts but does not fix non-conservative cases whose observed order falls inside [1.5, 2.5].'
+    - 'Founder: decide whether to re-scope A4. For absolute Tj, level 2 can demonstrate only about 0.06-0.7
+      K; 0.025 K needs 2-3 more levels (64-512 times the cells).'
+    - 'New experiment id, if the grid rule is to be revised: refine every trace and backside-inset edge
+      the same way as die edges, then repeat the strip T1 and a 3D cropped-domain reference before re-freezing.'
+    - 'For differences: do not compute the GCI from the difference sequence alone when it oscillates or
+      when the two layouts converge at different orders. Use GCI_A + GCI_B, or require a monotone difference
+      sequence.'
+    - Consider reporting die-mean or centroid Tj next to Tj max; they converge more regularly.
+    - Before re-freezing any rule, run the planned 3D single-die case or a cropped 3D layout reference
+      (levels 0-3+) to confirm the 2D strip verdicts in 3D.
+    files_written:
+    - research/notes/o006-gci-differences.md
+    - research/o006_gci/results.json
+    - research/o006_gci/part_pairs.json
+    - research/o006_gci/part_derived.json
+    - research/o006_gci/pair_tables.md
+    - research/o006_gci/pairs_jobs.jsonl
+    - research/o006_gci/pairs_powers.json
+    - research/o006_gci/run5_pairs.log
+    - research/o006_gci/run6_fit.log
+    - research/scripts/o006_gci/pair_jobs.py
+    - research/scripts/o006_gci/derive.py
+    - research/scripts/o006_gci/summarize_pairs.py
+    - research/scripts/o006_gci/run_pairs.sh
+    - research/scripts/o006_gci/run_fit.sh
+    experiment_drafts: []
