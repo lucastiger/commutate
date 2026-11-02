@@ -1,0 +1,202 @@
+{
+ "experiment": "E006",
+ "mode": "refcheck (F1 reference-only checks, full resolution, no L2)",
+ "checks": [
+  {
+   "name": "reference_sha256",
+   "value": null,
+   "threshold": null,
+   "passed": true,
+   "detail": "series befc5efaf2d5 (config befc5efaf2d5), mms ca05847b71c5 (config ca05847b71c5); checked before any solve"
+  },
+  {
+   "name": "series_cases_match_frozen_parameters",
+   "value": null,
+   "threshold": null,
+   "passed": true,
+   "detail": "e006_series cases == series_values.json parameters"
+  },
+  {
+   "name": "series_converged",
+   "value": null,
+   "threshold": null,
+   "passed": true,
+   "detail": "convergence_doubling_case1a: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case1b: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case2: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case3: max rel change modes=0.0e+00, quad=1.1e-15, images=1.1e-15, all=1.1e-15 (< 1e-7); convergence_doubling_nlayer_dbc: max rel change modes=0.0e+00, quad=8.0e-16, images=6.4e-16, all=8.0e-16 (< 1e-7)"
+  },
+  {
+   "name": "case3_printed_values",
+   "value": null,
+   "threshold": null,
+   "passed": true,
+   "detail": "50 terms 80.6147 C vs printed 80.61 C (|d| <= 0.005); converged 80.6119 C (converged - printed +0.0019 K); 50 terms 78.8712 C vs printed 78.87 C (|d| <= 0.005); converged 78.8731 C (converged - printed +0.0031 K)"
+  },
+  {
+   "name": "nlayer_reduces_to_two_layer",
+   "value": null,
+   "threshold": null,
+   "passed": true,
+   "detail": "max rel diff case1b_split: 2.2e-16; nl_split: 2.2e-16 (<= 1e-9)"
+  },
+  {
+   "name": "mms_numeric_check",
+   "value": 0.3227142963267051,
+   "threshold": 0.3,
+   "passed": true,
+   "detail": "e006_mms --selfcheck all gates pass (klaw_transcription=ok, field_range=ok, k_law_validity=ok, ceramic_single_branch=ok, k_variation=ok, source_vs_fd=ok, interface_continuity=ok, global_balance=ok, region_balance=ok, cubature_converged=ok); generator sha256 matches the frozen file: True; ceramic k_max/k_min - 1 = 0.3227 >= 0.3 (k_max-normalised 0.2440)"
+  },
+  {
+   "name": "skfem_q2_selftest",
+   "value": 2.5011104298755527e-11,
+   "threshold": 1e-06,
+   "passed": true,
+   "detail": "point evaluation of a triquadratic field max err 4.9e-15 (<= 1e-9); two-layer 1D conduction exact to 2.5e-11 K (<= 1e-6 K); energy balance 7.0e-14"
+  },
+  {
+   "name": "case2_skfem_gci",
+   "value": 0.0045688851735015135,
+   "threshold": 0.01,
+   "passed": true,
+   "detail": "scikit-fem Q2 own A4 GCI (gci_capped, floor 1e-3 K), max over 12 values; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 10647, 'elements': 1083, 'cg_iters': 31, 'rel_residual': 9.508071644750022e-12, 'wall_s': 0.26, 'energy_balance': 1.176836406102666e-14, 'rss_gb': 2.34}, {'level': 1, 'dofs': 77077, 'elements': 8664, 'cg_iters': 46, 'rel_residual': 1.7541251159644647e-11, 'wall_s': 1.94, 'energy_balance': 2.4136248555350903e-13, 'rss_gb': 2.45}, {'level': 2, 'dofs': 585225, 'elements': 69312, 'cg_iters': 59, 'rel_residual': 1.7861561530914942e-11, 'wall_s': 21.08, 'energy_balance': 1.6933121571582888e-12, 'rss_gb': 4.93}]"
+  },
+  {
+   "name": "case2_vs_skfem",
+   "value": 0.0010810708785129464,
+   "threshold": 0.02,
+   "passed": true,
+   "detail": "max |T_fe(level 2) - T_series|; levels 0/1/2: s1.centroid fe 370.53258/370.53750/370.53763 ref 370.53764 err -0.00001 gci 0.00154 (fast); s1.mean fe 369.99852/370.00434/370.00569 ref 370.00612 err -0.00043 gci 0.00182 (fast); s1.max fe 370.57986/370.57566/370.57581 ref 370.57581 err -0.00000 gci 0.00131 (fast); s2.centroid fe 376.93315/376.94549/376.94583 ref 376.94585 err -0.00002 gci 0.00386 (fast); s2.mean fe 375.48404/375.49866/375.50202 ref 375.50310 err -0.00108 gci 0.00457 (fast); s2.max fe 376.96203/376.96025/376.95987 ref 376.95987 err +0.00000 gci 0.00056 (fast); s3.centroid fe 374.40291/374.41278/374.41305 ref 374.41307 err -0.00002 gci 0.00308 (fast); s3.mean fe 373.25831/373.27001/373.27269 ref 373.27356 err -0.00086 gci 0.00365 (fast); s3.max fe 374.41200/374.41630/374.41624 ref 374.41623 err +0.00001 gci 0.00135 (fast); s4.centroid fe 373.06282/373.07021/373.07041 ref 373.07042 err -0.00001 gci 0.00231 (fast); s4.mean fe 372.22425/372.23300/372.23501 ref 372.23566 err -0.00065 gci 0.00274 (fast); s4.max fe 373.07332/373.07503/373.07492 ref 373.07492 err +0.00000 gci 0.00053 (fast)"
+  },
+  {
+   "name": "case2_skfem_energy_and_ratio",
+   "value": 1.6933121571582888e-12,
+   "threshold": 1e-06,
+   "passed": true,
+   "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+  },
+  {
+   "name": "nlayer_uniform_rise_in_band",
+   "value": 84.95957316989796,
+   "threshold": [
+    60.0,
+    110.0
+   ],
+   "passed": true,
+   "detail": "centred 5.50 mm die, 68.8 W on 16.5 mm box"
+  },
+  {
+   "name": "nlayer_uniform_skfem_gci",
+   "value": 0.0005761518305646973,
+   "threshold": 0.01,
+   "passed": true,
+   "detail": "quarter-symmetric scikit-fem Q2, own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 80, 'rel_residual': 1.1042600530765217e-11, 'wall_s': 0.29, 'energy_balance': 4.71955807768154e-13, 'rss_gb': 4.93}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 101, 'rel_residual': 9.788562027508217e-12, 'wall_s': 2.54, 'energy_balance': 2.0037305148434825e-12, 'rss_gb': 4.93}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 140, 'rel_residual': 1.0324468619509976e-11, 'wall_s': 29.68, 'energy_balance': 5.0136561569047444e-12, 'rss_gb': 4.93}]"
+  },
+  {
+   "name": "nlayer_uniform_vs_skfem",
+   "value": 9.989884983951924e-05,
+   "threshold": 0.02,
+   "passed": true,
+   "detail": "centroid ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast); mean ref 415.92189 fe 415.91961/415.92145/415.92179 err -0.00010 gci 0.00058 (fast); max ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast)"
+  },
+  {
+   "name": "nlayer_uniform_skfem_energy_and_ratio",
+   "value": 5.0136561569047444e-12,
+   "threshold": 1e-06,
+   "passed": true,
+   "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+  }
+ ],
+ "info": [
+  {
+   "name": "paper50_case1a_s1_centroid",
+   "value": false,
+   "detail": "50 terms 84.9386 C vs printed 84.97 C (|d| <= 0.005); converged 85.4506 C (converged - printed +0.4806 K)"
+  },
+  {
+   "name": "paper50_case1a_s1_mean",
+   "value": true,
+   "detail": "50 terms 80.5582 C vs printed 80.56 C (|d| <= 0.005); converged 80.7052 C (converged - printed +0.1452 K)"
+  },
+  {
+   "name": "paper50_case1a_s2_centroid",
+   "value": false,
+   "detail": "50 terms 108.3842 C vs printed 108.43 C (|d| <= 0.005); converged 109.1522 C (converged - printed +0.7222 K)"
+  },
+  {
+   "name": "paper50_case1a_s2_mean",
+   "value": false,
+   "detail": "50 terms 101.7967 C vs printed 101.81 C (|d| <= 0.005); converged 102.0170 C (converged - printed +0.2070 K)"
+  },
+  {
+   "name": "paper50_case1b_s1_centroid",
+   "value": true,
+   "detail": "50 terms 56.5480 C vs printed 56.55 C (|d| <= 0.005); converged 56.5659 C (converged - printed +0.0159 K)"
+  },
+  {
+   "name": "paper50_case1b_s1_mean",
+   "value": false,
+   "detail": "50 terms 56.0442 C vs printed 56.05 C (|d| <= 0.005); converged 56.0488 C (converged - printed -0.0012 K)"
+  },
+  {
+   "name": "paper50_case1b_s2_centroid",
+   "value": false,
+   "detail": "50 terms 59.9475 C vs printed 59.94 C (|d| <= 0.005); converged 59.9743 C (converged - printed +0.0343 K)"
+  },
+  {
+   "name": "paper50_case1b_s2_mean",
+   "value": true,
+   "detail": "50 terms 59.1878 C vs printed 59.19 C (|d| <= 0.005); converged 59.1947 C (converged - printed +0.0047 K)"
+  },
+  {
+   "name": "paper50_case2_s1_centroid",
+   "value": false,
+   "detail": "50 terms 97.4065 C vs printed 97.40 C (|d| <= 0.005); converged 97.3876 C (converged - printed -0.0124 K)"
+  },
+  {
+   "name": "paper50_case2_s1_mean",
+   "value": true,
+   "detail": "50 terms 96.8519 C vs printed 96.85 C (|d| <= 0.005); converged 96.8561 C (converged - printed +0.0061 K)"
+  },
+  {
+   "name": "paper50_case2_s2_centroid",
+   "value": false,
+   "detail": "50 terms 103.8409 C vs printed 103.82 C (|d| <= 0.005); converged 103.7958 C (converged - printed -0.0242 K)"
+  },
+  {
+   "name": "paper50_case2_s2_mean",
+   "value": false,
+   "detail": "50 terms 102.3426 C vs printed 102.33 C (|d| <= 0.005); converged 102.3531 C (converged - printed +0.0231 K)"
+  },
+  {
+   "name": "paper50_case2_s3_centroid",
+   "value": false,
+   "detail": "50 terms 101.2993 C vs printed 101.28 C (|d| <= 0.005); converged 101.2631 C (converged - printed -0.0169 K)"
+  },
+  {
+   "name": "paper50_case2_s3_mean",
+   "value": false,
+   "detail": "50 terms 100.1152 C vs printed 100.10 C (|d| <= 0.005); converged 100.1236 C (converged - printed +0.0236 K)"
+  },
+  {
+   "name": "paper50_case2_s4_centroid",
+   "value": false,
+   "detail": "50 terms 99.9482 C vs printed 99.94 C (|d| <= 0.005); converged 99.9204 C (converged - printed -0.0196 K)"
+  },
+  {
+   "name": "paper50_case2_s4_mean",
+   "value": false,
+   "detail": "50 terms 99.0794 C vs printed 99.07 C (|d| <= 0.005); converged 99.0857 C (converged - printed +0.0157 K)"
+  },
+  {
+   "name": "case1a_vs_skfem_info",
+   "value": 0.008417699250344413,
+   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.4369 K; levels [{'level': 0, 'dofs': 6627, 'elements': 529, 'cg_iters': 35, 'rel_residual': 1.1173389034750296e-08, 'wall_s': 0.17, 'energy_balance': 2.1291413077051402e-11, 'rss_gb': 4.93}, {'level': 1, 'dofs': 43245, 'elements': 4232, 'cg_iters': 43, 'rel_residual': 1.0432377737897313e-08, 'wall_s': 1.03, 'energy_balance': 6.80762113347555e-11, 'rss_gb': 4.93}, {'level': 2, 'dofs': 308025, 'elements': 33856, 'cg_iters': 54, 'rel_residual': 1.3469727452707581e-08, 'wall_s': 8.87, 'energy_balance': 7.141711666491801e-10, 'rss_gb': 4.93}]"
+  },
+  {
+   "name": "case1b_vs_skfem_info",
+   "value": 9.010417340959975e-05,
+   "detail": "max |err| (K) of scikit-fem Q2 level 2; max GCI 0.0014 K; levels [{'level': 0, 'dofs': 11045, 'elements': 1058, 'cg_iters': 198, 'rel_residual': 1.2028529674064528e-08, 'wall_s': 0.67, 'energy_balance': 1.3611112237299494e-11, 'rss_gb': 4.93}, {'level': 1, 'dofs': 77841, 'elements': 8464, 'cg_iters': 277, 'rel_residual': 1.555706018138204e-08, 'wall_s': 7.32, 'energy_balance': 4.193534408614141e-12, 'rss_gb': 4.93}, {'level': 2, 'dofs': 581825, 'elements': 67712, 'cg_iters': 580, 'rel_residual': 1.4591290574845702e-08, 'wall_s': 109.53, 'energy_balance': 2.7003954627957683e-12, 'rss_gb': 4.93}]"
+  }
+ ],
+ "all_passed": true,
+ "wall_s": 201.5,
+ "peak_rss_gb": 4.93
+}
