@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T02:08:17+00:00 from repository state — do not edit_
+_generated 2026-11-02T02:08:29+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -27,14 +27,12 @@ _generated 2026-11-02T02:08:17+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 29, done: 122, failed: 3, merge: 1, running: 2, todo: 6
+cancelled: 29, done: 123, failed: 3, running: 2, todo: 6
 
-- T0149 `merge` builder/implement: Thermal L2 core: steady finite-volume conduction on a non-uniform rectilinear grid with k(T) Picard (solvers/thermal_fv.py) (attempt 2)
 - T0151 `running` scientist/research: E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1b, 2, 3) and N-layer Fourier series, with F1 self-checks (attempt 2)
 - T0152 `running` builder/implement: scikit-fem hexahedral cross-check built from the Layout (D0006 fallback), own Picard loop and own GCI, A3 convergence/cost benchmark (attempt 1)
 
 ## Recent events
-- 2026-11-02T01:29:32+00:00 verified {"task": "T0149"}
 - 2026-11-02T01:29:35+00:00 run_started {"run": "T0160-critic-20261101T172935-b7f4", "task": "T0160", "role": "critic", "session": "984b6a20-027c-4d02-a666-57168b664548"}
 - 2026-11-02T01:37:33+00:00 run_finished {"run": "T0160-critic-20261101T172935-b7f4", "status": "completed", "cost": 1.817234, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T01:37:37+00:00 run_started {"run": "T0161-critic-20261101T173737-63fe", "task": "T0161", "role": "critic", "session": "d7186ca5-76d9-46d6-bf35-95746ec52432"}
@@ -49,3 +47,4 @@ cancelled: 29, done: 122, failed: 3, merge: 1, running: 2, todo: 6
 - 2026-11-02T01:54:09+00:00 merged {"task": "T0154"}
 - 2026-11-02T01:54:48+00:00 inbox_resolved {"id": "I0063", "status": "approved", "note": "Approved; Robin-face prescribed-flux path to be made second order in a follow-up before E006 (review T0160).", "b
 - 2026-11-02T01:54:49+00:00 task_added {"task": "T0163"}
+- 2026-11-02T02:08:26+00:00 merged {"task": "T0149"}
