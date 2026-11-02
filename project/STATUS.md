@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-02T04:09:41+00:00 from repository state — do not edit_
+_generated 2026-11-02T04:19:16+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0066** [external_action] [O006] P3 burst VM run of the missing 0.25/0.125 mm l2_layout levels (T0154 diagnosis)
@@ -14,7 +14,7 @@ _generated 2026-11-02T04:09:41+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $63.89/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $65.01/$115 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -24,18 +24,17 @@ _generated 2026-11-02T04:09:41+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 38 | $63.89 | 1395021 | 776759 | 55 | 0 |
+| O006 | 38 | $65.01 | 1410124 | 779184 | 55 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 136, failed: 3, needs_founder: 1, running: 2, todo: 5
+cancelled: 30, done: 136, failed: 3, needs_founder: 1, running: 1, todo: 5, verify: 1
 
 - T0155 `running` scientist/investigate: Pilot P4: FastHenry feasibility on 2D_Case_4 via a Layout-to-FastHenry exporter (research note, not evidence) (attempt 1)
 - T0157 `needs_founder` scout/research: Secondary-source screen of every k(T) law and 300 K value in geometry/stack.py (primary check deferred) (attempt 3)
-- T0164 `running` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
+- T0164 `verify` scientist/research: E006 analytic references (re-issue of T0151): paper-reproduction gate matching frozen F1 (Case 3 only), payload hash pinned (attempt 1)
 
 ## Recent events
-- 2026-11-02T03:55:33+00:00 task_amended {"task": "T0157", "reason": "I0072 re-scope to secondary-source screen"}
 - 2026-11-02T03:55:35+00:00 inbox_resolved {"id": "I0072", "status": "answered", "note": "Founder (2026-11-02): re-scoped T0157 to a secondary-source screen with the T0174/T0175 fixes and explicit P1 sen
 - 2026-11-02T03:56:00+00:00 verified {"task": "T0163"}
 - 2026-11-02T03:56:05+00:00 run_started {"run": "T0176-critic-20261101T195605-47f8", "task": "T0176", "role": "critic", "session": "7b6064a2-7508-44e2-a614-264e044a75d6"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 136, failed: 3, needs_founder: 1, running: 2, todo: 5
 - 2026-11-02T04:08:50+00:00 run_finished {"run": "T0177-critic-20261101T200333-2bd6", "status": "completed", "cost": 1.323057, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T04:09:37+00:00 inbox_opened {"id": "I0074", "kind": "protected_change", "subject": "T0157: merge needs founder approval"}
 - 2026-11-02T04:09:41+00:00 run_started {"run": "T0164-scientist-20261101T200941-306f", "task": "T0164", "role": "scientist", "session": "948820b8-8023-4c11-b4fc-11ed3b22783c"}
+- 2026-11-02T04:17:05+00:00 run_finished {"run": "T0164-scientist-20261101T200941-306f", "status": "completed", "cost": 1.118278, "subtype": "success", "report": "structured_output"}

@@ -4,7 +4,7 @@ title: 'E006 analytic references (re-issue of T0151): paper-reproduction gate ma
   3 only), payload hash pinned'
 type: research
 agent: scientist
-status: running
+status: merge
 depends_on: []
 description: 'Re-issue of T0151. Its DoD could not be met because its packet gated the printed Muzychka
   2003 Case 1a/1b centroids at 50 terms. That goes beyond frozen F1, and no truncation from 1 to 200 terms
@@ -92,4 +92,129 @@ lens: null
 trigger: null
 rationale: Hypothesis (a) cases for A1/A2 and F1's gates. This unblocks the frozen references E006 needs,
   with no change to any reference value.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'T0164 is done and committed as 7f95fac. I restored the three T0151 deliverables from commit
+    9c01c7c. The only code change is to GATED_PRINTED (plus its comment and the check_paper docstring):
+    it now holds exactly O006 F1''s two printed Case 3 values, 80.61 °C maximum at the centre and 78.87
+    °C source mean, checked to |Δ| ≤ 0.005 K. The other 16 printed comparisons at 50 terms, including
+    the Case 1a/1b centroids, are still printed but tagged INFO and not gated. The Case 1a/1b centroids
+    were the four gates T0151 had added, three of which failed.
+
+
+    `--selfcheck` exits 0 with 22 of 22 gates passing in 77 s. These are T0151''s 26 gates minus those
+    four centroid gates, with every other gate unchanged. A fresh `--emit` gives payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b8066'
+  report:
+    summary: 'T0164 is done and committed as 7f95fac. I restored the three T0151 deliverables from commit
+      9c01c7c. The only code change is to GATED_PRINTED (plus its comment and the check_paper docstring):
+      it now holds exactly O006 F1''s two printed Case 3 values, 80.61 °C maximum at the centre and 78.87
+      °C source mean, checked to |Δ| ≤ 0.005 K. The other 16 printed comparisons at 50 terms, including
+      the Case 1a/1b centroids, are still printed but tagged INFO and not gated. The Case 1a/1b centroids
+      were the four gates T0151 had added, three of which failed.
+
+
+      `--selfcheck` exits 0 with 22 of 22 gates passing in 77 s. These are T0151''s 26 gates minus those
+      four centroid gates, with every other gate unchanged. A fresh `--emit` gives payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151,
+      and the file is byte-identical to the committed series_values.json.
+
+
+      No reference value, parameter, material constant or the Case 2 Tf (25 °C) changed, and I added no
+      converged-value tolerance against the printed tables. The note now:
+
+      - records the founder decision;
+
+      - keeps T0151''s diagnosis (no single cut-off reproduces Tables 1 and 2, and each table is internally
+      inconsistent);
+
+      - relabels the Case 1a/1b section as INFO;
+
+      - adds section 4.1, the exact N-layer inputs for E006''s L2 case: 7 layers with thickness and k,
+      footprint, h, Tf, sources and T_1d.
+
+
+      Commands run and exit codes:
+
+      1. `uv run python experiments/runners/e006_series.py --selfcheck`: exit 0.
+
+      2. The DoD import-ban assert: exit 0.
+
+      3. `--emit /tmp/e006_sv_check.json`: exit 1, a sandbox PermissionError, because only /tmp/claude
+      and $TMPDIR are writable here. I re-ran it with `--emit $TMPDIR/e006_sv_check.json`: exit 0, same
+      sha256.
+
+      4. The DoD hash assert with the $TMPDIR path in place of /tmp: exit 0.
+
+      5. `cmp` of the emitted file against the committed JSON, and of the committed JSON against 9c01c7c:
+      both exit 0.
+
+      6. `ls` of the note: exit 0.
+
+      7. `uv run ruff check .`: exit 0.
+
+      8. `uv run mfos gate --fast`: exit 0 ("all gates passed").
+
+      9. `git commit`: exit 0.
+
+
+      I could not run the DoD''s literal /tmp path inside this sandbox. The orchestrator''s own run of
+      it should pass, since the output is the same.'
+    failure_class: none
+    root_cause: 'Not a failure. T0151''s blocker was a planning issue: its packet gated printed Case 1a/1b
+      centroids at 50 terms, which goes beyond F1. The founder decision moved those comparisons to INFO,
+      and this re-issue applies that decision.'
+    confidence: 0.95
+    affects_acceptance_criteria: false
+    evidence:
+    - '[fact] `diff` of 9c01c7c:experiments/runners/e006_series.py against the working file shows only
+      the GATED_PRINTED line (now ((''case3'',''centre'',''centroid''),(''case3'',''cross'',''mean''))),
+      a two-line comment and the check_paper docstring.'
+    - '[fact] `--selfcheck` printed ''selfcheck: 22/22 gates passed; failed: none; 77 s'' and exited 0.
+      The gated set is: kernel_eq30_kappa1_equals_eq18, kernel_recursion_equals_eq30, kernel_recursion_equals_linear_system,
+      kernel_beta0_limit_is_R1D, heat_kernel_images_equal_fourier, full_top_source_equals_1D, face_mean_equals_T1d,
+      reciprocity_mean_rise, paper50_case3_centre_centroid, paper50_case3_cross_mean, paper_Tb_case1a/1b,
+      raw_partial_sums_converge_to_accelerated, nlayer_equals_two_layer, max_dominates_samples_and_scale_positive,
+      case3_symmetry_and_centre_max, nlayer_rises_in_O002_band, and convergence_doubling for all 5 cases.
+      That is T0151''s 26 gates minus the four Case 1a/1b centroid gates.'
+    - '[fact] The 16 INFO lines include Case 1a s1/s2 centroids at 50 terms (84.9386 / 108.3842 °C against
+      printed 84.97 / 108.43) and Case 1b s1/s2 (56.5480 / 59.9475 against 56.55 / 59.94). They are the
+      same values T0151 reported.'
+    - '[fact] `--emit $TMPDIR/e006_sv_check.json` printed sha256(payload) = befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151.
+      `cmp` against research/e006_refs/series_values.json exited 0, and so did `cmp` of that file against
+      9c01c7c.'
+    - '[fact] The N-layer inputs printed from nlayer_layers()/case_nlayer(), listed bottom to top as (t
+      [m], k [W/(m K)]): baseplate (3.0e-3, 385), solder (1.0e-4, 58), backside_cu (3.0e-4, 385), ceramic
+      (3.8e-4, 24), top_cu (3.0e-4, 385), die_attach (5.0e-5, 58), die (1.8e-4, 370). Footprint 0.086
+      x 0.056 m, h = 5000 W/(m^2 K), Tf = 338.15 K, T_1d = 357.67694155722853 K. These are in note section
+      4.1, and the hashed payload''s layers_bottom_up pins them.'
+    - '[fact] The DoD import-ban assert exited 0, `uv run ruff check .` exited 0 (''All checks passed!''),
+      and `uv run mfos gate --fast` exited 0 (''all gates passed'').'
+    - '[fact] The sandbox refused a write to /tmp/e006_sv_check.json (PermissionError, Errno 1), so I
+      ran the DoD hash check against $TMPDIR/e006_sv_check.json. The assert logic was unchanged, and it
+      exited 0.'
+    alternative_explanations:
+    - explanation: 'Restoring files from 9c01c7c might have brought in a payload that depends on the repository
+        state: the N-layer case reads its constants from moduleforge.geometry.stack, which could have
+        changed on main since T0151. If so, the hash would differ.'
+      how_to_discriminate: 'Re-emit from this worktree and compare the hashes. Done: the hash and the
+        bytes are identical, so the current geometry.stack constants match T0151''s.'
+    discriminating_tests:
+    - 'Fresh `--emit` in this worktree, with its sha256 and a byte comparison against the committed JSON:
+      identical (run).'
+    - '`--selfcheck` exit code and its count of gated checks against T0151''s 26 minus the 4 Case 1a/1b
+      centroid gates: 22/22, exit 0 (run).'
+    recommended_actions:
+    - 'E006 spec: freeze payload sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151,
+      and build the N-layer L2 case from note section 4.1, where the die and die-attach layers are laterally
+      uniform slabs, not die islands.'
+    - E006 should copy the section 4.1 layer constants into the spec rather than reading moduleforge.geometry.stack
+      at run time. A later change to the stack would otherwise move the L2 case away from the frozen reference.
+    - The orchestrator should run the DoD's /tmp/e006_sv_check.json path itself. This sandbox blocks writes
+      to bare /tmp, so the equivalent $TMPDIR check was used here.
+    - 'As T0151''s note says: in E006''s F1 scikit-fem check, integrate the FE field exactly over each
+      source when forming means, and expect Fs = 3 where a Case 3 arm maximum sits on a source edge.'
+    files_written:
+    - experiments/runners/e006_series.py
+    - research/e006_refs/series_values.json
+    - research/notes/o006-reference-series.md
+    experiment_drafts: []
