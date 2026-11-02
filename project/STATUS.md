@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-02T19:11:31+00:00 from repository state — do not edit_
+_generated 2026-11-02T19:11:38+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0090** [experiment_registration] register E006 (pre-registration)
+- **I0093** [protected_change] T0196: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -13,7 +14,7 @@ _generated 2026-11-02T19:11:31+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | active | - | 0/1 | $128.59/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | - | 0/1 | $131.12/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -23,18 +24,15 @@ _generated 2026-11-02T19:11:31+00:00 from repository state — do not edit_
 | O003 | 4 | $5.89 | 136620 | 96498 | 8 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
-| O006 | 66 | $128.59 | 2466052 | 1349402 | 112 | 0 |
+| O006 | 66 | $131.12 | 2501448 | 1365604 | 124 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 161, failed: 3, review: 1, running: 1, todo: 1
+cancelled: 30, done: 162, failed: 3, needs_founder: 1, todo: 1
 
-- T0196 `review` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
-- T0197 `running` critic/review: Review T0196 (general) (attempt 1)
+- T0196 `needs_founder` scientist/design_experiment: E006 pre-registration fixes (reviews T0194/T0195): gate the z-doubled scikit-fem solve, calibrate_power pairing, F5 dev feasibility (attempt 1)
 
 ## Recent events
-- 2026-11-02T17:33:12+00:00 task_added {"task": "T0196", "objective": "O006", "reason": "E006 pre-registration fixes"}
-- 2026-11-02T17:42:14+00:00 inbox_opened {"id": "I0089", "kind": "protected_change", "subject": "T0165: merge needs founder approval"}
 - 2026-11-02T17:42:48+00:00 sleep_detected {"gap_s": 612, "runs_extended": 0}
 - 2026-11-02T18:33:53+00:00 inbox_resolved {"id": "I0089", "status": "approved", "note": "T0165: E006 design merged (reviews T0194/T0195 accept with caveats; fixes in T0196 before registration)", "by": "
 - 2026-11-02T18:34:18+00:00 merged {"task": "T0165"}
@@ -48,3 +46,5 @@ cancelled: 30, done: 161, failed: 3, review: 1, running: 1, todo: 1
 - 2026-11-02T19:01:47+00:00 run_finished {"run": "T0196-scientist-20261102T104039-19d7", "status": "completed", "cost": 3.36292, "subtype": "success", "report": "structured_output"}
 - 2026-11-02T19:03:55+00:00 verified {"task": "T0196"}
 - 2026-11-02T19:03:58+00:00 run_started {"run": "T0197-critic-20261102T110358-0958", "task": "T0197", "role": "critic", "session": "3e74a854-2db3-4e8a-b75c-34fdbd8b62ca"}
+- 2026-11-02T19:11:34+00:00 run_finished {"run": "T0197-critic-20261102T110358-0958", "status": "completed", "cost": 2.534383, "subtype": "success", "report": "structured_output"}
+- 2026-11-02T19:11:37+00:00 inbox_opened {"id": "I0093", "kind": "protected_change", "subject": "T0196: merge needs founder approval"}
