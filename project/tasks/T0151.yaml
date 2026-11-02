@@ -4,7 +4,7 @@ title: 'E006 analytic references: Muzychka 2003 flux-channel series (Cases 1a, 1
   series, with F1 self-checks'
 type: research
 agent: scientist
-status: running
+status: todo
 depends_on:
 - T0148
 description: 'Write the series references in experiments/runners/e006_series.py with your own code. The
@@ -232,3 +232,181 @@ history:
 
     '
   at: '2026-11-02T01:43:43+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'BLOCKED (planning). The definition of done cannot be met without weakening a gate the packet
+    itself asks for. `--selfcheck` passes 23 of 26 gates. The three failures all come from one packet
+    requirement: that the paper''s equations, cut off at 50 terms, reproduce the printed Case 1a and 1b
+    centroid temperatures to their printed digits. A correct implementation cannot meet it. The frozen
+    objective''s F1 gate asks only for the Case 3 printed values, and both of those pass (80.6147 against
+    80.61 °C, 78.8712 against 78.87 °C).
+
+
+    Attempt 2 added three discriminating tests to attempt 1''s work:
+
+    1. An independent scalar implementation of M03 eqs. (18)/(30), (20), (22), (24), (25)/(31) and (38)
+    matches the runner''s 50-term values to 1.7e-13 K. The runner computes exactly what the printed equations
+    say'
+  report:
+    summary: 'BLOCKED (planning). The definition of done cannot be met without weakening a gate the packet
+      itself asks for. `--selfcheck` passes 23 of 26 gates. The three failures all come from one packet
+      requirement: that the paper''s equations, cut off at 50 terms, reproduce the printed Case 1a and
+      1b centroid temperatures to their printed digits. A correct implementation cannot meet it. The frozen
+      objective''s F1 gate asks only for the Case 3 printed values, and both of those pass (80.6147 against
+      80.61 °C, 78.8712 against 78.87 °C).
+
+
+      Attempt 2 added three discriminating tests to attempt 1''s work:
+
+      1. An independent scalar implementation of M03 eqs. (18)/(30), (20), (22), (24), (25)/(31) and (38)
+      matches the runner''s 50-term values to 1.7e-13 K. The runner computes exactly what the printed
+      equations say.
+
+      2. No equal cut-off N from 1 to 200 reproduces the Case 1a s1, Case 1a s2 or Case 1b s2 centroid.
+      Tables 1 and 2 are each inconsistent with a single N even within themselves.
+
+      3. One alternative reading of "centroid", suggested by eq. (41), also fails.
+
+
+      The paper''s parameters and equations were re-extracted from the author PDF and match the code.
+      The converged reference values do not depend on this gate. Re-emitting them reproduced the committed
+      `series_values.json` exactly (sha256 `befc5efa…0667151`).
+
+
+      I did not change the gate, the runner or the JSON. I added the diagnosis to the note (section 5.3)
+      and committed it as 9c01c7c.
+
+
+      Commands run, with exit codes:
+
+      - `uv run python experiments/runners/e006_series.py --selfcheck`: exit 1 (23/26; failed `paper50_case1a_s1_centroid`,
+      `paper50_case1a_s2_centroid`, `paper50_case1b_s2_centroid`)
+
+      - the import check (`uv run python -c "...assert ''moduleforge.solvers'' not in s..."`): exit 0
+
+      - `ls research/e006_refs/series_values.json research/notes/o006-reference-series.md`: exit 0
+
+      - `uv run mfos gate --fast`: exit 0 ("all gates passed")
+
+      - `uv run python experiments/runners/e006_series.py --emit $TMPDIR/sv_check.json`: exit 0, same
+      payload hash as the committed file
+
+      - scratch diagnosis scripts under `$TMPDIR`: exit 0'
+    failure_class: planning
+    root_cause: 'Packet item (4) goes beyond the frozen objective''s F1. It requires the Muzychka (2003)
+      series cut off at 50 terms to reproduce the printed Case 1a and 1b centroids to their printed digits.
+      Those printed values are not the output of the paper''s printed equations under any single cut-off:
+      no N from 1 to 200 reproduces three of the four centroids. The 50-term point values also move by
+      up to 0.1 K when N changes by one. The gate therefore tests the paper''s (unrecoverable) summation
+      convention, not the physics. F1 itself requires only the Case 3 printed values, which pass.'
+    confidence: 0.9
+    evidence:
+    - '[fact] Text re-extracted from the author PDF of M03 (pp. 182-184) confirms the runner''s parameters.
+      Case 1: a=b=300 mm, t=10 mm, k=10, h=10, Tf=25 C, 25x25 mm sources, 10 W at (90,90) mm and 15 W
+      at (210,210) mm, ''50 terms were used in each of the single and double summations''. Case 1b: ''t
+      = 2 mm, k = 350 W/mK, is added to the original substrate''. Case 2: Table 3. Case 3: as stated.
+      Eqs. (18), (20), (22), (24), (25), (27), (30), (31), (38) and (41) match the code.'
+    - '[fact] Fresh scalar loops of the printed equations, with phi in its literal sinh/cosh/exp form,
+      give the following 50-term centroids. Case 1a: 84.938624 and 108.384159 C. Case 1b: 56.548006 and
+      59.947463 C. Case 3 centre: 80.614706 C. All equal the runner''s values within 1.7e-13 K.'
+    - '[fact] Values of N (equal cut-off m, n <= N, N = 1..200) that reproduce each printed value within
+      0.005 K. Case 1a: s1 centroid none, s1 mean 46-52, s2 centroid none, s2 mean 53 only. Case 1b: s1
+      centroid 43-55, s1 mean 57-200, s2 centroid none, s2 mean 40-200. Case 3: centre 44-55 and 58-200,
+      cross mean 24-200.'
+    - '[fact] Neither table fits a single N even internally. Table 1''s two means need disjoint N (46-52
+      against 53). Table 2''s s1 centroid and s1 mean need disjoint N (at most 55 against at least 57).'
+    - '[fact] An alternative reading of ''centroid'' (own source at the centroid point plus other sources
+      averaged over the patch, 50 terms) gives 84.9589 / 108.3977 / 56.5528 / 59.9507 C against the printed
+      84.97 / 108.43 / 56.55 / 59.94. Three of the four miss.'
+    - '[fact] Attempt 1''s scan (this task) found no square cut-off (N1 for the single sums 10-100, N2
+      for the double sums 5-100) and no triangular cut-off of the double sums that reproduces all six
+      gated printed values. The best worst-case error was 0.0086 K.'
+    - '[fact] The `--selfcheck` run passes 23/26 gates, including: Case 3 printed values at 50 terms,
+      convergence under doubling (at most 1.1e-15 relative), N-layer equal to two-layer (2.2e-16), full-top
+      source equal to the 1D solution, kernel cross-checks, reciprocity, and the raw partial sums converging
+      to the accelerated values.'
+    - '[fact] Re-emitting the values gives the committed payload exactly: sha256 befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151,
+      51 rows, 5 cases.'
+    - '[fact] The converged 50-term Case 1a centroids are 0.48 K and 0.72 K below the converged values
+      (85.4506 and 109.1522 C).'
+    - '[fact] `uv run mfos gate --fast` exits 0. The import-ban check exits 0. Both deliverable files
+      exist.'
+    alternative_explanations:
+    - explanation: Implementation error in the runner's 50-term path, or in its parameters (wrong source
+        position, layer order, coefficient or phi).
+      how_to_discriminate: 'Compare against an independent scalar implementation of the printed equations,
+        and re-read the parameters from the paper. Done: agreement within 1.7e-13 K, and the parameters
+        match the paper. Case 3 and the Case 1b s1 centroid pass through the same code path. Refuted.'
+    - explanation: 'M03''s Maple computation used a convention that cannot be recovered from the paper:
+        a different cut-off for the single sums, reduced precision (Digits), a transcription slip in Tables
+        1-2, or a different definition of the centroid temperature.'
+      how_to_discriminate: 'Check whether any single cut-off reproduces all printed values (none does;
+        the tables are inconsistent even internally). Try the one variant motivated by the paper (eq.
+        41 hybrid), which fails. Beyond that, only the authors'' code could tell; searching more variants
+        would amount to fitting. This explanation does not change the classification: in every version
+        the gate tests the paper''s summation convention, not the reference physics.'
+    - explanation: The packet's 'to their printed digits' means a looser tolerance than |d| <= 0.005 K.
+      how_to_discriminate: The packet says 'to their printed digits', and the same tolerance is used for
+        Case 3. Reading it more loosely would be improvising a weaker gate, which is not allowed.
+    discriminating_tests:
+    - 'Independent scalar re-implementation of M03 eqs. (18)/(30), (20), (22), (24), (25)/(31), (38) at
+      50 terms against the runner''s m03_truncated: max diff 1.7e-13 K (run)'
+    - 'Set of N in 1..200 (equal truncation) reproducing each printed Case 1a/1b/3 value to 0.005 K: three
+      centroids have no N; Table 1 and Table 2 internally need disjoint N (run)'
+    - 'Eq. (41)-motivated hybrid centroid at 50 terms against the printed values: 3 of 4 fail (run)'
+    - 'Re-emit the reference JSON and compare its sha256 with the committed file: identical (run)'
+    recommended_actions:
+    - 'Planner/founder: re-issue T0151 with packet item (4) brought in line with the frozen objective''s
+      F1. Gate the Case 3 printed values only, and report the Case 1a/1b 50-term comparisons as information.
+      In the runner this is a one-line change to GATED_PRINTED. `--selfcheck` then exits 0, and `series_values.json`
+      stays byte-identical (same sha256).'
+    - Do not replace the gate with a converged-value tolerance against Tables 1-2 chosen now. The printed
+      and converged numbers have been seen, so any tolerance picked now would be tuned.
+    - Keep the Case 2 converged-against-scikit-fem 0.02 K check (F1) in E006. As the note's section 7
+      says, integrate the FE field exactly over each source for the means, not by nodal averaging.
+    - 'Do not re-run this packet unchanged: a third attempt cannot meet its definition of done without
+      weakening a gate it asks for.'
+    files_written:
+    - research/notes/o006-reference-series.md
+    affects_acceptance_criteria: false
+- attempt: 2
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: 'FAIL uv run python experiments/runners/e006_series.py --selfcheck
+
+    /s4/mean: 2.2e-05,5.4e-06,1.4e-06,3.4e-07; case3/centre/centroid: 1.3e-05,3.3e-06,8.3e-07,2.1e-07;
+    case3/centre/mean: 1.5e-07,1.8e-08,2.2e-09,2.8e-10; worst at N=800 1.9e-06 (<= 1e-4, decreasing)
+
+    [PASS] nlayer_equals_two_layer: max rel diff case1b_split: 2.2e-16; nl_split: 2.2e-16 (<= 1e-9)
+
+    [PASS] max_dominates_samples_and_scale_positive: violations: none
+
+    [PASS] case3_symmetry_and_centre_max: arm means spread rel 0.0e+00 (<= 1e-10); centre max at 0.0e+00
+    m from (50, 50) mm (<= 1e-7 m)
+
+    [PASS] nlayer_rises_in_O002_band: max rises above coolant 81.37, 100.58, 88.16, 91.52 K (60-110 K)
+
+    [PASS] convergence_doubling_case1a: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case1b: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case2: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00
+    (< 1e-7)
+
+    [PASS] convergence_doubling_case3: max rel change modes=0.0e+00, quad=1.1e-15, images=1.1e-15, all=1.1e-15
+    (< 1e-7)
+
+    [PASS] convergence_doubling_nlayer_dbc: max rel change modes=0.0e+00, quad=8.0e-16, images=6.4e-16,
+    all=8.0e-16 (< 1e-7)
+
+    selfcheck: 23/26 gates passed; failed: [''paper50_case1a_s1_centroid'', ''paper50_case1a_s2_centroid'',
+    ''paper50_case1b_s2_centroid'']; 56 s
+
+
+    warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path
+    `.venv` and will be ignored; use `--active` to target the active environment instead
+
+    '
+  at: '2026-11-02T02:10:15+00:00'
