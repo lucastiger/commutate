@@ -1,0 +1,124 @@
+id: O007
+title: The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts
+kind: build
+priority: 1
+risk: medium
+depends_on: []
+unlocks: [O002, O003]
+hypothesis:
+  statement: >-
+    The scikit-fem thermal reference of D0006 (fallback, adopted by D0014 after O006's EV-O006-01: steady state, k(T) by
+    Picard iteration, uniform h at the baseplate, Galerkin hexahedra on a conforming grid built from the Layout by its
+    own code, src/moduleforge/solvers/thermal_fem.py extended as needed), on grids from its own frozen grid rule, whose
+    through-thickness cell size is bounded in absolute terms, not by a fixed count per layer (T0198): (a) reproduces the
+    frozen, converged reference solutions of O006 (Muzychka, Culham & Yovanovich 2003 Cases 1a, 1b, 2 and 3; the N-layer
+    Fourier series for the default stack with die attach and SiC die and several die-sized sources; the 3D manufactured
+    solution on the default stack geometry with patterned top copper and k varying by at least 30 % within one layer,
+    k_max/k_min - 1 >= 0.30) within 1 % of each case's scale and within 0.05 K; (b) agrees with the in-house finite-volume
+    L2 of D0006 (solvers.thermal_fv / thermal_layout at its own frozen rule, as evaluated in O006) on five generator
+    layouts with discrete die islands, die-attach footprints and patterned copper (two development layouts and three
+    fresh layouts, one per generator family) at O003's operating point (hottest die 60 K above the coolant), within the
+    two solvers' combined conservative discretisation estimates; and (c) has a conservative discretisation estimate
+    (O006's A4 estimator, D0012/D0013) of at most 0.5 K for every reported value. On generator geometry the 0.5 K bounds
+    the discretisation error; accuracy there is checked by (b).
+  null_hypothesis: >-
+    The scikit-fem thermal reference cannot be verified on the reference cases and on generator geometry at O003's
+    operating point to 0.5 K per Tj value either; no verified thermal reference exists for O003's +2 K Tj check.
+  why_it_matters: >-
+    O006 (EV-O006-01, INCONCLUSIVE) did not verify the in-house L2 at its frozen grid rule. A1/A2 missed on the 10 mm
+    Muzychka plates through the rule's fixed two cells per layer, and A4 was +inf through a GCI applied to interpolated
+    off-lattice maxima (T0198, reviews T0199/T0200). No implementation defect was found. O006's pre-registered decision
+    for that outcome is the D0006 fallback, scikit-fem verified under a new experiment id, which the founder chose (I0096,
+    D0014). O003's day-60 headroom test (2026-11-27, D0009/D0010) judges candidates against a +2 K Tj limit and needs a
+    verified thermal reference to do so. O003 inherits up to 1.0 K on its two-layout difference (GCI_ref + GCI_best,
+    D0013) and deducts it.
+  decision_if_pass: >-
+    Use the verified scikit-fem reference (code_must_match on this evaluation) and its frozen grid rule as the thermal
+    reference of O003, each run carrying its own GCI into O003's Tj check. The in-house L2 stays a fast, cross-checked
+    secondary solver (screening only, never the judge). Re-derive O002 against this reference before O002 is finalised.
+  decision_if_fail: >-
+    No verified thermal reference for O003's Tj check. Founder decision before O003 is approved: either re-verify the
+    in-house L2 with an absolute through-thickness bound under a new objective (T0198 path b, a post-data choice that
+    must be recorded as such), or run O003 without a judged Tj limit and report Tj from both solvers with their bands
+    (O003's verdict then indicative only on the thermal side). No continuation by default.
+  decision_if_inconclusive: >-
+    If A1, A2 and A4 are met and only A3 is not: diagnose which solver is wrong (mf-diagnosis) before any use; founder
+    decision. Otherwise same as fail.
+scope_in:
+  - steady-state conduction; the reference cases of O006, unchanged and with the same frozen hashes; the default DBC
+    stack with die attach and SiC die, patterned top copper, die islands and die-attach footprints; constant and
+    temperature-dependent k
+  - one scikit-fem configuration (element order, quadrature, grid rule, solver tolerances) frozen before E009
+    registration and used unchanged for every case of E009 and by O003. The reference cases are built through the same
+    mesh and assembly code as the layouts (a box-stack mode of thermal_fem, not a separate research solver)
+  - the grid rule, with three levels at a constant ratio r = 2 in every direction (x, y and z), with the level-0
+    through-thickness cell size bounded in absolute terms for every layer. Every reported point value lies at a
+    position that is a mesh node on all three levels (no interpolation inside an element). Area means are Galerkin
+    integrals, and per-die Tj max is the maximum nodal value on the die top face
+  - O003's operating point on every generator layout, namely 65 °C coolant, h = 5000 W/(m² K), k(T), and equal power per
+    die fixed per layout before the comparison from a level-0 solve of the solver under test so that the hottest die
+    rises 60 K (+/- 1 K) above the coolant, then used unchanged by both solvers and on every grid
+  - the registered run on a burst VM if a finest-level solve needs more than the local memory rule allows (founder,
+    2026-11-02, as for E006 via the policy burst_experiments list)
+scope_out:
+  - transient conduction; convection inside the cold plate; the L1 thermal model (O002)
+  - any sealed evaluation of O002, O003 or O004
+  - changes to the in-house L2 or its frozen rule (it is the cross-check here, used exactly as evaluated in O006)
+evidence_plan: [E009]
+acceptance:
+  required_experiments: [E009]
+  pass_all:
+    - {id: A1, metric: E009.max_case_scaled_err, comparator: "<=", threshold: 0.01, uncertainty: {use: point},
+       description: "as O006 A1, for the scikit-fem reference: max over the reference cases of (max over the case's reported points of |T_fem - T_ref|) / the case's scale (scale and points as O006 A1); the finest grid only; points are nodes on all three grids (scope_in), so no interpolation enters (T0198)"}
+    - {id: A2, metric: E009.max_abs_err_K, comparator: "<=", threshold: 0.05, uncertainty: {use: point},
+       description: "max over the same cases and points of |T_fem - T_ref| in K, the N-layer and manufactured cases at rises of 60-110 K, as O006 A2"}
+    - {id: A3, metric: E009.max_l2_consistency, comparator: "<=", threshold: 1.0, uncertainty: {use: point},
+       description: "max over the five generator layouts and every die of |Tj max (scikit-fem) - Tj max (L2)| / (GCI_fem + GCI_L2), each GCI by the A4 estimator from that solver's own three grids, recomputed from the grid values in the rows (mfos.metrics max_gci_consistency, params pred_levels and ref_levels naming the three grid columns of each solver, coarsest first, floor 1e-3 K; a divergent sequence on either side, or a zero summed estimate with a nonzero difference, gives +inf, A3 not met). Layouts: the two development layouts of O006 A3 (dev seed 20261101: side_by_side, dies_per_switch = 6; u_shaped, dies_per_switch = 2) and the first DRC-valid layout of each generator family from E009's sealed seed (dies per switch as drawn); the L2 runs at its frozen rule exactly as in E006; each die's convergence direction in both solvers is reported and same-side pairs are flagged; A3 is the only accuracy criterion on generator geometry"}
+    - {id: A4, metric: E009.max_conservative_gci_K, comparator: "<=", threshold: 0.5, uncertainty: {use: point},
+       description: "max over every reported scikit-fem value (the finest-grid values of the reference cases and the dies of the five layouts) of its grid convergence index from its three grids (r = 2 in x, y and z), recomputed from the grid values in the rows (mfos.metrics max_gci_capped, params levels naming the three grid columns, coarsest first, floor 1e-3 K): O006's A4 estimator (D0012, D0013 and addenda) unchanged. A4 is a precision criterion. A reference that cannot meet it on affordable grids does not meet A4 (INCONCLUSIVE), rather than an INVALID run"}
+  fail_any:
+    - {id: K1, metric: E009.max_case_scaled_err, comparator: ">", threshold: 0.05, uncertainty: {use: point},
+       description: "the scikit-fem reference misses some reference case by more than 5 % of its scale: a model or implementation error"}
+    - {id: K2, metric: E009.max_abs_err_K, comparator: ">", threshold: 0.25, uncertainty: {use: point},
+       description: "the scikit-fem reference misses some reference point by more than 0.25 K"}
+  max_evaluations: 1
+failure_modes:
+  - id: F1
+    description: "Reference solution wrong or changed"
+    detection: "gated sanity checks before any comparison: the reference files' sha256 equal O006's frozen values (series befc5efa..., manufactured ca05847b...); each series' convergence and Case 3's printed values re-checked as in E006; the N-layer series reduces to the two-layer series; the manufactured case's numeric check. The scikit-fem-against-series agreement checks of O006's F1 are dropped here: they would compare the solver under test with its own reference"
+    response: "experimental failure (INVALID): fix under a new experiment id"
+  - id: F2
+    description: "Discretisation error hidden by a lucky grid, or the estimator applied where it does not hold"
+    detection: "A4 is a criterion; three grids from the frozen rule with constant ratio 2 in every direction; observed order, A4 branch, d1 and d2 reported per value, values with p_obs outside [0.5, 2] flagged; a gated check that every reported point is a node on all three grids (its stencil coordinates reported per level, T0198); energy balance |Q_out/Q_in - 1| <= 1e-6 (manufactured case: against the integrated manufactured source and boundary fluxes); Picard until the largest temperature change is below 1e-4 K"
+    response: "a failed A4 alone gives INCONCLUSIVE; a failed energy balance or node check is INVALID"
+  - id: F3
+    description: "The k(T) case cannot discriminate"
+    detection: "declared null baseline: the column dT_const_k (every row solved with constant k at the layer-mean temperature) must fail A1 and A2, as in O006"
+    response: "design error: strengthen the manufactured case before registration"
+  - id: F4
+    description: "Leakage between development and evaluation"
+    detection: "dev seeds and O006's development layouts only for design work; E009's three fresh layouts from its own sealed seed, never used before; E009's spec asserts the two development fingerprints and records the three fresh ones; the reference values are those O006 froze and are not re-derived"
+    response: "a leaked layout or seed is excluded and the run repeated under a new experiment id"
+  - id: F5
+    description: "The L2 cross-check is itself not converged, so A3 cannot tell which solver is wrong"
+    detection: "gated sanity check: the L2's own GCI (A4 estimator on its three grids, floor 1e-3 K) at most 0.5 K on every die of the five A3 layouts (E006 measured at most 0.303 K on its five layouts at this operating point)"
+    response: "experimental failure (INVALID): a failed cross-check is never a verdict on the scikit-fem reference"
+budget: {usd: 70, cpu_hours: 40, wall_days: 12}
+require_plan_approval: true
+notes: >-
+  Draft by the founder session of 2026-11-02, after O006's evaluation EV-O006-01 (INCONCLUSIVE), the diagnosis T0198
+  (reviews T0199, T0200) and the founder's choice of O006's pre-registered fallback (I0096, D0014). Criteria A1, A2, A4,
+  K1 and K2 are O006's, unchanged. A3 swaps the roles: the in-house L2 at its frozen rule is now the independent
+  cross-check. Two design changes come from the diagnosis, not from the outcome: through-thickness cells bounded in
+  absolute size, and point values only at nodes persistent across the three grids. Both remove a defect of the
+  measurement, not a tolerance.
+  Build work (planner): (1) a box-stack mode in thermal_fem so the reference cases run through the production mesh and
+  assembly code; the element order is chosen by a development study on dev data. Note that the research Q2 box solver of
+  E006 reached 0.0011 K / 0.0046 K GCI on Case 2 at 0.59 M DOF, and Q1 reached 0.0155 K at 1.8 M DOF. (2) the frozen
+  grid rule with an absolute dz bound and r = 2 in every direction, frozen before registration, with a dev check of how
+  often layout Tj-max sequences fall in the divergent or oscillatory branch (T0198 recommendation 3). (3) E009 runner
+  reusing E006's machinery (rows with three grid values per reported value, mfos.metrics recomputation, F1 reference
+  checks, operating-point calibration, sealed fresh layouts), with the roles of the two solvers swapped. (4) memory and
+  cost plan: the registered run on a burst VM, with policy burst_experiments extended to E009 by the founder.
+  Successor edits when this objective is approved: O003 depends_on O007 instead of O006, and O002's reference text
+  points to O007. Both are drafts and are revised at their next draft review.
