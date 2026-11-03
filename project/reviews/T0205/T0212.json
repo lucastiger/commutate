@@ -1,0 +1,55 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The manufactured flux is silently dropped on the Robin face z = 0, unlike the FV solver and MMSCase contracts",
+      "detail": "thermal_fem applies `flux` to every boundary face except the Robin face (`sel = bf[(axis == ax) & (sign == sg) & ~robin]`). It never calls the callable there and drops any nonzero bottom flux without a warning. Two contracts say otherwise. thermal_fv.py contract (b) applies the same callable additively to the Robin condition on z = 0 (`T_inf_eff = T_inf + q/h`). The e006_mms solver contract also says the flux is 'additive to Robin on z = 0'. MMSCase returns 0 there, so O006 and all current tests are unaffected. But for any future manufactured data with a nonzero bottom flux, the FEM cross-check and the FV solver would solve different problems. This module's docstring says outright that the face is excluded. The design note's sentence that 'the interface and the sign convention follow MMSCase' therefore overstates the match.",
+      "evidence": "src/moduleforge/solvers/thermal_fv.py lines 42-44 and 405-410 (q_rob on axis 2, sign -1, ek == 0); thermal_fem.py `~robin` in the flux loop; experiments/runners/e006_mms.py line 28-29 contract (b).",
+      "suggested_check": "Either add the callable's z = 0 value to the Robin load (as f_robin) or raise if it is nonzero there; add a box-stack test with a nonzero bottom flux.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "top_value on a Q2 box-stack result reads a bilinear interpolant of vertex values, not the FE field",
+      "detail": "For Q2, solve_box_stack fills meta['T_top'] with vertex dofs only, and top_value interpolates them bilinearly. That discards the edge-midpoint and face-centre dofs, so a Q2 result read through top_value has only Q1 accuracy and differs from the actual field. I measured this on the h0 = 1 mm two-layer box with a partial 5 W source at (2.5, 2.2) mm: top_value = 382.397 K, point_values = 383.819 K, a 1.4 K gap. For Q1 the two agree exactly. No current caller uses top_value with Q2, and the docstring now says 'vertex values', so this is a trap for later users rather than a wrong result today.",
+      "evidence": "Scratch run: order 1 gives top_value 383.5612 and point_values 383.5612; order 2 gives top_value 382.3967 and point_values 383.8192.",
+      "suggested_check": "Make top_value call point_values when meta['element_order'] == 2, or raise for Q2.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Q2 tj_max is a nodal maximum, below the maximum of the biquadratic face field",
+      "detail": "tj_max is defined as the maximum over the face nodes. For Q1 this equals the maximum of the bilinear face field. For Q2 the biquadratic field can overshoot between nodes, so tj_max(Q2) is a different functional from the field maximum, and the gap shrinks with h. The design note acknowledges this, and the O006 test evaluates the maximum at the frozen location instead. Cross-order GCI or ranking comparisons of tj_max should keep it in mind.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "energy_balance is tautological, and absolute when Q_in = 0",
+      "detail": "This is documented honestly: the balance is zero for any data, up to the solver residual. When q_in == 0, the code returns |q_out| in watts rather than a relative value, so a gate that compares it with a relative tolerance mixes units in that corner case.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command. test_thermal_fem_assembly.py: 18 passed (66 s). test_thermal_fem.py and test_thermal_gci_matches_evaluator.py: 19 passed. `ruff check src tests`: clean. The inspect/signature one-liner: ok. `mfos gate --fast`: 'all gates passed'.",
+    "Independent layout-mode manufactured solution, not in the author's tests. On the toy layout (patterned copper, void cells, die islands) I set one uniform k for all materials and supplied a polynomial source, the matching flux k grad u.n and T_inf. Q2 reproduces a full quadratic at every dof to 2.95e-10 K, and Q1 reproduces a linear field to 2.2e-10 K. This confirms the outward-normal sign and face selection on void-bounding vertical faces and die tops, and the Robin T_inf load. q_out matches an independently Gauss-integrated k du/dz over the baseplate bottom exactly (-114.4 W Q2, -83.2 W Q1), and with die powers [7, 3] W added, Q_in = Q_out = exact + 10 W.",
+    "Q1 regression against the pre-change solver: I rebuilt the old module by reverse-applying the packet diff with patch -R in $TMPDIR. On the toy layout with k(T) ([60, 0] W at h = 5000; [30, 20] W at level 1; constant-k [5, 5] W at h = 500) and on a box stack, the dof count and Picard iterations are identical. tj_max/tj_mean agree to <= 4.1e-12 K and the full field to <= 4.8e-12 K, confirming the 'unchanged to 1e-12 K' claim.",
+    "Chunk invariance: I solved the toy layout with k(T), die powers and non-polynomial source/flux/T_inf at the default chunk and at chunk = 37. max |dT| = 8.5e-13 K (Q1) and 5.4e-12 K (Q2). q_in_volume is identical for Q1 and Q2 (14.08897 W), as exact data integration predicts.",
+    "Q1/Q2 consistency under refinement on the toy layout with k(T) and [30, 20] W, h = 2000. Q1 tj_mean of die 1 at levels 0/1/2: 427.009, 427.649, 427.888 (p about 1.4, extrapolates to about 428.03). Q2 at levels 0/1: 427.862, 427.967. Both approach the same limit, and Q2 at equal DOF is closer. estimate_dofs equals the solved N at every level and order (3901, 25945, 187441).",
+    "Confirmed the scikit-fem 12.0.2 quadrature counts behind the exactness claims: intorder 2 gives 2x2x2, 4 gives 3x3x3 (3x3 on faces), 7 gives 4x4x4 (4x4 on faces). Re-derived by hand: the Q2 stiffness integrand on affine diagonal boxes has degree <= 4 per direction and the Robin mass degree 4, both <= 5. The p-multigrid deflation c = 1^T b / 1^T A 1 is the A-orthogonal projection onto the constants, and it equals Q_in/(h A_b).",
+    "point_values at 200 random dofs equals the nodal T to 6e-13 K for Q2 (0 for Q1).",
+    "Checked the test closed forms by hand. Kirchhoff inverse \u03b8 = (-1 + sqrt(1 + 2\u03b2\u03c6/k0))/\u03b2. Quadratic case: T_inf = u - k u_z/h, and q_bot = k(c_xz a\u00b2b/2 + c_yz ab\u00b2/2 + c_z ab), so by the divergence theorem q_bnd = -Q_vol + q_bot. Small-Biot expansion. All correct.",
+    "Read thermal_fv.py's flux contract and compared its z = 0 treatment with thermal_fem (finding 1)."
+  ],
+  "caveats": [
+    "The manufactured flux reaches every exterior and void-bounding face except the Robin face z = 0. Nonzero bottom-flux data is silently ignored there, unlike thermal_fv. The claim holds for data whose flux vanishes at z = 0, which includes O006's MMSCase.",
+    "'Exact quadrature' means exact for constant k per element on axis-aligned boxes, and for data polynomials of degree <= 7 - p per direction. With k(T) or general data the quadrature is consistent but not exact, as the docs say.",
+    "Q2 tj_max is the maximum over face nodes, not the maximum of the field. top_value is not order-aware for Q2.",
+    "I could not run mutation tests (monkeypatching the solver inside the author's test functions): the session's permission layer denied those commands. I checked analytically that a flipped lateral normal sign, or a data rule below 3 points per direction, would break the Q2 quadratic-exactness test. Lowering DATA_INTORDER from 7 to 4 or 5 would not be detected by the current tests.",
+    "I did not re-measure the memory-per-DOF figures. The one incidental observation is consistent with the 10 kB/DOF bound: 1.37 GB whole-process peak RSS including earlier runs, at 187 k Q2 DOF."
+  ]
+}
