@@ -4,7 +4,7 @@ title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) an
   data (volume source, boundary inflow flux, Robin T_inf(x, y))'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
   \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
@@ -237,3 +237,133 @@ history:
     9.9/7.0/5.3 kB (Q2) and 4.5 kB (Q1) figures were not re-measured in this review; only chunk-size independence
     of the results was checked.'
   at: '2026-11-03T03:22:19+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I fixed the three findings that got attempt 1 rejected and re-measured Q2 memory. Every DoD
+    command and `mfos gate --fast` exits 0, and the work is committed as 81a991a on the T0205 branch.
+
+
+    **1. tj_max read nodes off the die face (blocker).** The die-face node set was taken from the non-zero
+    entries of a face integral. That integral carries about 1e-15 round-off on 25 to 550 nodes that are
+    not on the face, so those nodes entered tj_max. In the failing case, the copy at HEAD reported 370.0745
+    K for an unpowered die next to a 60 W die; the true face maximum is 370.0526 K, so the bias was 0.022
+    K. The node set is now exactly the face''s own nodes, and every face integral (Robin mass, die, sink,
+    flux and T_inf loads) is limited to the nodes of its faces. A new test picks the face nodes from th'
+  report:
+    status: completed
+    summary: 'I fixed the three findings that got attempt 1 rejected and re-measured Q2 memory. Every
+      DoD command and `mfos gate --fast` exits 0, and the work is committed as 81a991a on the T0205 branch.
+
+
+      **1. tj_max read nodes off the die face (blocker).** The die-face node set was taken from the non-zero
+      entries of a face integral. That integral carries about 1e-15 round-off on 25 to 550 nodes that
+      are not on the face, so those nodes entered tj_max. In the failing case, the copy at HEAD reported
+      370.0745 K for an unpowered die next to a 60 W die; the true face maximum is 370.0526 K, so the
+      bias was 0.022 K. The node set is now exactly the face''s own nodes, and every face integral (Robin
+      mass, die, sink, flux and T_inf loads) is limited to the nodes of its faces. A new test picks the
+      face nodes from their coordinates, for both orders, on a layout where the layer just below the unpowered
+      die is hotter than its face. It fails on the old code and passes now.
+
+
+      **2. Q2 linear solver stalled at weak cooling (major).** The reviewer''s suggested fix (B = 1/d)
+      also stalled when I tried it. The real cause: smoothed aggregation on the Q2 matrix builds almost
+      no coarse grid (operator complexity 1.005). There was also a round-off floor near 1.5e-10, above
+      the 1e-11 target, because at weak cooling the rise is a large uniform part (48 K) with a small variation
+      (0.6 K).
+
+      - Q2 now uses a p-multigrid preconditioner: the Q1 space of the same mesh as the first coarse level
+      (exact interpolation), smoothed aggregation below it, and symmetric Gauss-Seidel smoothing.
+
+      - The uniform (constant) part of the solution is computed separately from the global energy balance,
+      so CG solves only for the variation.
+
+      - The Q1 solver path is unchanged.
+
+      - Q2 now converges at h = 500, 50 and 5 W/(m² K), with energy balance at or below 1.5e-10, and needs
+      60 iterations instead of 137 at h = 5000.
+
+      - A new test checks the small-Biot limit: the die rise minus the uniform part P/(h·A) changes linearly
+      in h, by a factor of 10 per decade, for both orders. The old code fails it for Q2 with "AMG-CG did
+      not converge".
+
+      - Another new test checks that the Q1-to-Q2 interpolation is exact.
+
+
+      **3. Energy balance proves little on its own (minor).** It is zero for any input data by construction,
+      which the docstring and `docs/thermal_model.md` now say. To compensate, the quadratic manufactured-solution
+      test now also checks the assembled volume source and boundary inflow against closed forms.
+
+
+      **4. Memory per DOF (note).** Measured as whole-process peak memory on a generator layout with k(T):
+
+
+      | Element order | DOF | Memory per DOF | Peak memory | Time |
+
+      |---|---|---|---|---|
+
+      | Q2 | 57k | 8.1 kB | 0.47 GB | 5 s |
+
+      | Q2 | 416k | 4.5 kB | 1.9 GB | 45 s |
+
+      | Q2 | 719k | 4.8 kB | 3.5 GB | 75 s |
+
+      | Q1, chunked (current) | 416k | 4.4 kB | 1.8 GB | 34 s |
+
+      | Q1, earlier unchunked version | 416k | 7.6 kB | 3.1 GB | 18 s |
+
+
+      The memory constants stay at 7.7 kB (Q1) and 10 kB (Q2) per DOF. On the same 416k-DOF case, Q1 tj_max
+      and tj_mean match the original code to 3e-13 K. The O006 manufactured-case orders are unchanged
+      (Q1 3.6, Q2 4.2), and the Q2 version of that test (24 s) is no longer marked slow.
+
+
+      Every run stayed under 3.5 GB of memory, one job at a time.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+        tests/unit/solvers/test_thermal_fem_assembly.py
+      exit_code: 0
+    - cmd: uv run python -c "import inspect; from moduleforge.solvers import thermal_fem as F; assert
+        F.GridRule().element_order == 1 and F.GridRule(element_order=2).element_order == 2; s = inspect.signature(F.solve_layout).parameters;
+        b = inspect.signature(F.solve_box_stack).parameters; assert all(k in s and k in b for k in ('source',
+        'flux', 'T_inf'))"
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_assembly.py --durations=8
+      exit_code: 0
+    - cmd: 'PYTHONPATH=<HEAD copy>/src uv run pytest -q tests/unit/solvers/test_thermal_fem_assembly.py
+        -k ''tj_max or weak'' (new regression tests against attempt-1 code: 3 failed, as intended)'
+      exit_code: 1
+    - cmd: uv run python benchmarks/thermal_fem_convergence.py --child side_by_side 6 2 20.0 <out> --smoke
+        --zrefine --h0 8 (current and original code, Q1 memory/time and results comparison)
+      exit_code: 0
+    - cmd: uv run python memq2.py (Q2 peak-RSS measurements at 57k, 416k, 719k DOF)
+      exit_code: 0
+    - cmd: uv run python amg.py (Q2 AMG variants at h=50, 5000, 1e5; first run stopped by the 10-min background
+        limit, rerun with constant k completed)
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_assembly.py
+    - docs/thermal_model.md
+    concerns:
+    - 'On the 1D k(T) column, the Q2 pointwise (L2/RMS) error converges at 2.92, 2.98 and 2.995: it tends
+      to 3 from below and is not literally ''at least 3''. The through-thickness mean converges at 3.92
+      to 3.99, and that is the measure the test asserts at >= 3.0; the RMS assertion is > 2.85, with >
+      2.95 at the last bisection. End-node values are exact in 1D for both orders, so tj_max cannot show
+      an order there.'
+    - The Q1 path (chunked assembly, attempt 1's design, kept) takes about 1.8 times the wall time of
+      the original version for 42 % less peak memory (34 s vs 18 s at 416k DOF). As a result the existing
+      unmarked test_benchmark_smoke_run_with_new_options takes about 80 s; I did not change that test.
+    - The Q2 preconditioner is now a hand-built p-multigrid using pyamg's MultilevelSolver and change_smoothers,
+      not the diagonally scaled smoothed aggregation of experiments/runners/e006_skfem_q2.py. The chunked
+      stiffness assembly from that file is ported as specified, but the solver deliberately differs from
+      it because the research solver stalls at weak Robin coupling.
+    - energy_balance is by construction zero for any data, up to the solver residual. It is documented
+      as a solve and bookkeeping check only; the data quadrature is verified by tests against independent
+      integrals and against O006's frozen Q_out.
+    - 'The swap check in the memory rules could not be run: `sysctl vm.swapusage` and `ps` are blocked
+      by the sandbox. memory_pressure reported 60-66 % free throughout, and every job stayed at or below
+      3.5 GB of peak memory, inside the 5 GB budget that needs no swap check.'
