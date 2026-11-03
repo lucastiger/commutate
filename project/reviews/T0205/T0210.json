@@ -1,0 +1,45 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "tj_max includes nodes one cell below the die face (Q1 and Q2): the change broke the definition 'maximum over the nodes of that face'",
+      "detail": "The die-face vector is now built as `vec = _one_form.assemble(FacetBasis(...))` and the node set as `src_nodes = np.nonzero(vec)[0]`. scikit-fem's facet basis gives round-off nonzeros (1e-17 to 1e-14) for basis functions that vanish on the face, so dofs of the cell layer below the face end up in `src_nodes`, for both ElementHex1 and ElementHex2. `tj_max` is then the maximum over the face plus that layer. The removed code built the node set from the exact face corners, so this is a regression for Q1, and it contradicts both the docstring and docs/thermal_model.md ('tj_max is the maximum over the nodes of that face'). It does not show in the production problem (die heated on top, sink below), where the face is the hottest place: I measured tj_max equal to the face-only nodal maximum to all digits. It does show as soon as the new manufactured data put the hot spot below the surface. The new O006 manufactured-solution (MMS) test deliberately avoids tj_max, so no test catches it. `tj_mean` is unaffected (the spurious weights are about 1e-17).",
+      "evidence": "Scratch check on MeshHex.init_tensor meshes, top boundary facets: ElementHex1 has 24 nonzeros, 12 of them off the face (max |w| 1.4e-17, or 6.7e-15 on a non-uniform mesh); ElementHex2 has 105 nonzeros, 70 off the face (max 2.3e-17 / 1.6e-14). Toy two-die layout with a volume source in the top 0.1 mm of the die and the die top cooled through `flux = -2e5 W/m2`: Q1 tj_max = 338.48524 (= global max) vs face-node max 338.45812; Q2 tj_max = 338.47757 vs face-node max 338.45847. Production toy case, Q2: tj_max [383.14197, 393.87834] equals the face-only max.",
+      "suggested_check": "Pick the face nodes with a relative threshold (vec > 1e-12 * vec.max()) or from the facet dofs of the selected faces, and add a test with a top-cooled die where the face maximum is below the interior maximum.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "energy_balance now closes against the assembled Q_in, so it no longer checks how well the data are integrated",
+      "detail": "`q_in` = P_tot + f_vol.sum() + f_flux.sum() uses the same 4-point quadrature as the load. With v = 1, `energy_balance` is then exact up to the linear-solver residual whatever the data. For non-polynomial source, flux or T_inf, the quadrature error in Q_in cannot be seen from `energy_balance`. This is documented, and for the production problem (Q_in = P_tot exactly) nothing changes. Consumers should not read `energy_balance` as a check on the data integration.",
+      "evidence": "Toy layout with sin/cos source, linear flux and T_inf: energy_balance 1.4e-14 (Q1) and 6.9e-14 (Q2) whatever the data. The frozen O006 Q_out check in the tests (to 1e-6) is the actual independent check.",
+      "suggested_check": "Where an independent check is needed, compare q_out_W with a separately integrated reference (as the O006 test does).",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "No test compares chunked with single-chunk assembly",
+      "detail": "The chunk size is not exposed by solve_layout or solve_box_stack, and most unit cases fit in one 4000/20000-element stiffness chunk. Only the larger O006 cases can exercise more than one chunk, and only indirectly. I checked chunk invariance myself and it holds.",
+      "evidence": "Toy layout, k(T) Picard, source + flux + T_inf, `_solve_grid(chunk=37)` vs the default: max |dT| 6.3e-13 K (Q1, 2177 DOF) and 3.9e-12 K (Q2, 14217 DOF); tj_max, tj_mean and q_in are identical.",
+      "suggested_check": "Add a unit test calling _solve_grid with a small chunk and comparing it with the default.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done items. tests/unit/solvers/test_thermal_fem_assembly.py: 13 passed, including the slow Q2 O006 test (77 s). test_thermal_fem.py + test_thermal_gci_matches_evaluator.py: 19 passed. The inline signature/GridRule assertion passed. ruff check src tests: clean. mfos gate --fast: all gates passed.",
+    "Quadrature claim, checked against a 12th-order rule on an anisotropic box (0.7 x 2.3 x 0.31). skfem intorder 2/4/7 gives 8/27/64 cell points and 9 face points at intorder 4. Q1 stiffness with intorder 2 and Q2 stiffness with intorder 4 match intorder 12 to 1e-15 relative. The Robin face mass at intorder 4 matches to 2e-15 for both orders. A 2-point rule on Q2 is off by 31 %, so the check can fail.",
+    "Chunked assembly with binary-tree summation: _solve_grid(chunk=37) vs the default on the toy two-die layout with k(T), volume source, boundary flux and T_inf(x, y) agrees to 4e-12 K for Q1 and Q2.",
+    "T_inf: with constant k, T_inf = T_c + 5 K shifts the whole Q2 field by 5 K to 4e-11 and leaves q_out at 50 W (energy_balance 1e-13).",
+    "Consistency between orders on the toy layout with k(T), no manufactured data. tj_mean of die 1: Q1 levels 0/1/2 = 379.472/380.281/380.558; Q2 levels 0/1 = 380.553/380.650. Both head toward about 380.7, and Q2 at level 0 is about as accurate as Q1 at level 2 with 7x fewer DOF. energy_balance below 6e-14 throughout.",
+    "Boundary-face classification (_boundary_faces): on a tensor mesh, all six outward-normal groups are on the correct planes with the correct face counts.",
+    "Die-face node sets: the face vector has off-face round-off nonzeros for both element orders (see finding). Confirmed with an adversarial top-cooled die case, where tj_max differs from the face-node maximum by 0.027 K (Q1) and 0.019 K (Q2).",
+    "Memory: layout-mode Q2 with k(T) at 187,441 DOF peaked at 1.41 GB RSS = 7.5 kB/DOF, inside the stated BYTES_PER_DOF_BY_ORDER[2] = 10 kB bound."
+  ],
+  "caveats": [
+    "tj_max means 'maximum over the die-face nodes' only while the face is at least as hot as the cell layer below it. That holds for the production problem (die-top heating, bottom sink), not in general with manufactured source or flux data. Use point_values for die maxima in manufactured cases until src_nodes is fixed.",
+    "energy_balance against the assembled Q_in only checks the linear and Picard solve, not how accurately the manufactured data were integrated; use an independent Q_out reference for that.",
+    "The memory figures per DOF were checked at one layout-mode point (7.5 kB/DOF at 187k DOF, Q2); I did not re-measure the other documented points (9.9/7.0/5.3 kB, Q1 4.5 kB).",
+    "I ran Q2 only up to about 190k DOF; I did not test AMG-CG robustness of the diagonally scaled Q2 system on full production layouts at large DOF counts."
+  ]
+}
