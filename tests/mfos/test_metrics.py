@@ -259,3 +259,19 @@ def test_o006_gci_consistency_two_grid_terms():
         mx.compute("max_gci_consistency", [{**rows[0], "z1": math.nan}], params={**params, "ref_zpair": ["z0", "z1"]})
 
 
+
+
+def test_o007_f5_reference_gci_cap_makes_a3_not_met():
+    """I0099 (O007 F5): a cross-check whose own GCI exceeds the cap on any row makes A3 +inf (not met), never INVALID."""
+    rows = [{"a0": 410.0, "a1": 410.4, "a2": 410.6, "b0": 410.9, "b1": 410.7, "b2": 410.65},
+            {"a0": 400.0, "a1": 400.2, "a2": 400.3, "b0": 399.0, "b1": 399.8, "b2": 400.1}]
+    params = {"pred_levels": ["a0", "a1", "a2"], "ref_levels": ["b0", "b1", "b2"], "floor": 1e-3}
+    g_ref = [mx.gci_capped(r["b0"], r["b1"], r["b2"], 1e-3) for r in rows]
+    assert max(g_ref) == pytest.approx(1.25 * 0.3)  # second row: rho 0.375, p_obs 1.42 capped at 1
+    uncapped = mx.compute("max_gci_consistency", rows, params=params)
+    assert math.isfinite(uncapped)
+    assert mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": max(g_ref) + 1e-9}) == uncapped
+    assert mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": max(g_ref) - 1e-9}) == math.inf
+    assert mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": None}) == uncapped
+    with pytest.raises(ValueError):
+        mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": -0.1})

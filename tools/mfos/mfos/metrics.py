@@ -179,12 +179,15 @@ def two_grid_term(base: Sequence[float], doubled: Sequence[float]) -> np.ndarray
 
 def max_gci_consistency(p0: Sequence[float], p1: Sequence[float], p2: Sequence[float],
                         r0: Sequence[float], r1: Sequence[float], r2: Sequence[float], floor: float = 0.0,
-                        p_extra: Optional[Sequence[float]] = None, r_extra: Optional[Sequence[float]] = None) -> float:
+                        p_extra: Optional[Sequence[float]] = None, r_extra: Optional[Sequence[float]] = None,
+                        ref_gci_cap: Optional[float] = None) -> float:
     """max over rows of |p2 - r2| / (gci_capped(p0, p1, p2) + p_extra + gci_capped(r0, r1, r2) + r_extra) (O006 A3: two
     independent solvers' finest values agree within their summed conservative estimates when this is at most 1). The
     optional extra terms are non-negative per-row errors a three-grid sequence leaves out, formed by two_grid_term from
     grid values in the rows (O006: scikit-fem's through-thickness term). A divergent sequence on either side gives
-    +inf, as does a zero summed estimate with unequal values; a zero summed estimate with equal values gives 0."""
+    +inf, as does a zero summed estimate with unequal values; a zero summed estimate with equal values gives 0. With
+    ``ref_gci_cap``, a reference (cross-check) GCI above the cap on any row also gives +inf: the cross-check is not
+    converged enough to judge, so the criterion is not met (O007 F5, I0099), rather than the run being INVALID."""
     n = len(_arr(p0))
     pe = _arr(p_extra) if p_extra is not None else np.zeros(n)
     re_ = _arr(r_extra) if r_extra is not None else np.zeros(n)
@@ -192,9 +195,14 @@ def max_gci_consistency(p0: Sequence[float], p1: Sequence[float], p2: Sequence[f
     _finite_rows(*cols, pe, re_)
     if np.any(pe < 0) or np.any(re_ < 0):
         raise ValueError("extra error terms must be non-negative")
+    if ref_gci_cap is not None and ref_gci_cap < 0:
+        raise ValueError("ref_gci_cap must be non-negative")
     worst = 0.0
     for a0, a1, a2, b0, b1, b2, ea, eb in zip(*cols, pe, re_, strict=True):
-        g = gci_capped(a0, a1, a2, floor) + ea + gci_capped(b0, b1, b2, floor) + eb
+        g_ref = gci_capped(b0, b1, b2, floor)
+        if ref_gci_cap is not None and g_ref > ref_gci_cap:
+            return math.inf
+        g = gci_capped(a0, a1, a2, floor) + ea + g_ref + eb
         diff = abs(a2 - b2)
         if math.isinf(g) or (g == 0.0 and diff > 0.0):
             return math.inf
@@ -348,7 +356,8 @@ METRICS: dict[str, Callable[..., float]] = {
     "max_gci_consistency": lambda rows, params=None, **_: max_gci_consistency(
         *_levels(rows, params, "pred_levels"), *_levels(rows, params, "ref_levels"),
         floor=float((params or {}).get("floor", 0.0)),
-        p_extra=_two_grid(rows, params, "pred_zpair"), r_extra=_two_grid(rows, params, "ref_zpair")),
+        p_extra=_two_grid(rows, params, "pred_zpair"), r_extra=_two_grid(rows, params, "ref_zpair"),
+        ref_gci_cap=None if (params or {}).get("ref_gci_cap") is None else float(params["ref_gci_cap"])),
     "topk_recall": lambda rows, pred, ref, params=None, **_: topk_recall(_col(rows, pred), _col(rows, ref),
                                                                           **(params or {})),
     "within_strata_spearman": lambda rows, pred, ref, strata, **_: within_strata_spearman(
