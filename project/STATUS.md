@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-03T21:24:45+00:00 from repository state — do not edit_
+_generated 2026-11-03T21:24:55+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0107** [protected_change] T0206: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,12 @@ _generated 2026-11-03T21:24:45+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 178, failed: 3, merge: 1, needs_founder: 1, todo: 2
+cancelled: 30, done: 178, failed: 3, needs_founder: 2, todo: 2
 
-- T0206 `merge` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
+- T0206 `needs_founder` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-03T17:04:13+00:00 sleep_detected {"gap_s": 765, "runs_extended": 2}
 - 2026-11-03T17:04:14+00:00 run_finished {"run": "T0214-planner-20261103T090339-4fed", "status": "completed", "cost": 0.339082, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T17:04:15+00:00 plan_applied {"objective": "O007", "created": [], "dropped": 0}
 - 2026-11-03T17:30:05+00:00 run_finished {"run": "T0206-builder-20261103T090339-995c", "status": "completed", "cost": 0.919274, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 178, failed: 3, merge: 1, needs_founder: 1, todo: 2
 - 2026-11-03T21:13:23+00:00 run_started {"run": "T0215-critic-20261103T131323-9699", "task": "T0215", "role": "critic", "session": "2d6a85b3-f2f1-4ca0-98ec-f4bfce967471"}
 - 2026-11-03T21:15:45+00:00 inbox_resolved {"id": "I0106", "status": "rejected", "note": "Arrived without a review verdict: T0215 was parked by the network outage (I0105). T0206 returned to review; a new
 - 2026-11-03T21:21:44+00:00 run_finished {"run": "T0215-critic-20261103T131323-9699", "status": "completed", "cost": 1.595501, "subtype": "success", "report": "structured_output"}
+- 2026-11-03T21:24:53+00:00 inbox_opened {"id": "I0107", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
