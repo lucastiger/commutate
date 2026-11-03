@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A3's tolerance is now set mainly by the cross-check (L2), and F5 allows 0.5 K, so a disagreement of up to 1.0 K can pass",
+      "detail": "In O006's final text (D0013 addendum 2, from T0191) F5 was tightened to 0.25 K for the cross-check. The stated reason was that otherwise a 1.0 K disagreement between the L2 and scikit-fem could pass A3, and the aim was that 'A3's tolerance is set mainly by the [judged solver's] own estimate'. O007 swaps the roles but sets the cross-check's F5 at 0.5 K. With A4 at 0.5 K, A3 then accepts |\u0394Tj| up to 1.0 K. In E006 the L2 GCI (0.087-0.303 K) is larger than scikit-fem's estimate (0.088-0.233 K) on 32 of 34 dies, so A3's denominator in E009 will mostly be the L2's. decision_if_pass carries only GCI_fem into O003's deduction. A3 therefore does not directly test that GCI_fem bounds scikit-fem's error on generator geometry. It does so only through opposite-side convergence: in E006 scikit-fem Q1 converged from below and the L2 from above on every die, which gives A3 a slack of only about 0.03-0.09 K beyond GCI_fem. The draft lets the element order change (Q2 is under study). If the new configuration converges from the same side as the L2, the 'same-side' flag has no effect on acceptance, and A3 could pass while both estimates understate their errors. F5 = 0.5 K also appears to be chosen with E006's 0.303 K in view: 0.25 K would fail on u_shaped_2. The draft cites that value but does not record the choice as informed by data.",
+      "evidence": "O006 F5 text ('at most 0.25 K ... so that A3's tolerance is set mainly by the L2's own estimate'); O007 F5 ('at most 0.5 K ... E006 measured at most 0.303 K'); E006 rows (E006-20261102T145940-2815/rows.json): L2 d1,d2 < 0 on all 34 dies, scikit-fem d1,d2 > 0 on all 34; gci_L2 > skfem_estimate on 32/34 dies; slack GCI_L2 - err_L2 (vs consensus extrapolation) 0.03-0.09 K.",
+      "suggested_check": "Before registration, either require opposite-side convergence per die (or count same-side pairs against A3), or tighten F5 back to 0.25 K. Alternatively, state in decision_if_pass that A3 verifies scikit-fem only to within GCI_fem + GCI_L2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Per-die Tj max is a maximum over nodes, not a value at a persistent node, so the T0198 sampling defect is only partly removed",
+      "detail": "scope_in requires every reported point value to sit at a node on all three levels, and F2's node check enforces that. But the main generator-geometry quantity, per-die Tj max, is defined as the maximum nodal value on the die top face. When a die's peak is off its centre (neighbour heating in multi-die layouts), the maximising node can change between levels. The sampling error c\u00b7dist\u00b2 then follows the same non-smooth bisection map that T0198 diagnosed for interpolated off-lattice points. It can push the GCI branch, or partly cancel the discretisation step and shrink |d2|. The L2 side of A3/F5 (the maximum of a bilinear interpolant over cell centres on bisected cell-centred grids) is the construction the T0198 lesson warns against, and a divergent L2 die makes F5 return INVALID. In E006 all 68 Tj-max sequences (both solvers) were monotone or in the fast branch, so the practical risk looks small.",
+      "evidence": "thermal_fem docstring: even cell counts only guarantee the interval midpoint ('a symmetric die's surface maximum') is persistent; thermal_fv.mean_max takes the max of the cell-centre interpolant; project/memory/lessons.md T0198 entry; E006 rows: no divergent or oscillatory crosscheck die.",
+      "suggested_check": "In the planned dev check (T0198 rec. 3), report the argmax node coordinates per level for each die, and how often they move between levels.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'A1, A2, A4, K1, K2 unchanged' is not literally true: A1's points and the INCONCLUSIVE routes need restating",
+      "detail": "O006 A1's point set includes 'the reference field's maximum over each source', evaluated by bilinear interpolation. Under O007's node-only rule, either the box-stack grid rule must place mandatory lines at those reference-derived locations, which makes the frozen rule case-dependent on reference data, or the point definition changes. The draft says neither. O006's manufactured-case A2 route (an A2 miss below K2 and within the case's own GCI goes to a founder decision) is dropped from decision_if_inconclusive without comment.",
+      "evidence": "O006 A1 description; O007 A1 ('scale and points as O006 A1 ... points are nodes on all three grids'); O006 vs O007 decision_if_inconclusive.",
+      "suggested_check": "State in A1 that the reference-maximum locations are mandatory grid lines of the box-stack rule, and say whether the manufactured-case route is dropped on purpose.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Verification covers the default DBC stack only, but decision_if_pass hands the reference to O003, whose references may use other stacks",
+      "detail": "D0013 addendum 2 told O003 to spot-check the A3 metric on at least one O003 reference per stack type, because the estimator's conservatism had been shown only on the default DBC stack. O007's decision_if_pass does not carry this forward. O003's references (PowerSynth cases or customer AMB layouts) may have different layer thicknesses and materials.",
+      "evidence": "D0013 addendum 2, 'For O003's revision'; O007 scope_in: 'the default DBC stack'.",
+      "suggested_check": "Add the per-stack-type A3 spot check to decision_if_pass.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the L2 grid rule (thermal_layout.py): Z_CELLS = 2 at level 0, multiplied by R**level, so the L2's three grids refine z at r = 2 and its GCI includes its through-thickness error. This rules out the concern that A3's L2 denominator leaves the T0198 z error out.",
+    "Recomputed Richardson extrapolations from E006's 34 crosscheck rows (scikit-fem z correction included). The two solvers' extrapolated Tj agree within -0.063 to +0.099 K. Against their mean, each solver's error is at most 0.81x its own conservative estimate (L2 0.80, scikit-fem 0.81). So the order-1-capped estimator held for both, and A3 had real power in E006 because the solvers converged from opposite sides (L2 from above and scikit-fem from below on every die).",
+    "Counted dies where the L2 GCI exceeds scikit-fem's estimate: 32 of 34. A3's tolerance in E009 will therefore mostly come from the cross-check's GCI.",
+    "Checked the F3 null in E006's result.json: the constant-k baseline gives a scaled error of 0.025 (A1 limit 0.01) and an absolute error of 2.51 K (A2 limit 0.05 K), so the k(T) cases discriminate.",
+    "Checked that a predictor blind to geometry cannot pass A3: the per-layout Tj-max spread in E006 is 1.1-11.9 K, against A3 tolerances of about 0.2-0.5 K. A predictor that copies the L2 meets A3 trivially but would fail A1/A2 (E006: A1 = 0.0206, A2 = 0.143 K).",
+    "Read mfos.metrics.max_gci_consistency: it recomputes both GCIs from the grid columns, returns +inf on divergence or a zero estimate with a nonzero difference, and the extra terms are optional. That suits O007, where both solvers refine z inside their three levels.",
+    "Checked that the kill criteria can fire: K1/K2 apply to reference cases with known exact answers. Missing them points to a model or implementation error or an inadequate grid rule, and FAIL and INCONCLUSIVE lead to the same founder decision, so misattribution has no decision consequence."
+  ],
+  "caveats": [
+    "A3 checks scikit-fem's accuracy on generator geometry only to within GCI_fem + GCI_L2 (up to 1.0 K under F5 = 0.5 K). Its power to show that GCI_fem alone bounds the error comes from opposite-side convergence, seen with Q1 in E006, which the draft does not require.",
+    "Corner-dominated error, the part O003's decision depends on, is checked only by A3 on five layouts of the default DBC stack. The analytic and manufactured cases are corner-free.",
+    "Per-die Tj max on both solvers is a maximum over non-persistent sampling points. The node-persistence design fixes fixed-point values only. E006 shows no resulting pathology, but the three fresh layouts are new.",
+    "The conservatism of the A4 estimator for the final scikit-fem configuration (element order and z-refined rule still to be chosen) is shown only indirectly, by agreement with the L2. The T0181 corner study covered the finite-volume solver.",
+    "I could not read T0198 and its reviews (T0199/T0200), which are not in this checkout. I relied on the lessons.md summary and D0014."
+  ]
+}
