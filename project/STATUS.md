@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T17:03:08+00:00 from repository state — do not edit_
+_generated 2026-11-03T17:03:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,19 +25,17 @@ _generated 2026-11-03T17:03:08+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 10 | $24.10 | 496984 | 270828 | 20 | 0 |
+| O007 | 12 | $24.10 | 496984 | 270828 | 20 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 175, failed: 3, merge: 1, needs_founder: 1, todo: 3
+cancelled: 30, done: 176, failed: 3, needs_founder: 1, running: 2, todo: 2
 
-- T0205 `merge` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 2)
+- T0206 `running` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
+- T0214 `running` planner/plan: Plan O007 (founder approved I0099: Option (a): ref_gci_cap in max_gci_consistency (committed); E009's A3 recompute uses ref_gci_cap 0.25, floor 0.001 (no replan)) (attempt 1)
 
 ## Recent events
-- 2026-11-03T03:22:17+00:00 run_finished {"run": "T0211-critic-20261102T191132-86fb", "status": "completed", "cost": 2.103715, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T03:22:19+00:00 task_failed_attempt {"task": "T0205", "signal": "review_rejected", "action": "repair"}
-- 2026-11-03T03:22:20+00:00 run_started {"run": "T0205-builder-20261102T192220-e27a", "task": "T0205", "role": "builder", "session": "4ffd2f69-bb7e-45f0-bf93-0798190c6c86"}
 - 2026-11-03T04:22:46+00:00 run_finished {"run": "T0205-builder-20261102T192220-e27a", "status": "completed", "cost": 5.213868, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T04:29:47+00:00 verified {"task": "T0205"}
 - 2026-11-03T04:29:51+00:00 run_started {"run": "T0212-critic-20261102T202951-2a8e", "task": "T0212", "role": "critic", "session": "3af1a826-1b6a-46b2-9046-e16dd3e3682c"}
@@ -50,3 +48,6 @@ cancelled: 30, done: 175, failed: 3, merge: 1, needs_founder: 1, todo: 3
 - 2026-11-03T16:51:26+00:00 inbox_resolved {"id": "I0103", "status": "approved", "note": "T0204: L2 levels 1-3 preview (dry run predicts F5 max 0.155 K; VM 256 GB)", "by": "human"}
 - 2026-11-03T16:51:28+00:00 inbox_resolved {"id": "I0104", "status": "approved", "note": "T0205: thermal_fem Q1/Q2, MMS data, face-node tj_max fix, Q2 p-multigrid (reviews T0212/T0213 accept with caveats
 - 2026-11-03T16:51:32+00:00 merged {"task": "T0204"}
+- 2026-11-03T17:03:36+00:00 merged {"task": "T0205"}
+- 2026-11-03T17:03:39+00:00 run_started {"run": "T0214-planner-20261103T090339-4fed", "task": "T0214", "role": "planner", "session": "213a5a0d-9c9c-4bc3-b4cf-497f6193e964"}
+- 2026-11-03T17:03:39+00:00 run_started {"run": "T0206-builder-20261103T090339-995c", "task": "T0206", "role": "builder", "session": "1046f1a3-e544-41d4-96e2-525d771a25fd"}
