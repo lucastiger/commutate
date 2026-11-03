@@ -1,0 +1,81 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F5 (cross-check convergence) loosened from O006's 0.25 K to 0.5 K without disclosure, at a value set after the outcome was known",
+      "detail": "O006's final F5 (D0013 Addendum 2, T0191) capped the cross-check solver's own estimate at 0.25 K, \"so that a 1.0 K L2/scikit-fem disagreement cannot pass A3\" and \"so that A3's tolerance is set mainly by\" the estimate of the solver under test. O007 swaps the roles and caps the cross-check (the L2) at 0.5 K instead. With A4 (0.5 K) and F5 (0.5 K) both at their limits, A3 again admits a 1.0 K single-die disagreement, which is the case O006 ruled out. The notes say only A3's role swap and two measurement changes differ from O006, and that no tolerance was changed. That is not accurate. The 0.5 K value was also chosen knowing the result. The L2 runs \"exactly as in E006\" on the same two dev layouts, so its u_shaped_2 GCI of 0.303 K will repeat. It will come out about 2.2 % higher, because O007 calibrates power on scikit-fem's level-0 solve. Under O006's 0.25 K cap, E009 would therefore be INVALID with certainty. In practice the effect is moderate: on E006-like values A3 still detected a hidden 0.1 K offset (see checks). It is still a pre-registration integrity defect, and it widens A3's tolerance on exactly the dies where O003's deduction (GCI_fem only) is least supported.",
+      "evidence": "project/objectives/O006/objective.yaml line 102 (F5 at most 0.25 K, with that rationale) vs O007 F5 (0.5 K). E006 rows recomputed with mfos.metrics.gci_capped: L2 GCI max 0.303 K (u_shaped_2, dev), 2 of 34 dies above 0.25 K. scikit-fem level-0 rise on the u_shaped_2 hottest die is 58.67 K vs 59.95 K in the L2, so calibrating on scikit-fem scales power by about 1.022.",
+      "suggested_check": "State the F5 change and its post-data basis in the notes or an ADR, and either justify 0.5 K from the decision or require that GCI_fem dominate the A3 denominator, so that A3 actually checks the per-run GCI that O003 deducts.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "decision_if_pass goes beyond the sampled scope: O003's reference layouts and other stacks are not covered, and D0013's spot-check requirement is dropped",
+      "detail": "A3 and A4 sample only generator layouts on the default DBC stack. decision_if_pass adopts scikit-fem as O003's thermal reference outright. But O003 judges reference layouts that are customer layouts or reconstructed PowerSynth benchmarks (D0010), whose stack and geometry may differ. D0013 Addendum 2 required O003 to \"spot-check the A3 metric on at least one O003 reference per stack type\", because the estimator's conservatism is shown on the default DBC stack only. O007 does not carry that condition forward. The conservatism of the order-1-capped estimator was also shown for the FV discretisation at singular corners (T0181), not for the scikit-fem element and grid rule still to be chosen. On generator geometry A3 is the only check of it.",
+      "evidence": "D0013 Addendum 2, last bullet. O003 objective.yaml still lists depends_on [O006] and the L2 verified in O006. O007's decision_if_pass has no stack or reference-layout restriction.",
+      "suggested_check": "Limit decision_if_pass to the default DBC stack and generator geometry, and require the per-stack A3 spot-check on O003 references before any O003 verdict.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "F5 or F1 INVALID with a frozen L2 leaves re-drawing layouts as the only fix, which conditions the 'fresh' sample on the cross-check behaving well",
+      "detail": "scope_out forbids changes to the L2 or its rule. If F5 fails on a fresh layout (L2 GCI above 0.5 K or a divergent L2 sequence), the response is \"fix under a new experiment id\". The only remaining fix is then a new sealed seed, i.e. new layouts. Layouts with strong corner singularities, where the L2 is least converged and scikit-fem shares the same singularities, are then excluded by repetition. Nothing caps the number of such reruns. max_evaluations: 1 does not count INVALID runs. This is a forking path on the held-out sample.",
+      "evidence": "O007 F5 response and scope_out. The A3 layouts are \"the first DRC-valid layout of each generator family from E009's sealed seed\".",
+      "suggested_check": "Pre-register what happens after an F5 failure: either count the run as INCONCLUSIVE for A3, or cap the number of re-draws and report every excluded layout.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Two of the five A3/A4 layouts are in-sample, so the held-out evidence is three layouts, one per family",
+      "detail": "The scikit-fem configuration (element order, grid rule) is chosen by a development study on dev data. Both solvers' values on the two dev layouts are already known from E006: A3 ratios 0.64 and 0.69, and the L2 results repeat deterministically apart from about 1-2 % in power. A3 and A4 on these layouts are therefore not predictions. The held-out part is three layouts, one per family, about 18 dies. With max-type criteria, that supports \"no failure seen on these layouts\", not a rate over the generator population. This is acceptable for deterministic verification, but the scope statement should say it.",
+      "evidence": "E006 crosscheck rows: side_by_side_6 ratio 0.640 and u_shaped_2 ratio 0.685 (recomputed); fresh layouts 0.615-0.719.",
+      "suggested_check": "Report A3 and A4 separately on the fresh and dev subsets, and phrase the claim as covering the three fresh layouts.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The null baseline (F3) discriminates only through the manufactured case; no null baseline on generator geometry",
+      "detail": "In E006 the constant-k column equals the k(T) solution on five of the six reference cases. It differs only on the manufactured case (2.51 K, scaled 0.025). So F3 shows that the k(T) path matters on one case. Nothing shows that A3 would reject a scikit-fem that ignores k(T), for example constant k at the layer-mean temperature, on the layouts, where variation within a layer is smaller and the effect may sit inside A3's 0.2-0.5 K tolerance.",
+      "evidence": "E006 rows, finest-level case rows: const-k max error 0.124/0.001/0.143/0.011/2.514/0.026 K for case1a/1b/2/3/mms/nlayer_dbc, against the solver's own 0.124/0.001/0.143/0.011/0.018/0.026 K.",
+      "suggested_check": "Add a reported dT_const_k column on the A3 layouts, with its A3 ratio against the L2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Kill criteria K1/K2 can fire, but in practice only as a regression guard; there is no kill on generator geometry",
+      "detail": "The reference values are fixed and known, and the configuration is tuned by a development study that can see them (E006's research Q2 solver already reached 0.0011 K on Case 2). So K1 and K2 cannot realistically fire at registration except through a regression between development and the registered run. There is no kill on A3 or A4 (by design: an A3 miss leads to diagnosis, an A4 miss is INCONCLUSIVE, then same as fail). The claim \"the kill criteria can actually fire\" holds only in this narrow sense.",
+      "evidence": "O007 notes (Q2 0.0011 K on Case 2) and fail_any K1/K2 restricted to the reference cases.",
+      "suggested_check": "None needed beyond stating it; optionally record the development-study A1/A2 values at freeze time.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "A4 alone is met by a grid-insensitive predictor; the joint criteria catch it",
+      "detail": "gci_capped returns 0 when both steps are below the 1e-3 K floor, so a solver whose output ignores the level (for example a level argument dropped in the layout path) passes A4 with GCI 0. On E006 data such a predictor fails A3 (3.40 if frozen at scikit-fem level 0, 2.00 at level 1), so the joint pass set resists it. Per criterion, though, the claim that no criterion is met by a predictor that ignores the decision-relevant information is literally false for A4.",
+      "evidence": "Scratch recomputation with mfos.metrics.max_gci_capped and max_gci_consistency on the E006 crosscheck rows.",
+      "suggested_check": "Add a gated check that each value's three grids differ by a factor of about 8 in node count (r = 2 in x, y and z).",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos.metrics gci_capped, max_gci_capped, two_grid_term and max_gci_consistency to confirm the estimator branches, the floor and the +inf handling that A3 and A4 rely on.",
+    "Compared O007's F5 with project/objectives/O006/objective.yaml: O006 capped the cross-check estimate at 0.25 K with an explicit rationale; O007 uses 0.5 K.",
+    "Recomputed the L2 and scikit-fem GCIs from E006 run E006-20261102T145940-2815 rows.json (34 crosscheck dies): L2 GCI max 0.303 K (u_shaped_2, dev), median 0.163 K, 2/34 above 0.25 K; scikit-fem lateral GCI max 0.177 K, with z term 0.233 K; |diff| max 0.321 K; A3 = 0.719 as recorded; no same-side pairs.",
+    "Recomputed A3 with O007's roles (pred = scikit-fem, ref = L2, no z term) on the E006 values: 0.835.",
+    "Estimated the calibration shift from moving the power calibration to scikit-fem level 0: power scale 1.013-1.024 per layout, so the u_shaped_2 L2 GCI comes to about 0.31 K, which would fail a 0.25 K F5 with certainty.",
+    "Tested A3's power by adding hidden offsets to scikit-fem's values while keeping its own GCI unchanged: 0.1 K away from the L2 gives A3 = 1.38 (fail); 0.3 K toward the L2 gives 1.16. On E006-like values A3 is sensitive, which is why the F5 finding is major rather than a blocker.",
+    "Grid-insensitive scikit-fem predictor (all levels equal to its level-0 or level-1 value): A4 = 0 (passes), A3 = 3.40 or 2.00 (fails).",
+    "Checked the null baseline F3 on E006 reference rows: constant k differs from the k(T) solution only on the manufactured case (2.51 K, scaled 0.025); identical on Cases 1a, 1b, 2, 3 and the N-layer case.",
+    "Verified in src/moduleforge/solvers/thermal_layout.py (line 196) that the L2 frozen rule refines z with level (Z_CELLS * 2**level). My hypothesis that the L2's GCI omits through-thickness error, so that a z term would be needed when it is the cross-check, is therefore ruled out.",
+    "Checked the O003 draft: it still depends on O006 and has no per-stack A3 spot-check clause."
+  ],
+  "caveats": [
+    "Valid for the default DBC stack and generator geometry at O003's operating point only. The draft does not establish scikit-fem's per-run GCI as an error bound on O003's customer or PowerSynth reference layouts or on other stacks (D0013 Addendum 2's per-stack A3 spot-check must be carried into O003).",
+    "On generator geometry, A3 verifies that GCI_fem + GCI_L2 bounds the disagreement, not that GCI_fem alone bounds scikit-fem's error, while O003 deducts GCI_fem alone. With F5 at 0.5 K the worst-case A3 tolerance per die is 1.0 K. On E006-like values the binding margin is far tighter (a 0.1 K hidden offset fails A3).",
+    "Held-out evidence is three layouts, one per generator family. The two dev layouts are in-sample for the scikit-fem configuration and their L2 values are known in advance.",
+    "The F5 threshold change (0.25 K to 0.5 K for the cross-check) is a post-data choice and should be recorded as such before approval.",
+    "An F5 failure with a frozen L2 can only be 'fixed' by re-drawing layouts. A rule for that case should be pre-registered so the fresh sample is not conditioned on cross-check convergence.",
+    "I did not run the scikit-fem configuration to be frozen (it does not exist yet). The power estimates use E006's scikit-fem configuration, whose estimates were lateral-only plus a z term, as a proxy."
+  ]
+}
