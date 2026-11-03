@@ -171,3 +171,62 @@ i.e. 460 M-5 G cells (70-700 GB of RAM), against 4.5-7.3 M cells here. The 6-die
 further (die-edge cells, z-refinement and substrate features were excluded; the u-shaped tj_max still converges at
 `p_obs` about 1); a different discretisation near the die corners (local mesh refinement with hanging nodes, or a
 higher-order scheme) is the open option, not a finer global rule.
+
+## 9. scikit-fem reference: element order and manufactured data (T0205)
+
+`solvers/thermal_fem.py` implements sections 2-6 with hexahedral Galerkin elements of a chosen order,
+`GridRule.element_order` (default 1; `solve_box_stack(element_order=...)` for the box mode).
+
+* **Order 1**: trilinear `ElementHex1`, 2x2x2 Gauss points. Results are those of the earlier trilinear-only version
+  (same `tj_max`/`tj_mean` to 1e-12 K on the 416 k-DOF smoke level of `benchmarks/thermal_fem_convergence.py`).
+* **Order 2**: triquadratic `ElementHex2` (27 nodes), 3x3x3 Gauss points, on the same conforming mesh (same lines, same
+  void rule). On axis-aligned boxes the map is affine and diagonal, so for constant `k` per element the stiffness
+  integrand has degree 2(p-1) along the differentiated direction and 2p along the other two, at most 4 for Q2, and the
+  Robin face mass has degree 4 per direction; a 3-point Gauss rule is exact to degree 5, so both are integrated exactly
+  (Q1: degree 2 against the 2-point rule's 3). With `k(T)` the rule is the definition of the lagged-`k` Picard scheme.
+  The stiffness is assembled in element chunks and summed by a binary tree, so the peak memory is the CSR matrix, the AMG
+  hierarchy and one chunk of basis tables. Picard (stop at `max |dT| < 1e-4 K`), AMG-preconditioned CG (relative residual
+  1e-11, true residual checked at 1e-8) and the solve for `theta = T - T_c` are unchanged.
+* **Linear solver for Q2**: smoothed aggregation applied to the Q2 matrix directly coarsens far too aggressively (each Q2
+  dof couples strongly to 125 others; operator complexity 1.005) and stalled at `h = 50 W/(m2 K)`. The Q2 preconditioner
+  is a p-multigrid V-cycle: symmetric Gauss-Seidel on Q2, the exact Q1-to-Q2 interpolation on the same mesh as the first
+  prolongation, smoothed aggregation on the Galerkin Q1 matrix below it (Ronquist & Patera, J. Sci. Comput. 2(4):389,
+  1987). The constant mode is deflated (`x = c 1 + y`, `c = 1^T b / 1^T A 1`), because for a weak sink the rise is a
+  large uniform part plus a small variation and the attainable residual eps |A| |x| / |b| would otherwise exceed 1e-11
+  (1.5e-10 for a 48 K rise with 0.6 K of variation). Order 1 keeps plain smoothed aggregation.
+* **Surface quantities** are assembled with scikit-fem facet bases (exact tensor rules): the Robin face mass, the uniform
+  die flux `P_i/A_i`, and `tj_mean` = the exact Galerkin integral of `T` over the die top face divided by its area.
+  `tj_max` is the maximum over exactly the nodes of that face (the dofs of its faces; for Q2 these include the edge
+  midpoints and the face centres), and `point_values(result, pts)` evaluates the FE field at arbitrary points. Every face
+  integral is restricted to the dofs of its faces: the facet quadrature points are mapped back to the reference cell by an
+  inverse (Newton) map and land about 1e-16 off the face, which gives basis functions that vanish on the face values of
+  about 1e-15 (25 to 550 such nodes per die face). Without the restriction those nodes entered `tj_max` (a 0.02 K bias on
+  an unpowered die next to a 60 W die; T0205 review).
+* **Manufactured data** (optional, for the O006 reference cases; defaults `None` leave the problem of section 3-4
+  unchanged): `source(x, y, z)` [W/m3] over the volume; `flux(x, y, z, axis, sign)` [W/m2], heat into the domain, on every
+  exterior and void-bounding face except the Robin face `z = 0` (the callable is also asked for die top faces, additive to
+  the die flux); `T_inf(x, y)` [K] in place of the scalar coolant temperature in `h (T - T_inf)` (`T_c` stays the reference
+  of the solved rise). Quadrature of the data: 4x4x4 Gauss points per cell and 4x4 per face (exact to degree 7 per
+  direction). `meta` records `q_in_die_W`, `q_in_volume_W`, `q_in_boundary_W`, their sum `q_in_W`, and `q_out_W`
+  = `int h (T - T_inf) dS`; `energy_balance` is `|q_out_W / q_in_W - 1|` against the *assembled* `Q_in` (exact up to the
+  linear-solver residual, since constants lie in both spaces). It is a check of the linear solve and of the load
+  bookkeeping only: it is zero for any data, so it cannot detect a wrong data quadrature, face selection or flux sign.
+  Those are checked against independently integrated `Q_in` (tests) and O006's frozen `Q_out`. The interface and the sign
+  convention follow `MMSCase` of `experiments/runners/e006_mms.py`.
+* **Memory per DOF** (measured, whole-process peak RSS, k(T), `solve_layout` on the side_by_side/6 generator layout of
+  the benchmark): Q2 8.1 kB at 57 k DOF, 4.5 kB at 416 k (1.9 GB, 45 s), 4.8 kB at 719 k (3.5 GB, 75 s); attempt 1 measured
+  9.9 kB at 60 k on a box stack. Q1 at 416 k: 4.4 kB chunked (34 s) against 7.6 kB (18 s) for the earlier version that kept
+  one basis of all elements (chunking trades 1.8 times the wall time for 42 % less memory). `BYTES_PER_DOF_BY_ORDER` =
+  {1: 7.7 kB (D0006 bound), 2: 10 kB (upper bound of the Q2 figures)}; `max_dofs(budget, element_order=)` and
+  `estimate_dofs` (the Q2 count includes edge, face and cell dofs) account for the order.
+* **Verification** (`tests/unit/solvers/test_thermal_fem_assembly.py`): the two-layer series-resistance column and a
+  manufactured quadratic field are reproduced by Q2 to the solver tolerance; for `k = k0 (1 + beta (T - T0))` against
+  the Kirchhoff closed form the RMS error of the field converges at order 2 (Q1) and 3 (Q2), the through-thickness mean at
+  2 and 4 (end-node values are exact in 1D for both orders); a two-region case with matched interface flux closes the
+  energy balance against the exactly integrated source and flux to 1e-9; O006's manufactured case closes the balance to
+  1e-6 and agrees with the frozen `Q_out` integral to 1e-6, with the error at the frozen points falling from level 0 to 1 at
+  observed order >= 1.5 (measured 3.6 for Q1, 4.2 for Q2; the nodal maximum of the die is not the field maximum, so the
+  die maximum is evaluated at the frozen location). Regression tests: `tj_max` equals the maximum over the face nodes
+  selected by their coordinates on a layout where the node layer below an unpowered die is hotter than its face; at
+  `h` = 500, 50 and 5 W/(m2 K) both orders converge and the spreading part of the die rise, `T - T_c - P/(h A_b)`,
+  changes linearly in `h` (small-Biot limit); the Q1-to-Q2 prolongation reproduces trilinear fields exactly.

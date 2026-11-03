@@ -1,4 +1,4 @@
-"""Independent scikit-fem (trilinear hexahedra) thermal cross-check of a Layout (D0006 fallback, docs/thermal_model.md).
+"""Independent scikit-fem (trilinear or triquadratic hexahedra) thermal cross-check of a Layout (D0006 fallback, docs/thermal_model.md).
 
 This module implements ``docs/thermal_model.md`` on its own: it builds its own conforming hexahedral mesh, materials and
 boundary conditions straight from the ``Layout`` and its ``LayerStack`` and runs its own Picard loop. It must never import
@@ -6,9 +6,36 @@ the finite-volume solver or its layout/grid builder (task A3 independence); it o
 
 Method. Steady ``div(k(x,T) grad T) = 0`` in the solid Omega; uniform flux ``q_i = P_i / (w_i h_i)`` over each die top
 face; Robin sink ``k dT/dz = h (T - T_c)`` on the whole baseplate bottom; everything else adiabatic (natural BC).
-Galerkin with trilinear hexahedra (scikit-fem ``ElementHex1``), 2x2x2 Gauss points, ``k`` evaluated at the quadrature
+Galerkin with hexahedra of ``GridRule.element_order``: 1 = trilinear (scikit-fem ``ElementHex1``, 2x2x2 Gauss points,
+the default) or 2 = triquadratic (``ElementHex2``, 27 nodes, 3x3x3 Gauss points). ``k`` is evaluated at the quadrature
 points from the previous Picard iterate (lagged; Picard fixed point = the continuum solution). Linear systems are solved
-by CG preconditioned with smoothed-aggregation AMG (pyamg, MIT), warm-started from the previous iterate.
+by CG preconditioned with algebraic multigrid (pyamg, MIT), warm-started from the previous iterate: smoothed aggregation
+for Q1 (as before); for Q2 a p-multigrid whose first coarse level is the Q1 space of the same mesh, with the constant
+mode deflated (``_Solver``; smoothed aggregation on the Q2 matrix itself stalled at weak Robin coupling, T0205 review).
+
+Why the quadrature is exact (axis-aligned boxes, constant ``k`` per element). The mesh cells and faces are axis-aligned
+boxes, so the isoparametric map is affine and diagonal. In ``dT_i/dx_a dT_j/dx_a`` of two Q_p basis functions the
+derivative along ``a`` has degree p-1 and the other two directions keep degree p, so the integrand has degree 2(p-1) in
+direction ``a`` and 2p in the other two: 2 (p = 1) and 4 (p = 2), at most 2p. An n-point Gauss rule is exact to degree
+2n-1: n = 2 gives 3 >= 2 for Q1 and n = 3 gives 5 >= 4 for Q2 (Abramowitz & Stegun 25.4.29; Ciarlet, 1978, sec. 4.1). The
+Robin face mass is a product of two basis functions on a rectangle (degree 2p per direction, 4 for Q2) and the
+source-face and sink-face integrals of one basis function are lower: the 3x3 face rule used there is exact too. With
+``k`` varying inside an element the rule is a consistent quadrature (the lagged-k Picard scheme is defined by it). Every
+face integral (scikit-fem ``FacetBasis``) is restricted to the dofs of its faces, which removes the 1e-15 round-off
+values that the inverse-mapped face quadrature gives basis functions vanishing on the face (``_restrict``).
+
+Manufactured data (optional, ``solve_layout`` / ``solve_box_stack``). ``source(x, y, z)`` [W/m3] is integrated over the
+volume, ``flux(x, y, z, axis, sign)`` [W/m2] (heat into the domain, ``(axis, sign)`` the outward normal) over every
+exterior and void-bounding face except the Robin face z = 0, and ``T_inf(x, y)`` [K] replaces the scalar coolant
+temperature in ``h (T - T_inf)``. They are evaluated at 4x4x4 (volume) and 4x4 (face) Gauss points of every cell and
+face (``DATA_INTORDER`` = 7, exact to degree 7 per direction; chunked like the stiffness). The weak form is
+``int k grad T . grad v + int_sink h T v = int q v + int_faces g v + int_sink h T_inf v``; taking ``v = 1`` (in both
+spaces) gives ``Q_out = int_sink h (T - T_inf) dS = Q_in`` exactly, with ``Q_in`` the *assembled* die, volume and face
+loads, and ``energy_balance = |Q_out / Q_in - 1|`` is computed against that sum. It therefore checks the linear solve
+and the bookkeeping of the loads, NOT the data quadrature, the face selection or the sign of the flux: for any data it is
+zero up to the solver residual. Those are checked by comparing ``q_in_volume_W`` and ``q_in_boundary_W`` with
+independently integrated values (tests/unit/solvers/test_thermal_fem_assembly.py) and ``q_out_W`` with O006's frozen
+integral of the manufactured case.
 
 Mesh (own rule). Grid lines (x, y, z) pass through every die, die-attach, top-Cu, backside-Cu (inset), ceramic and
 baseplate edge and every layer interface, so every edge of every region is a mesh edge: the mesh conforms exactly and a
@@ -23,17 +50,30 @@ axis), 2 ``h0`` out to three margins and 4 ``h0`` beyond (the same multipliers a
 (a lateral-only study, the same pattern as the layout EM benchmark), because refining z too puts the finest level beyond
 memory (see "Memory").
 
-Outputs per die (section 5 of the definition): ``Tj_max`` = maximum nodal temperature on the die top face (the nodal
-FEM reads the continuous surface field directly) and ``Tj_mean`` = area mean of T over the die top face (Galerkin
-integral), plus the energy balance ``|Q_out / sum P - 1|`` (exact up to the linear-solver tolerance for a Galerkin
-system whose stiffness rows sum to zero) and the Picard residual.
+Outputs per die (section 5 of the definition): ``Tj_max`` = maximum nodal temperature over exactly the nodes of the die
+top face (the dofs of its faces: vertices, and for Q2 also edge midpoints and face centres; the nodal FEM reads the
+continuous surface field directly) and ``Tj_mean`` = area mean of T over the die top face (Galerkin integral), plus the
+energy balance ``|Q_out / Q_in - 1|`` (exact up to the linear-solver tolerance for a Galerkin system whose stiffness rows
+sum to zero, see above) and the Picard residual.
 
 GCI: the order-capped rule of O006 A4 (D0012, D0013 and its addenda), shared with the finite-volume solver through
 ``thermal_layout.gci_three_grid`` (Roache 1998, ch. 5 for the safety factors 1.25 and 3, oscillatory, and the form
 ``|d2| / (2**p - 1)``; order capped at 1; grid steps below 1e-3 K count as zero; ``+inf`` for a divergent or stagnant
 sequence). With f1, f2, f3 the finest, middle and coarsest values, the arguments of that function are (f3, f2, f1).
 
-Memory. D0006 estimated about 7.7 kB per DOF for scikit-fem + pyamg; ``max_dofs(budget_bytes)`` converts a budget into
+Memory, Q2 (T0205). The stiffness is assembled in element chunks (4000 elements for Q2, 20000 for Q1 per scikit-fem
+basis, partial matrices summed by a binary tree), so the peak is the CSR matrix, the multigrid hierarchy and one chunk's
+basis tables (about 23 kB per Q2 element), not all elements' tables. The bases are rebuilt at every Picard iteration (no
+tables are kept between iterations). Measured on this Mac (whole-process peak RSS ``ru_maxrss``, k(T), 5 Picard
+iterations, ``solve_layout`` on the generator layout side_by_side/6 of benchmarks/thermal_fem_convergence.py, T0205
+attempt 2): Q2 8.1 kB/DOF at 57 k DOF (0.47 GB, 5 s), 4.5 kB at 416 k (1.9 GB, 45 s), 4.8 kB at 719 k (3.5 GB, 75 s);
+attempt 1 measured 9.9 kB/DOF at 60 k on a three-layer box stack. ``BYTES_PER_DOF_BY_ORDER[2]`` = 10 kB is the upper bound
+of those figures (the small-mesh figures are dominated by the fixed Python/numpy baseline). Q1 on the same 416 k DOF:
+4.4 kB/DOF (1.8 GB, 34 s) chunked, against 7.6 kB/DOF (3.1 GB, 18 s) for the earlier version that kept one basis of all
+elements: chunking costs Q1 about 1.8 times the wall time for 42 % less memory. ``estimate_dofs`` counts the Q2 dofs
+(vertices, edges, faces and cells of the active cells); at equal DOF a Q2 mesh has 8 times fewer cells.
+
+Memory, Q1. D0006 estimated about 7.7 kB per DOF for scikit-fem + pyamg; ``max_dofs(budget_bytes)`` converts a budget into
 the largest DOF count at that figure. On the 17.2 GB Apple-silicon laptop that built this, with 70 % of RAM (12.0 GB) as
 the budget for one solve, that is 1.56 million DOF. Measured by ``benchmarks/thermal_fem_convergence.py`` (peak RSS of
 the child process, whole-process including the Python and numpy baseline, two runs): 8-9 kB/DOF at 0.06-0.1 M DOF, about
@@ -57,8 +97,11 @@ import numpy as np
 import pyamg
 import scipy.sparse as sp
 import shapely
+from pyamg.multilevel import MultilevelSolver
+from pyamg.relaxation.smoothing import change_smoothers
 from shapely.geometry import Polygon
-from skfem import Basis, BilinearForm, ElementHex1, MeshHex
+from skfem import BilinearForm, CellBasis, ElementHex1, ElementHex2, FacetBasis, LinearForm, MeshHex
+from skfem.assembly import Dofs
 from skfem.helpers import dot, grad
 
 from moduleforge.geometry.layout import Layout
@@ -66,7 +109,9 @@ from moduleforge.geometry.stack import Layer
 from moduleforge.solvers.thermal_layout import gci_three_grid
 
 MM = 1.0e3  # the mesh is built in millimetres: k [W/(m K)] -> 1e-3 W/(mm K), h -> 1e-6 W/(mm2 K), areas in mm2
-BYTES_PER_DOF = 7.7e3  # D0006 audit figure for scikit-fem + pyamg; the benchmark records the measured value
+BYTES_PER_DOF = 7.7e3  # D0006 audit figure for scikit-fem + pyamg (Q1); the benchmark records the measured value
+BYTES_PER_DOF_BY_ORDER = {1: BYTES_PER_DOF, 2: 10.0e3}  # whole-process peak RSS per DOF, see "Memory"
+DATA_INTORDER = 7  # quadrature of manufactured data: 4x4x4 / 4x4 Gauss points (exact to degree 7 per direction)
 PICARD_TOL_K = 1.0e-4  # stop when max |dT| of an iteration is below this [K]
 LINEAR_RTOL = 1.0e-11  # relative residual of every AMG-CG solve
 REFINEMENT_RATIO = 2  # constant r of the three-level study
@@ -74,8 +119,11 @@ LEVELS = (0, 1, 2)
 _HEX_CORNERS = ((0, 0, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1), (1, 1, 1))  # skfem order
 
 
-def max_dofs(budget_bytes: float, bytes_per_dof: float = BYTES_PER_DOF) -> int:
-    """Largest DOF count whose estimated memory (``bytes_per_dof`` each) fits ``budget_bytes``."""
+def max_dofs(budget_bytes: float, bytes_per_dof: float | None = None, element_order: int = 1) -> int:
+    """Largest DOF count whose estimated memory fits ``budget_bytes``: ``bytes_per_dof`` each, by default the figure of
+    ``element_order`` (``BYTES_PER_DOF_BY_ORDER``; 7.7 kB for Q1)."""
+    if bytes_per_dof is None:
+        bytes_per_dof = BYTES_PER_DOF_BY_ORDER[element_order]
     return int(budget_bytes // bytes_per_dof)
 
 
@@ -90,7 +138,7 @@ class ThermalResult:
 
     tj_max: np.ndarray  # per die / source, max over the top face nodes
     tj_mean: np.ndarray  # per die / source, area mean over the top face
-    energy_balance: float  # |Q_out / sum(P) - 1|
+    energy_balance: float  # |Q_out / Q_in - 1|, Q_in = die powers + assembled volume source + boundary inflow
     picard_iters: int
     picard_residual: float  # last max |dT| [K]
     dofs: int
@@ -98,6 +146,7 @@ class ThermalResult:
     T: np.ndarray = field(repr=False, default_factory=lambda: np.zeros(0))
     nodes: np.ndarray = field(repr=False, default_factory=lambda: np.zeros((0, 3)))
     meta: dict = field(default_factory=dict)
+    field_eval: object = field(repr=False, default=None)  # for ``point_values``
 
 
 @dataclass(frozen=True)
@@ -112,6 +161,11 @@ class GridRule:
     near_margin: float | None = None  # [m] if set: lateral size h0 within this distance of a die (along the axis), 2 h0
     # up to 3 x near_margin, 4 h0 beyond (smooth coarsening away from the dies, where the solution is smooth)
     min_cells: int = 2  # even minimum of level-0 lateral cells per interval
+    element_order: int = 1  # 1: trilinear ElementHex1 (2x2x2 Gauss); 2: triquadratic ElementHex2 (3x3x3 Gauss)
+
+    def __post_init__(self):
+        if self.element_order not in (1, 2):
+            raise ValueError("element_order must be 1 or 2")
 
     def nz_of(self, name: str) -> int:
         return int(self.nz.get(name, self.default_nz))
@@ -187,6 +241,10 @@ class _Grid:
     h: float
     Tc: float
     names: list = field(default_factory=list)
+    order: int = 1  # element order
+    source: Callable | None = None  # manufactured volume source(x, y, z) [W/m3]
+    flux: Callable | None = None  # manufactured inflow flux(x, y, z, axis, sign) [W/m2] on every boundary face but z = 0
+    T_inf: Callable | None = None  # Robin ambient T_inf(x, y) [K] (replaces the scalar coolant temperature in h (T - T_inf))
 
 
 def _build_mesh(g: _Grid):
@@ -209,22 +267,6 @@ def _build_mesh(g: _Grid):
     return mesh, emat, dof_of
 
 
-# 2D Q1 mass matrix of a rectangle a x b, corners ordered (0,0), (1,0), (0,1), (1,1): (a b / 36) * _MASS_Q1
-_MASS_Q1 = np.array([[4, 2, 2, 1], [2, 4, 1, 2], [2, 1, 4, 2], [1, 2, 2, 4]], dtype=float)
-
-
-def _face_nodes(g: _Grid, dof_of: np.ndarray, ii, jj, kplane: int):
-    """dofs (4, nfaces) of the corners (0,0),(1,0),(0,1),(1,1) of the x-y faces of cells (ii, jj) on node plane
-    ``kplane`` and the face areas a*b in mm2 (the faces are exact rectangles; assembled directly, no inverse map)."""
-    sy, sz = g.y.size, g.z.size
-    ids = np.stack([((ii + dx) * sy + (jj + dy)) * sz + kplane for dy in (0, 1) for dx in (0, 1)])
-    dofs = dof_of[ids]
-    if (dofs < 0).any():
-        raise RuntimeError("face node missing from the mesh")
-    area = (np.diff(g.x)[ii] * np.diff(g.y)[jj]) * MM**2
-    return dofs, area
-
-
 def _gci(f: Sequence[float], r: float = REFINEMENT_RATIO) -> tuple[float, float]:
     """(GCI, p_obs) of values (finest, middle, coarsest) at ratio ``r = 2`` by O006's A4 rule
     (``thermal_layout.gci_three_grid``); ``p_obs`` is NaN when the convergence is not monotone."""
@@ -238,47 +280,213 @@ def gci(values: Sequence[float], r: float = REFINEMENT_RATIO) -> tuple[float, fl
     return _gci(values, r)
 
 
-# ------------------------------------------------------------------------------------------------ core solver
-def _amg_cg(A: sp.csr_matrix, b: np.ndarray, x0: np.ndarray, ml) -> np.ndarray:
-    x = ml.solve(b, x0=x0, tol=LINEAR_RTOL, maxiter=400, accel="cg")
-    if np.linalg.norm(b - A @ x) > 1e-8 * np.linalg.norm(b):
-        raise RuntimeError("AMG-CG did not converge to a relative residual of 1e-8")
-    return x
+# ------------------------------------------------------------------------------------------------ assembly helpers
+def _element(order: int):
+    return ElementHex1() if order == 1 else ElementHex2()
+
+
+def _sum_chunks(parts) -> sp.csr_matrix | None:
+    """Sum an iterable of sparse matrices by a binary-counter tree (cost O(nnz log n_chunks), not O(n_chunks nnz); at most
+    about two partial sums of the final size are alive at once)."""
+    stack: list[tuple[int, sp.csr_matrix]] = []
+    for m in parts:
+        stack.append((0, m.tocsr()))
+        while len(stack) > 1 and stack[-1][0] == stack[-2][0]:
+            (lv, a), (_, b) = stack.pop(), stack.pop()
+            stack.append((lv + 1, (a + b).tocsr()))
+    out = None
+    for _, m in stack:
+        out = m if out is None else (out + m).tocsr()
+    return out
+
+
+@BilinearForm
+def _stiff_form(u, v, w):
+    return w["k"] * dot(grad(u), grad(v))
+
+
+@BilinearForm
+def _mass_form(u, v, w):
+    return u * v
+
+
+@LinearForm
+def _one_form(v, w):
+    return 1.0 * v
+
+
+@LinearForm
+def _load_form(v, w):
+    return w["f"] * v
+
+
+def _chunks(n: int, size: int):
+    for s in range(0, n, size):
+        yield np.arange(s, min(n, s + size))
+
+
+def _face_mask(dofs, facets: np.ndarray, nd: int) -> np.ndarray:
+    """True for the dofs that live on ``facets`` (their vertices, and for Q2 also their edge and face midpoints)."""
+    m = np.zeros(nd, dtype=bool)
+    if facets.size:
+        m[dofs.get_facet_dofs(facets).flatten()] = True
+    return m
+
+
+def _complement(idx: np.ndarray, nd: int) -> np.ndarray:
+    m = np.ones(nd, dtype=bool)
+    m[idx] = False
+    return m
+
+
+def _restrict(M: sp.csr_matrix, mask: np.ndarray) -> sp.csr_matrix:
+    """``M`` with the rows and columns outside ``mask`` zeroed.
+
+    A face integral assembled with ``FacetBasis`` maps the face quadrature points back to the reference cell by an inverse
+    (Newton) map, so they sit about 1e-16 off the reference face: basis functions that vanish on the face then come out at
+    about 1e-15 instead of 0 (measured: 25 to 550 such dofs per die face). They are exactly zero in the continuum. Every
+    face integral is therefore restricted to the face's own dofs, so the loads, the Robin mass and the node set of
+    ``tj_max`` are exactly those of the face (T0205 review: off-face nodes had entered ``tj_max``)."""
+    D = sp.diags(mask.astype(float))
+    out = (D @ M @ D).tocsr()
+    out.eliminate_zeros()
+    return out
+
+
+def _boundary_faces(mesh) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Boundary facets of the mesh (cells next to void included) with their outward normal ``axis`` (0, 1, 2), ``sign``
+    (+1/-1) and centre ``mp`` (3, n) [mm]; the faces are axis-aligned rectangles."""
+    bf = mesh.boundary_facets()
+    P = mesh.p[:, mesh.facets[:, bf]]  # (3, 4, nf)
+    mp = P.mean(axis=1)
+    axis = (P.max(axis=1) - P.min(axis=1)).argmin(axis=0)
+    cols = np.arange(bf.size)
+    ctr = mesh.p[:, mesh.t[:, mesh.f2t[0, bf]]].mean(axis=1)
+    sign = np.where(mp[axis, cols] > ctr[axis, cols], 1, -1)
+    return bf, axis, sign, mp
+
+
+def _q1_to_q2(mesh, dofs) -> sp.csr_matrix:
+    """Prolongation (N_Q2 x N_vertices) of the trilinear (Q1) space into the triquadratic (Q2) one on the same mesh: a
+    vertex dof copies its vertex, an edge-midpoint dof is the mean of the edge's 2 vertices, a face-centre dof the mean of
+    the face's 4 and a cell-centre dof the mean of the cell's 8. Exact, because a trilinear function on an axis-aligned box
+    is linear along an edge, bilinear on a face and trilinear in the cell (Q1 is a subspace of Q2)."""
+    nv = mesh.p.shape[1]
+    rows, cols, vals = [dofs.nodal_dofs[0]], [np.arange(nv)], [np.ones(nv)]
+    for dd, conn in ((dofs.edge_dofs, mesh.edges), (dofs.facet_dofs, mesh.facets), (dofs.interior_dofs, mesh.t)):
+        m = conn.shape[0]
+        rows.append(np.repeat(dd[0], m))
+        cols.append(conn.T.ravel())
+        vals.append(np.full(dd.shape[1] * m, 1.0 / m))
+    return sp.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(int(dofs.N), nv))
+
+
+class _Solver:
+    """CG preconditioned by algebraic multigrid (pyamg, MIT), stopping at the relative residual ``LINEAR_RTOL``; raises
+    unless the true relative residual of the returned solution is below 1e-8.
+
+    Order 1: smoothed-aggregation AMG on the matrix as is (unchanged from the trilinear-only version).
+
+    Order 2: smoothed aggregation applied to the Q2 matrix directly builds far too few coarse unknowns (every Q2 dof is
+    strongly coupled to up to 125 dofs of its neighbouring cells, so the aggregates are huge: operator complexity 1.005 on
+    the toy layout), and CG stalls when the Robin coupling is weak (h = 50 W/(m2 K), T0205 review). The first coarse level
+    is therefore the Q1 space of the same mesh (p-multigrid; Ronquist & Patera, J. Sci. Comput. 2(4):389, 1987):
+    prolongation ``P`` = ``_q1_to_q2`` (exact), Galerkin coarse matrix ``P^T A P``, smoothed aggregation below it, and
+    symmetric Gauss-Seidel smoothing on every level (a symmetric V-cycle, so a valid CG preconditioner). In addition the
+    near-null constant mode is deflated: ``x = c 1 + y`` with ``c = 1^T b / 1^T A 1`` (the A-orthogonal projection of the
+    solution on the constants, i.e. the global energy balance), and CG solves ``A y = b - c A 1``. Without it the
+    attainable relative residual of the rise, about eps |A| |x| / |b|, is 1.5e-10 for a uniform 48 K rise over 0.6 K of
+    variation (h = 50), above ``LINEAR_RTOL``; with it the floor scales with the variation of the rise, not its mean."""
+
+    def __init__(self, A: sp.csr_matrix, P: sp.csr_matrix | None = None):
+        self.A = A
+        self.P = P
+        if P is None:
+            self.ml = pyamg.smoothed_aggregation_solver(A, max_coarse=500)
+            return
+        Ac = (P.T @ (A @ P)).tocsr()
+        coarse = pyamg.smoothed_aggregation_solver(Ac, max_coarse=500)
+        top = MultilevelSolver.Level()
+        top.A, top.P, top.R = A, P, P.T.tocsr()
+        self.ml = MultilevelSolver([top, *coarse.levels], coarse_solver="pinv")
+        gs = ("gauss_seidel", {"sweep": "symmetric"})
+        change_smoothers(self.ml, presmoother=gs, postsmoother=gs)
+        self.one = np.ones(A.shape[0])
+        self.a1 = A @ self.one
+        self.c_den = float(self.one @ self.a1)
+
+    def solve(self, b: np.ndarray, x0: np.ndarray) -> np.ndarray:
+        if self.P is None:
+            x = self.ml.solve(b, x0=x0, tol=LINEAR_RTOL, maxiter=400, accel="cg")
+        else:
+            c = float(self.one @ b) / self.c_den
+            x = c + self.ml.solve(b - c * self.a1, x0=x0 - c, tol=LINEAR_RTOL, maxiter=400, accel="cg")
+        if np.linalg.norm(b - self.A @ x) > 1e-8 * np.linalg.norm(b):
+            raise RuntimeError("AMG-CG did not converge to a relative residual of 1e-8")
+        return x
+
+
+@dataclass
+class _FieldEval:
+    """What ``point_values`` needs to evaluate the FE field at a point."""
+
+    mesh: object
+    elem: object
+    dofs: object
+    eidx: np.ndarray  # (nx, ny, nz) element id of every tensor cell, -1 for void
+    lines: tuple  # (x, y, z) tensor lines [m]
 
 
 def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, picard_tol: float = PICARD_TOL_K,
-                max_picard: int = 60) -> ThermalResult:
+                max_picard: int = 60, chunk: int | None = None) -> ThermalResult:
+    """Assemble and solve the grid problem (module docstring). ``g.order`` selects Q1 or Q2; ``chunk`` is the number of
+    elements (facets: a tenth of it) per scikit-fem basis during assembly."""
     t0 = time.perf_counter()
-    mesh, emat, dof_of = _build_mesh(g)
-    basis = Basis(mesh, ElementHex1(), intorder=2)
-    nd = basis.N
+    order = g.order
+    mesh, emat, _ = _build_mesh(g)
+    elem = _element(order)
+    dofs = Dofs(mesh, elem)
+    nd = int(dofs.N)
     ne = emat.size
-    nqp = basis.X.shape[1]
+    chunk = chunk or (4000 if order == 2 else 20000)
+    fchunk = max(200, chunk // 10)
+    iq = 4 if order == 2 else 2  # stiffness quadrature (exact for constant k per element, see module docstring)
+    hh = g.h / MM**2  # W/(mm2 K)
 
-    @BilinearForm
-    def stiff(u, v, w):
-        return w["k"] * dot(grad(u), grad(v))
+    # ---- boundary classification ----
+    bf, axis, sign, mp = _boundary_faces(mesh)
+    ztol = 1e-9 * float(mesh.p[2].max())
+    robin = (axis == 2) & (sign < 0) & (np.abs(mp[2]) < ztol)
+    robin_idx = bf[robin]
+    # Robin mass, int of each basis function over the sink face, and the T_inf load
+    mass_parts, ones_b = [], np.zeros(nd)
+    f_robin = np.zeros(nd)
+    for s in _chunks(robin_idx.size, fchunk):
+        fb = FacetBasis(mesh, elem, facets=robin_idx[s], intorder=4, dofs=dofs)
+        mass_parts.append(_mass_form.assemble(fb))
+        ones_b += _one_form.assemble(fb)
+        if g.T_inf is not None:
+            fd = FacetBasis(mesh, elem, facets=robin_idx[s], intorder=DATA_INTORDER, dofs=dofs)
+            X = fd.global_coordinates() / MM
+            ti = np.broadcast_to(np.asarray(g.T_inf(X[0], X[1]), dtype=float), X[0].shape)
+            f_robin += _load_form.assemble(fd, f=hh * (ti - g.Tc))
+    on_sink = _face_mask(dofs, robin_idx, nd)
+    Mb = hh * _restrict(_sum_chunks(mass_parts), on_sink)
+    ones_b[~on_sink] = 0.0
+    f_robin[~on_sink] = 0.0
+    del mass_parts
 
-    nd = int(nd)
-    # Robin bottom: the whole z = 0 face of the active cells at k = 0 (the baseplate); mass matrix by direct assembly
-    bi, bj = np.nonzero(g.mat[:, :, 0] >= 0)
-    dofs, area = _face_nodes(g, dof_of, bi, bj, 0)
-    ii = np.repeat(dofs[:, None, :], 4, axis=1).ravel()
-    jj = np.repeat(dofs[None, :, :], 4, axis=0).ravel()
-    vals = (area[None, None, :] / 36.0 * _MASS_Q1[:, :, None]).ravel()
-    Mb = (g.h / MM**2) * sp.coo_matrix((vals, (ii, jj)), shape=(nd, nd)).tocsr()
-    ones_b = np.bincount(dofs.ravel(), weights=np.tile(area / 4.0, 4), minlength=nd)  # integral of each hat over the face
-    # heat input: uniform flux over each source's top face (cells whose top face lies on z = zt and has no active
-    # cell above it, i.e. the face is on the mesh boundary)
-    f = np.zeros(nd)
+    # ---- die sources: uniform flux over each top face (faces on the mesh boundary, no active cell above) ----
+    f_die = np.zeros(nd)
     src_vecs, src_nodes = [], []
     P_tot = 0.0
     nzc = g.mat.shape[2]
     xc, yc = 0.5 * (g.x[1:] + g.x[:-1]), 0.5 * (g.y[1:] + g.y[:-1])
-    ztol = 1e-9 * g.z[-1]
+    zt_tol = 1e-9 * g.z[-1]
+    top = (axis == 2) & (sign > 0)
     for (x0, y0, x1, y1, zt, P) in g.sources:
         kp = int(np.argmin(np.abs(g.z - zt)))
-        if abs(g.z[kp] - zt) > ztol:
+        if abs(g.z[kp] - zt) > zt_tol:
             raise ValueError("a heat source plane is not a z grid line")
         sx = np.nonzero((xc > x0) & (xc < x1))[0]
         sy_ = np.nonzero((yc > y0) & (yc < y1))[0]
@@ -288,36 +496,76 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
             raise ValueError("a heat source is not fully supported by active cells below its plane")
         if kp < nzc and (g.mat[si, sj, kp] >= 0).any():
             raise ValueError("a heat source face is not on the mesh boundary (active cells above it)")
-        dofs, area = _face_nodes(g, dof_of, si, sj, kp)
-        if abs(area.sum() - (x1 - x0) * (y1 - y0) * MM**2) > 1e-6 * area.sum():
+        sel = (top & (np.abs(mp[2] - zt * MM) < zt_tol * MM) & (mp[0] > x0 * MM) & (mp[0] < x1 * MM)
+               & (mp[1] > y0 * MM) & (mp[1] < y1 * MM))
+        vec = np.zeros(nd)
+        for s in _chunks(int(sel.sum()), fchunk):
+            fb = FacetBasis(mesh, elem, facets=bf[sel][s], intorder=4, dofs=dofs)
+            vec += _one_form.assemble(fb)
+        face_dofs = np.unique(dofs.get_facet_dofs(bf[sel]).flatten())  # every node of the face (Q2: + edge/face midpoints)
+        vec[_complement(face_dofs, nd)] = 0.0
+        area = float(vec.sum())
+        if abs(area - (x1 - x0) * (y1 - y0) * MM**2) > 1e-6 * area:
             raise ValueError("a heat source is not fully covered by mesh faces (area mismatch)")
-        vec = np.bincount(dofs.ravel(), weights=np.tile(area / 4.0, 4), minlength=nd)
-        f += (P / area.sum()) * vec  # W/mm2 times mm2
-        src_vecs.append(vec / area.sum())
-        src_nodes.append(np.nonzero(vec)[0])
+        f_die += (P / area) * vec  # W/mm2 times mm2
+        src_vecs.append(vec / area)
+        src_nodes.append(face_dofs)
         P_tot += P
-    rhs = f  # solve for the rise theta = T - Tc, whose Robin right-hand side vanishes
 
+    # ---- manufactured data: volume source and inflow flux on every boundary face except the Robin face ----
+    f_vol = np.zeros(nd)
+    if g.source is not None:
+        for idx in _chunks(ne, max(100, chunk // 4)):
+            cb = CellBasis(mesh, elem, intorder=DATA_INTORDER, elements=idx, dofs=dofs)
+            X = cb.global_coordinates() / MM
+            q = np.broadcast_to(np.asarray(g.source(X[0], X[1], X[2]), dtype=float), X[0].shape)
+            f_vol += _load_form.assemble(cb, f=q / MM**3)
+            del cb, X, q
+    f_flux = np.zeros(nd)
+    if g.flux is not None:
+        for ax in range(3):
+            for sg in (-1, 1):
+                sel = bf[(axis == ax) & (sign == sg) & ~robin]
+                part = np.zeros(nd)
+                for s in _chunks(sel.size, fchunk):
+                    fb = FacetBasis(mesh, elem, facets=sel[s], intorder=DATA_INTORDER, dofs=dofs)
+                    X = fb.global_coordinates() / MM
+                    q = np.broadcast_to(np.asarray(g.flux(X[0], X[1], X[2], ax, sg), dtype=float), X[0].shape)
+                    part += _load_form.assemble(fb, f=q / MM**2)
+                part[~_face_mask(dofs, sel, nd)] = 0.0
+                f_flux += part
+    rhs = f_die + f_vol + f_flux + f_robin  # solve for the rise theta = T - Tc, whose Robin right-hand side vanishes
+    q_die, q_vol, q_bnd = P_tot, float(f_vol.sum()), float(f_flux.sum())
+    del bf, axis, sign, mp
+
+    prolong = _q1_to_q2(mesh, dofs) if order == 2 else None  # first coarse level of the Q2 multigrid (see _Solver)
     theta = np.zeros(nd)
     picard = 0
     resid = float("inf")
-    ml = None
-    A = None
     kmax = len(g.kfun)
     while True:
+        A = None  # free the previous system before the next is built (one CSR matrix alive at the peak)
         T_prev = g.Tc + theta
-        if constant_k:
-            Tq = np.full((ne, nqp), k_const_T if k_const_T is not None else g.Tc)
-        else:
-            Tq = np.asarray(basis.interpolate(T_prev))  # (ne, nqp) absolute T at quadrature points
-        kq = np.empty((ne, nqp))
-        for m in range(kmax):
-            sel = emat == m
-            if sel.any():
-                kq[sel] = g.kfun[m](Tq[sel])
-        A = (stiff.assemble(basis, k=kq / MM) + Mb).tocsr()
-        ml = pyamg.smoothed_aggregation_solver(A, max_coarse=500)
-        new = _amg_cg(A, rhs, theta, ml)
+
+        def stiffness_parts(T_prev=T_prev):
+            for idx in _chunks(ne, chunk):
+                cb = CellBasis(mesh, elem, intorder=iq, elements=idx, dofs=dofs)
+                nq = cb.X.shape[1]
+                if constant_k:
+                    Tq = np.full((idx.size, nq), k_const_T if k_const_T is not None else g.Tc)
+                else:
+                    Tq = np.asarray(cb.interpolate(T_prev))  # absolute T at this chunk's quadrature points
+                kq = np.empty((idx.size, nq))
+                em = emat[idx]
+                for m in range(kmax):
+                    sel = em == m
+                    if sel.any():
+                        kq[sel] = g.kfun[m](Tq[sel])
+                yield _stiff_form.assemble(cb, k=kq / MM)
+                del cb, Tq, kq
+
+        A = (_sum_chunks(stiffness_parts()) + Mb).tocsr()
+        new = _Solver(A, prolong).solve(rhs, theta)
         picard += 1
         resid = float(np.max(np.abs(new - theta)))
         theta = new
@@ -326,13 +574,59 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
         if picard >= max_picard:
             raise RuntimeError(f"Picard did not converge in {max_picard} iterations (last |dT| = {resid:.3e} K)")
     Tn = g.Tc + theta
-    q_out = float(g.h / MM**2 * np.dot(ones_b, theta))
-    eb = abs(q_out / P_tot - 1.0)
+    # Q_out = int h (T - T_inf) dS over the sink face; the T_inf part is the assembled load (its integral is f_robin.sum())
+    q_out = float(hh * np.dot(ones_b, theta) - f_robin.sum())
+    q_in = q_die + q_vol + q_bnd
+    eb = abs(q_out / q_in - 1.0) if q_in != 0.0 else abs(q_out)
     tj_max = np.array([Tn[n].max() for n in src_nodes])
     tj_mean = np.array([float(np.dot(v, Tn)) for v in src_vecs])
     wall = time.perf_counter() - t0
-    return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=mesh.p.T / MM,
-                         meta={"n_elements": int(ne), "q_out_W": q_out, "P_total_W": P_tot})
+    ci, cj, ck = np.nonzero(g.mat >= 0)
+    eidx = -np.ones(g.mat.shape, dtype=np.int64)
+    eidx[ci, cj, ck] = np.arange(ne)
+    meta = {"n_elements": int(ne), "element_order": order, "n_vertices": int(mesh.p.shape[1]), "q_out_W": q_out,
+            "P_total_W": P_tot, "q_in_die_W": q_die, "q_in_volume_W": q_vol, "q_in_boundary_W": q_bnd,
+            "q_in_W": q_in, "data_intorder": DATA_INTORDER}
+    return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=_doflocs(mesh, dofs).T / MM, meta=meta,
+                         field_eval=_FieldEval(mesh, elem, dofs, eidx, (g.x, g.y, g.z)))
+
+
+def _doflocs(mesh, dofs) -> np.ndarray:
+    """Dof coordinates (3, N) [mm]: vertices, edge midpoints, face centres, cell centres (affine cells)."""
+    loc = np.zeros((3, int(dofs.N)))
+    loc[:, dofs.nodal_dofs[0]] = mesh.p
+    if dofs.edge_dofs.shape[0]:
+        loc[:, dofs.edge_dofs[0]] = mesh.p[:, mesh.edges].mean(axis=1)
+    if dofs.facet_dofs.shape[0]:
+        loc[:, dofs.facet_dofs[0]] = mesh.p[:, mesh.facets].mean(axis=1)
+    if dofs.interior_dofs.shape[0]:
+        loc[:, dofs.interior_dofs[0]] = mesh.p[:, mesh.t].mean(axis=1)
+    return loc
+
+
+def point_values(res: ThermalResult, pts: np.ndarray) -> np.ndarray:
+    """Absolute temperature [K] of the FE field at points ``pts`` (n, 3) [m]: the tensor cell containing each point (an
+    active one when the point is on a shared line or on a boundary), reference coordinates by the mesh mapping's inverse."""
+    fe = res.field_eval
+    if fe is None:
+        raise ValueError("the result carries no field evaluator")
+    mapping = fe.mesh._mapping()
+    out = np.empty(len(pts))
+    for n, p in enumerate(np.asarray(pts, dtype=float).reshape(-1, 3)):
+        cand = []
+        for lines, v in zip(fe.lines, p, strict=True):
+            tol = 1e-9 * abs(lines[-1])
+            i = int(np.clip(np.searchsorted(lines, v, side="right") - 1, 0, lines.size - 2))
+            if v < lines[0] - tol or v > lines[-1] + tol:
+                raise ValueError(f"point {p} outside the mesh")
+            cand.append([j for j in (i - 1, i) if 0 <= j < lines.size - 1 and lines[j] - tol <= v <= lines[j + 1] + tol])
+        e = next((int(fe.eidx[i, j, k]) for i in cand[0] for j in cand[1] for k in cand[2] if fe.eidx[i, j, k] >= 0), -1)
+        if e < 0:
+            raise ValueError(f"point {p} is not in an active cell")
+        X = mapping.invF((p * MM)[:, None, None], tind=np.array([e]))
+        cb = CellBasis(fe.mesh, fe.elem, elements=np.array([e]), quadrature=(X[:, 0, :], np.array([1.0])), dofs=fe.dofs)
+        out[n] = float(np.asarray(cb.interpolate(res.T)).ravel()[0])
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ layout mode
@@ -439,13 +733,15 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         x0, y0, x1, y1 = d.bounds
         sources.append((x0, y0, x1, y1, z_top_cu + d.attach_thickness + d.thickness, float(p)))
     return _Grid(xl, yl, zl, mat, [_k_of(m) for m in materials], sources, float(h), float(T_c),
-                 ["baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die"])
+                 ["baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die"],
+                 order=rule.element_order)
 
 
 def estimate_dofs(layout: Layout, rule: GridRule | None = None, level: int = 0) -> int:
-    """Node count of the level-``level`` mesh from the grid counts alone (no matrices built; used to skip levels)."""
+    """DOF count of the level-``level`` mesh from the grid counts alone (no matrices built; used to skip levels): the
+    nodes for ``rule.element_order`` 1, nodes + edges + faces + cells for 2."""
     g = layout_grid(layout, 1.0, 1.0, 300.0, rule, level)
-    return _count_nodes(g.mat)
+    return _count_nodes(g.mat) if g.order == 1 else _count_nodes_q2(g.mat)
 
 
 def _count_nodes(mat: np.ndarray) -> int:
@@ -458,15 +754,48 @@ def _count_nodes(mat: np.ndarray) -> int:
     return int(pad.sum())
 
 
+def _count_nodes_q2(mat: np.ndarray) -> int:
+    """Q2 DOFs = points of the doubled lattice (2n+1 per axis) that lie in the closure of an active cell. A lattice
+    point touches the cells on either side along every axis it is on a line of, so the test is separable per axis."""
+    act = mat >= 0
+    for ax in range(3):
+        n = act.shape[ax]
+        pad = np.concatenate([np.zeros_like(np.take(act, [0], axis=ax)), act, np.zeros_like(np.take(act, [0], axis=ax))], axis=ax)
+        out_shape = list(act.shape)
+        out_shape[ax] = 2 * n + 1
+        out = np.zeros(out_shape, dtype=bool)
+        sl = [slice(None)] * 3
+        sl[ax] = slice(1, 2 * n + 1, 2)  # odd points: the cell itself
+        out[tuple(sl)] = act
+        lo, hi = [slice(None)] * 3, [slice(None)] * 3
+        lo[ax], hi[ax] = slice(0, n + 1), slice(1, n + 2)
+        sl[ax] = slice(0, 2 * n + 1, 2)  # even points: either neighbour
+        out[tuple(sl)] = pad[tuple(lo)] | pad[tuple(hi)]
+        act = out
+    return int(act.sum())
+
+
 def solve_layout(layout: Layout, power_W: Sequence[float] | float, h: float, T_c: float, *, rule: GridRule | None = None,
-                 level: int = 0, constant_k: bool = False, picard_tol: float = PICARD_TOL_K) -> ThermalResult:
-    """Layout mode: solve docs/thermal_model.md on the level-``level`` conforming mesh.
+                 level: int = 0, constant_k: bool = False, picard_tol: float = PICARD_TOL_K,
+                 source: Callable | None = None, flux: Callable | None = None,
+                 T_inf: Callable | None = None) -> ThermalResult:
+    """Layout mode: solve docs/thermal_model.md on the level-``level`` conforming mesh (``rule.element_order`` 1 or 2).
+
+    Optional manufactured data (SI; defaults None = the production problem, unchanged): ``source(x, y, z)`` [W/m3] over
+    the volume; ``flux(x, y, z, axis, sign)`` [W/m2], heat INTO the domain, on every exterior and void-bounding face
+    except the Robin face z = 0, ``(axis, sign)`` the outward normal; ``T_inf(x, y)`` [K] replacing the scalar ``T_c`` in
+    ``h (T - T_inf)`` (``T_c`` stays the reference of the solved rise and the start of the Picard iteration). The callables
+    take arrays of any shape. They are integrated with 4-point Gauss rules per direction (``DATA_INTORDER`` = 7: exact to
+    degree 7 per direction on the axis-aligned cells and faces). ``meta`` splits ``Q_in`` into ``q_in_die_W``,
+    ``q_in_volume_W`` and ``q_in_boundary_W`` (sum ``q_in_W``) next to ``q_out_W``; ``energy_balance`` is
+    ``|q_out_W / q_in_W - 1|`` with the assembled ``Q_in``.
 
     ``power_W`` is one value per die (``layout.dies`` order) or a scalar for all. ``constant_k`` uses ``k = Layer.k``
     (``k_at(T_REF)``). Returns per-die ``tj_max`` / ``tj_mean`` (absolute K, same order as ``layout.dies``)."""
     g = layout_grid(layout, power_W, h, T_c, rule, level)
     if constant_k:
         g.kfun = [(lambda T, la=la: np.full_like(T, la.k)) for la in _materials(layout)]
+    g.source, g.flux, g.T_inf = source, flux, T_inf
     r = _solve_grid(g, constant_k=constant_k, picard_tol=picard_tol)
     r.meta.update(level=level, cells=g.mat.shape)
     return r
@@ -502,13 +831,20 @@ class BoxLayer:
 
 def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
                     sources: Sequence[tuple[float, float, float, float, float]], *, h0: float, level: int = 0,
-                    constant_k: bool = False, picard_tol: float = PICARD_TOL_K) -> ThermalResult:
+                    constant_k: bool = False, picard_tol: float = PICARD_TOL_K, element_order: int = 1,
+                    source: Callable | None = None, flux: Callable | None = None,
+                    T_inf: Callable | None = None) -> ThermalResult:
     """Laterally uniform flux-channel mode (section 6): rectangle [0,a]x[0,b], bottom-up ``layers`` spanning it all,
     adiabatic sides, convective bottom (``h``, ``T_c``), sources ``(x0, y0, x1, y1, P)`` on the top face.
 
     ``h0`` is the level-0 lateral cell size (intervals between 0, a, b and the source edges get ``ceil(L/h0)`` cells,
     times ``2**level``). ``constant_k`` with a callable ``k`` evaluates it at ``T_c``. ``meta`` carries the top-surface
-    grid (``xs``, ``ys``, ``T_top[nx+1, ny+1]``) for point lookups with ``top_value``."""
+    grid (``xs``, ``ys``, ``T_top[nx+1, ny+1]``, vertex values) for point lookups with ``top_value``.
+
+    ``element_order`` 1 or 2 as in ``GridRule``; ``source``, ``flux`` and ``T_inf`` are the manufactured data of
+    ``solve_layout`` (the flux applies to every face but the bottom, the top and sides included)."""
+    if element_order not in (1, 2):
+        raise ValueError("element_order must be 1 or 2")
     xl0 = _lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources])
     yl0 = _lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources])
     xl, yl = _subdivide(xl0, h0, level), _subdivide(yl0, h0, level)
@@ -525,13 +861,16 @@ def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_
         return lambda T, la=la: np.full_like(T, float(la.k))
 
     srcs = [(s[0], s[1], s[2], s[3], float(zb[-1]), float(s[4])) for s in sources]
-    g = _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c))
+    g = _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=element_order,
+              source=source, flux=flux, T_inf=T_inf)
     r = _solve_grid(g, constant_k=constant_k, k_const_T=T_c, picard_tol=picard_tol)
-    top = np.isclose(r.nodes[:, 2], zb[-1])
-    ix = np.searchsorted(xl, r.nodes[top, 0] - 1e-14)
-    iy = np.searchsorted(yl, r.nodes[top, 1] - 1e-14)
+    nv = r.meta["n_vertices"]  # vertex dofs come first in both elements (dof i = mesh node i)
+    nodes, Tv = r.nodes[:nv], r.T[:nv]
+    top = np.isclose(nodes[:, 2], zb[-1])
+    ix = np.searchsorted(xl, nodes[top, 0] - 1e-14)
+    iy = np.searchsorted(yl, nodes[top, 1] - 1e-14)
     grid = np.full((xl.size, yl.size), np.nan)
-    grid[ix, iy] = r.T[top]
+    grid[ix, iy] = Tv[top]
     r.meta.update(xs=xl, ys=yl, T_top=grid, level=level)
     return r
 
