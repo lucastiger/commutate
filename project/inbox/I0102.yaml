@@ -1,0 +1,43 @@
+id: I0102
+kind: plan_approval
+subject: '[O007] approve initial plan (6 tasks)'
+summary: 'O007 is approved and active, but there is no evidence yet: E009 has no draft. thermal_fem.py
+  is also missing most of what the frozen scope needs: a through-thickness cell size bounded in absolute
+  terms, with r = 2 in z as well as x and y; mandatory grid lines and point values read only at nodes;
+  a Q2 option inside the production code (Q2 exists today only as the research solver e006_skfem_q2.py);
+  and the volumetric-source, boundary-flux and T_inf(x, y) data the manufactured case needs. Three things
+  are most likely to sink the hypothesis.
+
+  (1) A2/A4 on affordable grids once z is refined too. Each level then costs 8x more. E006''s Q1 run already
+  needed 1.5 M DOF with z held fixed.
+
+  (2) F5 on the cross-check. The L2 must now run level 3. That is about 58 M cells (about 87 GB) on side_by_side_6,
+  my x8 extrapolation from the 7,259,392 cells at level 2 in E006''s log.
+
+  (3) A structural gap in mfos. Every failed sanity check makes a run INVALID, and max_gci_consistency
+  has no cap. So F5''s pre-registered response ("A3 not met", INCONCLUSIVE, no redraw) cannot be encoded
+  as the tools stand.
+
+  The plan starts with the cheap F5 and memory preview. It needs no new code and runs in parallel with
+  the build. Then come two sequential builder tasks on thermal_fem.py (assembly and element order, then
+  grid rule and node-only measurement), a development study that freezes the configuration and records
+  the dev A1/A2/A4 values, the E009 design, and the single registered run. I am raising three founder
+  actions: the F5 encoding in mfos.metrics, the burst policy and VM size for E009, and a dev-only burst
+  preview, so that the only evaluation is not spent on extrapolations.'
+refs:
+- O007
+- T0204
+- T0205
+- T0206
+- T0207
+- T0208
+- T0209
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-03T02:21:26+00:00'
+resolved_at: null
+resolved_by: null

@@ -1,0 +1,116 @@
+id: T0207
+objective: O007
+title: 'O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near
+  margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory
+  and cost plan'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0205
+- T0206
+description: "The objective requires one scikit-fem configuration, frozen before E009 is registered and\
+  \ then used unchanged for every E009 case and by O003, with the element order chosen by a development\
+  \ study on dev data. Use the production thermal_fem only (after the assembly and grid-rule tasks). Script:\
+  \ research/scripts/o007_dev_study.py.\n\nBefore running anything, state in research/notes/o007-dev-study.md:\n\
+  \  - the candidate list: Q1 and Q2, with a few (h0, near_margin, dz_max) settings, at most about 4 candidates\
+  \ in all;\n  - the selection criterion: the cheapest configuration by finest-level peak memory that\
+  \ meets A1, A2 and A4 with a margin you state, on every reference case, and A4 on the two dev layouts,\
+  \ with E009's finest solves fitting the burst VM you state.\nNo outcome-dependent changes after that\
+  \ without recording them as such.\n\nReference cases (frozen O006 references research/e006_refs/series_values.json,\
+  \ sha256 befc5efa..., and mms_values.json, sha256 ca05847b...; verify the hashes first):\n  - Muzychka\
+  \ Cases 1a, 1b, 2 and 3, and the N-layer DBC case, in box-stack mode. Mandatory lines go through each\
+  \ source centroid and through the frozen reference's maximum location over each source.\n  - The manufactured\
+  \ case in layout mode (geometry as e006_run.mms_layout, data from e006_mms.build_case). Its frozen point\
+  \ coordinates are made nodes by the same mandatory-line mechanism.\n  - Per reported point (O006 A1\
+  \ points: centroid, source mean, reference maximum; manufactured: its frozen points), record: the three\
+  \ level values, |T - T_ref|, the scaled error (O006 A1 scale), mfos.metrics.gci_capped (floor 1e-3 K),\
+  \ branch, p_obs, d1, d2 and the stencil per level.\n  - Per case, record the DOF growth ratio per level\
+  \ (8 +/- 15 %), the energy balance (manufactured: against 64.648 W) and the Picard residual.\n  - Also\
+  \ record the F3 null: constant k at the layer-mean temperature must fail A1 and A2.\n\nDev layouts only:\
+  \ dev seed 20261101, side_by_side with dies_per_switch = 6 and u_shaped with dies_per_switch = 2; assert\
+  \ the fingerprints of experiments/specs/E006.yaml. Never use another seed, E006's fresh layouts or data/holdout\
+  \ (F4).\n  - Operating point: equal power per die calibrated on scikit-fem level 0, hottest die 60 +/-\
+  \ 1 K above 65 °C coolant, h = 5000, k(T).\n  - Per die, record: three-level Tj max, GCI, branch, p_obs,\
+  \ the Tj-max node coordinates per level and how often they move (T0198 rec. 3, T0202), and a constant-k\
+  \ column.\n  - Count the sequences that are divergent or oscillatory.\n\nRecord per solve: DOFs, wall\
+  \ time and peak RSS. Report Q2 bytes per DOF and an E009 table: all solves, peak memory, CPU-hours and\
+  \ a recommended timeout.\n\nLocal memory rule: solve only within 0.85 x physical memory. For any level\
+  \ that does not fit, record `levels_run`, label extrapolations explicitly, and provide a `--full` mode\
+  \ with the exact command (scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study.py\
+  \ --full\" research/o007_dev) for a founder-run dev burst.\n\nOutputs:\n  - research/o007_dev/frozen_config.json\
+  \ with keys element_order, h0_m, near_margin_m, dz_max_m, nz_min, mandatory_lines (the policy), quadrature,\
+  \ linear_rtol, picard_tol_K (1e-4), levels ([0, 1, 2]), feasible (bool), rationale;\n  - research/o007_dev/dev_study.json\
+  \ with every candidate's values and, under 'chosen', {'cases': {case: {..., 'node_count_ratio': [...],\
+  \ 'levels_run': [...]}}, 'layouts': {name: {'levels_run': [...], 'dies': [{'gci_K', 'argmax_xyz': [one\
+  \ per level run], ...}]}}};\n  - the note, with the dev A1/A2/A4 values that E009's spec will record\
+  \ at freeze (K1/K2 regression guard).\nIf no candidate is feasible, set feasible: false and say so plainly.\
+  \ That is a finding, not a failure of the task."
+context_files:
+- project/objectives/O007/objective.yaml
+- research/diagnoses/T0198.md
+- project/reviews/OBJ-O007/T0201.json
+- project/reviews/OBJ-O007/T0202.json
+- src/moduleforge/solvers/thermal_fem.py
+- experiments/runners/e006_run.py
+- experiments/runners/e006_series.py
+- experiments/runners/e006_mms.py
+- experiments/specs/E006.yaml
+- research/e006_refs/series_values.json
+- research/e006_refs/mms_values.json
+- research/notes/o006-e006-design.md
+- tools/mfos/mfos/metrics.py
+deliverables:
+- research/scripts/o007_dev_study.py
+- research/o007_dev/frozen_config.json
+- research/o007_dev/dev_study.json
+- research/notes/o007-dev-study.md
+touches:
+- research/scripts/o007_dev_study.py
+- research/o007_dev/**
+- research/notes/o007-dev-study.md
+definition_of_done:
+- cmd: null
+  exists: research/o007_dev/frozen_config.json
+  timeout_s: 900
+- cmd: uv run python -c "import json; c=json.load(open('research/o007_dev/frozen_config.json')); assert
+    c['element_order'] in (1, 2) and c['dz_max_m'] > 0 and c['h0_m'] > 0 and c['levels'] == [0, 1, 2]
+    and c['picard_tol_K'] == 1e-4 and isinstance(c['feasible'], bool); assert all(k in c for k in ('near_margin_m',
+    'nz_min', 'mandatory_lines', 'quadrature', 'linear_rtol', 'rationale'))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d=json.load(open('research/o007_dev/dev_study.json')); ch=d['chosen'];
+    assert {'case1a','case1b','case2','case3','nlayer_dbc','mms'} <= set(ch['cases']); assert {'side_by_side_6','u_shaped_2'}
+    <= set(ch['layouts']); assert all('node_count_ratio' in v and len(v['levels_run']) >= 2 for v in ch['cases'].values());
+    assert all(len(x['argmax_xyz']) == len(ch['layouts'][k]['levels_run']) and 'gci_K' in x for k in ('side_by_side_6','u_shaped_2')
+    for x in ch['layouts'][k]['dies'])"
+  exists: null
+  timeout_s: 120
+- cmd: null
+  exists: research/notes/o007-dev-study.md
+  timeout_s: 900
+- cmd: uv run ruff check research/scripts/o007_dev_study.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0203
+created_at: '2026-11-03T02:21:26+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'scope_in: one configuration frozen before registration, element order chosen on dev data.
+  This is the main early check of A1, A2 and A4 at affordable cost, and it covers F2 (T0198 rec. 3, Tj-max
+  node movement) and F3 before the evaluation is spent.'
+history: []

@@ -1,0 +1,30 @@
+id: I0099
+kind: decision
+subject: '[O007] O007 F5: mfos has no way to record the pre-registered response ''A3 not met'' (it can
+  only make the run INVALID)'
+summary: 'O007''s F5 says: if the L2 cross-check''s own GCI (levels 1-3, floor 1e-3 K) exceeds 0.25 K
+  on any die, A3 counts as not met (INCONCLUSIVE), with no redraw of the fresh layouts (T0201). In mfos
+  every failed sanity check makes the run INVALID (tools/mfos/mfos/evaluate.py: ''sanity checks failed''
+  is a validity problem). A3''s recompute function max_gci_consistency has no cap on the cross-check''s
+  GCI. As the tools stand, E009 can encode F5 only as INVALID, which contradicts the frozen response and
+  reopens the redraw path, or leave it ungated, in which case an F5 failure could still PASS A3. tools/mfos
+  is protected, so I cannot plan a change to it. The E009 design task is told to stop rather than improvise
+  if no mechanism exists when it starts.'
+refs:
+- O007
+- T0203
+options:
+- '(a) Add an optional `ref_gci_cap` parameter to mfos.metrics.max_gci_consistency. It returns +inf when
+  any row''s recomputed reference GCI exceeds the cap; the default None keeps current behaviour; add a
+  unit test. E009''s A3 recompute entry then carries ref_gci_cap: 0.25 with floor 0.001, and F5 is reported
+  per die as an ungated diagnostic.'
+- (b) Keep F5 as a gated sanity check (INVALID on failure). This departs from O007's frozen F5 response
+  and would need a criteria change.
+- (c) Another mechanism of your choice, recorded before E009 is registered.
+recommendation: (a), done before the E009 design task starts. It implements F5's frozen response mechanically,
+  A3 stays fully recomputable from the rows, and no criterion or threshold changes.
+status: open
+response: ''
+created_at: '2026-11-03T02:21:26+00:00'
+resolved_at: null
+resolved_by: null

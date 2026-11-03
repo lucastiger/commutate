@@ -1,8 +1,11 @@
 # ModuleForge status
-_generated 2026-11-03T02:10:29+00:00 from repository state — do not edit_
+_generated 2026-11-03T02:21:28+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (4 open)
+- **I0099** [decision] [O007] O007 F5: mfos has no way to record the pre-registered response 'A3 not met' (it can only make the run INVALID)
+- **I0100** [external_action] [O007] Burst compute for E009: add E009 to policy burst_experiments and choose a VM with at least 128 GB RAM
+- **I0101** [external_action] [O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts, plus the dev study's full levels if needed)
+- **I0102** [plan_approval] [O007] approve initial plan (6 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +17,7 @@ _generated 2026-11-03T02:10:29+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $3.71/$70 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $6.45/$70 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,21 +28,20 @@ _generated 2026-11-03T02:10:29+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 3 | $3.71 | 82326 | 61465 | 5 | 0 |
+| O007 | 3 | $6.45 | 148116 | 107800 | 5 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 169, failed: 3, running: 1
+cancelled: 30, done: 170, failed: 3, proposed: 6
 
-- T0203 `running` planner/plan: Plan O007 (periodic) (attempt 1)
+- T0204 `proposed` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 0)
+- T0205 `proposed` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 0)
+- T0206 `proposed` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 0)
+- T0207 `proposed` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 0)
+- T0208 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
+- T0209 `proposed` none/experiment: Run E009: scikit-fem thermal reference against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
 
 ## Recent events
-- 2026-11-03T00:32:42+00:00 run_started {"run": "T0200-critic-20261102T163242-5c1e", "task": "T0200", "role": "critic", "session": "3269016e-cfdd-4363-b031-958147e6c1d2"}
-- 2026-11-03T00:40:53+00:00 run_finished {"run": "T0200-critic-20261102T163242-5c1e", "status": "completed", "cost": 2.460132, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T00:40:58+00:00 inbox_opened {"id": "I0097", "kind": "protected_change", "subject": "T0198: merge needs founder approval"}
-- 2026-11-03T01:49:44+00:00 inbox_resolved {"id": "I0097", "status": "approved", "note": "T0198 diagnosis of EV-O006-01 (review T0200 accept with caveats): z-resolution of the frozen rule on 10 mm plates
-- 2026-11-03T01:50:19+00:00 merged {"task": "T0198"}
-- 2026-11-03T01:50:19+00:00 inbox_opened {"id": "I0098", "kind": "decision", "subject": "[O006] replan limit reached"}
 - 2026-11-03T01:50:21+00:00 inbox_resolved {"id": "I0096", "status": "approved", "note": "Founder (2026-11-02): option A, the pre-registered decision. EV-O006-01 is INCONCLUSIVE (A1 0.0206, A2 0.143 K, A
 - 2026-11-03T01:50:54+00:00 inbox_resolved {"id": "I0098", "status": "approved", "note": "Founder decision A (I0096): no O006 replan. O006 is evaluated (INCONCLUSIVE, EV-O006-01) and the work continues u
 - 2026-11-03T01:54:02+00:00 objective_draft_review {"objective": "O007", "ref": "372e047d54ed240e66d8ff1f8c92e245035e87f8", "tasks": ["T0201", "T0202"]}
@@ -49,3 +51,9 @@ cancelled: 30, done: 169, failed: 3, running: 1
 - 2026-11-03T02:02:28+00:00 run_finished {"run": "T0202-critic-20261102T175430-01f1", "status": "completed", "cost": 2.133333, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T02:10:27+00:00 objective_approved {"objective": "O007", "criteria_hash": "sha256:81723bc542a25acd7c796ece92af5f8907868f2df37b0ba0a4fd3211956df93d"}
 - 2026-11-03T02:10:29+00:00 run_started {"run": "T0203-planner-20261102T181029-a0a1", "task": "T0203", "role": "planner", "session": "f0c0512d-357c-4d1b-bb7d-7fddeef0a43c"}
+- 2026-11-03T02:21:26+00:00 run_finished {"run": "T0203-planner-20261102T181029-a0a1", "status": "completed", "cost": 2.742655, "subtype": "success", "report": "structured_output"}
+- 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0099", "kind": "decision", "subject": "[O007] O007 F5: mfos has no way to record the pre-registered response 'A3 not met' (it can only make the run INV
+- 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0100", "kind": "external_action", "subject": "[O007] Burst compute for E009: add E009 to policy burst_experiments and choose a VM with at least 128 GB 
+- 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0101", "kind": "external_action", "subject": "[O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts
+- 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0102", "kind": "plan_approval", "subject": "[O007] approve initial plan (6 tasks)"}
+- 2026-11-03T02:21:26+00:00 plan_applied {"objective": "O007", "created": ["T0204", "T0205", "T0206", "T0207", "T0208", "T0209"], "dropped": 0}

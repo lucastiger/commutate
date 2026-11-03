@@ -1,0 +1,92 @@
+id: T0206
+objective: O007
+title: 'thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid
+  lines, node-only point values, Tj-max node coordinates (box-stack and layout modes)'
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0205
+description: "Extend src/moduleforge/solvers/thermal_fem.py (after the assembly task) with the two design\
+  \ changes O007 takes from diagnosis T0198 (research/diagnoses/T0198.md; project/memory/lessons.md, 2026-11-02\
+  \ entries).\n\n(a) `GridRule.dz_max` [m], default None (current per-layer counts). When set, every z\
+  \ interval of thickness t (each stack layer, die attach and die) gets max(nz_of(layer), ceil(t / dz_max))\
+  \ cells at level 0 and 2**level times as many at level l. Every direction is then refined (r = 2 in\
+  \ x, y and z; reject zrefine=False together with dz_max). The same rule applies in layout mode and box-stack\
+  \ mode.\n(b) Box-stack mode (solve_box_stack) takes the same GridRule (h0, near_margin, dz_max, element_order)\
+  \ through the same line builder and _solve_grid as layout mode. Keep the existing call signature working.\n\
+  (c) Mandatory grid lines: an optional `extra_lines=(xs, ys, zs)` in both modes, merged into the level-0\
+  \ line set before subdivision, so that a point on them is a node at every level. Box-stack mode always\
+  \ adds each source's centroid lines. (E009 will pass the frozen references' maximum locations and the\
+  \ manufactured case's frozen points, which are fixed by the references, not by any solver result.)\n\
+  (d) Node-only point values:\n  - `node_value(res, x, y, z=None)` (z defaults to the top face) returns\
+  \ T at the DOF location at that point (Q2 includes edge, face and cell mid-nodes), within a 1e-9 m tolerance,\
+  \ and raises ValueError otherwise. No interpolation.\n  - `node_stencil(res, x, y, z=None)` returns,\
+  \ per axis, the index of the grid line through the point and the neighbouring line coordinates, so a\
+  \ runner can report per level that the point is a node.\n  - Mark top_value as not for reported values.\n\
+  (e) Per die/source: Tj max is the maximum over the DOF locations on the top face, with its coordinates\
+  \ in `meta['tj_max_xyz']` (a list per die). The area mean stays the Galerkin integral.\n(f) meta records\
+  \ n_dofs, n_elements, element order, level and the per-axis line arrays/counts, so a runner can check\
+  \ bisection and DOF growth.\n\nTests in a new file, tests/unit/solvers/test_thermal_fem_rule.py:\n \
+  \ - level-0 dz <= dz_max in every layer, and halving per level, on the default stack and on a 10 mm\
+  \ single plate;\n  - every level-l line in x, y and z is a level-(l+1) line, and every cell bisects,\
+  \ over levels 0 -> 1 -> 2;\n  - the DOF count grows by 8 +/- 15 % per level, for Q1 and Q2, on a default-stack\
+  \ generator layout and a box stack of realistic size;\n  - mandatory lines are present at all levels,\
+  \ node_value returns the nodal value there at every level, and it raises off-node;\n  - tj_max_xyz lies\
+  \ on the die top face and is the node of maximum T;\n  - a centred single-source box stack is mirror-symmetric\
+  \ to 1e-9 K;\n  - dz_max=None reproduces the existing tests unchanged.\nUpdate docs/thermal_model.md.\
+  \ Never weaken an existing test."
+context_files:
+- project/objectives/O007/objective.yaml
+- research/diagnoses/T0198.md
+- project/memory/lessons.md
+- src/moduleforge/solvers/thermal_fem.py
+- src/moduleforge/solvers/thermal_layout.py
+- docs/thermal_model.md
+- tests/unit/solvers/test_thermal_fem.py
+- project/reviews/OBJ-O007/T0202.json
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- docs/thermal_model.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+    tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_fem_rule.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python -c "import inspect; from moduleforge.solvers import thermal_fem as F; r = F.GridRule(dz_max=2.5e-4,
+    element_order=2); assert r.dz_max == 2.5e-4 and r.zrefine; assert callable(F.node_value) and callable(F.node_stencil);
+    assert 'extra_lines' in inspect.signature(F.solve_layout).parameters and 'extra_lines' in inspect.signature(F.solve_box_stack).parameters"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 1800
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0203
+created_at: '2026-11-03T02:21:26+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Directly required by the hypothesis and scope_in (absolute through-thickness bound, r = 2
+  in x, y and z, node-only points, mandatory lines in box-stack mode). It also supplies the F2 checks:
+  node persistence, 8x DOF growth and Tj-max node movement.'
+history: []

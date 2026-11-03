@@ -3,7 +3,7 @@ objective: O007
 title: Plan O007 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,25 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O007 is approved and active, but there is no evidence yet: E009 has no draft. thermal_fem.py
+    is also missing most of what the frozen scope needs: a through-thickness cell size bounded in absolute
+    terms, with r = 2 in z as well as x and y; mandatory grid lines and point values read only at nodes;
+    a Q2 option inside the production code (Q2 exists today only as the research solver e006_skfem_q2.py);
+    and the volumetric-source, boundary-flux and T_inf(x, y) data the manufactured case needs. Three things
+    are most likely to sink the hypothesis.
+
+    (1) A2/A4 on affordable grids once z is refined too. Each level then costs 8x more. E006''s Q1 run
+    already needed 1.5 M DOF with z held fixed.
+
+    (2) F5 on the cross-check. The L2 must now run level 3. That is about 58 M cells (about 87 GB) on
+    side_by_side_6, '
+  created:
+  - T0204
+  - T0205
+  - T0206
+  - T0207
+  - T0208
+  - T0209
+  dropped_for_limits: 0

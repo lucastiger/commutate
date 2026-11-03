@@ -1,0 +1,100 @@
+id: T0205
+objective: O007
+title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution
+  data (volume source, boundary inflow flux, Robin T_inf(x, y))'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
+  \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
+  \ needs it to run every O006 reference case, including the manufactured one, through the production\
+  \ mesh and assembly code (O007 scope_in), with the element order chosen later by a dev study.\n\n(a)\
+  \ `GridRule.element_order` in {1, 2}, default 1. With order 1, current results must be unchanged: the\
+  \ existing tests in tests/unit/solvers/test_thermal_fem.py and test_thermal_gci_matches_evaluator.py\
+  \ pass unmodified. Order 1 is ElementHex1 with 2x2x2 Gauss. Order 2 is ElementHex2 with 3x3x3 Gauss;\
+  \ state in the docstring why it is exact for the stiffness and face-mass integrands on axis-aligned\
+  \ boxes. Port the method of experiments/runners/e006_skfem_q2.py (research code; port it, do not import\
+  \ it): stiffness assembled in element chunks, so peak memory is the CSR matrix plus the AMG hierarchy.\
+  \ Keep the Picard scheme (k at the quadrature points from the previous iterate, stop at max|dT| < 1e-4\
+  \ K), AMG-CG with relative residual 1e-11, and the solve for theta = T - T_c.\n(b) Robin face mass,\
+  \ the uniform-flux die/source loads and the source/die means (exact Galerkin integral of T over the\
+  \ face / area) are assembled correctly for either element. Use skfem FacetBasis or an equivalent exact\
+  \ tensor rule.\n(c) Optional manufactured data on solve_layout and solve_box_stack (defaults None give\
+  \ the current behaviour):\n  - `source(x, y, z)` [W/m³], integrated over the volume;\n  - `flux(x, y,\
+  \ z, axis, sign)` [W/m², heat into the domain], on every exterior and void-bounding face except the\
+  \ Robin face z = 0;\n  - `T_inf(x, y)` [K], replacing the scalar coolant temperature in h (T - T_inf).\n\
+  \  These are the signatures of MMSCase in experiments/runners/e006_mms.py (see run_mms and mms_layout\
+  \ in e006_run.py for how the L2 consumed them). State the quadrature order used for the data. meta records\
+  \ Q_in split into die sources, volume source and boundary inflow, plus Q_out, and the energy balance\
+  \ |Q_out/Q_in - 1| is computed against the assembled Q_in.\n(d) Bytes per DOF per element order (measure\
+  \ Q2, document it). max_dofs/estimate_dofs account for the order.\n\nTests in a new file, tests/unit/solvers/test_thermal_fem_assembly.py.\
+  \ Cite every closed form (skill mf-conventions); mark tests over 60 s as slow.\n  1. A two-layer 1D\
+  \ column (full-face uniform flux, Robin bottom): Q1 and Q2 match the series-resistance closed form within\
+  \ 1e-6 K, with energy balance <= 1e-9.\n  2. A 1D column with linear k(T) against the Kirchhoff-transform\
+  \ closed form: observed order about 2 for Q1 and at least 3 for Q2 over three bisections.\n  3. A field\
+  \ quadratic in x, y and z in a constant-k box, with matching source, inflow flux and T_inf: Q2 reproduces\
+  \ it at every node within 1e-8 K; Q1 converges at about order 2 at a fixed node.\n  4. A two-region\
+  \ manufactured case with a material interface: energy balance against the integrated source and flux\
+  \ <= 1e-9, and convergence at the element's order.\n  5. O006's manufactured case (e006_mms.build_case\
+  \ and the mms_layout construction, imported by path in the test) at a coarse level: energy balance <=\
+  \ 1e-6, and the error at the frozen points of research/e006_refs/mms_values.json decreasing from level\
+  \ 0 to level 1 at an observed order of at least 1.5.\nUpdate docs/thermal_model.md. Never weaken an\
+  \ existing test or tolerance."
+context_files:
+- project/objectives/O007/objective.yaml
+- src/moduleforge/solvers/thermal_fem.py
+- experiments/runners/e006_skfem_q2.py
+- experiments/runners/e006_mms.py
+- experiments/runners/e006_run.py
+- research/notes/o006-manufactured-solution.md
+- research/e006_refs/mms_values.json
+- docs/thermal_model.md
+- tests/unit/solvers/test_thermal_fem.py
+- tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_assembly.py
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_assembly.py
+- docs/thermal_model.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+    tests/unit/solvers/test_thermal_fem_assembly.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python -c "import inspect; from moduleforge.solvers import thermal_fem as F; assert F.GridRule().element_order
+    == 1 and F.GridRule(element_order=2).element_order == 2; s = inspect.signature(F.solve_layout).parameters;
+    b = inspect.signature(F.solve_box_stack).parameters; assert all(k in s and k in b for k in ('source',
+    'flux', 'T_inf'))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 1800
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0203
+created_at: '2026-11-03T02:21:26+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Hypothesis (a) and A1/A2: the manufactured case must run through the production code (scope_in).
+  The element-order option is what the dev study chooses between. Q2 is the documented route to A2 at
+  affordable DOF (E006: Q2 at 0.0011 K at 0.59 M DOF; Q1 at 0.0155 K at 1.8 M DOF).'
+history: []
