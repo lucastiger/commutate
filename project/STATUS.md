@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-03T17:45:14+00:00 from repository state — do not edit_
+_generated 2026-11-03T17:46:36+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0105** [infrastructure] infrastructure: venv_provisioning
+- **I0106** [protected_change] T0206: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,14 +30,13 @@ _generated 2026-11-03T17:45:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 177, failed: 3, needs_founder: 2, review: 1, todo: 2
+cancelled: 30, done: 177, failed: 3, needs_founder: 3, todo: 2
 
-- T0206 `review` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
+- T0206 `needs_founder` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 - T0215 `needs_founder` critic/review: Review T0206 (general) (attempt 0)
 
 ## Recent events
-- 2026-11-03T16:51:26+00:00 inbox_resolved {"id": "I0103", "status": "approved", "note": "T0204: L2 levels 1-3 preview (dry run predicts F5 max 0.155 K; VM 256 GB)", "by": "human"}
 - 2026-11-03T16:51:28+00:00 inbox_resolved {"id": "I0104", "status": "approved", "note": "T0205: thermal_fem Q1/Q2, MMS data, face-node tj_max fix, Q2 p-multigrid (reviews T0212/T0213 accept with caveats
 - 2026-11-03T16:51:32+00:00 merged {"task": "T0204"}
 - 2026-11-03T17:03:36+00:00 merged {"task": "T0205"}
@@ -51,3 +51,4 @@ cancelled: 30, done: 177, failed: 3, needs_founder: 2, review: 1, todo: 2
 - 2026-11-03T17:42:16+00:00 inbox_opened {"id": "I0105", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
 - 2026-11-03T17:42:16+00:00 infrastructure_pause {"task": "T0215", "signal": "venv_provisioning"}
 - 2026-11-03T17:44:03+00:00 sleep_detected {"gap_s": 913, "runs_extended": 0}
+- 2026-11-03T17:46:34+00:00 inbox_opened {"id": "I0106", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
