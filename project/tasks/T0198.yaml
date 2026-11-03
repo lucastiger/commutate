@@ -1,0 +1,67 @@
+id: T0198
+objective: O006
+title: Diagnose failure of EV-O006-01
+type: investigate
+agent: scientist
+status: running
+depends_on: []
+description: "Task EV-O006-01 ('evaluation EV-O006-01') failed with preliminary class `experimental`:\
+  \ objective verdict INCONCLUSIVE.\nFailure output (tail):\n```\naluator_version\": \"2.0.0\",\n \"results_used\"\
+  : {\n  \"E006\": \"E006-20261102T145940-2815\"\n },\n \"validity_problems\": [],\n \"pass_checks\":\
+  \ [\n  {\n   \"id\": \"A1\",\n   \"metric\": \"E006.max_case_scaled_err\",\n   \"comparator\": \"<=\"\
+  ,\n   \"threshold\": 0.01,\n   \"value\": 0.02060733107309668,\n   \"bound_used\": 0.02060733107309668,\n\
+  \   \"verdict\": \"not_satisfied\",\n   \"recomputed\": true,\n   \"runner_value\": 0.02060733107309668,\n\
+  \   \"null_value\": 0.024952122539889186,\n   \"null_bound\": 0.024952122539889186\n  },\n  {\n   \"\
+  id\": \"A2\",\n   \"metric\": \"E006.max_abs_err_K\",\n   \"comparator\": \"<=\",\n   \"threshold\"\
+  : 0.05,\n   \"value\": 0.1430808527080103,\n   \"bound_used\": 0.1430808527080103,\n   \"verdict\":\
+  \ \"not_satisfied\",\n   \"recomputed\": true,\n   \"runner_value\": 0.1430808527080103,\n   \"null_value\"\
+  : 2.5138936561559717,\n   \"null_bound\": 2.5138936561559717\n  },\n  {\n   \"id\": \"A3\",\n   \"metric\"\
+  : \"E006.max_skfem_consistency\",\n   \"comparator\": \"<=\",\n   \"threshold\": 1.0,\n   \"value\"\
+  : 0.7194335222635525,\n   \"bound_used\": 0.7194335222635525,\n   \"verdict\": \"satisfied\",\n   \"\
+  recomputed\": true,\n   \"runner_value\": 0.7194335222635525,\n   \"null_value\": null,\n   \"null_bound\"\
+  : null\n  },\n  {\n   \"id\": \"A4\",\n   \"metric\": \"E006.max_conservative_gci_K\",\n   \"comparator\"\
+  : \"<=\",\n   \"threshold\": 0.5,\n   \"value\": null,\n   \"bound_used\": null,\n   \"verdict\": \"\
+  not_satisfied\",\n   \"recomputed\": true,\n   \"runner_value\": null,\n   \"null_value\": null,\n \
+  \  \"null_bound\": null\n  }\n ],\n \"fail_checks\": [\n  {\n   \"id\": \"K1\",\n   \"metric\": \"E006.max_case_scaled_err\"\
+  ,\n   \"comparator\": \">\",\n   \"threshold\": 0.05,\n   \"value\": 0.02060733107309668,\n   \"bound_used\"\
+  : 0.02060733107309668,\n   \"verdict\": \"not_satisfied\",\n   \"recomputed\": true,\n   \"runner_value\"\
+  : 0.02060733107309668,\n   \"null_value\": null,\n   \"null_bound\": null\n  },\n  {\n   \"id\": \"\
+  K2\",\n   \"metric\": \"E006.max_abs_err_K\",\n   \"comparator\": \">\",\n   \"threshold\": 0.25,\n\
+  \   \"value\": 0.1430808527080103,\n   \"bound_used\": 0.1430808527080103,\n   \"verdict\": \"not_satisfied\"\
+  ,\n   \"recomputed\": true,\n   \"runner_value\": 0.1430808527080103,\n   \"null_value\": null,\n  \
+  \ \"null_bound\": null\n  }\n ],\n \"verdict\": \"INCONCLUSIVE\",\n \"explanation\": \"Pass criteria\
+  \ not established: A1, A2, A4\",\n \"unused_runs\": {},\n \"checks\": {\n  \"E006\": {\n   \"on_main\"\
+  : \"ok\",\n   \"spec_in_commit\": \"ok\",\n   \"lockfile\": \"ok\",\n   \"runner_files\": \"ok\",\n\
+  \   \"code_under_test\": \"ok\",\n   \"artifacts\": \"ok\",\n   \"registry\": \"ok\",\n   \"code_must_match\"\
+  : \"n/a: the spec declares no code_must_match\",\n   \"requires_passed\": \"n/a: the spec requires no\
+  \ objective\"\n  }\n }\n}\n```\nDetermine the true failure class and root cause. Follow skill mf-diagnosis:\
+  \ list at least two alternative explanations, design a discriminating test, run it if cheap, and write\
+  \ your notes to research/diagnoses/T0198.md."
+context_files:
+- project/objectives/O006/evaluations/EV-O006-01.json
+deliverables:
+- research/diagnoses/T0198.md
+touches:
+- research/diagnoses/T0198.md
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0198-diagnose-failure-of-ev-o006-01
+pr: null
+runs:
+- T0198-scientist-20261102T161535-eb70
+created_by: orchestrator
+created_at: '2026-11-03T00:15:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

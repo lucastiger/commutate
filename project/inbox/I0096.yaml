@@ -1,0 +1,25 @@
+id: I0096
+kind: decision
+subject: '[O006] INCONCLUSIVE (EV-O006-01): the pre-registered decision'
+summary: 'Pass criteria not established: A1, A2, A4
+
+  Pre-registered decision if INCONCLUSIVE: If A1, A2 and A4 are met and only A3 is not: diagnose which
+  solver is wrong (mf-diagnosis, e.g. a finer scikit-fem grid or a third method on the worst die) before
+  any switch; founder decision. If only A2 is missed, only on the manufactured case, with max |T_L2 -
+  T_ref| on it below K2''s 0.25 K and its excess over 0.05 K at most that case''s own GCI: a discretisation
+  shortfall on a smooth case rather than a model error; founder decision on refining that case under a
+  new experiment id instead of the fallback. Otherwise same as fail.
+
+  A diagnosis and a statistics review are running.'
+refs:
+- O006
+- EV-O006-01
+options:
+- act on the pre-registered decision
+- wait for the diagnosis
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-03T00:15:31+00:00'
+resolved_at: null
+resolved_by: null

@@ -1,0 +1,449 @@
+{
+  "experiment_id": "E006",
+  "run_id": "E006-20261102T145940-2815",
+  "status": "complete",
+  "seed": 1474348386,
+  "config": {
+    "series_ref_path": "research/e006_refs/series_values.json",
+    "series_sha256": "befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151",
+    "mms_ref_path": "research/e006_refs/mms_values.json",
+    "mms_sha256": "ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b",
+    "mms_kvar_min": 0.3,
+    "mms_kvar_measured": 0.3227142963267051,
+    "mms_kvar_margin": 0.0227142963267051,
+    "mms_kvar_max_normalised": 0.244,
+    "gci_floor_K": 0.001,
+    "energy_tol": 1e-06,
+    "picard_tol_K": 0.0001,
+    "coolant_K": 338.15,
+    "h_W_m2K": 5000.0,
+    "target_rise_K": 60.0,
+    "calibration_tol_K": 0.25,
+    "operating_point_tol_K": 1.0,
+    "power_start_W": 30.0,
+    "dev_seed": 20261101,
+    "dev_layouts": [
+      [
+        "side_by_side_6",
+        "side_by_side",
+        6
+      ],
+      [
+        "u_shaped_2",
+        "u_shaped",
+        2
+      ]
+    ],
+    "dev_fingerprints": {
+      "side_by_side_6": "1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b",
+      "u_shaped_2": "6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6"
+    },
+    "skfem_rule": {
+      "h0_m": 0.0005,
+      "near_margin_m": 0.0015,
+      "nz": {
+        "baseplate": 6,
+        "solder": 2,
+        "backside_cu": 2,
+        "ceramic": 2,
+        "top_cu": 2,
+        "die_attach": 2,
+        "die": 2
+      }
+    },
+    "f5_max_K": 0.25,
+    "skfem_f1_gci_K": 0.01,
+    "skfem_f1_agree_K": 0.02,
+    "skfem_max_dofs": 700000,
+    "skfem_f1_element": "ElementHex2 (Q2, 27-node Lagrange hexahedron), Gauss 3x3x3, exact Galerkin source means",
+    "skfem_case2": {
+      "s0_m": 0.002,
+      "grow": 2.0,
+      "hmax_m": 0.005,
+      "z_s0_m": 0.002,
+      "z_hmax_m": 0.005,
+      "nz": {}
+    },
+    "skfem_uniform": {
+      "box_m": 0.0165,
+      "die_m": 0.0055,
+      "target_rise_K": 85.0,
+      "s0_m": 0.00025,
+      "grow": 2.0,
+      "hmax_m": 0.001,
+      "nz": {
+        "baseplate": 2
+      }
+    },
+    "skfem_case1": {
+      "s0_m": 0.005,
+      "grow": 2.0,
+      "hmax_m": 0.03,
+      "nz": {
+        "plate": 1,
+        "spreader": 1
+      }
+    },
+    "skfem_offcentre": {
+      "box_m": [
+        0.012,
+        0.01
+      ],
+      "die_m": [
+        0.005,
+        0.004
+      ],
+      "centre_m": [
+        0.004,
+        0.0035
+      ],
+      "target_rise_K": 85.0,
+      "s0_m": 0.0005,
+      "grow": 2.0,
+      "hmax_m": 0.002,
+      "nz": {
+        "baseplate": 2
+      }
+    },
+    "fv_bytes_per_cell": 1500.0,
+    "memory_fraction": 0.85,
+    "smoke_rule": {
+      "H0_MAX": 0.004,
+      "LAT_FRAC": 4.0,
+      "EDGE_FRAC": 8.0,
+      "Z_CELLS": 1
+    },
+    "smoke_skfem_rule": {
+      "h0_m": 0.002,
+      "near_margin_m": 0.0015,
+      "nz": {
+        "baseplate": 3,
+        "solder": 1,
+        "backside_cu": 1,
+        "ceramic": 1,
+        "top_cu": 1,
+        "die_attach": 1,
+        "die": 1
+      }
+    },
+    "smoke_fresh_dev_seed": 7
+  },
+  "provenance": {
+    "git_commit": "bb0725fee4b57bcee20da9bbc49aae5625992bcc",
+    "git_dirty": false,
+    "git_branch": "HEAD",
+    "spec_hash": "sha256:6ea7ce80d70572248e8704bbc71743459c4fa44cec07ff2a1cdeb59547b08fcf",
+    "lock_hash": "4a8bdc2b28bde8b94f945eeaafe16c95ab16a0691edd66bd860a726bc24d30e1",
+    "python": "3.12.3",
+    "platform": "Linux-7.0.0-1014-gcp-x86_64-with-glibc2.39",
+    "host": "mf-burst-e006-1793660380",
+    "packages": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "jax": "0.11.2",
+      "pydantic": "2.13.5",
+      "shapely": "2.1.2"
+    },
+    "tools": {},
+    "started": "2026-11-02T23:01:43+00:00",
+    "finished": "2026-11-03T00:14:43+00:00",
+    "code": {
+      "experiments/runners/e006_mms.py": "2653c76de6e76bda8f1ced5e33dedc12a03ee68e1632aeaa332aadd40eafe153",
+      "experiments/runners/e006_series.py": "b7a005bf44e8699de1908164474191b44535ddc037b868791642563667850636",
+      "experiments/runners/e006_skfem_q2.py": "75d1978b17b305ebf08d321b533f06f1505e339434ab92cee949bbc635e266e5",
+      "src/moduleforge/geometry/stack.py": "f213fed1f62ba5f655c78136e465f11ad906b2c95c9022a870967903dff21065",
+      "src/moduleforge/solvers/thermal_fem.py": "7075d74662721f7bb0f047040bbbaf8206e9e939aa5afc3c2edd015ef02774b7",
+      "src/moduleforge/solvers/thermal_fv.py": "408efd57718941618ca7d176c293f52d058cf48cd65d33575fab7ad8fa5a309e",
+      "src/moduleforge/solvers/thermal_layout.py": "5a43758ddacc1b90903f03f220fd2092219a1c2ba0fdd73c7d758c46e756b9e6"
+    },
+    "runner_hashes": {
+      "experiments/runners/e006_run.py": "a793b15584822020d29bd27b98cf4eadddb10e94381768746fddf9a892b9d488"
+    }
+  },
+  "metrics": {
+    "max_case_scaled_err": {
+      "value": 0.02060733107309668,
+      "ci": null,
+      "level": 0.0,
+      "n": 214,
+      "unit": ""
+    },
+    "max_abs_err_K": {
+      "value": 0.1430808527080103,
+      "ci": null,
+      "level": 0.0,
+      "n": 214,
+      "unit": "K"
+    },
+    "max_skfem_consistency": {
+      "value": 0.7194335222635525,
+      "ci": null,
+      "level": 0.0,
+      "n": 214,
+      "unit": ""
+    },
+    "max_conservative_gci_K": {
+      "value": Infinity,
+      "ci": null,
+      "level": 0.0,
+      "n": 214,
+      "unit": "K"
+    },
+    "null_dT_const_k_scaled_err": {
+      "value": 0.024952122539889186,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_dT_const_k_abs_err_K": {
+      "value": 2.5138936561559717,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "n_oscillatory_values": {
+      "value": 2.0,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "n_non_asymptotic_values": {
+      "value": 41.0,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    }
+  },
+  "sanity": [
+    {
+      "name": "reference_sha256",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "series befc5efaf2d5 (config befc5efaf2d5), mms ca05847b71c5 (config ca05847b71c5); checked before any solve"
+    },
+    {
+      "name": "series_cases_match_frozen_parameters",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "e006_series cases == series_values.json parameters"
+    },
+    {
+      "name": "series_converged",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "convergence_doubling_case1a: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case1b: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case2: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_case3: max rel change modes=0.0e+00, quad=0.0e+00, images=0.0e+00, all=0.0e+00 (< 1e-7); convergence_doubling_nlayer_dbc: max rel change modes=8.0e-16, quad=8.0e-16, images=8.0e-16, all=8.0e-16 (< 1e-7)"
+    },
+    {
+      "name": "case3_printed_values",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "50 terms 80.6147 C vs printed 80.61 C (|d| <= 0.005); converged 80.6119 C (converged - printed +0.0019 K); 50 terms 78.8712 C vs printed 78.87 C (|d| <= 0.005); converged 78.8731 C (converged - printed +0.0031 K)"
+    },
+    {
+      "name": "nlayer_reduces_to_two_layer",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "max rel diff case1b_split: 0.0e+00; nl_split: 6.7e-16 (<= 1e-9)"
+    },
+    {
+      "name": "mms_numeric_check",
+      "passed": true,
+      "value": 0.3227142963267051,
+      "threshold": 0.3,
+      "detail": "e006_mms --selfcheck all gates pass (klaw_transcription=ok, field_range=ok, k_law_validity=ok, ceramic_single_branch=ok, k_variation=ok, source_vs_fd=ok, interface_continuity=ok, global_balance=ok, region_balance=ok, cubature_converged=ok); generator sha256 matches the frozen file: True; ceramic k_max/k_min - 1 = 0.3227 >= 0.3 (k_max-normalised 0.2440)"
+    },
+    {
+      "name": "skfem_q2_selftest",
+      "passed": true,
+      "value": 2.5931967684300616e-10,
+      "threshold": 1e-06,
+      "detail": "point evaluation of a triquadratic field max err 4.9e-15 (<= 1e-9); two-layer 1D conduction exact to 2.6e-10 K (<= 1e-6 K); energy balance 6.9e-13"
+    },
+    {
+      "name": "case2_skfem_gci",
+      "passed": true,
+      "value": 0.004568885177249626,
+      "threshold": 0.01,
+      "detail": "scikit-fem Q2 own A4 GCI (gci_capped, floor 1e-3 K), max over 12 values; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 10647, 'elements': 1083, 'cg_iters': 31, 'rel_residual': 9.519008968054591e-12, 'wall_s': 1.2, 'energy_balance': 1.0302869668521453e-13, 'rss_gb': 1.66}, {'level': 1, 'dofs': 77077, 'elements': 8664, 'cg_iters': 46, 'rel_residual': 1.7636966490423746e-11, 'wall_s': 7.45, 'energy_balance': 4.911626660941693e-13, 'rss_gb': 1.66}, {'level': 2, 'dofs': 585225, 'elements': 69312, 'cg_iters': 59, 'rel_residual': 1.781066549496786e-11, 'wall_s': 68.1, 'energy_balance': 2.26840768391412e-12, 'rss_gb': 2.63}]"
+    },
+    {
+      "name": "case2_vs_skfem",
+      "passed": true,
+      "value": 0.0010810708382678058,
+      "threshold": 0.02,
+      "detail": "max |T_fe(level 2) - T_series|; levels 0/1/2: s1.centroid fe 370.53258/370.53750/370.53763 ref 370.53764 err -0.00001 gci 0.00154 (fast); s1.mean fe 369.99852/370.00434/370.00569 ref 370.00612 err -0.00043 gci 0.00182 (fast); s1.max fe 370.57986/370.57566/370.57581 ref 370.57581 err -0.00000 gci 0.00131 (fast); s2.centroid fe 376.93315/376.94549/376.94583 ref 376.94585 err -0.00002 gci 0.00386 (fast); s2.mean fe 375.48404/375.49866/375.50202 ref 375.50310 err -0.00108 gci 0.00457 (fast); s2.max fe 376.96203/376.96025/376.95987 ref 376.95987 err +0.00000 gci 0.00056 (fast); s3.centroid fe 374.40291/374.41278/374.41305 ref 374.41307 err -0.00002 gci 0.00308 (fast); s3.mean fe 373.25831/373.27001/373.27269 ref 373.27356 err -0.00086 gci 0.00365 (fast); s3.max fe 374.41200/374.41630/374.41624 ref 374.41623 err +0.00001 gci 0.00135 (fast); s4.centroid fe 373.06282/373.07021/373.07041 ref 373.07042 err -0.00001 gci 0.00231 (fast); s4.mean fe 372.22425/372.23300/372.23501 ref 372.23566 err -0.00065 gci 0.00274 (fast); s4.max fe 373.07332/373.07503/373.07492 ref 373.07492 err +0.00000 gci 0.00053 (fast)"
+    },
+    {
+      "name": "case2_skfem_energy_and_ratio",
+      "passed": true,
+      "value": 2.26840768391412e-12,
+      "threshold": 1e-06,
+      "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+    },
+    {
+      "name": "nlayer_uniform_rise_in_band",
+      "passed": true,
+      "value": 84.95957316989791,
+      "threshold": null,
+      "detail": "centred 5.50 mm die, 68.8 W on 16.5 mm box"
+    },
+    {
+      "name": "nlayer_uniform_skfem_gci",
+      "passed": true,
+      "value": 0.0005761518350055894,
+      "threshold": 0.01,
+      "detail": "quarter-symmetric scikit-fem Q2, own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: True; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 80, 'rel_residual': 1.0982391388589735e-11, 'wall_s': 0.84, 'energy_balance': 3.389510894180603e-13, 'rss_gb': 2.63}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 101, 'rel_residual': 9.834406071122986e-12, 'wall_s': 9.15, 'energy_balance': 1.6292522886374172e-12, 'rss_gb': 2.63}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 140, 'rel_residual': 1.0473604600582303e-11, 'wall_s': 89.92, 'energy_balance': 3.166022999323559e-12, 'rss_gb': 2.63}]"
+    },
+    {
+      "name": "nlayer_uniform_vs_skfem",
+      "passed": true,
+      "value": 9.989873916538272e-05,
+      "threshold": 0.02,
+      "detail": "centroid ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast); mean ref 415.92189 fe 415.91961/415.92145/415.92179 err -0.00010 gci 0.00058 (fast); max ref 423.10957 fe 423.10780/423.10948/423.10957 err -0.00001 gci 0.00052 (fast)"
+    },
+    {
+      "name": "nlayer_uniform_skfem_energy_and_ratio",
+      "passed": true,
+      "value": 3.166022999323559e-12,
+      "threshold": 1e-06,
+      "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+    },
+    {
+      "name": "nlayer_offcentre_rise_in_band",
+      "passed": true,
+      "value": 85.07823305857659,
+      "threshold": null,
+      "detail": "5.00 x 4.00 mm die centred at (4.00, 3.50) mm, 35.9 W on a 12.0 x 10.0 mm box; series odd-mode signal at the centroid: x +9.2971 K, y +7.6606 K (zero for a centred source); maximum offset from the centroid (-0.337, -0.239) mm"
+    },
+    {
+      "name": "nlayer_offcentre_series_converged",
+      "passed": true,
+      "value": 0.0,
+      "threshold": 1e-07,
+      "detail": "max |T(all Acc knobs doubled) - T(default)| / rise over the five points"
+    },
+    {
+      "name": "nlayer_offcentre_skfem_gci",
+      "passed": true,
+      "value": 0.008056194646797838,
+      "threshold": 0.01,
+      "detail": "full-domain scikit-fem Q2 (no symmetry), own A4 GCI; ratio 2 between levels: True; GCI >= |err| on every value: False; levels [{'level': 0, 'dofs': 8993, 'elements': 968, 'cg_iters': 113, 'rel_residual': 9.075913272577516e-12, 'wall_s': 1.08, 'energy_balance': 4.2521541843143495e-14, 'rss_gb': 2.63}, {'level': 1, 'dofs': 66825, 'elements': 7744, 'cg_iters': 149, 'rel_residual': 1.1689548307497617e-11, 'wall_s': 12.24, 'energy_balance': 1.0271783423831948e-12, 'rss_gb': 2.63}, {'level': 2, 'dofs': 514865, 'elements': 61952, 'cg_iters': 212, 'rel_residual': 1.238382286799074e-11, 'wall_s': 122.18, 'energy_balance': 1.1100009800202315e-12, 'rss_gb': 2.63}]"
+    },
+    {
+      "name": "nlayer_offcentre_vs_skfem",
+      "passed": true,
+      "value": 0.000347340854432332,
+      "threshold": 0.02,
+      "detail": "centroid ref 423.04161 fe 423.04794/423.04120/423.04158 err -0.00002 gci 0.00211 (fast); mean ref 418.88641 fe 418.88018/418.88499/418.88606 err -0.00035 gci 0.00150 (fast); max ref 423.22823 fe 423.23297/423.23021/423.22812 err -0.00011 gci 0.00806 (monotone); centroid_xmirror ref 404.44732 fe 404.44730/404.44716/404.44731 err -0.00001 gci 0.00000 (exact); centroid_ymirror ref 407.72048 fe 407.71664/407.72095/407.72049 err +0.00002 gci 0.00135 (fast)"
+    },
+    {
+      "name": "nlayer_offcentre_skfem_energy_and_ratio",
+      "passed": true,
+      "value": 1.1100009800202315e-12,
+      "threshold": 1e-06,
+      "detail": "max |Q_out/Q_in - 1| over the three solves; constant ratio 2: True"
+    },
+    {
+      "name": "layout_fingerprints",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "{\"side_by_side_6\": {\"fingerprint\": \"1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b\", \"family\": \"side_by_side\", \"dies_per_switch\": 6}, \"u_shaped_2\": {\"fingerprint\": \"6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6\", \"family\": \"u_shaped\", \"dies_per_switch\": 2}, \"fresh_side_by_side\": {\"fingerprint\": \"0a096c2c054ebba04862bb619979daf0628eee3dd4a11b53f6208546a063c1be\", \"family\": \"side_by_side\", \"dies_per_switch\": 3}, \"fresh_interleaved\": {\"fingerprint\": \"438f66f1518a7a52d3ddf30abc79aed7b0cb30b9d67dfa0f95ac07b2b296e333\", \"family\": \"interleaved\", \"dies_per_switch\": 3}, \"fresh_u_shaped\": {\"fingerprint\": \"e97d7d9ed3a4dc26156ff8a54404970285aa72e4b589501fab078c67723db475\", \"family\": \"u_shaped\", \"dies_per_switch\": 3}}"
+    },
+    {
+      "name": "mms_geometry_matches_reference",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "frozen-rule grid material map == reference region map at every level; grid z lines contain the reference interfaces"
+    },
+    {
+      "name": "constant_refinement_ratio",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "case1a:ok; case1b:ok; case2:ok; case3:ok; nlayer_dbc:ok; mms:ok; side_by_side_6:ok; u_shaped_2:ok; fresh_side_by_side:ok; fresh_interleaved:ok; fresh_u_shaped:ok"
+    },
+    {
+      "name": "energy_balance",
+      "passed": true,
+      "value": 1.4704560147293932e-07,
+      "threshold": 1e-06,
+      "detail": "max over 57 solves incl. mms against the integrated reference fluxes"
+    },
+    {
+      "name": "picard_converged",
+      "passed": true,
+      "value": 2.9084160132697434e-05,
+      "threshold": 0.0001,
+      "detail": ""
+    },
+    {
+      "name": "operating_point",
+      "passed": true,
+      "value": 0.13448594960755145,
+      "threshold": 1.0,
+      "detail": "max |level-0 hottest rise - 60 K| over layouts"
+    },
+    {
+      "name": "skfem_gci_f5",
+      "passed": true,
+      "value": 0.2333739397661816,
+      "threshold": 0.25,
+      "detail": "max over every die of five layouts of gci_capped(skfem_lv0..2, 1e-3) + 2.5|z1 - z0|"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "rows.json",
+      "sha256": "f4b8adc3477cc4b7f81db3a88d5c08286e8b2403a8434be8186332be689f7ef1",
+      "bytes": 156582
+    }
+  ],
+  "notes": "secondary {\"n_values\": 94, \"n_oscillatory\": 2, \"n_divergent\": 3, \"n_non_asymptotic\": 41, \"min_gci_over_err_case\": 1.9348804506859443, \"n_case_err_above_gci\": 0, \"n_same_side_crosscheck\": 0}; same-side A3 pairs (weak for A3): []; solves [{\"tag\": \"case1a/L0\", \"n_cells\": 181202, \"wall_s\": 1.11, \"rss_gb\": 2.63}, {\"tag\": \"case1a/L1\", \"n_cells\": 1449616, \"wall_s\": 8.7, \"rss_gb\": 2.63}, {\"tag\": \"case1a/L2\", \"n_cells\": 11596928, \"wall_s\": 86.5, \"rss_gb\": 12.2}, {\"tag\": \"case1b/L0\", \"n_cells\": 362404, \"wall_s\": 2.19, \"rss_gb\": 12.2}, {\"tag\": \"case1b/L1\", \"n_cells\": 2899232, \"wall_s\": 20.41, \"rss_gb\": 12.2}, {\"tag\": \"case1b/L2\", \"n_cells\": 23193856, \"wall_s\": 217.01, \"rss_gb\": 24.9}, {\"tag\": \"case2/L0\", \"n_cells\": 5202, \"wall_s\": 0.04, \"rss_gb\": 24.9}, {\"tag\": \"case2/L1\", \"n_cells\": 41616, \"wall_s\": 0.26, \"rss_gb\": 24.9}, {\"tag\": \"case2/L2\", \"n_cells\": 332928, \"wall_s\": 2.15, \"rss_gb\": 24.9}, {\"tag\": \"case3/L0\", \"n_cells\": 20000, \"wall_s\": 0.33, \"rss_gb\": 24.9}, {\"tag\": \"case3/L1\", \"n_cells\": 160000, \"wall_s\": 1.05, \"rss_gb\": 24.9}, {\"tag\": \"case3/L2\", \"n_cells\": 1280000, \"wall_s\": 8.02, \"rss_gb\": 24.9}, {\"tag\": \"nlayer_dbc/L0\", \"n_cells\": 295120, \"wall_s\": 2.69, \"rss_gb\": 24.9}, {\"tag\": \"nlayer_dbc/L1\", \"n_cells\": 2360960, \"wall_s\": 23.59, \"rss_gb\": 24.9}, {\"tag\": \"nlayer_dbc/L2\", \"n_cells\": 18887680, \"wall_s\": 291.15, \"rss_gb\": 24.9}, {\"tag\": \"mms/L0\", \"n_cells\": 14578, \"wall_s\": 1.37, \"rss_gb\": 24.9}, {\"tag\": \"mms/L1\", \"n_cells\": 116624, \"wall_s\": 7.31, \"rss_gb\": 24.9}, {\"tag\": \"mms/L2\", \"n_cells\": 932992, \"wall_s\": 71.07, \"rss_gb\": 24.9}, {\"tag\": \"mms/L2-constk\", \"n_cells\": 932992, \"wall_s\": 59.08, \"rss_gb\": 24.9}, {\"tag\": \"side_by_side_6/L0\", \"n_cells\": 113428, \"wall_s\": 2.07, \"rss_gb\": 24.9}, {\"tag\": \"side_by_side_6/L1\", \"n_cells\": 907424, \"wall_s\": 17.82, \"rss_gb\": 24.9}, {\"tag\": \"side_by_side_6/L2\", \"n_cells\": 7259392, \"wall_s\": 180.06, \"rss_gb\": 24.9}, {\"tag\": \"u_shaped_2/L0\", \"n_cells\": 70066, \"wall_s\": 1.42, \"rss_gb\": 24.9}, {\"tag\": \"u_shaped_2/L1\", \"n_cells\": 560528, \"wall_s\": 11.86, \"rss_gb\": 24.9}, {\"tag\": \"u_shaped_2/L2\", \"n_cells\": 4484224, \"wall_s\": 119.91, \"rss_gb\": 24.9}, {\"tag\": \"fresh_side_by_side/L0\", \"n_cells\": 78464, \"wall_s\": 1.57, \"rss_gb\": 24.9}, {\"tag\": \"fresh_side_by_side/L1\", \"n_cells\": 627712, \"wall_s\": 12.76, \"rss_gb\": 24.9}, {\"tag\": \"fresh_side_by_side/L2\", \"n_cells\": 5021696, \"wall_s\": 129.04, \"rss_gb\": 24.9}, {\"tag\": \"fresh_interleaved/L0\", \"n_cells\": 81858, \"wall_s\": 1.7, \"rss_gb\": 24.9}, {\"tag\": \"fresh_interleaved/L1\", \"n_cells\": 654864, \"wall_s\": 14.18, \"rss_gb\": 24.9}, {\"tag\": \"fresh_interleaved/L2\", \"n_cells\": 5238912, \"wall_s\": 135.22, \"rss_gb\": 24.9}, {\"tag\": \"fresh_u_shaped/L0\", \"n_cells\": 80874, \"wall_s\": 1.61, \"rss_gb\": 24.9}, {\"tag\": \"fresh_u_shaped/L1\", \"n_cells\": 646992, \"wall_s\": 14.02, \"rss_gb\": 24.9}, {\"tag\": \"fresh_u_shaped/L2\", \"n_cells\": 5175936, \"wall_s\": 141.5, \"rss_gb\": 24.9}]; reference info [{\"name\": \"paper50_case1a_s1_centroid\", \"value\": false, \"detail\": \"50 terms 84.9386 C vs printed 84.97 C (|d| <= 0.005); converged 85.4506 C (converged - printed +0.4806 K)\"}, {\"name\": \"paper50_case1a_s1_mean\", \"value\": true, \"detail\": \"50 terms 80.5582 C vs printed 80.56 C (|d| <= 0.005); converged 80.7052 C (converged - printed +0.1452 K)\"}, {\"name\": \"paper50_case1a_s2_centroid\", \"value\": false, \"detail\": \"50 terms 108.3842 C vs printed 108.43 C (|d| <= 0.005); converged 109.1522 C (converged - printed +0.7222 K)\"}, {\"name\": \"paper50_case1a_s2_mean\", \"value\": false, \"detail\": \"50 terms 101.7967 C vs printed 101.81 C (|d| <= 0.005); converged 102.0170 C (converged - printed +0.2070 K)\"}, {\"name\": \"paper50_case1b_s1_centroid\", \"value\": true, \"detail\": \"50 terms 56.5480 C vs printed 56.55 C (|d| <= 0.005); converged 56.5659 C (converged - printed +0.0159 K)\"}, {\"name\": \"paper50_case1b_s1_mean\", \"value\": false, \"detail\": \"50 terms 56.0442 C vs printed 56.05 C (|d| <= 0.005); converged 56.0488 C (converged - printed -0.0012 K)\"}, {\"name\": \"paper50_case1b_s2_centroid\", \"value\": false, \"detail\": \"50 terms 59.9475 C vs printed 59.94 C (|d| <= 0.005); converged 59.9743 C (converged - printed +0.0343 K)\"}, {\"name\": \"paper50_case1b_s2_mean\", \"value\": true, \"detail\": \"50 terms 59.1878 C vs printed 59.19 C (|d| <= 0.005); converged 59.1947 C (converged - printed +0.0047 K)\"}, {\"name\": \"paper50_case2_s1_centroid\", \"value\": false, \"detail\": \"50 terms 97.4065 C vs printed 97.40 C (|d| <= 0.005); converged 97.3876 C (converged - printed -0.0124 K)\"}, {\"name\": \"paper50_case2_s1_mean\", \"value\": true, \"detail\": \"50 terms 96.8519 C vs printed 96.85 C (|d| <= 0.005); converged 96.8561 C (converged - printed +0.0061 K)\"}, {\"name\": \"paper50_case2_s2_centroid\", \"value\": false, \"detail\": \"50 terms 103.8409 C vs printed 103.82 C (|d| <= 0.005); converged 103.7958 C (converged - printed -0.0242 K)\"}, {\"name\": \"paper50_case2_s2_mean\", \"value\": false, \"detail\": \"50 terms 102.3426 C vs printed 102.33 C (|d| <= 0.005); converged 102.3531 C (converged - printed +0.0231 K)\"}, {\"name\": \"paper50_case2_s3_centroid\", \"value\": false, \"detail\": \"50 terms 101.2993 C vs printed 101.28 C (|d| <= 0.005); converged 101.2631 C (converged - printed -0.0169 K)\"}, {\"name\": \"paper50_case2_s3_mean\", \"value\": false, \"detail\": \"50 terms 100.1152 C vs printed 100.10 C (|d| <= 0.005); converged 100.1236 C (converged - printed +0.0236 K)\"}, {\"name\": \"paper50_case2_s4_centroid\", \"value\": false, \"detail\": \"50 terms 99.9482 C vs printed 99.94 C (|d| <= 0.005); converged 99.9204 C (converged - printed -0.0196 K)\"}, {\"name\": \"paper50_case2_s4_mean\", \"value\": false, \"detail\": \"50 terms 99.0794 C vs printed 99.07 C (|d| <= 0.005); converged 99.0857 C (converged - printed +0.0157 K)\"}, {\"name\": \"case1a_vs_skfem_info\", \"value\": 0.00841769935470893, \"detail\": \"max |err| (K) of scikit-fem Q2 level 2; max GCI 0.4369 K; levels [{'level': 0, 'dofs': 6627, 'elements': 529, 'cg_iters': 35, 'rel_residual': 1.1173402",
+  "domain": {
+    "case": [
+      "case1a",
+      "case1b",
+      "case2",
+      "case3",
+      "mms",
+      "nlayer_dbc"
+    ],
+    "family": [
+      "interleaved",
+      "side_by_side",
+      "u_shaped"
+    ],
+    "dies_per_switch": [
+      2,
+      3,
+      6
+    ],
+    "layout_fingerprint": [
+      "0a096c2c054ebba04862bb619979daf0628eee3dd4a11b53f6208546a063c1be",
+      "1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b",
+      "438f66f1518a7a52d3ddf30abc79aed7b0cb30b9d67dfa0f95ac07b2b296e333",
+      "6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6",
+      "e97d7d9ed3a4dc26156ff8a54404970285aa72e4b589501fab078c67723db475"
+    ],
+    "coolant_K": [
+      338.15
+    ],
+    "h_W_m2K": [
+      5000.0
+    ],
+    "target_rise_K": [
+      60.0
+    ]
+  }
+}

@@ -1421,3 +1421,8 @@
 {"ts": "2026-11-02T19:33:12+00:00", "event": "experiment_minted", "actor": "orchestrator", "id": "E006", "run": "E006-20261102T113312-b41e"}
 {"ts": "2026-11-02T22:59:27+00:00", "event": "experiment_run_abandoned", "actor": "founder", "id": "E006", "run": "E006-20261102T113312-b41e", "reason": "Complete run, all 26 sanity checks passed, but result.json is unreadable: mfos wrote A4 (+inf) as null. Fixed in the mfos inf/NaN commit. Runner-reported values: A1 0.0206, A2 0.143 K, A3 0.70, A4 unreadable. Re-run under a new mint."}
 {"ts": "2026-11-02T22:59:40+00:00", "event": "experiment_minted", "actor": "orchestrator", "id": "E006", "run": "E006-20261102T145940-2815"}
+{"ts": "2026-11-03T00:15:31+00:00", "event": "evaluation", "actor": "orchestrator", "objective": "O006", "id": "EV-O006-01", "verdict": "INCONCLUSIVE"}
+{"ts": "2026-11-03T00:15:31+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0096", "kind": "decision", "subject": "[O006] INCONCLUSIVE (EV-O006-01): the pre-registered decision"}
+{"ts": "2026-11-03T00:15:31+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0198", "about": "EV-O006-01", "cls": "experimental"}
+{"ts": "2026-11-03T00:15:34+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0199-critic-20261102T161534-e1a5", "task": "T0199", "role": "critic", "session": "e816c6b8-bfdd-4902-9c02-021f4a56fe8e"}
+{"ts": "2026-11-03T00:15:35+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0198-scientist-20261102T161535-eb70", "task": "T0198", "role": "scientist", "session": "d644af8d-7244-4ef6-a0f0-f470e0b3b907"}

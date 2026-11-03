@@ -1,0 +1,109 @@
+{
+  "id": "EV-O006-01",
+  "objective": "O006",
+  "timestamp": "2026-11-03T00:15:31+00:00",
+  "criteria_hash": "sha256:76caaac481581134a4cacbd333e297dfc61f7aef780edae4ca7ae0aa7a64bc54",
+  "evaluator_version": "2.0.0",
+  "results_used": {
+    "E006": "E006-20261102T145940-2815"
+  },
+  "validity_problems": [],
+  "pass_checks": [
+    {
+      "id": "A1",
+      "metric": "E006.max_case_scaled_err",
+      "comparator": "<=",
+      "threshold": 0.01,
+      "value": 0.02060733107309668,
+      "bound_used": 0.02060733107309668,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.02060733107309668,
+      "null_value": 0.024952122539889186,
+      "null_bound": 0.024952122539889186
+    },
+    {
+      "id": "A2",
+      "metric": "E006.max_abs_err_K",
+      "comparator": "<=",
+      "threshold": 0.05,
+      "value": 0.1430808527080103,
+      "bound_used": 0.1430808527080103,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.1430808527080103,
+      "null_value": 2.5138936561559717,
+      "null_bound": 2.5138936561559717
+    },
+    {
+      "id": "A3",
+      "metric": "E006.max_skfem_consistency",
+      "comparator": "<=",
+      "threshold": 1.0,
+      "value": 0.7194335222635525,
+      "bound_used": 0.7194335222635525,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.7194335222635525,
+      "null_value": null,
+      "null_bound": null
+    },
+    {
+      "id": "A4",
+      "metric": "E006.max_conservative_gci_K",
+      "comparator": "<=",
+      "threshold": 0.5,
+      "value": Infinity,
+      "bound_used": Infinity,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": Infinity,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "fail_checks": [
+    {
+      "id": "K1",
+      "metric": "E006.max_case_scaled_err",
+      "comparator": ">",
+      "threshold": 0.05,
+      "value": 0.02060733107309668,
+      "bound_used": 0.02060733107309668,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.02060733107309668,
+      "null_value": null,
+      "null_bound": null
+    },
+    {
+      "id": "K2",
+      "metric": "E006.max_abs_err_K",
+      "comparator": ">",
+      "threshold": 0.25,
+      "value": 0.1430808527080103,
+      "bound_used": 0.1430808527080103,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.1430808527080103,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "verdict": "INCONCLUSIVE",
+  "explanation": "Pass criteria not established: A1, A2, A4",
+  "unused_runs": {},
+  "checks": {
+    "E006": {
+      "on_main": "ok",
+      "spec_in_commit": "ok",
+      "lockfile": "ok",
+      "runner_files": "ok",
+      "code_under_test": "ok",
+      "artifacts": "ok",
+      "registry": "ok",
+      "code_must_match": "n/a: the spec declares no code_must_match",
+      "requires_passed": "n/a: the spec requires no objective"
+    }
+  }
+}
