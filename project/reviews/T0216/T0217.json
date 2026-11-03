@@ -1,0 +1,57 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The snap distance is tied to the level-0 cell size, but the crash depends on absolute cell width: lines just outside the snap distance still crash at refinement levels 1\u20133",
+      "detail": "`_merge_lines` snaps a mandatory line only when it lies within SNAP_FRACTION\u00b7h0 (2 \u00b5m at h0 = 2 mm) of an existing line, or within SNAP_FRACTION times the level-0 dz in z. A line just outside that distance is kept and its interval is split into min_cells cells, and each refinement level halves them again. The failure (the same scikit-fem invF error 'Newton iteration didn't converge up to TOL=1e-12', or AMG-CG non-convergence) appears once a cell is narrower than about 1 \u00b5m, whatever its ratio to the neighbouring cell. So a mandatory line 2\u201310 \u00b5m from a die or source edge solves at level 0 but crashes at levels \u22651. Mandatory lines exist so that a point is a node at every level, which is what grid-convergence (GCI) sweeps need, so this is the case the fix had to cover. The task claims 'no sliver cells', but sliver cells that crash the solver remain inside this band.",
+      "evidence": "Toy layout (tests' _toy_layout), h0 = 2e-3, dz_max = 5e-4, constant_k, x line at 4.5e-3, y line at 3e-3 + f\u00b7SNAP_FRACTION\u00b7h0:\n- Level 0, f = 1.01 to 100: OK in both modes and both element orders.\n- Level 1: f = 1.01 and 1.5 FAIL (Newton invF); f = 3 and above OK.\n- Level 2: f = 1.01, 1.5 and 3 FAIL; f = 5 and above OK.\n- Level 3: f = 1.01 FAIL; f = 0.99 (snapped) OK.\n- Q2 at level 1, f = 1.01: FAIL.\nBox stack (A_BOX, SRC2, edge y = 4e-3), f = 1.01: FAIL at levels 1, 2, 3 (Q1) and level 1 (Q2); f = 0.99: OK everywhere.\nz axis, layout, line at z_top_cu + 1.01\u00b71e-3\u00b7dz (dz = 5e-5): OK at levels 0 and 1; FAIL at level 2 ('AMG-CG did not converge to a relative residual of 1e-8'); f = 3 OK at level 2.",
+      "suggested_check": "Set the snap distance from the finest cell width that will be used (for example scale by 2**-level_max, or use an absolute floor of a few \u00b5m), and add a solve test at levels 1\u20132 with a line at 1.01\u20135\u00d7 the snap distance in y and z.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The tests never solve a kept near-threshold line or any snapped case above level 0",
+      "detail": "test_near_coincident_mandatory_line_snaps_and_solves solves only at the default level 0, with offsets of 1e-9 to 1e-6 m, all well inside the snap distance. test_far_mandatory_line_is_kept_and_close_ones_merge builds the 1.5\u00d7 case, which its own comment calls 'kept (a sliver cell)', but only builds the grid and never solves it. Neither test exercises the band where the defect above occurs, so the suite passes while that band still crashes.",
+      "evidence": "Read the test code. The 80 DoD tests pass in 421 s. Reproduced FAIL at levels \u22651 for the 1.5\u00d7 offset that test_far_mandatory_line_is_kept_and_close_ones_merge treats as fine.",
+      "suggested_check": "Parametrize the snap/keep tests over level \u2208 {0, 1, 2} and solve the kept-line case.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The docstring's stated failure mechanism (cell-size ratio) contradicts the measured behaviour and the chosen threshold",
+      "detail": "The `_merge_lines` docstring says a sliver cell 1e-3 times its neighbour makes invF and AMG fail. Yet the threshold keeps cells of about 0.5e-3 h0 (a 1.01\u00d7 offset split into 2 cells), and those solve fine at level 0. The same ratio fails at level 1, so the measurements contradict the ratio explanation and point to an absolute-width limit of about 1 \u00b5m. The comment would lead a maintainer to the wrong fix.",
+      "evidence": "At level 0 the minimum dy is 1.01e-6 m and the solve is OK. At level 1 the minimum dy is about 5e-7 m and the solve FAILs. The cell-size ratio is identical in both cases.",
+      "suggested_check": "Correct the rationale once the threshold is fixed.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "node_value at the requested (unsnapped) coordinate raises ValueError",
+      "detail": "After a snap, the requested point is no longer a degree-of-freedom location, so callers must read meta['snapped_lines'] and query the snapped coordinate instead. This is documented and tested. No caller outside the tests passes extra_lines today. Future runners must handle it, or they will fail at reporting time rather than at solve time.",
+      "evidence": "grep finds no use of extra_lines outside thermal_fem.py and the tests. The test asserts the ValueError for dy > 2e-9.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Box-stack source centroid lines now go through snapping",
+      "detail": "For a source narrower than about 2\u00b7SNAP_FRACTION\u00b7h0, the always-mandatory centroid line would snap onto a source edge, losing the symmetric-centre node. This is an unrealistic edge case for current inputs.",
+      "evidence": "Code reading: in box_stack_grid, cx and cy are now passed as extra lines with snap = SNAP_FRACTION\u00b7h0.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD commands: 4 test files, 80 passed in 421 s; ruff check src tests: all checks passed; `uv run mfos gate --fast`: all gates passed.",
+    "Turned snapping off (F.SNAP_FRACTION = 0) and solved with the T0215 offsets 1e-9, 1e-7 and 1e-6 m in layout and box mode, Q1 and Q2: all 12 runs crash (invF Newton), so the original defect is real and the level-0 tests do catch it.",
+    "Swept the offset across the snap threshold (0.99\u00d7 to 100\u00d7 SNAP_FRACTION\u00b7h0) at levels 0\u20133, both modes, both element orders, in y and in z: every level-\u22651 run with offsets of 1.01\u20133\u00d7 (up to ~4\u00d7) crashes, while all level-0 runs pass (blocker above). Peak resident memory was about 3.4 GB, at the level-3 layout run.",
+    "Rebuilt the pre-change thermal_fem.py by reverse-applying the packet diff in $TMPDIR and recomputed the _PINNED cases: they match the pinned values to \u22642.2e-12 K, so the 'unchanged without near-coincident lines' test really compares against the old code.",
+    "Checked by grep for other callers of extra_lines in src, experiments, tools, benchmarks and scripts: none outside thermal_fem.py and the tests."
+  ],
+  "caveats": [
+    "The approximately 1 \u00b5m absolute-width crash threshold is measured on the toy layout and the test box stack only; the exact value may depend on the in-plane cell size and on the scikit-fem/pyamg tolerances.",
+    "Inside its tested envelope the change behaves as claimed: offsets below the snap distance at any level (0.99\u00d7 tested at levels 0\u20133), level-0 solves at any offset, extra_lines input parity, and unchanged results when no lines are near-coincident.",
+    "I did not see the T0215 review text itself; I judged 'no sliver cells' against the crash the docstring describes."
+  ]
+}

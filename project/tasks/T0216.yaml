@@ -4,7 +4,7 @@ title: 'thermal_fem: snap near-coincident mandatory grid lines (no sliver cells)
   (review T0215 of T0206)'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on:
 - T0206
 description: 'Fix the findings of review T0215 on T0206 (project/reviews/T0206/T0215.json) in src/moduleforge/solvers/thermal_fem.py,
@@ -82,12 +82,13 @@ model: null
 budget_usd: 3.0
 max_turns: 60
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0216-thermal-fem-snap-near-coincident-mandato
 pr: null
 runs:
 - T0216-builder-20261103T132718-cf1b
+- T0216-builder-20261103T141939-9319
 created_by: founder
 created_at: '2026-11-03T21:27:02+00:00'
 protected_approved: false
@@ -143,3 +144,41 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] The snap distance is tied to the level-0 cell size, but the crash depends
+    on absolute cell width: lines just outside the snap distance still crash at refinement levels 1–3:
+    `_merge_lines` snaps a mandatory line only when it lies within SNAP_FRACTION·h0 (2 µm at h0 = 2 mm)
+    of an existing line, or within SNAP_FRACTION times the level-0 dz in z. A line just outside that distance
+    is kept and its interval is split into min_cells cells, and each refinement level halves them again.
+    The failure (the same scikit-fem invF error ''Newton iteration didn''t converge up to TOL=1e-12'',
+    or AMG-CG non-convergence) appears once a cell is narrower than about 1 µm, whatever its ratio to
+    the neighbouring cell. So a mandatory line 2–10 µm from a die or source edge solves at level 0 but
+    crashes at levels ≥1. Mandatory lines exist so that a point is a node at every level, which is what
+    grid-convergence (GCI) sweeps need, so this is the case the fix had to cover. The task claims ''no
+    sliver cells'', but sliver cells that crash the solver remain inside this band.
+
+    - [major] The tests never solve a kept near-threshold line or any snapped case above level 0: test_near_coincident_mandatory_line_snaps_and_solves
+    solves only at the default level 0, with offsets of 1e-9 to 1e-6 m, all well inside the snap distance.
+    test_far_mandatory_line_is_kept_and_close_ones_merge builds the 1.5× case, which its own comment calls
+    ''kept (a sliver cell)'', but only builds the grid and never solves it. Neither test exercises the
+    band where the defect above occurs, so the suite passes while that band still crashes.
+
+    - [minor] The docstring''s stated failure mechanism (cell-size ratio) contradicts the measured behaviour
+    and the chosen threshold: The `_merge_lines` docstring says a sliver cell 1e-3 times its neighbour
+    makes invF and AMG fail. Yet the threshold keeps cells of about 0.5e-3 h0 (a 1.01× offset split into
+    2 cells), and those solve fine at level 0. The same ratio fails at level 1, so the measurements contradict
+    the ratio explanation and point to an absolute-width limit of about 1 µm. The comment would lead a
+    maintainer to the wrong fix.
+
+    - [note] node_value at the requested (unsnapped) coordinate raises ValueError: After a snap, the requested
+    point is no longer a degree-of-freedom location, so callers must read meta[''snapped_lines''] and
+    query the snapped coordinate instead. This is documented and tested. No caller outside the tests passes
+    extra_lines today. Future runners must handle it, or they will fail at reporting time rather than
+    at solve time.
+
+    - [note] Box-stack source centroid lines now go through snapping: For a source narrower than about
+    2·SNAP_FRACTION·h0, the always-mandatory centroid line would snap onto a source edge, losing the symmetric-centre
+    node. This is an unrealistic edge case for current inputs.'
+  at: '2026-11-03T22:19:37+00:00'
