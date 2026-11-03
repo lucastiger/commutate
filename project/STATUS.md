@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T22:05:14+00:00 from repository state — do not edit_
+_generated 2026-11-03T22:05:57+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -36,7 +36,6 @@ cancelled: 30, done: 179, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - T0217 `running` critic/review: Review T0216 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-03T17:44:03+00:00 sleep_detected {"gap_s": 913, "runs_extended": 0}
 - 2026-11-03T17:46:34+00:00 inbox_opened {"id": "I0106", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
 - 2026-11-03T21:12:49+00:00 inbox_resolved {"id": "I0105", "status": "approved", "note": "Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable again (200). Resume T0215
 - 2026-11-03T21:12:57+00:00 task_amended {"task": "T0206", "reason": "review restored after outage (I0105/I0106)"}
@@ -51,3 +50,4 @@ cancelled: 30, done: 179, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-03T21:48:57+00:00 run_finished {"run": "T0216-builder-20261103T132718-cf1b", "status": "completed", "cost": 0.532044, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T22:05:07+00:00 verified {"task": "T0216"}
 - 2026-11-03T22:05:14+00:00 run_started {"run": "T0217-critic-20261103T140514-fabf", "task": "T0217", "role": "critic", "session": "843f22e7-5618-4c2b-bb00-ab3c12aeb94e"}
+- 2026-11-03T22:05:48+00:00 sleep_detected {"gap_s": 1012, "runs_extended": 1}
