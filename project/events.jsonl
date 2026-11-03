@@ -1488,3 +1488,8 @@
 {"ts": "2026-11-03T17:04:13+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 765, "runs_extended": 2}
 {"ts": "2026-11-03T17:04:14+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0214-planner-20261103T090339-4fed", "status": "completed", "cost": 0.339082, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-03T17:04:15+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O007", "created": [], "dropped": 0}
+{"ts": "2026-11-03T17:30:05+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0206-builder-20261103T090339-995c", "status": "completed", "cost": 0.919274, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-03T17:42:11+00:00", "event": "verified", "actor": "orchestrator", "task": "T0206"}
+{"ts": "2026-11-03T17:42:16+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0215", "signal": "venv_provisioning", "action": "pause"}
+{"ts": "2026-11-03T17:42:16+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0105", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
+{"ts": "2026-11-03T17:42:16+00:00", "event": "infrastructure_pause", "actor": "orchestrator", "task": "T0215", "signal": "venv_provisioning"}

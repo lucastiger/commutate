@@ -4,7 +4,7 @@ title: 'thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x
   lines, node-only point values, Tj-max node coordinates (box-stack and layout modes)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0205
 description: "Extend src/moduleforge/solvers/thermal_fem.py (after the assembly task) with the two design\
@@ -90,4 +90,54 @@ trigger: null
 rationale: 'Directly required by the hypothesis and scope_in (absolute through-thickness bound, r = 2
   in x, y and z, node-only points, mandatory lines in box-stack mode). It also supplies the F2 checks:
   node persistence, 8x DOF growth and Tj-max node movement.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: Implemented all of (a)–(f) in thermal_fem.py, with the T0206 tests and a new docs/thermal_model.md
+    section 10. GridRule.dz_max sets each z interval to max(nz, ceil(t/dz_max)) cells at level 0, doubling
+    per level; zrefine=False with dz_max is rejected. solve_box_stack takes a GridRule (rule=) through
+    the same line builder as layout mode. The legacy h0=/element_order= call still works and gives the
+    same grid, with the same T to 1e-9 K. I split out a box_stack_grid helper so DOF counts can be checked
+    without solving. extra_lines=(xs, ys, zs) is accepted by layout_grid, solve_layout, box_stack_grid
+    and solve_box_stack, and box-stack mode always adds source centroid lines. node_value raises ValueError
+    off-node, and node_stencil returns per-axis line index, coordinate and neighbours. tj_max is n
+  report:
+    status: completed
+    summary: 'Implemented all of (a)–(f) in thermal_fem.py, with the T0206 tests and a new docs/thermal_model.md
+      section 10. GridRule.dz_max sets each z interval to max(nz, ceil(t/dz_max)) cells at level 0, doubling
+      per level; zrefine=False with dz_max is rejected. solve_box_stack takes a GridRule (rule=) through
+      the same line builder as layout mode. The legacy h0=/element_order= call still works and gives the
+      same grid, with the same T to 1e-9 K. I split out a box_stack_grid helper so DOF counts can be checked
+      without solving. extra_lines=(xs, ys, zs) is accepted by layout_grid, solve_layout, box_stack_grid
+      and solve_box_stack, and box-stack mode always adds source centroid lines. node_value raises ValueError
+      off-node, and node_stencil returns per-axis line index, coordinate and neighbours. tj_max is now
+      the argmax DOF on the top face and meta[''tj_max_xyz''] holds its coordinates. meta also records
+      n_dofs, lines and n_lines. Every DoD command exited 0: the four-file pytest set (61 passed), the
+      inspect one-liner, ruff and mfos gate --fast. The existing tests were not changed.'
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_rule.py
+    - docs/thermal_model.md
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+        tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_fem_rule.py
+      exit_code: 0
+    - cmd: uv run python -c "import inspect; from moduleforge.solvers import thermal_fem as F; r = F.GridRule(dz_max=2.5e-4,
+        element_order=2); assert r.dz_max == 2.5e-4 and r.zrefine; assert callable(F.node_value) and callable(F.node_stencil);
+        assert 'extra_lines' in inspect.signature(F.solve_layout).parameters and 'extra_lines' in inspect.signature(F.solve_box_stack).parameters"
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Box-stack mode now always adds source centroid lines, as the packet specifies. Box-stack grids with
+      sources therefore have extra lines compared with before. The existing tests still pass, but any
+      frozen box-stack numbers from before this change would shift slightly.
+    - In box-stack mode a layer's level-0 z count is BoxLayer.n, raised to ceil(t/dz_max); GridRule.nz
+      is not used there. This is in the docs.
+    - The generator-layout DOF-growth test uses estimate_dofs, the lattice count that the existing assembly
+      test already checks against the solved N. It does not run Q2 solves at three levels on the generator
+      layout. Actual solves are used for the box stack (levels 0 and 1) and the toy layout.
+    - At one point I ran git checkout on thermal_fem.py by mistake, which lost my edits. I reapplied them
+      in full and re-ran everything; the committed state is the one verified by the checks above.

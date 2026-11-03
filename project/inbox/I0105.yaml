@@ -1,0 +1,23 @@
+id: I0105
+kind: infrastructure
+subject: 'infrastructure: venv_provisioning'
+summary: "could not prepare the virtual environment in review-T0215\nNo attempt was used and no diagnosis\
+  \ was spawned. Fix the cause, then approve this item: every listed task returns to todo.\n\nUsing CPython\
+  \ 3.12.16\nCreating virtual environment at: .venv\n   Building moduleforge @ file:///Users/lukeskywalker/mf/wt/review-T0215\n\
+  error: Failed to build `moduleforge @ file:///Users/lukeskywalker/mf/wt/review-T0215`\n  cause: Failed\
+  \ to resolve requirements from `build-system.requires`\n  cause: No solution found when resolving: `hatchling`\n\
+  \  cause: Failed to fetch: https://pypi.org/simple/hatchling/\n  cause: error sending request for url\
+  \ (https://pypi.org/simple/hatchling/)\n  cause: client error (Connect)\n  cause: invalid peer certificate:\
+  \ UnknownIssuer\n\nhint: Consider enabling use of system TLS certificates with the `--system-certs`\
+  \ command-line flag\n"
+refs:
+- T0215
+options:
+- 'fixed: retry the listed tasks'
+- 'reject: leave them parked'
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-03T17:42:16+00:00'
+resolved_at: null
+resolved_by: null
