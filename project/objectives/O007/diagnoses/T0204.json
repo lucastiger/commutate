@@ -1,0 +1,51 @@
+{
+  "summary": "The dry run predicts that F5 passes on both dev layouts: the largest predicted levels 1-3 GCI is 0.155 K (u_shaped_2 die 3), a margin of at least 0.095 K, but this assumes the levels 0-2 step ratio holds for one more level. Recommended VM RAM is 256 GB, which is burst_gcp.sh's default n2-highmem-32.\n\n**What was built.** research/scripts/o007_l2_preview.py has two modes:\n- `--dry-run` (local, about 27 s, exits 0) writes research/o007_l2/preview.json.\n- `--full` is for the founder's burst VM. Each solve runs in its own child process, so peak RSS is measured cleanly. A preflight refuses any solve above 0.85 x physical memory, as e006_run.preflight does, and each solve is checkpointed under research/o007_l2/full_ckpt so an interrupted run resumes.\n\nThe note is research/notes/o007-l2-crosscheck-preview.md.\n\n**Cell counts** (active cells, all four levels built with build_layout_grid; each level has exactly 8x the previous; E006's recorded counts for levels 0-2 match):\n\n| layout | L1 | L2 | L3 | memory at 1500 B/cell (L1 / L2 / L3) |\n|---|---|---|---|---|\n| side_by_side_6 | 907,424 | 7,259,392 | 58,075,136 | 1.36 / 10.9 / 87.1 GB |\n| u_shaped_2 | 560,528 | 4,484,224 | 35,873,792 | 0.84 / 6.7 / 53.8 GB |\n\n**Level-1 solves on this Mac**, at E006's power:\n- side_by_side_6: about 5 s, peak RSS 1.55-1.74 GB.\n- u_shaped_2: about 3 s, peak RSS 1.11 GB.\n- Both use about 1.78 kB/cell, which is more than E006's 1500 B/cell planning figure.\n- Both reproduce E006's f_lv1 within 2e-10 K, which shows the solver code is unchanged since E006.\n\n**Prediction per die.** From E006's dev rows only, I computed d1, d2, p_obs and branch for each die, then assumed the observed step ratio holds for one more level:\n- side_by_side_6: predicted GCI 0.021-0.052 K, margin at least 0.198 K.\n- u_shaped_2: dies 0-1 at 0.051-0.056 K. Dies 2-3 converge at order about 0.96 and are predicted at 0.151 and 0.155 K, margins 0.099 and 0.095 K. These two dies decide F5.\n\n**Sensitivity:**\n- Every scenario where the next step keeps its sign passes. That includes order 2, order 1, two-term fits and a step below the 1e-3 K floor; the worst is 0.155 K.\n- Dies 2-3 fail only if their step ratio rises from 0.51 to above about 0.6 (order below about 0.75).\n- Rescaling for E009's different power calibration adds 1-2 %.\n- The fragile case is a sign change in the next step. The A4 rule then charges 3 times the level 1\u21922 step, and F5 would fail on 8 of 12 side_by_side_6 dies and all 4 u_shaped_2 dies. No die changed sign at levels 0-2.\n\n**RAM sizing.** The preflight alone needs 102.5 GB of physical memory. Sizing at the locally measured 1.78 kB/cell needs about 122 GB, which is just over a 128 GB VM, so I recommend 256 GB. A 128 GB VM (n2-highmem-16) would probably work at the lower rate E006 measured on Linux, but has no margin.\n\n**Wall time.** About 0.9-1.4 h on E006's VM type, extrapolated from E006's recorded dev-layout solve times.",
+  "failure_class": "none",
+  "root_cause": "Not a failure diagnosis; this is a forecast. Prediction: F5 passes on both dev layouts. The binding dies are u_shaped_2 dies 2 and 3, which converge at order about 0.96 at levels 0-2. Their predicted levels 1-3 GCI is 0.151 and 0.155 K, a margin of about 0.095 K, assuming the step ratio of about 0.51 holds. The main risk is a sign change in the level 2\u21923 step, which would put most dies in the oscillatory branch and fail F5.",
+  "confidence": 0.6,
+  "evidence": [
+    "Commands run and exit codes:",
+    "uv run ruff check research/scripts/o007_l2_preview.py -> 0 (run after every edit)",
+    "uv run python research/scripts/o007_l2_preview.py --dry-run --out research/o007_l2/preview.json -> 0 (run three times as the script was revised; final output kept)",
+    "smoke test of full mode with a 2 GB cap: --full --levels 0 1 2 --mem-cap-gb 2 --out $TMPDIR/o007_full_smoke/full.json -> 3 as designed (level 2 refused by the preflight); re-running it resumed all 4 checkpointed solves",
+    "DoD JSON assertion command -> 0; test -f research/notes/o007-l2-crosscheck-preview.md -> 0; uv run mfos gate --fast -> 0 ('all gates passed')",
+    "Both dev fingerprints are asserted equal to the E006 spec. E006 rows are selected by an explicit allow-list (side_by_side_6, u_shaped_2); each row's recorded gci is recomputed from f_lv0..2 and matches to 1e-12; the solver's own GCI copy (thermal_layout.gci_three_grid) and mfos.metrics.gci_capped are asserted equal",
+    "Level-3 grids built in child processes: 58,075,136 and 35,873,792 active cells, peak RSS 0.92 and 0.63 GB; the 8x-per-level identity holds at every level and matches E006's recorded level 0-2 counts",
+    "Level-1 solves match E006's f_lv1 within 2e-10 K (smoke run: f_lv0 and f_lv1 within 1e-10 K); energy balance at most 1e-14; final Picard step at most 1.9e-5 K",
+    "git diff bb0725f (E006's commit) over src/moduleforge/solvers/thermal_*, geometry and generate is empty",
+    "Measured local memory rate about 1.78 kB/cell at level 1 for both layouts, above E006's 1500 B/cell; E006's VM peak on its largest solve (case 1b, 23.2 M cells) was 24.9 GB, at most 1.07 kB/cell",
+    "E006 dev-layout level 0-2 wall times: 2.07 / 17.8 / 180 s and 1.42 / 11.9 / 120 s, growing 8.4-10.1x per level"
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "Asymptotic monotone convergence: the levels 1-3 step ratio stays close to its levels 0-2 value and F5 passes with a margin of at least about 0.09 K.",
+      "how_to_discriminate": "In full.json, compare each die's levels 1-3 step ratio (d2/d1) with its levels 0-2 value from E006."
+    },
+    {
+      "explanation": "u_shaped_2 dies 2-3 are pre-asymptotic: a slower-decaying error term (order about 1 or lower) holds the step ratio at 0.5 or pushes it higher.",
+      "how_to_discriminate": "The full run's step ratio for these two dies. A value above about 0.6 fails F5 on them."
+    },
+    {
+      "explanation": "The Tj-max location moves between levels, so the level 2\u21923 step changes sign and the A4 rule switches to its oscillatory branch (3 x max step), failing F5 on most dies.",
+      "how_to_discriminate": "In full.json, check each die's branch and direction: oscillatory or divergent on any die refutes the primary prediction."
+    }
+  ],
+  "discriminating_tests": [
+    "The founder runs the full mode on a burst VM: scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_l2_preview.py --full --out research/o007_l2/full.json\" research/o007_l2 (default n2-highmem-32, 256 GB). It needs this script on main, or MF_REF set to the T0204 branch.",
+    "Check in full.json: per die, gci_capped_K <= 0.25, branch not oscillatory or divergent, and levels 1-2 matching E006's f_lv1 and f_lv2 within 1e-6 K",
+    "No local test can separate the explanations: every one needs a level-3 solve, and side_by_side_6 needs more than 5 GB already at level 2 (10.9 GB at 1500 B/cell)"
+  ],
+  "recommended_actions": [
+    "Integrate research/scripts/o007_l2_preview.py into main, or set MF_REF to the T0204 branch, before the founder runs the burst command; burst_gcp.sh ships main by default",
+    "Size E009's VM at 256 GB (n2-highmem-32, the default). If E009 keeps fv_bytes_per_cell = 1500, its preflight needs at least 102.5 GB; note that the measured macOS rate (1.78 kB/cell) is above that planning figure",
+    "Run the full preview before E009 is registered; it is dev-only data, so it does not condition the fresh layouts. If u_shaped_2 dies 2-3 show a step ratio above 0.6 or any die is oscillatory, flag the F5 risk to the founder before E009 is frozen; F5 itself must not be changed",
+    "Consider recording the Tj-max location per level in E009's L2 rows (T0202 asks for this), so a sign change can be traced to a hot-spot shift"
+  ],
+  "files_written": [
+    "research/scripts/o007_l2_preview.py",
+    "research/o007_l2/preview.json",
+    "research/notes/o007-l2-crosscheck-preview.md"
+  ],
+  "affects_acceptance_criteria": false,
+  "experiment_drafts": []
+}
