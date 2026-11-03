@@ -1,0 +1,44 @@
+diff --git a/src/moduleforge/solvers/thermal_fem.py b/src/moduleforge/solvers/thermal_fem.py
+index be5b2ee..0ae9df3 100644
+--- a/src/moduleforge/solvers/thermal_fem.py
++++ b/src/moduleforge/solvers/thermal_fem.py
+@@ -421,7 +421,9 @@ class _Solver:
+     """CG preconditioned by algebraic multigrid (pyamg, MIT), stopping at the relative residual ``LINEAR_RTOL``; raises
+     unless the true relative residual of the returned solution is below 1e-8.
+ 
+-    Order 1: smoothed-aggregation AMG on the matrix as is (unchanged from the trilinear-only version).
++    Order 1: smoothed-aggregation AMG on the matrix as is, with the constant-mode deflation below (added 2026-11-03: without
++    it the order-1 solve at h = 5 W/(m2 K) sat at its round-off floor, near the 1e-8 check, and failed on Linux CI; with it
++    the toy layout reaches 2.4e-11 at h = 5, while h <= 1 W/(m2 K) still fails the check, far below any operating point).
+ 
+     Order 2: smoothed aggregation applied to the Q2 matrix directly builds far too few coarse unknowns (every Q2 dof is
+     strongly coupled to up to 125 dofs of its neighbouring cells, so the aggregates are huge: operator complexity 1.005 on
+@@ -437,6 +439,9 @@ class _Solver:
+     def __init__(self, A: sp.csr_matrix, P: sp.csr_matrix | None = None):
+         self.A = A
+         self.P = P
++        self.one = np.ones(A.shape[0])
++        self.a1 = A @ self.one
++        self.c_den = float(self.one @ self.a1)
+         if P is None:
+             self.ml = pyamg.smoothed_aggregation_solver(A, max_coarse=500)
+             return
+@@ -447,16 +452,10 @@ class _Solver:
+         self.ml = MultilevelSolver([top, *coarse.levels], coarse_solver="pinv")
+         gs = ("gauss_seidel", {"sweep": "symmetric"})
+         change_smoothers(self.ml, presmoother=gs, postsmoother=gs)
+-        self.one = np.ones(A.shape[0])
+-        self.a1 = A @ self.one
+-        self.c_den = float(self.one @ self.a1)
+ 
+     def solve(self, b: np.ndarray, x0: np.ndarray) -> np.ndarray:
+-        if self.P is None:
+-            x = self.ml.solve(b, x0=x0, tol=LINEAR_RTOL, maxiter=400, accel="cg")
+-        else:
+-            c = float(self.one @ b) / self.c_den
+-            x = c + self.ml.solve(b - c * self.a1, x0=x0 - c, tol=LINEAR_RTOL, maxiter=400, accel="cg")
++        c = float(self.one @ b) / self.c_den
++        x = c + self.ml.solve(b - c * self.a1, x0=x0 - c, tol=LINEAR_RTOL, maxiter=400, accel="cg")
+         if np.linalg.norm(b - self.A @ x) > 1e-8 * np.linalg.norm(b):
+             raise RuntimeError("AMG-CG did not converge to a relative residual of 1e-8")
+         return x
