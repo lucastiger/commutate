@@ -4,7 +4,7 @@ title: 'thermal_fem: snap near-coincident mandatory grid lines (no sliver cells)
   (review T0215 of T0206)'
 type: implement
 agent: builder
-status: running
+status: failed
 depends_on:
 - T0206
 description: 'Fix the findings of review T0215 on T0206 (project/reviews/T0206/T0215.json) in src/moduleforge/solvers/thermal_fem.py,
@@ -330,3 +330,13 @@ history:
 - attempt: 3
   outcome: resumed
   summary: T0216-builder-20261103T152816-adeb
+- outcome: founder_hold
+  summary: 'Held: the flaky test (AMG-CG residual) is fixed on main by 1b869ea (Q1 deflation) and 95eb537
+    (seeded pyamg hierarchy); the branch predates both. Founder merges main into the task branch, then
+    `mfos task retry T0216`. Attempt 3 was stopped before it made any change.'
+  at: '2026-11-03T23:31:18+00:00'
+- attempt: 3
+  outcome: agent_error
+  summary: run interrupted
+  failure_output: ''
+  at: '2026-11-03T23:31:19+00:00'
