@@ -51,7 +51,24 @@ description: 'Fix the findings of review T0215 on T0206 (project/reviews/T0206/T
   Do not change the element order, the dz_max rule, the node-only point rule or anything O007 froze; Q1
   and Q2 results on
 
-  grids without near-coincident lines must be unchanged (assert it on one case per mode).'
+  grids without near-coincident lines must be unchanged (assert it on one case per mode).
+
+
+  Founder note (2026-11-03, before attempt 4): the flaky test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]
+
+  was caused by pyamg''s unseeded random spectral-radius estimate plus a round-off floor in the order-1
+  solve. Both are fixed
+
+  on main: 1b869ea (constant-mode deflation for order 1) and 95eb537 (seeded hierarchy construction, _sa_solver).
+  The founder
+
+  merges main into this branch before this attempt. Do not change _Solver or _sa_solver, and do not weaken
+  or skip any
+
+  test. Run the definition of done. The flaky test should now pass deterministically: confirm it with
+  5 consecutive runs and
+
+  report them. Fix only what the DoD or review T0217 still needs.'
 context_files:
 - src/moduleforge/solvers/thermal_fem.py
 - project/reviews/T0206/T0215.json
@@ -340,3 +357,6 @@ history:
   summary: run interrupted
   failure_output: ''
   at: '2026-11-03T23:31:19+00:00'
+- outcome: founder_brief_amended
+  summary: 'attempt 4: main''s AMG fixes merged in; leave _Solver alone; confirm determinism'
+  at: '2026-11-03T23:31:36+00:00'

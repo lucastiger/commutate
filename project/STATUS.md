@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T23:31:22+00:00 from repository state — do not edit_
+_generated 2026-11-03T23:31:58+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 30, done: 180, failed: 4, needs_founder: 1, running: 1, todo: 2
 - T0218 `running` scientist/investigate: Diagnose failure of T0216 (attempt 1)
 
 ## Recent events
-- 2026-11-03T22:19:35+00:00 run_finished {"run": "T0217-critic-20261103T140514-fabf", "status": "completed", "cost": 1.060941, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T22:19:37+00:00 task_failed_attempt {"task": "T0216", "signal": "review_rejected", "action": "repair"}
 - 2026-11-03T22:19:39+00:00 run_started {"run": "T0216-builder-20261103T141939-9319", "task": "T0216", "role": "builder", "session": "c1cfd2a5-3629-4b6f-b6b9-fe6051726ad3"}
 - 2026-11-03T23:15:26+00:00 run_finished {"run": "T0216-builder-20261103T141939-9319", "status": "completed", "cost": 2.767249, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 180, failed: 4, needs_founder: 1, running: 1, todo: 2
 - 2026-11-03T23:31:19+00:00 task_failed_attempt {"task": "T0216", "signal": "agent_error", "action": "diagnose"}
 - 2026-11-03T23:31:19+00:00 investigation_spawned {"task": "T0218", "about": "T0216", "cls": "implementation"}
 - 2026-11-03T23:31:22+00:00 run_started {"run": "T0218-scientist-20261103T153122-860d", "task": "T0218", "role": "scientist", "session": "ca079b5a-a812-4a75-854c-6673c9d6dee2"}
+- 2026-11-03T23:31:36+00:00 task_amended {"task": "T0216", "reason": "attempt 4 note"}
