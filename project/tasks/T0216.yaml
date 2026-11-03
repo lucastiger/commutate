@@ -4,7 +4,7 @@ title: 'thermal_fem: snap near-coincident mandatory grid lines (no sliver cells)
   (review T0215 of T0206)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0206
 description: 'Fix the findings of review T0215 on T0206 (project/reviews/T0206/T0215.json) in src/moduleforge/solvers/thermal_fem.py,
@@ -82,11 +82,12 @@ model: null
 budget_usd: 3.0
 max_turns: 60
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0216-thermal-fem-snap-near-coincident-mandato
 pr: null
-runs: []
+runs:
+- T0216-builder-20261103T132718-cf1b
 created_by: founder
 created_at: '2026-11-03T21:27:02+00:00'
 protected_approved: false

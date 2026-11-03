@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T21:27:09+00:00 from repository state — do not edit_
+_generated 2026-11-03T21:27:18+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,18 +25,16 @@ _generated 2026-11-03T21:27:09+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 13 | $26.96 | 564816 | 292691 | 22 | 0 |
+| O007 | 14 | $26.96 | 564816 | 292691 | 22 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 178, failed: 3, merge: 1, needs_founder: 1, todo: 3
+cancelled: 30, done: 179, failed: 3, needs_founder: 1, running: 1, todo: 2
 
-- T0206 `merge` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
+- T0216 `running` builder/implement: thermal_fem: snap near-coincident mandatory grid lines (no sliver cells); extra_lines input parity (review T0215 of T0206) (attempt 1)
 
 ## Recent events
-- 2026-11-03T17:30:05+00:00 run_finished {"run": "T0206-builder-20261103T090339-995c", "status": "completed", "cost": 0.919274, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T17:42:11+00:00 verified {"task": "T0206"}
 - 2026-11-03T17:42:16+00:00 task_failed_attempt {"task": "T0215", "signal": "venv_provisioning", "action": "pause"}
 - 2026-11-03T17:42:16+00:00 inbox_opened {"id": "I0105", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
 - 2026-11-03T17:42:16+00:00 infrastructure_pause {"task": "T0215", "signal": "venv_provisioning"}
@@ -50,3 +48,5 @@ cancelled: 30, done: 178, failed: 3, merge: 1, needs_founder: 1, todo: 3
 - 2026-11-03T21:24:53+00:00 inbox_opened {"id": "I0107", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
 - 2026-11-03T21:26:56+00:00 inbox_resolved {"id": "I0107", "status": "approved", "note": "T0206: thickness-aware grid rule, mandatory lines, node-only values (review T0215 accept with caveats; major find
 - 2026-11-03T21:27:02+00:00 task_added {"task": "T0216", "objective": "O007", "reason": "review T0215 of T0206"}
+- 2026-11-03T21:27:15+00:00 merged {"task": "T0206"}
+- 2026-11-03T21:27:18+00:00 run_started {"run": "T0216-builder-20261103T132718-cf1b", "task": "T0216", "role": "builder", "session": "a4887358-7954-474b-8090-148bca42f950"}
