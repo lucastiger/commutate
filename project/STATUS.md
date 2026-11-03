@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T04:52:00+00:00 from repository state — do not edit_
+_generated 2026-11-03T04:52:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0103** [protected_change] T0204: merge needs founder approval
@@ -37,7 +37,6 @@ cancelled: 30, done: 174, failed: 3, needs_founder: 3, todo: 3
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-03T03:11:32+00:00 run_started {"run": "T0210-critic-20261102T191132-b5f2", "task": "T0210", "role": "critic", "session": "167aabb8-8473-4ec6-81b0-fafa74140976"}
 - 2026-11-03T03:11:32+00:00 run_started {"run": "T0211-critic-20261102T191132-86fb", "task": "T0211", "role": "critic", "session": "79ed597c-0905-4dd7-9f5f-d3289bd5a4f7"}
 - 2026-11-03T03:12:05+00:00 sleep_detected {"gap_s": 405, "runs_extended": 2}
 - 2026-11-03T03:19:54+00:00 run_finished {"run": "T0210-critic-20261102T191132-b5f2", "status": "completed", "cost": 1.745066, "subtype": "success", "report": "structured_output"}
@@ -52,3 +51,4 @@ cancelled: 30, done: 174, failed: 3, needs_founder: 3, todo: 3
 - 2026-11-03T04:41:45+00:00 run_finished {"run": "T0212-critic-20261102T202951-2a8e", "status": "completed", "cost": 2.491222, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T04:42:22+00:00 run_finished {"run": "T0213-critic-20261102T202952-e3a3", "status": "completed", "cost": 1.952961, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T04:51:59+00:00 inbox_opened {"id": "I0104", "kind": "protected_change", "subject": "T0205: merge needs founder approval"}
+- 2026-11-03T04:52:33+00:00 sleep_detected {"gap_s": 612, "runs_extended": 0}
