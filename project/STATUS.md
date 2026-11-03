@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T23:28:16+00:00 from repository state — do not edit_
+_generated 2026-11-03T23:28:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 30, done: 180, failed: 3, needs_founder: 1, running: 1, todo: 2
 - T0216 `running` builder/implement: thermal_fem: snap near-coincident mandatory grid lines (no sliver cells); extra_lines input parity (review T0215 of T0206) (attempt 3)
 
 ## Recent events
-- 2026-11-03T21:24:53+00:00 inbox_opened {"id": "I0107", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
 - 2026-11-03T21:26:56+00:00 inbox_resolved {"id": "I0107", "status": "approved", "note": "T0206: thickness-aware grid rule, mandatory lines, node-only values (review T0215 accept with caveats; major find
 - 2026-11-03T21:27:02+00:00 task_added {"task": "T0216", "objective": "O007", "reason": "review T0215 of T0206"}
 - 2026-11-03T21:27:15+00:00 merged {"task": "T0206"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 180, failed: 3, needs_founder: 1, running: 1, todo: 2
 - 2026-11-03T23:15:26+00:00 run_finished {"run": "T0216-builder-20261103T141939-9319", "status": "completed", "cost": 2.767249, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T23:28:13+00:00 task_failed_attempt {"task": "T0216", "signal": "dod_failed", "action": "repair"}
 - 2026-11-03T23:28:16+00:00 run_started {"run": "T0216-builder-20261103T152816-adeb", "task": "T0216", "role": "builder", "session": "bfa49f36-eed9-4a8b-80f9-2a13bde3e263"}
+- 2026-11-03T23:28:49+00:00 sleep_detected {"gap_s": 805, "runs_extended": 1}
