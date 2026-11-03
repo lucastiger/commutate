@@ -82,13 +82,14 @@ model: null
 budget_usd: 3.0
 max_turns: 60
 wall_minutes: null
-attempts: 2
+attempts: 3
 max_attempts: 3
 branch: task/T0216-thermal-fem-snap-near-coincident-mandato
 pr: null
 runs:
 - T0216-builder-20261103T132718-cf1b
 - T0216-builder-20261103T141939-9319
+- T0216-builder-20261103T152816-adeb
 created_by: founder
 created_at: '2026-11-03T21:27:02+00:00'
 protected_approved: false
@@ -182,3 +183,146 @@ history:
     2·SNAP_FRACTION·h0, the always-mandatory centroid line would snap onto a source edge, losing the symmetric-centre
     node. This is an unrealistic edge case for current inputs.'
   at: '2026-11-03T22:19:37+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I fixed the attempt-1 blocker and committed it (872a16b), but I''m reporting `partial`: one
+    new test is flaky and can fail the DoD when the orchestrator re-runs it. It failed in 2 of my 4 runs;
+    the last full DoD run passed (86 passed), ruff exit 0, `mfos gate --fast` exit 0.
+
+
+    **Cause of the blocker (measured).** Two separate failures:
+
+    - scikit-fem''s face inverse map (`MappingIsoparametric.invF`) uses an absolute 1e-12 Newton tolerance
+    in reference units. In a cell under about 1 µm, round-off keeps the step above that tolerance, whatever
+    the ratio to neighbouring cells. That is why a line kept at 2.1 µm solved at level 0 and crashed at
+    level 1 (reproduced).
+
+    - Q2 AMG-CG also failed to converge on slivers about 5e-4 of their cell at levels 1–2.
+
+
+    **Fixes (`src/moduleforge/solvers/thermal_fem.py'
+  report:
+    status: partial
+    summary: 'I fixed the attempt-1 blocker and committed it (872a16b), but I''m reporting `partial`:
+      one new test is flaky and can fail the DoD when the orchestrator re-runs it. It failed in 2 of my
+      4 runs; the last full DoD run passed (86 passed), ruff exit 0, `mfos gate --fast` exit 0.
+
+
+      **Cause of the blocker (measured).** Two separate failures:
+
+      - scikit-fem''s face inverse map (`MappingIsoparametric.invF`) uses an absolute 1e-12 Newton tolerance
+      in reference units. In a cell under about 1 µm, round-off keeps the step above that tolerance, whatever
+      the ratio to neighbouring cells. That is why a line kept at 2.1 µm solved at level 0 and crashed
+      at level 1 (reproduced).
+
+      - Q2 AMG-CG also failed to converge on slivers about 5e-4 of their cell at levels 1–2.
+
+
+      **Fixes (`src/moduleforge/solvers/thermal_fem.py`):**
+
+      1. New `_BoxMapping`, passed to every face basis and to `point_values`. It runs scikit-fem''s own
+      inverse first, so any grid that already worked gets bit-identical points; the pinned Q1/Q2 values
+      in both modes are unchanged within 1e-8 K. Only when that fails does it accept the Newton iterate,
+      once its error in physical units is at round-off.
+
+      2. The snap distance is now `SNAP_FRACTION` = 1e-2 of the level-0 cell size of the geometry interval
+      holding the line (L/n laterally, t/n in z), not of h0. Every kept line is at least that far from
+      every other line, so the cells it creates stay at least 1e-2/n of the surrounding cell at every
+      level (n = 2 laterally, the layer''s nz in z). In a sweep (box stack, h0 = 4 mm, Q2, levels 0–2),
+      offsets of 1e-3 of the cell failed, while 3e-3 and 1e-2 converged. A snapped point moves at most
+      1e-2 of a cell (20 µm at h0 = 2 mm). The move is recorded in `meta[''snapped_lines'']` and `meta[''max_snap_m'']`.
+      The docstrings state the cause and the justification.
+
+
+      Findings (2) and (3) keep attempt 1''s fixes:
+
+      - (2) `extra_lines` takes a scalar or a sequence per axis in both modes.
+
+      - (3) The docstring and test now say the legacy box-stack grid includes the source centroid lines.
+      Under the new rule a centroid line can no longer snap onto its own source''s edges.
+
+
+      **Tests (`tests/unit/solvers/test_thermal_fem_rule.py`):**
+
+      - The inverse map on a 1e-7 m cell, checked against points mapped forward from known coordinates.
+      scikit-fem''s own inverse is shown to raise there and to give identical output on a regular cell.
+
+      - A 0.4 µm layer (cells down to 0.2 µm) solved in Q1 and Q2 at levels 0–1, matching the closed form
+      T_top = Tc + q(1/h + Σt/k) to 1e-7 K.
+
+      - Lines at 1.5× the snap distance (kept) and 0.5× (snapped), in x, y and two z bands, solved at
+      levels 0–2 (Q1) and 0–1 (Q2) in box mode. The snapped coordinates, `max_snap_m` and the node value
+      at the snapped point are checked.
+
+      - Layout mode with kept lines at levels 0–1 (Q1) and 0 (Q2).
+
+      - The far/close test now uses the local cell size.
+
+      - Attempt 1''s tests at 1e-9, 1e-7 and 1e-6 m (both modes, both orders) still pass.
+
+      - With the attempt-1 inverse map patched back in, the thin-layer and band tests both fail, so they
+      catch the bug.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_rule.py tests/unit/solvers/test_thermal_fem.py
+        tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+        (first full run)
+      exit_code: 1
+    - cmd: uv run pytest -q -x tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box
+        (run 1 of 2)
+      exit_code: 1
+    - cmd: uv run pytest -q -x tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box
+        (run 2 of 2)
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_rule.py tests/unit/solvers/test_thermal_fem.py
+        tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+        (final run, 86 passed)
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_rule.py
+    concerns:
+    - 'The new test test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1] (Q1) is flaky.
+      It failed with ''AMG-CG did not converge to a relative residual of 1e-8'' in 2 of 4 pytest runs
+      (once in the full DoD run, once alone) and passed in the other 2, including the final full DoD run.
+      30 seeded reruns of the same solves (14 seeds × 3 levels for kept lines, 8 × 3 for snapped and 8
+      × 3 for plain grids) never failed. The likely source is a random start vector in pyamg''s spectral-radius
+      estimate, which this solver does not seed. That cause is not confirmed, and the exact failing solve
+      was not identified because I ran out of budget. The orchestrator''s re-run may hit this. Possible
+      next steps: seed pyamg (deterministic multigrid setup), increase SNAP_FRACTION, or make _Solver
+      more robust.'
+    - _BoxMapping overrides scikit-fem's invF (subclass of MappingIsoparametric, version 12.0.2). It defers
+      to the library's own iteration first, so results on grids that already worked are bit-identical.
+      It does depend on that method's signature.
+    - 'Q2 at level 2 was swept only on the 24x16 mm box stack (h0 = 4 mm, about 1M DOF, peak RSS 4.2 GB).
+      It is not in the unit tests for memory reasons: they cover Q2 at levels 0-1 only. Layout mode is
+      tested at levels 0-1 (Q1) and 0 (Q2).'
+    - A snapped point can now move by up to 1e-2 of a level-0 cell (20 um at h0 = 2 mm), compared with
+      1e-3 h0 in attempt 1. The move is recorded in meta['snapped_lines']. Runners must query node_value
+      at the snapped coordinate and evaluate references there. No runner passes extra_lines today.
+    - I did not independently re-derive the _PINNED values (attributed to T0206 HEAD 6241ee4). They come
+      from attempt 1, and the current code still matches them within 1e-8 K.
+- attempt: 2
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "FAIL uv run pytest -q tests/unit/solvers/test_thermal_fem_rule.py tests/unit/solvers/test_thermal_fem.py\
+    \ tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py\n\
+    d\n    new = _Solver(A, prolong).solve(rhs, theta)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <moduleforge.solvers.thermal_fem._Solver\
+    \ object at 0x1105c7b30>\nb = array([0., 0., 0., ..., 0., 0., 0.], shape=(55965,))\nx0 = array([25.76745039,\
+    \ 25.91094704, 26.01590039, ..., 25.97634486,\n       25.97682956, 25.97699112], shape=(55965,))\n\
+    \n    def solve(self, b: np.ndarray, x0: np.ndarray) -> np.ndarray:\n        if self.P is None:\n\
+    \            x = self.ml.solve(b, x0=x0, tol=LINEAR_RTOL, maxiter=400, accel=\"cg\")\n        else:\n\
+    \            c = float(self.one @ b) / self.c_den\n            x = c + self.ml.solve(b - c * self.a1,\
+    \ x0=x0 - c, tol=LINEAR_RTOL, maxiter=400, accel=\"cg\")\n        if np.linalg.norm(b - self.A @ x)\
+    \ > 1e-8 * np.linalg.norm(b):\n>           raise RuntimeError(\"AMG-CG did not converge to a relative\
+    \ residual of 1e-8\")\nE           RuntimeError: AMG-CG did not converge to a relative residual of\
+    \ 1e-8\n\nsrc/moduleforge/solvers/thermal_fem.py:546: RuntimeError\n=========================== short\
+    \ test summary info ============================\nFAILED tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]\n\
+    1 failed, 85 passed in 233.44s (0:03:53)\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\n"
+  at: '2026-11-03T23:28:13+00:00'
