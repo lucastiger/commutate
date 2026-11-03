@@ -9,6 +9,7 @@ status: todo
 depends_on:
 - T0205
 - T0206
+- T0216
 description: "The objective requires one scikit-fem configuration, frozen before E009 is registered and\
   \ then used unchanged for every E009 case and by O003, with the element order chosen by a development\
   \ study on dev data. Use the production thermal_fem only (after the assembly and grid-rule tasks). Script:\
@@ -113,4 +114,7 @@ trigger: null
 rationale: 'scope_in: one configuration frozen before registration, element order chosen on dev data.
   This is the main early check of A1, A2 and A4 at affordable cost, and it covers F2 (T0198 rec. 3, Tj-max
   node movement) and F3 before the evaluation is spent.'
-history: []
+history:
+- outcome: founder_dependency_added
+  summary: waits for T0216 (near-coincident grid lines)
+  at: '2026-11-03T21:27:02+00:00'
