@@ -1,0 +1,47 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The Q1 linear solver still stalls at very weak Robin coupling on refined meshes, so the doc's 'both orders converge at h = 5' holds only at level 0",
+      "detail": "The Q2 path gained p-multigrid plus constant-mode deflation. The Q1 path keeps plain smoothed-aggregation CG with no deflation, the same solver as the earlier version. On the toy two-die layout (h0 = 1 mm, constant k), Q1 raises 'AMG-CG did not converge to a relative residual of 1e-8' at h = 5 W/(m2 K) at level 1 (25,945 DOF) and at level 2 (187,441 DOF). Q2 converges at level 1 (187,441 DOF, energy balance 4.5e-10), and both orders converge at h = 50 and 1e5. The regression test exercises h = 5 only at level 0, where Q1 passes. This leaves the stated Q1 behaviour unchanged, so the claim is not falsified, but the doc and test docstring sentence 'at h = 500, 50 and 5 W/(m2 K) both orders converge' is broader than what holds.",
+      "evidence": "solve_layout(toy, [0.6,0.4], h=5, rule=GridRule(h0=1e-3, element_order=1), level=1, constant_k=True) -> RuntimeError; element_order=2, level=1 -> tj_mean [819.406, 819.240], eb 4.5e-10; Q1 level 2 at h=50 -> eb 4.7e-12",
+      "suggested_check": "Limit the doc sentence to level 0, or give Q1 the same constant-mode deflation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "top_value / meta['T_top'] in box-stack mode interpolate only vertex values, which is not the Q2 field",
+      "detail": "For element_order=2, solve_box_stack builds T_top from the vertex dofs only, and top_value interpolates them bilinearly. Edge-midpoint and face-centre dofs are dropped, so a Q2 user of top_value gets a Q1-quality lookup. The docstring does say 'vertex values', and point_values gives the true field. This only matters to callers who assume top_value carries Q2 accuracy.",
+      "evidence": "thermal_fem.py lines 867-886",
+      "suggested_check": "Route top_value through point_values when meta['element_order'] == 2.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "point_values relies on a private scikit-fem API",
+      "detail": "point_values calls mesh._mapping().invF. A scikit-fem upgrade could break it silently; the Kirchhoff and MMS tests would catch that, since they depend on point_values.",
+      "evidence": "thermal_fem.py point_values",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands. pytest on test_thermal_fem.py, test_thermal_gci_matches_evaluator.py and test_thermal_fem_assembly.py: 19 + 18 passed. The inspect-based signature check passed. ruff check src tests: clean. mfos gate --fast: all gates passed.",
+    "Quadrature exactness. On a non-uniform anisotropic box mesh with random constant k per element, the Q1 (intorder 2) and Q2 (intorder 4) stiffness and the z=0 facet mass match a 14th-order rule to 4e-16 to 1e-15 relative. A deliberately under-integrated Q2 stiffness differs by 31 %, so the comparison can fail. Confirmed that scikit-fem intorder 2/4/7 gives 8/27/64 hex points and 4/9/16 face points.",
+    "Flux sign and face selection on a layout. On the toy layout with void-bounding faces, I built an exact piecewise-linear field T = T0 + gx x + gy y + Tz(z), with continuous k dT/dz = G across the 7 layers. I prescribed flux = k grad T . n_out on all non-Robin faces (including the downward ceramic-overhang faces) and a non-constant T_inf(x, y). Q1 reproduces every node to 1.4e-10 K and Q2 to 4.4e-11 K. The die mean, die max and point_values at interior points are exact to 1e-11, and Q_out = G * A_base to 4e-14.",
+    "Per-face-set area check. With flux = 1 on one (axis, sign) set at a time, q_in_boundary_W matches the exposed-face area I counted from the material map to within 2e-15 relative, for all 5 non-Robin sets and both orders. That includes the 5.6e-5 m2 of downward faces off z = 0, which the code correctly does not treat as Robin. A volume source of 1 gives exactly the active-cell volume.",
+    "Chunk invariance. With manufactured source, flux and T_inf plus die powers and k(T), forcing chunk = 37 (dozens of chunks for the stiffness, volume and facet loads) against the default single chunk changes T by at most 1.1e-12 K, with bit-identical q_in. The unit tests mostly fit in one chunk, so this was otherwise untested.",
+    "Cross-order agreement on the production k(T) problem (toy layout, 60/25 W, h = 5000). For die 1, Q1 levels 0/1/2 give tj_mean 435.822/437.111/437.591 K, and the Richardson extrapolation of levels 1-2 is about 437.75. Q2 levels 0/1 give 437.539/437.749 K. Energy balance is at most 1.7e-13 throughout.",
+    "Discriminating power of the O006 check. In the frozen balance, Q_out = 64.65 W is the net of a -300.1 W source and +364.8 W of exposed inflow, with individual exposed-region contributions of 0.23 W and up. The test's 1e-6 relative tolerance on q_out vs the frozen value (about 6.5e-5 W) would therefore detect a missing face set or a wrong sign.",
+    "Tested the tests by monkeypatching quadrature. Forcing Q2 stiffness to intorder 2 is caught by both the quadratic-field and two-region tests. Forcing data quadrature to intorder 3 is caught by the quadratic-field test; the two-region test lets it through.",
+    "Weak and strong cooling sweep. Q2 at level 1 (187k DOF) converges at h = 5 and h = 1e5. Q1 fails at h = 5 at levels 1 and 2 (finding 1)."
+  ],
+  "caveats": [
+    "The diff in the review packet was truncated partway through the new test file; I reviewed the full file and module from the repository at this commit.",
+    "I could not compare against the earlier trilinear-only version: the worktree has one snapshot commit. The doc's claim that Q1 results match it to 1e-12 K at 416k DOF is unverified. By the diff, the Q1 matrix, loads and solver are mathematically identical, and my exact-field checks pass for Q1.",
+    "I did not reproduce the memory and wall-time figures in the doc and docstring (Q2 4.5-8.1 kB/DOF; BYTES_PER_DOF_BY_ORDER[2] = 10 kB). In my mixed run, the process peaked at 1.34 GB for a 187k-DOF Q2 solve that followed Q1 runs in the same process (about 7.2 kB/DOF), which is within the 10 kB bound.",
+    "'Exact quadrature' holds for constant k per element on axis-aligned boxes (verified). With k(T) it is a consistent quadrature, as the doc states, and manufactured data is integrated exactly only up to integrand degree 7 per direction.",
+    "The Q1 weak-cooling solver limit (finding 1) belongs to the unchanged Q1 path, not to the new assembly; anyone relying on Q1 at h of about 5 W/(m2 K) on refined meshes should use Q2 or add deflation."
+  ]
+}

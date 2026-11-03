@@ -4,7 +4,7 @@ title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) an
   data (volume source, boundary inflow flux, Robin T_inf(x, y))'
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on: []
 description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
   \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
@@ -367,3 +367,6 @@ history:
     - 'The swap check in the memory rules could not be run: `sysctl vm.swapusage` and `ps` are blocked
       by the sandbox. memory_pressure reported 60-66 % free throughout, and every job stayed at or below
       3.5 GB of peak memory, inside the 5 GB budget that needs no swap check.'
+- outcome: full_gate_passed
+  summary: 81a991a3fe2ab9658babc6ba092013898becfc0d
+  at: '2026-11-03T04:51:57+00:00'
