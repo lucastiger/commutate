@@ -4,7 +4,7 @@ title: 'Plan O007 (founder approved I0099: Option (a): ref_gci_cap in max_gci_co
   E009''s A3 recompute uses ref_gci_cap 0.25, floor 0.001 (no replan))'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -32,4 +32,15 @@ lens: null
 trigger: 'founder approved I0099: Option (a): ref_gci_cap in max_gci_consistency (committed); E009''s
   A3 recompute uses ref_gci_cap 0.25, floor 0.001 (no replan)'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'I0099 is now settled: the optional `ref_gci_cap` parameter is committed in tools/mfos/mfos/metrics.py
+    (max_gci_consistency, lines 183-203 and 360), with a unit test in tests/mfos/test_metrics.py. E009''s
+    A3 recompute entry can therefore record F5''s frozen response mechanically. With ref_gci_cap 0.25
+    and floor 0.001, any die where the L2 cross-check''s own GCI is above 0.25 K gives A3 = +inf (not
+    met, INCONCLUSIVE). That avoids both an INVALID run and a reopened redraw path, and no criterion or
+    threshold changes. The founder marked this "no replan", and nothing in the evidence calls for one.
+    T0206 (grid rule, node-only values) is running. T0207 (dev study, freezes the scikit-fem configuration)
+    follows it. T0208 (E009 design) is correctly on founder hold under I0101 until the dev-only VM resul'
+  created: []
+  dropped_for_limits: 0
