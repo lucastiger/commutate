@@ -1450,3 +1450,11 @@
 {"ts": "2026-11-03T02:21:26+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0101", "kind": "external_action", "subject": "[O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts, plus the dev study's full levels if needed)"}
 {"ts": "2026-11-03T02:21:26+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0102", "kind": "plan_approval", "subject": "[O007] approve initial plan (6 tasks)"}
 {"ts": "2026-11-03T02:21:26+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O007", "created": ["T0204", "T0205", "T0206", "T0207", "T0208", "T0209"], "dropped": 0}
+{"ts": "2026-11-03T02:36:32+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0099", "status": "approved", "note": "Option (a): ref_gci_cap in max_gci_consistency (committed); E009's A3 recompute uses ref_gci_cap 0.25, floor 0.001", "by": "human"}
+{"ts": "2026-11-03T02:36:32+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0100", "status": "approved", "note": "E009 added to burst_experiments; VM n2-highmem-16 (128 GB) or larger, confirmed against research/o007_l2/preview.json", "by": "human"}
+{"ts": "2026-11-03T02:36:33+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0101", "status": "approved", "note": "Both dev-only VM runs approved; hold the E009 design task (T0208) until their results are committed", "by": "human"}
+{"ts": "2026-11-03T02:36:33+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0102", "status": "approved", "note": "Plan approved (T0204-T0209)", "by": "human"}
+{"ts": "2026-11-03T02:36:56+00:00", "event": "task_held", "actor": "founder", "task": "T0208", "reason": "I0101"}
+{"ts": "2026-11-03T02:36:56+00:00", "event": "loop_started", "actor": "orchestrator", "pid": 54012}
+{"ts": "2026-11-03T02:37:00+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0204-scientist-20261102T183700-d6f6", "task": "T0204", "role": "scientist", "session": "56262709-81c0-4cca-bc07-0a32a56298c2"}
+{"ts": "2026-11-03T02:37:01+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0205-builder-20261102T183701-552d", "task": "T0205", "role": "builder", "session": "9c48f49e-ba57-4499-9170-284e665b992b"}

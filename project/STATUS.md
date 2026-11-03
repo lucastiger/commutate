@@ -1,11 +1,8 @@
 # ModuleForge status
-_generated 2026-11-03T02:21:28+00:00 from repository state — do not edit_
+_generated 2026-11-03T02:37:01+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
-- **I0099** [decision] [O007] O007 F5: mfos has no way to record the pre-registered response 'A3 not met' (it can only make the run INVALID)
-- **I0100** [external_action] [O007] Burst compute for E009: add E009 to policy burst_experiments and choose a VM with at least 128 GB RAM
-- **I0101** [external_action] [O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts, plus the dev study's full levels if needed)
-- **I0102** [plan_approval] [O007] approve initial plan (6 tasks)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -28,28 +25,17 @@ _generated 2026-11-03T02:21:28+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 3 | $6.45 | 148116 | 107800 | 5 | 0 |
+| O007 | 5 | $6.45 | 148116 | 107800 | 5 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 170, failed: 3, proposed: 6
+cancelled: 30, done: 170, failed: 3, needs_founder: 1, running: 2, todo: 3
 
-- T0204 `proposed` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 0)
-- T0205 `proposed` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 0)
-- T0206 `proposed` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 0)
-- T0207 `proposed` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 0)
-- T0208 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0209 `proposed` none/experiment: Run E009: scikit-fem thermal reference against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
+- T0204 `running` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 1)
+- T0205 `running` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 1)
+- T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-03T01:50:21+00:00 inbox_resolved {"id": "I0096", "status": "approved", "note": "Founder (2026-11-02): option A, the pre-registered decision. EV-O006-01 is INCONCLUSIVE (A1 0.0206, A2 0.143 K, A
-- 2026-11-03T01:50:54+00:00 inbox_resolved {"id": "I0098", "status": "approved", "note": "Founder decision A (I0096): no O006 replan. O006 is evaluated (INCONCLUSIVE, EV-O006-01) and the work continues u
-- 2026-11-03T01:54:02+00:00 objective_draft_review {"objective": "O007", "ref": "372e047d54ed240e66d8ff1f8c92e245035e87f8", "tasks": ["T0201", "T0202"]}
-- 2026-11-03T01:54:29+00:00 run_started {"run": "T0201-critic-20261102T175429-a541", "task": "T0201", "role": "critic", "session": "f648893f-5369-49f7-90b2-2c08bb96c049"}
-- 2026-11-03T01:54:30+00:00 run_started {"run": "T0202-critic-20261102T175430-01f1", "task": "T0202", "role": "critic", "session": "52a9d629-36ef-4164-95f8-a0a5785535d7"}
-- 2026-11-03T02:01:17+00:00 run_finished {"run": "T0201-critic-20261102T175429-a541", "status": "completed", "cost": 1.572953, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T02:02:28+00:00 run_finished {"run": "T0202-critic-20261102T175430-01f1", "status": "completed", "cost": 2.133333, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T02:10:27+00:00 objective_approved {"objective": "O007", "criteria_hash": "sha256:81723bc542a25acd7c796ece92af5f8907868f2df37b0ba0a4fd3211956df93d"}
 - 2026-11-03T02:10:29+00:00 run_started {"run": "T0203-planner-20261102T181029-a0a1", "task": "T0203", "role": "planner", "session": "f0c0512d-357c-4d1b-bb7d-7fddeef0a43c"}
 - 2026-11-03T02:21:26+00:00 run_finished {"run": "T0203-planner-20261102T181029-a0a1", "status": "completed", "cost": 2.742655, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0099", "kind": "decision", "subject": "[O007] O007 F5: mfos has no way to record the pre-registered response 'A3 not met' (it can only make the run INV
@@ -57,3 +43,11 @@ cancelled: 30, done: 170, failed: 3, proposed: 6
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0101", "kind": "external_action", "subject": "[O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0102", "kind": "plan_approval", "subject": "[O007] approve initial plan (6 tasks)"}
 - 2026-11-03T02:21:26+00:00 plan_applied {"objective": "O007", "created": ["T0204", "T0205", "T0206", "T0207", "T0208", "T0209"], "dropped": 0}
+- 2026-11-03T02:36:32+00:00 inbox_resolved {"id": "I0099", "status": "approved", "note": "Option (a): ref_gci_cap in max_gci_consistency (committed); E009's A3 recompute uses ref_gci_cap 0.25, floor 0.00
+- 2026-11-03T02:36:32+00:00 inbox_resolved {"id": "I0100", "status": "approved", "note": "E009 added to burst_experiments; VM n2-highmem-16 (128 GB) or larger, confirmed against research/o007_l2/preview.
+- 2026-11-03T02:36:33+00:00 inbox_resolved {"id": "I0101", "status": "approved", "note": "Both dev-only VM runs approved; hold the E009 design task (T0208) until their results are committed", "by": "huma
+- 2026-11-03T02:36:33+00:00 inbox_resolved {"id": "I0102", "status": "approved", "note": "Plan approved (T0204-T0209)", "by": "human"}
+- 2026-11-03T02:36:56+00:00 task_held {"task": "T0208", "reason": "I0101"}
+- 2026-11-03T02:36:56+00:00 loop_started {"pid": 54012}
+- 2026-11-03T02:37:00+00:00 run_started {"run": "T0204-scientist-20261102T183700-d6f6", "task": "T0204", "role": "scientist", "session": "56262709-81c0-4cca-bc07-0a32a56298c2"}
+- 2026-11-03T02:37:01+00:00 run_started {"run": "T0205-builder-20261102T183701-552d", "task": "T0205", "role": "builder", "session": "9c48f49e-ba57-4499-9170-284e665b992b"}
