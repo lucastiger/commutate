@@ -1,8 +1,7 @@
 # ModuleForge status
-_generated 2026-11-03T04:52:37+00:00 from repository state — do not edit_
+_generated 2026-11-03T16:51:27+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0103** [protected_change] T0204: merge needs founder approval
+## Founder inbox (1 open)
 - **I0104** [protected_change] T0205: merge needs founder approval
 
 ## Objectives
@@ -30,15 +29,13 @@ _generated 2026-11-03T04:52:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 174, failed: 3, needs_founder: 3, todo: 3
+cancelled: 30, done: 174, failed: 3, merge: 2, needs_founder: 1, todo: 3
 
-- T0204 `needs_founder` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 1)
-- T0205 `needs_founder` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 2)
+- T0204 `merge` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 1)
+- T0205 `merge` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 2)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-03T03:11:32+00:00 run_started {"run": "T0211-critic-20261102T191132-86fb", "task": "T0211", "role": "critic", "session": "79ed597c-0905-4dd7-9f5f-d3289bd5a4f7"}
-- 2026-11-03T03:12:05+00:00 sleep_detected {"gap_s": 405, "runs_extended": 2}
 - 2026-11-03T03:19:54+00:00 run_finished {"run": "T0210-critic-20261102T191132-b5f2", "status": "completed", "cost": 1.745066, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T03:22:17+00:00 run_finished {"run": "T0211-critic-20261102T191132-86fb", "status": "completed", "cost": 2.103715, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T03:22:19+00:00 task_failed_attempt {"task": "T0205", "signal": "review_rejected", "action": "repair"}
@@ -52,3 +49,5 @@ cancelled: 30, done: 174, failed: 3, needs_founder: 3, todo: 3
 - 2026-11-03T04:42:22+00:00 run_finished {"run": "T0213-critic-20261102T202952-e3a3", "status": "completed", "cost": 1.952961, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T04:51:59+00:00 inbox_opened {"id": "I0104", "kind": "protected_change", "subject": "T0205: merge needs founder approval"}
 - 2026-11-03T04:52:33+00:00 sleep_detected {"gap_s": 612, "runs_extended": 0}
+- 2026-11-03T16:51:26+00:00 inbox_resolved {"id": "I0103", "status": "approved", "note": "T0204: L2 levels 1-3 preview (dry run predicts F5 max 0.155 K; VM 256 GB)", "by": "human"}
+- 2026-11-03T16:51:28+00:00 inbox_resolved {"id": "I0104", "status": "approved", "note": "T0205: thermal_fem Q1/Q2, MMS data, face-node tj_max fix, Q2 p-multigrid (reviews T0212/T0213 accept with caveats

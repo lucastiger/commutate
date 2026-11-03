@@ -4,7 +4,7 @@ title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) an
   data (volume source, boundary inflow flux, Robin T_inf(x, y))'
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
   \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
@@ -91,8 +91,8 @@ runs:
 - T0205-builder-20261102T192220-e27a
 created_by: planner:T0203
 created_at: '2026-11-03T02:21:26+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0104
 target: null
 lens: null
 trigger: null
