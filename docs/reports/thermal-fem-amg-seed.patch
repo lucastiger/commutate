@@ -1,0 +1,41 @@
+diff --git a/src/moduleforge/solvers/thermal_fem.py b/src/moduleforge/solvers/thermal_fem.py
+index 0ae9df3..ea6672d 100644
+--- a/src/moduleforge/solvers/thermal_fem.py
++++ b/src/moduleforge/solvers/thermal_fem.py
+@@ -417,6 +417,23 @@ def _q1_to_q2(mesh, dofs) -> sp.csr_matrix:
+     return sp.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(int(dofs.N), nv))
+ 
+ 
++AMG_SEED = 20261103  # explicit seed for pyamg's hierarchy construction (see _sa_solver)
++
++
++def _sa_solver(A: sp.csr_matrix, **kw):
++    """pyamg smoothed aggregation with a fixed seed. pyamg estimates the spectral radius it uses to smooth the
++    prolongator from an unseeded random start vector (pyamg.util.linalg.approximate_spectral_radius,
++    np.random.rand), so without a seed the hierarchy, and with it the CG convergence of every solve, changes from run
++    to run (2026-11-03: residual-check failures in 1 of 25 runs of the same solve, and flaky tests). The global numpy
++    random state is restored afterwards, so callers' random streams are unaffected."""
++    state = np.random.get_state()
++    np.random.seed(AMG_SEED)
++    try:
++        return pyamg.smoothed_aggregation_solver(A, **kw)
++    finally:
++        np.random.set_state(state)
++
++
+ class _Solver:
+     """CG preconditioned by algebraic multigrid (pyamg, MIT), stopping at the relative residual ``LINEAR_RTOL``; raises
+     unless the true relative residual of the returned solution is below 1e-8.
+@@ -443,10 +460,10 @@ class _Solver:
+         self.a1 = A @ self.one
+         self.c_den = float(self.one @ self.a1)
+         if P is None:
+-            self.ml = pyamg.smoothed_aggregation_solver(A, max_coarse=500)
++            self.ml = _sa_solver(A, max_coarse=500)
+             return
+         Ac = (P.T @ (A @ P)).tocsr()
+-        coarse = pyamg.smoothed_aggregation_solver(Ac, max_coarse=500)
++        coarse = _sa_solver(Ac, max_coarse=500)
+         top = MultilevelSolver.Level()
+         top.A, top.P, top.R = A, P, P.T.tocsr()
+         self.ml = MultilevelSolver([top, *coarse.levels], coarse_solver="pinv")
