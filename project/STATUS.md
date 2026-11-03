@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T04:29:52+00:00 from repository state — do not edit_
+_generated 2026-11-03T04:30:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0103** [protected_change] T0204: merge needs founder approval
@@ -38,7 +38,6 @@ cancelled: 30, done: 172, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - T0213 `running` critic/review: Review T0205 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-03T02:51:25+00:00 verified {"task": "T0204"}
 - 2026-11-03T02:51:27+00:00 inbox_opened {"id": "I0103", "kind": "protected_change", "subject": "T0204: merge needs founder approval"}
 - 2026-11-03T03:05:21+00:00 run_finished {"run": "T0205-builder-20261102T183701-552d", "status": "completed", "cost": 1.879788, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T03:11:28+00:00 verified {"task": "T0205"}
@@ -53,3 +52,4 @@ cancelled: 30, done: 172, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - 2026-11-03T04:29:47+00:00 verified {"task": "T0205"}
 - 2026-11-03T04:29:51+00:00 run_started {"run": "T0212-critic-20261102T202951-2a8e", "task": "T0212", "role": "critic", "session": "3af1a826-1b6a-46b2-9046-e16dd3e3682c"}
 - 2026-11-03T04:29:52+00:00 run_started {"run": "T0213-critic-20261102T202952-e3a3", "task": "T0213", "role": "critic", "session": "0134b3fd-c465-48d8-8051-1d294958c782"}
+- 2026-11-03T04:30:25+00:00 sleep_detected {"gap_s": 461, "runs_extended": 2}
