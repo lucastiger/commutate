@@ -119,7 +119,10 @@ fi
 printf 'set -uo pipefail\nexport PATH="$HOME/.local/bin:$PATH"\ncd ~/mf\n%s\n' "$JOB" > "$WORK/job.sh"
 gcloud compute scp --zone "$ZONE" --quiet "$WORK/job.sh" "$NAME:job.sh" > /dev/null
 MAXH="${MF_GCP_MAX_HOURS:-6}"
-gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "sudo shutdown -h +$((MAXH * 60)) > /dev/null 2>&1; nohup bash -c 'bash ~/job.sh > ~/job.log 2>&1; echo \$? > ~/job.rc' > /dev/null 2>&1 < /dev/null &"
+# The VM's own shutdown is a backstop 20 minutes after this script's deadline, so that on a timeout the script can
+# still copy job.log and any partial results back before it deletes the VM (2026-11-03: both fired at 4 h exactly, the
+# VM powered off first, and the O007 preview run returned nothing).
+gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "sudo shutdown -h +$((MAXH * 60 + 20)) > /dev/null 2>&1; nohup bash -c 'bash ~/job.sh > ~/job.log 2>&1; echo \$? > ~/job.rc' > /dev/null 2>&1 < /dev/null &"
 echo "job started on $NAME: $JOB"
 RC=""
 DEADLINE=$((SECONDS + MAXH * 3600))
