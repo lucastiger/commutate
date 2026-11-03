@@ -1,0 +1,59 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A1 and A2 are not met: the L2 misses the Muzychka Case 2 source means by 0.143 K (2.06 % of scale)",
+      "detail": "Claim (a) says the L2 reproduces every reference case within 1 % of scale and within 0.05 K. The registered evaluation EV-O006-01 records A1 = 0.0206 against a threshold of 0.01 and A2 = 0.143 K against 0.05 K, both not met. I recomputed both from rows.json and got the same values. The worst rows are all Case 2 source means: s2.mean 0.143 K, s3.mean 0.114 K, s4.mean 0.084 K, s1.mean 0.055 K. Case 1a s2.mean (0.124 K) also misses A2. So A2 fails on two separate constant-k reference cases, not only on the manufactured case. That means the special route in decision_if_inconclusive (an A2 miss only on the manufactured case) does not apply, and the objective's own rule is 'Otherwise same as fail'.",
+      "evidence": "Case 2 s2.mean: f_lv0/1/2 = 376.877/375.961/375.646 K, T_ref = 375.503 K. The F1 sanity case2_vs_skfem has scikit-fem Q2 at 375.502 K, which confirms the reference value, so the error is in the L2. The K1/K2 kill criteria were not triggered (0.0206 < 0.05; 0.143 < 0.25).",
+      "suggested_check": "Treat (a) as refuted at the frozen grid rule. Refining the Case 2 and Case 1a grids would need a new experiment id.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "blocker",
+      "title": "A4 is +inf; even without the divergent rows the largest finite GCI is 0.595 K > 0.5 K",
+      "detail": "Claim (c) needs every reported value to have GCI \u2264 0.5 K. I re-implemented the A4 estimator from the objective text, independently of mfos.metrics, and ran it on all 100 finest rows. My values matched the stored gci on every row (0 mismatches). Three rows diverge (|rho| \u2265 1): nlayer_dbc d1.max, nlayer_dbc d4.max and mms die_max. One might argue these are artefacts of sampling a maximum on a discrete grid. Even so, mms die_centroid falls in the oscillatory branch with GCI = 3\u00b7max(|d1|,|d2|) = 0.595 K, which is above 0.5 K. So A4 fails under any reasonable reading of the registered metric.",
+      "evidence": "nlayer_dbc d1.max 419.521/419.594/419.510 (rho = -1.14); d4.max 429.742/429.748/429.698 (rho = -9.5); mms die_max 395.499/395.509/395.486 (rho = -2.3); mms die_centroid 395.321/395.123/395.128 (rho = -0.027, GCI 0.595 K). The runner reports n_divergent = 3 and n_oscillatory = 2.",
+      "suggested_check": "Accept that A4 is not met. Any re-scoping of A4 to layout values only would have to be a new pre-registered objective, not a reinterpretation after the fact.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The Case 2 and Case 1a misses look like grid-rule shortfall, not a model error",
+      "detail": "I did a Richardson extrapolation of the Case 2 mean sequences using the observed order (p_obs \u2248 1.50 to 1.54). It lands within 0.010 to 0.022 K of the frozen reference, and the capped-order GCI (0.15 to 0.39 K) bounds every case error (min gci/err = 1.93 per the runner). This suggests the solver converges to the right answer and the frozen grid rule's level 2 is simply too coarse for constant-k source means. This does not rescue the claim, which is specifically about grids from the frozen rule. It does narrow what the failure means.",
+      "evidence": "s2.mean: extrapolated value minus reference = -0.0216 K; s1.mean -0.0097; s3.mean -0.0176; s4.mean -0.0136.",
+      "suggested_check": "Diagnose with mf-diagnosis: one finer Case 2 level would show whether the error keeps shrinking at about order 1.5.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "On the layouts alone, (b) and the layout part of (c) hold in the checked run",
+      "detail": "In the snapshot run, A3 has a maximum of 0.699 (the evaluated run reports 0.719). Every die's L2 GCI is \u2264 0.303 K, and no A3 pair converges from the same side. So the cross-check and the layout-restricted precision statement are consistent with the data. The registered A4, however, explicitly includes the reference-case rows. A3 is also based on 40 dies drawn from 5 layouts, which are strongly correlated within each layout. Solver differences reach 0.29 K against summed estimates of about 0.37 to 0.42 K, so A3 tests consistency, not 0.05 K accuracy.",
+      "evidence": "Top A3 rows: fresh_interleaved die 4 (diff 0.260 K, consistency 0.699), die 6 (0.293 K, 0.697), u_shaped_2 die 0 (0.216 K, 0.685). Operating point: each layout's level-0 hottest-die rise is between 59.95 and 60.13 K.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The F3 null is identical to the L2 on constant-k cases, so the L2's lead over the null on A1 is thin",
+      "detail": "dT_const_k equals T_l2 on Cases 1a, 1b, 2, 3 and nlayer_dbc. The A1 null (0.02495) exceeds the L2 (0.0206) only because of the manufactured case. If a constant-k case had missed by more than the null's k(T) error, the null comparison would have told us nothing. This does not affect the verdict.",
+      "evidence": "Null scaled error by case: case2 0.0206 (= L2), mms 0.02495.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed A1 and A2 from rows.json (kind=case, is_finest): 0.0206 and 0.143 K, matching the evaluator. Identified the worst rows as the Case 2 source means and Case 1a s2.mean.",
+    "Re-implemented the A4 GCI estimator from the objective text (floor, the four branches, order capped at 1) independently of mfos.metrics. It matched the stored gci on all 100 finest rows (0 mismatches) and confirmed 3 divergent rows plus an oscillatory mms die_centroid at 0.595 K.",
+    "Checked the Case 2 reference against the F1 scikit-fem Q2 sanity detail: s2.mean 375.502 vs series 375.503, so the reference holds and the error is in the L2.",
+    "Ran a Richardson extrapolation (observed order) on the Case 2 mean sequences: within 0.01 to 0.022 K of the reference, consistent with a grid-rule shortfall rather than a model bug.",
+    "Recomputed the A3 consistency per die from the grid and z columns (max 0.699 in the snapshot run), the max L2 GCI on layouts (0.303 K), the operating-point rises (59.95 to 60.13 K) and the same-side flags (none).",
+    "Checked the null baseline by case: dT_const_k equals T_l2 on the constant-k cases; the null exceeds the L2 on A1 only through the mms case.",
+    "Read the objective's decision_if_inconclusive: the A2 miss is not confined to the manufactured case, so the route is 'same as fail'.",
+    "Checked registry.jsonl: run b41e was abandoned (A4 +inf serialised as null) and re-minted as 2815; A1 and A2 were already known to fail before the re-mint, so the re-run gave no forking-path advantage."
+  ],
+  "caveats": [
+    "This checkout contains only the abandoned run E006-20261102T113312-b41e, not the evaluated run E006-20261102T145940-2815. My row-level recomputations use b41e. Its A1 and A2 agree with the evaluated values to about 1e-12, and the evaluator independently recomputed A4 = +inf on 2815. A3 differs (0.699 vs 0.719), presumably because the new mint's sealed seed produced different fresh layouts.",
+    "The rejection concerns the claim as registered (parts (a) and (c) at the frozen grid rule). The evidence is consistent with a correct solver whose frozen grid rule is too coarse for the Case 2 and Case 1a source means and for the A4 precision target, and with part (b) holding on the five layouts."
+  ]
+}
