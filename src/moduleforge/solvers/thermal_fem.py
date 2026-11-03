@@ -162,10 +162,17 @@ class GridRule:
     # up to 3 x near_margin, 4 h0 beyond (smooth coarsening away from the dies, where the solution is smooth)
     min_cells: int = 2  # even minimum of level-0 lateral cells per interval
     element_order: int = 1  # 1: trilinear ElementHex1 (2x2x2 Gauss); 2: triquadratic ElementHex2 (3x3x3 Gauss)
+    dz_max: float | None = None  # [m] absolute bound of the level-0 z cell size: every z interval of thickness t gets
+    # max(nz_of(layer), ceil(t / dz_max)) cells at level 0 and 2**level times as many at level l (T0198). Needs zrefine.
 
     def __post_init__(self):
         if self.element_order not in (1, 2):
             raise ValueError("element_order must be 1 or 2")
+        if self.dz_max is not None:
+            if not self.dz_max > 0.0:
+                raise ValueError("dz_max must be positive")
+            if not self.zrefine:
+                raise ValueError("dz_max needs zrefine=True (r = 2 in x, y and z)")
 
     def nz_of(self, name: str) -> int:
         return int(self.nz.get(name, self.default_nz))
@@ -216,6 +223,35 @@ def _subdivide_n(lines: np.ndarray, n0: Sequence[int], level: int, zrefine: bool
         m = int(n) * (REFINEMENT_RATIO**level if zrefine else 1)
         out.append(a + (b - a) * np.arange(1, m + 1) / m)
     return np.concatenate(out)
+
+
+def _z_counts(zl0: np.ndarray, base_of_mid: Callable[[float], int], rule: GridRule) -> list[int]:
+    """Level-0 cells of every z interval: ``base_of_mid(midpoint)`` (the layer's count), at least ``ceil(t / dz_max)`` when
+    ``rule.dz_max`` is set (t the interval thickness), so the level-0 cell is at most ``dz_max`` thick."""
+    out = []
+    for a, b in zip(zl0[:-1], zl0[1:], strict=True):
+        n = int(base_of_mid(0.5 * (a + b)))
+        if rule.dz_max is not None:
+            n = max(n, math.ceil((b - a) / rule.dz_max - 1e-9))
+        out.append(n)
+    return out
+
+
+def _merge_lines(base: Sequence[float], extra: Sequence[float] | None, lo: float, hi: float, tol: float) -> np.ndarray:
+    """Level-0 lines ``base`` plus the mandatory lines ``extra`` (which must lie within [lo, hi])."""
+    ex = [] if extra is None else [float(v) for v in np.asarray(extra, dtype=float).ravel()]
+    for v in ex:
+        if v < lo - tol or v > hi + tol:
+            raise ValueError(f"mandatory grid line {v} is outside the domain [{lo}, {hi}]")
+    return _lines(list(base) + ex, tol)
+
+
+def _split_extra(extra_lines) -> tuple:
+    if extra_lines is None:
+        return None, None, None
+    if len(extra_lines) != 3:
+        raise ValueError("extra_lines must be (xs, ys, zs)")
+    return tuple(extra_lines)
 
 
 def _poly_coords(poly) -> tuple[list[float], list[float]]:
@@ -578,7 +614,10 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     q_out = float(hh * np.dot(ones_b, theta) - f_robin.sum())
     q_in = q_die + q_vol + q_bnd
     eb = abs(q_out / q_in - 1.0) if q_in != 0.0 else abs(q_out)
-    tj_max = np.array([Tn[n].max() for n in src_nodes])
+    nodes_m = _doflocs(mesh, dofs).T / MM
+    arg = [int(n[np.argmax(Tn[n])]) for n in src_nodes]  # the top-face DOF of maximum T (first one on a tie)
+    tj_max = np.array([Tn[a] for a in arg])
+    tj_xyz = [[float(c) for c in nodes_m[a]] for a in arg]
     tj_mean = np.array([float(np.dot(v, Tn)) for v in src_vecs])
     wall = time.perf_counter() - t0
     ci, cj, ck = np.nonzero(g.mat >= 0)
@@ -586,8 +625,10 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     eidx[ci, cj, ck] = np.arange(ne)
     meta = {"n_elements": int(ne), "element_order": order, "n_vertices": int(mesh.p.shape[1]), "q_out_W": q_out,
             "P_total_W": P_tot, "q_in_die_W": q_die, "q_in_volume_W": q_vol, "q_in_boundary_W": q_bnd,
-            "q_in_W": q_in, "data_intorder": DATA_INTORDER}
-    return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=_doflocs(mesh, dofs).T / MM, meta=meta,
+            "q_in_W": q_in, "data_intorder": DATA_INTORDER, "n_dofs": int(nd), "tj_max_xyz": tj_xyz,
+            "lines": {"x": g.x.copy(), "y": g.y.copy(), "z": g.z.copy()},
+            "n_lines": {"x": int(g.x.size), "y": int(g.y.size), "z": int(g.z.size)}}
+    return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=nodes_m, meta=meta,
                          field_eval=_FieldEval(mesh, elem, dofs, eidx, (g.x, g.y, g.z)))
 
 
@@ -629,13 +670,57 @@ def point_values(res: ThermalResult, pts: np.ndarray) -> np.ndarray:
     return out
 
 
+NODE_TOL_M = 1.0e-9  # a point is a DOF location when every coordinate is within this of it
+
+
+def _top_z(res: ThermalResult) -> float:
+    return float(res.field_eval.lines[2][-1]) if res.field_eval is not None else float(res.nodes[:, 2].max())
+
+
+def node_value(res: ThermalResult, x: float, y: float, z: float | None = None) -> float:
+    """Temperature [K] at the DOF location (x, y, z) [m] (``z`` defaults to the top face). Q2 DOFs include edge, face and
+    cell mid-nodes. The point must coincide with a DOF to within ``NODE_TOL_M`` in every coordinate, else ValueError: there
+    is no interpolation, so a reported value is always a nodal value of the discrete solution."""
+    z = _top_z(res) if z is None else float(z)
+    d = np.abs(res.nodes - np.array([x, y, z], dtype=float))
+    hit = np.nonzero((d <= NODE_TOL_M).all(axis=1))[0]
+    if hit.size == 0:
+        raise ValueError(f"point ({x}, {y}, {z}) is not a DOF location of the mesh (tolerance {NODE_TOL_M} m)")
+    return float(res.T[hit[np.argmin(d[hit].sum(axis=1))]])
+
+
+def node_stencil(res: ThermalResult, x: float, y: float, z: float | None = None) -> tuple[dict, dict, dict]:
+    """Per axis (x, y, z) the grid-line stencil of a point: ``{"index", "on_line", "coord", "lo", "hi"}``. If the point is
+    on a grid line (within ``NODE_TOL_M``): ``index`` is the line's index, ``coord`` its coordinate, ``lo`` / ``hi`` the
+    neighbouring line coordinates (None at the domain ends). If it lies between lines (a Q2 mid-node): ``index`` None,
+    ``on_line`` False, ``lo`` / ``hi`` the enclosing lines. ValueError outside the mesh. A runner compares these between
+    levels to report that the point is a node."""
+    fe = res.field_eval
+    if fe is None:
+        raise ValueError("the result carries no field evaluator")
+    z = _top_z(res) if z is None else float(z)
+    out = []
+    for lines, v in zip(fe.lines, (float(x), float(y), z), strict=True):
+        if v < lines[0] - NODE_TOL_M or v > lines[-1] + NODE_TOL_M:
+            raise ValueError(f"coordinate {v} is outside the mesh")
+        i = int(np.argmin(np.abs(lines - v)))
+        if abs(lines[i] - v) <= NODE_TOL_M:
+            out.append({"index": i, "on_line": True, "coord": float(lines[i]),
+                        "lo": float(lines[i - 1]) if i > 0 else None,
+                        "hi": float(lines[i + 1]) if i < lines.size - 1 else None})
+        else:
+            j = int(np.searchsorted(lines, v) - 1)
+            out.append({"index": None, "on_line": False, "coord": v, "lo": float(lines[j]), "hi": float(lines[j + 1])})
+    return out[0], out[1], out[2]
+
+
 # ------------------------------------------------------------------------------------------------ layout mode
 def _k_of(layer: Layer) -> Callable:
     return lambda T: layer.k_at(T)
 
 
 def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c: float,
-                rule: GridRule | None = None, level: int = 0) -> _Grid:
+                rule: GridRule | None = None, level: int = 0, extra_lines: tuple | None = None) -> _Grid:
     """Conforming tensor grid, material map and sources for ``layout`` (docs/thermal_model.md, sections 2-4)."""
     rule = rule or GridRule()
     st = layout.stack
@@ -670,17 +755,18 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         for t in dth:
             extra.append((z_top_cu + a, z_top_cu + a + t, rule.nz_of("die")))
     zl_pts = sorted({round(v, 15) for v in zb} | {round(e[0], 15) for e in extra} | {round(e[1], 15) for e in extra})
-    zl0 = _lines(zl_pts, 1e-12)
+    exs, eys, ezs = _split_extra(extra_lines)
+    zl0 = _merge_lines(zl_pts, ezs, zl_pts[0], zl_pts[-1], 1e-12)
     # cells per z interval at level 0
-    nzi = []
-    for a, b in zip(zl0[:-1], zl0[1:], strict=True):
-        mid = 0.5 * (a + b)
-        n = 1
-        for lo, hi, nn in [(zb[i], zb[i + 1], zcounts[i]) for i in range(len(zcounts))] + extra:
+    bands = [(zb[i], zb[i + 1], zcounts[i]) for i in range(len(zcounts))] + extra
+
+    def base_n(mid: float) -> int:
+        for lo, hi, nn in bands:
             if lo - 1e-12 <= mid <= hi + 1e-12:
-                n = nn
-                break
-        nzi.append(n)
+                return nn
+        return 1
+
+    nzi = _z_counts(zl0, base_n, rule)
     zl = _subdivide_n(zl0, nzi, level, rule.zrefine)
     # x, y lines
     xs, ys = [], []
@@ -692,7 +778,9 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         x0, y0, x1, y1 = d.bounds
         xs += [x0, x1]
         ys += [y0, y1]
-    xl0, yl0 = _lines(xs), _lines(ys)
+    bx, by = layout.baseplate_outline.bounds[0::2], layout.baseplate_outline.bounds[1::2]
+    xl0 = _merge_lines(_lines(xs), exs, bx[0], bx[1], 1e-10)
+    yl0 = _merge_lines(_lines(ys), eys, by[0], by[1], 1e-10)
     mx = _size_multipliers(xl0, [(d.bounds[0], d.bounds[2]) for d in layout.dies], rule.near_margin)
     my = _size_multipliers(yl0, [(d.bounds[1], d.bounds[3]) for d in layout.dies], rule.near_margin)
     xl = _subdivide(xl0, rule.h0, level, rule.min_cells, mx)
@@ -778,7 +866,7 @@ def _count_nodes_q2(mat: np.ndarray) -> int:
 def solve_layout(layout: Layout, power_W: Sequence[float] | float, h: float, T_c: float, *, rule: GridRule | None = None,
                  level: int = 0, constant_k: bool = False, picard_tol: float = PICARD_TOL_K,
                  source: Callable | None = None, flux: Callable | None = None,
-                 T_inf: Callable | None = None) -> ThermalResult:
+                 T_inf: Callable | None = None, extra_lines: tuple | None = None) -> ThermalResult:
     """Layout mode: solve docs/thermal_model.md on the level-``level`` conforming mesh (``rule.element_order`` 1 or 2).
 
     Optional manufactured data (SI; defaults None = the production problem, unchanged): ``source(x, y, z)`` [W/m3] over
@@ -790,9 +878,13 @@ def solve_layout(layout: Layout, power_W: Sequence[float] | float, h: float, T_c
     ``q_in_volume_W`` and ``q_in_boundary_W`` (sum ``q_in_W``) next to ``q_out_W``; ``energy_balance`` is
     ``|q_out_W / q_in_W - 1|`` with the assembled ``Q_in``.
 
+    ``extra_lines=(xs, ys, zs)`` [m] are mandatory grid lines, merged into the level-0 line set before subdivision, so a
+    point on them is a node at every level (``node_value``); they must lie inside the baseplate box and the z extent.
+    ``rule.dz_max`` bounds the z cell size in absolute terms (``GridRule``).
+
     ``power_W`` is one value per die (``layout.dies`` order) or a scalar for all. ``constant_k`` uses ``k = Layer.k``
     (``k_at(T_REF)``). Returns per-die ``tj_max`` / ``tj_mean`` (absolute K, same order as ``layout.dies``)."""
-    g = layout_grid(layout, power_W, h, T_c, rule, level)
+    g = layout_grid(layout, power_W, h, T_c, rule, level, extra_lines)
     if constant_k:
         g.kfun = [(lambda T, la=la: np.full_like(T, la.k)) for la in _materials(layout)]
     g.source, g.flux, g.T_inf = source, flux, T_inf
@@ -829,27 +921,35 @@ class BoxLayer:
     name: str = ""
 
 
-def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
-                    sources: Sequence[tuple[float, float, float, float, float]], *, h0: float, level: int = 0,
-                    constant_k: bool = False, picard_tol: float = PICARD_TOL_K, element_order: int = 1,
-                    source: Callable | None = None, flux: Callable | None = None,
-                    T_inf: Callable | None = None) -> ThermalResult:
-    """Laterally uniform flux-channel mode (section 6): rectangle [0,a]x[0,b], bottom-up ``layers`` spanning it all,
-    adiabatic sides, convective bottom (``h``, ``T_c``), sources ``(x0, y0, x1, y1, P)`` on the top face.
-
-    ``h0`` is the level-0 lateral cell size (intervals between 0, a, b and the source edges get ``ceil(L/h0)`` cells,
-    times ``2**level``). ``constant_k`` with a callable ``k`` evaluates it at ``T_c``. ``meta`` carries the top-surface
-    grid (``xs``, ``ys``, ``T_top[nx+1, ny+1]``, vertex values) for point lookups with ``top_value``.
-
-    ``element_order`` 1 or 2 as in ``GridRule``; ``source``, ``flux`` and ``T_inf`` are the manufactured data of
-    ``solve_layout`` (the flux applies to every face but the bottom, the top and sides included)."""
-    if element_order not in (1, 2):
-        raise ValueError("element_order must be 1 or 2")
-    xl0 = _lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources])
-    yl0 = _lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources])
-    xl, yl = _subdivide(xl0, h0, level), _subdivide(yl0, h0, level)
+def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
+                   sources: Sequence[tuple[float, float, float, float, float]], *, h0: float | None = None, level: int = 0,
+                   constant_k: bool = False, element_order: int = 1, source: Callable | None = None,
+                   flux: Callable | None = None, T_inf: Callable | None = None, rule: GridRule | None = None,
+                   extra_lines: tuple | None = None) -> _Grid:
+    """Conforming tensor grid of ``solve_box_stack`` (arguments there)."""
+    if rule is None:
+        if h0 is None:
+            raise ValueError("give a GridRule (rule=) or h0")
+        rule = GridRule(h0=h0, element_order=element_order)
+    else:
+        if h0 is not None and h0 != rule.h0:
+            raise ValueError("h0 and rule.h0 disagree")
+        if element_order != 1 and element_order != rule.element_order:
+            raise ValueError("element_order and rule.element_order disagree")
+    exs, eys, ezs = _split_extra(extra_lines)
+    cx = [0.5 * (s[0] + s[2]) for s in sources]  # a source's centroid lines are always mandatory
+    cy = [0.5 * (s[1] + s[3]) for s in sources]
+    xl0 = _merge_lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources],
+                       cx + ([] if exs is None else list(exs)), 0.0, a, 1e-10)
+    yl0 = _merge_lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources],
+                       cy + ([] if eys is None else list(eys)), 0.0, b, 1e-10)
+    mx = _size_multipliers(xl0, [(s[0], s[2]) for s in sources], rule.near_margin)
+    my = _size_multipliers(yl0, [(s[1], s[3]) for s in sources], rule.near_margin)
+    xl, yl = _subdivide(xl0, rule.h0, level, rule.min_cells, mx), _subdivide(yl0, rule.h0, level, rule.min_cells, my)
     zb = np.concatenate(([0.0], np.cumsum([la.t for la in layers])))
-    zl = _subdivide_n(zb, [la.n for la in layers], level)
+    zl0 = _merge_lines(zb, ezs, 0.0, float(zb[-1]), 1e-12)
+    nzi = _z_counts(zl0, lambda m: layers[min(int(np.searchsorted(zb, m) - 1), len(layers) - 1)].n, rule)
+    zl = _subdivide_n(zl0, nzi, level, rule.zrefine)
     mat = np.empty((xl.size - 1, yl.size - 1, zl.size - 1), dtype=np.int32)
     zc = 0.5 * (zl[1:] + zl[:-1])
     for i in range(len(layers)):
@@ -861,12 +961,37 @@ def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_
         return lambda T, la=la: np.full_like(T, float(la.k))
 
     srcs = [(s[0], s[1], s[2], s[3], float(zb[-1]), float(s[4])) for s in sources]
-    g = _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=element_order,
-              source=source, flux=flux, T_inf=T_inf)
+    return _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=rule.element_order,
+                 source=source, flux=flux, T_inf=T_inf)
+
+
+def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
+                    sources: Sequence[tuple[float, float, float, float, float]], *, h0: float | None = None, level: int = 0,
+                    constant_k: bool = False, picard_tol: float = PICARD_TOL_K, element_order: int = 1,
+                    source: Callable | None = None, flux: Callable | None = None,
+                    T_inf: Callable | None = None, rule: GridRule | None = None,
+                    extra_lines: tuple | None = None) -> ThermalResult:
+    """Laterally uniform flux-channel mode (section 6): rectangle [0,a]x[0,b], bottom-up ``layers`` spanning it all,
+    adiabatic sides, convective bottom (``h``, ``T_c``), sources ``(x0, y0, x1, y1, P)`` on the top face.
+
+    Grid: the same ``GridRule`` and line builder as layout mode. Pass ``rule`` (``h0``, ``near_margin``, ``min_cells``,
+    ``dz_max``, ``element_order``, ``zrefine``) or the legacy ``h0`` / ``element_order`` keywords (a rule with those two
+    and the defaults otherwise). The level-0 z cells of a layer are its ``BoxLayer.n``, raised to ``ceil(t / dz_max)``
+    when ``rule.dz_max`` is set (``rule.nz`` is not used here). Lateral lines are 0, a, b, the source edges, every
+    source's centroid lines (always mandatory) and ``extra_lines=(xs, ys, zs)`` [m], merged before subdivision. A
+    ``constant_k`` with a callable ``k`` evaluates it at ``T_c``. ``meta`` carries the top-surface grid (``xs``, ``ys``,
+    ``T_top[nx+1, ny+1]``, vertex values) for ``top_value`` (not for reported values: use ``node_value``).
+
+    ``source``, ``flux`` and ``T_inf`` are the manufactured data of ``solve_layout`` (the flux applies to every face but
+    the bottom, the top and sides included)."""
+    g = box_stack_grid(a, b, layers, h, T_c, sources, h0=h0, level=level, constant_k=constant_k,
+                       element_order=element_order, source=source, flux=flux, T_inf=T_inf, rule=rule,
+                       extra_lines=extra_lines)
     r = _solve_grid(g, constant_k=constant_k, k_const_T=T_c, picard_tol=picard_tol)
+    xl, yl, ztop = g.x, g.y, g.z[-1]
     nv = r.meta["n_vertices"]  # vertex dofs come first in both elements (dof i = mesh node i)
     nodes, Tv = r.nodes[:nv], r.T[:nv]
-    top = np.isclose(nodes[:, 2], zb[-1])
+    top = np.isclose(nodes[:, 2], ztop)
     ix = np.searchsorted(xl, nodes[top, 0] - 1e-14)
     iy = np.searchsorted(yl, nodes[top, 1] - 1e-14)
     grid = np.full((xl.size, yl.size), np.nan)
@@ -876,7 +1001,8 @@ def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_
 
 
 def top_value(res: ThermalResult, x: float, y: float) -> float:
-    """Bilinear lookup of the top-surface temperature of a box-stack result at (x, y)."""
+    """Bilinear lookup of the top-surface temperature of a box-stack result at (x, y). NOT FOR REPORTED VALUES: it
+    interpolates between vertices (and ignores Q2 mid-nodes); report ``node_value`` at a mandatory grid line instead."""
     xs, ys, T = res.meta["xs"], res.meta["ys"], res.meta["T_top"]
     i = int(np.clip(np.searchsorted(xs, x) - 1, 0, xs.size - 2))
     j = int(np.clip(np.searchsorted(ys, y) - 1, 0, ys.size - 2))

@@ -230,3 +230,35 @@ higher-order scheme) is the open option, not a finer global rule.
   selected by their coordinates on a layout where the node layer below an unpowered die is hotter than its face; at
   `h` = 500, 50 and 5 W/(m2 K) both orders converge and the spreading part of the die rise, `T - T_c - P/(h A_b)`,
   changes linearly in `h` (small-Biot limit); the Q1-to-Q2 prolongation reproduces trilinear fields exactly.
+
+## 10. scikit-fem reference: grid rule with an absolute dz bound, mandatory lines and node-only values (T0206)
+
+Implemented in `src/moduleforge/solvers/thermal_fem.py` (O007; from diagnosis T0198 and `project/memory/lessons.md`).
+
+**Absolute through-thickness bound.** `GridRule.dz_max` [m] (default None: the per-layer counts of section 8's rule, unchanged).
+When set, every z interval of thickness `t` (each stack layer, the die attach, the die; an interval cut by a mandatory z line is
+bounded per piece) gets `max(nz_of(layer), ceil(t / dz_max))` cells at level 0 and `2**level` times as many at level `l`, so the
+level-0 cell is at most `dz_max` thick and a count set by the bound is not capped by a fixed count per layer. All three
+directions are refined, with the constant ratio `r = 2` (every line of level `l` is a line of level `l+1` and every cell
+bisects), so `zrefine=False` together with `dz_max` is rejected. The rule is the same in layout mode (`solve_layout`) and in
+box-stack mode (`solve_box_stack`); the latter takes the same `GridRule` (`h0`, `near_margin`, `min_cells`, `dz_max`,
+`element_order`) through the same line builder and `_solve_grid` (`rule=`; the legacy `h0=` / `element_order=` keywords still
+work). In box-stack mode a layer's level-0 count is `BoxLayer.n` (`GridRule.nz` is not used). The DOF count grows by about 8
+per level (tested 8 +/- 15 % for Q1 and Q2).
+
+**Mandatory grid lines.** `extra_lines=(xs, ys, zs)` [m] (any entry may be None) are merged into the level-0 line set before
+subdivision, so a point on them is a node at every level; lines outside the domain are rejected. Level-0 lateral intervals
+have an even cell count, so a line is a node at all levels also under Q2 (where, in addition, interval midpoints are mid-edge
+DOFs). Box-stack mode always adds each source's centroid lines. The runner (E009) passes the frozen references' maximum
+locations and the manufactured case's frozen points: they are fixed by the references, never by a solver result.
+
+**Node-only point values.** `node_value(res, x, y, z=None)` [K] returns T at the DOF at that point (`z` defaults to the top
+face; Q2 includes edge, face and cell mid-nodes) within 1e-9 m and raises `ValueError` otherwise: no interpolation.
+`node_stencil(res, x, y, z=None)` returns, per axis, the index of the grid line through the point with the neighbouring line
+coordinates (`index` None and the enclosing lines for a Q2 mid-node), so a runner can show per level that the point is a
+node. `top_value` (bilinear, vertices only) is not for reported values.
+
+**Per-die outputs.** `tj_max[i]` is the maximum over the DOF locations of die `i`'s top face and `meta['tj_max_xyz'][i]` its
+coordinates [m] (the first such DOF on an exact tie); `tj_mean[i]` stays the Galerkin area integral. `meta` also records
+`n_dofs`, `n_elements`, `element_order`, `level` (set by the solve functions), the per-axis line arrays `meta['lines']` and
+the counts `meta['n_lines']`, so a runner can check bisection and DOF growth.
