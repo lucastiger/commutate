@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "N-layer z-split compares two z doublings with one lateral doubling",
+      "detail": "\u00a72 Supplementary says that refining z alone takes d2.centroid from +0.084 to -0.247 K and refining laterally alone takes it to +0.285 K, and calls the two effects 'similar size'. The -0.247 value is the L0z2 variant (z quadrupled). The lateral value is L1z0 (one doubling). One z doubling (L0z1) gives -0.179 K. The like-for-like changes are -0.263 K (z) and +0.201 K (lateral). They still have opposite signs and similar size, so the inference survives, but as written it overstates the z effect.",
+      "evidence": "My own grids, through the production build_box_grid and solve_steady: nlayer_dbc d2.centroid lat0/z0 +0.0838, lat0/z1 -0.1790, lat0/z2 -0.2467, lat1/z0 +0.2851.",
+      "suggested_check": "Report L0z1 next to L1z0, or state that -0.247 is after two z doublings.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The residual at z L4 is the remaining z error, not the lateral error",
+      "detail": "\u00a72 [I] says the 0.010 K residual at lateral L2 / z L4 'has the size of the lateral error'. Richardson extrapolation of the z sequence at lateral L2 (0.1431, 0.0397, 0.0101; ratios 3.6, 3.9) gives a z-converged limit of about 0.0002 K. So the 0.010 K is mostly z error still left at z L4. The conclusion that any bias is at most about 0.01 K still holds, and the data actually support a tighter bound, so H2's refutation is not weakened.",
+      "evidence": "Reproduced independently: lat2/z2 0.1431, lat2/z3 0.0397, lat2/z4 0.0101. Limit: 0.0101 - (0.0397 - 0.0101)/3 \u2248 0.0002 K.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "The lesson's 'invisible on thin DBC stacks' is stronger than the author's own DBC data",
+      "detail": "The new lessons.md entry says Z_CELLS = 2 error is 'invisible on thin DBC stacks'. The author's supplementary data, which I reproduced, show that on the DBC stack at L0 one z doubling moves d2.centroid by about 0.26 K. At L2 this extrapolates to roughly 0.02 K, and it is partly cancelled by lateral and interpolation errors of opposite sign (the diagnosis itself says column-centre accuracy is about 0.047 K, not 0.006 K). The z error on DBC is below the 0.05 K threshold at L2, but it is not invisible. Lessons persist and guide future grid rules.",
+      "evidence": "nlayer_dbc d2.centroid lat0/z0 +0.0838 vs lat0/z1 -0.1790. Diagnosis \u00a72 Supplementary [I].",
+      "suggested_check": "Reword to 'below the 0.05 K threshold at level 2 on DBC stacks, partly masked by cancellation'.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Sign convention of the stated interpolation remainder",
+      "detail": "The diagnosis and the lesson write the interpolation error as -1/2 \u03be(1-\u03be) h\u00b2 T''. That is the Lagrange remainder f - p. The t2 script defines e_int as interpolant minus exact (p - f), which is +1/2 \u03be(1-\u03be) h\u00b2 T''. That sign is what makes the observed e_int negative at hot spots, where T'' < 0. The mechanism depends only on the \u03be(1-\u03be) coefficient, so nothing changes.",
+      "evidence": "f(x) = -x\u00b2 on nodes 0 and 1, \u03be = 1/2: p - f = -0.25 = +1/2\u00b7(1/4)\u00b7(-2).",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The \u03be-orbit derivation assumes locally uniform grids; manufactured-case residuals are not shown",
+      "detail": "The map \u03be \u2192 (2\u03be+\u00bd) mod 1 holds when the stencil's neighbouring cells are equal (inside one bisected level-0 cell). On the box grids I confirmed it at every max point. The manufactured case uses the graded layout grid, and for it the diagnosis reports only corrected GCIs (0.061, 0.0625, 0.0068), not the residual sequences that would show the monotone column-centre convergence G1 predicts. The A4 conclusion for the N-layer points is well supported. For the manufactured points it rests on the corrected GCIs alone.",
+      "evidence": "My stencil coordinates: d1.max tx 0.747 \u2192 0.995 \u2192 0.489, ty 0.474 \u2192 0.449 \u2192 0.397; d2.max tx 0.354 \u2192 0.207 \u2192 0.914; d4.max ty 0.633 \u2192 0.765 \u2192 0.03; d3.centroid (0, 0) \u2192 (0.5, 0.5). All follow (2\u03be+\u00bd) mod 1.",
+      "suggested_check": "Print e_resid per level for the manufactured points in t2.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read EV-O006-01.json and the run directory E006-20261102T145940-2815 in the main checkout. A1 = 0.020607, A2 = 0.143081 K, A3 = 0.719, A4 = Infinity, K1/K2 not triggered, verdict INCONCLUSIVE, all provenance checks ok, run commit bb0725f. Matches \u00a71.",
+    "Recomputed from rows.json: 60 finest case rows + 34 crosscheck rows = 94 values. Every |err| > 0.05 K is in case1a or case2. Every scaled error > 0.01 is in case2 (s2, s3, s4 means). Largest error in the remaining cases is nlayer d4.max at 0.0262 K. Table rows match (case2 s2.mean 1.3737/0.4578/0.1431, p_obs 1.54; case1a s2.mean 1.4521/0.429/0.1238; case2 s3.mean 1.0852/0.3628/0.1136).",
+    "Recomputed every A4 GCI with mfos.metrics.gci_capped(floor = 1e-3): inf for nlayer d1.max, nlayer d4.max and mms die_max; 0.595 for mms die_centroid. The maximum without these four is 0.3934 (case2 s2.mean). Layouts alone: 0.3031 (u_shaped_2 die 3). Muzychka cases alone: 0.3934. The four values' L2 errors are -0.0048, +0.0262, -0.0006, +0.0076 K. All as claimed.",
+    "Checked result.json: 26 sanity checks all pass; energy balance 1.47e-7; Picard 2.9e-5 K; F5 0.233; case2_vs_skfem 0.00108 K; scikit-fem's own GCI 0.00457 K.",
+    "Read the frozen grid rule in thermal_layout.py: Z_CELLS = 2 per layer, z_counts = Z_CELLS\u00b72^L. Edge grading is inactive when s_edge = 2\u00b7t_min = 20 mm \u2265 h0 = 1 mm. The docstring's 0.02 K justification comes from a generator dev layout (docs/thermal_model.md \u00a78).",
+    "Independent z/lateral split on Case 2 with my own driver (production build_box_grid and solve_steady, my own flux assignment). Lateral L0 at z0..z3: 1.3737, 0.4081, 0.1058, 0.0198. Lateral L1 at z0..z3: 1.4748, 0.4578, 0.1305, 0.0334. Lateral L2 at z1..z4: 0.4833, 0.1431, 0.0397, 0.0101. Lateral L3/z2: 0.1495. This reproduces rows.json and every Test 1 value, and confirms the error is set by z resolution at second order in dz.",
+    "Independent N-layer DBC z-split at lateral L0 for d2.centroid: +0.0838, -0.1790 (z1), -0.2467 (z2), +0.2851 (lateral L1). This reproduces the author's numbers and exposed the one-versus-two-doublings wording issue.",
+    "Derived \u03be' = frac(2\u03be + \u00bd) for bisected cell-centred grids. Computed the production stencil coordinates for every N-layer max and centroid point at levels 0-2: they follow the orbit, centroids sit at \u03be = \u00bd, and d3.centroid starts at \u03be = 0. Checked by hand that the reported e_int at d1.max (-0.748/-0.110/-0.052) is consistent with the Lagrange remainder given tx and ty near \u00bd.",
+    "Confirmed the smoke-run note (o006-e006-design.md \u00a74: one divergent manufactured value, A4 = inf), max_evaluations = 1, the pre-registered INCONCLUSIVE branch ('Otherwise same as fail'), the A4 description including the reference-case values, and that project/memory/** is in the scientist's write scope."
+  ],
+  "caveats": [
+    "The failure-class label 'model' for A1/A2 is a judgement. The binding error is the numerical resolution of a frozen grid rule in a regime (thick plates with high q/k) the generator stacks lack. It could also be called 'experimental' (the cases lie outside the decision regime), which the diagnosis concedes, or argued as a solver-specification defect. The mechanism and the recommended actions do not depend on the label.",
+    "Case 1a's z mechanism was confirmed only at lateral level 0. Level 2 is not affordable on this Mac. Case 2, which binds A1 and A2, was confirmed at level 2.",
+    "The conclusion that A4 = inf is a measurement artefact holds for the reported reference-case point values. It does not establish that meta['solver_tol'] is reliable for layout Tj max under O003. The diagnosis rightly leaves this as a speculative follow-up.",
+    "The T0198 deliverable files are not in this review snapshot (c39ef07). I reviewed them from the packet diff and checked them against the main checkout's run artefacts. I did not run the author's scripts; I reproduced their numbers with my own code."
+  ]
+}

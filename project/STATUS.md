@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T00:32:42+00:00 from repository state — do not edit_
+_generated 2026-11-03T00:40:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0096** [decision] [O006] INCONCLUSIVE (EV-O006-01): the pre-registered decision
