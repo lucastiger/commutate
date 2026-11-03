@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-03T02:51:17+00:00 from repository state — do not edit_
+_generated 2026-11-03T02:51:29+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0103** [protected_change] T0204: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,15 +29,13 @@ _generated 2026-11-03T02:51:17+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 170, failed: 3, needs_founder: 1, running: 1, todo: 3, verify: 1
+cancelled: 30, done: 170, failed: 3, needs_founder: 2, running: 1, todo: 3
 
-- T0204 `verify` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 1)
+- T0204 `needs_founder` scientist/investigate: O007 cross-check preview: L2 cost at levels 1-3 and predicted F5 GCI on the two dev layouts (dry run locally, full mode ready for a burst VM) (attempt 1)
 - T0205 `running` builder/implement: thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) and manufactured-solution data (volume source, boundary inflow flux, Robin T_inf(x, y)) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-03T02:21:26+00:00 run_finished {"run": "T0203-planner-20261102T181029-a0a1", "status": "completed", "cost": 2.742655, "subtype": "success", "report": "structured_output"}
-- 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0099", "kind": "decision", "subject": "[O007] O007 F5: mfos has no way to record the pre-registered response 'A3 not met' (it can only make the run INV
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0100", "kind": "external_action", "subject": "[O007] Burst compute for E009: add E009 to policy burst_experiments and choose a VM with at least 128 GB 
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0101", "kind": "external_action", "subject": "[O007] Approve dev-only burst runs before E009 registration (L2 levels 1-3 preview on the two dev layouts
 - 2026-11-03T02:21:26+00:00 inbox_opened {"id": "I0102", "kind": "plan_approval", "subject": "[O007] approve initial plan (6 tasks)"}
@@ -51,3 +49,5 @@ cancelled: 30, done: 170, failed: 3, needs_founder: 1, running: 1, todo: 3, veri
 - 2026-11-03T02:37:00+00:00 run_started {"run": "T0204-scientist-20261102T183700-d6f6", "task": "T0204", "role": "scientist", "session": "56262709-81c0-4cca-bc07-0a32a56298c2"}
 - 2026-11-03T02:37:01+00:00 run_started {"run": "T0205-builder-20261102T183701-552d", "task": "T0205", "role": "builder", "session": "9c48f49e-ba57-4499-9170-284e665b992b"}
 - 2026-11-03T02:49:41+00:00 run_finished {"run": "T0204-scientist-20261102T183700-d6f6", "status": "completed", "cost": 2.268061, "subtype": "success", "report": "structured_output"}
+- 2026-11-03T02:51:25+00:00 verified {"task": "T0204"}
+- 2026-11-03T02:51:27+00:00 inbox_opened {"id": "I0103", "kind": "protected_change", "subject": "T0204: merge needs founder approval"}
