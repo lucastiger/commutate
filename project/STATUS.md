@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T23:37:16+00:00 from repository state — do not edit_
+_generated 2026-11-03T23:37:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,17 +25,17 @@ _generated 2026-11-03T23:37:16+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 21 | $33.35 | 659166 | 336859 | 25 | 0 |
+| O007 | 22 | $33.35 | 659166 | 336859 | 25 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 180, failed: 4, needs_founder: 1, running: 1, todo: 2
+cancelled: 30, done: 180, failed: 3, needs_founder: 1, running: 2, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
+- T0216 `running` builder/implement: thermal_fem: snap near-coincident mandatory grid lines (no sliver cells); extra_lines input parity (review T0215 of T0206) (attempt 4)
 - T0218 `running` scientist/investigate: Diagnose failure of T0216 (attempt 2)
 
 ## Recent events
-- 2026-11-03T23:28:49+00:00 sleep_detected {"gap_s": 805, "runs_extended": 1}
 - 2026-11-03T23:29:27+00:00 run_interrupted {"run": "T0216-builder-20261103T152816-adeb", "cost": 0.319081}
 - 2026-11-03T23:29:27+00:00 run_started {"run": "T0216-builder-20261103T152927-a066", "task": "T0216", "role": "builder", "session": "bfa49f36-eed9-4a8b-80f9-2a13bde3e263"}
 - 2026-11-03T23:31:18+00:00 task_held {"task": "T0216", "reason": "needs main's AMG fixes merged into its branch"}
@@ -50,3 +50,4 @@ cancelled: 30, done: 180, failed: 4, needs_founder: 1, running: 1, todo: 2
 - 2026-11-03T23:37:13+00:00 run_interrupted {"run": "T0218-scientist-20261103T153636-ea78", "cost": 0.0572}
 - 2026-11-03T23:37:13+00:00 task_failed_attempt {"task": "T0218", "signal": "agent_error", "action": "repair"}
 - 2026-11-03T23:37:16+00:00 run_started {"run": "T0218-scientist-20261103T153716-0728", "task": "T0218", "role": "scientist", "session": "ee7c956a-2f84-4c29-b9a5-e62cb8ecdc8a"}
+- 2026-11-03T23:37:52+00:00 run_started {"run": "T0216-builder-20261103T153752-d11b", "task": "T0216", "role": "builder", "session": "c2ddb676-0d3a-4d6d-afd0-e275ae84114f"}
