@@ -3,7 +3,7 @@ objective: O006
 title: Diagnose failure of EV-O006-01
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Task EV-O006-01 ('evaluation EV-O006-01') failed with preliminary class `experimental`:\
   \ objective verdict INCONCLUSIVE.\nFailure output (tail):\n```\naluator_version\": \"2.0.0\",\n \"results_used\"\
@@ -64,4 +64,145 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'EV-O006-01 came back INCONCLUSIVE: A1 = 0.0206 against a 0.01 threshold, A2 = 0.143 K against
+    0.05 K, A4 = +inf against 0.5 K; A3 = 0.72 is met and kill criteria K1/K2 are not triggered. The run
+    itself is valid: all 26 sanity checks pass and every evaluator provenance check is ok. I found no
+    evidence that the L2 solver is wrong. There are two separate causes, each confirmed by a cheap local
+    test.
+
+
+    (1) A1/A2. Every row over 0.05 K is in Muzychka Cases 1a or 2, which are single 10 mm plates. The
+    frozen grid rule always puts 2 cells in each layer, whatever its thickness, so at level 2 the cells
+    are 1.25 mm thick. Doubling only the through-thickness (z) cells cuts the Case 2 error from 0.143
+    to 0.040 K, and quadrupling them cuts it to 0.010 K. Doubling only the lateral cells changes nothing
+    (0'
+  report:
+    summary: 'EV-O006-01 came back INCONCLUSIVE: A1 = 0.0206 against a 0.01 threshold, A2 = 0.143 K against
+      0.05 K, A4 = +inf against 0.5 K; A3 = 0.72 is met and kill criteria K1/K2 are not triggered. The
+      run itself is valid: all 26 sanity checks pass and every evaluator provenance check is ok. I found
+      no evidence that the L2 solver is wrong. There are two separate causes, each confirmed by a cheap
+      local test.
+
+
+      (1) A1/A2. Every row over 0.05 K is in Muzychka Cases 1a or 2, which are single 10 mm plates. The
+      frozen grid rule always puts 2 cells in each layer, whatever its thickness, so at level 2 the cells
+      are 1.25 mm thick. Doubling only the through-thickness (z) cells cuts the Case 2 error from 0.143
+      to 0.040 K, and quadrupling them cuts it to 0.010 K. Doubling only the lateral cells changes nothing
+      (0.150 K). Case 1a behaves the same way: 0.025 K with 16 z-cells even at 1 mm lateral cells. The
+      solver converges to the validated reference at second order, with no bias above about 0.01 K.
+
+
+      (2) A4 = inf. All three divergent values are ''reference max'' points that are bilinearly interpolated
+      at a fixed (x, y) position. With each refinement, that point''s relative position inside the interpolation
+      stencil jumps around (ξ → (2ξ+½) mod 1). The interpolation error therefore has no C·h^p form, which
+      the GCI assumes. Filling the production stencil with the exact field shows the FV error at those
+      points is identical to the centroid''s and falls by exactly 4.0 per level. With the interpolation
+      part removed, the GCIs become 0.06–0.18 K instead of inf or 0.595 K. On the five generator layouts
+      alone, A4 is 0.303 K. The pre-registration smoke run had already shown a divergent manufactured-case
+      max point.
+
+
+      Primary class: model (the frozen grid rule''s per-layer z count fails on thick layers). Secondary:
+      an experimental defect in how A4 measures point values. The pre-registered decision for this outcome
+      is ''same as fail'' (switch to the scikit-fem fallback), and O006''s only evaluation has been used,
+      so the next step is the founder''s.'
+    failure_class: model
+    root_cause: 'A1/A2: the frozen thermal grid rule sets Z_CELLS = 2 cells per layer regardless of thickness.
+      On the 10 mm single-layer Muzychka Cases 1a and 2 this gives dz = 1.25 mm at level 2 and leaves
+      0.12–0.14 K of through-thickness discretisation error at the source means. The verified solver converges
+      to the validated reference at second order in dz with no bias above about 0.01 K. A4 = +inf: the
+      three-grid GCI is applied to bilinear interpolants at fixed off-lattice ''reference max'' points.
+      Their position inside the cell-centre stencil changes non-monotonically between levels (ξ → (2ξ+½)
+      mod 1), so the interpolation error -½ξ(1-ξ)h²T'''' has no C·h^p expansion. The estimator therefore
+      reports ''divergent'' even though the FV field there converges monotonically at order 2.'
+    confidence: 0.7
+    affects_acceptance_criteria: true
+    evidence:
+    - '[F] Run E006-20261102T145940-2815 (commit bb0725f): all 26 sanity checks pass, energy balance max
+      1.5e-7, Picard 2.9e-5 K, F5 0.233 <= 0.25 K. Evaluator provenance checks all ok, so the run is valid.'
+    - '[F] Every row with |err| > 0.05 K is in case2 or case1a. Top three: case2 s2.mean +1.374/+0.458/+0.143
+      K, case1a s2.mean +0.124 K, case2 s3.mean +0.114 K. Case 1b, Case 3, the N-layer DBC case and the
+      manufactured case meet A1/A2 (max 0.026 K).'
+    - '[F] Test 1 (t1_case2_refinement.py, reproduces rows.json exactly): Case 2 s2.mean error is +0.1431
+      at frozen L2, +0.0397 with z doubled, +0.0101 with z quadrupled, and +0.1495 with lateral doubled.
+      Case 1a at L0 lateral with z refined to L3: +0.025 K. Lateral-only doubling: +1.508 K.'
+    - '[F] The cell-sum source mean is less accurate than the interpolant mean (+0.160 vs +0.143 K), so
+      the mean measurement is not the cause.'
+    - '[F] Test 2 (t2_interp_stencil.py; exact field reproduces T_ref to within 4e-8 K): nlayer d1''s
+      FV column-centre error is +0.7530/+0.1885/+0.0472 at the centroid and +0.7535/+0.1887/+0.0473 at
+      the max (ratio 4.00). The interpolation error at the max is -0.748/-0.110/-0.052, with stencil coordinate
+      tx 0.747 -> 0.995 -> 0.489.'
+    - '[F] Corrected GCIs (A4 rule on f_L - e_int): d1.max inf -> 0.177, d4.max inf -> 0.161, mms die_max
+      inf -> 0.061, mms die_centroid 0.595 -> 0.0625, mms overhang 0.201 -> 0.0068.'
+    - '[F] Max GCI on the five generator layouts alone is 0.303 K. Over all values except the four interpolation-affected
+      ones it is 0.393 K (case2 s2.mean).'
+    - '[F] The pre-registration smoke dev rows already had one divergent manufactured value and A4 = inf
+      (research/notes/o006-e006-design.md section 4).'
+    - '[F] N-layer DBC case at L0: refining z alone takes d2.centroid from +0.084 to -0.247 K; refining
+      laterally alone takes it to +0.285 K. At L2 the FV column-centre error is about +0.047 K and the
+      bilinear peak under-estimate is about -0.045 K, so the small A2 errors there are partly a systematic,
+      stable cancellation.'
+    - 'Commands: t1 small/all/zsplit case1a/nlsplit nlayer_dbc all exit 0. t2 first attempt failed with
+      a SyntaxError in my script, then exit 0 after the fix. ruff check exit 0. mfos gate --fast exit
+      0 (''all gates passed''). sysctl and ps were refused by the sandbox. Peak RSS of my jobs was 2.97
+      GB.'
+    alternative_explanations:
+    - explanation: H2 implementation bias in the solver (flux assignment, T_c + q dz/2k reconstruction,
+        linear solve)
+      how_to_discriminate: 'Refine until the error should vanish. Refuted: error falls 3.6x then 3.9x
+        under z-doubling, to 0.010 K.'
+    - explanation: H3 frozen series reference wrong (F1)
+      how_to_discriminate: 'Independent scikit-fem check, and whether L2 converges to the series. Refuted:
+        case2_vs_skfem 0.0011 K with scikit-fem''s own GCI 0.0046 K, and the L2 converges to the series.'
+    - explanation: H4 the interpolant mean over the source pulls in values from outside the source edge
+      how_to_discriminate: 'Compare with the cell-sum mean. Refuted: the cell-sum mean is worse (+0.160
+        vs +0.143 K).'
+    - explanation: H5 lateral source-edge singularity, with edge grading inactive on thick plates (s_edge
+        = 20 mm)
+      how_to_discriminate: 'Lateral-only refinement. Refuted as dominant: +0.1431 -> +0.1495 K.'
+    - explanation: G2 the FV field does not converge near the hot spot
+      how_to_discriminate: 'Column-centre error via exact-field stencil decomposition. Refuted: same error
+        as the centroid, ratio 4.00.'
+    - explanation: G3 Picard/CG iteration noise drives the non-monotone A4 sequences
+      how_to_discriminate: 'Step sizes vs the 1e-3 K floor, and smoothness at neighbouring points. Refuted:
+        steps 0.005-0.08 K, Picard 2.9e-5 K, nlayer has constant k, the centroid 0.15 mm away is clean.'
+    - explanation: 'Label alternative: call A1/A2 ''experimental'', because Cases 1a/2 (10 mm plates)
+        lie outside the DBC regime the decision concerns'
+      how_to_discriminate: A judgement, not a test. The hypothesis explicitly includes Cases 1a/2 on the
+        frozen rule, so I label it model. A founder could reasonably weigh it the other way.
+    discriminating_tests:
+    - 'Case 2 z-only vs lateral-only refinement at frozen level 2 (run: z-dominated, confirmed)'
+    - 'Case 1a z-split at lateral L0 (run: z-dominated, confirmed)'
+    - 'Exact-field substitution into the production SurfaceField stencil at the nlayer/MMS points (run:
+      the interpolation stencil explains every A4 offender)'
+    - 'N-layer DBC z-split at L0 (run: z and lateral errors have opposite signs and similar size)'
+    - 'Not run (needs about 46 GB): Case 1a with z doubled at level-2 lateral resolution, to confirm the
+      z-mechanism at the registered level'
+    - 'Not run: scikit-fem Case 2 with dz <= 0.3 mm as a third method on the binding rows'
+    recommended_actions:
+    - 'Founder decision memo. O006''s single evaluation is used, and the pre-registered inconclusive branch
+      is ''same as fail'' (scikit-fem fallback). Present (a) the pre-registered fallback under a new experiment
+      id and (b) a model change: a re-frozen grid rule whose through-thickness cell size is bounded in
+      absolute terms rather than per layer, tested under a new experiment id with a fresh sealed seed.
+      State that no implementation defect was found.'
+    - 'For any successor experiment (new id): do not apply a three-grid GCI to bilinear values at fixed
+      off-lattice points. Evaluate at grid lines that persist under bisection (ξ = ½), or compare column-centre
+      values against the reference at those centres. Add a sanity check that reports stencil coordinates
+      per level.'
+    - 'Before O003 relies on meta[''solver_tol'']: count divergent/oscillatory Tj-max sequences on dev
+      layouts. Tj max is a discrete maximum and samples the true maximum through the same ξ-orbit; all
+      34 layout values here were fast/monotone.'
+    - 'Founder flag: hypothesis (c) bounds the GCI ''on those layouts'', but A4''s description also includes
+      reference-case values (layouts alone: 0.303 K). A2''s ''corner-free'' rationale does not anticipate
+      through-thickness under-resolution on 10 mm plates. No threshold change is recommended; this is
+      for the founder to weigh.'
+    - Do not re-evaluate O006 on the same run or data after any change; use fresh sealed seeds only.
+    files_written:
+    - research/diagnoses/T0198.md
+    - research/diagnoses/T0198/t1_case2_refinement.py
+    - research/diagnoses/T0198/t2_interp_stencil.py
+    - project/memory/lessons.md
+    experiment_drafts: []
