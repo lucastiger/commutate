@@ -1498,3 +1498,4 @@
 {"ts": "2026-11-03T21:12:49+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0105", "status": "approved", "note": "Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable again (200). Resume T0215.", "by": "session"}
 {"ts": "2026-11-03T21:12:57+00:00", "event": "task_amended", "actor": "founder", "task": "T0206", "reason": "review restored after outage (I0105/I0106)"}
 {"ts": "2026-11-03T21:13:23+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0215-critic-20261103T131323-9699", "task": "T0215", "role": "critic", "session": "2d6a85b3-f2f1-4ca0-98ec-f4bfce967471"}
+{"ts": "2026-11-03T21:15:45+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0106", "status": "rejected", "note": "Arrived without a review verdict: T0215 was parked by the network outage (I0105). T0206 returned to review; a new merge request follows the review.", "by": "human"}

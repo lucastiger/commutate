@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-03T21:13:23+00:00 from repository state — do not edit_
+_generated 2026-11-03T21:15:47+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0106** [protected_change] T0206: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -36,7 +36,6 @@ cancelled: 30, done: 177, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - T0215 `running` critic/review: Review T0206 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-03T17:03:39+00:00 run_started {"run": "T0214-planner-20261103T090339-4fed", "task": "T0214", "role": "planner", "session": "213a5a0d-9c9c-4bc3-b4cf-497f6193e964"}
 - 2026-11-03T17:03:39+00:00 run_started {"run": "T0206-builder-20261103T090339-995c", "task": "T0206", "role": "builder", "session": "1046f1a3-e544-41d4-96e2-525d771a25fd"}
 - 2026-11-03T17:04:13+00:00 sleep_detected {"gap_s": 765, "runs_extended": 2}
 - 2026-11-03T17:04:14+00:00 run_finished {"run": "T0214-planner-20261103T090339-4fed", "status": "completed", "cost": 0.339082, "subtype": "success", "report": "structured_output"}
@@ -51,3 +50,4 @@ cancelled: 30, done: 177, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-03T21:12:49+00:00 inbox_resolved {"id": "I0105", "status": "approved", "note": "Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable again (200). Resume T0215
 - 2026-11-03T21:12:57+00:00 task_amended {"task": "T0206", "reason": "review restored after outage (I0105/I0106)"}
 - 2026-11-03T21:13:23+00:00 run_started {"run": "T0215-critic-20261103T131323-9699", "task": "T0215", "role": "critic", "session": "2d6a85b3-f2f1-4ca0-98ec-f4bfce967471"}
+- 2026-11-03T21:15:45+00:00 inbox_resolved {"id": "I0106", "status": "rejected", "note": "Arrived without a review verdict: T0215 was parked by the network outage (I0105). T0206 returned to review; a new
