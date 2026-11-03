@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A mandatory line close to, but not on, an existing grid line crashes the solve",
+      "detail": "`_merge_lines` only merges a mandatory line into an existing line when the two are within 1e-10 m laterally (1e-12 m in z). Between that and about 1\u20133 \u00b5m, the line is kept and creates sliver cells. The solve then fails inside scikit-fem with an opaque exception instead of a clear ValueError. The 'mandatory grid lines' feature therefore only works for lines more than about 3 \u00b5m (layout mode) or 10 \u00b5m (box-stack mode) from a geometry line. The doc says the runner will pass frozen reference maximum locations, and those can sit on or near die edges (for example on an unpowered die next to a hot one). If such coordinates are rounded, they fall into this gap. The failure is loud, so no wrong number is reported silently.",
+      "evidence": "Toy two-die layout, GridRule(h0=2e-3, dz_max=2.5e-4), extra_lines=([4.5e-3],[3e-3+dy],None), where y = 3 mm is a die edge. dy = 5e-11 m is merged and the solve works. dy = 2e-9, 1e-8, 1e-7 and 1e-6 m all raise 'Newton iteration didn't converge up to TOL=1e-12' (skfem FacetBasis invF). dy >= 3e-6 m works. Box stack, line 1e-6 m from a source edge: same Newton failure; 1e-5 m works. A z line 1e-9 m above a layer boundary: RuntimeError 'AMG-CG did not converge'.",
+      "suggested_check": "Reject (clear ValueError) or snap any mandatory line closer than a stated minimum separation (e.g. 1e-3*h0) to an existing level-0 line, and add a test for it.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Q2 Tj max is the maximum over DOFs, not over the field; near-ties are decided by round-off",
+      "detail": "`tj_max` and `meta['tj_max_xyz']` are taken over the top-face DOFs, as documented. On a coarse Q2 mesh the field between nodes is hotter than the hottest node. In a mirror-symmetric case, two candidate nodes differed by only 3e-11 K, so which node was reported depended on round-off rather than an exact tie. A runner that compares `tj_max_xyz` between levels or platforms must allow for this.",
+      "evidence": "Box stack 24x16 mm, source (5..11, 4..12) mm, h0=4e-3, dz_max=1e-3, level 0. Q2: max over DOFs 369.604 K at (8, 8) mm, but dense point_values sampling of the face gives 369.685 K at (7.6, 7.7) mm. Q1, level 0: T(6.5, 6) = 369.7474313902163 K and T(6.5, 10) = 369.74743139018665 K (y-symmetric grid); the location reported was y = 6 mm, and it jumped to (8, 8) mm at level 1.",
+      "suggested_check": "Document that tj_max_xyz is unique only up to solver round-off and that the Q2 nodal maximum is a lower bound on the field maximum.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "extra_lines accepts different inputs in the two modes",
+      "detail": "Layout mode flattens each entry with np.asarray(...).ravel(), so a scalar is accepted. Box-stack mode does `cx + list(exs)`, so a scalar entry raises TypeError. The legacy `element_order` keyword is ignored without warning when `rule` is given and `element_order` is 1, because 1 is the default and cannot be told apart from an explicit 1.",
+      "evidence": "F.box_stack_grid(..., extra_lines=(5e-3, None, None)) raises TypeError: 'float' object is not iterable. The same scalar is accepted by layout_grid.",
+      "suggested_check": "Pass box-stack extras through the same ravel as layout mode.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Legacy box-stack grids change, and the legacy-equality test cannot catch it",
+      "detail": "Box-stack mode now always adds each source's centroid lines, so the legacy h0= call no longer builds the grid it used to. `test_default_rule_unchanged_counts_and_legacy_signature` compares the legacy call with the rule call, but both run through the new code, so the test cannot detect any change from the old behaviour. I checked that no experiment runner calls solve_box_stack: E006 uses solve_layout only, and its default layout grid (no extra lines, dz_max None) is unchanged. Registered evidence is therefore not affected.",
+      "evidence": "grep over experiments/runners: thermal_fem box-stack APIs are used only in unit tests; e006_run.py and e006_f5_dev.py call FEM.solve_layout with zrefine=False and no extra_lines.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands: the 4 pytest files (61 passed), the inline API assertion (no output, no error), ruff check src tests (clean) and mfos gate --fast ('all gates passed').",
+    "Nodal values: on 200 random DOFs of Q1 and Q2 box-stack solutions, node_value equals res.T exactly and agrees with the independent FE interpolation (point_values) to 3e-13 K. This confirms that ElementHex2 mid-node DOFs are nodal temperatures, so 'node-only values' is sound for Q2.",
+    "Tj-max location: compared tj_max and tj_max_xyz with a dense 61x81 point_values sampling of the source face. For Q1 they match exactly. For Q2 the nodal maximum is 0.08 K below the field maximum at level 0.",
+    "Layout mode with two dies of different thickness and attach thickness, a mandatory z line inside the attach band, and mandatory x/y lines, levels 0\u20132: dz <= dz_max/2^l holds, every axis nests and bisects (a1.size == 2*a0.size-1, old lines kept), tj_max_xyz z equals each die's own top face (4.34 mm and 4.48 mm), and energy balance is about 1e-14.",
+    "On the same layout, node_value without z on the thinner die raises ValueError, because z defaults to the global top face. It works with an explicit z and at the interior mandatory z plane.",
+    "Generator layout (seed 20261103), dz_max = 2.5e-4: max dz is 2.5e-4 at level 0 and 1.25e-4 at level 1, so the bound holds.",
+    "Adversarial near-coincident mandatory lines: swept the offset from a die/source edge from 5e-11 m to 3e-4 m in layout and box-stack modes, plus z offsets from 1e-9 m to 1e-5 m. Crashes in the 2e-9 to 1e-6 m range (major finding above).",
+    "Checked that the tests are not circular: the dz counts are rebuilt independently from the stack bands, the Tj-max node is selected independently from node coordinates, and the off-node cases do raise. I also confirmed that the legacy-equality test is tautological with respect to old behaviour.",
+    "Checked whether the box-stack change reaches registered evidence: the E006 runners use only solve_layout with default extra_lines and dz_max, so their grid is unchanged."
+  ],
+  "caveats": [
+    "Mandatory grid lines work only when each line is either within 1e-10 m of an existing level-0 line (1e-12 m in z) or more than about 3 \u00b5m away laterally in layout mode (10 \u00b5m in box-stack mode; more than about 1e-7 m in z). Lines in between make the solve fail with an exception; no wrong value is reported silently.",
+    "Tj max and its coordinates are the maximum over DOFs of the die top face. For Q2 on coarse grids this is below the maximum of the FE field (by 0.08 K in the case I checked). On symmetric problems the reported coordinate is decided by round-off between near-equal nodes.",
+    "node_value's default z is the global top face. For a die thinner than the thickest one, z must be passed explicitly (it raises otherwise, which is correct but easy to trip over).",
+    "Box-stack grids now always include source centroid lines, so legacy box-stack results differ from earlier ones. No registered experiment runner uses box-stack mode."
+  ]
+}
