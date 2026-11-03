@@ -1,0 +1,53 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "tj_max includes off-face nodes picked up by round-off (regression in the default Q1 production path)",
+      "detail": "_solve_grid builds the die-face node set as src_nodes = np.nonzero(vec)[0], where vec is the FacetBasis integral of every basis function over the die top faces. The inverse-mapped facet quadrature points are not exactly on the reference face, so basis functions of nodes one element layer below the face get values of about 1e-17 and count as nonzero. tj_max = max(T[src_nodes]) therefore includes a layer of interior nodes. The old code used exact structured face nodes (_face_nodes), and both docs say 'tj_max is the maximum over the nodes of that face' and 'Order 1: Results are those of the earlier trilinear-only version'. In production mode (Q1, k(T), no manufactured data) with unequal die powers, the interior node under a cool die next to a hot die is hotter than its face, so the reported tj_max is biased high. The T field is identical to the old solver (2e-13 K); only the node selection differs. 0.13-0.18 K is about 18 times O006's 0.01 K GCI target. The bias also depends on round-off, so it can vary by platform, mesh and refinement level, and can contaminate tj_max convergence studies. Under manufactured data the error can be arbitrarily large. No test catches it: all use equal powers or downward-cooling fields.",
+      "evidence": "Toy layout (dies at x = 8 and 12.5 mm), h0 = 0.5 mm, P = [0, 60] W, h = 5000, k(T): new tj_max = 391.43519 K, old solver = 391.25406 K, max over the geometric face nodes of the new field = 391.25406 K (diff +0.181 K; +0.176 K at [0.2, 60] W, +0.130 K at [2, 60] W). Node-set counts on the toy layout: Q1 50 nonzero vs 25 geometric face nodes; Q2 177/213 vs 81; smallest nonzero |vec| = 5e-17 (Q1) and 3e-34 (Q2). Box stack with top cooling flux and volume source, h0 = 0.7 mm: tj_max = 2584.09 K vs face-node maximum 2564.63 K, both orders.",
+      "suggested_check": "Select src_nodes with a relative threshold (np.abs(vec) > 1e-12 * np.abs(vec).max()) or geometrically, and add a test with unequal die powers comparing tj_max with the maximum over the face's own nodes.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Q2 diagonally scaled AMG-CG stalls for small Robin h (wrong near-nullspace after scaling)",
+      "detail": "For order 2, _Solver solves D^-1/2 A D^-1/2 with pyamg smoothed aggregation and the default near-nullspace B = ones. After scaling, the near-null (constant) mode of A becomes D^1/2 * 1, which is not constant, so the hierarchy misses it once the Robin term is weak. At h = 50 W/(m2 K) on the toy layout, Q2 raises RuntimeError (relative residual 0.13 after 3000 CG iterations) for both constant k and k(T); Q1 solves the same problem in 0.1 s. Passing B = 1/d converges in 97 iterations. The failure is loud, not a wrong answer, and O006's h = 5000 and all tested h >= 200 work, so this limits scope rather than correctness of returned values.",
+      "evidence": "Toy layout, h0 = 1 mm, P = [20, 35] W: Q2 h = 50 FAIL ('AMG-CG did not converge'); Q2 h = 200, 1000, 5000, 2e4 ok; Q1 ok at every h. Captured system at h = 50: shipped B = ones, 3001 iterations, rel resid 0.129; B = 1/d, 97 iterations, rel resid 2.2e-11.",
+      "suggested_check": "Pass B=(1/self.d)[:, None] to smoothed_aggregation_solver in the scaled branch and add a low-h Q2 solve to the tests.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "energy_balance is a tautology for any data",
+      "detail": "With v = 1 in both spaces, sum(A theta) = hh*ones_b.theta, and q_out subtracts f_robin.sum(), so q_out = q_die + q_vol + q_bnd up to the CG residual by construction. energy_balance alone therefore cannot detect wrong data quadrature, wrong flux face selection or sign errors. The docs say so, and the tests compensate with independently integrated Q (sympy) and the frozen O006 Q_out.",
+      "evidence": "Algebra of the assembled system; every run gave eb of 1e-12 to 1e-14, including the adversarial cases.",
+      "suggested_check": "Do not cite energy_balance alone as verification; always pair it with an independently integrated Q_in or Q_out.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Memory-per-DOF figures not reproduced",
+      "detail": "BYTES_PER_DOF_BY_ORDER[2] = 10 kB and the measured 9.9/7.0/5.3 kB (Q2) and 4.5 kB (Q1) figures were not re-measured in this review; only chunk-size independence of the results was checked.",
+      "evidence": "",
+      "suggested_check": "Re-run the box-stack Q2 benchmark at about 270 k DOF and compare peak RSS.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD test files (test_thermal_fem, test_thermal_gci_matches_evaluator, test_thermal_fem_assembly incl. slow): 32 passed; ruff check src tests: pass; DoD signature/GridRule one-liner: pass; mfos gate --fast: all gates passed.",
+    "Rebuilt the pre-change thermal_fem.py by reverse-applying the packet diff in $TMPDIR and compared on a two-die toy layout: Q1 T field, tj_mean and energy balance agree to 1e-13 K (constant k and k(T)).",
+    "Manufactured fields inside the element space on a layout with 60% void cells (all k equal via layout_grid + _solve_grid): Q2 reproduces a full triquadratic field (x^2 y^2 z^2 terms) to 2.7e-10 K at levels 0-1, Q1 a harmonic trilinear field to 1.2e-10 K; flux was queried on all six (axis, sign) face classes incl. void-bounding and downward-facing faces at z > 0; point_values agree to 1e-10.",
+    "Chunk independence: chunk=7 vs default gives identical T, q_in and q_out.",
+    "Mutation test of the tests: forcing Q2 stiffness quadrature to 2x2x2 makes test_quadratic_field_q2_exact... fail (the mutant is caught); the series-column test does not catch it (expected, linear field).",
+    "Die-face node set: counted nonzero(vec) vs geometric face nodes (Q1 50 vs 25, Q2 177/213 vs 81); built adversarial cases (top cooling + volume source; production mode with unequal die powers) showing tj_max taken from off-face nodes (+0.18 K in production Q1, +19.5 K in the manufactured case).",
+    "Q2 solver robustness over h in {50, 200, 1e3, 5e3, 2e4}: Q2 fails at h = 50 where Q1 works; diagnosed by re-solving the captured system with B = 1/d (97 iterations) vs B = ones (stalls).",
+    "estimate_dofs vs assembled Dofs.N on O006's mms_layout (57% void): equal for Q1 (3239) and Q2 (21621).",
+    "Verified scikit-fem 12.0.2 get_quadrature_line: intorder 2/4/7 map to 2/3/4 Gauss points (exact to degree 3/5/7), matching the docstring's exactness argument."
+  ],
+  "caveats": [
+    "Quadrature exactness, chunked assembly, manufactured-data assembly (source, flux on all face classes, T_inf), estimate_dofs and point_values all passed independent checks; the reject rests only on the tj_max node selection, which is a one-line fix.",
+    "The Q2 low-h convergence failure raises an error rather than returning a wrong value; it limits the h range for Q2 but does not affect O006's h = 5000.",
+    "Memory-per-DOF figures and the documented convergence orders (Kirchhoff, O006 MMS) were not independently re-measured beyond the passing tests."
+  ]
+}

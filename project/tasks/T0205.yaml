@@ -4,7 +4,7 @@ title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) an
   data (volume source, boundary inflow flux, Robin T_inf(x, y))'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on: []
 description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
   \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
@@ -82,12 +82,13 @@ model: null
 budget_usd: 8.0
 max_turns: 100
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0205-thermal-fem-assembly-element-order-q1-q2
 pr: null
 runs:
 - T0205-builder-20261102T183701-552d
+- T0205-builder-20261102T192220-e27a
 created_by: planner:T0203
 created_at: '2026-11-03T02:21:26+00:00'
 protected_approved: false
@@ -199,3 +200,40 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] tj_max includes off-face nodes picked up by round-off (regression in the
+    default Q1 production path): _solve_grid builds the die-face node set as src_nodes = np.nonzero(vec)[0],
+    where vec is the FacetBasis integral of every basis function over the die top faces. The inverse-mapped
+    facet quadrature points are not exactly on the reference face, so basis functions of nodes one element
+    layer below the face get values of about 1e-17 and count as nonzero. tj_max = max(T[src_nodes]) therefore
+    includes a layer of interior nodes. The old code used exact structured face nodes (_face_nodes), and
+    both docs say ''tj_max is the maximum over the nodes of that face'' and ''Order 1: Results are those
+    of the earlier trilinear-only version''. In production mode (Q1, k(T), no manufactured data) with
+    unequal die powers, the interior node under a cool die next to a hot die is hotter than its face,
+    so the reported tj_max is biased high. The T field is identical to the old solver (2e-13 K); only
+    the node selection differs. 0.13-0.18 K is about 18 times O006''s 0.01 K GCI target. The bias also
+    depends on round-off, so it can vary by platform, mesh and refinement level, and can contaminate tj_max
+    convergence studies. Under manufactured data the error can be arbitrarily large. No test catches it:
+    all use equal powers or downward-cooling fields.
+
+    - [major] Q2 diagonally scaled AMG-CG stalls for small Robin h (wrong near-nullspace after scaling):
+    For order 2, _Solver solves D^-1/2 A D^-1/2 with pyamg smoothed aggregation and the default near-nullspace
+    B = ones. After scaling, the near-null (constant) mode of A becomes D^1/2 * 1, which is not constant,
+    so the hierarchy misses it once the Robin term is weak. At h = 50 W/(m2 K) on the toy layout, Q2 raises
+    RuntimeError (relative residual 0.13 after 3000 CG iterations) for both constant k and k(T); Q1 solves
+    the same problem in 0.1 s. Passing B = 1/d converges in 97 iterations. The failure is loud, not a
+    wrong answer, and O006''s h = 5000 and all tested h >= 200 work, so this limits scope rather than
+    correctness of returned values.
+
+    - [minor] energy_balance is a tautology for any data: With v = 1 in both spaces, sum(A theta) = hh*ones_b.theta,
+    and q_out subtracts f_robin.sum(), so q_out = q_die + q_vol + q_bnd up to the CG residual by construction.
+    energy_balance alone therefore cannot detect wrong data quadrature, wrong flux face selection or sign
+    errors. The docs say so, and the tests compensate with independently integrated Q (sympy) and the
+    frozen O006 Q_out.
+
+    - [note] Memory-per-DOF figures not reproduced: BYTES_PER_DOF_BY_ORDER[2] = 10 kB and the measured
+    9.9/7.0/5.3 kB (Q2) and 4.5 kB (Q1) figures were not re-measured in this review; only chunk-size independence
+    of the results was checked.'
+  at: '2026-11-03T03:22:19+00:00'
