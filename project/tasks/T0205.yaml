@@ -4,7 +4,7 @@ title: 'thermal_fem assembly: element order Q1/Q2 (chunked, exact quadrature) an
   data (volume source, boundary inflow flux, Robin T_inf(x, y))'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: "Extend src/moduleforge/solvers/thermal_fem.py (one module; no new solver module; it must\
   \ still never import thermal_fv or the L2 grid builder, apart from the existing gci_three_grid). E009\
@@ -98,4 +98,104 @@ trigger: null
 rationale: 'Hypothesis (a) and A1/A2: the manufactured case must run through the production code (scope_in).
   The element-order option is what the dev study chooses between. Q2 is the documented route to A2 at
   affordable DOF (E006: Q2 at 0.0011 K at 0.59 M DOF; Q1 at 0.0155 K at 1.8 M DOF).'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I extended `thermal_fem.py` with Q1/Q2 element order and the manufactured source, flux and
+    T_inf data. All DoD commands exit 0 and the work is committed as 00ae4d7.
+
+
+    - **Element order:** `GridRule.element_order` is 1 or 2 (default 1). Order 1 is ElementHex1 with 2x2x2
+    Gauss. Order 2 is ElementHex2 with 3x3x3 Gauss. The docstring explains why both are exact on axis-aligned
+    boxes.
+
+    - **Assembly:** stiffness is assembled in element chunks and summed by a binary tree. Robin mass,
+    die and source means, the T_inf load and all manufactured loads use skfem `FacetBasis` or `CellBasis`.
+    Picard, the 1e-4 K stop, AMG-CG at 1e-11 and the theta solve are kept. Order 2 uses diagonal scaling
+    in the AMG solve.
+
+    - **Existing behaviour:** the existing 19 thermal tests pass unmodified.
+
+    - **Manufactured data:** '
+  report:
+    status: completed
+    summary: 'I extended `thermal_fem.py` with Q1/Q2 element order and the manufactured source, flux and
+      T_inf data. All DoD commands exit 0 and the work is committed as 00ae4d7.
+
+
+      - **Element order:** `GridRule.element_order` is 1 or 2 (default 1). Order 1 is ElementHex1 with
+      2x2x2 Gauss. Order 2 is ElementHex2 with 3x3x3 Gauss. The docstring explains why both are exact
+      on axis-aligned boxes.
+
+      - **Assembly:** stiffness is assembled in element chunks and summed by a binary tree. Robin mass,
+      die and source means, the T_inf load and all manufactured loads use skfem `FacetBasis` or `CellBasis`.
+      Picard, the 1e-4 K stop, AMG-CG at 1e-11 and the theta solve are kept. Order 2 uses diagonal scaling
+      in the AMG solve.
+
+      - **Existing behaviour:** the existing 19 thermal tests pass unmodified.
+
+      - **Manufactured data:** `source`, `flux` and `T_inf` are on `solve_layout` and `solve_box_stack`.
+      The data quadrature is 4-point Gauss per direction (`DATA_INTORDER` = 7). `meta` records `q_in_die_W`,
+      `q_in_volume_W`, `q_in_boundary_W`, `q_in_W` and `q_out_W`. The energy balance is computed against
+      the assembled Q_in.
+
+      - **Memory:** I measured Q2 at 9.9 kB/DOF at 60 k DOF, 7.0 kB at 269 k and 5.3 kB at 728 k (3.9
+      GB, 63 s). Q1 at 269 k DOF is 4.5 kB. `BYTES_PER_DOF_BY_ORDER` is {1: 7.7e3, 2: 10e3}. `max_dofs(...,
+      element_order=)` and `estimate_dofs` account for the order. I checked that the Q2 count equals the
+      solved N.
+
+      - **Additions beyond the spec:** `point_values(result, pts)` evaluates the FE field at arbitrary
+      points. `ThermalResult` gained a `field_eval` field.
+
+      - **Tests:** the new file `test_thermal_fem_assembly.py` has 13 tests. All five requested items
+      are covered, plus option, memory and `estimate_dofs` checks and a check of the Galerkin source mean.
+      All pass, including the one slow test.
+
+      - **Docs:** `docs/thermal_model.md` has a new section 9.
+
+
+      Checks run:
+
+      - Three-file pytest: 32 passed, exit 0.
+
+      - DoD python signature check: exit 0.
+
+      - `ruff check src tests`: exit 0.
+
+      - `mfos gate --fast`: exit 0.'
+    concerns:
+    - Test 2 asks for Q2 observed order of at least 3. In a 1D column the end-node values are exact for
+      both orders (Galerkin nodal exactness), so the end temperature cannot show convergence. The test
+      uses the RMS error of the FE field at 81 points along the column and the through-thickness mean
+      instead. For Q1 the order is 2.0 on both. For Q2 the RMS order is 2.92, 2.98, 2.99 (approaches 3
+      from below, so I assert > 2.85 and > 2.95 on the last), and the mean is 3.9 to 4.0 (asserted >=
+      3).
+    - 'Test 5 compares the error at the frozen points as the Linf over the nine points. Per-point orders
+      are noisy because of sign changes. The ''max'' point is evaluated at its frozen location, because
+      the nodal maximum does not converge to the field maximum (Q2 error stuck at about 0.022 K). Measured
+      Linf order from level 0 to 1: 3.5 for Q1, 4.3 for Q2. Balance agreement with the frozen Q_out integral
+      is about 1e-9.'
+    - The Q2 O006 test takes about 48 s, so I marked it slow. A fast-gate run does not execute it, but
+      the DoD pytest command does.
+    - The three-file DoD pytest takes about 134 s in total. I did not time the old Q1 code to compare.
+    - The T_inf setting leaves T_c as the Picard start and the reference for theta. Callers should pass
+      a T_c inside the k(T) validity range, for example 340 K for the O006 case.
+    - I did not run a Q2 case above 728 k DOF. The 10 kB/DOF Q2 bound is taken from the 60 k to 728 k
+      measurements, so the E009 dev study should re-measure at its target size.
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_assembly.py
+    - docs/thermal_model.md
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+        tests/unit/solvers/test_thermal_fem_assembly.py
+      exit_code: 0
+    - cmd: uv run python -c "import inspect; from moduleforge.solvers import thermal_fem as F; assert
+        F.GridRule().element_order == 1 and F.GridRule(element_order=2).element_order == 2; s = inspect.signature(F.solve_layout).parameters;
+        b = inspect.signature(F.solve_box_stack).parameters; assert all(k in s and k in b for k in ('source',
+        'flux', 'T_inf'))"
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
