@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-03T01:50:20+00:00 from repository state — do not edit_
+_generated 2026-11-03T01:51:00+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0096** [decision] [O006] INCONCLUSIVE (EV-O006-01): the pre-registered decision
-- **I0098** [decision] [O006] replan limit reached
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +13,7 @@ _generated 2026-11-03T01:50:20+00:00 from repository state — do not edit_
 | O003 | draft | - | 0/1 | $5.89/$150 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
-| O006 | needs_founder | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
+| O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -32,7 +31,6 @@ cancelled: 30, done: 167, failed: 3
 
 
 ## Recent events
-- 2026-11-03T00:15:31+00:00 evaluation {"objective": "O006", "id": "EV-O006-01", "verdict": "INCONCLUSIVE"}
 - 2026-11-03T00:15:31+00:00 inbox_opened {"id": "I0096", "kind": "decision", "subject": "[O006] INCONCLUSIVE (EV-O006-01): the pre-registered decision"}
 - 2026-11-03T00:15:31+00:00 investigation_spawned {"task": "T0198", "about": "EV-O006-01", "cls": "experimental"}
 - 2026-11-03T00:15:34+00:00 run_started {"run": "T0199-critic-20261102T161534-e1a5", "task": "T0199", "role": "critic", "session": "e816c6b8-bfdd-4902-9c02-021f4a56fe8e"}
@@ -47,3 +45,4 @@ cancelled: 30, done: 167, failed: 3
 - 2026-11-03T01:50:19+00:00 merged {"task": "T0198"}
 - 2026-11-03T01:50:19+00:00 inbox_opened {"id": "I0098", "kind": "decision", "subject": "[O006] replan limit reached"}
 - 2026-11-03T01:50:21+00:00 inbox_resolved {"id": "I0096", "status": "approved", "note": "Founder (2026-11-02): option A, the pre-registered decision. EV-O006-01 is INCONCLUSIVE (A1 0.0206, A2 0.143 K, A
+- 2026-11-03T01:50:54+00:00 inbox_resolved {"id": "I0098", "status": "approved", "note": "Founder decision A (I0096): no O006 replan. O006 is evaluated (INCONCLUSIVE, EV-O006-01) and the work continues u
