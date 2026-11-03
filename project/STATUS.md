@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-03T03:11:32+00:00 from repository state — do not edit_
+_generated 2026-11-03T03:12:09+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0103** [protected_change] T0204: merge needs founder approval
@@ -38,7 +38,6 @@ cancelled: 30, done: 170, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - T0211 `running` critic/review: Review T0205 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-03T02:36:32+00:00 inbox_resolved {"id": "I0099", "status": "approved", "note": "Option (a): ref_gci_cap in max_gci_consistency (committed); E009's A3 recompute uses ref_gci_cap 0.25, floor 0.00
 - 2026-11-03T02:36:32+00:00 inbox_resolved {"id": "I0100", "status": "approved", "note": "E009 added to burst_experiments; VM n2-highmem-16 (128 GB) or larger, confirmed against research/o007_l2/preview.
 - 2026-11-03T02:36:33+00:00 inbox_resolved {"id": "I0101", "status": "approved", "note": "Both dev-only VM runs approved; hold the E009 design task (T0208) until their results are committed", "by": "huma
 - 2026-11-03T02:36:33+00:00 inbox_resolved {"id": "I0102", "status": "approved", "note": "Plan approved (T0204-T0209)", "by": "human"}
@@ -53,3 +52,4 @@ cancelled: 30, done: 170, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - 2026-11-03T03:11:28+00:00 verified {"task": "T0205"}
 - 2026-11-03T03:11:32+00:00 run_started {"run": "T0210-critic-20261102T191132-b5f2", "task": "T0210", "role": "critic", "session": "167aabb8-8473-4ec6-81b0-fafa74140976"}
 - 2026-11-03T03:11:32+00:00 run_started {"run": "T0211-critic-20261102T191132-86fb", "task": "T0211", "role": "critic", "session": "79ed597c-0905-4dd7-9f5f-d3289bd5a4f7"}
+- 2026-11-03T03:12:05+00:00 sleep_detected {"gap_s": 405, "runs_extended": 2}
