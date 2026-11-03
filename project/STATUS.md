@@ -1,8 +1,7 @@
 # ModuleForge status
-_generated 2026-11-03T17:46:36+00:00 from repository state — do not edit_
+_generated 2026-11-03T21:13:23+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0105** [infrastructure] infrastructure: venv_provisioning
+## Founder inbox (1 open)
 - **I0106** [protected_change] T0206: merge needs founder approval
 
 ## Objectives
@@ -26,20 +25,17 @@ _generated 2026-11-03T17:46:36+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 12 | $25.36 | 536749 | 278358 | 20 | 0 |
+| O007 | 13 | $25.36 | 536749 | 278358 | 20 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 177, failed: 3, needs_founder: 3, todo: 2
+cancelled: 30, done: 177, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 2
 
-- T0206 `needs_founder` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
+- T0206 `review` builder/implement: thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x, y, z, mandatory grid lines, node-only point values, Tj-max node coordinates (box-stack and layout modes) (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0215 `needs_founder` critic/review: Review T0206 (general) (attempt 0)
+- T0215 `running` critic/review: Review T0206 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-03T16:51:28+00:00 inbox_resolved {"id": "I0104", "status": "approved", "note": "T0205: thermal_fem Q1/Q2, MMS data, face-node tj_max fix, Q2 p-multigrid (reviews T0212/T0213 accept with caveats
-- 2026-11-03T16:51:32+00:00 merged {"task": "T0204"}
-- 2026-11-03T17:03:36+00:00 merged {"task": "T0205"}
 - 2026-11-03T17:03:39+00:00 run_started {"run": "T0214-planner-20261103T090339-4fed", "task": "T0214", "role": "planner", "session": "213a5a0d-9c9c-4bc3-b4cf-497f6193e964"}
 - 2026-11-03T17:03:39+00:00 run_started {"run": "T0206-builder-20261103T090339-995c", "task": "T0206", "role": "builder", "session": "1046f1a3-e544-41d4-96e2-525d771a25fd"}
 - 2026-11-03T17:04:13+00:00 sleep_detected {"gap_s": 765, "runs_extended": 2}
@@ -52,3 +48,6 @@ cancelled: 30, done: 177, failed: 3, needs_founder: 3, todo: 2
 - 2026-11-03T17:42:16+00:00 infrastructure_pause {"task": "T0215", "signal": "venv_provisioning"}
 - 2026-11-03T17:44:03+00:00 sleep_detected {"gap_s": 913, "runs_extended": 0}
 - 2026-11-03T17:46:34+00:00 inbox_opened {"id": "I0106", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
+- 2026-11-03T21:12:49+00:00 inbox_resolved {"id": "I0105", "status": "approved", "note": "Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable again (200). Resume T0215
+- 2026-11-03T21:12:57+00:00 task_amended {"task": "T0206", "reason": "review restored after outage (I0105/I0106)"}
+- 2026-11-03T21:13:23+00:00 run_started {"run": "T0215-critic-20261103T131323-9699", "task": "T0215", "role": "critic", "session": "2d6a85b3-f2f1-4ca0-98ec-f4bfce967471"}

@@ -4,7 +4,7 @@ title: 'thermal_fem grid rule and measurement: absolute dz bound with r = 2 in x
   lines, node-only point values, Tj-max node coordinates (box-stack and layout modes)'
 type: implement
 agent: builder
-status: needs_founder
+status: review
 depends_on:
 - T0205
 description: "Extend src/moduleforge/solvers/thermal_fem.py (after the assembly task) with the two design\
@@ -141,3 +141,7 @@ history:
       layout. Actual solves are used for the box stack (levels 0 and 1) and the toy layout.
     - At one point I ran git checkout on thermal_fem.py by mistake, which lost my edits. I reapplied them
       in full and re-ran everything; the committed state is the one verified by the checks above.
+- outcome: founder_review_restored
+  summary: 'Merge request I0106 arrived without a review verdict: T0215 had been parked by the network
+    outage (I0105). Back to review so the merge waits for T0215.'
+  at: '2026-11-03T21:12:57+00:00'

@@ -3,7 +3,7 @@ objective: O007
 title: Review T0206 (general)
 type: review
 agent: critic
-status: needs_founder
+status: running
 depends_on: []
 description: 7ac0ec24d03bc1302f50e7910acf7c9fcaad01a9
 context_files: []
@@ -16,11 +16,12 @@ model: null
 budget_usd: 3.0
 max_turns: 60
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
 branch: null
 pr: null
-runs: []
+runs:
+- T0215-critic-20261103T131323-9699
 created_by: orchestrator
 created_at: '2026-11-03T17:42:11+00:00'
 protected_approved: false
@@ -41,3 +42,7 @@ history:
     \  cause: invalid peer certificate: UnknownIssuer\n\nhint: Consider enabling use of system TLS certificates\
     \ with the `--system-certs` command-line flag\n"
   at: '2026-11-03T17:42:16+00:00'
+- outcome: infrastructure_resolved
+  summary: 'I0105: Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable
+    again (200). Resume T0215.'
+  at: '2026-11-03T21:12:49+00:00'

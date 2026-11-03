@@ -1495,3 +1495,6 @@
 {"ts": "2026-11-03T17:42:16+00:00", "event": "infrastructure_pause", "actor": "orchestrator", "task": "T0215", "signal": "venv_provisioning"}
 {"ts": "2026-11-03T17:44:03+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 913, "runs_extended": 0}
 {"ts": "2026-11-03T17:46:34+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0106", "kind": "protected_change", "subject": "T0206: merge needs founder approval"}
+{"ts": "2026-11-03T21:12:49+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0105", "status": "approved", "note": "Cause was the network outage (PyPI TLS failure during the interruption); PyPI reachable again (200). Resume T0215.", "by": "session"}
+{"ts": "2026-11-03T21:12:57+00:00", "event": "task_amended", "actor": "founder", "task": "T0206", "reason": "review restored after outage (I0105/I0106)"}
+{"ts": "2026-11-03T21:13:23+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0215-critic-20261103T131323-9699", "task": "T0215", "role": "critic", "session": "2d6a85b3-f2f1-4ca0-98ec-f4bfce967471"}
