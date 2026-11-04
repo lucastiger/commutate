@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The kill-timing argument mixes up when the run was detected dead with when it died",
+      "detail": "E1 is called 'Supported' partly because task_held/founder_hold came '1 s before the 23:31:19 run_interrupted', and E3 is called 'Not supported' because 'the timing matches a founder action, which a random crash would not'. But the same timeline shows a fresh `loop_started` at 23:31:18. `Runner.poll` only notices a dead pid when the loop ticks, so 23:31:19 is the first poll after the loop restarted, not the moment the process died. The resumed run (started 23:29:27) died at some point in [23:29:27, 23:31:18]. The 1 s proximity comes from the restart, so it cannot tell E1 from E3. What actually supports E1 is the founder's own `founder_hold` note ('Attempt 3 was stopped before it made any change'). That is strong, so the conclusion stands, but the stated discriminating test is weaker than presented.",
+      "evidence": "tools/mfos/mfos/loop.py:232-241 (_poll_runs only polls on a tick), loop.py:102 (loop_started emitted at process start), agents.py:232-253 (interrupted is set when poll finds the pid gone); diagnosis \u00a72 rows 23:29:27, 23:31:18, 23:31:19.",
+      "suggested_check": "Look for the previous loop's last tick or loop-exit event between 23:29:27 and 23:31:18 to bound when the resumed run died.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The first kill at 23:29:27 is still unexplained, and the founder link is inferred",
+      "detail": "The diagnosis says this openly: no event marks the 23:29:27 death of run \u2026152816-adeb, and the reading 'founder stopped it, loop auto-resumed, founder stopped it again' is labelled [I]. That fits, but it means a CLI fault (E3) is not excluded for the first of the two deaths. The stated confidence of 0.85 already allows for this.",
+      "evidence": "Diagnosis \u00a73, paragraph after the table; \u00a75 confidence statement.",
+      "suggested_check": "Check founder-session transcripts or shell history for a kill at about 23:29:27.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'infrastructure' is the nearest available class for a founder stop, not an exact one",
+      "detail": "diagnose.py defines infrastructure as 'tooling, not the work'. A deliberate founder stop is neither tooling nor the work. 'infrastructure' is still the right choice among the allowed `failure_class` values (models.py:462), since it gives the attempt back and spawns no diagnosis. The diagnosis's own recommendation for a separate `founder_stopped` outcome is the correct fix.",
+      "evidence": "tools/mfos/mfos/diagnose.py:1-17, 27-52; models.py:462.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "One stated deadline does not match start + run_wall_minutes",
+      "detail": "Policy has run_wall_minutes = 360. The runs started at 23:28:16 and 23:29:27 UTC, so the expected deadlines are about 05:28 and 05:29. The diagnosis gives '05:41 and 05:29'. A shift from extend_deadlines or a per-task wall_minutes could explain the 05:41. Either way the deadline is hours away, so the claim that this was not a timeout is unaffected.",
+      "evidence": ".mfos/policy.toml:140; agents.py:206-209; loop.py:160-168.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The residual-risk section covers only the CG iteration cap; very thin slivers can also fail in assembly",
+      "detail": "On this snapshot (main, no snap rule), a box stack with a 20 \u00b5m sliver line at level 1 raised a scikit-fem `invF` exception ('Newton iteration didn't converge up to TOL=1e-12') in FacetBasis. That happens before any CG solve. The T0216 branch's snap rule may remove such slivers; I could not check that because the branch is not in the snapshot. The section's recommendation to make AMG-CG headroom visible should not be read as covering every way a sliver grid can fail.",
+      "evidence": "Scratch probe: solve_box_stack(16 mm \u00d7 16 mm, 5 layers, extra_lines x = 5.02/8.98 mm, y = 9.52 mm, h0 = 4 mm, level = 1) failed with an skfem mapping_isoparametric.invF exception.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Checked diagnose.py:31: it maps \"agent_error\" to \"implementation\". respond() returns 'diagnose' when implementation has attempts >= max_attempts. Both match the diagnosis's account of how T0218 was spawned.",
+    "Read agents.py::poll: a dead pid with stdout.json that is not valid JSON gives status 'interrupted' and a run_interrupted event. A timeout gives status 'timeout' and a run_timeout event. Matches the E5 refutation.",
+    "Read loop.py::_on_run_done: an interrupted run is resumed once (resumes < 1), then _fail(agent_error, 'run interrupted', result_text). Confirmed that neither _on_run_done, _fail nor anything else in loop.py/cli.py checks a founder hold. There is no hold command or task_held event in tools/mfos, so the stated orchestrator gap is real.",
+    "Confirmed agents are spawned with start_new_session=True (agents.py:205), so a plain loop restart would not kill the agent through its process group. A loop restart is therefore not a hidden alternative cause.",
+    "Confirmed in the snapshot's thermal_fem.py: AMG_SEED = 20261103, np.random.seed(AMG_SEED) inside _sa_solver with the RNG state restored afterwards, maxiter=400, LINEAR_RTOL=1e-11, and a final 1e-8 residual check that does not detect hitting maxiter. Matches the cap and check described in \u00a74.",
+    "Scanned pyamg 5.4.1 source: approximate_spectral_radius uses the legacy global np.random.rand, so np.random.seed does control the hierarchy, which is the mechanism behind the fix.",
+    "Ran a determinism probe on the snapshot: a 20 \u00b5m sliver box stack at L0/L1 under 5 different global RNG states. Seeded _sa_solver gave bit-identical tj_max (1 distinct value per level), identical CG counts (103, 158), and the caller's RNG state restored. With seeding removed: 5 distinct tj_max values per level and the RNG state not restored. Confirms the determinism claim.",
+    "Ran an iteration-growth probe on the snapshot. No sliver: 36/40/60 max CG iterations at L0/L1/L2. 20 \u00b5m sliver: 103 at L0. 200 \u00b5m sliver: 37/53/69. Qualitatively consistent with the claim that slivers slow AMG-CG convergence, more so for thinner slivers. The exact counts in the diagnosis's table are on the branch's snap-rule geometry and could not be reproduced. Peak RSS under 300 MB.",
+    "Checked the arithmetic in \u00a74: 164/230/296 is linear with a step of 66, so 362 is the right linear prediction for L3. Margin (400-362)/400 = 9.5%, i.e. 'about 10 %'. The successive tj differences 0.079/0.044/0.0067 give ratios 0.56 and 0.15, so 'not geometric' is correct.",
+    "Checked the notes file against the mf-diagnosis protocol: signal, five explanations each with a discriminating test, a result that would falsify the conclusion, class plus calibrated confidence, recommended actions, and what would change the conclusion are all present. No change to acceptance thresholds or scope is recommended, and the protected-path change is routed to the founder."
+  ],
+  "caveats": [
+    "The review snapshot is a single orphan commit. It does not contain project/tasks/T0216.yaml, project/events.jsonl, the run records or transcripts, the cited commits (1b869ea, 95eb537, 872a16b, 6241ee4, eb4c541), the T0216 branch, its snap rule, or test_kept_line_just_outside_snap_distance_solves_above_level_0_box. So the timeline, the founder_hold quote, the transcript contents, the cmp equality of branch changes, the 3/3 test passes on eb4c541, and the iteration-count table are taken from the material and were not re-verified.",
+    "The central conclusion (attempt 3 was a deliberate founder stop, wrongly recorded as agent_error \u2192 implementation) rests mainly on the quoted founder_hold note. The timing argument adds little, because the 23:31:19 detection came right after a loop restart.",
+    "The determinism and margin conclusions apply to the tested box-stack case on this Mac's BLAS. The diagnosis itself says generator layouts in E009 and other platforms were not tested."
+  ]
+}
