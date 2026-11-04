@@ -1,0 +1,72 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "No configuration is chosen or frozen. The deliverable is a negative result in a file named frozen_config.json",
+      "detail": "The task says \"choose and freeze\" a configuration. The study's own result is feasible:false: every one of the four pre-registered candidates is ruled out. Even so, frozen_config.json holds a complete, usable-looking Q1 config (candidate_id q1_h4: h0 4 mm, dz_max 1 mm). Only the `feasible` flag and the rationale string say it is for the record only and not a recommendation. The definition of done allows a boolean `feasible`, so a negative outcome was anticipated and the work is a legitimate negative study. But the claim holds only in that narrower sense. Any E009 or O003 tooling that reads frozen_config.json without checking `feasible` would pick up a configuration that misses A2 by 28x (1.389 K against 0.05 K).",
+      "evidence": "frozen_config.json: \"candidate_id\": \"q1_h4\", \"feasible\": false. The rationale contains A2_max_abs_err_K 1.389 and A4_layouts_max_gci_K Infinity.",
+      "suggested_check": "Make every consumer of frozen_config.json assert feasible is true, or write the record-only config under a name that is not 'frozen'.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Q2 is ruled out by a CG-headroom rule whose source is not in the repository, and its level-2 accuracy on the binding case was never measured",
+      "detail": "Both Q2 candidates are excluded only by the pre-registered limit of 300 CG iterations, which the note attributes to a founder note (T0218). No such note exists in project/ or docs/ at this commit, so the rule cannot be checked against its source. Q2's A2 on the N-layer case, the case that binds, was measured only at level 1 (0.482 K). The level-2 value of about 0.1 K is labelled [S] (speculation). The log shows the Q2 N-layer level-2 solve was skipped with an estimate of 13.8 GB, using 3.9 kB/DOF. With the 3.0 kB/DOF measured later at 2.08 M DOF, the estimate is about 10.6 GB: still over the 10 GB local cap, but only just. The overall feasible:false verdict survives either way. Without the CG rule, Q2 would be 'unverified' rather than 'ruled out', so feasible stays false and only the record-only 'chosen' would change from q1_h4 to a provisional q2_h4. The cap hits themselves are real (see the checks).",
+      "evidence": "Searching project/, docs/, src/ and tools/ for T0218 finds only the review packet. The run log reads: SKIP q2_h4__nlayer_dbc__L2__kT: 3061641 DOF, est 13.8 GB > 10.0 GB local cap.",
+      "suggested_check": "Cite or commit the T0218 founder rule. When the burst run happens, measure the Q2 N-layer level-2 A2.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The pre-registration commit cannot be verified in this snapshot",
+      "detail": "The note says section 0 (the pre-registration) was committed as df40ac9 before any solve. That object is not in this repository; the snapshot has a single commit. So I could not verify that the candidates and margins were fixed before any results existed. The note does disclose its one post-data choice: listing q1_h4 when every candidate is ruled out.",
+      "evidence": "git cat-file -t df40ac9 returns: fatal: Not a valid object name",
+      "suggested_check": "The orchestrator should confirm df40ac9 is an ancestor on the task branch and touches only the note's section 0.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The parameter space explored is narrower than the task wording, and one inference about cost is not computed",
+      "detail": "The task lists element order, h0, near margin, dz_max, mandatory lines and tolerances. Only element order, h0 and dz_max were varied, at four points; near_margin (2 mm), the mandatory-line policy and the tolerances stayed at the production defaults. That is defensible: near_margin only widens the zone of h0-sized cells and does not refine at the source edges. But the [I] inference in section 1 is broader than the data: \"any grid that resolves it ... puts the 300 mm Muzychka plates at tens of millions of DOF\". It was not costed for, say, h0 = 1 mm. Section 8 correctly limits the conclusion to the four pre-registered configurations.",
+      "evidence": "CANDIDATES in o007_dev_study.py: near_margin_m is 2e-3 for all four. My DOF count for Q2 with h0 = 1 mm on the N-layer case: 161,535 at level 0 and 1,237,053 at level 1. The Muzychka plates were not counted.",
+      "suggested_check": "Run --plan with an h0 = 1 mm Q2 rule to cost that inference before options (a) and (b) are pre-registered.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The E009 cost plan covers only the scikit-fem solves",
+      "detail": "The finite-volume L2 cross-check (levels 1-3 of its rule) is not costed here; it is deferred to o007-l2-crosscheck-preview.md. Memory is extrapolated with the bytes/DOF of the largest measured solve, which is also the lowest per-DOF value. Neither point matters given the 217 GB of usable burst memory against at most 30.5 GB needed.",
+      "evidence": "e009_plan note string; burst usable_GB 217.6",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Small bookkeeping inconsistencies",
+      "detail": "The final 'chosen' line in run_local.log has different wording from what the committed report() emits, so the report was regenerated after a text edit. The cache specs contain absolute paths into another worktree (wt/T0207). Section 1 says both Q2 candidates hit the 400 cap at level 2 on Cases 1a and 2. For q2_h4z2, Case 1a level 2 was not run; the table in section 4 has this right.",
+      "evidence": "run_local.log line 231 vs the why-string in report(); \"out\": \"/Users/.../wt/T0207/...\"",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands: both JSON assertions pass, and `ruff check` on the script passes.",
+    "Read pyamg 5.4.1 MultilevelSolver.solve and aspreconditioner. The preconditioner's matvec calls self.solve(maxiter=1) without accel, so the 'cg_only' wrapper counts only outer CG iterations. The old counter structurally gave 2n+1; every untagged count in the cache is odd, which fits, and none looks like the earlier 2-3-entry residuals list.",
+    "Scanned all 106 cached solves (all status ok) and recomputed the converted CG maxima: q1_h4 286, q1_h2 225; Q2 at level 1 on Case 1a 359 and 352 (from 719 and 705); 400 at level 2 on Cases 1a and 2.",
+    "Independently confirmed the Q2 cap hits are genuine: the true relative residuals of the capped solves are 1.0e-9, 1.2e-10 and 7.5e-11, well above LINEAR_RTOL 1e-11, while uncapped solves sit near 1e-11.",
+    "Recomputed the A4 GCI by hand with Roache's order-capped formula from mfos.metrics.gci_capped for q1_h4 N-layer d3 mean (402.028 / 408.925 / 411.863 K): rho 0.426, p_obs 1.23 capped to 1, GCI = 1.25 x 2.938 = 3.67 K, as reported.",
+    "Recomputed per-candidate A1, A2 and A4, node-count ratios (7.04-7.77), maximum energy balance (2.44e-11), persistence of node coordinates across levels, manufactured Q_out against reference (2.1e-9 or less) and the F3 null (2.51 K; fails A1 and A2) from dev_study.json. All match the note's tables.",
+    "Checked that the divergent and oscillatory Tj-max sequences on the dev layouts are real, not artefacts of the 1 mK floor: for example, u_shaped_2 die 3 under q1_h4 reads 396.09 / 396.69 / 397.50 K, so d2 > d1, both far above the floor.",
+    "Richardson-extrapolated the N-layer mean sequences (q1_h4 d3 gives 414.04 K, q1_h2 d2 gives 424.0 K; Q2 with p = 2 gives 413.34 K). They bracket or slightly overshoot the references (413.25 K and 423.79 K), as pre-asymptotic convergence would. No sign of a definition mismatch big enough to explain a 1.39 K error.",
+    "Read the N-layer reference case: four sources 4-5.5 mm square, a 0.18 mm die and a 0.05 mm attach on an 86 x 56 mm plate. This fits the note's edge-singularity diagnosis.",
+    "Counted DOFs for finer N-layer grids with the production builder, without solving.",
+    "Checked the quadrature and tolerance fields in frozen_config.json against the thermal_fem constants: facet intorder 4, DATA_INTORDER 7, PICARD_TOL_K 1e-4, maxiter 400, SNAP_FRACTION 1e-2, AMG_SEED."
+  ],
+  "caveats": [
+    "The claim holds only as a negative result. The study shows that none of the four pre-registered configurations (Q1 or Q2, h0 of 2 or 4 mm, dz_max of 0.5-5 mm, near_margin 2 mm) meets the pre-registered margins. Nothing is frozen, and frozen_config.json must not be used unless feasible is true.",
+    "The session's permission layer denied my attempts to re-run solves: re-solving one cached level-0 case and a finer Q2 N-layer grid. All accuracy and CG numbers were therefore checked for consistency against the committed cache and the code, not regenerated.",
+    "Q2 is excluded by a CG rule (T0218) that is not in the repository. Its level-2 accuracy on the N-layer case is extrapolated, not measured.",
+    "The timing of the pre-registration (commit df40ac9) cannot be verified from this snapshot."
+  ]
+}
