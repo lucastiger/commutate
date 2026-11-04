@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T19:17:37+00:00 from repository state — do not edit_
+_generated 2026-11-04T19:30:14+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0123** [protected_change] T0228: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,13 @@ _generated 2026-11-04T19:17:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 194, failed: 3, needs_founder: 2, todo: 2
+cancelled: 31, done: 194, failed: 3, merge: 1, needs_founder: 2, todo: 1
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0228 `needs_founder` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 1)
+- T0228 `merge` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 1)
+- T0229 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen graded rule against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-04T17:30:53+00:00 task_failed_attempt {"task": "T0231", "signal": "venv_provisioning", "action": "pause"}
 - 2026-11-04T17:30:53+00:00 inbox_opened {"id": "I0121", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
 - 2026-11-04T17:30:53+00:00 infrastructure_pause {"task": "T0231", "signal": "venv_provisioning"}
 - 2026-11-04T17:35:32+00:00 inbox_resolved {"id": "I0121", "status": "approved", "note": "fixed: the founder's internet connection dropped (PyPI TLS UnknownIssuer during reconnection); PyPI verified reac
@@ -50,3 +50,4 @@ cancelled: 31, done: 194, failed: 3, needs_founder: 2, todo: 2
 - 2026-11-04T19:11:36+00:00 run_started {"run": "T0232-critic-20261104T111136-df2e", "task": "T0232", "role": "critic", "session": "79a74e14-e49c-431e-a8fa-5263f1c78267"}
 - 2026-11-04T19:17:32+00:00 run_finished {"run": "T0232-critic-20261104T111136-df2e", "status": "completed", "cost": 2.179511, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T19:17:35+00:00 inbox_opened {"id": "I0123", "kind": "protected_change", "subject": "T0228: merge needs founder approval"}
+- 2026-11-04T19:30:10+00:00 inbox_resolved {"id": "I0123", "status": "approved", "note": "Merge T0228: pre-registration 5570ba2 verified (ancestor of the result, script byte-identical since, section 0 un
