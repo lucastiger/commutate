@@ -1,0 +1,553 @@
+{
+ "task": "T0228",
+ "candidate": "a_q1h4_graded",
+ "grading": [
+  0.0001,
+  2.5,
+  0.004,
+  0.5
+ ],
+ "references": {
+  "series_sha256": "befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151",
+  "series_ok": true,
+  "mms_sha256": "ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b",
+  "mms_ok": true,
+  "file_sha256": {
+   "series_values.json": "c24fe7f7e0ba7107ac55dcd17b682a73c7bf35770941f3dc0ac5a1c7607b83af",
+   "mms_values.json": "39e1ca214fd9c80daa3a17067e95850f08d419ab0027da73bd2dd474b7f97423"
+  }
+ },
+ "local_bytes_per_dof": 4200.8,
+ "local_est_margin": 1.15,
+ "burst_command": "scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study2.py --full\" research/o007_dev2",
+ "rows": [
+  {
+   "problem": "case1a",
+   "level": 0,
+   "dofs": 135531,
+   "cells": [
+    110,
+    110,
+    10
+   ],
+   "min_cell_ratio_lateral": 0.01331912919044693,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 0.65473941852,
+   "local": "yes"
+  },
+  {
+   "problem": "case1a",
+   "level": 1,
+   "dofs": 1025661,
+   "cells": [
+    220,
+    220,
+    20
+   ],
+   "min_cell_ratio_lateral": 0.013319129190447015,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 4.95488623812,
+   "local": "yes"
+  },
+  {
+   "problem": "case1a",
+   "level": 2,
+   "dofs": 7973721,
+   "cells": [
+    440,
+    440,
+    40
+   ],
+   "min_cell_ratio_lateral": 0.013319129190459933,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 38.52040825332,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "case1b",
+   "level": 0,
+   "dofs": 160173,
+   "cells": [
+    110,
+    110,
+    12
+   ],
+   "min_cell_ratio_lateral": 0.03136121583793279,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 0.77378294916,
+   "local": "yes"
+  },
+  {
+   "problem": "case1b",
+   "level": 1,
+   "dofs": 1221025,
+   "cells": [
+    220,
+    220,
+    24
+   ],
+   "min_cell_ratio_lateral": 0.03136121583793299,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 5.898674093,
+   "local": "if memory_pressure allows"
+  },
+  {
+   "problem": "case1b",
+   "level": 2,
+   "dofs": 9529569,
+   "cells": [
+    440,
+    440,
+    48
+   ],
+   "min_cell_ratio_lateral": 0.03136121583793299,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 4,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 46.03658547348,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "case2",
+   "level": 0,
+   "dofs": 99275,
+   "cells": [
+    94,
+    94,
+    10
+   ],
+   "min_cell_ratio_lateral": 0.010373180046119314,
+   "grading_lines": {
+    "x": 36,
+    "y": 36
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 0.47958958299999993,
+   "local": "yes"
+  },
+  {
+   "problem": "case2",
+   "level": 1,
+   "dofs": 750141,
+   "cells": [
+    188,
+    188,
+    20
+   ],
+   "min_cell_ratio_lateral": 0.010373180046118315,
+   "grading_lines": {
+    "x": 36,
+    "y": 36
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 3.6238711597199997,
+   "local": "yes"
+  },
+  {
+   "problem": "case2",
+   "level": 2,
+   "dofs": 5827289,
+   "cells": [
+    376,
+    376,
+    40
+   ],
+   "min_cell_ratio_lateral": 0.010373180046118315,
+   "grading_lines": {
+    "x": 36,
+    "y": 36
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 28.15116697588,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "case3",
+   "level": 0,
+   "dofs": 99275,
+   "cells": [
+    94,
+    94,
+    10
+   ],
+   "min_cell_ratio_lateral": 0.14563106796116498,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 2,
+    "y": 2,
+    "z": 0
+   },
+   "local_est_GB": 0.47958958299999993,
+   "local": "yes"
+  },
+  {
+   "problem": "case3",
+   "level": 1,
+   "dofs": 750141,
+   "cells": [
+    188,
+    188,
+    20
+   ],
+   "min_cell_ratio_lateral": 0.14563106796116543,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 2,
+    "y": 2,
+    "z": 0
+   },
+   "local_est_GB": 3.6238711597199997,
+   "local": "yes"
+  },
+  {
+   "problem": "case3",
+   "level": 2,
+   "dofs": 5827289,
+   "cells": [
+    376,
+    376,
+    40
+   ],
+   "min_cell_ratio_lateral": 0.1456310679611635,
+   "grading_lines": {
+    "x": 40,
+    "y": 40
+   },
+   "snaps": {
+    "x": 2,
+    "y": 2,
+    "z": 0
+   },
+   "local_est_GB": 28.15116697588,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "nlayer_dbc",
+   "level": 0,
+   "dofs": 232130,
+   "cells": [
+    166,
+    138,
+    9
+   ],
+   "min_cell_ratio_lateral": 0.06568247487049765,
+   "grading_lines": {
+    "x": 67,
+    "y": 56
+   },
+   "snaps": {
+    "x": 1,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 1.1214014596,
+   "local": "yes"
+  },
+  {
+   "problem": "nlayer_dbc",
+   "level": 1,
+   "dofs": 1752579,
+   "cells": [
+    332,
+    276,
+    18
+   ],
+   "min_cell_ratio_lateral": 0.06568247487049698,
+   "grading_lines": {
+    "x": 67,
+    "y": 56
+   },
+   "snaps": {
+    "x": 1,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 8.46656894268,
+   "local": "if memory_pressure allows"
+  },
+  {
+   "problem": "nlayer_dbc",
+   "level": 2,
+   "dofs": 13606565,
+   "cells": [
+    664,
+    552,
+    36
+   ],
+   "min_cell_ratio_lateral": 0.06568247487051718,
+   "grading_lines": {
+    "x": 67,
+    "y": 56
+   },
+   "snaps": {
+    "x": 1,
+    "y": 4,
+    "z": 0
+   },
+   "local_est_GB": 65.7322269898,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "mms",
+   "level": 0,
+   "dofs": 28683,
+   "cells": [
+    66,
+    58,
+    9
+   ],
+   "min_cell_ratio_lateral": 0.20000000000000057,
+   "grading_lines": {
+    "x": 13,
+    "y": 12
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 0.13856527836,
+   "local": "yes"
+  },
+  {
+   "problem": "mms",
+   "level": 1,
+   "dofs": 207837,
+   "cells": [
+    132,
+    116,
+    18
+   ],
+   "min_cell_ratio_lateral": 0.2,
+   "grading_lines": {
+    "x": 13,
+    "y": 12
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 1.00404392004,
+   "local": "yes"
+  },
+  {
+   "problem": "mms",
+   "level": 2,
+   "dofs": 1577913,
+   "cells": [
+    264,
+    232,
+    36
+   ],
+   "min_cell_ratio_lateral": 0.2,
+   "grading_lines": {
+    "x": 13,
+    "y": 12
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 7.62277146996,
+   "local": "if memory_pressure allows"
+  },
+  {
+   "problem": "side_by_side_6",
+   "level": 0,
+   "dofs": 167682,
+   "cells": [
+    218,
+    96,
+    9
+   ],
+   "min_cell_ratio_lateral": 0.08333333333333343,
+   "grading_lines": {
+    "x": 86,
+    "y": 30
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 0.81005832744,
+   "local": "yes"
+  },
+  {
+   "problem": "side_by_side_6",
+   "level": 1,
+   "dofs": 1237087,
+   "cells": [
+    436,
+    192,
+    18
+   ],
+   "min_cell_ratio_lateral": 0.08333333333333352,
+   "grading_lines": {
+    "x": 86,
+    "y": 30
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 5.97626833004,
+   "local": "if memory_pressure allows"
+  },
+  {
+   "problem": "side_by_side_6",
+   "level": 2,
+   "dofs": 9483501,
+   "cells": [
+    872,
+    384,
+    36
+   ],
+   "min_cell_ratio_lateral": 0.08333333333333333,
+   "grading_lines": {
+    "x": 86,
+    "y": 30
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 45.81403465092,
+   "local": "no (burst)"
+  },
+  {
+   "problem": "u_shaped_2",
+   "level": 0,
+   "dofs": 70604,
+   "cells": [
+    94,
+    96,
+    9
+   ],
+   "min_cell_ratio_lateral": 0.0909090909090909,
+   "grading_lines": {
+    "x": 31,
+    "y": 28
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 0.34108227567999994,
+   "local": "yes"
+  },
+  {
+   "problem": "u_shaped_2",
+   "level": 1,
+   "dofs": 517263,
+   "cells": [
+    188,
+    192,
+    18
+   ],
+   "min_cell_ratio_lateral": 0.090909090909091,
+   "grading_lines": {
+    "x": 31,
+    "y": 28
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 2.49885617196,
+   "local": "yes"
+  },
+  {
+   "problem": "u_shaped_2",
+   "level": 2,
+   "dofs": 3950429,
+   "cells": [
+    376,
+    384,
+    36
+   ],
+   "min_cell_ratio_lateral": 0.09090909090909097,
+   "grading_lines": {
+    "x": 31,
+    "y": 28
+   },
+   "snaps": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   "local_est_GB": 19.08420646468,
+   "local": "no (burst)"
+  }
+ ]
+}
