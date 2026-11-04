@@ -8,6 +8,7 @@ status: needs_founder
 depends_on:
 - T0204
 - T0207
+- T0222
 description: "Write experiments/runners/e009_run.py and experiments/drafts/E009.yaml. Reuse E006's machinery\
   \ by import from e006_run.py, e006_series.py and e006_mms.py (unchanged): load_refs, series_checks,\
   \ mms_checks, Checks, Stats, dev_layouts, fresh_layouts, preflight. Swap the roles: scikit-fem is under\
@@ -46,7 +47,16 @@ description: "Write experiments/runners/e009_run.py and experiments/drafts/E009.
   \ per solve (FV at 1500 B/cell, scikit-fem at the measured bytes per DOF);\n  - a `--smoke` mode on\
   \ coarsened rules, using a non-sealed dev seed for its 'fresh' layouts.\nUse the dev-burst results under\
   \ research/o007_dev/ and research/o007_l2/full.json if they exist, and state in research/notes/o007-e009-design.md\
-  \ which dev values were measured and which extrapolated."
+  \ which dev values were measured and which extrapolated.\n\nFounder amendment (2026-11-04, I0110 option\
+  \ a; diagnosis T0218 rec. 3):\n- Depends on T0222. E009 runs on thermal_fem's instrumented solve, which\
+  \ reports meta['cg_iterations'],\n  'cg_max_iterations', 'linear_rel_residual_max' and 'cg_hit_maxiter'.\n\
+  - Rows record, for every reported value, the cg_max_iterations and linear_rel_residual_max of each of\
+  \ its three grid\n  solves (columns per grid level), for scikit-fem and for the L2 where the L2 reports\
+  \ them.\n- Gated sanity check 'linear_solver_headroom': no solve that feeds a reported value has cg_hit_maxiter\
+  \ True. A capped\n  solve makes the run INVALID (fixed under a new experiment id), so linear-solver\
+  \ error can never pass silently into\n  the GCIs of A3 or A4.\n- Diagnostic (not gated): the count of\
+  \ solves above 300 iterations, matching T0207's eligibility rule; report it in\n  the design note and\
+  \ the run's notes."
 context_files:
 - project/objectives/O007/objective.yaml
 - experiments/specs/E006.yaml
@@ -96,6 +106,10 @@ definition_of_done:
 - cmd: uv run ruff check experiments/runners research
   exists: null
   timeout_s: 300
+- cmd: uv run python -c "s=open('experiments/drafts/E009.yaml').read(); assert 'linear_solver_headroom'
+    in s"
+  exists: null
+  timeout_s: 120
 experiment: E009
 risk: high
 model: null
@@ -121,3 +135,7 @@ history:
   summary: Held per I0101 until the dev-only VM results (L2 levels 1-3 preview; dev-study --full if needed)
     are committed. Release with `uv run mfos task retry T0208`.
   at: '2026-11-03T02:36:56+00:00'
+- outcome: founder_brief_amended
+  summary: 'I0110 (a): depends on T0222; CG iterations/residual in rows; gated linear_solver_headroom;
+    >300 diagnostic'
+  at: '2026-11-04T01:37:48+00:00'
