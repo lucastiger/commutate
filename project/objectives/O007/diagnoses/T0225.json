@@ -1,0 +1,57 @@
+{
+  "summary": "I ran the O007 feasibility probe as pre-registered: section 0 of the note was committed as c2cf616 before any solve, and that hash is in probe.json. The result is **option (a) provisional_go, option (b) no_go**. Production thermal_fem was not changed; only research/ files were written.\n\n**Part 1, CG discriminator (Q2, q2_h4 settings).** The max-line runs reproduce T0207 to the iteration. On Case 1a, CG falls from 249/359 iterations (L0/L1) to 28/32 when the maximum lines are removed and only the centroid lines are kept. On Case 2 it falls from 190/288 to 15/17. The smallest ratio between neighbouring lateral cells goes from 0.009 and 0.007 up to 0.20 and 0.33. Case 1a therefore reads as slivers; Case 2 stays at or below 300 in both versions, so it does not discriminate at levels 0-1. For option (b), this means the Q2 CG headroom can be recovered without a preconditioner change. The fix is in the max-line/snap policy of the grid builder, which is still a `src` change.\n\n**Part 2, N-layer case. Locally only L0 and L1 fit; L2 needs about 57 GB and 45 GB.**\n- **Option (a): Q1, edge grading** at 0.1/0.25/0.625/1.5625/3.906 mm.\n  - Max error 0.591 K at L0 and 0.152 K at L1 (d1 mean). Max scaled error 0.0019 at L1.\n  - Observed order 1.96, so the Richardson L2 error is 0.039 K [S] against the 0.040 K margin. That margin is thin: staying under 0.040 K needs an order of at least 1.93.\n  - CG max 191; 4.1 GB at 1.75 M DOF.\n- **Option (b): Q2, h0 1 mm, near_margin 0.5 mm.**\n  - Max error 0.263 K at L0 and 0.057 K at L1. Order 2.21, which is outside [0.5, 2]. Extrapolated L2 error 0.012 K [S].\n  - CG reaches the 400-iteration cap at L1. The cause is the production max lines: they sit 8.5-17.5 um from the centroids, are not snapped at h0 = 1 mm, and leave 4.3 um cells.\n\n**Part 3, E009 cost (DOF counted exactly; memory from measured bytes/DOF).** Both options fit the 217.6 GB burst VM: (a) peaks at 66.5 GB (fresh-layout L2, 15.8 M DOF) and needs about 5.0 CPU-hours [S]; (b) peaks at 114.4 GB (Case 1b L2, 24.7 M DOF) and needs about 5.9 CPU-hours [S].\n\n**Commands and exit codes.**\n- `--plan` (grid only, before section 0): 0.\n- Probe run: first launch 0, but the two centroid-only L0 solves failed. This was a bookkeeping bug: the worker asked for the max points, which that version leaves out by design. I fixed it after the data, before any centroid-only CG count existed, deleted the failed cache records and re-ran: 0. The note labels this change.\n- `--report`: 0, and it regenerates probe.json byte-identically.\n- Definition-of-done probe.json assertion: 0. Note assertion: 0. `ruff check`: 0. `mfos gate --fast`: 0 (\"all gates passed\").\n- Committed as d435ea6 on the task branch.\n\n**Open.**\n- L2 of both options has not been measured; the burst command is in the note. The burst run resumes from the cache.\n- CG on the Muzychka plates under the part-2 rules was costed but not solved.\n- Tj convergence on the dev layouts under grading was not probed.",
+  "failure_class": "implementation",
+  "root_cause": "T0207's infeasibility comes from the grid rule in the code, not from a physics model error.\n1. The Q2 CG headroom loss is caused by sliver cells from the mandatory maximum-point lines, not by weak-Robin conditioning. On Case 1a, CG goes from 359 to 32 when those lines are removed.\n2. The N-layer accuracy shortfall is a lack of resolution near the die edges in the tensor grid. Grading at the edges (option a) brings the observed order to about 2 and the L1 error to 0.152 K.\n3. Q2 at h0 = 1 mm (option b) is accurate (0.057 K at L1), but at that cell size the same max-line policy leaves 4.3 um slivers and CG hits the cap.",
+  "confidence": 0.7,
+  "evidence": [
+    "[F] Part 1, Case 1a (Q2 q2_h4): CG max L0/L1 is 249/359 with max lines and 28/32 centroid-only. Final relative residuals 1.7e-11 vs 8.4e-12. Min lateral cell ratio 0.0092 vs 0.197.",
+    "[F] Part 1, Case 2: 190/288 with max lines vs 15/17 centroid-only. Cell ratio 0.0071 vs 0.333. The max-line values match T0207 exactly (249, 190, 359, 288).",
+    "[F] Option (a) a_q1h4_graded, N-layer: max |T - T_ref| 0.591 K at L0 and 0.152 K at L1 (d1 mean). Per-point orders 1.78-1.96, all errors negative. CG 132/191. Energy balance <= 7e-14. 1,752,579 DOF and 4.13 GB at L1.",
+    "[S] Option (a) extrapolated L2 error 0.0392 K (p = 1.96). Staying <= 0.040 K needs p >= 1.93; staying <= 0.05 K needs p >= 1.61.",
+    "[F] Option (b) b_q2h1, N-layer: 0.263 K at L0 and 0.057 K at L1 (d3 mean). p = 2.21. CG 296 at L0 and 400 (cap) at L1. Final residual 7.7e-11 at L1. Min lateral cell ratio 0.0076 (4.3 um cells from the unsnapped max lines).",
+    "[F] E009 cost (DOF counted exactly from the grids). Option (a) peaks at 66.5 GB (fresh-layout L2, 15.8 M DOF, 4.20 kB/DOF); option (b) peaks at 114.4 GB (Case 1b L2, 24.7 M DOF, 4.64 kB/DOF). Both are under 217.6 GB.",
+    "[F] Reference hashes befc5efa... and ca05847b... verified by load_refs. Node-count growth L0 to L1 was 7.55 and 7.65. Peak RSS stayed <= 5.05 GB, and memory_pressure showed 55-69 % free."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "The Q2 CG loss is conditioning on the weak-Robin 10 mm plates (T0207 alternative 2), not slivers.",
+      "how_to_discriminate": "Done here. Removing the maximum lines (centroid only) on Case 1a takes 359 iterations to 32 at L1. Conditioning would keep both above 300. This explanation is refuted at levels 0-1. L2 with a sliver-free line policy was not measured."
+    },
+    {
+      "explanation": "The centroid-only CG drop comes from the smaller grid (20-60 % fewer DOF), not from removing the slivers.",
+      "how_to_discriminate": "Solve a grid with the same line count where the max lines are moved to at least about 0.1 of a cell from the centroid lines, so DOF match and slivers are gone. Not run: it would be a fifth configuration. An 11- to 17-fold change in iterations against a <= 1.6-fold change in DOF argues against this explanation [I]."
+    },
+    {
+      "explanation": "Option (a)'s order of about 2 between L0 and L1 is pre-asymptotic, so its real L2 error exceeds 0.040 K.",
+      "how_to_discriminate": "Measure L2 on the burst VM (13.6 M DOF, about 57 GB). no_go if E_L2 > 0.040 K, or if the L1-to-L2 order is below 1.93."
+    },
+    {
+      "explanation": "Option (b)'s CG cap is conditioning at h0 = 1 mm, not slivers from the max lines.",
+      "how_to_discriminate": "Re-probe option (b) with a sliver-free max-line or snap policy (new pre-registration). CG staying above 300 would mean conditioning."
+    }
+  ],
+  "discriminating_tests": [
+    "Done: Case 1a and Case 2, Q2 L0-L1, with max lines vs centroid only. Result: slivers on Case 1a (359 to 32); Case 2 does not discriminate (288 vs 17, both <= 300).",
+    "Pending (burst): option (a) and option (b) N-layer at L2. This resolves the provisional status of (a) and gives the measured accuracy of (b).",
+    "Pending (new pre-registration): option (b) with a sliver-free max-line policy. CG <= 300 at L1-L2 would confirm the slivers explanation for (b).",
+    "Pending: same-DOF sliver-free control on Case 1a, which separates grid size from slivers."
+  ],
+  "recommended_actions": [
+    "Founder: run the burst to measure L2 for both options. It resumes from the cache, with peaks of about 57 GB and 45 GB: scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_probe.py --full\" research/o007_probe",
+    "Planning: option (a) is provisional_go with a thin margin (extrapolated 0.039 K vs 0.040 K). Do not commit builder budget to graded Q1 before the L2 burst result.",
+    "Builder task (reviewed, src change): a mandatory-line/snap policy that avoids slivers from the maximum lines, for example a minimum gap relative to the local cell. Part 1 shows the Q2 CG loss needs no preconditioner change. Then pre-register a new probe or dev study of option (b) with that policy.",
+    "If (a) is confirmed at L2: builder task to put the edge grading into the GridRule. Then a new pre-registered dev study covering the Muzychka plates' CG at L2 and Tj convergence on the dev layouts.",
+    "Make the T0218 CG-headroom rule (300 iterations) a citable repository document. It decides option (b) here."
+  ],
+  "files_written": [
+    "research/scripts/o007_probe.py",
+    "research/notes/o007-probe.md",
+    "research/o007_probe/probe.json",
+    "research/o007_probe/plan.json",
+    "research/o007_probe/preregistration.json",
+    "research/o007_probe/cost_dofs.json",
+    "research/o007_probe/run_local.log",
+    "research/o007_probe/cache/"
+  ],
+  "affects_acceptance_criteria": false
+}
