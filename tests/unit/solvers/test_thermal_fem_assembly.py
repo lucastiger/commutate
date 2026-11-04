@@ -452,3 +452,21 @@ def test_kt_picard_solve_is_unchanged_by_the_chunk_interpolation(order, monkeypa
     r_ref, p_ref = run()
     assert r_new.picard_iters > 3 and r_new.picard_iters == r_ref.picard_iters
     assert np.array_equal(r_new.T, r_ref.T) and np.array_equal(p_new, p_ref)
+
+
+def test_every_basis_skips_the_global_dof_coordinates(monkeypatch):
+    """Every scikit-fem basis the solver builds (stiffness and data chunks, Robin and die faces, point values) passes
+    ``disable_doflocs=True``: otherwise each chunk's basis maps every element of the mesh to its DOF coordinates, O(N) per
+    chunk (0.48 s per chunk at 1.7 M elements, against 0.022 s)."""
+    seen = []
+    for name in ("CellBasis", "FacetBasis"):
+        def make(*args, _cls=getattr(F, name), _name=name, **kw):
+            seen.append((_name, kw.get("disable_doflocs", False)))
+            return _cls(*args, **kw)
+
+        monkeypatch.setattr(F, name, make)
+    layer = F.BoxLayer(5e-3, lambda T: 100.0 * (1.0 + 6e-3 * (np.asarray(T) - 300.0)), 1)
+    r = F.solve_box_stack(0.01, 0.01, [layer], 2.0e4, 300.0, [(2e-3, 2e-3, 8e-3, 8e-3, 50.0)], h0=0.01, level=1)
+    F.point_values(r, np.array([[3e-3, 4e-3, 1e-3]]))
+    assert {n for n, _ in seen} == {"CellBasis", "FacetBasis"}
+    assert all(flag for _, flag in seen), [n for n, flag in seen if not flag]

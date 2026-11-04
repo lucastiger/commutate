@@ -71,8 +71,10 @@ attempt 1 measured 9.9 kB/DOF at 60 k on a three-layer box stack. ``BYTES_PER_DO
 of those figures (the small-mesh figures are dominated by the fixed Python/numpy baseline). Q1 on the same 416 k DOF:
 4.4 kB/DOF (1.8 GB, 34 s) chunked, against 7.6 kB/DOF (3.1 GB, 18 s) for the earlier version that kept one basis of all
 elements: chunking costs Q1 about 1.8 times the wall time for 42 % less memory. Most of that time, growing as N^2 /
-chunk, was scikit-fem's global split inside ``interpolate``, which ``_interpolate`` avoids (2026-11-04: at 1.7 M elements
-0.38 s per chunk against 0.001 s, same values). ``estimate_dofs`` counts the Q2 dofs
+chunk, was whole-mesh work that scikit-fem repeats for every chunk's basis: the global split inside ``interpolate``
+(avoided by ``_interpolate``) and the global DOF coordinates every basis computes unless built with
+``disable_doflocs=True``, as all bases here are (2026-11-04, 1.7 M elements, per chunk: 0.38 s against 0.001 s and 0.48
+s against 0.022 s; the values are unchanged). ``estimate_dofs`` counts the Q2 dofs
 (vertices, edges, faces and cells of the active cells); at equal DOF a Q2 mesh has 8 times fewer cells.
 
 Memory, Q1. D0006 estimated about 7.7 kB per DOF for scikit-fem + pyamg; ``max_dofs(budget_bytes)`` converts a budget into
@@ -627,11 +629,11 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     mass_parts, ones_b = [], np.zeros(nd)
     f_robin = np.zeros(nd)
     for s in _chunks(robin_idx.size, fchunk):
-        fb = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=4, dofs=dofs)
+        fb = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=4, dofs=dofs, disable_doflocs=True)
         mass_parts.append(_mass_form.assemble(fb))
         ones_b += _one_form.assemble(fb)
         if g.T_inf is not None:
-            fd = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=DATA_INTORDER, dofs=dofs)
+            fd = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=DATA_INTORDER, dofs=dofs, disable_doflocs=True)
             X = fd.global_coordinates() / MM
             ti = np.broadcast_to(np.asarray(g.T_inf(X[0], X[1]), dtype=float), X[0].shape)
             f_robin += _load_form.assemble(fd, f=hh * (ti - g.Tc))
@@ -665,7 +667,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                & (mp[1] > y0 * MM) & (mp[1] < y1 * MM))
         vec = np.zeros(nd)
         for s in _chunks(int(sel.sum()), fchunk):
-            fb = FacetBasis(mesh, elem, mapping=bmap, facets=bf[sel][s], intorder=4, dofs=dofs)
+            fb = FacetBasis(mesh, elem, mapping=bmap, facets=bf[sel][s], intorder=4, dofs=dofs, disable_doflocs=True)
             vec += _one_form.assemble(fb)
         face_dofs = np.unique(dofs.get_facet_dofs(bf[sel]).flatten())  # every node of the face (Q2: + edge/face midpoints)
         vec[_complement(face_dofs, nd)] = 0.0
@@ -681,7 +683,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     f_vol = np.zeros(nd)
     if g.source is not None:
         for idx in _chunks(ne, max(100, chunk // 4)):
-            cb = CellBasis(mesh, elem, intorder=DATA_INTORDER, elements=idx, dofs=dofs)
+            cb = CellBasis(mesh, elem, intorder=DATA_INTORDER, elements=idx, dofs=dofs, disable_doflocs=True)
             X = cb.global_coordinates() / MM
             q = np.broadcast_to(np.asarray(g.source(X[0], X[1], X[2]), dtype=float), X[0].shape)
             f_vol += _load_form.assemble(cb, f=q / MM**3)
@@ -693,7 +695,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                 sel = bf[(axis == ax) & (sign == sg) & ~robin]
                 part = np.zeros(nd)
                 for s in _chunks(sel.size, fchunk):
-                    fb = FacetBasis(mesh, elem, mapping=bmap, facets=sel[s], intorder=DATA_INTORDER, dofs=dofs)
+                    fb = FacetBasis(mesh, elem, mapping=bmap, facets=sel[s], intorder=DATA_INTORDER, dofs=dofs, disable_doflocs=True)
                     X = fb.global_coordinates() / MM
                     q = np.broadcast_to(np.asarray(g.flux(X[0], X[1], X[2], ax, sg), dtype=float), X[0].shape)
                     part += _load_form.assemble(fb, f=q / MM**2)
@@ -715,7 +717,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
 
         def stiffness_parts(T_prev=T_prev):
             for idx in _chunks(ne, chunk):
-                cb = CellBasis(mesh, elem, intorder=iq, elements=idx, dofs=dofs)
+                cb = CellBasis(mesh, elem, intorder=iq, elements=idx, dofs=dofs, disable_doflocs=True)
                 nq = cb.X.shape[1]
                 if constant_k:
                     Tq = np.full((idx.size, nq), k_const_T if k_const_T is not None else g.Tc)
@@ -803,7 +805,7 @@ def point_values(res: ThermalResult, pts: np.ndarray) -> np.ndarray:
         if e < 0:
             raise ValueError(f"point {p} is not in an active cell")
         X = mapping.invF((p * MM)[:, None, None], tind=np.array([e]))
-        cb = CellBasis(fe.mesh, fe.elem, elements=np.array([e]), quadrature=(X[:, 0, :], np.array([1.0])), dofs=fe.dofs)
+        cb = CellBasis(fe.mesh, fe.elem, elements=np.array([e]), quadrature=(X[:, 0, :], np.array([1.0])), dofs=fe.dofs, disable_doflocs=True)
         out[n] = float(_interpolate(cb, res.T).ravel()[0])
     return out
 
