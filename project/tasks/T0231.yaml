@@ -3,7 +3,7 @@ objective: O007
 title: Review T0227 (general)
 type: review
 agent: critic
-status: needs_founder
+status: running
 depends_on: []
 description: 37106b9358bce74739c191c11b8043baa40ec5af
 context_files: []
@@ -16,12 +16,13 @@ model: null
 budget_usd: 3.0
 max_turns: 60
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: null
 pr: null
 runs:
 - T0231-critic-20261104T092034-2690
+- T0231-critic-20261104T093601-6da6
 created_by: orchestrator
 created_at: '2026-11-04T17:20:30+00:00'
 protected_approved: false
@@ -50,3 +51,7 @@ history:
     \  cause: invalid peer certificate: UnknownIssuer\n\nhint: Consider enabling use of system TLS certificates\
     \ with the `--system-certs` command-line flag\n"
   at: '2026-11-04T17:30:53+00:00'
+- outcome: infrastructure_resolved
+  summary: 'I0121: fixed: the founder''s internet connection dropped (PyPI TLS UnknownIssuer during reconnection);
+    PyPI verified reachable with valid TLS at 17:3x UTC. Retry T0231.'
+  at: '2026-11-04T17:35:32+00:00'

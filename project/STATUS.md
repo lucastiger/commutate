@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T17:30:53+00:00 from repository state — do not edit_
+_generated 2026-11-04T17:36:01+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0121** [infrastructure] infrastructure: venv_provisioning
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -25,19 +25,17 @@ _generated 2026-11-04T17:30:53+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 33 | $57.29 | 1073580 | 551058 | 39 | 0 |
+| O007 | 34 | $57.29 | 1073580 | 551058 | 39 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 191, failed: 3, needs_founder: 2, review: 1, todo: 3
+cancelled: 31, done: 191, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 3
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 - T0227 `review` builder/implement: thermal_fem: source-edge grading in GridRule (port of T0225's emulated option-(a) grading, box-stack and layout modes) (attempt 1)
-- T0231 `needs_founder` critic/review: Review T0227 (general) (attempt 1)
+- T0231 `running` critic/review: Review T0227 (general) (attempt 2)
 
 ## Recent events
-- 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0119", "kind": "external_action", "subject": "[O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and h
-- 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0120", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
 - 2026-11-04T10:21:20+00:00 plan_applied {"objective": "O007", "created": ["T0227", "T0228", "T0229", "T0230"], "dropped": 0}
 - 2026-11-04T11:09:11+00:00 inbox_resolved {"id": "I0119", "status": "approved", "note": "Option 1: run both bursts now; hold T0227 until the probe burst is committed and release it only if (a) is go at 
 - 2026-11-04T11:09:11+00:00 inbox_resolved {"id": "I0120", "status": "approved", "note": "Plan approved (T0227-T0230); T0227 held per I0119", "by": "human"}
@@ -51,3 +49,5 @@ cancelled: 31, done: 191, failed: 3, needs_founder: 2, review: 1, todo: 3
 - 2026-11-04T17:30:53+00:00 task_failed_attempt {"task": "T0231", "signal": "venv_provisioning", "action": "pause"}
 - 2026-11-04T17:30:53+00:00 inbox_opened {"id": "I0121", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
 - 2026-11-04T17:30:53+00:00 infrastructure_pause {"task": "T0231", "signal": "venv_provisioning"}
+- 2026-11-04T17:35:32+00:00 inbox_resolved {"id": "I0121", "status": "approved", "note": "fixed: the founder's internet connection dropped (PyPI TLS UnknownIssuer during reconnection); PyPI verified reac
+- 2026-11-04T17:36:01+00:00 run_started {"run": "T0231-critic-20261104T093601-6da6", "task": "T0231", "role": "critic", "session": "2a608ae1-a1b2-43fa-a636-b9e9f1d2e58e"}
