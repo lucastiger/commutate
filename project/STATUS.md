@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T03:07:13+00:00 from repository state — do not edit_
+_generated 2026-11-04T03:07:25+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0114** [protected_change] T0207: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,12 @@ _generated 2026-11-04T03:07:13+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 187, failed: 3, merge: 1, needs_founder: 1, todo: 1
+cancelled: 30, done: 187, failed: 3, needs_founder: 2, todo: 1
 
-- T0207 `merge` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 1)
+- T0207 `needs_founder` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-04T01:37:27+00:00 inbox_resolved {"id": "I0110", "status": "approved", "note": "Option (a): T0208 waits for T0222; rows record CG iterations and residual per grid solve; gated sanity check line
 - 2026-11-04T01:37:28+00:00 inbox_resolved {"id": "I0111", "status": "approved", "note": "Option (a): founder-session patch to tools/mfos covering founder stops (no attempt used, no diagnosis), reviews p
 - 2026-11-04T01:37:39+00:00 run_started {"run": "T0222-builder-20261103T173739-6d59", "task": "T0222", "role": "builder", "session": "36b1896d-8047-4e21-8978-e078e81cba2b"}
 - 2026-11-04T01:37:48+00:00 task_amended {"task": "T0208", "reason": "I0110"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 187, failed: 3, merge: 1, needs_founder: 1, todo: 1
 - 2026-11-04T02:57:52+00:00 verified {"task": "T0207"}
 - 2026-11-04T02:57:56+00:00 run_started {"run": "T0223-critic-20261103T185756-0311", "task": "T0223", "role": "critic", "session": "66c1f187-6936-4349-98d2-fa9d72e0ed30"}
 - 2026-11-04T03:03:46+00:00 run_finished {"run": "T0223-critic-20261103T185756-0311", "status": "completed", "cost": 2.025559, "subtype": "success", "report": "structured_output"}
+- 2026-11-04T03:07:23+00:00 inbox_opened {"id": "I0114", "kind": "protected_change", "subject": "T0207: merge needs founder approval"}
