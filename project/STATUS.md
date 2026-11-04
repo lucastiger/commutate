@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T10:21:22+00:00 from repository state — do not edit_
+_generated 2026-11-04T11:09:17+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0119** [external_action] [O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and hold n3 until n2's burst and --report are committed
-- **I0120** [plan_approval] [O007] approve initial plan (4 tasks)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -30,17 +29,12 @@ _generated 2026-11-04T10:21:22+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 191, failed: 3, needs_founder: 1, proposed: 4
+cancelled: 31, done: 191, failed: 3, needs_founder: 2, todo: 3
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0227 `proposed` builder/implement: thermal_fem: source-edge grading in GridRule (port of T0225's emulated option-(a) grading, box-stack and layout modes) (attempt 0)
-- T0228 `proposed` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 0)
-- T0229 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen graded rule against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0230 `proposed` none/experiment: Run E009: scikit-fem thermal reference (graded rule) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
+- T0227 `needs_founder` builder/implement: thermal_fem: source-edge grading in GridRule (port of T0225's emulated option-(a) grading, box-stack and layout modes) (attempt 0)
 
 ## Recent events
-- 2026-11-04T04:18:58+00:00 plan_applied {"objective": "O007", "created": ["T0225"], "dropped": 0}
-- 2026-11-04T04:22:04+00:00 inbox_resolved {"id": "I0117", "status": "approved", "note": "Plan approved: T0225 feasibility probe (research only)", "by": "human"}
 - 2026-11-04T04:22:04+00:00 inbox_resolved {"id": "I0115", "status": "approved", "note": "Probe first (T0225). Choose (a) edge grading or (b) Q2 finer near sources from its go/no-go; (c)/(d) only if both
 - 2026-11-04T04:22:09+00:00 inbox_resolved {"id": "I0116", "status": "approved", "note": "usd=32.49", "by": "human"}
 - 2026-11-04T04:22:31+00:00 run_started {"run": "T0225-scientist-20261103T202231-f14d", "task": "T0225", "role": "scientist", "session": "83a73824-30bf-4d06-8383-81a06639e35c"}
@@ -54,3 +48,5 @@ cancelled: 31, done: 191, failed: 3, needs_founder: 1, proposed: 4
 - 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0119", "kind": "external_action", "subject": "[O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and h
 - 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0120", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
 - 2026-11-04T10:21:20+00:00 plan_applied {"objective": "O007", "created": ["T0227", "T0228", "T0229", "T0230"], "dropped": 0}
+- 2026-11-04T11:09:11+00:00 inbox_resolved {"id": "I0119", "status": "approved", "note": "Option 1: run both bursts now; hold T0227 until the probe burst is committed and release it only if (a) is go at 
+- 2026-11-04T11:09:11+00:00 inbox_resolved {"id": "I0120", "status": "approved", "note": "Plan approved (T0227-T0230); T0227 held per I0119", "by": "human"}

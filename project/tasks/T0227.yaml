@@ -4,7 +4,7 @@ title: 'thermal_fem: source-edge grading in GridRule (port of T0225''s emulated 
   and layout modes)'
 type: implement
 agent: builder
-status: proposed
+status: needs_founder
 depends_on: []
 description: "Founder path (a) after T0225 (I0115, I0118). Move the probe's emulated grading (research/scripts/o007_probe.py:\
   \ offsets(), grading_lines(), box_setup(), layout_grid()) into production thermal_fem.py.\n\nAPI and\
@@ -108,4 +108,8 @@ rationale: scope_in requires the one frozen grid rule to come from thermal_fem's
   for O003. T0207 identified the N-layer source edges as the binding case (A2/K2), and T0225 showed that
   grading fixes it (provisional_go). The line-for-line check against the emulation makes T0225's measured
   N-layer values transfer to production.
-history: []
+history:
+- outcome: founder_hold
+  summary: Held per I0119 until the probe burst (level 2 for (a) and (b)) is committed. Release with mfos
+    task retry T0227.
+  at: '2026-11-04T11:09:04+00:00'
