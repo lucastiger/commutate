@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T19:17:27+00:00 from repository state — do not edit_
+_generated 2026-11-04T19:17:37+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0123** [protected_change] T0228: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +14,7 @@ _generated 2026-11-04T19:17:27+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $62.47/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $64.65/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,19 +25,16 @@ _generated 2026-11-04T19:17:27+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 36 | $62.47 | 1173728 | 593728 | 43 | 0 |
+| O007 | 36 | $64.65 | 1206192 | 609946 | 51 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 193, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 2
+cancelled: 31, done: 194, failed: 3, needs_founder: 2, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0228 `review` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 1)
-- T0232 `running` critic/review: Review T0228 (general) (attempt 1)
+- T0228 `needs_founder` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 1)
 
 ## Recent events
-- 2026-11-04T17:30:49+00:00 run_finished {"run": "T0231-critic-20261104T092034-2690", "status": "error", "cost": 1.159218, "subtype": "success", "report": "missing"}
-- 2026-11-04T17:30:49+00:00 task_failed_attempt {"task": "T0231", "signal": "agent_error", "action": "repair"}
 - 2026-11-04T17:30:53+00:00 task_failed_attempt {"task": "T0231", "signal": "venv_provisioning", "action": "pause"}
 - 2026-11-04T17:30:53+00:00 inbox_opened {"id": "I0121", "kind": "infrastructure", "subject": "infrastructure: venv_provisioning"}
 - 2026-11-04T17:30:53+00:00 infrastructure_pause {"task": "T0231", "signal": "venv_provisioning"}
@@ -51,3 +48,5 @@ cancelled: 31, done: 193, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-04T19:08:20+00:00 run_finished {"run": "T0228-scientist-20261104T103535-ea5f", "status": "completed", "cost": 3.800514, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T19:11:32+00:00 verified {"task": "T0228"}
 - 2026-11-04T19:11:36+00:00 run_started {"run": "T0232-critic-20261104T111136-df2e", "task": "T0232", "role": "critic", "session": "79a74e14-e49c-431e-a8fa-5263f1c78267"}
+- 2026-11-04T19:17:32+00:00 run_finished {"run": "T0232-critic-20261104T111136-df2e", "status": "completed", "cost": 2.179511, "subtype": "success", "report": "structured_output"}
+- 2026-11-04T19:17:35+00:00 inbox_opened {"id": "I0123", "kind": "protected_change", "subject": "T0228: merge needs founder approval"}
