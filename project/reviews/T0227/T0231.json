@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Layout mode is not a straight port of the T0225 emulation: trace, outline and backside lines are added to the fixed set",
+      "detail": "In layout_grid the port passes fixed = list(xb) + exs to _grading_lines, where xb holds every layout geometry line: baseplate, outline, backside polygon, traces and dies. The T0225 emulation (o007_probe.layout_grid) passed only the mandatory extra lines. The pre-registered rule (research/notes/o007-probe.md \u00a70.2) lists the fixed lines as 'domain ends, source edges, centroids, maximum lines', so trace and outline edges were not among them. As a result the port drops grading candidates within 0.5\u00b7s of trace or outline edges, which the emulation kept. In box-stack mode xb holds only the domain ends and source edges, so the two agree exactly there. The definition of done checks identity only for box-stack mode. Layout mode is checked only by a level-1/level-0 DOF ratio and a rise in line count, and both would pass with either rule. The new module docstring calls the feature a 'port of the T0225 probe's option (a)' and doesn't mention the change. The change is probably for the better: there are no slivers below 50 \u00b5m, and test_gaps_and_domain_box_and_layout asserts this on purpose. No T0225 layout measurement depends on it either: the E009 cost becomes conservative, and dev-layout Tj under grading was never measured. Still, 'port \u2026 box-stack and layout modes' holds exactly only for box-stack mode.",
+      "evidence": "Grids built at this commit with the DoD rule, port vs P.layout_grid('a_q1h4_graded', \u2026). side_by_side_6: L0 x 219 vs 223 lines, y 97 vs 107; DOF 167682 vs 186854 (0.897), same ratio at L1 and L2. u_shaped_2: DOF ratio 0.869\u20130.871 at L0\u2013L2. Manufactured layout: 0.882\u20130.884. Smallest y cell 50 \u00b5m in the port vs 31.3 \u00b5m in the emulation (side_by_side_6, mms). Neither has any snapped lines.",
+      "suggested_check": "State the layout-mode fixed set, and that it differs from the emulation, in the thermal_fem docstring and the O007 notes. Note that the T0225 E009 layout DOF and cost figures were computed for the emulated rule.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Grading breaks mirror symmetry for symmetric multi-source geometries (inherited tie-break); test_mirror_symmetry covers only one centred source",
+      "detail": "Candidates are taken in sorted (s, v) order. When two candidates with the same step from opposite edges conflict, for example in the gap between two mirrored dies, the one with the smaller coordinate always wins, so the line set is not mirror-symmetric. This comes from the T0225 rule, and the box-stack grids match the emulation exactly, so the port is faithful. But a mirror-symmetric layout (half-bridge pairs, parallel dies) gets a slightly asymmetric discrete solution. test_mirror_symmetry uses a single centred source, where no such conflict can happen, so it suggests a symmetry guarantee that doesn't hold in general. The measured effect on Tj is tiny compared with the 0.040 K go margin.",
+      "evidence": "Random mirror-symmetric two-die extents, using _grading_lines with centroids as fixed lines: 1583 of 4000 cases asymmetric (L = 20 mm), and about 37\u201344% with 3\u20136 mm dies and 0.2\u20134 mm gaps (L = 40 mm). Lines shift by up to 0.47 mm. Example: gap edges 19.4587 and 20.5413 mm; at o = 0.625 mm the candidates 19.9163 and 20.0837 are 0.167 mm apart, under 0.5\u00b70.375 mm, and only 19.9163 is kept. Solved symmetric box stack (30\u00d716 mm): graded Tj_max(die1) \u2212 Tj_max(die2) = 7.9e-5 K at L0 and 2.4e-5 K at L1; ungraded 6.6e-11 K.",
+      "suggested_check": "Rename or extend the symmetry test so it states that the property holds for a single source only, or make conflicts between same-step candidates resolve symmetrically. The latter would end exact identity with the T0225 emulation and is the founder's call.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "edge_grading with max_offset = inf passes validation and then never terminates",
+      "detail": "__post_init__ checks max_off >= first, which is true for inf. In _grading_offsets the condition 'o <= max_off * (1 + 1e-9)' then stays true once o overflows to inf, so the list grows without bound and memory runs out. NaN is rejected, but inf is not.",
+      "evidence": "GridRule(edge_grading=(1e-4, 2.5, math.inf, 0.5)) is accepted, and math.inf <= math.inf*(1+1e-9) evaluates to True. I did not run the loop itself because its memory use is unbounded.",
+      "suggested_check": "Require math.isfinite for all four values in GridRule.__post_init__.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "The two-layer slab test cannot detect grading errors",
+      "detail": "With uniform flux over the whole top face the exact field is 1-D and linear in each layer, so Q1 reproduces it on any lateral grid. The test shows that grading doesn't break assembly or the boundary conditions. It says nothing about where the lines go; that is covered by the offsets test, the gap test and the DoD identity check.",
+      "evidence": "Reasoning from the test setup: P spread over (0,0,a,b) and constant k.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself: grading tests 9 passed; fast unit suite 504 passed, 37 deselected; box-stack identity script printed 'identical'; layout DOF-ratio script gave [7.54, 7.52]; ruff clean; 'mfos gate --fast' passed all gates.",
+    "Compared port and emulation side by side: o007_probe.grading_lines matches _grading_lines line for line. In box-stack mode the fixed sets are equivalent (xb holds only domain ends and source edges, both already in acc).",
+    "Checked that the default is unchanged: _merge_lines treats extra=None and an empty concatenated array the same (both become ex=[]).",
+    "Compared layout-mode grids with P.layout_grid('a_q1h4_graded', \u2026) for side_by_side_6, u_shaped_2 and the manufactured layout at L0\u2013L2: the line sets differ and the port has 10\u201313% fewer DOF.",
+    "Solved case2 and nlayer_dbc at L0 through the new rule and through the T0225 emulated extra lines: nodal temperatures and Tj_max bitwise identical (max |dT| = 0.0), energy balance about 1e-13.",
+    "Adversarial search over 4000 + 9000 random mirror-symmetric two-source geometries for symmetry breaking in _grading_lines; found and explained the tie-break mechanism.",
+    "Solved a symmetric two-die box stack at L0 and L1, graded and ungraded, to size the Tj asymmetry: 7.9e-5 K and 2.4e-5 K graded, about 1e-11 K ungraded.",
+    "Searched for other grid builders: only layout_grid and box_stack_grid construct _Grid, so both modes are covered. GridRule was already unhashable because of its nz dict, so that is not a regression.",
+    "Probed GridRule validation with ratio 1, gap 0, first 0, max < first and NaN (all rejected) and max_offset = inf (accepted, which leads to a non-terminating loop)."
+  ],
+  "caveats": [
+    "Box-stack mode is an exact port of the T0225 emulation: grids and solved temperatures are bitwise identical on the probe cases. Layout mode uses a deliberately different fixed-line set (geometry lines included), so its grids are 10\u201313% smaller than the emulation's and match neither the emulation nor the literal \u00a70.2 list.",
+    "The T0225 E009 layout-mode DOF and cost figures were computed for the emulated rule, not this implementation. They are conservative upper bounds by about 10\u201313%, not exact values.",
+    "Graded grids are not mirror-symmetric for mirror-symmetric multi-source geometries. The Tj effect measured here is \u2264 1e-4 K, far below the 0.040 K margin, but symmetry-based checks on graded multi-die layouts need a tolerance at that level, not 1e-9.",
+    "Not checked: whether grading improves accuracy in layout mode (dev-layout Tj convergence under grading was never measured), and whether level 2 fits in memory."
+  ]
+}
