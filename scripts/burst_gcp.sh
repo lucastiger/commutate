@@ -11,6 +11,8 @@
 #                                                               relative path here (for benchmarks and spikes)
 # Defaults: n2-highmem-32 (32 vCPU, 256 GB) in us-central1-a. MF_GCP_SPOT=1 uses a Spot VM (cheaper, can be
 # preempted: fine for benchmarks, not for a registered run). MF_REF=<ref> bundles another committed ref (default main).
+# With --cmd, the output directory is cached on this machine every ~5 min; after a Spot preemption, rerun the same
+# command with MF_GCP_RESUME=1 to upload that cache first, so a script that resumes from its checkpoints continues.
 # Setup (once): docs/INFRASTRUCTURE.md, "Burst compute on Google Cloud".
 set -euo pipefail
 MODE=exp
@@ -116,6 +118,20 @@ if [ "$MODE" = exp ]; then
 else
   JOB="$CMD"
 fi
+# Spot resume (--cmd runs only; a registered experiment is never seeded with earlier results): while the job runs, its
+# output directory, checkpoints included, is copied every ~5 min to a cache on this machine; with MF_GCP_RESUME=1 a
+# relaunch uploads that cache before the job starts, so a script that resumes from its checkpoints skips finished work.
+CACHE=""
+if [ "$MODE" = cmd ]; then
+  CACHE="${MF_GCP_CACHE:-$HOME/.cache/mf-burst}/$(printf '%s' "$FETCH" | tr '/' '_')"
+  mkdir -p "$CACHE"
+  if [ "${MF_GCP_RESUME:-0}" = 1 ] && [ -d "$CACHE/fetched" ]; then
+    gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "mkdir -p ~/mf/$FETCH" > /dev/null
+    gcloud compute scp --zone "$ZONE" --quiet --recurse "$CACHE/fetched" "$NAME:mf-resume" > /dev/null
+    gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "cp -R ~/mf-resume/. ~/mf/$FETCH/ && rm -rf ~/mf-resume" > /dev/null
+    echo "resumed from $CACHE/fetched ($(find "$CACHE/fetched" -type f | wc -l | tr -d ' ') files)"
+  fi
+fi
 printf 'set -uo pipefail\nexport PATH="$HOME/.local/bin:$PATH"\ncd ~/mf\n%s\n' "$JOB" > "$WORK/job.sh"
 gcloud compute scp --zone "$ZONE" --quiet "$WORK/job.sh" "$NAME:job.sh" > /dev/null
 MAXH="${MF_GCP_MAX_HOURS:-6}"
@@ -129,7 +145,14 @@ GONE=0
 DEADLINE=$((SECONDS + MAXH * 3600))
 while [ -z "$RC" ] && [ $SECONDS -lt $DEADLINE ]; do
   sleep 30
+  POLLS=$((${POLLS:-0} + 1))
   RC="$(gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command 'cat ~/job.rc 2> /dev/null' 2> /dev/null | tr -d '[:space:]' || true)"
+  if [ -n "$CACHE" ] && [ $((POLLS % 10)) -eq 0 ]; then
+    rm -rf "$CACHE/sync.tmp"
+    if gcloud compute scp --zone "$ZONE" --quiet --recurse "$NAME:mf/$FETCH" "$CACHE/sync.tmp" > /dev/null 2>&1; then
+      rm -rf "$CACHE/fetched" && mv "$CACHE/sync.tmp" "$CACHE/fetched"
+    fi
+  fi
   # A spot VM can be preempted (2026-11-03: after 27 min, then this loop waited 6.5 h for a VM that no longer existed).
   # Only a successful listing that shows the VM missing or not running counts; a failed gcloud call (network) never does,
   # so a connection blip cannot end the wait or delete a healthy VM. Two consecutive such polls end the wait.
@@ -148,6 +171,8 @@ mkdir -p "$(dirname "$FETCH")"
 if gcloud compute scp --zone "$ZONE" --quiet --recurse "$NAME:mf/$FETCH" "$WORK/fetched" > /dev/null 2>&1; then
   mkdir -p "$FETCH"; cp -R "$WORK/fetched/." "$FETCH/"
   echo "copied $FETCH back"
+  # A finished job's cache is spent: clear it so a later MF_GCP_RESUME=1 run cannot be seeded with stale results.
+  [ -n "$CACHE" ] && [ "$RC" = 0 ] && rm -rf "$CACHE"
   [ "$MODE" = exp ] && echo "the orchestrator picks the results up on its next tick"
 else
   echo "nothing to copy back at $FETCH" >&2
