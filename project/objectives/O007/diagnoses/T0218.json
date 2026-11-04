@@ -1,0 +1,53 @@
+{
+  "summary": "T0216 attempt 3 did not fail because of the code. The founder stopped it on purpose to hold T0216 and merge main's AMG fixes into its branch, and the orchestrator logged that stop as `agent_error`, defaulting the class to `implementation`. That consumed the task's last attempt and spawned this diagnosis.\n\nThe defect behind the hold is attempt 2's flaky AMG-CG test. It is fixed on main by 1b869ea and 95eb537, which the founder merged into the branch as eb4c541. On eb4c541 the previously flaky test passes and the solves are bit-for-bit reproducible. T0216 needs no new repair task; attempt 4 is already running under the founder's amended brief.\n\nOne forward risk: on grids with thin sliver cells, AMG-CG at level 2 uses 362 of its 400 allowed iterations, and at level 3 it reaches the cap.\n\nNotes: research/diagnoses/T0218.md (committed as 12176ab). Commands and exit codes:\n- Read-only inspection of the packet, task YAML, run records, events.jsonl and orchestrator source: exit 0.\n- `git diff`/`cmp` comparing the branch against main's fixes: exit 0, identical.\n- `memory_pressure`: exit 0. `ps` and `sysctl` were denied by the sandbox.\n- Probe runs on an export of eb4c541 (one at a time, 1, 60, 1 and 6 solves): all exit 0.\n- The flaky pytest test on eb4c541, 3 runs, all '2 passed'. Runs 1\u20132 showed exit 1, but that came from the `/usr/bin/time` wrapper being blocked by the sandbox; run 3 without it exited 0.\n- `uv run ruff check .`: exit 0.\n- `uv run mfos gate --fast`: exit 0 ('all gates passed').",
+  "failure_class": "infrastructure",
+  "root_cause": "The founder stopped attempt 3 deliberately: `task_held` at 23:31:18 UTC, and the T0216 history entry `founder_hold` reads \"Attempt 3 was stopped before it made any change\". The reason was that the branch predated main's AMG fixes (1b869ea: deflate the constant mode for Q1; 95eb537: seed pyamg's hierarchy). Those fixes repair attempt 2's DoD failure, a non-reproducible AMG-CG solve caused by pyamg's unseeded random spectral-radius start. One second later (23:31:19) the orchestrator found the agent process dead with an empty stdout. It recorded `agent_error` and mapped it to `implementation` (diagnose.py:31). Because attempts were 3 of 3, it set the task to failed and spawned T0218. `loop.py::_on_run_done` and `_fail` never check for a founder hold or stop, so an operator stop is billed as an attempt and treated as a code failure.",
+  "confidence": 0.85,
+  "evidence": [
+    "[F] events.jsonl: 23:31:18 task_held (founder) 'needs main's AMG fixes merged into its branch' plus loop_started; 23:31:19 run_interrupted, then task_failed_attempt agent_error \u2192 diagnose, then investigation_spawned T0218 cls=implementation.",
+    "[F] main's project/tasks/T0216.yaml history: founder_hold at 23:31:18: 'the flaky test (AMG-CG residual) is fixed on main by 1b869ea \u2026 and 95eb537 \u2026; the branch predates both \u2026 Attempt 3 was stopped before it made any change.' Then founder_brief_amended: 'attempt 4: main's AMG fixes merged in; leave _Solver alone; confirm determinism'.",
+    "[F] Both attempt-3 runs have empty stdout.json and stderr.log, num_turns 0 and is_error false. Their deadlines were about 6 h away, and no run_timeout event exists, so a timeout is ruled out.",
+    "[F] The attempt-3 transcripts contain only read-only Bash calls (cat, git diff, grep, sed, probes in $TMPDIR). There is no Edit or Write and no tool error, and both end in an api-request rather than a running tool.",
+    "[F] No builder commit exists on the branch after 872a16b. The src/tests change from 872a16b to the branch tip is line-for-line identical (cmp) to 6241ee4..95eb537, i.e. main's fixes, merged by the founder in eb4c541 at 23:37:16.",
+    "[F] Determinism on eb4c541: the flaky case (box stack, Q1, kept lines at 1.5\u00d7 and snapped at 0.5\u00d7 the snap distance, levels 0\u20132) was solved under 10 different global RNG states. 60/60 converged, tj_max was bit-identical and CG iteration counts were identical in every case and level; energy balance \u2264 3.2e-12; peak RSS 459 MB.",
+    "[F] test_kept_line_just_outside_snap_distance_solves_above_level_0_box passed 3/3 runs on the eb4c541 export (2 passed each, about 13 s).",
+    "[F] Pre-merge branch, from T0218 attempt 1's surviving probe output: level 2 hit maxiter = 400 on every RNG seed, and 2/9 seeds failed the 1e-8 residual check.",
+    "[F] Residual risk: CG iterations on sliver grids with eb4c541 are 164/230/296 at levels 0\u20132 for 1.5\u00d7 kept lines and 196/280/362 for 1.01\u00d7, against 21/26/34 when the lines are snapped. At level 3 the 1.5\u00d7 case reached the 400 cap and was accepted only because the 1e-8 final check is looser than LINEAR_RTOL = 1e-11. My linear-trend prediction of 362 was falsified.",
+    "[F] O007's dev-study config (T0207) freezes thermal_fem levels at [0, 1, 2]."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "E2: a code defect in T0216, the preliminary 'implementation' class.",
+      "how_to_discriminate": "Check whether attempt 3 ran any code or test that failed. It did not: it made no change, ran no DoD test, has no traceback, and its transcripts have no tool errors. Refuted for attempt 3. The real code defect (attempt 2's flaky AMG-CG) is separate and already fixed."
+    },
+    {
+      "explanation": "E3: the agent CLI crashed (a bug or an API error).",
+      "how_to_discriminate": "A crash would leave a stderr trace, an is_error JSON, or an error entry in the transcript. stderr is empty and the transcripts have no error entries, while the kill time is 1 s from the founder hold. Not supported. A CLI crash log time-stamped before the hold would revive it."
+    },
+    {
+      "explanation": "E4: a SIGKILL from macOS under memory pressure.",
+      "how_to_discriminate": "Check for a large process running at the time of the kill, and for swap and memory history. Attempt 3 ran no heavy compute, memory is now 51\u201363 % free, and T0218 attempt 1's probes were each at most about 0.4 GB and died together (a tree kill). Only weakly excluded, because the sandbox denies ps and sysctl, so swap history cannot be read."
+    },
+    {
+      "explanation": "E5: the orchestrator killed it on its deadline.",
+      "how_to_discriminate": "That would show status 'timeout' and a run_timeout event. Neither exists, and the deadlines were about 6 h away. Refuted."
+    }
+  ],
+  "discriminating_tests": [
+    "Line up founder events against the run_interrupted times: done, a 1 s alignment at 23:31:18\u201319 with the founder_hold note.",
+    "List attempt-3 tool calls and branch commits: done, read-only calls only and no builder commits.",
+    "Check whether the merged branch eb4c541 is deterministic and passes the flaky test under different global RNG states: done, 60/60 bit-identical and pytest 3/3 passed.",
+    "Falsifiable forward check: CG iterations at level 3 and for the thinnest admissible sliver (1.01\u00d7 snap distance): done. Level 3 hits the cap (400); 1.01\u00d7 at level 2 needs 362/400.",
+    "Not run (out of sandbox reach): process and swap history at 23:29:27, which would show whether the first attempt-3 run exited without a founder action."
+  ],
+  "recommended_actions": [
+    "Do not create a repair task for T0216. Let attempt 4 (T0216-builder-20261103T153752-d11b) finish under the founder's amended brief; on eb4c541 the previously failing DoD test passes and the solves are deterministic.",
+    "Founder decision, since tools/mfos is protected: in loop.py::_on_run_done and _fail, treat a run that dies while its task is held, or after a founder_hold entry newer than the run's start, as 'founder_stopped'. Give the attempt back and do not spawn a diagnosis. Optionally, have `mfos task hold` stop the run itself and emit a run_stopped event, so no stop goes unrecorded (the 23:29:27 kill has no event). This task's agent time, about $3\u20134, is the cost of the current behaviour.",
+    "Planner or scientist, for T0207/E009 before E009 is registered: record the largest CG iteration count per solve and any solve that reached maxiter in thermal_fem meta and in the dev study. Add an E009 sanity check that no reported value comes from a solve stopped at the cap. On the thinnest sliver the grid rule keeps (1.01\u00d7 the snap distance), level 2 needs 362 of 400 iterations, a margin of about 10 %.",
+    "Keep thermal_fem at the frozen levels [0, 1, 2]. Level 3 on sliver grids already reaches the CG cap, so any future use of level 3 must re-measure first. Whether to change maxiter, the 1e-8 acceptance check or SNAP_FRACTION is a separate reviewed implementation task, not part of T0216 (the founder's brief says to leave _Solver alone)."
+  ],
+  "files_written": [
+    "research/diagnoses/T0218.md"
+  ],
+  "affects_acceptance_criteria": false
+}
