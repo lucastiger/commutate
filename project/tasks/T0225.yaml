@@ -4,7 +4,7 @@ title: 'O007 feasibility probe after T0207: N-layer source-edge resolution (emul
   finer near sources), Q2 CG sliver-vs-conditioning discriminator, E009 cost per option'
 type: investigate
 agent: scientist
-status: proposed
+status: running
 depends_on: []
 description: 'Why: T0207 found no feasible scikit-fem configuration (research/notes/o007-dev-study.md,
   review project/reviews/T0207/T0223.json). Before any builder work or budget is committed, measure cheaply
@@ -132,11 +132,12 @@ model: null
 budget_usd: 4.0
 max_turns: 100
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0225-o007-feasibility-probe-after-t0207-n-lay
 pr: null
-runs: []
+runs:
+- T0225-scientist-20261103T202231-f14d
 created_by: planner:T0224
 created_at: '2026-11-04T04:18:58+00:00'
 protected_approved: false
