@@ -1,0 +1,43 @@
+id: I0115
+kind: decision
+subject: '[O007] [O007] Path after T0207: no scikit-fem configuration can be frozen (N-layer A2 out of
+  reach on the current grid rule; Q2 CG over 300 iterations)'
+summary: 'T0207 (review T0223, accept with caveats) ruled out all four pre-registered configurations,
+  so frozen_config.json is feasible:false. The binding case is the N-layer DBC source mean: Q1 is 0.68-1.39
+  K off at level 2, and Q2 is 0.48 K off at level 1, against A2''s 0.05 K and K2''s 0.25 K. Errors converge
+  monotonically toward the frozen references, and Cases 1b, 3 and the manufactured case agree to 0.0003-0.008
+  K, so this is a discretisation shortfall at the source edges, not a model error. Q2 also needs 359 CG
+  iterations at level 1 and hits the 400 cap at level 2 on Cases 1a and 2, against your 300-iteration
+  rule (T0218). Running E009 now would trip K2 for a measurement reason and waste the only evaluation.
+  T0208 and T0209 stay held. I am not cancelling them, because options (a) and (b) both still need them.
+  Under either option, T0208''s brief should be amended to assert frozen_config[''feasible''] is True
+  (T0223''s major finding). This plan adds one probe (about $4) that measures which option can work before
+  anything larger is committed. A second, independent risk to A4 is unmeasured: Q2 Tj-max convergence
+  on the layouts at level 2 (the argmax node moved on 12 of 16 dies from level 0 to level 1). Only a burst
+  can measure it; the existing dev-study `--full` command would cover it.'
+refs:
+- O007
+- T0224
+options:
+- (a) Edge grading toward die and source edges in thermal_fem's GridRule (builder task plus review; r
+  = 2 bisection keeps nodes persistent), then a new pre-registered dev study, then T0208 (amended) and
+  T0209. Within the objective's scope; needs the budget request.
+- (b) Q2 with a finer h0 near the sources, plus an AMG-CG headroom repair (snap or line policy if the
+  probe shows slivers, otherwise the preconditioner; builder task plus review), then a new dev study,
+  T0208 and T0209. Within scope; similar cost.
+- (c) Revisit the N-layer case's criteria or resolution budget at objective level. Founder only, and a
+  post-data choice that must be recorded as such.
+- '(d) Stop O007 without spending its evaluation. decision_if_fail applies: no verified thermal reference
+  for O003; you choose T0198 path b under a new objective, or an indicative-only thermal side for O003.'
+recommendation: 'Approve the probe now. Pick (a) or (b) from its go/no-go and its CG discriminator: (a)
+  if edge grading reaches 0.040 K on the N-layer case and Q2''s headroom loss comes from slivers, (b)
+  if a finer Q2 h0 alone is enough and affordable. Consider (c) or (d) only if both come back no_go. Optionally
+  run the existing dev burst (`scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_dev_study.py
+  --full" research/o007_dev`) in parallel. It measures Q2 level 2 on the N-layer case and the dev layouts
+  (the layout Tj-max risk) at VM cost only. Timeline: O003''s day-60 test is on 2026-11-27, and path (a)
+  or (b) needs about 4-6 working days to reach E009.'
+status: open
+response: ''
+created_at: '2026-11-04T04:18:58+00:00'
+resolved_at: null
+resolved_by: null

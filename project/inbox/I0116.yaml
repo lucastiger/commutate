@@ -1,0 +1,24 @@
+id: I0116
+kind: budget_increase
+subject: '[O007] [O007] Budget and replan allowance to reach E009 after T0207''s negative dev study'
+summary: 'O007 has spent $49.51 of $70, leaving $20.49, and replans are at 4 of 3. Estimated cost of option
+  (a) or (b) through to E009: probe $4, builder task $5, reviews about $3, new pre-registered dev study
+  $7, E009 design (T0208) $8, its review about $2. That is about $29, roughly $8.5 over what is left,
+  with no margin for a repair attempt. The next planning step, which picks the path from the probe''s
+  result, is also beyond the replan limit. E009 itself runs on the burst VM; T0207 measured a peak of
+  4.7-18.3 GB and 0.4-3.7 CPU-hours for the scikit-fem side, within the 40 CPU-hour budget.'
+refs:
+- O007
+- T0224
+options:
+- Raise O007's budget to $82 (+$12) and allow one more replan, both conditional on the probe returning
+  go or provisional_go for (a) or (b)
+- Raise to $78 (+$8, no margin for a repair attempt) and allow one more replan
+- 'No increase: O007 stops after the probe, and option (c) or (d) applies'
+recommendation: Raise to $82 and allow one more replan, conditional on the probe's go/no-go, so a single
+  failed attempt on the critical path does not stall O003's day-60 test.
+status: open
+response: ''
+created_at: '2026-11-04T04:18:58+00:00'
+resolved_at: null
+resolved_by: null

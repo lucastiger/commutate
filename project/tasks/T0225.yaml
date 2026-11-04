@@ -1,0 +1,151 @@
+id: T0225
+objective: O007
+title: 'O007 feasibility probe after T0207: N-layer source-edge resolution (emulated edge grading, Q2
+  finer near sources), Q2 CG sliver-vs-conditioning discriminator, E009 cost per option'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: 'Why: T0207 found no feasible scikit-fem configuration (research/notes/o007-dev-study.md,
+  review project/reviews/T0207/T0223.json). Before any builder work or budget is committed, measure cheaply
+  whether options (a) edge grading and (b) Q2 with finer h0 near the sources can meet A2 on the N-layer
+  DBC case at an affordable three-level r = 2 cost, and whether Q2''s CG headroom loss can be fixed without
+  a solver change. Research only: do NOT change src/, thermal_fem''s limits (CG cap 400, LINEAR_RTOL,
+  SNAP_FRACTION), or research/o007_dev/frozen_config.json. This is a feasibility probe, not the frozen
+  configuration.
+
+
+  Data (F4): O006''s frozen references only (research/e006_refs/series_values.json sha256 befc5efa...,
+  mms_values.json ca05847b...; verify the hashes first). If a layout is used, only dev seed 20261101 (side_by_side
+  dies_per_switch=6, u_shaped dies_per_switch=2, fingerprints as in experiments/specs/E006.yaml). Never
+  a fresh or sealed seed, never data/holdout.
+
+
+  Pre-registration: before any solve, write section 0 of research/notes/o007-probe.md. It states the probe
+  configurations (at most 4 in total across parts 1-2), the grading offsets, and the go/no-go rule below
+  with its thresholds. Commit section 0 and record the commit hash in probe.json as ''preregistration_commit''.
+  Label any later change as made after the data.
+
+
+  Script: research/scripts/o007_probe.py. Reuse research/scripts/o007_dev_study.py by import: load_refs,
+  box_problem, the CG logger with the corrected ''cg_only'' counter, the child-process solve with its
+  watchdog, and a4/gci. Modes: default (solve within the local rule), --report (rebuild probe.json from
+  the cache, no solve), --full (every level under 0.85 x physical memory, for a founder burst; print the
+  exact command `scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_probe.py --full" research/o007_probe`).
+  Local memory rule as in T0207: one solve at a time in a child process, at most 5 GB per process, or
+  10 GB when memory_pressure shows at least 50 % free and swap is under 4 GB. Record levels_run and label
+  every extrapolation [S].
+
+
+  Part 1, CG discriminator (T0207 alternative explanation 2). Use Q2 with the q2_h4 settings (h0 4 mm,
+  dz_max 5 mm, near_margin 2 mm). Solve Case 1a and Case 2 at levels 0 and 1 twice: once with the production
+  mandatory lines (source centroids plus the frozen reference-maximum lines) and once with centroid lines
+  only. Record the max CG iterations over Picard steps, the final relative residual, and the minimum cell-size
+  ratio of the grid. Reading: centroid-only <= 300 while the version with the maximum lines is > 300 means
+  slivers, fixable by the line or snap policy. Both > 300 means conditioning on the weak-Robin plates,
+  which needs a preconditioner change.
+
+
+  Part 2, N-layer source-edge resolution, box-stack mode, k(T), the frozen O006 A1 points (centroid, source
+  mean, reference maximum):
+
+  - Option (a) emulation: add mandatory lines (extra_lines of box_stack_grid) at geometric offsets on
+  both sides of every source edge, in x and y. Fix the first offset and the growth ratio in section 0
+  from the layer thicknesses (first offset on the order of the 0.05-0.38 mm layers, growing by about 2-3
+  up to about h0). Those lines are fixed by the geometry, never by a solution. Use Q1 and/or Q2.
+
+  - Option (b): Q2 with h0 of about 1 mm and a small near_margin, without grading.
+
+  Per configuration, record per level: every point''s error against the frozen reference, the max scaled
+  error (O006 A1 scale), DOF count, peak RSS and CG max iterations. With three levels, also record gci_capped
+  from mfos.metrics (floor 1e-3 K), branch and observed order.
+
+
+  Part 3, cost (grid-only, no solve). For each part-2 configuration, apply the same rule to every E009
+  scikit-fem solve: 6 cases x 3 levels, the 2 dev layouts with the same grading at die edges, and the
+  fresh layouts at 1.5x the larger dev layout''s DOF. Count DOFs exactly. Estimate peak memory from the
+  measured bytes/DOF in research/o007_dev/dev_study.json and give CPU-hours. State whether every solve
+  fits the n2-highmem-32 burst VM (217 GB usable).
+
+
+  Part 4, go_no_go per option (keys option_a, option_b; values go, provisional_go or no_go), by the section-0
+  rule. Default rule unless section 0 states a stricter one:
+
+  - go: N-layer max |T - T_ref| <= 0.040 K at a measured level, CG max <= 300 on every probe solve, and
+  the E009 cost fits the burst VM.
+
+  - provisional_go: the same, but with a Richardson-extrapolated level-2 error (observed order in [0.5,
+  2]).
+
+  - no_go: otherwise.
+
+  For option (b), also state from part 1 whether the CG headroom can be recovered without a solver change.
+
+  The note ends with a short memo for the founder''s path decision: facts with [F]/[I]/[S] labels, and
+  what would change the conclusion.'
+context_files:
+- project/objectives/O007/objective.yaml
+- research/notes/o007-dev-study.md
+- research/o007_dev/dev_study.json
+- research/scripts/o007_dev_study.py
+- project/reviews/T0207/T0223.json
+- src/moduleforge/solvers/thermal_fem.py
+- research/e006_refs/series_values.json
+- experiments/runners/e006_series.py
+- experiments/specs/E006.yaml
+- tools/mfos/mfos/metrics.py
+deliverables:
+- research/scripts/o007_probe.py
+- research/o007_probe/probe.json
+- research/notes/o007-probe.md
+touches:
+- research/scripts/o007_probe.py
+- research/o007_probe/**
+- research/notes/o007-probe.md
+definition_of_done:
+- cmd: uv run python research/scripts/o007_probe.py --report
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('research/o007_probe/probe.json')); assert isinstance(d['preregistration_commit'],
+    str) and len(d['preregistration_commit']) >= 7; cg=d['cg_discriminator']; assert all(isinstance(cg[c][v]['cg_max_iterations'],
+    int) for c in ('case1a','case2') for v in ('with_max_lines','centroid_only')); n=d['nlayer']; assert
+    len(n) >= 2 and all(len(v['levels_run']) >= 2 and len(v['max_abs_err_K']) == len(v['levels_run'])
+    and len(v['dof']) == len(v['levels_run']) and 'cg_max_iterations' in v and 'gci_K' in v for v in n.values());
+    assert set(d['cost']) == set(n) and all('e009_finest_peak_GB' in v and 'cpu_hours' in v and 'fits_burst_vm'
+    in v for v in d['cost'].values()); assert all(d['go_no_go'][k] in ('go','provisional_go','no_go')
+    for k in ('option_a','option_b'))"
+  exists: null
+  timeout_s: 120
+- cmd: null
+  exists: research/notes/o007-probe.md
+  timeout_s: 900
+- cmd: uv run python -c "s=open('research/notes/o007-probe.md').read(); assert '## 0' in s and 'go' in
+    s and 'befc5efa' in s"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/scripts/o007_probe.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: low
+model: null
+budget_usd: 4.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0224
+created_at: '2026-11-04T04:18:58+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Front-loaded kill shot after T0207's feasible:false (diagnosis class planning). A2 and K2 on
+  the N-layer case, and Q2's CG headroom (F2 and the founder's T0218 rule), decide whether options (a)
+  or (b) can ever meet A1, A2 and A4. This roughly $4 probe answers that before about $20 of builder,
+  dev-study and design work, and before the single evaluation, is committed.
+history: []

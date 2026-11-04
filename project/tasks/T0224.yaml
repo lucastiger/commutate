@@ -5,7 +5,7 @@ title: 'Plan O007 (founder approved I0111: Option (a): founder-session patch to 
   verdict), and cancel not undone by the loop (no replan))'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -34,4 +34,16 @@ trigger: 'founder approved I0111: Option (a): founder-session patch to tools/mfo
   (no attempt used, no diagnosis), reviews parked by infrastructure (no merge request without a verdict),
   and cancel not undone by the loop (no replan)'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: The trigger, I0111, is a founder-session patch to tools/mfos. That path is protected and outside
+    O007's scope, so this plan adds no task for it. What actually blocks O007 is T0207's measured negative
+    result, accepted with caveats in review T0223. None of the four pre-registered scikit-fem configurations
+    can be frozen. Q1 misses A2 by up to 28x on the N-layer DBC source means (1.389 K at level 2, observed
+    order about 1.2, an edge singularity) and diverges on the dev-layout Tj-max sequences. Q2 is accurate
+    where it ran, but it exceeds the founder's 300-iteration CG rule on Cases 1a and 2 (359 at level 1,
+    the 400 cap at level 2). It is also still 0.48 K off on the N-layer case at level 1. With today's
+    grid rule, E009 would trip K2 because the grid is too coarse, not because the model is wrong
+  created:
+  - T0225
+  dropped_for_limits: 0

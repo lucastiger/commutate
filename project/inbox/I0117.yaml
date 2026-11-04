@@ -1,0 +1,32 @@
+id: I0117
+kind: plan_approval
+subject: '[O007] approve initial plan (1 tasks)'
+summary: 'The trigger, I0111, is a founder-session patch to tools/mfos. That path is protected and outside
+  O007''s scope, so this plan adds no task for it. What actually blocks O007 is T0207''s measured negative
+  result, accepted with caveats in review T0223. None of the four pre-registered scikit-fem configurations
+  can be frozen. Q1 misses A2 by up to 28x on the N-layer DBC source means (1.389 K at level 2, observed
+  order about 1.2, an edge singularity) and diverges on the dev-layout Tj-max sequences. Q2 is accurate
+  where it ran, but it exceeds the founder''s 300-iteration CG rule on Cases 1a and 2 (359 at level 1,
+  the 400 cap at level 2). It is also still 0.48 K off on the N-layer case at level 1. With today''s grid
+  rule, E009 would trip K2 because the grid is too coarse, not because the model is wrong. Spending the
+  single evaluation now would be wasted, so T0208 and T0209 stay held. Three things could still kill the
+  hypothesis: (1) no affordable three-level r = 2 grid resolves the source edges in the 0.05-0.38 mm layers;
+  (2) Q2''s CG headroom comes from conditioning, not from slivers; (3) Q2 Tj-max on layouts at level 2,
+  which no local run can reach. The cheapest decisive step is a one-task probe for about $4. It uses only
+  research code and dev data, plus O006''s frozen references. It tests (1) by emulating source-edge grading
+  through the existing extra_lines mechanism and (2) through the CG discriminator T0207 named but did
+  not run. It also prices every option on the burst VM. I am asking the founder to choose the path and
+  to cover the budget gap: the probe, builder, dev study and E009 design path costs about $29 against
+  $20.49 left, with replans already at 4 of 3.'
+refs:
+- O007
+- T0225
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-04T04:18:58+00:00'
+resolved_at: null
+resolved_by: null
