@@ -360,6 +360,16 @@ provenance, the VM deleted on every exit path. Default machine `n2-highmem-32` (
 `us-central1-a`; any machine type and zone can be passed. On-demand by default (a registered run must not be
 preempted); `MF_GCP_SPOT=1` gives a cheaper Spot VM for benchmarks.
 
+Spot with automatic resume (`--cmd` runs only): `MF_GCP_SPOT=auto` starts on a Spot VM; after a preemption it
+relaunches in the next zone of `MF_GCP_ZONES` (zones may span regions with quota), uploads the output directory
+cached on the Mac every `MF_GCP_SYNC_POLLS` x 30 s, and after `MF_GCP_SPOT_TRIES` Spot attempts (default 2) finishes
+on a regular VM. The deadline `MF_GCP_MAX_HOURS` covers all attempts; the script prints the minutes and outcome of
+each VM. It only pays off when the job checkpoints in steps much shorter than the time between preemptions: N2 Spot
+costs 60 % of regular (us-central1, 2026-11-04), so Spot is cheaper only while more than 60 % of its VM time ends in
+saved work, and an unfinished step is lost on every preemption (three `n2-highmem-32` Spot VMs on 2026-11-03 lasted
+6, 7 and 27 minutes, against about 6 minutes of setup). `MF_GCP_PROVISION=0` skips the FastHenry/ngspice build when
+a job needs neither.
+
 One-time setup (founder, in a terminal):
 
 ```bash
