@@ -99,14 +99,19 @@ ZONELIST="${MF_GCP_ZONES:-$ZONE $(gcloud compute zones list --filter="region:$RE
 read -r -a ZONEARR <<< "$ZONELIST"
 PROVISION="scripts/provision_compute.sh"   # FastHenry and ngspice; MF_GCP_PROVISION=0 when the job needs neither
 if [ "${MF_GCP_PROVISION:-1}" = 0 ]; then PROVISION=""; fi
+# Idempotent, so that a setup cut by a network failure can simply run again: ~/mf.ready marks a finished setup.
 REMOTE='set -euo pipefail
+if [ ! -e ~/mf.ready ]; then
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update -qq && sudo apt-get install -y -qq git build-essential curl > /dev/null
+sudo apt-get -o DPkg::Lock::Timeout=300 update -qq
+sudo apt-get -o DPkg::Lock::Timeout=300 install -y -qq git build-essential curl > /dev/null
 curl -LsSf https://astral.sh/uv/install.sh | sh > /dev/null
 export PATH="$HOME/.local/bin:$PATH"
-git clone -q ~/mf.bundle ~/mf && cd ~/mf && git checkout -q '"$REF"'
+rm -rf ~/mf && git clone -q ~/mf.bundle ~/mf && cd ~/mf && git checkout -q '"$REF"'
 '"$PROVISION"'
 uv sync -q --all-groups
+touch ~/mf.ready
+fi
 echo "host: $(hostname), $(nproc) vCPU, $(free -g | awk "/Mem:/ {print \$2}") GB"'
 if [ "$MODE" = exp ]; then
   JOB="uv run mfos exp run $EID --force --run-id $RUN_ID"; FETCH="experiments/results/$EID"
@@ -181,6 +186,15 @@ setup_vm() {
 }
 
 start_job() {  # $1: 1 to upload the cache before the job starts
+  # A start whose reply was lost may have started the job: then it must neither start again nor be overwritten by the
+  # cache upload. The answer is read from stdout, because gcloud's own errors exit 1 as well.
+  local started
+  started="$(gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command 'if [ -e ~/job.started ]; then echo yes; else echo no; fi' 2> /dev/null | tr -d '[:space:]')" || true
+  case "$started" in
+    yes) echo "job already started on $NAME: $JOB"; return 0 ;;
+    no) ;;
+    *) return 1 ;;
+  esac
   if [ "$MODE" = exp ] && [ -n "$SEED_FILE" ]; then
     gcloud compute scp --zone "$ZONE" --quiet "$SEED_FILE" "$NAME:mf.seed" > /dev/null || return 1
   fi
@@ -198,13 +212,13 @@ for f in pathlib.Path(sys.argv[1]).rglob("*.json"):
 PY
     gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "mkdir -p ~/mf/$FETCH" > /dev/null || return 1
     gcloud compute scp --zone "$ZONE" --quiet --recurse "$CACHE/fetched" "$NAME:mf-resume" > /dev/null || return 1
-    gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "cp -R ~/mf-resume/. ~/mf/$FETCH/ && rm -rf ~/mf-resume" > /dev/null || return 1
+    gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "[ -e ~/job.started ] || cp -R ~/mf-resume/. ~/mf/$FETCH/; rm -rf ~/mf-resume" > /dev/null || return 1
     echo "resumed from $CACHE/fetched ($(find "$CACHE/fetched" -type f | wc -l | tr -d ' ') files)"
   fi
   gcloud compute scp --zone "$ZONE" --quiet "$WORK/job.sh" "$NAME:job.sh" > /dev/null || return 1
   # The VM's own shutdown is a backstop 20 minutes after this script's deadline, so that on a timeout the script can
   # still copy job.log and partial results back before it deletes the VM (2026-11-03: both fired at 4 h exactly).
-  gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "sudo shutdown -h +$(((DEADLINE - SECONDS) / 60 + 20)) > /dev/null 2>&1; nohup bash -c 'bash ~/job.sh > ~/job.log 2>&1; echo \$? > ~/job.rc' > /dev/null 2>&1 < /dev/null &" || return 1
+  gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "[ -e ~/job.started ] && exit 0; touch ~/job.started; sudo shutdown -h +$(((DEADLINE - SECONDS) / 60 + 20)) > /dev/null 2>&1; nohup bash -c 'bash ~/job.sh > ~/job.log 2>&1; echo \$? > ~/job.rc' > /dev/null 2>&1 < /dev/null &" || return 1
   echo "job started on $NAME: $JOB"
 }
 
@@ -250,14 +264,24 @@ while :; do
     echo "$NAME ($TYPE, $ZONE, $KIND, attempt $ATTEMPT)"
     UPLOAD=0
     if [ "$ATTEMPT" -gt 1 ] || [ "${MF_GCP_RESUME:-0}" = 1 ]; then UPLOAD=1; fi
-    if setup_vm && start_job "$UPLOAD"; then
-      poll_job
-    elif vm_lost; then
-      echo "$NAME was lost during setup (spot preemption?)" >&2; RC=125
-    else
-      account "setup failed"
-      echo "setup of $NAME failed while the VM is still up: not a preemption, stopping" >&2; exit 1
-    fi
+    # A failure while the VM is still up is usually this machine's network (2026-11-04: a 5-minute ConnectTimeout cost
+    # a relaunch): setup and start are idempotent, so try them three times, a minute apart, before giving up.
+    STEP_TRIES=0
+    while :; do
+      if setup_vm && start_job "$UPLOAD"; then
+        poll_job; break
+      fi
+      if vm_lost; then
+        echo "$NAME was lost during setup (spot preemption?)" >&2; RC=125; break
+      fi
+      STEP_TRIES=$((STEP_TRIES + 1))
+      if [ "$STEP_TRIES" -ge 3 ]; then
+        account "setup failed"
+        echo "setup of $NAME failed 3 times while the VM is still up: not a preemption, stopping" >&2; exit 1
+      fi
+      echo "setup or start of $NAME failed while the VM is up (network?): retrying in 60 s" >&2
+      sleep 60
+    done
   fi
   # Relaunch only in auto mode, after a preemption, while time and Spot attempts (plus the one regular VM) remain.
   if [ "$RC" = 125 ] && [ "$SPOT_MODE" = auto ] && [ $SECONDS -lt $DEADLINE ] && [ "$ATTEMPT" -le "$SPOT_TRIES" ]; then
