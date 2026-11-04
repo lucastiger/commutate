@@ -1,0 +1,98 @@
+diff --git a/tests/mfos/test_failure_handling.py b/tests/mfos/test_failure_handling.py
+index 9b32a99..4870bf9 100644
+--- a/tests/mfos/test_failure_handling.py
++++ b/tests/mfos/test_failure_handling.py
+@@ -226,3 +226,54 @@ def test_packets_and_transcripts_are_archived_with_the_run(sandbox, tmp_path, mo
+     with tarfile.open(archive) as tar:
+         assert f".mfos/runs/{rec.run_id}/packet.md" in tar.getnames()
+     assert next((tmp_path / "arch").glob("*.sha256")).read_text().count(".mfos/runs/") >= 3
++
++
++# ------------------------------------------------------------------------------------------------ founder stops
++@pytest.mark.parametrize("held_as", ["needs_founder", "cancelled"])
++@pytest.mark.parametrize("run_status", ["interrupted", "error", "completed"])
++def test_a_run_that_ends_while_the_founder_holds_or_cancels_its_task_is_the_founders_stop(sandbox, held_as,
++                                                                                          run_status):
++    """2026-11-03: a hold followed by a stop used T0216's last attempt and spawned diagnosis T0218; a cancel of T0218
++    was undone because the loop resumed the interrupted run."""
++    s = Store()
++    o = Orchestrator(s)
++    o._start_agent = lambda *a, **k: pytest.fail("a founder-stopped task must not be resumed")
++    t = m.Task(id="T9710", objective="O000", title="build", type="implement", agent="builder", status=held_as,
++               attempts=3, max_attempts=3)
++    s.save_task(t)
++    o._on_run_done(t, RunRecord(run_id="T9710-r", task_id="T9710", role="builder", session_id="x", cwd=".",
++                                started="2026-11-03T23:29:00+00:00", status=run_status,
++                                is_error=run_status == "error", subtype="error_during_execution",
++                                result_text="stopped"))
++    t = Store().task("T9710")
++    assert (t.status, t.attempts) == (held_as, 2)
++    assert t.history[-1]["outcome"] == "founder_stopped"
++    assert not [x for x in Store().tasks() if x.type == "investigate"]
++
++
++def test_an_interrupted_run_of_a_running_task_is_still_resumed_once(sandbox):
++    s = Store()
++    o = Orchestrator(s)
++    started = []
++    o._start_agent = lambda t, resume=None: started.append(resume)
++    t = m.Task(id="T9711", objective="O000", title="build", type="implement", agent="builder", status="running",
++               attempts=1)
++    s.save_task(t)
++    o._on_run_done(t, RunRecord(run_id="T9711-r", task_id="T9711", role="builder", session_id="sess", cwd=".",
++                                started="", status="interrupted"))
++    assert started == ["sess"]
++
++
++def test_a_review_parked_by_the_founder_or_infrastructure_blocks_the_merge(sandbox):
++    """2026-11-03: T0206 reached merge while its review T0215 was parked (needs_founder) by a network outage."""
++    s = Store()
++    o = Orchestrator(s)
++    t = m.Task(id="T9712", objective="O000", title="build", type="implement", agent="builder", status="review")
++    s.save_task(t)
++    parked = m.Task(id="T9713", objective="O000", title="Review T9712 (general)", type="review", agent="critic",
++                    status="needs_founder", target="T9712")
++    o.git.head = lambda path=None: "abc123"
++    o._reviews_for = lambda target, ref=None: ([parked], [])
++    o._merge = lambda task: pytest.fail("must not merge past a parked review")
++    o._advance(t)
++    assert Store().task("T9712").status == "review"
+diff --git a/tools/mfos/mfos/loop.py b/tools/mfos/mfos/loop.py
+index 029b33c..3dab869 100644
+--- a/tools/mfos/mfos/loop.py
++++ b/tools/mfos/mfos/loop.py
+@@ -245,7 +245,23 @@ class Orchestrator:
+         st.spent_usd = round(st.spent_usd + usd, 4)
+         self.s.save_objective_state(t.objective, st)
+ 
++    def _founder_stopped(self, t: m.Task, rec: RunRecord) -> bool:
++        """A run that ended while the founder had taken its task out of the pipeline (held it as needs_founder, or
++        cancelled it, during the run) is the founder's stop, not the agent's failure: give the attempt back, keep the
++        task where the founder put it, and never resume, repair or diagnose it. 2026-11-03: a hold followed by a stop
++        used T0216's last attempt and spawned diagnosis T0218, and a cancel of T0218 was undone by the resume."""
++        if t.status not in ("cancelled", "needs_founder"):
++            return False
++        t.attempts = max(0, t.attempts - 1)
++        t.history.append({"attempt": t.attempts, "outcome": "founder_stopped", "summary": f"{rec.run_id} ended "
++                          f"({rec.status}) while the task was {t.status}", "at": now()})
++        self.s.save_task(t)
++        self.s.event("founder_stopped", task=t.id, run=rec.run_id, run_status=rec.status, task_status=t.status)
++        return True
++
+     def _on_run_done(self, t: m.Task, rec: RunRecord) -> None:
++        if self._founder_stopped(t, rec):
++            return
+         if rec.status in ("interrupted", "timeout"):
+             resumes = sum(1 for h in t.history if h.get("outcome") == "resumed")
+             if rec.status == "interrupted" and resumes < 1:
+@@ -457,7 +473,9 @@ class Orchestrator:
+                     self._create_review(t.objective, target=t.id, lens=lens, ref=head)
+                 if self._review_lenses(t):
+                     return
+-            if any(x.status not in TERMINAL for x in rtasks):
++            # A review parked as needs_founder (an infrastructure pause or a stuck decision) has no verdict: wait for it,
++            # never merge past it (2026-11-03: T0206 reached merge while its review T0215 was parked by a network outage).
++            if any(x.status not in TERMINAL or x.status == "needs_founder" for x in rtasks):
+                 return
+             if any(x.status == "failed" for x in rtasks) and len(revs) < len(rtasks):
+                 t.status = "needs_founder"

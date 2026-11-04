@@ -226,3 +226,54 @@ def test_packets_and_transcripts_are_archived_with_the_run(sandbox, tmp_path, mo
     with tarfile.open(archive) as tar:
         assert f".mfos/runs/{rec.run_id}/packet.md" in tar.getnames()
     assert next((tmp_path / "arch").glob("*.sha256")).read_text().count(".mfos/runs/") >= 3
+
+
+# ------------------------------------------------------------------------------------------------ founder stops
+@pytest.mark.parametrize("held_as", ["needs_founder", "cancelled"])
+@pytest.mark.parametrize("run_status", ["interrupted", "error", "completed"])
+def test_a_run_that_ends_while_the_founder_holds_or_cancels_its_task_is_the_founders_stop(sandbox, held_as,
+                                                                                          run_status):
+    """2026-11-03: a hold followed by a stop used T0216's last attempt and spawned diagnosis T0218; a cancel of T0218
+    was undone because the loop resumed the interrupted run."""
+    s = Store()
+    o = Orchestrator(s)
+    o._start_agent = lambda *a, **k: pytest.fail("a founder-stopped task must not be resumed")
+    t = m.Task(id="T9710", objective="O000", title="build", type="implement", agent="builder", status=held_as,
+               attempts=3, max_attempts=3)
+    s.save_task(t)
+    o._on_run_done(t, RunRecord(run_id="T9710-r", task_id="T9710", role="builder", session_id="x", cwd=".",
+                                started="2026-11-03T23:29:00+00:00", status=run_status,
+                                is_error=run_status == "error", subtype="error_during_execution",
+                                result_text="stopped"))
+    t = Store().task("T9710")
+    assert (t.status, t.attempts) == (held_as, 2)
+    assert t.history[-1]["outcome"] == "founder_stopped"
+    assert not [x for x in Store().tasks() if x.type == "investigate"]
+
+
+def test_an_interrupted_run_of_a_running_task_is_still_resumed_once(sandbox):
+    s = Store()
+    o = Orchestrator(s)
+    started = []
+    o._start_agent = lambda t, resume=None: started.append(resume)
+    t = m.Task(id="T9711", objective="O000", title="build", type="implement", agent="builder", status="running",
+               attempts=1)
+    s.save_task(t)
+    o._on_run_done(t, RunRecord(run_id="T9711-r", task_id="T9711", role="builder", session_id="sess", cwd=".",
+                                started="", status="interrupted"))
+    assert started == ["sess"]
+
+
+def test_a_review_parked_by_the_founder_or_infrastructure_blocks_the_merge(sandbox):
+    """2026-11-03: T0206 reached merge while its review T0215 was parked (needs_founder) by a network outage."""
+    s = Store()
+    o = Orchestrator(s)
+    t = m.Task(id="T9712", objective="O000", title="build", type="implement", agent="builder", status="review")
+    s.save_task(t)
+    parked = m.Task(id="T9713", objective="O000", title="Review T9712 (general)", type="review", agent="critic",
+                    status="needs_founder", target="T9712")
+    o.git.head = lambda path=None: "abc123"
+    o._reviews_for = lambda target, ref=None: ([parked], [])
+    o._merge = lambda task: pytest.fail("must not merge past a parked review")
+    o._advance(t)
+    assert Store().task("T9712").status == "review"

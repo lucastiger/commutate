@@ -245,7 +245,23 @@ class Orchestrator:
         st.spent_usd = round(st.spent_usd + usd, 4)
         self.s.save_objective_state(t.objective, st)
 
+    def _founder_stopped(self, t: m.Task, rec: RunRecord) -> bool:
+        """A run that ended while the founder had taken its task out of the pipeline (held it as needs_founder, or
+        cancelled it, during the run) is the founder's stop, not the agent's failure: give the attempt back, keep the
+        task where the founder put it, and never resume, repair or diagnose it. 2026-11-03: a hold followed by a stop
+        used T0216's last attempt and spawned diagnosis T0218, and a cancel of T0218 was undone by the resume."""
+        if t.status not in ("cancelled", "needs_founder"):
+            return False
+        t.attempts = max(0, t.attempts - 1)
+        t.history.append({"attempt": t.attempts, "outcome": "founder_stopped", "summary": f"{rec.run_id} ended "
+                          f"({rec.status}) while the task was {t.status}", "at": now()})
+        self.s.save_task(t)
+        self.s.event("founder_stopped", task=t.id, run=rec.run_id, run_status=rec.status, task_status=t.status)
+        return True
+
     def _on_run_done(self, t: m.Task, rec: RunRecord) -> None:
+        if self._founder_stopped(t, rec):
+            return
         if rec.status in ("interrupted", "timeout"):
             resumes = sum(1 for h in t.history if h.get("outcome") == "resumed")
             if rec.status == "interrupted" and resumes < 1:
@@ -457,7 +473,9 @@ class Orchestrator:
                     self._create_review(t.objective, target=t.id, lens=lens, ref=head)
                 if self._review_lenses(t):
                     return
-            if any(x.status not in TERMINAL for x in rtasks):
+            # A review parked as needs_founder (an infrastructure pause or a stuck decision) has no verdict: wait for it,
+            # never merge past it (2026-11-03: T0206 reached merge while its review T0215 was parked by a network outage).
+            if any(x.status not in TERMINAL or x.status == "needs_founder" for x in rtasks):
                 return
             if any(x.status == "failed" for x in rtasks) and len(revs) < len(rtasks):
                 t.status = "needs_founder"
