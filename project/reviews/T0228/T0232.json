@@ -1,0 +1,43 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Constant-k L2 solves are not covered by the CG-headroom / linear-failure eligibility check",
+      "detail": "Pre-registered criterion 2 (note sec. 0.2) says 'At most 300 CG iterations in every L0-L2 solve at every Picard step'. Sec. 0.6 counts the constant-k L2 columns as E009 solves. The reused T0207 `summarise` collects CG maxima only from the k(T) level runs and the calibration runs. The constant-k nulls (mms L2, layout L2 columns) are recorded but not gated, and a failed constant-k solve is not gated either. Materiality is low: in every measured pair the constant-k CG equals the k(T) CG (185/185, 179/179, 93/93), so this is unlikely to flip the post-burst decision. Still, the code applies a narrower rule than the pre-registered text.",
+      "evidence": "In a scratch copy, the fabricated L2 cache (all criteria passing) gave feasible=True. Setting cg iters to 350 on side_by_side_6__L2__constk and mms__L2__constk and re-running --report still gave feasible=True with cg_max_iters 259.",
+      "suggested_check": "Include the constant-k records' cg_max (and status) in summarise's cg list and gates, or state explicitly in the note that the nulls are excluded.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Several [F]-labelled statements in the note do not match the data",
+      "detail": "(a) Sec. 1 item 2: '14 of 16 dies have d1 > 0.083 K'. dev_study.json gives 12 of 16 (side_by_side_6 dies 0, 2, 3 and 5 have d1 of 0.058-0.066 K). (b) Sec. 2: 'It ran 30 child-process solves'. run_local.log shows 22 solves (22 'done' lines, 22 spec files) plus 6 skips. (c) Sec. 3: 'Energy balance <= 3.2e-12'. Case 2 L1 is 3.32e-12. (d) Sec. 4: 'lateral shifts of 0.36-0.47 mm in x or y'. u_shaped_2 dies 2 and 3 shift 0.47 mm in x and 0.25 mm in y. None of these changes the conclusion (feasible=false, unverified) or the burst plan.",
+      "evidence": "Recomputed from research/o007_dev2/dev_study.json and run_local.log.",
+      "suggested_check": "Correct the four statements so that [F] labels hold.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Pre-registration commit 5570ba2 cannot be verified in this review snapshot",
+      "detail": "The review worktree has a single 'review snapshot' commit, and `git cat-file` cannot find 5570ba2. So I could not check the claim that section 0 and the script were committed before any solve with no post-data change. The DoD only checks that the hash string has 7 or more characters.",
+      "evidence": "git cat-file -t 5570ba2 \u2192 'Not a valid object name'; git log --all shows only a5c5899.",
+      "suggested_check": "Provenance check: confirm 5570ba2 is an ancestor of the result commit and that o007_dev_study2.py and note sec. 0 are unchanged between them.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all packet DoD commands: frozen_config schema assert plus GridRule construction (OK), dev_study/plan asserts (OK), ruff (clean). Ran --report in a scratch copy of the repo; frozen_config.json and dev_study.json were byte-identical to the committed files (deterministic).",
+    "Recomputed from dev_study.json: CG per level, node-count ratios (7.25-7.76), energy balance, Picard residual, true residual, meta/cg_only mismatch (0), Case 2 positive-error points (7, max 0.0035 K), N-layer monotone with p_obs 1.70-1.96, mms Q_out deviation 2.1e-9, F3 null 2.51 K / 0.0249, calibration (32.23 W / 60.16 K in 2 solves; 47.14 W / 59.95 K in 3 solves; CG 122/128), layout d1 and centroid-node d1 ranges, argmax moves (8/12, 4/4), 0.219 mm centroid offsets on 6 dies, reuse check bitwise (dT=0) on levels 0-2.",
+    "Verified the CG L2 extrapolations (311/308/300) and the N-layer ratio drop 1.45\u21921.36 by hand. Checked the E009 table: 54 rows, sk-fem peak 71.3 GB, FV 104.8 GB, 13.57 CPU-h, 41 h timeout, 5.01 kB/DOF. Burst wall for the 8 L2 solves is 12,123 s \u2248 3.4 h, as stated.",
+    "Checked run_local.log: 6 L2 skips at 19.1-46.0 GB estimates, largest peak 7.91 GB, 22 child solves (not 30).",
+    "Checked that node persistence is enforced: FEM.node_value raises ValueError for non-DOF points; _stencil_from_lines raises for the reused points.",
+    "Exercised the post-burst --report path, which current data do not cover (3 levels on layouts and Cases 1-3), with fabricated L2 cache records in the scratch copy. L2 = L1 values ruled out Case 1a (A2 0.116 > 0.040), as expected. Converging L2 values gave feasible=True with levels_missing {}. Constant-k CG 350 was not caught (finding 1)."
+  ],
+  "caveats": [
+    "The deliverable is the pre-burst state: feasible=false, with level 2 missing on Cases 1a/1b/2/3 and both dev layouts. It is a correct and deterministic implementation of the freeze machinery, not a verified frozen rule. The rule is verified only after the founder's burst and the --report run.",
+    "The post-burst 3-level layout and box-case analysis was exercised only with fabricated cache data, not real solves.",
+    "The N-layer L1/L2 values are reused T0225 probe solves. Only line identity of the grids and an L0 bitwise re-solve were checked, as pre-registered. L1/L2 were not re-solved under the production code.",
+    "The pre-registration ordering (commit 5570ba2) was not verifiable from this snapshot. It depends on the provenance check."
+  ]
+}
