@@ -50,6 +50,11 @@ axis), 2 ``h0`` out to three margins and 4 ``h0`` beyond (the same multipliers a
 (a lateral-only study, the same pattern as the layout EM benchmark), because refining z too puts the finest level beyond
 memory (see "Memory").
 
+Source-edge grading (optional, ``GridRule.edge_grading``, T0227; port of the T0225 probe's option (a)). Geometric lateral
+lines around every source edge (die footprints in layout mode, the source rectangles in box-stack mode) resolve the flux
+singularity at the die edge at level 0; they join the mandatory lines through ``_merge_lines`` (same snapping). Levels 1 and
+2 bisect as before (r = 2), so every level-0 line is a node at every level. Default None: grids and results unchanged.
+
 Outputs per die (section 5 of the definition): ``Tj_max`` = maximum nodal temperature over exactly the nodes of the die
 top face (the dofs of its faces: vertices, and for Q2 also edge midpoints and face centres; the nodal FEM reads the
 continuous surface field directly) and ``Tj_mean`` = area mean of T over the die top face (Galerkin integral), plus the
@@ -157,7 +162,14 @@ class ThermalResult:
 
 @dataclass(frozen=True)
 class GridRule:
-    """Level-0 grid of the refinement rule: lateral size ``h0`` [m] and cells per layer in z (see module docstring)."""
+    """Level-0 grid of the refinement rule: lateral size ``h0`` [m] and cells per layer in z (see module docstring).
+
+    ``edge_grading = (first_offset_m, ratio, max_offset_m, min_gap_fraction)`` (default None: no grading, every grid is
+    unchanged) adds mandatory lateral lines at geometric offsets ``o_0 = first``, ``o_{k+1} = ratio * o_k`` (while
+    ``o_k <= max_offset``) outside every source edge, and inside it while ``o < half-width - min_gap_fraction * step``
+    (step ``s_0 = o_0``, ``s_k = o_k - o_{k-1}``), at level 0 only (``_grading_lines``). A candidate closer than
+    ``min_gap_fraction * s`` to a fixed or an accepted grading line, or outside the domain, is dropped. Higher levels
+    bisect, so every level-0 line is a node at every level."""
 
     h0: float = 2.0e-3
     nz: dict = field(default_factory=lambda: {"baseplate": 2, "solder": 1, "backside_cu": 1, "ceramic": 1, "top_cu": 1,
@@ -170,6 +182,8 @@ class GridRule:
     element_order: int = 1  # 1: trilinear ElementHex1 (2x2x2 Gauss); 2: triquadratic ElementHex2 (3x3x3 Gauss)
     dz_max: float | None = None  # [m] absolute bound of the level-0 z cell size: every z interval of thickness t gets
     # max(nz_of(layer), ceil(t / dz_max)) cells at level 0 and 2**level times as many at level l (T0198). Needs zrefine.
+    edge_grading: tuple[float, float, float, float] | None = None  # (first_offset_m, ratio, max_offset_m, min_gap_fraction):
+    # geometric grading lines around every source edge in x and y (``_grading_lines``); None = no grading (default)
 
     def __post_init__(self):
         if self.element_order not in (1, 2):
@@ -179,6 +193,12 @@ class GridRule:
                 raise ValueError("dz_max must be positive")
             if not self.zrefine:
                 raise ValueError("dz_max needs zrefine=True (r = 2 in x, y and z)")
+        if self.edge_grading is not None:
+            if len(self.edge_grading) != 4:
+                raise ValueError("edge_grading must be (first_offset_m, ratio, max_offset_m, min_gap_fraction)")
+            first, ratio, max_off, gap = self.edge_grading
+            if not (first > 0.0 and ratio > 1.0 and max_off >= first and gap > 0.0):
+                raise ValueError("edge_grading needs first > 0, ratio > 1, max_offset >= first and min_gap_fraction > 0")
 
     def nz_of(self, name: str) -> int:
         return int(self.nz.get(name, self.default_nz))
@@ -283,6 +303,45 @@ def _merge_lines(base: Sequence[float], extra: Sequence[float] | None, lo: float
     return np.unique(np.asarray(lines, dtype=float)), snaps
 
 
+def _grading_offsets(grading: Sequence[float]) -> tuple[list[float], list[float]]:
+    """Offsets ``o_0 = first``, ``o_{k+1} = o_k * ratio`` while ``o_k <= max_offset (1 + 1e-9)``, and their steps
+    ``s_0 = o_0``, ``s_k = o_k - o_{k-1}``."""
+    first, ratio, max_off, _ = grading
+    offs, o = [], float(first)
+    while o <= max_off * (1.0 + 1e-9):
+        offs.append(o)
+        o *= ratio
+    return offs, [offs[0]] + [b - a for a, b in zip(offs[:-1], offs[1:], strict=True)]
+
+
+def _grading_lines(grading: Sequence[float], extents: Sequence[tuple[float, float]], lo: float, hi: float,
+                   fixed: Sequence[float]) -> list[float]:
+    """Source-edge grading lines along one axis (a function of geometry only). Per source extent ``(e0, e1)`` and offset
+    ``o`` with step ``s`` the candidates are ``e0 - o`` and ``e1 + o`` (always) and ``e0 + o`` and ``e1 - o`` (only if
+    ``o < half-width - min_gap_fraction * s``). Candidates are taken in sorted ``(s, v)`` order, finest first; one is dropped if
+    it is outside ``(lo, hi)`` or closer than ``min_gap_fraction * s`` to ``fixed``, the domain ends, the source edges or an
+    accepted grading line. Returns the accepted lines, sorted."""
+    gap = float(grading[3])
+    offs, steps = _grading_offsets(grading)
+    cand = []
+    for e0, e1 in extents:
+        half = 0.5 * (e1 - e0)
+        for o, s in zip(offs, steps, strict=True):
+            cand += [(s, e0 - o), (s, e1 + o)]
+            if o < half - gap * s:
+                cand += [(s, e0 + o), (s, e1 - o)]
+    acc = [float(v) for v in fixed] + [lo, hi] + [v for e in extents for v in e]
+    out: list[float] = []
+    for s, v in sorted(cand):
+        if not lo < v < hi:
+            continue
+        if min(abs(v - w) for w in acc) < gap * s:
+            continue
+        acc.append(v)
+        out.append(v)
+    return sorted(out)
+
+
 def _interval_lookup(base: np.ndarray, widths: Sequence[float]) -> Callable[[float], float]:
     """``widths[i]`` of the interval ``[base[i], base[i+1]]`` that contains ``v`` (clipped to the end intervals)."""
     def cell(v: float) -> float:
@@ -340,6 +399,8 @@ class _Grid:
     flux: Callable | None = None  # manufactured inflow flux(x, y, z, axis, sign) [W/m2] on every boundary face but z = 0
     T_inf: Callable | None = None  # Robin ambient T_inf(x, y) [K] (replaces the scalar coolant temperature in h (T - T_inf))
     snaps: dict = field(default_factory=dict)  # per axis: (requested, used) of every snapped mandatory line
+    grading: dict = field(default_factory=dict)  # per axis: the accepted edge-grading lines (before snapping)
+    rule_grading: tuple | None = None  # GridRule.edge_grading
 
 
 class _BoxMapping(MappingIsoparametric):
@@ -767,6 +828,8 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
             "lines": {"x": g.x.copy(), "y": g.y.copy(), "z": g.z.copy()},
             "n_lines": {"x": int(g.x.size), "y": int(g.y.size), "z": int(g.z.size)},
             "snapped_lines": {ax: [(float(a), float(b)) for a, b in v] for ax, v in g.snaps.items()},
+            "edge_grading": None if g.rule_grading is None else list(g.rule_grading),
+            "grading_lines": {ax: len(v) for ax, v in g.grading.items()},
             "max_snap_m": max([abs(b - a) for v in g.snaps.values() for a, b in v], default=0.0)}
     return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=nodes_m, meta=meta,
                          field_eval=_FieldEval(mesh, elem, dofs, eidx, (g.x, g.y, g.z)))
@@ -922,8 +985,14 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
     bx, by = layout.baseplate_outline.bounds[0::2], layout.baseplate_outline.bounds[1::2]
     ext_x, ext_y = [(d.bounds[0], d.bounds[2]) for d in layout.dies], [(d.bounds[1], d.bounds[3]) for d in layout.dies]
     xb, yb = _lines(xs), _lines(ys)
-    xl0, xsnap = _merge_lines(xb, exs, bx[0], bx[1], 1e-10, _lateral_cell(xb, rule.h0, rule.min_cells, ext_x, rule.near_margin))
-    yl0, ysnap = _merge_lines(yb, eys, by[0], by[1], 1e-10, _lateral_cell(yb, rule.h0, rule.min_cells, ext_y, rule.near_margin))
+    gx, gy = [], []
+    if rule.edge_grading is not None:
+        gx = _grading_lines(rule.edge_grading, ext_x, bx[0], bx[1], list(xb) + ([] if exs is None else list(exs)))
+        gy = _grading_lines(rule.edge_grading, ext_y, by[0], by[1], list(yb) + ([] if eys is None else list(eys)))
+    xl0, xsnap = _merge_lines(xb, np.concatenate([[] if exs is None else exs, gx]), bx[0], bx[1], 1e-10,
+                              _lateral_cell(xb, rule.h0, rule.min_cells, ext_x, rule.near_margin))
+    yl0, ysnap = _merge_lines(yb, np.concatenate([[] if eys is None else eys, gy]), by[0], by[1], 1e-10,
+                              _lateral_cell(yb, rule.h0, rule.min_cells, ext_y, rule.near_margin))
     mx = _size_multipliers(xl0, ext_x, rule.near_margin)
     my = _size_multipliers(yl0, ext_y, rule.near_margin)
     xl = _subdivide(xl0, rule.h0, level, rule.min_cells, mx)
@@ -965,7 +1034,8 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         sources.append((x0, y0, x1, y1, z_top_cu + d.attach_thickness + d.thickness, float(p)))
     return _Grid(xl, yl, zl, mat, [_k_of(m) for m in materials], sources, float(h), float(T_c),
                  ["baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die"],
-                 order=rule.element_order, snaps={"x": xsnap, "y": ysnap, "z": zsnap})
+                 order=rule.element_order, snaps={"x": xsnap, "y": ysnap, "z": zsnap},
+                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading)
 
 
 def estimate_dofs(layout: Layout, rule: GridRule | None = None, level: int = 0) -> int:
@@ -1089,9 +1159,13 @@ def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c
     ext_x, ext_y = [(s[0], s[2]) for s in sources], [(s[1], s[3]) for s in sources]
     xb = _lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources])
     yb = _lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources])
-    xl0, xsnap = _merge_lines(xb, np.concatenate([cx, [] if exs is None else exs]), 0.0, a, 1e-10,
+    gx, gy = [], []
+    if rule.edge_grading is not None:
+        gx = _grading_lines(rule.edge_grading, ext_x, 0.0, a, list(xb) + cx + ([] if exs is None else list(exs)))
+        gy = _grading_lines(rule.edge_grading, ext_y, 0.0, b, list(yb) + cy + ([] if eys is None else list(eys)))
+    xl0, xsnap = _merge_lines(xb, np.concatenate([cx, [] if exs is None else exs, gx]), 0.0, a, 1e-10,
                               _lateral_cell(xb, rule.h0, rule.min_cells, ext_x, rule.near_margin))
-    yl0, ysnap = _merge_lines(yb, np.concatenate([cy, [] if eys is None else eys]), 0.0, b, 1e-10,
+    yl0, ysnap = _merge_lines(yb, np.concatenate([cy, [] if eys is None else eys, gy]), 0.0, b, 1e-10,
                               _lateral_cell(yb, rule.h0, rule.min_cells, ext_y, rule.near_margin))
     mx = _size_multipliers(xl0, ext_x, rule.near_margin)
     my = _size_multipliers(yl0, ext_y, rule.near_margin)
@@ -1116,7 +1190,8 @@ def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c
 
     srcs = [(s[0], s[1], s[2], s[3], float(zb[-1]), float(s[4])) for s in sources]
     return _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=rule.element_order,
-                 source=source, flux=flux, T_inf=T_inf, snaps={"x": xsnap, "y": ysnap, "z": zsnap})
+                 source=source, flux=flux, T_inf=T_inf, snaps={"x": xsnap, "y": ysnap, "z": zsnap},
+                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading)
 
 
 def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
