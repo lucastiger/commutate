@@ -4,7 +4,7 @@ title: 'O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on
   the dev layouts (deterministic --report freeze after a founder burst)'
 type: investigate
 agent: scientist
-status: todo
+status: needs_founder
 depends_on:
 - T0227
 description: 'Pre-registered development study on the production graded rule (n1). It replaces T0207''s
@@ -167,4 +167,8 @@ rationale: 'scope_in: one configuration frozen before E009 registration, on dev 
   only place where the remaining kill risks are measured on the full case set before the single evaluation:
   N-layer L2 under grading, Q1 Tj-max convergence on layouts (A4, F2) and CG headroom on the Muzychka
   plates. The freeze is deterministic, so the post-burst result needs no agent judgment.'
-history: []
+history:
+- outcome: founder_hold
+  summary: Held until the T0231 review follow-ups (finite edge_grading validation; layout-mode fixed set
+    and symmetry scope documented) are committed. Release with mfos task retry T0228.
+  at: '2026-11-04T18:29:04+00:00'

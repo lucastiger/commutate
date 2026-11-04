@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-04T17:48:31+00:00 from repository state — do not edit_
+_generated 2026-11-04T18:29:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0122** [protected_change] T0227: merge needs founder approval
@@ -29,10 +29,11 @@ _generated 2026-11-04T17:48:31+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 192, failed: 3, needs_founder: 2, todo: 3
+cancelled: 31, done: 192, failed: 3, needs_founder: 3, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 - T0227 `needs_founder` builder/implement: thermal_fem: source-edge grading in GridRule (port of T0225's emulated option-(a) grading, box-stack and layout modes) (attempt 1)
+- T0228 `needs_founder` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 0)
 
 ## Recent events
 - 2026-11-04T11:09:11+00:00 inbox_resolved {"id": "I0120", "status": "approved", "note": "Plan approved (T0227-T0230); T0227 held per I0119", "by": "human"}
