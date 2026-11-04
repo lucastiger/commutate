@@ -43,6 +43,14 @@ def test_offsets_match_spec():
     assert np.allclose(steps, [0.1e-3, 0.15e-3, 0.375e-3, 0.9375e-3, 2.34375e-3], rtol=1e-12, atol=0)
 
 
+@pytest.mark.parametrize("grading", [(1e-4, 2.5, np.inf, 0.5), (1e-4, np.inf, 4e-3, 0.5), (np.nan, 2.5, 4e-3, 0.5),
+                                     (1e-4, 2.5, 4e-3, np.inf)])
+def test_non_finite_grading_is_rejected(grading):
+    """An infinite max_offset passes the order checks and would never end the offset loop (review T0231)."""
+    with pytest.raises(ValueError):
+        _rule(grading)
+
+
 def test_default_is_unchanged():
     g0 = _box_grid(F.GridRule(h0=4e-3, nz={}, default_nz=1, near_margin=2e-3, dz_max=1e-3))
     g1 = _box_grid(_rule())
@@ -143,6 +151,8 @@ def test_energy_balance_graded_box_stack():
 
 
 def test_mirror_symmetry():
+    """A single centred source: lines and temperatures are mirror-symmetric. This does not extend to several sources:
+    equal-step conflicts keep the smaller coordinate, so mirrored dies can see slightly different grids (review T0231)."""
     a, b = 20e-3, 12e-3
     src = [(7e-3, 4e-3, 13e-3, 8e-3, 25.0)]  # centred about (a/2, b/2)
     r = _rule()

@@ -175,3 +175,24 @@ fingerprints checked). No fresh or sealed seed was used, and the holdout data di
   sliver-free line policy that still needs more than 300 iterations would point to conditioning instead.
 - Burst to measure L2 of both options (resumes from the cache; about 57 GB and 45 GB peaks):
   `scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_probe.py --full" research/o007_probe`
+
+## 7. Addendum 2026-11-04 (founder session): level-2 burst and the T0227 port
+- [F] Level-2 burst (`e2-custom-10-81920`, 122 min, commit 5abe652; `probe.json` committed in a8553bb): **option (a)
+  go**: N-layer max |T - T_ref| 0.591 / 0.152 / **0.0386 K** at L0 / L1 / L2 (d1 mean; limit 0.040 K), observed order
+  1.98 (L1 to L2, against 1.93 in section 6), CG max 132 / 191 / **259** (limit 300), energy balance 1.4e-12, peak 41.9 GB.
+  **Option (b) no_go**: CG 400 (the cap) at L1, and its L2 solve stopped with "AMG-CG did not converge to 1e-8". None of
+  section 6's reversal conditions for (a) occurred on the N-layer case. Its margin is thin (3.5 % under the limit).
+- [F] Still open from section 5: CG on the Muzychka plates and dev-layout Tj convergence under (a)'s grading, both for
+  the second dev study (T0228).
+- [F] The production rule (T0227, `GridRule.edge_grading`) equals the emulation in box-stack mode: grids and solved
+  temperatures are bitwise identical on the probe cases (review T0231), so the 0.0386 K carries over. In **layout mode
+  it differs**: the fixed set also holds every layout geometry line (traces, outline, baseplate, backside), so grading
+  lines stay `min_gap_fraction * s` away from trace and outline edges. That gives 10-13 % fewer DOF than section 3's
+  emulated layout figures, which are therefore upper bounds, and no cell below 50 um. Any pre-registration of the graded
+  rule (T0228) describes the rule as implemented, not section 0.2's literal fixed-line list.
+- [F] The probe's equal-step tie-break (keep the smaller coordinate) carries over, so mirror-symmetric multi-die
+  layouts get slightly asymmetric grids: <= 1e-4 K in Tj_max on a two-die box stack (T0231). Symmetry checks on graded
+  multi-die grids need that tolerance.
+- [F] Two whole-mesh costs per chunk in scikit-fem made the first level-2 attempt assemble for hours: `interpolate`'s
+  global split and the DOF coordinates every basis computed. Both were removed (0929d9e, 5abe652; bit-identical
+  results); this probe's L1 (a) solve went from 202 s to 74 s.

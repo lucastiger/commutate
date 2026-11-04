@@ -54,6 +54,14 @@ Source-edge grading (optional, ``GridRule.edge_grading``, T0227; port of the T02
 lines around every source edge (die footprints in layout mode, the source rectangles in box-stack mode) resolve the flux
 singularity at the die edge at level 0; they join the mandatory lines through ``_merge_lines`` (same snapping). Levels 1 and
 2 bisect as before (r = 2), so every level-0 line is a node at every level. Default None: grids and results unchanged.
+Box-stack grids are identical to the probe's (bitwise equal temperatures on the probe cases, review T0231), so its
+measured level-2 N-layer error (0.0386 K) holds for this rule. Layout mode is not a literal port: its fixed set also
+holds every layout geometry line (baseplate, outline, backside, traces, dies), not only the probe's mandatory lines, so
+no grading line falls within ``min_gap_fraction * s`` of a trace or outline edge. On the dev layouts that gives 10-13 %
+fewer DOF than the probe's emulation and no cell below 50 um (T0231); the T0225 layout DOF and cost figures are upper
+bounds for this rule. Conflicts between equal-step candidates keep the smaller coordinate, as in the probe, so mirror-
+symmetric multi-source geometries get slightly asymmetric grids (Tj_max differs by <= 1e-4 K between mirrored dies of a
+two-die box stack, T0231): symmetry checks on graded multi-die grids need a tolerance at that level.
 
 Outputs per die (section 5 of the definition): ``Tj_max`` = maximum nodal temperature over exactly the nodes of the die
 top face (the dofs of its faces: vertices, and for Q2 also edge midpoints and face centres; the nodal FEM reads the
@@ -199,6 +207,9 @@ class GridRule:
             first, ratio, max_off, gap = self.edge_grading
             if not (first > 0.0 and ratio > 1.0 and max_off >= first and gap > 0.0):
                 raise ValueError("edge_grading needs first > 0, ratio > 1, max_offset >= first and min_gap_fraction > 0")
+            if not all(math.isfinite(float(v)) for v in self.edge_grading):
+                # an infinite max_offset passes the checks above and never ends the offset loop (review T0231)
+                raise ValueError("edge_grading values must be finite")
 
     def nz_of(self, name: str) -> int:
         return int(self.nz.get(name, self.default_nz))
