@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-04T02:22:14+00:00 from repository state — do not edit_
+_generated 2026-11-04T02:22:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -29,14 +29,12 @@ _generated 2026-11-04T02:22:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 185, failed: 3, merge: 1, needs_founder: 1, running: 1, todo: 1
+cancelled: 30, done: 186, failed: 3, needs_founder: 1, running: 1, todo: 1
 
 - T0207 `running` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0222 `merge` builder/implement: thermal_fem: report AMG-CG iterations and final relative residual per linear solve in ThermalResult.meta (instrumentation only, numerics unchanged) (attempt 1)
 
 ## Recent events
-- 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0110", "kind": "decision", "subject": "[O007] Amend held T0208 (E009 design): AMG-CG headroom guard (T0218 rec. 3) and a dependency on the new thermal_
 - 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0111", "kind": "decision", "subject": "[O007] Orchestrator (tools/mfos, protected): a founder stop is counted as an agent attempt and spawns a diagnosi
 - 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0112", "kind": "plan_approval", "subject": "[O007] approve initial plan (1 tasks)"}
 - 2026-11-04T01:35:46+00:00 plan_applied {"objective": "O007", "created": ["T0222"], "dropped": 0}
@@ -51,3 +49,4 @@ cancelled: 30, done: 185, failed: 3, merge: 1, needs_founder: 1, running: 1, tod
 - 2026-11-04T02:19:10+00:00 inbox_opened {"id": "I0113", "kind": "protected_change", "subject": "T0222: merge needs founder approval"}
 - 2026-11-04T02:19:46+00:00 sleep_detected {"gap_s": 1072, "runs_extended": 1}
 - 2026-11-04T02:21:53+00:00 inbox_resolved {"id": "I0113", "status": "approved", "note": "T0222: CG iteration/residual/maxiter instrumentation in thermal_fem meta (numerics unchanged, bit-identity tested
+- 2026-11-04T02:22:20+00:00 merged {"task": "T0222"}
