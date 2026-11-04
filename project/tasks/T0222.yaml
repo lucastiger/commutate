@@ -4,7 +4,7 @@ title: 'thermal_fem: report AMG-CG iterations and final relative residual per li
   (instrumentation only, numerics unchanged)'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on: []
 description: "Diagnosis T0218 (research/diagnoses/T0218.md sections 4 and 7, rec. 3) found the following.\
   \ On grids with mandatory lines kept just outside the snap distance, AMG-CG in _Solver.solve used 362\
@@ -85,4 +85,52 @@ rationale: Failure mode F2 requires that A3 and A4 GCIs reflect discretisation a
   and the single E009 run (max_evaluations 1) must be able to gate on that. This is diagnosis T0218 rec.
   3. The guard must be in production thermal_fem, because O003 uses the same code under code_must_match;
   a runner-side patch of _Solver would not satisfy that.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: Added CG_MAXITER = 400, used in _Solver.solve. Each solve now records its CG iteration count,
+    taken from pyamg's own residuals list and return_info, so the iterates are unchanged. It also records
+    the true relative residual ||b-Ax||/||b|| and a hit-maxiter flag. solve_layout and solve_box_stack
+    put cg_iterations, cg_max_iterations, linear_rel_residual_max and cg_hit_maxiter in ThermalResult.meta,
+    one list entry per Picard step. LINEAR_RTOL, the 1e-8 check, AMG_SEED, the hierarchy and Picard are
+    untouched. New tests cover Q1/Q2 bit-identity, meta types and bounds in both modes, and the sliver
+    case, where the kept-line grids need more CG iterations than the snapped ones (164 vs 21 at level
+    0, 230 vs 26 at level 1). The new meta keys are documented in docs/thermal_model.md. All DoD commands
+    ex
+  report:
+    status: completed
+    summary: Added CG_MAXITER = 400, used in _Solver.solve. Each solve now records its CG iteration count,
+      taken from pyamg's own residuals list and return_info, so the iterates are unchanged. It also records
+      the true relative residual ||b-Ax||/||b|| and a hit-maxiter flag. solve_layout and solve_box_stack
+      put cg_iterations, cg_max_iterations, linear_rel_residual_max and cg_hit_maxiter in ThermalResult.meta,
+      one list entry per Picard step. LINEAR_RTOL, the 1e-8 check, AMG_SEED, the hierarchy and Picard
+      are untouched. New tests cover Q1/Q2 bit-identity, meta types and bounds in both modes, and the
+      sliver case, where the kept-line grids need more CG iterations than the snapped ones (164 vs 21
+      at level 0, 230 vs 26 at level 1). The new meta keys are documented in docs/thermal_model.md. All
+      DoD commands exit 0 and the work is committed.
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_solver_stats.py
+    - docs/thermal_model.md
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_solver_stats.py tests/unit/solvers/test_thermal_fem_rule.py
+        tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+      exit_code: 0
+    - cmd: uv run python -c "import moduleforge.solvers.thermal_fem as m; assert m.CG_MAXITER == 400 and
+        m.LINEAR_RTOL == 1e-11 and m.AMG_SEED == 20261103 and m.SNAP_FRACTION == 1e-2 and m.PICARD_TOL_K
+        == 1e-4"
+      exit_code: 0
+    - cmd: uv run python -c "s=open('src/moduleforge/solvers/thermal_fem.py').read(); assert all(k in
+        s for k in ('cg_iterations','cg_max_iterations','linear_rel_residual_max','cg_hit_maxiter'))"
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - A Picard step warm-started at the solution takes 0 CG iterations, so individual entries of cg_iterations
+      can be 0. Only cg_max_iterations is guaranteed to be at least 1.
+    - The packet's 'bit-identity' test compares against the same ml.solve called without residuals/return_info,
+      on the system captured from a real solve. It does not compare against a separate pre-change build.
+    - The new tests duplicate the toy layout and band-stack constants, because tests/unit/solvers has
+      no __init__.py and a relative import fails.
