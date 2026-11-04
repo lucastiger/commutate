@@ -4,7 +4,7 @@ title: 'thermal_fem: report AMG-CG iterations and final relative residual per li
   (instrumentation only, numerics unchanged)'
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: "Diagnosis T0218 (research/diagnoses/T0218.md sections 4 and 7, rec. 3) found the following.\
   \ On grids with mandatory lines kept just outside the snap distance, AMG-CG in _Solver.solve used 362\
@@ -76,8 +76,8 @@ runs:
 - T0222-builder-20261103T173739-6d59
 created_by: planner:T0221
 created_at: '2026-11-04T01:35:46+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0113
 target: null
 lens: null
 trigger: null
