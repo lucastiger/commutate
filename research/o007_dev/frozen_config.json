@@ -1,0 +1,30 @@
+{
+ "element_order": 1,
+ "h0_m": 0.004,
+ "near_margin_m": 0.002,
+ "dz_max_m": 0.001,
+ "nz_min": 1,
+ "min_cells": 2,
+ "zrefine": true,
+ "refinement_ratio": 2,
+ "snap_fraction": 0.01,
+ "amg_seed": 20261103,
+ "mandatory_lines": "box-stack mode: x and y lines through every source centroid (built in) and through the frozen reference maximum of every source (extra_lines); layout mode (manufactured case): x and y lines through every frozen reported point and maximum, z lines at their (interface) heights; generator layouts: none (Tj max = max nodal value on the die top face). Snapping: production SNAP_FRACTION 1e-2 of the level-0 cell; every snap recorded and the node at the snapped coordinate reported.",
+ "quadrature": {
+  "stiffness": "2x2x2 Gauss (Q1)",
+  "faces": "3x3 Gauss (intorder 4)",
+  "manufactured_data": "4x4x4 / 4x4 Gauss (intorder 7)"
+ },
+ "linear_rtol": 1e-11,
+ "cg_maxiter": 400,
+ "cg_eligibility_limit": 300,
+ "picard_tol_K": 0.0001,
+ "levels": [
+  0,
+  1,
+  2
+ ],
+ "candidate_id": "q1_h4",
+ "feasible": false,
+ "rationale": "every candidate ruled out by measured data; 'chosen' lists the cheapest candidate (complete three-level data) for the record only, not as a recommendation (case not pre-specified). Summary: {\"levels_complete\": true, \"A1_max_scaled_err\": 0.017139144097450754, \"A2_max_abs_err_K\": 1.3891539377507343, \"A4_cases_max_gci_K\": 3.672526952169193, \"A4_layouts_max_gci_K\": Infinity, \"errors_at_level\": {\"case1a\": 2, \"case1b\": 2, \"case2\": 2, \"case3\": 2, \"nlayer_dbc\": 2, \"mms\": 2}, \"cg_max_iters\": 286, \"cg_over_300\": false, \"gates_ok\": true, \"meets_margins\": false, \"eligible\": false, \"margin_misses_measured_at_level_2\": [\"case1a\", \"case2\", \"nlayer_dbc\", \"side_by_side_6\", \"u_shaped_2\"], \"ruled_out\": true, \"verdict\": \"ineligible: margins missed at level 2 on ['case1a', 'case2', 'nlayer_dbc', 'side_by_side_6', 'u_shaped_2']\", \"fits_burst\": true}. Pre-registered criterion: research/notes/o007-dev-study.md sec. 0."
+}
