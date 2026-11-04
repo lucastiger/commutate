@@ -306,7 +306,8 @@ def test_centred_single_source_box_stack_mirror_symmetric(order):
 # ------------------------------------------------------------------------------------------------ unchanged default
 def test_default_rule_unchanged_counts_and_legacy_signature():
     """dz_max=None: z cells are the per-layer counts times 2**level (the earlier rule); the legacy box-stack call
-    (h0, element_order keywords) equals the rule call; no extra lines add no lines (beyond a box stack's centroids)."""
+    (h0, element_order keywords) equals the rule call; no extra lines add no lines (beyond a box stack's centroids: the legacy ``h0=`` box-stack grid now
+    includes every source's centroid lines, T0215 note; the test checks that explicitly below)."""
     lay = _toy_layout()
     rule = F.GridRule(h0=2e-3)
     for lv in (0, 1, 2):
@@ -322,8 +323,221 @@ def test_default_rule_unchanged_counts_and_legacy_signature():
                            constant_k=True)
     for ax in "xyz":
         np.testing.assert_array_equal(r1.meta["lines"][ax], r2.meta["lines"][ax])  # the same grid
+    assert np.min(np.abs(r1.meta["lines"]["x"] - 0.005)) < 1e-12  # the legacy grid has the source centroid line x = a / 2
     np.testing.assert_allclose(r1.T, r2.T, rtol=0, atol=1e-9)
     with pytest.raises(ValueError):
         F.solve_box_stack(a, b, layers, 1000.0, 300.0, src, level=0)  # neither h0 nor a rule
     with pytest.raises(ValueError):
         F.solve_box_stack(a, b, layers, 1000.0, 300.0, src, h0=0.005, rule=F.GridRule(h0=0.004))
+
+
+# ------------------------------------------------------------------------------------------------ snapping (T0215)
+# values of the pre-T0216 code (git HEAD of T0206) on grids without near-coincident lines: the change must not move them
+_PINNED = {
+    ("layout", 1): ([409.3695498235362, 387.9296200355076], [402.93731534702255, 384.62940987494596]),
+    ("layout", 2): ([409.40963472949034, 388.0002973140944], [404.5359297103216, 385.6077243402118]),
+    ("box", 1): ([377.3747379321397, 375.99713690098713], [374.47348709395874, 373.3398746240375]),
+    ("box", 2): ([377.3621280688686, 376.0135333254722], [374.8045130715334, 373.70663407223515]),
+}
+
+
+@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("mode", ["layout", "box"])
+def test_results_unchanged_without_near_coincident_lines(mode, order):
+    if mode == "layout":
+        r = F.solve_layout(_toy_layout(), [40.0, 20.0], H, TC, rule=F.GridRule(h0=2e-3, dz_max=5e-4, element_order=order),
+                           extra_lines=([4.5e-3], [3.7e-3], [1.234e-4]))
+    else:
+        r = F.solve_box_stack(A_BOX, B_BOX, _stack(), H, TC, SRC2, rule=F.GridRule(h0=4e-3, dz_max=1e-3, element_order=order),
+                              extra_lines=([7.3e-3], [5.1e-3], [1.7e-3]))
+    tj, tm = _PINNED[(mode, order)]
+    np.testing.assert_allclose(r.tj_max, tj, rtol=0, atol=1e-8)
+    np.testing.assert_allclose(r.tj_mean, tm, rtol=0, atol=1e-8)
+    assert r.meta["snapped_lines"] == {"x": [], "y": [], "z": []} and r.meta["max_snap_m"] == 0.0
+
+
+@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("mode", ["layout", "box"])
+@pytest.mark.parametrize("dy", [1e-9, 1e-7, 1e-6])
+def test_near_coincident_mandatory_line_snaps_and_solves(mode, dy, order):
+    """A mandatory line dy from an existing edge (die edge y = 3 mm / source edge y = 4 mm) snaps onto it: no sliver
+    cell, the solve works, the snap is recorded, and the nodal value at the snapped coordinate equals the value of a run
+    that asked for the edge exactly (so a reported point moved by exactly the recorded distance, dy)."""
+    if mode == "layout":
+        edge, xe, ze = 3e-3, 4.5e-3, _toy_layout().stack.z_top("top_cu") + 1e-9  # z: just above the top-Cu / attach plane
+        rule = F.GridRule(h0=3e-3, dz_max=5e-4, element_order=order)
+
+        def run(ey, ez):
+            return F.solve_layout(_toy_layout(), 30.0, H, TC, rule=rule, constant_k=True, extra_lines=([xe], [ey], [ez]))
+    else:
+        edge, xe, ze = 4e-3, 7.3e-3, 3.0e-3 + 1e-7  # z: just above the base / cu interface
+        rule = F.GridRule(h0=4e-3, dz_max=1e-3, element_order=order)
+
+        def run(ey, ez):
+            return F.solve_box_stack(A_BOX, B_BOX, _stack(), H, TC, SRC2, rule=rule, constant_k=True,
+                                     extra_lines=([xe], [ey], [ez]))
+    zedge = round(ze - (1e-9 if mode == "layout" else 1e-7), 12)
+    r = run(edge + dy, ze)
+    ref = run(edge, zedge)
+    y = r.meta["lines"]["y"]
+    assert np.min(np.abs(y - edge)) < 1e-14 and np.sum(np.abs(y - edge) < 1e-5) == 1  # one line near the edge, on it
+    assert np.sum(np.abs(r.meta["lines"]["z"] - zedge) < 1e-5) == 1
+    for ax in "yz":
+        np.testing.assert_array_equal(r.meta["lines"][ax], ref.meta["lines"][ax])
+    sy = r.meta["snapped_lines"]["y"]
+    assert len(sy) == 1 and sy[0][0] == edge + dy and abs(sy[0][1] - edge) < 1e-14
+    sz = r.meta["snapped_lines"]["z"]
+    assert len(sz) == 1 and abs(sz[0][1] - zedge) < 1e-12 and abs(sz[0][0] - ze) < 1e-14
+    assert r.meta["max_snap_m"] == pytest.approx(max(dy, abs(ze - zedge)), rel=1e-3, abs=1e-12)
+    assert ref.meta["snapped_lines"]["y"] == []
+    zt = r.meta["lines"]["z"][-1]
+    xs = r.meta["lines"]["x"]
+    assert np.min(np.abs(xs - xe)) < 1e-14
+    np.testing.assert_allclose(r.tj_max, ref.tj_max, rtol=0, atol=1e-9)
+    # the point is reported at the snapped coordinate, a node; the requested one is a recorded dy away
+    assert F.node_value(r, xe, sy[0][1], zt) == pytest.approx(F.node_value(ref, xe, edge, zt), abs=1e-9)
+    if dy > 2e-9:
+        with pytest.raises(ValueError):
+            F.node_value(r, xe, edge + dy, zt)
+
+
+@pytest.mark.parametrize("mode", ["layout", "box"])
+def test_far_mandatory_line_is_kept_and_close_ones_merge(mode):
+    """The snap distance is SNAP_FRACTION of the level-0 cell of the geometry interval holding the line: just outside it the
+    line is kept, just inside it snaps; two mandatory lines 1e-7 apart give one line."""
+    if mode == "layout":
+        # y = 3 mm die edge; geometry interval [3, 7] mm (die), L = 4 mm, h0 = 2 mm -> 2 cells of 2 mm
+        h0, edge, w = 2e-3, 3e-3, 2e-3
+        mk = lambda ey: F.layout_grid(_toy_layout(), 1.0, H, TC, F.GridRule(h0=h0), 0, extra_lines=([4.5e-3], ey, None))  # noqa: E731
+    else:
+        # y = 4 mm source edge; geometry interval [4, 5] mm (the two sources' lower edges), L = 1 mm -> 2 cells of 0.5 mm
+        h0, edge, w = 2e-3, 4e-3, 0.5e-3
+        mk = lambda ey: F.box_stack_grid(A_BOX, B_BOX, _stack(), H, TC, SRC2, rule=F.GridRule(h0=h0), extra_lines=([7.3e-3], ey, None))  # noqa: E731
+    g = mk([edge + 1.5 * F.SNAP_FRACTION * w])
+    assert np.min(np.abs(g.y - (edge + 1.5 * F.SNAP_FRACTION * w))) < 1e-14 and g.snaps["y"] == []  # kept
+    assert np.min(np.diff(g.y)) == pytest.approx(0.75 * F.SNAP_FRACTION * w, rel=1e-6)  # 2 cells: >= SNAP_FRACTION / 2 of w
+    g = mk([edge + 0.5 * F.SNAP_FRACTION * w])
+    assert np.sum(np.abs(g.y - edge) < 1e-5) == 1 and len(g.snaps["y"]) == 1
+    assert g.snaps["y"][0][1] == pytest.approx(edge, abs=1e-15)
+    g = mk([edge + 0.4 * w, edge + 0.4 * w + 1e-7])
+    assert np.sum(np.abs(g.y - (edge + 0.4 * w)) < 1e-5) == 1 and len(g.snaps["y"]) == 1
+    assert abs(g.snaps["y"][0][0] - g.snaps["y"][0][1] - 1e-7) < 1e-12  # the later line snapped onto the earlier one
+
+
+def test_box_mapping_inverse_is_exact_in_thin_cells():
+    """The face inverse map: scikit-fem's own iteration fails in a 1e-7 m cell (absolute tolerance, the cause of the
+    level-1 crashes); _BoxMapping returns the reference coordinates of points mapped forward from known ones, to round-off."""
+    from skfem import MeshHex
+    from skfem.mapping import MappingIsoparametric
+
+    x = np.array([10.0, 30.0, 30.0 + 1e-4, 31.0])  # mm, as in the solver: cell 1 is 1e-4 mm = 1e-7 m wide
+    m = MeshHex.init_tensor(x, np.array([0.0, 2.0]), np.array([0.0, 1.0]))
+    e = int(np.argmin(np.ptp(m.p[0, m.t], axis=0)))  # the thin cell
+    rng = np.random.default_rng(20261103)
+    Xref = rng.random((3, 1, 9))
+    Xref[0, 0, :3] = 0.0  # points on a face, as FacetBasis passes them
+    pts = MappingIsoparametric(m, m.elem(), m.bndelem).F(Xref, tind=np.array([e]))  # the forward (affine) map
+    assert np.ptp(pts[0]) < 1.1e-4  # the points do lie in the thin cell
+    with pytest.raises(Exception, match="Newton"):
+        MappingIsoparametric(m, m.elem(), m.bndelem).invF(pts, tind=np.array([e]))
+    got = F._BoxMapping(m, m.elem(), m.bndelem).invF(pts, tind=np.array([e]))
+    # reference-space error of a point known to eps |x| = 7e-15 mm in a 1e-4 mm cell: <= ~1e-10
+    np.testing.assert_allclose(got, Xref, rtol=0, atol=1e-9)
+    # a regular cell: the same points as scikit-fem's own inverse (bit-identical path)
+    e2 = int(np.argmax(np.ptp(m.p[0, m.t], axis=0)))
+    p2 = MappingIsoparametric(m, m.elem(), m.bndelem).F(Xref, tind=np.array([e2]))
+    np.testing.assert_array_equal(F._BoxMapping(m, m.elem(), m.bndelem).invF(p2, tind=np.array([e2])),
+                                  MappingIsoparametric(m, m.elem(), m.bndelem).invF(p2, tind=np.array([e2])))
+
+
+@pytest.mark.parametrize("order", [1, 2])
+def test_thin_layer_cells_solve_to_the_1d_closed_form(order):
+    """A 0.4 um layer (cells of 0.4 um at level 0, 0.2 um at level 1) under a source covering the whole top: the exact
+    solution is 1D and linear in each layer, T_top = Tc + q (1/h + sum t_i / k_i), q = P / (a b) (series thermal
+    resistances; Incropera, Fundamentals of Heat and Mass Transfer, 6th ed., eq. 3.19), which Q1 and Q2 reproduce exactly.
+    The face inverse map failed here before _BoxMapping."""
+    a = b = 8e-3
+    layers = [F.BoxLayer(1e-3, 100.0, 1), F.BoxLayer(4e-7, 5.0, 1)]
+    P, h = 10.0, 2000.0
+    q = P / (a * b)
+    exact = TC + q * (1.0 / h + 1e-3 / 100.0 + 4e-7 / 5.0)
+    for lv in (0, 1):
+        r = F.solve_box_stack(a, b, layers, h, TC, [(0.0, 0.0, a, b, P)], rule=F.GridRule(h0=8e-3, element_order=order),
+                              level=lv, constant_k=True)
+        assert np.min(np.diff(r.meta["lines"]["z"])) == pytest.approx(4e-7 / 2**lv, rel=1e-6)
+        np.testing.assert_allclose(r.tj_max, exact, rtol=0, atol=1e-7)
+        np.testing.assert_allclose(r.tj_mean, exact, rtol=0, atol=1e-7)
+        assert r.energy_balance < 1e-9
+
+
+# a small box with a 1 mm source gap (x cells of 0.5 mm) and a 0.1 mm attach layer (one z cell): kept lines just outside
+# the snap distance there give the thinnest cells the rule allows (x: 3.75 um, z: 1.5 um at level 0; halved per level)
+_BAND_LAYERS = [F.BoxLayer(2e-3, 390.0, 1, "base"), F.BoxLayer(0.1e-3, 60.0, 1, "attach"), F.BoxLayer(0.18e-3, 120.0, 1, "die")]
+_BAND_SRC = [(4e-3, 4e-3, 8e-3, 12e-3, 20.0), (9e-3, 4e-3, 12e-3, 12e-3, 15.0)]
+
+
+@pytest.mark.parametrize("order", [1, 2])
+def test_kept_line_just_outside_snap_distance_solves_above_level_0_box(order):
+    """Lines at 1.5 x and 0.5 x the snap distance from a source edge (x, gap [8, 9] mm: cell 0.5 mm), a source edge (y,
+    interval [4, 12] mm: cell 4 mm), below the base / attach interface (z, base cell 2 mm) and below the attach / die
+    interface (z, attach cell 0.1 mm): the 1.5 x lines are kept (z cells of the layer count, 1: 1.5 um), the 0.5 x ones snap, and every grid solves at levels 0-2 (Q1) and 0-1 (Q2) with the energy balanced. The attempt-1 rule
+    crashed at level 1 on such lines."""
+    f = F.SNAP_FRACTION
+    z_ba, z_ad = 2e-3, 2.1e-3
+    rule = F.GridRule(h0=4e-3, element_order=order)
+    kept = ([8e-3 + 1.5 * f * 0.5e-3], [4e-3 + 1.5 * f * 4e-3], [z_ba - 1.5 * f * 2e-3, z_ad - 1.5 * f * 0.1e-3])
+    snapped = ([8e-3 + 0.5 * f * 0.5e-3], [4e-3 + 0.5 * f * 4e-3], [z_ad - 0.5 * f * 0.1e-3])
+    prev = None
+    for lv in range(3 if order == 1 else 2):
+        r = F.solve_box_stack(16e-3, 16e-3, _BAND_LAYERS, H, TC, _BAND_SRC, rule=rule, level=lv, extra_lines=kept)
+        assert r.meta["max_snap_m"] == 0.0
+        for ax, vals in zip("xyz", kept, strict=True):
+            for v in vals:
+                assert np.min(np.abs(r.meta["lines"][ax] - v)) < 1e-15
+        assert np.min(np.diff(r.meta["lines"]["z"])) == pytest.approx(1.5 * f * 0.1e-3 / 2**lv, rel=1e-6)
+        assert np.min(np.diff(r.meta["lines"]["x"])) == pytest.approx(0.75 * f * 0.5e-3 / 2**lv, rel=1e-6)
+        assert r.energy_balance < 1e-8 and np.all(r.tj_max > TC + 1.0)
+        if prev is not None:
+            assert np.all(np.abs(r.tj_max - prev) < 0.5)  # a converging sequence, not a broken solve
+        prev = r.tj_max
+        rs = F.solve_box_stack(16e-3, 16e-3, _BAND_LAYERS, H, TC, _BAND_SRC, rule=rule, level=lv, extra_lines=snapped)
+        got = {ax: [u for _, u in rs.meta["snapped_lines"][ax]] for ax in "xyz"}
+        assert got["x"] == [pytest.approx(8e-3, abs=1e-15)] and got["y"] == [pytest.approx(4e-3, abs=1e-15)]
+        assert got["z"] == [pytest.approx(z_ad, abs=1e-15)] and rs.energy_balance < 1e-8
+        assert rs.meta["max_snap_m"] == pytest.approx(0.5 * f * 4e-3, rel=1e-9)  # the largest requested move (y)
+        assert np.isfinite(F.node_value(rs, 8e-3, 4e-3, z_ad))  # the snapped point is a node
+
+
+def test_kept_line_just_outside_snap_distance_solves_above_level_0_layout():
+    """Layout mode: lines 1.5 x the snap distance from the die edge y = 3 mm (cell 4 mm at h0 = 8 mm) and from the top-Cu
+    / die-attach plane (one attach cell) are kept and solve at levels 0 and 1 (Q1) and 0 (Q2)."""
+    lay = _toy_layout()
+    f, zt = F.SNAP_FRACTION, lay.stack.z_top("top_cu")
+    att = lay.dies[0].attach_thickness
+    ex = ([4.5e-3], [3e-3 + 1.5 * f * 4e-3], [zt + 1.5 * f * att])
+    for order, levels in ((1, (0, 1)), (2, (0,))):
+        for lv in levels:
+            r = F.solve_layout(lay, [40.0, 20.0], H, TC, rule=F.GridRule(h0=8e-3, element_order=order), level=lv,
+                               extra_lines=ex)
+            assert r.meta["max_snap_m"] == 0.0 and r.energy_balance < 1e-8 and np.all(r.tj_max > TC + 1.0)
+            assert np.min(np.abs(r.meta["lines"]["z"] - ex[2][0])) < 1e-15
+            assert np.min(np.abs(r.meta["lines"]["y"] - ex[1][0])) < 1e-15
+
+
+def test_extra_lines_same_inputs_in_both_modes():
+    """extra_lines entries may be None, a scalar, a list, a tuple or an array in layout and box-stack mode alike; scalar
+    and one-element list give the identical grid."""
+    forms = [(5e-3, 6.1e-3, 1.5e-4), ([5e-3], [6.1e-3], [1.5e-4]), ((5e-3,), (6.1e-3,), (1.5e-4,)),
+             (np.array(5e-3), np.array([6.1e-3]), np.float64(1.5e-4))]
+    rule = F.GridRule(h0=2e-3, dz_max=5e-4)
+    for build in (lambda e: F.layout_grid(_toy_layout(), 1.0, H, TC, rule, 0, extra_lines=e),
+                  lambda e: F.box_stack_grid(A_BOX, B_BOX, _stack(), H, TC, SRC2, rule=rule, extra_lines=e)):
+        ref = build(forms[1])
+        for f in forms:
+            g = build(f)
+            for u, v in ((g.x, ref.x), (g.y, ref.y), (g.z, ref.z)):
+                np.testing.assert_array_equal(u, v)
+        assert np.min(np.abs(ref.x - 5e-3)) < 1e-14 and np.min(np.abs(ref.y - 6.1e-3)) < 1e-14
+        build((5e-3, None, None))  # None entries
+        with pytest.raises(ValueError):
+            build(([1.0], [0.0]))

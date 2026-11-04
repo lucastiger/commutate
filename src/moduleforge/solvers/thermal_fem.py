@@ -103,6 +103,7 @@ from shapely.geometry import Polygon
 from skfem import BilinearForm, CellBasis, ElementHex1, ElementHex2, FacetBasis, LinearForm, MeshHex
 from skfem.assembly import Dofs
 from skfem.helpers import dot, grad
+from skfem.mapping import MappingIsoparametric
 
 from moduleforge.geometry.layout import Layout
 from moduleforge.geometry.stack import Layer
@@ -237,21 +238,73 @@ def _z_counts(zl0: np.ndarray, base_of_mid: Callable[[float], int], rule: GridRu
     return out
 
 
-def _merge_lines(base: Sequence[float], extra: Sequence[float] | None, lo: float, hi: float, tol: float) -> np.ndarray:
-    """Level-0 lines ``base`` plus the mandatory lines ``extra`` (which must lie within [lo, hi])."""
+SNAP_FRACTION = 1.0e-2  # a mandatory line closer than this fraction of its level-0 cell size snaps onto a line
+
+
+def _merge_lines(base: Sequence[float], extra: Sequence[float] | None, lo: float, hi: float, tol: float,
+                 cell: Callable[[float], float] | None = None) -> tuple[np.ndarray, list[tuple[float, float]]]:
+    """Level-0 lines: ``base`` (merged within ``tol``) plus the mandatory lines ``extra`` (inside [lo, hi]).
+
+    Snapping (T0215, T0216). ``cell(v)`` is the level-0 cell size of the *geometry* interval that contains ``v``
+    (``_lateral_cell``, ``_z_cell``). A mandatory line closer than ``SNAP_FRACTION * cell(v)`` (and at least ``tol``) to
+    an existing line (geometry lines first, then mandatory lines taken in ascending order) is not added. It SNAPS onto
+    the nearest such line, and ``(requested, used)`` is returned for it, with snap distance ``|used - requested|``. Every
+    kept line is therefore at least ``SNAP_FRACTION * cell`` from every other line. The interval it creates gets the rule's count
+    ``n`` (``min_cells`` = 2 laterally, the layer's ``nz`` in z: 1 or 2 by default), so each of its cells is at least
+    ``SNAP_FRACTION / n`` of the surrounding level-0 cell. Every level halves both, so the ratio holds at every level.
+
+    Why 1e-2 and a ratio. Two failures were measured (T0216, Q1 and Q2, layout and box-stack modes).
+    (i) scikit-fem's face inverse map ``invF`` uses an absolute Newton tolerance, so it failed in any cell under about
+    1 um, whatever the ratio. A kept line of 1e-3 h0 therefore solved at level 0 and crashed at level 1.
+    ``_BoxMapping`` removes that failure.
+    (ii) Q2 AMG-CG (``_Solver``) failed to converge on slivers about 5e-4 of the surrounding cell (offsets of 1e-3 cell)
+    at levels 1-2. Offsets of 3e-3 and 1e-2 cell converged at levels 0-2. 1e-2 leaves a factor of 3 above that limit.
+    A snapped point moves by at most 1e-2 of a level-0 cell: 20 um at h0 = 2 mm, 2.5 um in a 0.25 mm z cell. The move
+    is recorded, not hidden, and a reported point is the node at ``used``."""
     ex = [] if extra is None else [float(v) for v in np.asarray(extra, dtype=float).ravel()]
     for v in ex:
         if v < lo - tol or v > hi + tol:
             raise ValueError(f"mandatory grid line {v} is outside the domain [{lo}, {hi}]")
-    return _lines(list(base) + ex, tol)
+    lines = list(_lines(base, tol))
+    snaps: list[tuple[float, float]] = []
+    for v in sorted(ex):
+        arr = np.asarray(lines)
+        j = int(np.argmin(np.abs(arr - v)))
+        if abs(arr[j] - v) <= max(tol, 0.0 if cell is None else SNAP_FRACTION * cell(v)):
+            if arr[j] != v:
+                snaps.append((v, float(arr[j])))
+        else:
+            lines.append(v)
+    return np.unique(np.asarray(lines, dtype=float)), snaps
+
+
+def _interval_lookup(base: np.ndarray, widths: Sequence[float]) -> Callable[[float], float]:
+    """``widths[i]`` of the interval ``[base[i], base[i+1]]`` that contains ``v`` (clipped to the end intervals)."""
+    def cell(v: float) -> float:
+        return float(widths[int(np.clip(np.searchsorted(base, v, side="right") - 1, 0, base.size - 2))])
+    return cell
+
+
+def _lateral_cell(base: np.ndarray, h0: float, min_cells: int, extents: Sequence[tuple[float, float]],
+                  margin: float | None) -> Callable[[float], float]:
+    """Level-0 lateral cell size ``L / n`` of each geometry interval (``_subdivide`` with its ``near_margin`` multipliers)."""
+    L = np.diff(base)
+    mult = _size_multipliers(base, extents, margin)
+    return _interval_lookup(base, [li / _base_cells(li, h0 * m, min_cells) for li, m in zip(L, mult, strict=True)])
+
+
+def _z_cell(base: np.ndarray, counts: Sequence[int]) -> Callable[[float], float]:
+    """Level-0 z cell thickness ``t / n`` of each geometry z interval (``counts`` from ``_z_counts``)."""
+    return _interval_lookup(base, list(np.diff(base) / np.asarray(counts, dtype=float)))
 
 
 def _split_extra(extra_lines) -> tuple:
+    """(xs, ys, zs) with every entry None or a flat float array (a scalar or any sequence is accepted, both modes)."""
     if extra_lines is None:
         return None, None, None
     if len(extra_lines) != 3:
         raise ValueError("extra_lines must be (xs, ys, zs)")
-    return tuple(extra_lines)
+    return tuple(None if e is None else np.asarray(e, dtype=float).ravel() for e in extra_lines)
 
 
 def _poly_coords(poly) -> tuple[list[float], list[float]]:
@@ -281,6 +334,38 @@ class _Grid:
     source: Callable | None = None  # manufactured volume source(x, y, z) [W/m3]
     flux: Callable | None = None  # manufactured inflow flux(x, y, z, axis, sign) [W/m2] on every boundary face but z = 0
     T_inf: Callable | None = None  # Robin ambient T_inf(x, y) [K] (replaces the scalar coolant temperature in h (T - T_inf))
+    snaps: dict = field(default_factory=dict)  # per axis: (requested, used) of every snapped mandatory line
+
+
+class _BoxMapping(MappingIsoparametric):
+    """scikit-fem's trilinear mapping with an inverse that also works in thin cells (T0216).
+
+    ``MappingIsoparametric.invF`` stops when the per-element 1-norm of the Newton step in *reference* units falls below
+    an absolute 1e-12. In a cell of width ``w`` the step cannot fall below round-off, about ``eps |x| / w``, with the
+    coordinate ``|x|`` in mm. For a cell under about 1 um at module coordinates of tens of mm the test therefore never
+    passes ('Newton iteration didn't converge'). The cause is the absolute width, not the ratio to the neighbouring cell,
+    which is why a sliver that solves at level 0 fails at level 1 (T0216 attempt-1 review). Our cells are axis-aligned
+    boxes, so the map is affine and one Newton step is exact up to round-off. The inverse first runs scikit-fem's own
+    iteration, so a mesh it handles gets bit-identical points (Q1/Q2 results unchanged). If that iteration fails, this
+    accepts the Newton iterate once its residual in *physical* units is round-off, ``|x - F(X)| <= 64 eps max|x|``
+    (64 bounds the summed rounding of the eight-corner map). That leaves the point within 64 eps max|x| of its exact
+    position (about 1e-13 mm)."""
+
+    NEWTON_ITERS = 8  # the affine box map converges in 1-2 steps; more steps only jitter at round-off
+
+    def invF(self, x, tind=None, newton_max_iters=NEWTON_ITERS, newton_tol=1e-12):
+        try:
+            return super().invF(x, tind=tind, newton_max_iters=newton_max_iters, newton_tol=newton_tol)
+        except Exception:  # noqa: BLE001 - scikit-fem raises a bare Exception on non-convergence
+            pass
+        tol = 64.0 * np.finfo(float).eps * max(1.0, float(np.max(np.abs(x))))
+        X = np.zeros(x.shape) + 0.5
+        for _ in range(newton_max_iters):
+            dX = np.einsum("ijkl,jkl->ikl", self.invDF(X, tind), x - self.F(X, tind))
+            X = np.clip(X + dX, 0.0, 1.0)
+            if np.max(np.abs(x - self.F(X, tind)), initial=0.0) <= tol:
+                return X
+        raise ValueError("inverse map of the hexahedral mesh did not converge to round-off (degenerate cell?)")
 
 
 def _build_mesh(g: _Grid):
@@ -496,6 +581,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     t0 = time.perf_counter()
     order = g.order
     mesh, emat, _ = _build_mesh(g)
+    bmap = _BoxMapping(mesh, mesh.elem(), mesh.bndelem)  # every face basis: inverse map robust in thin cells
     elem = _element(order)
     dofs = Dofs(mesh, elem)
     nd = int(dofs.N)
@@ -514,11 +600,11 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     mass_parts, ones_b = [], np.zeros(nd)
     f_robin = np.zeros(nd)
     for s in _chunks(robin_idx.size, fchunk):
-        fb = FacetBasis(mesh, elem, facets=robin_idx[s], intorder=4, dofs=dofs)
+        fb = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=4, dofs=dofs)
         mass_parts.append(_mass_form.assemble(fb))
         ones_b += _one_form.assemble(fb)
         if g.T_inf is not None:
-            fd = FacetBasis(mesh, elem, facets=robin_idx[s], intorder=DATA_INTORDER, dofs=dofs)
+            fd = FacetBasis(mesh, elem, mapping=bmap, facets=robin_idx[s], intorder=DATA_INTORDER, dofs=dofs)
             X = fd.global_coordinates() / MM
             ti = np.broadcast_to(np.asarray(g.T_inf(X[0], X[1]), dtype=float), X[0].shape)
             f_robin += _load_form.assemble(fd, f=hh * (ti - g.Tc))
@@ -552,7 +638,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                & (mp[1] > y0 * MM) & (mp[1] < y1 * MM))
         vec = np.zeros(nd)
         for s in _chunks(int(sel.sum()), fchunk):
-            fb = FacetBasis(mesh, elem, facets=bf[sel][s], intorder=4, dofs=dofs)
+            fb = FacetBasis(mesh, elem, mapping=bmap, facets=bf[sel][s], intorder=4, dofs=dofs)
             vec += _one_form.assemble(fb)
         face_dofs = np.unique(dofs.get_facet_dofs(bf[sel]).flatten())  # every node of the face (Q2: + edge/face midpoints)
         vec[_complement(face_dofs, nd)] = 0.0
@@ -580,7 +666,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                 sel = bf[(axis == ax) & (sign == sg) & ~robin]
                 part = np.zeros(nd)
                 for s in _chunks(sel.size, fchunk):
-                    fb = FacetBasis(mesh, elem, facets=sel[s], intorder=DATA_INTORDER, dofs=dofs)
+                    fb = FacetBasis(mesh, elem, mapping=bmap, facets=sel[s], intorder=DATA_INTORDER, dofs=dofs)
                     X = fb.global_coordinates() / MM
                     q = np.broadcast_to(np.asarray(g.flux(X[0], X[1], X[2], ax, sg), dtype=float), X[0].shape)
                     part += _load_form.assemble(fb, f=q / MM**2)
@@ -643,7 +729,9 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
             "P_total_W": P_tot, "q_in_die_W": q_die, "q_in_volume_W": q_vol, "q_in_boundary_W": q_bnd,
             "q_in_W": q_in, "data_intorder": DATA_INTORDER, "n_dofs": int(nd), "tj_max_xyz": tj_xyz,
             "lines": {"x": g.x.copy(), "y": g.y.copy(), "z": g.z.copy()},
-            "n_lines": {"x": int(g.x.size), "y": int(g.y.size), "z": int(g.z.size)}}
+            "n_lines": {"x": int(g.x.size), "y": int(g.y.size), "z": int(g.z.size)},
+            "snapped_lines": {ax: [(float(a), float(b)) for a, b in v] for ax, v in g.snaps.items()},
+            "max_snap_m": max([abs(b - a) for v in g.snaps.values() for a, b in v], default=0.0)}
     return ThermalResult(tj_max, tj_mean, eb, picard, resid, nd, wall, T=Tn, nodes=nodes_m, meta=meta,
                          field_eval=_FieldEval(mesh, elem, dofs, eidx, (g.x, g.y, g.z)))
 
@@ -667,7 +755,7 @@ def point_values(res: ThermalResult, pts: np.ndarray) -> np.ndarray:
     fe = res.field_eval
     if fe is None:
         raise ValueError("the result carries no field evaluator")
-    mapping = fe.mesh._mapping()
+    mapping = _BoxMapping(fe.mesh, fe.mesh.elem(), fe.mesh.bndelem)
     out = np.empty(len(pts))
     for n, p in enumerate(np.asarray(pts, dtype=float).reshape(-1, 3)):
         cand = []
@@ -772,7 +860,6 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
             extra.append((z_top_cu + a, z_top_cu + a + t, rule.nz_of("die")))
     zl_pts = sorted({round(v, 15) for v in zb} | {round(e[0], 15) for e in extra} | {round(e[1], 15) for e in extra})
     exs, eys, ezs = _split_extra(extra_lines)
-    zl0 = _merge_lines(zl_pts, ezs, zl_pts[0], zl_pts[-1], 1e-12)
     # cells per z interval at level 0
     bands = [(zb[i], zb[i + 1], zcounts[i]) for i in range(len(zcounts))] + extra
 
@@ -782,6 +869,8 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
                 return nn
         return 1
 
+    zbase = np.asarray(zl_pts, dtype=float)
+    zl0, zsnap = _merge_lines(zbase, ezs, zbase[0], zbase[-1], 1e-12, _z_cell(zbase, _z_counts(zbase, base_n, rule)))
     nzi = _z_counts(zl0, base_n, rule)
     zl = _subdivide_n(zl0, nzi, level, rule.zrefine)
     # x, y lines
@@ -795,10 +884,12 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         xs += [x0, x1]
         ys += [y0, y1]
     bx, by = layout.baseplate_outline.bounds[0::2], layout.baseplate_outline.bounds[1::2]
-    xl0 = _merge_lines(_lines(xs), exs, bx[0], bx[1], 1e-10)
-    yl0 = _merge_lines(_lines(ys), eys, by[0], by[1], 1e-10)
-    mx = _size_multipliers(xl0, [(d.bounds[0], d.bounds[2]) for d in layout.dies], rule.near_margin)
-    my = _size_multipliers(yl0, [(d.bounds[1], d.bounds[3]) for d in layout.dies], rule.near_margin)
+    ext_x, ext_y = [(d.bounds[0], d.bounds[2]) for d in layout.dies], [(d.bounds[1], d.bounds[3]) for d in layout.dies]
+    xb, yb = _lines(xs), _lines(ys)
+    xl0, xsnap = _merge_lines(xb, exs, bx[0], bx[1], 1e-10, _lateral_cell(xb, rule.h0, rule.min_cells, ext_x, rule.near_margin))
+    yl0, ysnap = _merge_lines(yb, eys, by[0], by[1], 1e-10, _lateral_cell(yb, rule.h0, rule.min_cells, ext_y, rule.near_margin))
+    mx = _size_multipliers(xl0, ext_x, rule.near_margin)
+    my = _size_multipliers(yl0, ext_y, rule.near_margin)
     xl = _subdivide(xl0, rule.h0, level, rule.min_cells, mx)
     yl = _subdivide(yl0, rule.h0, level, rule.min_cells, my)
     xc, yc, zc = 0.5 * (xl[1:] + xl[:-1]), 0.5 * (yl[1:] + yl[:-1]), 0.5 * (zl[1:] + zl[:-1])
@@ -838,7 +929,7 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
         sources.append((x0, y0, x1, y1, z_top_cu + d.attach_thickness + d.thickness, float(p)))
     return _Grid(xl, yl, zl, mat, [_k_of(m) for m in materials], sources, float(h), float(T_c),
                  ["baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die"],
-                 order=rule.element_order)
+                 order=rule.element_order, snaps={"x": xsnap, "y": ysnap, "z": zsnap})
 
 
 def estimate_dofs(layout: Layout, rule: GridRule | None = None, level: int = 0) -> int:
@@ -895,7 +986,11 @@ def solve_layout(layout: Layout, power_W: Sequence[float] | float, h: float, T_c
     ``|q_out_W / q_in_W - 1|`` with the assembled ``Q_in``.
 
     ``extra_lines=(xs, ys, zs)`` [m] are mandatory grid lines, merged into the level-0 line set before subdivision, so a
-    point on them is a node at every level (``node_value``); they must lie inside the baseplate box and the z extent.
+    point on them is a node at every level (``node_value``); they must lie inside the baseplate box and the z extent. Each
+    entry is None, a scalar or a sequence (the same in box-stack mode). A line closer than ``SNAP_FRACTION`` (1e-2) of the
+    level-0 cell size of the geometry interval that contains it (lateral ``L / n``, z ``t / n``) to an existing line
+    snaps onto it (``_merge_lines``): ``meta["snapped_lines"][axis]`` lists ``(requested, used)`` and ``meta["max_snap_m"]`` the largest
+    distance, so a reported point (``node_value`` at the ``used`` coordinate) never moved by more than that.
     ``rule.dz_max`` bounds the z cell size in absolute terms (``GridRule``).
 
     ``power_W`` is one value per die (``layout.dies`` order) or a scalar for all. ``constant_k`` uses ``k = Layer.k``
@@ -955,16 +1050,23 @@ def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c
     exs, eys, ezs = _split_extra(extra_lines)
     cx = [0.5 * (s[0] + s[2]) for s in sources]  # a source's centroid lines are always mandatory
     cy = [0.5 * (s[1] + s[3]) for s in sources]
-    xl0 = _merge_lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources],
-                       cx + ([] if exs is None else list(exs)), 0.0, a, 1e-10)
-    yl0 = _merge_lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources],
-                       cy + ([] if eys is None else list(eys)), 0.0, b, 1e-10)
-    mx = _size_multipliers(xl0, [(s[0], s[2]) for s in sources], rule.near_margin)
-    my = _size_multipliers(yl0, [(s[1], s[3]) for s in sources], rule.near_margin)
+    ext_x, ext_y = [(s[0], s[2]) for s in sources], [(s[1], s[3]) for s in sources]
+    xb = _lines([0.0, a] + [s[0] for s in sources] + [s[2] for s in sources])
+    yb = _lines([0.0, b] + [s[1] for s in sources] + [s[3] for s in sources])
+    xl0, xsnap = _merge_lines(xb, np.concatenate([cx, [] if exs is None else exs]), 0.0, a, 1e-10,
+                              _lateral_cell(xb, rule.h0, rule.min_cells, ext_x, rule.near_margin))
+    yl0, ysnap = _merge_lines(yb, np.concatenate([cy, [] if eys is None else eys]), 0.0, b, 1e-10,
+                              _lateral_cell(yb, rule.h0, rule.min_cells, ext_y, rule.near_margin))
+    mx = _size_multipliers(xl0, ext_x, rule.near_margin)
+    my = _size_multipliers(yl0, ext_y, rule.near_margin)
     xl, yl = _subdivide(xl0, rule.h0, level, rule.min_cells, mx), _subdivide(yl0, rule.h0, level, rule.min_cells, my)
     zb = np.concatenate(([0.0], np.cumsum([la.t for la in layers])))
-    zl0 = _merge_lines(zb, ezs, 0.0, float(zb[-1]), 1e-12)
-    nzi = _z_counts(zl0, lambda m: layers[min(int(np.searchsorted(zb, m) - 1), len(layers) - 1)].n, rule)
+
+    def base_n(m: float) -> int:
+        return layers[min(int(np.searchsorted(zb, m) - 1), len(layers) - 1)].n
+
+    zl0, zsnap = _merge_lines(zb, ezs, 0.0, float(zb[-1]), 1e-12, _z_cell(zb, _z_counts(zb, base_n, rule)))
+    nzi = _z_counts(zl0, base_n, rule)
     zl = _subdivide_n(zl0, nzi, level, rule.zrefine)
     mat = np.empty((xl.size - 1, yl.size - 1, zl.size - 1), dtype=np.int32)
     zc = 0.5 * (zl[1:] + zl[:-1])
@@ -978,7 +1080,7 @@ def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c
 
     srcs = [(s[0], s[1], s[2], s[3], float(zb[-1]), float(s[4])) for s in sources]
     return _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=rule.element_order,
-                 source=source, flux=flux, T_inf=T_inf)
+                 source=source, flux=flux, T_inf=T_inf, snaps={"x": xsnap, "y": ysnap, "z": zsnap})
 
 
 def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
@@ -994,7 +1096,8 @@ def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_
     ``dz_max``, ``element_order``, ``zrefine``) or the legacy ``h0`` / ``element_order`` keywords (a rule with those two
     and the defaults otherwise). The level-0 z cells of a layer are its ``BoxLayer.n``, raised to ``ceil(t / dz_max)``
     when ``rule.dz_max`` is set (``rule.nz`` is not used here). Lateral lines are 0, a, b, the source edges, every
-    source's centroid lines (always mandatory) and ``extra_lines=(xs, ys, zs)`` [m], merged before subdivision. A
+    source's centroid lines (always mandatory, so the legacy ``h0=`` grid now includes them) and ``extra_lines=(xs, ys, zs)`` [m]
+    (scalar or sequence per axis, snapped as in ``solve_layout``), merged before subdivision. A
     ``constant_k`` with a callable ``k`` evaluates it at ``T_c``. ``meta`` carries the top-surface grid (``xs``, ``ys``,
     ``T_top[nx+1, ny+1]``, vertex values) for ``top_value`` (not for reported values: use ``node_value``).
 
