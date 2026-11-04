@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-04T18:30:14+00:00 from repository state — do not edit_
+_generated 2026-11-04T18:35:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,17 +25,16 @@ _generated 2026-11-04T18:30:14+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 34 | $58.67 | 1100140 | 563707 | 42 | 0 |
+| O007 | 35 | $58.67 | 1100140 | 563707 | 42 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 193, failed: 3, needs_founder: 2, todo: 2
+cancelled: 31, done: 193, failed: 3, needs_founder: 1, running: 1, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0228 `needs_founder` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 0)
+- T0228 `running` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 1)
 
 ## Recent events
-- 2026-11-04T17:10:56+00:00 run_finished {"run": "T0227-builder-20261104T084507-31d2", "status": "completed", "cost": 0.486723, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T17:20:30+00:00 verified {"task": "T0227"}
 - 2026-11-04T17:20:34+00:00 run_started {"run": "T0231-critic-20261104T092034-2690", "task": "T0231", "role": "critic", "session": "9f639ba8-0f08-414a-8074-2e80f7c840da"}
 - 2026-11-04T17:21:07+00:00 sleep_detected {"gap_s": 613, "runs_extended": 1}
@@ -50,3 +49,4 @@ cancelled: 31, done: 193, failed: 3, needs_founder: 2, todo: 2
 - 2026-11-04T17:48:29+00:00 inbox_opened {"id": "I0122", "kind": "protected_change", "subject": "T0227: merge needs founder approval"}
 - 2026-11-04T18:30:01+00:00 inbox_resolved {"id": "I0122", "status": "approved", "note": "Merge T0227: box-stack grading bitwise identical to the probe's option (a) (T0231 verified), so the measured 0.03
 - 2026-11-04T18:30:11+00:00 merged {"task": "T0227"}
+- 2026-11-04T18:35:35+00:00 run_started {"run": "T0228-scientist-20261104T103535-ea5f", "task": "T0228", "role": "scientist", "session": "bc2323b0-520f-460f-9373-8b82b1af391a"}
