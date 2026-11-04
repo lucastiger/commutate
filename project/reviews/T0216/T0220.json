@@ -1,0 +1,46 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "A user extra line just below a source centroid displaces the 'always mandatory' centroid line (box-stack mode)",
+      "detail": "In box_stack_grid the source centroid lines are passed to _merge_lines together with the user's extra lines and processed in ascending order. If a user line lies below a centroid and within SNAP_FRACTION*cell of it, the user line is kept and the centroid snaps onto it. The centroid then stops being a grid line. If the user line lies above the centroid, the centroid is kept. So the docstring promise that 'a source's centroid lines are always mandatory' depends on the order of the inputs. The move is recorded in snapped_lines and max_snap_m, but node_value at the true centroid then raises ValueError.",
+      "evidence": "box_stack_grid(A_BOX, B_BOX, _stack(), ..., SRC2, rule=GridRule(h0=4e-3, dz_max=1e-3), extra_lines=([8e-3 - 1e-6], None, None)) gives: centroid x = 8 mm is not a line, snaps x = [(0.008, 0.007999)]. With 8e-3 + 1e-6 the centroid is kept and the user line snaps onto it.",
+      "suggested_check": "Treat source centroids as base (geometry) lines in _merge_lines, so user lines snap onto them and not the other way round.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Near-coincident snapping is only tested at level 0; Q2 level 2 with kept lines is claimed but not tested",
+      "detail": "test_near_coincident_mandatory_line_snaps_and_solves runs only at the default level 0. The kept-line tests cover Q1 at levels 0-2 and Q2 at levels 0-1 (box), and Q1 levels 0-1 and Q2 level 0 (layout). The docstring says offsets of 1e-2 of a cell converge at levels 0-2, which for Q2 level 2 is backed by no test or artifact in this change. Level 0 is enough for the snapping itself, because the snap is decided on the level-0 lines and later levels only nest. The AMG convergence margin behind SNAP_FRACTION = 1e-2 is an empirical claim, recorded only in a comment.",
+      "evidence": "Kept-line box case at Q2 level 2: about 428k DOF, roughly 4.3 GB estimated. Not run here because of the memory budget.",
+      "suggested_check": "Add a slow-marked Q2 level-2 kept-line test, or record the T0216 measurement as an artifact.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Fallback inverse map: newton_max_iters lowered from scikit-fem's 50 to 8, and the fallback clips X",
+      "detail": "_BoxMapping first calls super().invF with 8 iterations instead of the default 50. A mesh that scikit-fem would only have passed after 9-50 round-off-jitter iterations now takes the fallback path. That path is accurate to round-off but not bit-identical, so the docstring's 'bit-identical' claim holds only for cells that converge within 8 iterations. In point_values, a point within the 1e-9 relative tolerance but just outside a thin cell gets clipped and raises ValueError. That is no regression, since it failed before too.",
+      "evidence": "skfem 12.0.2 MappingIsoparametric.invF(newton_max_iters=50, newton_tol=1e-12). In the regular-mesh cases I checked, results were bit-identical at level 1.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the four definition-of-done test files: 86 passed in 286 s.",
+    "uv run ruff check src tests: all checks passed.",
+    "uv run mfos gate --fast: 'all gates passed', exit 0.",
+    "Rebuilt the pre-change thermal_fem.py by reverse-applying the packet diff in $TMPDIR and recomputed the _PINNED cases (layout and box, Q1 and Q2, level 0). Old-code values match the pinned values to about 1e-12 K, so the pins are genuine pre-change values.",
+    "Ran the box pinned case at level 1, Q1, with both old and new code: tj_max and tj_mean are bit-identical, and max_snap_m = 0.",
+    "Probed the minimum cell ratio. For every level-0 line in layout x (near_margin None and 1e-3) I placed an extra line at offsets 1e-6 to 3e-4 m; for every z line in layout and box mode (dz_max None and 5e-4) at offsets \u00b11.2e-6 to 3e-5 m. I computed the smallest new cell divided by the enclosing original level-0 cell. No case fell below SNAP_FRACTION/2 (worst z ratio 6.7e-3).",
+    "Adversarial layout solve: kept lines 1.5 x the snap distance inside the narrowest x interval (0.5 mm cells), next to the die edge in y, and below the attach/die plane in z (0.75 um z cells). It solved at Q1 levels 0-2 and Q2 levels 0-1 with energy balance at most 9e-12 and monotone tj_max (Q1: 410.15, 409.88, 409.61 K).",
+    "Mutation test: replacing _BoxMapping with plain MappingIsoparametric makes test_thin_layer_cells_solve_to_the_1d_closed_form fail ('Newton iteration didn't converge'), so the test detects removal of the fix. Its closed form (series resistances, T = Tc + q(1/h + sum t/k)) is exact for linear FE in this 1D case.",
+    "extra_lines input forms (empty lists, a 2D (3,1) array, a nested list with a scalar and None) produce consistent grids in both modes; NaN input is rejected with ValueError in both modes.",
+    "Reproduced the centroid-displacement order dependence in box-stack mode (finding 1)."
+  ],
+  "caveats": [
+    "There is no T0215 review text in the repository (the only mentions are in the two deliverables), so I checked 'completely implements' against the claim text only, not against the review's full list of findings.",
+    "SNAP_FRACTION = 1e-2 rests on an AMG-CG convergence measurement (T0216) recorded only in a comment. Solver robustness at Q2 level 2 or on larger layouts is not established by this change.",
+    "The no-sliver guarantee covers slivers created by mandatory lines only: each new cell is at least SNAP_FRACTION/n of the enclosing level-0 geometry cell. It does nothing about near-coincident geometry lines, about 3D aspect ratio (z slivers of about 1 um against mm-scale lateral cells are allowed), or about neighbouring cells made larger when near_margin multipliers are recomputed."
+  ]
+}
