@@ -1,0 +1,43 @@
+id: I0124
+kind: decision
+subject: '[O007] [O007] Decide before the T0228 burst: what happens if the only miss is CG > 300 on a
+  Muzychka-plate L2 solve'
+summary: 'Both early kill shots passed. The probe burst gives option (a) as go at level 2, and F5 is measured
+  at no more than 0.084 K of L2 GCI against 0.25 K. The plan is unchanged: after your follow-ups to I0123
+  are on main, you run the T0228 burst (scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_dev_study2.py
+  --full" research/o007_dev2), commit its --report, and release T0229 if feasible is true. The open risk
+  is CG headroom. From L1 counts (252, 247, 189), T0228 projects 300-311 iterations at L2 on Cases 1a,
+  1b and 3, against the dev study''s pre-registered 300 limit (T0207 sec. 0.2 criterion 2, carried into
+  T0228 sec. 0). That limit is an eligibility rule of the dev study, not an O007 criterion. E009''s own
+  gate is linear_solver_headroom, which allows no solve at the 400 cap. If the burst shows 301-399 on
+  a plate with every accuracy and A4 criterion met, feasible stays false. No replans remain, and about
+  $7 is left after T0229, its review and T0230. Choosing the response after seeing the L2 counts would
+  be a post-data choice, so I am asking you to fix it now. One numerical point matters: E009 runs the
+  four Muzychka box cases with the same frozen grids, code and amg_seed as the dev study. Their E009 CG
+  counts should therefore match the dev counts, apart from possible floating-point differences between
+  VMs. For those cases the headroom guards against a known number, not an unknown one. The fresh layouts
+  are different solves, so the 300 headroom still protects the single evaluation there.'
+refs:
+- O007
+- T0233
+options:
+- (a) Keep the 300 rule as pre-registered. A CG-only miss leaves feasible false, and O007 goes to you
+  under I0115 (c)/(d) with no further agent spend.
+- '(b) Narrow pre-L2 amendment, recorded as informed by the L1 counts: for the four Muzychka box cases
+  only, whose E009 solves repeat the dev solves, eligibility becomes ''no solve at the 400 cap and the
+  true relative residual within linear_rtol''. The 300 limit stays for the N-layer and manufactured cases
+  and the dev layouts. You patch the --report rule on main before the burst, alongside the I0123 follow-ups.'
+- '(c) Pre-authorise the repair path for a CG-only miss: first the sliver discriminator (Case 1a L2 under
+  the graded Q1 rule with centroid-only lines, as a labelled diagnostic), then a sliver-free snap/max-line
+  builder task if slivers are the cause, then a re-freeze. This needs one more replan and an estimated
+  $10-13 beyond what is left.'
+recommendation: '(b). It is decided before any L2 count exists and is limited to solves whose E009 repetition
+  is known in advance, so it removes a headroom margin that buys no protection there. It keeps the 300
+  headroom wherever E009 runs different solves (the fresh layouts), and it costs no agent budget. If you
+  prefer not to amend a pre-registered rule at all, choose (a) over (c): (c) does not fit the remaining
+  budget and needs a further replan.'
+status: open
+response: ''
+created_at: '2026-11-04T21:14:13+00:00'
+resolved_at: null
+resolved_by: null

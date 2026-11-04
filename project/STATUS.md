@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T19:31:12+00:00 from repository state — do not edit_
+_generated 2026-11-04T21:14:16+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0124** [decision] [O007] [O007] Decide before the T0228 burst: what happens if the only miss is CG > 300 on a Muzychka-plate L2 solve
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +14,7 @@ _generated 2026-11-04T19:31:12+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $64.65/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $65.33/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,20 +25,16 @@ _generated 2026-11-04T19:31:12+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 37 | $64.65 | 1206192 | 609946 | 51 | 0 |
+| O007 | 37 | $65.33 | 1215889 | 615846 | 51 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 31, done: 195, failed: 3, needs_founder: 2, running: 1, todo: 1
+cancelled: 31, done: 196, failed: 3, needs_founder: 2, todo: 1
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 - T0229 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen graded rule against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0233 `running` planner/plan: Plan O007 (founder 2026-11-04: one more replan allowed (I0116)) (attempt 1)
 
 ## Recent events
-- 2026-11-04T17:35:32+00:00 inbox_resolved {"id": "I0121", "status": "approved", "note": "fixed: the founder's internet connection dropped (PyPI TLS UnknownIssuer during reconnection); PyPI verified reac
-- 2026-11-04T17:36:01+00:00 run_started {"run": "T0231-critic-20261104T093601-6da6", "task": "T0231", "role": "critic", "session": "2a608ae1-a1b2-43fa-a636-b9e9f1d2e58e"}
-- 2026-11-04T17:48:26+00:00 run_finished {"run": "T0231-critic-20261104T093601-6da6", "status": "completed", "cost": 1.384725, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T17:48:29+00:00 inbox_opened {"id": "I0122", "kind": "protected_change", "subject": "T0227: merge needs founder approval"}
 - 2026-11-04T18:30:01+00:00 inbox_resolved {"id": "I0122", "status": "approved", "note": "Merge T0227: box-stack grading bitwise identical to the probe's option (a) (T0231 verified), so the measured 0.03
 - 2026-11-04T18:30:11+00:00 merged {"task": "T0227"}
@@ -51,3 +47,6 @@ cancelled: 31, done: 195, failed: 3, needs_founder: 2, running: 1, todo: 1
 - 2026-11-04T19:30:10+00:00 inbox_resolved {"id": "I0123", "status": "approved", "note": "Merge T0228: pre-registration 5570ba2 verified (ancestor of the result, script byte-identical since, section 0 un
 - 2026-11-04T19:31:09+00:00 merged {"task": "T0228"}
 - 2026-11-04T19:31:12+00:00 run_started {"run": "T0233-planner-20261104T113112-3700", "task": "T0233", "role": "planner", "session": "9bc5f2d1-db93-44ba-8f3b-a1524c13fad3"}
+- 2026-11-04T21:14:13+00:00 run_finished {"run": "T0233-planner-20261104T113112-3700", "status": "completed", "cost": 0.673057, "subtype": "success", "report": "structured_output"}
+- 2026-11-04T21:14:13+00:00 inbox_opened {"id": "I0124", "kind": "decision", "subject": "[O007] [O007] Decide before the T0228 burst: what happens if the only miss is CG > 300 on a Muzychka-plate L2 so
+- 2026-11-04T21:14:13+00:00 plan_applied {"objective": "O007", "created": [], "dropped": 0}

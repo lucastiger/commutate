@@ -3,7 +3,7 @@ objective: O007
 title: 'Plan O007 (founder 2026-11-04: one more replan allowed (I0116))'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,15 @@ target: null
 lens: null
 trigger: 'founder 2026-11-04: one more replan allowed (I0116)'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O007 has used no evaluations and has $18.45 left. T0227 (grading in GridRule) and T0228 (dev
+    study 2) have merged. Two of the three kill shots from the last plan are now measured and passed.
+    The probe burst gives option (a) as go at level 2 (research/o007_probe/probe.json). The F5 burst puts
+    the L2 GCI at levels 1-3 at no more than 0.084 K on every dev die, well inside 0.25 K (research/o007_l2/full.json).
+    What can still kill the hypothesis is in the founder''s pending T0228 burst. First, CG headroom at
+    L2 on Cases 1a, 1b and 3: L1 counts were 252, 247 and 189, which project to 300-311 against the pre-registered
+    300 limit. Second, layout Tj-max oscillation at L2: the hottest node moved on 12 of 16 dies from L0
+    to L1, which would make A4 +inf. Both are measured only by that burst and its dete'
+  created: []
+  dropped_for_limits: 0
