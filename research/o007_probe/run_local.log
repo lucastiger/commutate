@@ -1,0 +1,42 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[20:30:36]   solve p1_q2h4_maxlines__case1a__L0: 29645 DOF, est 0.15 GB <= 5.0 GB
+[20:30:39]   done p1_q2h4_maxlines__case1a__L0: 29645 DOF, 2.2 s, peak 0.39 GB, CG max 249, eb 2.6e-13
+[20:30:39]   solve p1_q2h4_maxlines__case2__L0: 10125 DOF, est 0.05 GB <= 5.0 GB
+[20:30:40]   done p1_q2h4_maxlines__case2__L0: 10125 DOF, 0.6 s, peak 0.23 GB, CG max 190, eb 2.1e-13
+[20:30:40]   solve p1_q2h4_centroid__case1a__L0: 23805 DOF, est 0.12 GB <= 5.0 GB
+[20:30:41]   FAILED p1_q2h4_centroid__case1a__L0: rc 1: T0225/src/moduleforge/solvers/thermal_fem.py", line 809, in node_value
+    raise ValueError(f"point ({x}, {y}, {z}) is not a DOF location of the mesh (tolerance {NODE_TOL_M} m)")
+ValueError: point (0.09005723063324021, 0.09005723063324021, 0.01) is not a DOF location of the mesh (tolerance 1e-09 m)
+
+[20:30:41]   solve p1_q2h4_centroid__case2__L0: 4205 DOF, est 0.02 GB <= 5.0 GB
+[20:30:41]   FAILED p1_q2h4_centroid__case2__L0: rc 1: 225/src/moduleforge/solvers/thermal_fem.py", line 809, in node_value
+    raise ValueError(f"point ({x}, {y}, {z}) is not a DOF location of the mesh (tolerance {NODE_TOL_M} m)")
+ValueError: point (0.013579065214060208, 0.012967736227938224, 0.01) is not a DOF location of the mesh (tolerance 1e-09 m)
+
+[20:30:41]   solve a_q1h4_graded__nlayer_dbc__L0: 232130 DOF, est 1.12 GB <= 5.0 GB
+[20:30:50]   done a_q1h4_graded__nlayer_dbc__L0: 232130 DOF, 8.2 s, peak 1.34 GB, CG max 132, eb 2.0e-14
+[20:30:50]   solve b_q2h1__nlayer_dbc__L0: 142155 DOF, est 0.71 GB <= 5.0 GB
+[20:31:03]   done b_q2h1__nlayer_dbc__L0: 142155 DOF, 12.3 s, peak 1.13 GB, CG max 296, eb 1.1e-13
+[20:31:03]   solve p1_q2h4_maxlines__case1a__L1: 210681 DOF, est 1.05 GB <= 5.0 GB
+[20:31:25]   done p1_q2h4_maxlines__case1a__L1: 210681 DOF, 21.3 s, peak 1.35 GB, CG max 359, eb 3.3e-12
+[20:31:25]   solve p1_q2h4_maxlines__case2__L1: 71289 DOF, est 0.36 GB <= 5.0 GB
+[20:31:31]   done p1_q2h4_maxlines__case2__L1: 71289 DOF, 5.9 s, peak 0.64 GB, CG max 288, eb 1.1e-11
+[20:31:31]   solve a_q1h4_graded__nlayer_dbc__L1: 1752579 DOF, est 8.5 GB; memory_pressure free 65 %, swap(proxy) 0.0 GB
+[20:34:54]   done a_q1h4_graded__nlayer_dbc__L1: 1752579 DOF, 202.1 s, peak 4.13 GB, CG max 191, eb 7.1e-14
+[20:34:54]   solve b_q2h1__nlayer_dbc__L1: 1087877 DOF, est 5.4 GB; memory_pressure free 55 %, swap(proxy) 0.0 GB
+[20:37:31]   done b_q2h1__nlayer_dbc__L1: 1087877 DOF, 156.2 s, peak 5.05 GB, CG max 400, eb 5.9e-13
+[20:37:31]   SKIP a_q1h4_graded__nlayer_dbc__L2: 13606565 DOF, est 65.7 GB > 10.0 GB local cap
+[20:37:31]   SKIP b_q2h1__nlayer_dbc__L2: 8508105 DOF, est 45.4 GB > 10.0 GB local cap
+[20:37:32] go_no_go: option_a provisional_go, option_b no_go; CG readings {'case1a': 'incomplete', 'case2': 'incomplete'}
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[20:37:51]   solve p1_q2h4_centroid__case1a__L0: 23805 DOF, est 0.13 GB <= 5.0 GB
+[20:37:52]   done p1_q2h4_centroid__case1a__L0: 23805 DOF, 0.5 s, peak 0.34 GB, CG max 28, eb 8.7e-14
+[20:37:52]   solve p1_q2h4_centroid__case2__L0: 4205 DOF, est 0.02 GB <= 5.0 GB
+[20:37:53]   done p1_q2h4_centroid__case2__L0: 4205 DOF, 0.1 s, peak 0.18 GB, CG max 15, eb 7.5e-14
+[20:37:53]   solve p1_q2h4_centroid__case1a__L1: 168921 DOF, est 0.90 GB <= 5.0 GB
+[20:37:58]   done p1_q2h4_centroid__case1a__L1: 168921 DOF, 4.2 s, peak 1.25 GB, CG max 32, eb 3.6e-13
+[20:37:58]   solve p1_q2h4_centroid__case2__L1: 29241 DOF, est 0.16 GB <= 5.0 GB
+[20:37:59]   done p1_q2h4_centroid__case2__L1: 29241 DOF, 0.6 s, peak 0.39 GB, CG max 17, eb 3.0e-13
+[20:37:59]   SKIP a_q1h4_graded__nlayer_dbc__L2: 13606565 DOF, est 65.7 GB > 10.0 GB local cap
+[20:37:59]   SKIP b_q2h1__nlayer_dbc__L2: 8508105 DOF, est 45.4 GB > 10.0 GB local cap
+[20:37:59] go_no_go: option_a provisional_go, option_b no_go; CG readings {'case1a': 'slivers (fixable by the line or snap policy)', 'case2': 'no headroom loss at levels 0-1 (not discriminating at these levels)'}
