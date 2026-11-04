@@ -4,7 +4,7 @@ title: 'thermal_fem: source-edge grading in GridRule (port of T0225''s emulated 
   and layout modes)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: "Founder path (a) after T0225 (I0115, I0118). Move the probe's emulated grading (research/scripts/o007_probe.py:\
   \ offsets(), grading_lines(), box_setup(), layout_grid()) into production thermal_fem.py.\n\nAPI and\
@@ -114,3 +114,43 @@ history:
   summary: Held per I0119 until the probe burst (level 2 for (a) and (b)) is committed. Release with mfos
     task retry T0227.
   at: '2026-11-04T11:09:04+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: Added GridRule.edge_grading (first_offset, ratio, max_offset, min_gap_fraction), default None,
+    so existing grids are unchanged. The helpers _grading_offsets and _grading_lines hold the probe algorithm.
+    Grading lines join the mandatory lines through _merge_lines in both box_stack_grid and layout_grid,
+    at level 0 only. In layout mode the fixed set includes every outline line. meta now carries edge_grading
+    and grading_lines per axis. Module and GridRule docstrings are updated. The new test file has 9 tests
+    covering all 7 spec items. Box-stack grids match the T0225 emulation (levels 0 and 1, all five problems).
+    Layout level-1/level-0 node ratios are 7.54 and 7.52. All DoD commands exit 0.
+  report:
+    status: completed
+    summary: Added GridRule.edge_grading (first_offset, ratio, max_offset, min_gap_fraction), default
+      None, so existing grids are unchanged. The helpers _grading_offsets and _grading_lines hold the
+      probe algorithm. Grading lines join the mandatory lines through _merge_lines in both box_stack_grid
+      and layout_grid, at level 0 only. In layout mode the fixed set includes every outline line. meta
+      now carries edge_grading and grading_lines per axis. Module and GridRule docstrings are updated.
+      The new test file has 9 tests covering all 7 spec items. Box-stack grids match the T0225 emulation
+      (levels 0 and 1, all five problems). Layout level-1/level-0 node ratios are 7.54 and 7.52. All DoD
+      commands exit 0.
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_grading.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_grading.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: box-stack grids identical to T0225 emulation (python -c, DoD)
+      exit_code: 0
+    - cmd: layout node-count ratio 6.8-9.2 and finer x lines (python -c, DoD)
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - In layout mode the fixed set includes every outline line, as the packet specifies. This differs
+      from the probe, but the probe only costed layout grids.
+    - The slab test (spec item 5) uses a single full-face source plus two abutting half-face sources.
+      The full-face source gets inward grading lines, so the slab is graded in both cases.

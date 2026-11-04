@@ -1596,3 +1596,6 @@
 {"ts": "2026-11-04T11:09:11+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0119", "status": "approved", "note": "Option 1: run both bursts now; hold T0227 until the probe burst is committed and release it only if (a) is go at level 2 (if (b) is go instead, switch to (b) with a snap-policy task); T0229 waits for T0228's burst and --report", "by": "human"}
 {"ts": "2026-11-04T11:09:11+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0120", "status": "approved", "note": "Plan approved (T0227-T0230); T0227 held per I0119", "by": "human"}
 {"ts": "2026-11-04T16:45:07+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0227-builder-20261104T084507-31d2", "task": "T0227", "role": "builder", "session": "ae86bdc4-d415-4158-9150-bad3aae2af1e"}
+{"ts": "2026-11-04T17:10:56+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0227-builder-20261104T084507-31d2", "status": "completed", "cost": 0.486723, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-04T17:20:30+00:00", "event": "verified", "actor": "orchestrator", "task": "T0227"}
+{"ts": "2026-11-04T17:20:34+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0231-critic-20261104T092034-2690", "task": "T0231", "role": "critic", "session": "9f639ba8-0f08-414a-8074-2e80f7c840da"}
