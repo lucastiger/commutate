@@ -1,8 +1,10 @@
 # ModuleForge status
-_generated 2026-11-04T01:32:04+00:00 from repository state — do not edit_
+_generated 2026-11-04T01:35:49+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (3 open)
+- **I0110** [decision] [O007] Amend held T0208 (E009 design): AMG-CG headroom guard (T0218 rec. 3) and a dependency on the new thermal_fem instrumentation task
+- **I0111** [decision] [O007] Orchestrator (tools/mfos, protected): a founder stop is counted as an agent attempt and spawns a diagnosis
+- **I0112** [plan_approval] [O007] approve initial plan (1 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +16,7 @@ _generated 2026-11-04T01:32:04+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $40.41/$70 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $41.51/$70 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,22 +27,17 @@ _generated 2026-11-04T01:32:04+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 26 | $40.41 | 739302 | 372752 | 31 | 0 |
+| O007 | 26 | $41.51 | 759896 | 387169 | 31 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 184, failed: 3, needs_founder: 1, running: 2, todo: 1
+cancelled: 30, done: 185, failed: 3, needs_founder: 1, proposed: 1, running: 1, todo: 1
 
 - T0207 `running` scientist/investigate: O007 development study: choose and freeze the scikit-fem configuration (element order, h0, near margin, dz_max, mandatory lines, tolerances) on the reference cases and the two dev layouts; E009 memory and cost plan (attempt 1)
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0221 `running` planner/plan: Plan O007 (diagnosis:T0218 of T0216 (implementation)) (attempt 1)
+- T0222 `proposed` builder/implement: thermal_fem: report AMG-CG iterations and final relative residual per linear solve in ThermalResult.meta (instrumentation only, numerics unchanged) (attempt 0)
 
 ## Recent events
-- 2026-11-04T00:01:44+00:00 run_finished {"run": "T0216-builder-20261103T153752-d11b", "status": "completed", "cost": 0.662595, "subtype": "success", "report": "structured_output"}
-- 2026-11-04T00:14:20+00:00 verified {"task": "T0216"}
-- 2026-11-04T00:14:25+00:00 run_started {"run": "T0219-critic-20261103T161425-2900", "task": "T0219", "role": "critic", "session": "0625d7db-9c4e-4b1c-9d5b-0ec8465ad651"}
-- 2026-11-04T00:14:26+00:00 run_started {"run": "T0220-critic-20261103T161426-88f6", "task": "T0220", "role": "critic", "session": "6eb11cd3-4275-40c6-9bb4-5346f86b70c4"}
-- 2026-11-04T00:15:00+00:00 sleep_detected {"gap_s": 1068, "runs_extended": 2}
 - 2026-11-04T00:20:49+00:00 run_finished {"run": "T0219-critic-20261103T161425-2900", "status": "completed", "cost": 1.423908, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T00:20:54+00:00 inbox_opened {"id": "I0108", "kind": "protected_change", "subject": "T0218: merge needs founder approval"}
 - 2026-11-04T00:27:53+00:00 run_finished {"run": "T0220-critic-20261103T161426-88f6", "status": "completed", "cost": 2.537472, "subtype": "success", "report": "structured_output"}
@@ -51,3 +48,8 @@ cancelled: 30, done: 184, failed: 3, needs_founder: 1, running: 2, todo: 1
 - 2026-11-04T01:32:00+00:00 merged {"task": "T0218"}
 - 2026-11-04T01:32:02+00:00 run_started {"run": "T0221-planner-20261103T173202-cf34", "task": "T0221", "role": "planner", "session": "95b1a59d-d8ec-469f-830b-58656d248ab9"}
 - 2026-11-04T01:32:04+00:00 run_started {"run": "T0207-scientist-20261103T173204-4fe3", "task": "T0207", "role": "scientist", "session": "79536b18-03ab-4ebf-b8da-d177995f72dc"}
+- 2026-11-04T01:35:46+00:00 run_finished {"run": "T0221-planner-20261103T173202-cf34", "status": "completed", "cost": 1.101878, "subtype": "success", "report": "structured_output"}
+- 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0110", "kind": "decision", "subject": "[O007] Amend held T0208 (E009 design): AMG-CG headroom guard (T0218 rec. 3) and a dependency on the new thermal_
+- 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0111", "kind": "decision", "subject": "[O007] Orchestrator (tools/mfos, protected): a founder stop is counted as an agent attempt and spawns a diagnosi
+- 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0112", "kind": "plan_approval", "subject": "[O007] approve initial plan (1 tasks)"}
+- 2026-11-04T01:35:46+00:00 plan_applied {"objective": "O007", "created": ["T0222"], "dropped": 0}

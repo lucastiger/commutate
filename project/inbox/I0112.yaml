@@ -1,0 +1,32 @@
+id: I0112
+kind: plan_approval
+subject: '[O007] approve initial plan (1 tasks)'
+summary: 'O007 has no evaluation yet ($40.41 of $70 spent, 0 of 1 evaluations used, replans 3/3). The
+  trigger was T0216''s attempt 3, which diagnosis T0218 put in the infrastructure class: the founder stopped
+  the run on purpose, and the orchestrator recorded the stop as agent_error. T0216 is done, and its DoD
+  passes on eb4c541 with main''s AMG fixes merged in, so no repair task is needed. The only forward risk
+  the diagnosis found is AMG-CG headroom. With mandatory lines kept just outside the snap distance, CG
+  used 362 of 400 iterations at level 2 and reached the cap at level 3. That capped solve was accepted
+  only by the looser 1e-8 check, while LINEAR_RTOL is 1e-11. thermal_fem does not report iteration counts,
+  so linear-solver error could pass silently into the GCIs that A3 and A4 are computed from (F2), in a
+  run that has a single evaluation. The exposure on E009''s fresh layouts looks low, because every lateral
+  geometry edge from the generator lies on the 0.5 mm design grid and layout mode adds no mandatory lines.
+  The reference-case grids are the same ones T0207 now screens under the founder''s >300-iteration eligibility
+  rule. The guard is still cheap and the diagnosis recommends it. It has to live in production thermal_fem,
+  not in a runner patch, because O003 inherits this code under code_must_match. So the plan adds one small
+  builder task that only exposes CG iterations and final residuals; it changes no numerics. Two founder
+  requests cover the rest: wiring the guard into the held T0208 brief and its dependencies, which I cannot
+  amend myself, and the orchestrator bookkeeping gap in a protected path. Evidence is complete: E009 already
+  has its design task (T0208) and its experiment task (T0209).'
+refs:
+- O007
+- T0222
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-04T01:35:46+00:00'
+resolved_at: null
+resolved_by: null

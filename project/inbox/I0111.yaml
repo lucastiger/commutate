@@ -1,0 +1,24 @@
+id: I0111
+kind: decision
+subject: '[O007] Orchestrator (tools/mfos, protected): a founder stop is counted as an agent attempt and
+  spawns a diagnosis'
+summary: T0218 found that loop.py::_on_run_done and _fail never check for a founder hold. Your deliberate
+  stop of T0216's attempt 3 was therefore recorded as agent_error, which diagnose.py maps to implementation.
+  That used up the last attempt and spawned diagnosis T0218, review T0219 and this replan. The cost was
+  about $3-4 of O007's budget and one of its three replans; O007 is now at 3/3 replans. The kill at 23:29:27
+  also left no event. This is outside O007's scope and in a protected path, so only you can schedule it.
+refs:
+- O007
+- T0221
+options:
+- '(a) Founder-approved tools/mfos task: when a run is found dead and the task is held, or has a founder_hold
+  newer than the run''s start, record founder_stopped, give the attempt back and do not diagnose; optionally
+  have `mfos task hold` stop the run itself and emit run_stopped'
+- (b) Leave as is and hold tasks only between runs
+recommendation: (a). It is small, it removes a source of false diagnoses, and it protects scarce replans
+  on objectives with fixed deadlines like O003's day-60 test.
+status: open
+response: ''
+created_at: '2026-11-04T01:35:46+00:00'
+resolved_at: null
+resolved_by: null

@@ -1,0 +1,33 @@
+id: I0110
+kind: decision
+subject: '[O007] Amend held T0208 (E009 design): AMG-CG headroom guard (T0218 rec. 3) and a dependency
+  on the new thermal_fem instrumentation task'
+summary: 'Diagnosis T0218 found AMG-CG at 362 of 400 iterations (level 2), and at the cap at level 3,
+  on grids with near-threshold kept lines. A capped solve is accepted by the 1e-8 final check even though
+  LINEAR_RTOL is 1e-11, so linear-solver error can pass silently into the GCIs behind A3 and A4. You already
+  amended T0207 to record CG iterations and to make a configuration ineligible above 300. T0208''s brief
+  has no such guard, and T0208 is under your hold (I0101), so I cannot change its brief or its dependencies.
+  This plan creates a builder task (n1) that exposes meta[''cg_iterations''], ''cg_max_iterations'', ''linear_rel_residual_max''
+  and ''cg_hit_maxiter'' in thermal_fem with no numerical change. Proposed T0208 amendment: (1) depends_on
+  += n1, so the E009 registration hashes the instrumented thermal_fem and T0209 inherits the dependency
+  through T0208; (2) rows record, per reported value, the cg_max_iterations and linear_rel_residual_max
+  of each grid''s solve; (3) add a gated sanity check ''linear_solver_headroom'': no solve that feeds
+  a reported value has cg_hit_maxiter True; (4) a diagnostic count of solves above 300 iterations, matching
+  T0207''s rule. Expected trigger rate is low. Fresh generator layouts have every lateral edge on the
+  0.5 mm design grid and no mandatory lines, and the reference-case grids are the ones T0207 screens.'
+refs:
+- O007
+- T0221
+options:
+- '(a) Amend T0208 as proposed, with the headroom check gated: a capped solve makes the run INVALID, fixed
+  under a new experiment id, rather than silently contaminating a GCI'
+- (b) Amend T0208 to record the counts as diagnostics only, not gated
+- (c) No change to T0208; n1 still gives O003 the counts
+recommendation: (a). It is what T0218 recommends. It costs nothing on grids without slivers, and it keeps
+  linear-solver error from being mistaken for discretisation error in the single evaluation. If you prefer
+  (b), the counts are still recorded and auditable.
+status: open
+response: ''
+created_at: '2026-11-04T01:35:46+00:00'
+resolved_at: null
+resolved_by: null

@@ -1,0 +1,87 @@
+id: T0222
+objective: O007
+title: 'thermal_fem: report AMG-CG iterations and final relative residual per linear solve in ThermalResult.meta
+  (instrumentation only, numerics unchanged)'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: "Diagnosis T0218 (research/diagnoses/T0218.md sections 4 and 7, rec. 3) found the following.\
+  \ On grids with mandatory lines kept just outside the snap distance, AMG-CG in _Solver.solve used 362\
+  \ of its 400 iterations at level 2 and reached the cap at level 3. That capped solve was accepted only\
+  \ by the looser final check ||b - A x|| <= 1e-8 ||b||, while LINEAR_RTOL is 1e-11. thermal_fem does\
+  \ not report this, so neither E009's runner nor O003 can tell whether a reported value came from a capped\
+  \ solve. Make it visible without changing anything numerical.\n\n(1) Name the cap as a module constant\
+  \ CG_MAXITER = 400 and use it in _Solver.solve (same value).\n(2) For every linear solve in a solve_layout\
+  \ or solve_box_stack call (every Picard step), record the CG iteration count and the final true relative\
+  \ residual ||b - A x|| / ||b||, the quantity the existing 1e-8 check already computes. Add these to\
+  \ ThermalResult.meta:\n  - 'cg_iterations': list of int, one per linear solve;\n  - 'cg_max_iterations':\
+  \ int;\n  - 'linear_rel_residual_max': float;\n  - 'cg_hit_maxiter': bool, True if any solve's iteration\
+  \ count reached CG_MAXITER or its CG did not reach LINEAR_RTOL.\n(3) Numerics stay unchanged. Do not\
+  \ change the cap value, LINEAR_RTOL, the 1e-8 final check, AMG_SEED, _sa_solver, the p-multigrid hierarchy,\
+  \ smoothers, constant-mode deflation, SNAP_FRACTION, the grid rule or Picard. The founder's 'leave _Solver\
+  \ alone' still holds for behaviour; this task only adds counting. The counting must not alter the iterates\
+  \ (for example, pyamg's residuals list or a callback).\n\nAdd tests in tests/unit/solvers/test_thermal_fem_solver_stats.py:\n\
+  \  (a) In-process bit-identity, Q1 and Q2: on the same assembled system, the instrumented _Solver.solve\
+  \ returns a solution bitwise equal to the same multilevel solve called without the instrumentation.\n\
+  \  (b) The meta keys exist with the right types, 1 <= cg_max_iterations <= CG_MAXITER, linear_rel_residual_max\
+  \ <= 1e-8, and cg_hit_maxiter is False on a plain grid, in both box-stack and layout modes.\n  (c) On\
+  \ the setup of test_kept_line_just_outside_snap_distance_solves_above_level_0_box (Q1, levels 0-1),\
+  \ cg_max_iterations exceeds that of the same case with the lines snapped, so the counter sees the sliver\
+  \ effect.\nThe existing pinned Q1/Q2 values in test_thermal_fem_rule.py must pass unchanged. Document\
+  \ the new meta keys in docs/thermal_model.md. Keep the new tests' runtime under about 60 s."
+context_files:
+- research/diagnoses/T0218.md
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- docs/thermal_model.md
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_solver_stats.py
+- docs/thermal_model.md
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_solver_stats.py
+- docs/thermal_model.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_solver_stats.py tests/unit/solvers/test_thermal_fem_rule.py
+    tests/unit/solvers/test_thermal_fem.py tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python -c "import moduleforge.solvers.thermal_fem as m; assert m.CG_MAXITER == 400 and m.LINEAR_RTOL
+    == 1e-11 and m.AMG_SEED == 20261103 and m.SNAP_FRACTION == 1e-2 and m.PICARD_TOL_K == 1e-4"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "s=open('src/moduleforge/solvers/thermal_fem.py').read(); assert all(k in s for
+    k in ('cg_iterations','cg_max_iterations','linear_rel_residual_max','cg_hit_maxiter'))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 1800
+experiment: null
+risk: low
+model: null
+budget_usd: 2.5
+max_turns: 50
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0221
+created_at: '2026-11-04T01:35:46+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Failure mode F2 requires that A3 and A4 GCIs reflect discretisation and not linear-solver error,
+  and the single E009 run (max_evaluations 1) must be able to gate on that. This is diagnosis T0218 rec.
+  3. The guard must be in production thermal_fem, because O003 uses the same code under code_must_match;
+  a runner-side patch of _Solver would not satisfy that.
+history: []
