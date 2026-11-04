@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T04:51:52+00:00 from repository state — do not edit_
+_generated 2026-11-04T10:12:21+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0118** [protected_change] T0225: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,12 @@ _generated 2026-11-04T04:51:52+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 189, failed: 3, needs_founder: 2, todo: 1
+cancelled: 30, done: 189, failed: 3, merge: 1, needs_founder: 1, todo: 1
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0225 `needs_founder` scientist/investigate: O007 feasibility probe after T0207: N-layer source-edge resolution (emulated edge grading, Q2 finer near sources), Q2 CG sliver-vs-conditioning discriminator, E009 cost per option (attempt 1)
+- T0225 `merge` scientist/investigate: O007 feasibility probe after T0207: N-layer source-edge resolution (emulated edge grading, Q2 finer near sources), Q2 CG sliver-vs-conditioning discriminator, E009 cost per option (attempt 1)
 
 ## Recent events
-- 2026-11-04T04:14:20+00:00 inbox_resolved {"id": "I0114", "status": "approved", "note": "T0207 dev study: no feasible scikit-fem configuration (N-layer error 0.48-1.39 K; Q2 CG at the cap at level 2). R
 - 2026-11-04T04:14:52+00:00 merged {"task": "T0207"}
 - 2026-11-04T04:14:54+00:00 run_started {"run": "T0224-planner-20261103T201454-d682", "task": "T0224", "role": "planner", "session": "04328ae7-cabb-4772-a7bf-18ad237c62a3"}
 - 2026-11-04T04:18:57+00:00 run_finished {"run": "T0224-planner-20261103T201454-d682", "status": "completed", "cost": 1.105553, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 30, done: 189, failed: 3, needs_founder: 2, todo: 1
 - 2026-11-04T04:48:11+00:00 run_finished {"run": "T0225-scientist-20261103T202231-f14d", "status": "completed", "cost": 2.986866, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T04:51:47+00:00 verified {"task": "T0225"}
 - 2026-11-04T04:51:50+00:00 inbox_opened {"id": "I0118", "kind": "protected_change", "subject": "T0225: merge needs founder approval"}
+- 2026-11-04T10:11:52+00:00 inbox_resolved {"id": "I0118", "status": "approved", "note": "T0225 probe: (a) provisional_go (L2 extrapolated 0.039 K vs 0.040 K margin), (b) no_go only through max-line sliv
