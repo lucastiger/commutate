@@ -125,10 +125,21 @@ MAXH="${MF_GCP_MAX_HOURS:-6}"
 gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command "sudo shutdown -h +$((MAXH * 60 + 20)) > /dev/null 2>&1; nohup bash -c 'bash ~/job.sh > ~/job.log 2>&1; echo \$? > ~/job.rc' > /dev/null 2>&1 < /dev/null &"
 echo "job started on $NAME: $JOB"
 RC=""
+GONE=0
 DEADLINE=$((SECONDS + MAXH * 3600))
 while [ -z "$RC" ] && [ $SECONDS -lt $DEADLINE ]; do
   sleep 30
   RC="$(gcloud compute ssh "$NAME" --zone "$ZONE" --quiet --command 'cat ~/job.rc 2> /dev/null' 2> /dev/null | tr -d '[:space:]' || true)"
+  # A spot VM can be preempted (2026-11-03: after 27 min, then this loop waited 6.5 h for a VM that no longer existed).
+  # Only a successful listing that shows the VM missing or not running counts; a failed gcloud call (network) never does,
+  # so a connection blip cannot end the wait or delete a healthy VM. Two consecutive such polls end the wait.
+  if [ -z "$RC" ] && STATE="$(gcloud compute instances list --filter="name=$NAME" --format='value(status)' 2> /dev/null)"; then
+    case "$STATE" in
+      RUNNING|PROVISIONING|STAGING|REPAIRING) GONE=0 ;;
+      *) GONE=$((GONE + 1)) ;;
+    esac
+    if [ "$GONE" -ge 2 ]; then echo "VM $NAME is ${STATE:-gone} (spot preemption or deletion): stopping the wait" >&2; RC=125; fi
+  fi
 done
 [ -n "$RC" ] || { echo "job did not finish within ${MAXH} h" >&2; RC=124; }
 gcloud compute scp --zone "$ZONE" --quiet "$NAME:job.log" "$WORK/job.log" > /dev/null 2>&1 || true
