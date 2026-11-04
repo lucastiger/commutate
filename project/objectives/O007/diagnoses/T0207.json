@@ -1,0 +1,54 @@
+{
+  "summary": "None of the four pre-registered scikit-fem configurations can be frozen for E009, so frozen_config.json has feasible: false. The pre-registration was committed as df40ac9 before any solve. The four candidates were Q1 with h0 4 mm / dz_max 1 mm, Q1 with 2 mm / 0.5 mm, Q2 with 4 mm / 5 mm, and Q2 with 4 mm / 2 mm, all with near_margin 2 mm. Q1 misses on accuracy, measured at level 2. q1_h4 is 1.389 K off at the N-layer d3 source mean, against the 0.040 K margin and the 0.05 K of A2. Its A4 on the reference cases is 3.67 K, and the GCI is +inf on both dev layouts because some Tj-max sequences diverge. q1_h2 is 0.680 K off at the N-layer level 2. Q2 is much more accurate (Case 1a at level 2: error 0.0115 K, GCI 0.042 K), but it fails the founder's CG rule. It needs 359 and 352 iterations at level 1 on Case 1a and reaches the 400-iteration cap at level 2 on Cases 1a and 2. Q2 is also still 0.48 K off on the N-layer case at level 1. The gates hold everywhere: energy balance at most 2.4e-11, node-count growth 7.04 to 7.77 per level, every reported point a node on all levels, reference hashes and dev fingerprints verified. The F3 null discriminates: constant k gives a 2.51 K error, failing A1 and A2. 'chosen' in the JSON files is q1_h4. It is listed for the record only, as the cheapest candidate with complete three-level data, and is not a recommendation. That display choice was not pre-specified and is labelled as made after the data. Measured Q2 memory is 3.0 to 6.0 kB per DOF, falling with size. The E009 tables per candidate range from a 4.7 GB peak and 0.4 h (q1_h4) to 18.3 GB and 3.7 h (q2_h4z2). All fit the n2-highmem-32 burst VM. The local run stayed under 5.64 GB peak, one solve at a time. Separately, I found and fixed a flaw in my own instrumentation. pyamg's preconditioner calls the same solve object, so my first counter recorded 2n+1 instead of n CG iterations. Old entries were converted by (n-1)/2, and a re-solve confirmed it: 154 predicted, 154 counted, bit-identical residual. Commands and exit codes: the --plan run exited 0. The first study launch exited 1 on a cache bookkeeping bug (no solve affected); after the fix the study exited 0. --report exited 0, ruff exited 0, both DoD python checks exited 0, and `mfos gate --fast` reported 'all gates passed'.",
+  "failure_class": "planning",
+  "root_cause": "Two measured obstacles. (1) The N-layer DBC reference case is badly under-resolved. Its die-sized flux patches sit on thin layers (0.18 mm die, 0.05 mm attach, 0.3 mm Cu, 0.38 mm ceramic). The source-mean error converges slowly, at observed order about 1.2 for Q1, so reaching 0.05 K needs lateral cells near the source edges far below what h0 with near_margin's x1/x2/x4 steps gives. Refining by r = 2 in x, y and z over three levels then puts the 300 mm Muzychka plates at tens of millions of DOF. (2) Q2's AMG-CG uses up its iteration headroom on the weak-Robin 10 mm plates (Cases 1a and 2): over 300 iterations at level 1 and the 400 cap at level 2. Neither is an implementation defect in the configurations tested. The objective's A2/K2 pair, the r = 2 three-level rule, and the affordable grid budget do not fit together for the N-layer case with this grid rule.",
+  "confidence": 0.8,
+  "evidence": [
+    "[F] q1_h4 level 2: N-layer d3 source mean 402.03 / 408.92 / 411.86 K vs reference 413.25 K (|err| 1.389 K, GCI 3.67 K, observed order about 1.2); dev_study.json candidates.q1_h4.cases.nlayer_dbc",
+    "[F] q1_h2 level 2: N-layer max |err| 0.680 K, GCI 2.00 K; side_by_side_6 has 8 divergent Tj-max sequences",
+    "[F] q2_h4: Case 1a level 2 |err| 0.0115 K, GCI 0.042 K; CG max iterations by level on Case 1a 249 / 359 / 400 (cap); on Case 2 190 / 288 / 400; N-layer level 1 |err| 0.482 K",
+    "[F] q2_h4z2: CG 352 on Case 1a level 1, 400 on Case 2 level 2",
+    "[F] Case 1b, Case 3 and the manufactured case meet A1, A2 and A4 for every candidate (worst manufactured-case error 0.0085 K for Q1)",
+    "[F] Gates: energy balance at most 2.4e-11; manufactured Q_out within 1e-6 of 64.648 W; Picard below 1e-4 K; node-count growth 7.04 to 7.77, inside 8 +/- 15 %; reported points are nodes at identical coordinates on all levels",
+    "[F] F3 null: constant k at the layer-mean temperature gives a 2.51 K error (scaled 0.025) for every candidate, failing A1 and A2",
+    "[F] Reference hashes befc5efa (series) and ca05847b (manufactured) verified; dev fingerprints 1f66b68a and 6aaf383a equal E006.yaml; only dev seed 20261101 used",
+    "[F] CG-count check: the converted count predicted 154, the re-solve counted 154, and the final residual 1.1093e-11 was bit-identical, so the instrumentation does not change the solve",
+    "[F] Measured Q2 peak bytes/DOF: 3.0 kB at 2.08 M DOF, 3.9 kB at 1.58 M, 4.0-6.0 kB at 0.2-0.6 M; local peak 5.64 GB"
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "The frozen N-layer reference value of the source mean is wrong, or it means something other than the solver's Galerkin face mean.",
+      "how_to_discriminate": "Three facts argue against it: the error moves monotonically toward the reference under refinement for both Q1 and Q2; Cases 1b and 3 and the manufactured case agree to 0.0003-0.008 K through the same code; and the series' own convergence is gated in E006. A direct test would be one Q2 level-2 N-layer solve on the burst VM (3.06 M DOF, about 12-14 GB): an error that stalls near a nonzero value would point to the reference."
+    },
+    {
+      "explanation": "The large CG counts come from slivers created by the reference-maximum mandatory lines, not from the weak Robin coupling.",
+      "how_to_discriminate": "Re-run Case 1a and Case 2 at level 1 without the maximum lines (centroid lines only) and compare the iteration counts. Not run here, to stay within the brief (no solver changes) and the budget."
+    },
+    {
+      "explanation": "Q1 divergent or oscillatory Tj-max sequences on the layouts are caused by the argmax node moving between levels, not by a lack of grid convergence.",
+      "how_to_discriminate": "Compare the Tj value at a fixed node that persists across levels with Tj max. The argmax node already moves on 14 of 16 dies (recorded per level in dev_study.json)."
+    }
+  ],
+  "discriminating_tests": [
+    "Done: re-solve with the corrected CG counter (predicted 154, counted 154, identical residual)",
+    "Done: monotone convergence of every failing point toward its reference, with GCI bracketing the true error (q1_h4 N-layer: GCI 3.67 K against an error of 1.39 K)",
+    "Not run (needs the burst VM): Q2 level 2 on the N-layer case, to confirm the extrapolated error of about 0.1 K",
+    "Not run: Case 1a and Case 2 level-1 CG counts without the maximum mandatory lines, to separate sliver effects from weak-Robin conditioning"
+  ],
+  "recommended_actions": [
+    "Founder decision before E009 is designed: no pre-registered configuration reaches A2 (0.05 K) on the N-layer source means at an affordable three-level, r = 2 grid. With any of the four, E009 would trip K2 (> 0.25 K) through a discretisation shortfall, not a model error. Options, each needing a new pre-registered study: (a) a builder task adding edge grading toward the sources to the thermal_fem grid rule; (b) Q2 with a finer h0 near sources only, costed on the burst VM; (c) revisit the resolution budget or criteria for the N-layer case at objective level.",
+    "Implementation task, with its own review: AMG-CG headroom for Q2 on the weak-Robin plates. It reaches the 400 cap at level 2 on Cases 1a and 2, and those solves pass only through the 1e-8 final check. Options include the preconditioner, the cap, or the snap policy. Until then Q2 is ineligible under the T0218 rule.",
+    "Keep the corrected CG instrumentation (count only the outer accel='cg' call) in the E009 runner. pyamg's residuals list and a naive callback both miscount.",
+    "Optional founder dev burst to complete the missing levels (the verdict does not depend on it): scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study.py --full\" research/o007_dev (it resumes from the cache)."
+  ],
+  "files_written": [
+    "research/notes/o007-dev-study.md",
+    "research/scripts/o007_dev_study.py",
+    "research/o007_dev/frozen_config.json",
+    "research/o007_dev/dev_study.json",
+    "research/o007_dev/plan.json",
+    "research/o007_dev/run_local.log",
+    "research/o007_dev/cache/"
+  ],
+  "affects_acceptance_criteria": true
+}
