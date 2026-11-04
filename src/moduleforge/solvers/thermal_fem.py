@@ -70,7 +70,9 @@ attempt 2): Q2 8.1 kB/DOF at 57 k DOF (0.47 GB, 5 s), 4.5 kB at 416 k (1.9 GB, 4
 attempt 1 measured 9.9 kB/DOF at 60 k on a three-layer box stack. ``BYTES_PER_DOF_BY_ORDER[2]`` = 10 kB is the upper bound
 of those figures (the small-mesh figures are dominated by the fixed Python/numpy baseline). Q1 on the same 416 k DOF:
 4.4 kB/DOF (1.8 GB, 34 s) chunked, against 7.6 kB/DOF (3.1 GB, 18 s) for the earlier version that kept one basis of all
-elements: chunking costs Q1 about 1.8 times the wall time for 42 % less memory. ``estimate_dofs`` counts the Q2 dofs
+elements: chunking costs Q1 about 1.8 times the wall time for 42 % less memory. Most of that time, growing as N^2 /
+chunk, was scikit-fem's global split inside ``interpolate``, which ``_interpolate`` avoids (2026-11-04: at 1.7 M elements
+0.38 s per chunk against 0.001 s, same values). ``estimate_dofs`` counts the Q2 dofs
 (vertices, edges, faces and cells of the active cells); at equal DOF a Q2 mesh has 8 times fewer cells.
 
 Memory, Q1. D0006 estimated about 7.7 kB per DOF for scikit-fem + pyamg; ``max_dofs(budget_bytes)`` converts a budget into
@@ -407,6 +409,21 @@ def _element(order: int):
     return ElementHex1() if order == 1 else ElementHex2()
 
 
+def _interpolate(cb: CellBasis, w: np.ndarray) -> np.ndarray:
+    """``np.asarray(cb.interpolate(w))`` for a scalar element, at the cost of ``cb``'s own elements.
+
+    scikit-fem 12.0's ``interpolate`` first splits ``w`` by ``np.unique`` over the whole ``Dofs.element_dofs``. With the
+    global ``Dofs`` shared by every chunk's basis that is O(N) per chunk, O(N^2 / chunk) per k(T) assembly: 13.6 M Q1
+    DOFs spent more than 100 min in one Picard step's assembly (O007 probe burst, 2026-11-04). The loop below is
+    scikit-fem's ``linear_combination`` term for term, so the values are bit-identical."""
+    if w.shape[0] != cb.N:
+        raise ValueError("Input array has wrong size.")
+    out = 0.0 * np.einsum("...,...j->...j", w[cb.element_dofs[0]], cb.basis[0][0].get(0))
+    for i in range(cb.Nbfun):
+        out += np.einsum("...,...j->...j", w[cb.element_dofs[i]], cb.basis[i][0].get(0))
+    return out
+
+
 def _sum_chunks(parts) -> sp.csr_matrix | None:
     """Sum an iterable of sparse matrices by a binary-counter tree (cost O(nnz log n_chunks), not O(n_chunks nnz); at most
     about two partial sums of the final size are alive at once)."""
@@ -703,7 +720,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                 if constant_k:
                     Tq = np.full((idx.size, nq), k_const_T if k_const_T is not None else g.Tc)
                 else:
-                    Tq = np.asarray(cb.interpolate(T_prev))  # absolute T at this chunk's quadrature points
+                    Tq = _interpolate(cb, T_prev)  # absolute T at this chunk's quadrature points
                 kq = np.empty((idx.size, nq))
                 em = emat[idx]
                 for m in range(kmax):
@@ -787,7 +804,7 @@ def point_values(res: ThermalResult, pts: np.ndarray) -> np.ndarray:
             raise ValueError(f"point {p} is not in an active cell")
         X = mapping.invF((p * MM)[:, None, None], tind=np.array([e]))
         cb = CellBasis(fe.mesh, fe.elem, elements=np.array([e]), quadrature=(X[:, 0, :], np.array([1.0])), dofs=fe.dofs)
-        out[n] = float(np.asarray(cb.interpolate(res.T)).ravel()[0])
+        out[n] = float(_interpolate(cb, res.T).ravel()[0])
     return out
 
 

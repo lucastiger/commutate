@@ -413,3 +413,42 @@ def test_o006_manufactured_case_q2_coarse_levels():
     res = _check_mms(2, (0, 1))
     q1 = _mms_levels(1, (1,))[0][1]  # Q2 at level 0 (same dof count as Q1 at level 1) is at least as accurate
     assert max(abs(v) for v in res[0][1].values()) < max(abs(v) for v in q1.values())
+
+
+# ------------------------------------------------------------------------------------------------- 6. chunked assembly
+@pytest.mark.parametrize("order", [1, 2])
+def test_chunk_interpolation_equals_scikit_fem_bit_for_bit(order):
+    """``_interpolate`` on a basis restricted to one chunk of elements (the global ``Dofs`` shared, as in the assembly)
+    returns exactly scikit-fem's ``interpolate`` values for chunks at the start, middle and end of the mesh: it only
+    skips scikit-fem's global ``np.unique`` split, whose cost grows with the whole mesh."""
+    from skfem import CellBasis, MeshHex
+    from skfem.assembly import Dofs
+
+    mesh = MeshHex.init_tensor(*(np.linspace(0.0, 1.0, 9),) * 3)
+    elem = F._element(order)
+    dofs = Dofs(mesh, elem)
+    w = np.random.default_rng(20261104).random(dofs.N)
+    ne = mesh.t.shape[1]
+    for idx in (np.arange(0, 50), np.arange(200, 260), np.arange(ne - 30, ne)):
+        cb = CellBasis(mesh, elem, intorder=4 if order == 2 else 2, elements=idx, dofs=dofs)
+        assert np.array_equal(F._interpolate(cb, w), np.asarray(cb.interpolate(w)))
+    with pytest.raises(ValueError):
+        F._interpolate(cb, w[:-1])
+
+
+@pytest.mark.parametrize("order", [1, 2])
+def test_kt_picard_solve_is_unchanged_by_the_chunk_interpolation(order, monkeypatch):
+    """A k(T) column (several Picard steps, so the lagged k is interpolated at every step) gives bit-identical nodal
+    temperatures and point values with ``_interpolate`` and with scikit-fem's own ``interpolate``."""
+    layer = F.BoxLayer(5e-3, lambda T: 100.0 * (1.0 + 6e-3 * (np.asarray(T) - 300.0)), 1)
+
+    def run():
+        r = F.solve_box_stack(0.01, 0.01, [layer], 2.0e4, 300.0, [(0, 0, 0.01, 0.01, 300.0)], h0=0.01, level=1,
+                              element_order=order, picard_tol=1e-11)
+        return r, F.point_values(r, np.array([[3e-3, 4e-3, 1e-3], [5e-3, 5e-3, 4.9e-3]]))
+
+    r_new, p_new = run()
+    monkeypatch.setattr(F, "_interpolate", lambda cb, w: np.asarray(cb.interpolate(w)))
+    r_ref, p_ref = run()
+    assert r_new.picard_iters > 3 and r_new.picard_iters == r_ref.picard_iters
+    assert np.array_equal(r_new.T, r_ref.T) and np.array_equal(p_new, p_ref)

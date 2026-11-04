@@ -18,6 +18,10 @@
 # MF_GCP_DISK_GB sets the boot disk (default 20 GB). Size the machine by memory: the thermal solvers run on one core.
 # Setup (once): docs/INFRASTRUCTURE.md, "Burst compute on Google Cloud".
 set -euo pipefail
+# The whole script is one brace group, so bash parses all of it before running any of it: editing this file while a
+# burst runs cannot change the running copy (2026-11-04: an in-place edit shifted the bytes bash had yet to read, and
+# the running probe burst died with a syntax error after its wait loop, before the copy-back).
+{
 MODE=exp
 case "${1:-}" in
   --check) MODE=check; shift ;;
@@ -287,3 +291,4 @@ fi
 if [ -n "$NAME" ]; then account "exit $RC"; fi
 echo "--- VM time (the deleting step adds about a minute each):$ACCOUNT"
 exit "$RC"
+}
