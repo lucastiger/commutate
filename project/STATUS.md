@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-04T00:27:58+00:00 from repository state — do not edit_
+_generated 2026-11-04T01:28:13+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0108** [protected_change] T0218: merge needs founder approval
-- **I0109** [protected_change] T0216: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -30,15 +29,13 @@ _generated 2026-11-04T00:27:58+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 182, failed: 3, needs_founder: 3, todo: 2
+cancelled: 30, done: 182, failed: 3, merge: 2, needs_founder: 1, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0216 `needs_founder` builder/implement: thermal_fem: snap near-coincident mandatory grid lines (no sliver cells); extra_lines input parity (review T0215 of T0206) (attempt 4)
-- T0218 `needs_founder` scientist/investigate: Diagnose failure of T0216 (attempt 2)
+- T0216 `merge` builder/implement: thermal_fem: snap near-coincident mandatory grid lines (no sliver cells); extra_lines input parity (review T0215 of T0206) (attempt 4)
+- T0218 `merge` scientist/investigate: Diagnose failure of T0216 (attempt 2)
 
 ## Recent events
-- 2026-11-03T23:37:13+00:00 task_failed_attempt {"task": "T0218", "signal": "agent_error", "action": "repair"}
-- 2026-11-03T23:37:16+00:00 run_started {"run": "T0218-scientist-20261103T153716-0728", "task": "T0218", "role": "scientist", "session": "ee7c956a-2f84-4c29-b9a5-e62cb8ecdc8a"}
 - 2026-11-03T23:37:52+00:00 run_started {"run": "T0216-builder-20261103T153752-d11b", "task": "T0216", "role": "builder", "session": "c2ddb676-0d3a-4d6d-afd0-e275ae84114f"}
 - 2026-11-03T23:57:13+00:00 run_finished {"run": "T0218-scientist-20261103T153716-0728", "status": "completed", "cost": 2.432332, "subtype": "success", "report": "structured_output"}
 - 2026-11-03T23:57:59+00:00 task_amended {"task": "T0207", "reason": "T0218 iteration headroom"}
@@ -52,3 +49,5 @@ cancelled: 30, done: 182, failed: 3, needs_founder: 3, todo: 2
 - 2026-11-04T00:20:54+00:00 inbox_opened {"id": "I0108", "kind": "protected_change", "subject": "T0218: merge needs founder approval"}
 - 2026-11-04T00:27:53+00:00 run_finished {"run": "T0220-critic-20261103T161426-88f6", "status": "completed", "cost": 2.537472, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T00:27:56+00:00 inbox_opened {"id": "I0109", "kind": "protected_change", "subject": "T0216: merge needs founder approval"}
+- 2026-11-04T01:27:59+00:00 inbox_resolved {"id": "I0108", "status": "approved", "note": "T0218 diagnosis note (review T0219 accept with caveats): T0216 attempt 3 was a founder stop; AMG fixes 1b869ea/95
+- 2026-11-04T01:28:01+00:00 inbox_resolved {"id": "I0109", "status": "approved", "note": "T0216: snap near-coincident mandatory lines, thin-cell-safe inverse map, extra_lines parity (review T0220 accept 
