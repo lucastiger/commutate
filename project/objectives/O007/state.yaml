@@ -16,5 +16,11 @@ log:
 - 'founder approved I0099: Option (a): ref_gci_cap in max_gci_consistency (committed); E009''s A3 recompute
   uses ref_gci_cap 0.25, floor 0.001 (no replan)'
 - diagnosis:T0218 of T0216 (implementation)
+- 'founder approved I0110: Option (a): T0208 waits for T0222; rows record CG iterations and residual per
+  grid solve; gated sanity check linear_solver_headroom (no capped solve feeds a reported value -> INVALID);
+  diagnostic count above 300 (no replan)'
+- 'founder approved I0111: Option (a): founder-session patch to tools/mfos covering founder stops (no
+  attempt used, no diagnosis), reviews parked by infrastructure (no merge request without a verdict),
+  and cancel not undone by the loop (no replan)'
 evidence_rules: 2
 frozen_hash: sha256:35b7943c786d5f810977218c3d7af475db63ee0a8f56c4b90b1e79abd4fc8ed5

@@ -26,8 +26,10 @@ options:
 recommendation: (a). It is what T0218 recommends. It costs nothing on grids without slivers, and it keeps
   linear-solver error from being mistaken for discretisation error in the single evaluation. If you prefer
   (b), the counts are still recorded and auditable.
-status: open
-response: ''
+status: approved
+response: 'Option (a): T0208 waits for T0222; rows record CG iterations and residual per grid solve; gated
+  sanity check linear_solver_headroom (no capped solve feeds a reported value -> INVALID); diagnostic
+  count above 300'
 created_at: '2026-11-04T01:35:46+00:00'
-resolved_at: null
-resolved_by: null
+resolved_at: '2026-11-04T01:37:27+00:00'
+resolved_by: human
