@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-04T10:12:46+00:00 from repository state — do not edit_
+_generated 2026-11-04T10:21:22+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (2 open)
+- **I0119** [external_action] [O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and hold n3 until n2's burst and --report are committed
+- **I0120** [plan_approval] [O007] approve initial plan (4 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +15,7 @@ _generated 2026-11-04T10:12:46+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $53.60/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $55.64/$83 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,20 +26,19 @@ _generated 2026-11-04T10:12:46+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 31 | $53.60 | 992526 | 505790 | 38 | 0 |
+| O007 | 31 | $55.64 | 1042703 | 541088 | 38 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 30, done: 190, failed: 3, needs_founder: 1, running: 1, todo: 1
+cancelled: 31, done: 191, failed: 3, needs_founder: 1, proposed: 4
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0226 `running` planner/plan: Plan O007 (founder 2026-11-04: one more replan allowed (I0116)) (attempt 1)
+- T0227 `proposed` builder/implement: thermal_fem: source-edge grading in GridRule (port of T0225's emulated option-(a) grading, box-stack and layout modes) (attempt 0)
+- T0228 `proposed` scientist/investigate: O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and the dev layouts (deterministic --report freeze after a founder burst) (attempt 0)
+- T0229 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen graded rule against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
+- T0230 `proposed` none/experiment: Run E009: scikit-fem thermal reference (graded rule) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
 
 ## Recent events
-- 2026-11-04T04:18:57+00:00 run_finished {"run": "T0224-planner-20261103T201454-d682", "status": "completed", "cost": 1.105553, "subtype": "success", "report": "structured_output"}
-- 2026-11-04T04:18:58+00:00 inbox_opened {"id": "I0115", "kind": "decision", "subject": "[O007] [O007] Path after T0207: no scikit-fem configuration can be frozen (N-layer A2 out of reach on the curren
-- 2026-11-04T04:18:58+00:00 inbox_opened {"id": "I0116", "kind": "budget_increase", "subject": "[O007] [O007] Budget and replan allowance to reach E009 after T0207's negative dev study"}
-- 2026-11-04T04:18:58+00:00 inbox_opened {"id": "I0117", "kind": "plan_approval", "subject": "[O007] approve initial plan (1 tasks)"}
 - 2026-11-04T04:18:58+00:00 plan_applied {"objective": "O007", "created": ["T0225"], "dropped": 0}
 - 2026-11-04T04:22:04+00:00 inbox_resolved {"id": "I0117", "status": "approved", "note": "Plan approved: T0225 feasibility probe (research only)", "by": "human"}
 - 2026-11-04T04:22:04+00:00 inbox_resolved {"id": "I0115", "status": "approved", "note": "Probe first (T0225). Choose (a) edge grading or (b) Q2 finer near sources from its go/no-go; (c)/(d) only if both
@@ -50,3 +50,7 @@ cancelled: 30, done: 190, failed: 3, needs_founder: 1, running: 1, todo: 1
 - 2026-11-04T10:11:52+00:00 inbox_resolved {"id": "I0118", "status": "approved", "note": "T0225 probe: (a) provisional_go (L2 extrapolated 0.039 K vs 0.040 K margin), (b) no_go only through max-line sliv
 - 2026-11-04T10:12:43+00:00 merged {"task": "T0225"}
 - 2026-11-04T10:12:46+00:00 run_started {"run": "T0226-planner-20261104T021246-6424", "task": "T0226", "role": "planner", "session": "ef5107dc-61e2-4288-8b67-b0bc3588508c"}
+- 2026-11-04T10:21:19+00:00 run_finished {"run": "T0226-planner-20261104T021246-6424", "status": "completed", "cost": 2.043838, "subtype": "success", "report": "structured_output"}
+- 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0119", "kind": "external_action", "subject": "[O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and h
+- 2026-11-04T10:21:20+00:00 inbox_opened {"id": "I0120", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
+- 2026-11-04T10:21:20+00:00 plan_applied {"objective": "O007", "created": ["T0227", "T0228", "T0229", "T0230"], "dropped": 0}

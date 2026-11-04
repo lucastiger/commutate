@@ -1,0 +1,35 @@
+id: I0119
+kind: external_action
+subject: '[O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst
+  is in, and hold n3 until n2''s burst and --report are committed'
+summary: 'Path (a) rests on an extrapolation: T0225 put the N-layer L2 error at 0.039 K against a 0.040
+  K margin, which requires the observed order to stay at or above 1.93. Two kill shots can be measured
+  now, before any agent spend, with commands that are already on main. (1) The probe burst, scripts/burst_gcp.sh
+  --cmd "uv run python research/scripts/o007_probe.py --full" research/o007_probe (about 57 GB peak; resumes
+  from cache). It measures N-layer L2 for options (a) and (b) under the probe''s pre-registered go rule:
+  measured error at most 0.040 K and CG at most 300. (2) The L2 cross-check burst, scripts/burst_gcp.sh
+  --cmd "uv run python research/scripts/o007_l2_preview.py --full --out research/o007_l2/full.json" research/o007_l2.
+  It measures F5, the in-house L2''s GCI at levels 1-3, on the dev layouts; F5 has only been predicted
+  so far and would cap A3. If (1) shows (a) no_go at level 2, I recommend cancelling n1-n4 and taking
+  the I0115 (c)/(d) decision, since no replans remain. If (b)''s measured L2 is good in that case, (b)
+  still needs a snap-policy builder task that is outside this plan. Later, n2''s own burst (its plan.json
+  burst_command; the script must be on main first) is needed before n3 can start, because n3''s done-check
+  requires frozen_config feasible: true. Budget: about $19 of tasks plus about $6 of reviews against $29.50,
+  so there is little margin for a repair attempt.'
+refs:
+- O007
+- T0226
+options:
+- Run both bursts now; hold n1 until the probe burst is committed, then release n1 only if (a) is go at
+  level 2; hold n3 until n2's burst and --report are committed (recommended)
+- 'Run both bursts now and release n1 in parallel: about 1 day faster, but about $8 (builder plus reviews)
+  is lost if (a) fails at level 2'
+- Skip the early bursts; n2's dev-study burst becomes the first level-2 measurement (latest and most expensive
+  point to learn that (a) fails)
+recommendation: Option 1. Both bursts cost VM time only and could each make the single E009 evaluation
+  pointless. Measuring them first protects the last $29.50 and the last replan.
+status: open
+response: ''
+created_at: '2026-11-04T10:21:20+00:00'
+resolved_at: null
+resolved_by: null

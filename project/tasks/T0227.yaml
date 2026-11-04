@@ -1,0 +1,111 @@
+id: T0227
+objective: O007
+title: 'thermal_fem: source-edge grading in GridRule (port of T0225''s emulated option-(a) grading, box-stack
+  and layout modes)'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: "Founder path (a) after T0225 (I0115, I0118). Move the probe's emulated grading (research/scripts/o007_probe.py:\
+  \ offsets(), grading_lines(), box_setup(), layout_grid()) into production thermal_fem.py.\n\nAPI and\
+  \ algorithm:\n- Add the field GridRule.edge_grading: tuple[float, float, float, float] | None = None,\
+  \ meaning (first_offset_m, ratio, max_offset_m, min_gap_fraction). The default None must leave every\
+  \ existing grid and result bit-identical.\n- Offsets: o_0 = first; o_{k+1} = o_k * ratio (cumulative,\
+  \ as offsets()), while o_k <= max_offset * (1 + 1e-9). Step s_0 = o_0 and s_k = o_k - o_{k-1}.\n- Candidates,\
+  \ per axis (x and y), for every source extent (e0, e1):\n  - outward e0 - o and e1 + o, always;\n  -\
+  \ inward e0 + o and e1 - o, only if o < half-width - min_gap_fraction * s.\n- Take candidates in sorted\
+  \ (s, v) order, finest first. Drop one if it lies outside (lo, hi), or closer than min_gap_fraction\
+  \ * s to any fixed line or already accepted grading line.\n- Fixed lines: domain ends, source edges,\
+  \ every geometry line of that axis, and the requested (pre-snap) mandatory extra_lines. In box-stack\
+  \ mode the geometry lines are 0, a/b, source edges and centroids, so the fixed set equals the probe's.\
+  \ In layout mode they also include every outline line of the layout, to avoid slivers next to copper\
+  \ edges; the probe only costed layout grids, so no measured result depends on that difference.\n- Sources\
+  \ are the srcs rectangles in box-stack mode and the layout.dies footprints in layout mode, as in the\
+  \ probe.\n- Accepted grading lines join the mandatory lines through the existing _merge_lines: the same\
+  \ SNAP_FRACTION rule, with snaps recorded.\n- Grading applies at level 0 only. Higher levels bisect\
+  \ through _subdivide, unchanged (r = 2 in x, y and z), so every level-0 line remains a node on every\
+  \ level.\n- meta records the edge_grading parameters and the number of grading lines per axis.\n- Update\
+  \ the module and GridRule docstrings.\n\nTests in tests/unit/solvers/test_thermal_fem_grading.py:\n\
+  (1) the offsets for (1e-4, 2.5, 4e-3, 0.5) are 0.1, 0.25, 0.625, 1.5625 and 3.90625 mm;\n(2) no grading\
+  \ line lies closer than min_gap_fraction * s to a fixed or other grading line, and all lie inside the\
+  \ domain;\n(3) every level-0 line is in the level-1 and level-2 line sets, for a graded box-stack case\
+  \ and a graded layout;\n(4) grading lines depend only on geometry: identical for two powers and two\
+  \ h values;\n(5) analytic: a constant-k two-layer slab with uniform top flux q over the full face and\
+  \ Robin bottom gives T_top = T_c + q/h + q * sum(t_i / k_i) (1-D series resistance, exact for Q1 since\
+  \ T is piecewise linear in z); the graded result matches to 1e-9 relative;\n(6) energy balance |Q_out\
+  \ / Q_in - 1| <= 1e-6 on a small graded box-stack with a die-sized source and k(T);\n(7) mirror symmetry:\
+  \ a centred source gives grading lines symmetric to 1e-12 m and mirrored nodal temperatures equal to\
+  \ 1e-9 K.\n\nDo not change SNAP_FRACTION, CG_MAXITER, LINEAR_RTOL, the near_margin rule or any default."
+context_files:
+- src/moduleforge/solvers/thermal_fem.py
+- research/scripts/o007_probe.py
+- research/notes/o007-probe.md
+- research/scripts/o007_dev_study.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- tests/unit/solvers/test_thermal_fem.py
+- project/objectives/O007/objective.yaml
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_grading.py
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_grading.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_grading.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: 'uv run python -c "import sys; sys.path.insert(0, ''research/scripts''); import numpy as np, o007_probe
+    as P, o007_dev_study as DS; from moduleforge.solvers import thermal_fem as F; ser = DS.load_refs()[0];
+    r = F.GridRule(h0=4e-3, nz={}, default_nz=1, zrefine=True, near_margin=2e-3, element_order=1, dz_max=1e-3,
+    edge_grading=(1e-4, 2.5, 4e-3, 0.5)); B = {p: DS.box_problem(ser, p) for p in (''nlayer_dbc'', ''case1a'',
+    ''case1b'', ''case2'', ''case3'')}; G = lambda p, lv: F.box_stack_grid(B[p][''a''], B[p][''b''], B[p][''layers''],
+    B[p][''h''], B[p][''Tc''], B[p][''srcs''], rule=r, level=lv, extra_lines=(list(B[p][''extra''][0]),
+    list(B[p][''extra''][1]), None)); same = lambda u, v: u.shape == v.shape and np.allclose(u, v, rtol=0.0,
+    atol=1e-12); bad = [(p, lv) for p in B for lv in (0, 1) if not all(same(getattr(G(p, lv), a), getattr(P.box_grid(''a_q1h4_graded'',
+    p, lv, ser), a)) for a in ''xyz'')]; assert not bad, bad; print(''box-stack grids identical to the
+    T0225 emulation'')"'
+  exists: null
+  timeout_s: 900
+- cmd: 'uv run python -c "import sys; sys.path.insert(0, ''research/scripts''); import o007_dev_study
+    as DS; from moduleforge.solvers import thermal_fem as F; r = F.GridRule(h0=4e-3, nz={}, default_nz=1,
+    zrefine=True, near_margin=2e-3, element_order=1, dz_max=1e-3, edge_grading=(1e-4, 2.5, 4e-3, 0.5));
+    r0 = F.GridRule(h0=4e-3, nz={}, default_nz=1, zrefine=True, near_margin=2e-3, element_order=1, dz_max=1e-3);
+    n = lambda g: g.x.size * g.y.size * g.z.size; L = {k: DS.dev_layout(k) for k in (''side_by_side_6'',
+    ''u_shaped_2'')}; q = [n(F.layout_grid(L[k], 1.0, DS.H_OP, DS.COOLANT_K, r, 1)) / n(F.layout_grid(L[k],
+    1.0, DS.H_OP, DS.COOLANT_K, r, 0)) for k in L]; assert all(6.8 <= v <= 9.2 for v in q), q; assert
+    all(F.layout_grid(L[k], 1.0, DS.H_OP, DS.COOLANT_K, r, 0).x.size > F.layout_grid(L[k], 1.0, DS.H_OP,
+    DS.COOLANT_K, r0, 0).x.size for k in L); print(q)"'
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0226
+created_at: '2026-11-04T10:21:20+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in requires the one frozen grid rule to come from thermal_fem's own code, for E009 and
+  for O003. T0207 identified the N-layer source edges as the binding case (A2/K2), and T0225 showed that
+  grading fixes it (provisional_go). The line-for-line check against the emulation makes T0225's measured
+  N-layer values transfer to production.
+history: []

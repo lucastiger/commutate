@@ -1,0 +1,36 @@
+id: I0120
+kind: plan_approval
+subject: '[O007] approve initial plan (4 tasks)'
+summary: 'O007 has no evaluation yet: $53.60 spent, $29.50 left, and this is the last replan the founder
+  allowed (I0116). T0207 measured that no configuration could be frozen. The binding case is the N-layer
+  source mean, which is under-resolved at the source edges rather than modelled wrongly, and Q2 also breaks
+  the 300-iteration CG rule. T0225''s pre-registered probe returned option (a), Q1 with geometric source-edge
+  grading, as provisional_go: 0.152 K at L1 with order 1.96, extrapolated to 0.039 K at L2 against a 0.040
+  K margin. Option (b) came back no_go, so by the founder''s I0115 rule this plan takes path (a). Three
+  risks could still sink the hypothesis before the single evaluation is spent: the N-layer L2 error or
+  order under grading (a margin of about 1 mK), divergent Q1 Tj-max sequences on the layouts (10 of 16
+  dies ungraded in T0207, which gives A4 = +inf), and F5 on the L2 at levels 1-3, which has been predicted
+  but never measured. The first and third can be measured now for VM cost only, with burst commands that
+  are already written, so the founder request asks for those first and for n1 to be held until the probe
+  burst is in. After that the plan is the shortest chain to E009: build the probe''s grading into GridRule,
+  checked line by line against the emulation so the probe evidence carries over; run one pre-registered
+  dev study on the production rule, whose --report freezes the configuration deterministically after a
+  founder burst; then a re-scoped E009 design and run. That replaces T0208 and T0209, which point at T0207''s
+  infeasible frozen config and do not depend on the grading code; the estimate is about $19 of task budget
+  plus about $6 of reviews, which leaves little room for a repair attempt, and with no replans left any
+  failure goes straight to the founder.'
+refs:
+- O007
+- T0227
+- T0228
+- T0229
+- T0230
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-04T10:21:20+00:00'
+resolved_at: null
+resolved_by: null

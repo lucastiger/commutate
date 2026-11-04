@@ -1589,3 +1589,7 @@
 {"ts": "2026-11-04T10:11:52+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0118", "status": "approved", "note": "T0225 probe: (a) provisional_go (L2 extrapolated 0.039 K vs 0.040 K margin), (b) no_go only through max-line slivers (4.3 um cells; extrapolated 0.012 K); Q2 CG headroom is a grid-line policy issue, not conditioning", "by": "human"}
 {"ts": "2026-11-04T10:12:43+00:00", "event": "merged", "actor": "orchestrator", "task": "T0225"}
 {"ts": "2026-11-04T10:12:46+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0226-planner-20261104T021246-6424", "task": "T0226", "role": "planner", "session": "ef5107dc-61e2-4288-8b67-b0bc3588508c"}
+{"ts": "2026-11-04T10:21:19+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0226-planner-20261104T021246-6424", "status": "completed", "cost": 2.043838, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-04T10:21:20+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0119", "kind": "external_action", "subject": "[O007] [O007] Run the two ready dev bursts now (VM cost only); hold n1 until the probe burst is in, and hold n3 until n2's burst and --report are committed"}
+{"ts": "2026-11-04T10:21:20+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0120", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
+{"ts": "2026-11-04T10:21:20+00:00", "event": "plan_applied", "actor": "orchestrator", "objective": "O007", "created": ["T0227", "T0228", "T0229", "T0230"], "dropped": 0}

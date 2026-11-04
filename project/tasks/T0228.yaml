@@ -1,0 +1,170 @@
+id: T0228
+objective: O007
+title: 'O007 dev study 2: pre-registered freeze of the graded scikit-fem rule on the reference cases and
+  the dev layouts (deterministic --report freeze after a founder burst)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0227
+description: 'Pre-registered development study on the production graded rule (n1). It replaces T0207''s
+  infeasible freeze and is the last check before E009 is designed. Write research/scripts/o007_dev_study2.py,
+  reusing o007_dev_study.py and o007_probe.py by import: load_refs, box_problem, mms_extra, dev_layout,
+  the child-process worker, the memory gate, and the ''cg_only'' counter or thermal_fem meta[''cg_iterations'']
+  (T0222). Outputs go under research/o007_dev2/. Make no production code change.
+
+
+  (1) Pre-registration. Write section 0 of research/notes/o007-dev-study2.md and commit it before any
+  solve; only grid construction is allowed beforehand. Record the commit hash in dev_study.json as preregistration_commit.
+  Section 0 fixes:
+
+  - Candidates, at most two. Candidate 1 is exactly T0225''s a_q1h4_graded, built through production GridRule:
+  Q1, h0 4 mm, near_margin 2 mm, dz_max 1 mm, nz_min 1, min_cells 2, edge_grading (1e-4, 2.5, 4e-3, 0.5),
+  production mandatory lines and SNAP_FRACTION, linear_rtol 1e-11, CG cap 400, Picard 1e-4 K, levels [0,
+  1, 2]. Candidate 2 is optional. It is chosen from a grid-only cost survey, its E009 peak must be at
+  most 217.6 GB, and its rationale must name the kill risk it targets.
+
+  - Eligibility: T0207 note section 0.2, criteria 1-4, unchanged. That means the gates; CG at most 300
+  iterations on every L0-L2 solve; A1 at most 0.008; A2 at most 0.040 K; A4 at most 0.40 K on the cases
+  and at most 0.25 K on the dev-layout dies; and every E009 finest solve within 217.6 GB, with fresh layouts
+  at 1.5 x the larger dev layout. All of it is measured at level 2 on all six cases and both dev layouts.
+
+  - Choice: the cheapest eligible candidate by E009 finest-level peak memory.
+
+
+  (2) Problems, as in T0207:
+
+  - Cases 1a, 1b, 2 and 3 and the N-layer DBC case in box-stack mode, and the manufactured case in layout
+  mode, all with O006''s frozen references (check the sha256 befc5efa... and ca05847b... first).
+
+  - Dev seed 20261101: side_by_side with dies_per_switch = 6 and u_shaped with dies_per_switch = 2. Assert
+  the E006 fingerprints. Use no other seed, no fresh layouts and no data/holdout.
+
+  - Calibrated operating point (hottest die 60 +/- 1 K above 65 C coolant, h = 5000) and k(T).
+
+  Record per point and per die what T0207 recorded:
+
+  - the three level values, |T - T_ref|, scaled error, gci_capped (floor 1e-3 K), branch, p_obs, d1 and
+  d2;
+
+  - the stencil;
+
+  - argmax_xyz per level and the move count;
+
+  - a constant-k column;
+
+  - node_count_ratio per case;
+
+  - cg_max_per_level for every case and layout.
+
+  As a diagnostic only (not eligibility), also record the three-level GCI of each die''s value at a fixed
+  persistent node, the die-centroid node. This separates argmax movement from non-convergence (T0207 alternative
+  explanation 3).
+
+
+  (3) Run under the T0207/T0225 local memory rule. Add a --full mode. Write its burst command, scripts/burst_gcp.sh
+  --cmd "uv run python research/scripts/o007_dev_study2.py --full" research/o007_dev2, to research/o007_dev2/plan.json
+  as burst_command; the mode ends by running --report. Cached T0225 probe solves may be reused only where
+  the grid is asserted line-identical.
+
+
+  (4) --report is deterministic. It applies the pre-registered rule to the cached solves and writes dev_study.json
+  and frozen_config.json.
+
+  - frozen_config.json keeps T0207''s keys (element_order, h0_m, near_margin_m, dz_max_m, nz_min, mandatory_lines,
+  quadrature, linear_rtol, picard_tol_K, levels, feasible, rationale) and adds edge_grading {first_offset_m,
+  ratio, max_offset_m, min_gap_fraction}.
+
+  - feasible is true only when every criterion is measured at level 2.
+
+  - Before the founder''s burst, the expected state is feasible: false, with levels_run showing what is
+  missing. That is a valid completion, not a failure.
+
+
+  (5) Write an E009 cost table covering every scikit-fem solve, plus the FV L2 levels 1-3 cost from T0204''s
+  preview: peak memory, CPU-hours and a recommended timeout. The note also records the dev A1/A2/A4 values
+  for E009''s K1/K2 regression guard. Label every post-data change as such.'
+context_files:
+- project/objectives/O007/objective.yaml
+- research/notes/o007-dev-study.md
+- research/scripts/o007_dev_study.py
+- research/notes/o007-probe.md
+- research/scripts/o007_probe.py
+- research/o007_probe/probe.json
+- research/o007_l2/preview.json
+- research/notes/o007-l2-crosscheck-preview.md
+- src/moduleforge/solvers/thermal_fem.py
+- experiments/specs/E006.yaml
+- tools/mfos/mfos/metrics.py
+- project/reviews/OBJ-O007/T0202.json
+deliverables:
+- research/scripts/o007_dev_study2.py
+- research/o007_dev2/frozen_config.json
+- research/o007_dev2/dev_study.json
+- research/o007_dev2/plan.json
+- research/notes/o007-dev-study2.md
+touches:
+- research/scripts/o007_dev_study2.py
+- research/o007_dev2/**
+- research/notes/o007-dev-study2.md
+definition_of_done:
+- cmd: null
+  exists: research/o007_dev2/frozen_config.json
+  timeout_s: 60
+- cmd: uv run python -c "import json; from moduleforge.solvers import thermal_fem as F; c = json.load(open('research/o007_dev2/frozen_config.json'));
+    g = c['edge_grading']; assert c['levels'] == [0, 1, 2] and c['picard_tol_K'] == 1e-4 and isinstance(c['feasible'],
+    bool) and c['element_order'] in (1, 2); assert set(g) == {'first_offset_m', 'ratio', 'max_offset_m',
+    'min_gap_fraction'}; assert all(k in c for k in ('h0_m', 'near_margin_m', 'dz_max_m', 'nz_min', 'mandatory_lines',
+    'quadrature', 'linear_rtol', 'rationale')); F.GridRule(h0=c['h0_m'], near_margin=c['near_margin_m'],
+    dz_max=c['dz_max_m'], element_order=c['element_order'], edge_grading=(g['first_offset_m'], g['ratio'],
+    g['max_offset_m'], g['min_gap_fraction']))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('research/o007_dev2/dev_study.json')); c = json.load(open('research/o007_dev2/frozen_config.json'));
+    ch = d['chosen']; cs, ls = ch['cases'], ch['layouts']; assert {'case1a', 'case1b', 'case2', 'case3',
+    'nlayer_dbc', 'mms'} <= set(cs) and {'side_by_side_6', 'u_shaped_2'} <= set(ls); assert all('node_count_ratio'
+    in v for v in cs.values()); allv = list(cs.values()) + list(ls.values()); assert all(len(v['levels_run'])
+    >= 2 and len(v['cg_max_per_level']) == len(v['levels_run']) for v in allv); assert all(len(x['argmax_xyz'])
+    == len(ls[k]['levels_run']) and 'gci_K' in x for k in ('side_by_side_6', 'u_shaped_2') for x in ls[k]['dies']);
+    assert (not c['feasible']) or all(v['levels_run'] == [0, 1, 2] for v in allv); assert len(d['preregistration_commit'])
+    >= 7"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import subprocess, sys; f = 'research/o007_dev2/frozen_config.json'; a = open(f).read();
+    subprocess.run([sys.executable, 'research/scripts/o007_dev_study2.py', '--report'], check=True); assert
+    open(f).read() == a, 'report is not deterministic'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; p = json.load(open('research/o007_dev2/plan.json')); assert 'o007_dev_study2.py
+    --full' in p['burst_command']"
+  exists: null
+  timeout_s: 60
+- cmd: null
+  exists: research/notes/o007-dev-study2.md
+  timeout_s: 60
+- cmd: uv run ruff check research/scripts/o007_dev_study2.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0226
+created_at: '2026-11-04T10:21:20+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'scope_in: one configuration frozen before E009 registration, on dev data. This task is the
+  only place where the remaining kill risks are measured on the full case set before the single evaluation:
+  N-layer L2 under grading, Q1 Tj-max convergence on layouts (A4, F2) and CG headroom on the Muzychka
+  plates. The freeze is deterministic, so the post-burst result needs no agent judgment.'
+history: []
