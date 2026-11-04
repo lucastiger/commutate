@@ -262,3 +262,10 @@ node. `top_value` (bilinear, vertices only) is not for reported values.
 coordinates [m] (the first such DOF on an exact tie); `tj_mean[i]` stays the Galerkin area integral. `meta` also records
 `n_dofs`, `n_elements`, `element_order`, `level` (set by the solve functions), the per-axis line arrays `meta['lines']` and
 the counts `meta['n_lines']`, so a runner can check bisection and DOF growth.
+
+**Linear-solver statistics.** Every linear solve (one per Picard step) is counted without changing the iterates (pyamg's own
+residual history; numerics, `LINEAR_RTOL` = 1e-11, the 1e-8 final check and `CG_MAXITER` = 400 are untouched). `meta` records
+`cg_iterations` (list of int, one per solve; a warm start at the solution takes 0), `cg_max_iterations` (int, their maximum),
+`linear_rel_residual_max` (float, the largest true ‖b − A x‖/‖b‖ of the returned solutions, the quantity the 1e-8 check tests)
+and `cg_hit_maxiter` (bool: some solve reached `CG_MAXITER` iterations or its CG did not reach `LINEAR_RTOL`, so it was accepted
+only by the 1e-8 check). Mandatory lines kept just outside the snap distance make slivers that raise the counts (T0218).

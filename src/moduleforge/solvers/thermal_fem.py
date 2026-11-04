@@ -115,6 +115,7 @@ BYTES_PER_DOF_BY_ORDER = {1: BYTES_PER_DOF, 2: 10.0e3}  # whole-process peak RSS
 DATA_INTORDER = 7  # quadrature of manufactured data: 4x4x4 / 4x4 Gauss points (exact to degree 7 per direction)
 PICARD_TOL_K = 1.0e-4  # stop when max |dT| of an iteration is below this [K]
 LINEAR_RTOL = 1.0e-11  # relative residual of every AMG-CG solve
+CG_MAXITER = 400  # iteration cap of every AMG-CG solve
 REFINEMENT_RATIO = 2  # constant r of the three-level study
 LEVELS = (0, 1, 2)
 _HEX_CORNERS = ((0, 0, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1), (1, 1, 1))  # skfem order
@@ -557,8 +558,17 @@ class _Solver:
 
     def solve(self, b: np.ndarray, x0: np.ndarray) -> np.ndarray:
         c = float(self.one @ b) / self.c_den
-        x = c + self.ml.solve(b - c * self.a1, x0=x0 - c, tol=LINEAR_RTOL, maxiter=400, accel="cg")
-        if np.linalg.norm(b - self.A @ x) > 1e-8 * np.linalg.norm(b):
+        hist: list = []  # pyamg's own residual history (read only: it does not change the iterates)
+        y, info = self.ml.solve(b - c * self.a1, x0=x0 - c, tol=LINEAR_RTOL, maxiter=CG_MAXITER, accel="cg",
+                                residuals=hist, return_info=True)
+        x = c + y
+        nb = np.linalg.norm(b)
+        rel = float(np.linalg.norm(b - self.A @ x) / nb) if nb > 0.0 else float(np.linalg.norm(b - self.A @ x))
+        # info is 0 on convergence to LINEAR_RTOL and the iteration count otherwise; hist[0] is the starting residual
+        iters = len(hist) - 1
+        self.stats = {"iterations": int(iters), "rel_residual": rel,
+                      "hit_maxiter": bool(iters >= CG_MAXITER or info != 0)}
+        if np.linalg.norm(b - self.A @ x) > 1e-8 * nb:
             raise RuntimeError("AMG-CG did not converge to a relative residual of 1e-8")
         return x
 
@@ -681,6 +691,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     picard = 0
     resid = float("inf")
     kmax = len(g.kfun)
+    cg_stats: list[dict] = []  # one entry per linear solve (every Picard step)
     while True:
         A = None  # free the previous system before the next is built (one CSR matrix alive at the peak)
         T_prev = g.Tc + theta
@@ -703,7 +714,9 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                 del cb, Tq, kq
 
         A = (_sum_chunks(stiffness_parts()) + Mb).tocsr()
-        new = _Solver(A, prolong).solve(rhs, theta)
+        lin = _Solver(A, prolong)
+        new = lin.solve(rhs, theta)
+        cg_stats.append(lin.stats)
         picard += 1
         resid = float(np.max(np.abs(new - theta)))
         theta = new
@@ -725,7 +738,11 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
     ci, cj, ck = np.nonzero(g.mat >= 0)
     eidx = -np.ones(g.mat.shape, dtype=np.int64)
     eidx[ci, cj, ck] = np.arange(ne)
-    meta = {"n_elements": int(ne), "element_order": order, "n_vertices": int(mesh.p.shape[1]), "q_out_W": q_out,
+    cg_its = [int(st["iterations"]) for st in cg_stats]
+    meta = {"cg_iterations": cg_its, "cg_max_iterations": max(cg_its),
+            "linear_rel_residual_max": max(float(st["rel_residual"]) for st in cg_stats),
+            "cg_hit_maxiter": any(bool(st["hit_maxiter"]) for st in cg_stats),
+            "n_elements": int(ne), "element_order": order, "n_vertices": int(mesh.p.shape[1]), "q_out_W": q_out,
             "P_total_W": P_tot, "q_in_die_W": q_die, "q_in_volume_W": q_vol, "q_in_boundary_W": q_bnd,
             "q_in_W": q_in, "data_intorder": DATA_INTORDER, "n_dofs": int(nd), "tj_max_xyz": tj_xyz,
             "lines": {"x": g.x.copy(), "y": g.y.copy(), "z": g.z.copy()},
