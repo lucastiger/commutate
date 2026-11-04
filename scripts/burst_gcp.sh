@@ -15,6 +15,7 @@
 # after MF_GCP_SPOT_TRIES Spot attempts (default 2). With --cmd the output directory is cached on this machine every
 # MF_GCP_SYNC_POLLS x 30 s (default 4, ~2-3 min); MF_GCP_RESUME=1 uploads that cache on the first VM too.
 # MF_GCP_PROVISION=0 skips the FastHenry/ngspice build for jobs that do not need them (faster relaunches).
+# MF_GCP_DISK_GB sets the boot disk (default 20 GB). Size the machine by memory: the thermal solvers run on one core.
 # Setup (once): docs/INFRASTRUCTURE.md, "Burst compute on Google Cloud".
 set -euo pipefail
 MODE=exp
@@ -85,6 +86,8 @@ git bundle create -q "$WORK/mf.bundle" "$REF"
 SPOT_TRIES="${MF_GCP_SPOT_TRIES:-2}"
 SYNC_POLLS="${MF_GCP_SYNC_POLLS:-4}"
 MAXH="${MF_GCP_MAX_HOURS:-6}"
+# A set-up VM uses about 4 GB of its boot disk (2026-11-04: 3.7 GB with the uv cache); 200 GB cost $0.027/h for nothing.
+DISK_GB="${MF_GCP_DISK_GB:-20}"
 DEADLINE=$((SECONDS + MAXH * 3600))
 # A zone can run out of a machine type (ZONE_RESOURCE_POOL_EXHAUSTED for n2-highmem-32 in us-central1-a, 2026-10-06).
 # The CPU quota is regional, so the default list is the region's zones; MF_GCP_ZONES may list zones of several regions.
@@ -145,12 +148,14 @@ trap cleanup EXIT
 create_vm() {  # $1: 1 for Spot; $2: attempt number (rotates the first zone tried). Sets NAME and ZONE; 1 if no capacity.
   local spot_args=() n=${#ZONEARR[@]} i z err
   if [ "$1" = 1 ]; then spot_args=(--provisioning-model=SPOT --instance-termination-action=DELETE); fi
-  NAME="mf-burst-$TAG-$(date +%s)-a$2"
+  # The PID keeps two bursts started in the same second apart (2026-11-04: the L2 preview's VM name collided with the
+  # probe's and its create failed).
+  NAME="mf-burst-$TAG-$(date +%s)-$$-a$2"
   for ((i = 0; i < n; i++)); do
     z="${ZONEARR[$(((i + $2 - 1) % n))]}"
     if err="$(gcloud compute instances create "$NAME" --zone "$z" --machine-type "$TYPE" \
         --image-family ubuntu-2404-lts-amd64 --image-project ubuntu-os-cloud \
-        --boot-disk-size 200GB --boot-disk-type pd-balanced ${spot_args[@]+"${spot_args[@]}"} --quiet 2>&1 > /dev/null)"; then
+        --boot-disk-size "${DISK_GB}GB" --boot-disk-type pd-balanced ${spot_args[@]+"${spot_args[@]}"} --quiet 2>&1 > /dev/null)"; then
       ZONE="$z"; return 0
     fi
     if echo "$err" | grep -qE "ZONE_RESOURCE_POOL_EXHAUSTED|resource_availability|does not have enough resources|STOCKOUT"; then
