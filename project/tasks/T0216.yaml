@@ -4,7 +4,7 @@ title: 'thermal_fem: snap near-coincident mandatory grid lines (no sliver cells)
   (review T0215 of T0206)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0206
 description: 'Fix the findings of review T0215 on T0206 (project/reviews/T0206/T0215.json) in src/moduleforge/solvers/thermal_fem.py,
@@ -361,3 +361,85 @@ history:
 - outcome: founder_brief_amended
   summary: 'attempt 4: main''s AMG fixes merged in; leave _Solver alone; confirm determinism'
   at: '2026-11-03T23:31:36+00:00'
+- attempt: 4
+  outcome: agent_finished
+  summary: 'I didn''t need to change any code in attempt 4: the definition of done passes on the branch
+    as it stands after the founder merged main into it, and the flaky test now passes every time.
+
+
+    **Flaky test:** `test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]` passed 5 runs
+    in a row (about 3.7 s each, all exit 0). It also passed inside the full definition-of-done run.
+
+
+    **Definition of done:**
+
+    - The 4 thermal_fem test files: 86 passed in 194 s.
+
+    - `uv run ruff check src tests`: clean.
+
+    - `uv run mfos gate --fast`: "all gates passed".
+
+
+    **How the earlier commits (43d6215, then 872a16b) cover the reviews:**
+
+    - **T0215 major (sliver cells crash the solve):** a mandatory line now snaps onto a nearby existing
+    line when it is within 1 % (`SNAP_FRACTION`) of the level-0 cell size of the g'
+  report:
+    status: completed
+    summary: "I didn't need to change any code in attempt 4: the definition of done passes on the branch\
+      \ as it stands after the founder merged main into it, and the flaky test now passes every time.\n\
+      \n**Flaky test:** `test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]` passed\
+      \ 5 runs in a row (about 3.7 s each, all exit 0). It also passed inside the full definition-of-done\
+      \ run.\n\n**Definition of done:**\n- The 4 thermal_fem test files: 86 passed in 194 s.\n- `uv run\
+      \ ruff check src tests`: clean.\n- `uv run mfos gate --fast`: \"all gates passed\".\n\n**How the\
+      \ earlier commits (43d6215, then 872a16b) cover the reviews:**\n- **T0215 major (sliver cells crash\
+      \ the solve):** a mandatory line now snaps onto a nearby existing line when it is within 1 % (`SNAP_FRACTION`)\
+      \ of the level-0 cell size of the geometry interval that contains it, laterally or in z. Each snap\
+      \ is recorded as `(requested, used)` in `meta['snapped_lines']`, and `meta['max_snap_m']` gives\
+      \ the largest move. Tests cover lines 1e-9, 1e-7 and 1e-6 m from an edge in both modes and both\
+      \ element orders, and check the snapped position and the nodal value at it.\n- **T0217 blocker (lines\
+      \ just outside the snap distance still crash at levels 1–3):**\n  - `_BoxMapping` runs scikit-fem's\
+      \ own inverse map first, so grids it already handled give bit-identical results.\n  - Only if that\
+      \ fails does `_BoxMapping` accept the Newton result once the physical-space residual is at round-off.\
+      \ scikit-fem's fixed absolute tolerance cannot be met in cells under about 1 µm, which was the cause\
+      \ of the crash.\n  - New tests: the inverse map on a 1e-7 m cell; a 0.4 µm layer solved against\
+      \ the closed-form 1-D series-resistance answer; and kept lines just outside the snap distance (and\
+      \ snapped lines just inside it) solved at levels 0–2 for Q1 and 0–1 for Q2 in box-stack mode, and\
+      \ in layout mode.\n- **T0217 docstring:** the explanation now says the crash depends on absolute\
+      \ cell width, not on the ratio to the neighbouring cell.\n- **T0215 minor (extra_lines inputs):**\
+      \ both modes now pass each entry through the same flattening, so a scalar or any sequence works\
+      \ in either mode; tested.\n- **T0215 note (legacy box-stack grid):** I kept the second option the\
+      \ task offered. The docstring and test now state that the legacy `h0=` box-stack grid includes every\
+      \ source's centroid lines, and the test asserts it.\n- **Unchanged results:** on grids without near-coincident\
+      \ lines, the result values match numbers pinned from the pre-change code to 1e-8 K for both modes\
+      \ and both element orders.\n\n`_Solver` and `_sa_solver` are the same as on main. The working tree\
+      \ is clean, and the existing `[T0216]` commits already hold the changes."
+    checks_run:
+    - cmd: memory_pressure | tail -1  (60% free)
+      exit_code: 0
+    - cmd: 'sysctl vm.swapusage (sandbox: Operation not permitted)'
+      exit_code: 1
+    - cmd: 'for i in 1..5: uv run pytest -q -p no:randomly ''tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]''  (5/5
+        passed, each exit 0)'
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_rule.py tests/unit/solvers/test_thermal_fem.py
+        tests/unit/solvers/test_thermal_fem_assembly.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py  (86
+        passed in 193.97s)
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: git diff main HEAD -- src/moduleforge/solvers/thermal_fem.py (confirmed _Solver/_sa_solver
+        unchanged vs main)
+      exit_code: 0
+    files_changed: []
+    concerns:
+    - The 5 repeat runs of the flaky test used `-p no:randomly`, which has no effect if pytest-randomly
+      is not installed. I couldn't check the plugin list because the sandbox blocks pypi.org. The full
+      definition-of-done run without that flag also passed the test.
+    - I couldn't measure swap use because the sandbox blocks `sysctl vm.swapusage`. `memory_pressure`
+      reported 60 % free, and I ran all jobs one after another.
+    - 'T0217 note still applies: a box-stack source narrower than about 2 x SNAP_FRACTION x its cell would
+      have its always-added centroid line snapped onto a source edge, so its centre would no longer be
+      a grid node. This is not realistic for current inputs.'

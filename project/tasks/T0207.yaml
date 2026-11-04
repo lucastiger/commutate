@@ -46,7 +46,13 @@ description: "The objective requires one scikit-fem configuration, frozen before
   \ 'levels_run': [...]}}, 'layouts': {name: {'levels_run': [...], 'dies': [{'gci_K', 'argmax_xyz': [one\
   \ per level run], ...}]}}};\n  - the note, with the dev A1/A2/A4 values that E009's spec will record\
   \ at freeze (K1/K2 regression guard).\nIf no candidate is feasible, set feasible: false and say so plainly.\
-  \ That is a finding, not a failure of the task."
+  \ That is a finding, not a failure of the task.\n\nFounder note (2026-11-03, diagnosis T0218): on grids\
+  \ with near-threshold kept lines, scikit-fem's AMG-CG used 362 of its\n400 iterations at level 2 and\
+  \ reached the cap at level 3. For every candidate configuration and every solve of the\nstudy, record\
+  \ the CG iteration count and the final relative residual. Flag any solve above 300 iterations. A\nconfiguration\
+  \ where any level-0 to level-2 solve of the reference cases or development layouts exceeds 300 iterations\n\
+  is not eligible for freezing. Report this in the note and in dev_study.json; do not change the solver\
+  \ or its limits\nhere."
 context_files:
 - project/objectives/O007/objective.yaml
 - research/diagnoses/T0198.md
@@ -118,3 +124,6 @@ history:
 - outcome: founder_dependency_added
   summary: waits for T0216 (near-coincident grid lines)
   at: '2026-11-03T21:27:02+00:00'
+- outcome: founder_brief_amended
+  summary: record CG iterations per solve; >300 of 400 makes a configuration ineligible (T0218)
+  at: '2026-11-03T23:57:59+00:00'
