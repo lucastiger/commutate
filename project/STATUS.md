@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-04T02:19:12+00:00 from repository state — do not edit_
+_generated 2026-11-04T02:19:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0113** [protected_change] T0222: merge needs founder approval
@@ -36,7 +36,6 @@ cancelled: 30, done: 185, failed: 3, needs_founder: 2, running: 1, todo: 1
 - T0222 `needs_founder` builder/implement: thermal_fem: report AMG-CG iterations and final relative residual per linear solve in ThermalResult.meta (instrumentation only, numerics unchanged) (attempt 1)
 
 ## Recent events
-- 2026-11-04T01:32:04+00:00 run_started {"run": "T0207-scientist-20261103T173204-4fe3", "task": "T0207", "role": "scientist", "session": "79536b18-03ab-4ebf-b8da-d177995f72dc"}
 - 2026-11-04T01:35:46+00:00 run_finished {"run": "T0221-planner-20261103T173202-cf34", "status": "completed", "cost": 1.101878, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0110", "kind": "decision", "subject": "[O007] Amend held T0208 (E009 design): AMG-CG headroom guard (T0218 rec. 3) and a dependency on the new thermal_
 - 2026-11-04T01:35:46+00:00 inbox_opened {"id": "I0111", "kind": "decision", "subject": "[O007] Orchestrator (tools/mfos, protected): a founder stop is counted as an agent attempt and spawns a diagnosi
@@ -51,3 +50,4 @@ cancelled: 30, done: 185, failed: 3, needs_founder: 2, running: 1, todo: 1
 - 2026-11-04T02:01:57+00:00 run_finished {"run": "T0222-builder-20261103T173739-6d59", "status": "completed", "cost": 0.350853, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T02:14:42+00:00 verified {"task": "T0222"}
 - 2026-11-04T02:19:10+00:00 inbox_opened {"id": "I0113", "kind": "protected_change", "subject": "T0222: merge needs founder approval"}
+- 2026-11-04T02:19:46+00:00 sleep_detected {"gap_s": 1072, "runs_extended": 1}
