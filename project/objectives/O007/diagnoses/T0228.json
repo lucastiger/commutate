@@ -1,0 +1,54 @@
+{
+  "summary": "The study ran locally and the result is `feasible: false`. That is the expected state before the founder's burst: candidate 1 is unverified, not ruled out. Level 2 is still missing on Cases 1a, 1b, 2 and 3 and on both dev layouts, because every one of those solves needs 19\u201346 GB, over the 10 GB local cap.\n\nNothing measured misses a criterion:\n- Every gate holds, and the most CG iterations in any solve is 259 (limit 300).\n- The N-layer case, which failed T0207, now passes at level 2: 0.0386 K error against the 0.040 K margin, A4 0.142 K, order 1.95. These are T0225's solves, reused only after checking that the grids are identical line for line at all three levels and that a fresh level-0 solve reproduces the cached one exactly.\n- The manufactured case at level 2: 0.0050 K error, A4 0.019 K.\n\nThe risk has moved from accuracy to CG headroom on the large Muzychka plates. From level 0 to level 1, Case 1a went from 204 to 252 iterations, Case 1b from 198 to 247 and Case 3 from 119 to 189. Projecting the same growth (speculation) puts all three at about 300\u2013311 at level 2, right at the limit.\n\nThe pre-registration was committed as 5570ba2 before any solve. I added only candidate 1 (no second candidate) and made no change to the design after seeing data. The E009 cost table puts the largest single solve at 104.8 GB (an FV level-3 solve on a fresh layout, extrapolated), within the 217.6 GB limit. Total compute is about 13.6 CPU-hours (extrapolated). No production code was changed.",
+  "failure_class": "none",
+  "root_cause": "No failure. This was a pre-registered development study, and `feasible: false` is the expected state before the burst because level 2 of Cases 1a, 1b, 2 and 3 and of both dev layouts does not fit the local memory rule (estimated 19\u201346 GB each).",
+  "confidence": 0.85,
+  "evidence": [
+    "Commands and exit codes: grid-only survey in $TMPDIR (exit 0); `uv run python research/scripts/o007_dev_study2.py --plan` (exit 0); pre-registration commit 5570ba2; `uv run python research/scripts/o007_dev_study2.py` (exit 0, 10:42-10:54, 30 child-process solves one at a time, largest peak 7.91 GB, memory_pressure 60-70 % free, swap proxy 0 GB); `--report` (exit 0); all six packet DoD python checks (exit 0; the determinism check rewrote frozen_config.json byte-identically); `uv run ruff check research/scripts/o007_dev_study2.py` (exit 0); `uv run mfos gate --fast` (exit 0, 'all gates passed'); results commit 1b72455.",
+    "[F] Reference hashes befc5efa... and ca05847b... verified. Dev fingerprints 1f66b68a... and 6aaf383a... match E006.yaml. Only seed 20261101 was used; the holdout data directory was not read.",
+    "[F] Reuse check: production GridRule.edge_grading grids equal the T0225 emulated grid (x, y, z lines and material map) at L0, L1 and L2. The L0 re-solve is bitwise identical on all 12 N-layer points (max |dT| = 0).",
+    "[F] Gates: energy balance <= 3.2e-12; manufactured Q_out within 2.1e-9 of 64.648 W; Picard residual <= 4.4e-5 K; true relative residual <= 3.8e-11; node-count growth 7.25-7.76; every point is a node at every level run; T0222 meta cg_iterations equals the cg_only count (mismatch 0).",
+    "[F] Maximum |T - T_ref| per level: Case 1a 0.442 / 0.116 K; 1b 0.052 / 0.013; 2 0.063 / 0.017; 3 0.030 / 0.0075; N-layer 0.591 / 0.152 / 0.0386 (A4 0.142, monotone); manufactured 0.079 / 0.020 / 0.0050 (A4 0.019). Maximum A1 is 0.0025.",
+    "[F] Maximum CG per level: 1a 204/252; 1b 198/247; 2 81/116; 3 119/189; N-layer 132/191/259; manufactured 53/75/93; side_by_side_6 122/185 (calibration 122); u_shaped_2 128/179 (calibration 128).",
+    "[F] Dev layouts, L0 to L1: Tj_max change d1 is +0.058 to +0.396 K on all 16 dies. The hottest node moved on 12 of 16 dies. At the die-centroid node d1 is +0.048 to +0.181 K. Where the hottest node moved, the Tj_max change is 1.5-3.0 times the centroid-node change. Calibration: 32.23 W per die (60.16 K rise) and 47.14 W per die (59.95 K rise). k(T) runs 0.41-1.63 K hotter than constant k.",
+    "[F] F3 null: the manufactured case at constant k is off by 2.51 K (scaled 0.0249), so it fails A1 and A2 as intended.",
+    "[S] E009 cost: largest scikit-fem solve 71.3 GB (fresh layout L2, 14.2 M DOF at 5.01 kB/DOF, conservative); largest FV L2 solve 104.8 GB (fresh layout L3, 1.5 x the measured 69.9 GB); total 13.6 CPU-hours, recommended overall timeout 41 h; all within 217.6 GB."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "Open risk 1, CG at L2 on Cases 1a, 1b and 3. If the count passes 300, the cause may be thin sliver cells next to the maximum lines (minimum neighbouring cell-width ratio 0.010-0.031 on the plates; T0225 part 1 showed this effect on Q2) rather than poor conditioning of the weak-Robin plates.",
+      "how_to_discriminate": "Solve Case 1a at L2 under this rule in T0225's centroid-only variant (no maximum lines). If it stays at or below 300 iterations, the slivers are the cause and a line or snap policy fixes it. If both variants exceed 300, it is conditioning."
+    },
+    {
+      "explanation": "Open risk 2, dev-die Tj_max convergence. The large L0-to-L1 changes on dies where the hottest node moved may come from the maximum jumping to a different node rather than from real non-convergence of the temperature field (T0207 alternative 3).",
+      "how_to_discriminate": "Use the pre-registered die-centroid node GCI at L2 (it comes with the burst). If the centroid sequence is monotone with a small GCI while Tj_max oscillates, the moving maximum is the cause. If the centroid sequence also oscillates or diverges, the field itself is not converging."
+    },
+    {
+      "explanation": "The reused N-layer L2 (T0225, Linux VM) might not match current production code if the solver path changed after commit 5abe652.",
+      "how_to_discriminate": "Already tested: the grids are identical at all levels and the L0 re-solve under current code is bitwise identical on all 12 points. A residual risk exists only for code paths used at L2 alone, and none is known."
+    }
+  ],
+  "discriminating_tests": [
+    "Founder burst: `scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study2.py --full\" research/o007_dev2`. Run it after merge, or with MF_REF set to the task branch. It does 8 L2 solves (about 3.4 h, conservative estimate), largest about 55 GB; the default n2-highmem-32 or e2-custom-10-81920 fits. It ends with the deterministic --report.",
+    "If the burst shows more than 300 CG iterations on a plate: run Case 1a L2 with centroid-only lines under the graded rule to separate slivers from conditioning.",
+    "If a die's Tj_max oscillates at L2: read that die's centroid_node branch in dev_study.json; it is already recorded by the burst."
+  ],
+  "recommended_actions": [
+    "Founder: run the burst above to complete level 2. `feasible` turns true only if every pre-registered criterion holds at level 2 on all 6 cases and both dev layouts.",
+    "E009 design: size the VM at 256 GB (n2-highmem-32), since the FV level-3 fresh-layout solve is about 104.8 GB (extrapolated) and a 128 GB machine leaves no margin. Budget about 13.6 CPU-hours and a 41 h overall timeout. Per-solve timeouts are in dev_study.json under chosen.e009_plan.rows.",
+    "E009 K1/K2 regression guard: at the finest level run so far, A1 is 0.0025 or less and A2 is 0.116 K (Case 1a, L1). The level-2 values are N-layer 0.0386 K and manufactured 0.0050 K. Quote the level-2 values after the burst. At L0 the N-layer (0.59 K) and Case 1a (0.44 K) would trip K2, so E009 must read level 2.",
+    "If the burst reads more than 300 CG iterations on the Muzychka plates, that is a planning decision for the founder: either keep the T0218 300-iteration headroom rule, or commission a builder task for a sliver-free maximum-line or snap policy, with review. No production change is made or recommended before that data exists."
+  ],
+  "files_written": [
+    "research/scripts/o007_dev_study2.py",
+    "research/notes/o007-dev-study2.md",
+    "research/o007_dev2/plan.json",
+    "research/o007_dev2/preregistration.json",
+    "research/o007_dev2/dev_study.json",
+    "research/o007_dev2/frozen_config.json",
+    "research/o007_dev2/run_local.log",
+    "research/o007_dev2/cache/ (49 files: solve records, specs and calibration)"
+  ],
+  "experiment_drafts": [],
+  "affects_acceptance_criteria": false
+}
