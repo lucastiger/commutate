@@ -143,7 +143,7 @@ measured data:
    119 → 189, Case 2 81 → 116. [S] At a constant growth ratio, L2 lands at about 311, 308 and 300 for 1a, 1b and 3,
    against the limit of 300. The N-layer ratio fell from 1.45 to 1.36 between levels, so the outcome is genuinely open.
 2. **Tj_max convergence on the dev dies (A4 <= 0.25 K).** Under `gci_capped`, an oscillatory die costs
-   3 x max(|d1|, |d2|). [F] 14 of 16 dies have d1 > 0.083 K, so any oscillation at L2 on those dies misses the margin.
+   3 x max(|d1|, |d2|). [F] 12 of 16 dies have d1 > 0.083 K (side_by_side_6 dies 0, 2, 3 and 5: 0.058-0.066 K), so any oscillation at L2 on those dies misses the margin.
    A monotone or fast sequence passes if |d2| <= 0.20 K.
 3. **Case 1a accuracy (A2 <= 0.040 K).** [F] The s2 mean is 0.442 → 0.116 K off (order 1.93). [S] The Richardson L2
    value is 0.030 K.
@@ -156,7 +156,7 @@ The N-layer A2, the binding item in T0207, is measured at 0.0386 K. It passes wi
    `uv run python research/scripts/o007_dev_study2.py --plan`, exit 0, which wrote `plan.json`.
 2. Section 0 committed as `5570ba2`.
 3. `uv run python research/scripts/o007_dev_study2.py`, exit 0, 10:42-10:54 local time
-   (`research/o007_dev2/run_local.log`). It ran 30 child-process solves one at a time, including the reuse check and
+   (`research/o007_dev2/run_local.log`). It ran 22 child-process solves one at a time, including the reuse check and
    the 5 calibration solves. Largest peak 7.91 GB (manufactured constant-k L2). `memory_pressure` showed 60-70 % free
    and the swap proxy 0 GB. Six L2 solves were skipped by the memory gate: estimates of 19-46 GB, over the 10 GB cap.
 4. `--report` (exit 0, deterministic: the DoD re-run reproduces `frozen_config.json` byte for byte);
@@ -170,7 +170,7 @@ The N-layer A2, the binding item in T0207, is measured at 0.0386 K. It passes wi
 - **Reuse (sec. 0.5).** The production graded grid equals the T0225 emulated grid in x, y and z lines and in the
   material map at L0, L1 and L2. The production L0 re-solve reproduces the cached L0 **bitwise** on all 12 points
   (max |dT| = 0).
-- **Gates.** Energy balance <= 3.2e-12 on every solve. Manufactured |Q_out / 64.648 W - 1| <= 2.1e-9. Picard residual
+- **Gates.** Energy balance <= 3.4e-12 on every solve (largest 3.32e-12, Case 2 L1). Manufactured |Q_out / 64.648 W - 1| <= 2.1e-9. Picard residual
   <= 4.4e-5 K. Final true relative residual <= 3.8e-11. Node-count growth 7.25-7.76, inside 6.8-9.2. Every reported
   point is a node at the same coordinates at every level run, with stencils recorded. The largest snap is 0.1 mm (Case
   1a/1b/3 maximum lines; recorded).
@@ -208,7 +208,7 @@ from L0/L1): 1a 0.030 K, 1b 0.0035 K, 2 0.0048 K, 3 0.0019 K.
 [F] Every die rises from L0 to L1. On every die whose argmax stayed put (4 of 12 on side_by_side_6), Tj_max d1 equals
 the centroid-node d1, or the argmax sits off-centre by a fixed offset. Where the argmax moved, Tj_max d1 is 1.5-3.0
 times the centroid-node d1. Example: u_shaped_2 die 2 gives 0.396 K against 0.144 K. The moves are lateral shifts of
-0.36-0.47 mm in x or y. [I] This is the T0207 pattern: part of the level-to-level change
+0.25-0.47 mm per axis, in x, y or both. [I] This is the T0207 pattern: part of the level-to-level change
 is the maximum moving to a new node. With only two levels, nothing is known yet about convergence order. The
 centroid-node GCI at L2 will separate the two effects, as pre-registered.
 
@@ -276,3 +276,16 @@ solves set the E009 VM size: at 104.8 GB [S], an n2-highmem-16 (128 GB, 108.8 GB
   is T0225 part 1's centroid-only variant at L2 on Case 1a under this rule. If centroid-only stays <= 300, a
   line or snap policy fixes the headroom without a solver change. That is a builder task with review; it is not
   decided here.
+
+## 9. Corrections before the burst (founder session, 2026-11-04, review T0232)
+- [F] Four statements above were corrected to match the data: 12 (not 14) of 16 dies with d1 > 0.083 K; 22 (not 30)
+  local solves; energy balance <= 3.4e-12 (largest 3.32e-12, Case 2 L1); argmax shifts 0.25-0.47 mm per axis.
+- [F] **Analysis correction, made before any burst data exist.** Sec. 0.2 criterion 2 covers every L0-L2 solve, but
+  the reused T0207 `summarise` gated CG only on the k(T) level runs and the calibration runs. `report()` now also gates
+  the constant-k nulls (`_gate_constant_k`): over 300 CG iterations rules the candidate out, and a null missing or
+  unfinished at the finest level run leaves it unverified, like an unfinished k(T) level. The change can only make the
+  decision stricter. Rerunning `--report` on the local data changes nothing but two new summary keys
+  (`constk_cg_max_iters` 185, `constk_missing_or_unfinished` []); `frozen_config.json` is unchanged.
+- [F] Pre-registration provenance (T0232 could not check it from its snapshot): `5570ba2` is an ancestor of the result
+  commit, `o007_dev_study2.py` is byte-identical between them, and sec. 0 is unchanged except for the appended
+  pre-registration statement. The local run's log starts 4 s after the commit.

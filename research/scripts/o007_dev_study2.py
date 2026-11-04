@@ -376,11 +376,32 @@ def e009_table(ser: dict, mms: dict) -> dict:
                     "macOS (local) and Linux (burst) timings; FV L2 from research/o007_l2/full.json (T0204 burst)."}
 
 
+def _gate_constant_k(s: dict) -> None:
+    """Sec. 0.2 criterion 2 covers every L0-L2 solve, but ``DS.summarise`` (T0207) gates only the k(T) level runs and the
+    calibration runs. The constant-k nulls are gated here the same way: over 300 CG iterations rules the candidate out,
+    and a null missing or unfinished at the finest level run leaves it unverified, like an unfinished k(T) level. Added
+    before the burst, after review T0232; it can only make the decision stricter."""
+    recs = [json.loads(p.read_text()) for p in _rec_files() if p.name.endswith("__constk.json")]
+    cg = max((DS.cg_max(d) for d in recs if d.get("status") == "ok"), default=0)
+    missing = []
+    for prob in ["mms", *DS.LAYOUTS]:
+        lvs = [lv for lv in DS.LEVELS if (Runner2.result(CID, prob, lv) or {}).get("status") == "ok"]
+        if lvs and (Runner2.result(CID, prob, lvs[-1], "constk") or {}).get("status") != "ok":
+            missing.append(f"{prob} L{lvs[-1]}")
+    s.update(constk_cg_max_iters=cg, constk_missing_or_unfinished=missing, cg_max_iters=max(s["cg_max_iters"], cg))
+    if cg > DS.CG_FLAG:
+        s.update(eligible=False, ruled_out=True, cg_over_300=True,
+                 verdict="ineligible: CG > 300 iterations (constant-k null)")
+    elif missing and s["eligible"]:
+        s.update(eligible=False, verdict=f"unverified: constant-k null missing or unfinished on {missing}")
+
+
 def report() -> int:
     ser, mms, hashes = DS.load_refs()
     cases = {p: extend_case(DS.analyse_case(CID, p, ser, mms), p) for p in DS.CASES}
     lays = {n: extend_layout(DS.analyse_layout(CID, n), n) for n in DS.LAYOUTS}
     s = DS.summarise(CID, cases, lays)
+    _gate_constant_k(s)
     plan = e009_table(ser, mms)
     rc = reuse_check()
     allv = list(cases.values()) + list(lays.values())
