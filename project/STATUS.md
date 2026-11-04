@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-04T17:20:34+00:00 from repository state — do not edit_
+_generated 2026-11-04T17:21:12+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -36,7 +36,6 @@ cancelled: 31, done: 191, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - T0231 `running` critic/review: Review T0227 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-04T04:51:47+00:00 verified {"task": "T0225"}
 - 2026-11-04T04:51:50+00:00 inbox_opened {"id": "I0118", "kind": "protected_change", "subject": "T0225: merge needs founder approval"}
 - 2026-11-04T10:11:52+00:00 inbox_resolved {"id": "I0118", "status": "approved", "note": "T0225 probe: (a) provisional_go (L2 extrapolated 0.039 K vs 0.040 K margin), (b) no_go only through max-line sliv
 - 2026-11-04T10:12:43+00:00 merged {"task": "T0225"}
@@ -51,3 +50,4 @@ cancelled: 31, done: 191, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-04T17:10:56+00:00 run_finished {"run": "T0227-builder-20261104T084507-31d2", "status": "completed", "cost": 0.486723, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T17:20:30+00:00 verified {"task": "T0227"}
 - 2026-11-04T17:20:34+00:00 run_started {"run": "T0231-critic-20261104T092034-2690", "task": "T0231", "role": "critic", "session": "9f639ba8-0f08-414a-8074-2e80f7c840da"}
+- 2026-11-04T17:21:07+00:00 sleep_detected {"gap_s": 613, "runs_extended": 1}
