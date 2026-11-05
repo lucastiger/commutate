@@ -1,0 +1,52 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The note's [F] claim that no removal or merge of named lines reaches 0.1 is false, and it is the stated reason sliver_free was not registered",
+      "detail": "Section 0.1 of research/notes/o007-sliver.md states as fact [F]: 'No removal or merge of survey-named lines brings these grids to >= 0.1. Reaching 0.1 would need an added line or a changed far-field cell size.' The check behind it, named_removal_check, removes only lines labelled 'grading_line' (line 147: `if \"grading_line\" in lab`). It ignores the survey-named 'subdivision' lines that bound the same intervals, and it tests no merge at all. Two counterexamples: (a) merging the two 1.17 mm cells at the named subdivision lines (74.766, 105.234, 194.766, 225.234 mm) raises the minimum lateral ratio from 0.0806 to 0.161 on both 1a and 1b. (b) Removing only the unnamed outer grading line at offset 1.5625 mm (75.9375, 104.0625, 195.9375, 224.0625 mm), a pure geometry-only removal under the unchanged production rule, gives 0.1129 at L0, L1 and L2, with fewer DOF than centroid_only. So the decisive variant keeps intervals below the task's own 0.1 sliver threshold, and the reason given for not registering sliver_free is wrong. The task did make sliver_free optional, so the required deliverables are still complete. But the task's rationale is 'if the decisive variants also exceed 300, no line or snap policy can restore headroom'. A `conditioning` verdict from centroid_only would not show that. The projected L2 counts sit within \u00b115 of 300, so the 0.08 coarsening jump could decide the outcome. Recommendation 2 ('Even a perfect builder leaves these grids at centroid_only') overstates for the same reason. Section 0.4 partly hedges this.",
+      "evidence": "Scratch run (grid only): removing the named x subdivision lines from the centroid_only L0 grid takes min ratio from 0.0806451612903228 to 0.1612903225806456 (case1a and case1b). Wrapping FEM._grading_lines to drop the 1.5625 mm outer lines gives min_ratio_lateral 0.11290322580645 at L0/L1/L2 with DOF 107811/814989/6332409 (1a) and 127413/970225/7568001 (1b). survey.json named_line_removal_check removed only [73.594, 106.406, 193.594, 226.406] mm.",
+      "suggested_check": "Before the founder decides on the burst or the builder, add a post-data-labelled correction to sec. 0.1 and recommendation 2, and say that a `conditioning` verdict does not rule out a line policy that also fixes the outermost graded cell.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Any RuntimeError, including Picard non-convergence, is recorded as a measured 'cg_failed' level with no sanity check",
+      "detail": "worker() catches every RuntimeError and sets status 'cg_failed'. _variant() then counts that level in levels_run, and the sanity gates check only 'ok' indices. If the L2 solve failed in Picard (thermal_fem line 817) or in some other RuntimeError path with a CG count <= 300, verdict() could return 'slivers' from a failed solve, and sanity_failed would stay empty. The packet only intends a solve that fails at the CG cap (count >= 400) to count as measured. This is unlikely here, since Picard converged in 2 steps at L0/L1.",
+      "evidence": "o007_sliver.py lines 199-201 (except RuntimeError -> cg_failed); lines 318 and 371 (sanity only on status == 'ok'); thermal_fem.py lines 663 and 817 both raise RuntimeError.",
+      "suggested_check": "Treat 'cg_failed' as measured only if some CG_LOG entry has hit_cap; otherwise treat the level as missing or broken.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "The burst command takes the default n2-highmem-32, not the e2-highmem-8 the note says is enough",
+      "detail": "burst_gcp.sh defaults TYPE to n2-highmem-32 (256 GB). The note says e2-highmem-8 suffices, and T0228's records support that (hard cap 60.68 GB means phys about 67.4 GB; 0.85 x 67.4 = 57.3 GB, above the 51.0 GB gate estimate). The command in plan.json, as the task prescribes, has no machine-type argument, so running it verbatim uses the more expensive VM.",
+      "evidence": "scripts/burst_gcp.sh line 32; research/o007_dev2/cache/a_q1h4_graded__case1b__L2__kT.json spec.hard_cap_gb = 60.6775",
+      "suggested_check": "Append 'e2-highmem-8' to the command in the recommended action.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The docstring points to a SLIVER_FREE constant that does not exist",
+      "detail": "The module docstring says 'see SLIVER_FREE below', but no such symbol exists. variant_problem raises for any variant other than max_lines and centroid_only, which matches the pre-registration.",
+      "evidence": "research/scripts/o007_sliver.py line 8",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command at this commit. All pass. --report rewrites discriminator.json byte for byte, and git status is clean afterwards.",
+    "Checked pre-registration provenance in the main repo. 79502c0 is on the T0235 branch with note section 0, survey, plan and script, and no cache. The result commit 25aae78 follows it. The only script change between them is the labelled informational plan field full_gate_min_physical_GB.",
+    "Checked that the copied max_lines values (cg_max_per_level, dofs, wall) match research/o007_dev2/dev_study.json. Checked the T0228 L2 burst cache records: CG 316 and 318, Linux, hard cap 60.68 GB.",
+    "Checked that the --full path is executable. burst_gcp.sh accepts --cmd with a path argument. The repo reaches the VM as a git bundle of main, so the committed cache is reused. The --full gate (est 42.7 and 51.0 GB <= 0.85 x phys) passes on the T0228 VM (phys about 67.4 GB) and on the default n2-highmem-32.",
+    "Recomputed the note's arithmetic. Drops: 27 (13%) and 17 (7%) for 1a, 10 (5%) and 7 (3%) for 1b. Growth per level: 1.33 and 1.28. Projected L2: 1a about 312 and 295, 1b about 306 and 309. All agree with the note.",
+    "Adversarial grid check of the survey-based reason for not registering sliver_free. Merging at the survey-named subdivision lines gives min ratio 0.161. Removing only the unnamed 1.5625 mm outer grading line gives 0.1129 at L0-L2. Both refute the note's [F] statement.",
+    "Read the CG counter and failure path (install_cg_logger, _Solver.solve). A cap failure is logged with its iteration count, so it maps to 'conditioning' as the rule requires. Found that a Picard RuntimeError is also mapped to the measured status cg_failed."
+  ],
+  "caveats": [
+    "The required implementation is complete. What the work can support is narrower than 'sliver-forming lines removed': the decisive variant, centroid_only, removes only the frozen-maximum lines. It keeps eight lateral intervals per plate with neighbour ratio 0.0806-0.0955, below the task's 0.1 sliver threshold. A future `conditioning` verdict therefore means only 'removing the maximum lines is not enough'. It does not mean 'no line policy can restore CG headroom'.",
+    "There is no verdict yet. discriminator.json is 'unmeasured' until the founder's L2 burst, as the task allows. The L0/L1 trend and L2 projections in section 2 are labelled inference and speculation, not evidence.",
+    "The note's [F] claim in sec. 0.1 ('no removal or merge of survey-named lines reaches 0.1; reaching 0.1 would need an added line') is incorrect and should be corrected, labelled as a post-data change, before it is used to decide the builder.",
+    "I re-ran no thermal solve. The centroid_only L0/L1 CG counts are taken from the committed cache records, with their own sanity fields."
+  ]
+}
