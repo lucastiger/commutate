@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-05T20:56:01+00:00 from repository state — do not edit_
+_generated 2026-11-05T21:49:58+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0128** [decision] [O007] replan limit reached
@@ -36,7 +36,6 @@ cancelled: 33, done: 199, failed: 3, needs_founder: 3, todo: 2
 - T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T04:20:09+00:00 run_finished {"run": "T0240-critic-20261104T201451-9304", "status": "completed", "cost": 1.97977, "subtype": "success", "report": "structured_output"}
 - 2026-11-05T04:20:13+00:00 inbox_opened {"id": "I0127", "kind": "protected_change", "subject": "T0235: merge needs founder approval"}
 - 2026-11-05T14:59:47+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
 - 2026-11-05T15:55:01+00:00 sleep_detected {"gap_s": 2555, "runs_extended": 0}
@@ -51,3 +50,4 @@ cancelled: 33, done: 199, failed: 3, needs_founder: 3, todo: 2
 - 2026-11-05T20:55:28+00:00 inbox_resolved {"id": "I0127", "status": "approved", "note": "Merge T0235: labelled diagnostic, levels 0-1 verified; follow-ups on main before the burst: correct sec. 0.1 (pos
 - 2026-11-05T20:55:59+00:00 merged {"task": "T0235"}
 - 2026-11-05T20:56:00+00:00 inbox_opened {"id": "I0128", "kind": "decision", "subject": "[O007] replan limit reached"}
+- 2026-11-05T21:49:55+00:00 sleep_detected {"gap_s": 975, "runs_extended": 0}
