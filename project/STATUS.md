@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-05T20:55:22+00:00 from repository state — do not edit_
+_generated 2026-11-05T20:55:52+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0127** [protected_change] T0235: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,15 +29,14 @@ _generated 2026-11-05T20:55:22+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 33, done: 198, failed: 3, needs_founder: 4, todo: 2
+cancelled: 33, done: 198, failed: 3, merge: 1, needs_founder: 3, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0235 `needs_founder` scientist/investigate: O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with the sliver-forming lines removed, L0-L2 (L2 by founder burst) (attempt 1)
+- T0235 `merge` scientist/investigate: O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with the sliver-forming lines removed, L0-L2 (L2 by founder burst) (attempt 1)
 - T0236 `needs_founder` builder/implement: thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged), with grid survey on the O006 cases and dev layouts (attempt 0)
 - T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T04:11:32+00:00 run_finished {"run": "T0235-scientist-20261104T194322-2f4a", "status": "completed", "cost": 2.154142, "subtype": "success", "report": "structured_output"}
 - 2026-11-05T04:14:46+00:00 verified {"task": "T0235"}
 - 2026-11-05T04:14:51+00:00 run_started {"run": "T0240-critic-20261104T201451-9304", "task": "T0240", "role": "critic", "session": "de239e9f-8840-4c5f-b2a6-1520c5a645c6"}
 - 2026-11-05T04:20:09+00:00 run_finished {"run": "T0240-critic-20261104T201451-9304", "status": "completed", "cost": 1.97977, "subtype": "success", "report": "structured_output"}
@@ -52,3 +51,4 @@ cancelled: 33, done: 198, failed: 3, needs_founder: 4, todo: 2
 - 2026-11-05T20:01:51+00:00 sleep_detected {"gap_s": 355, "runs_extended": 0}
 - 2026-11-05T20:46:25+00:00 sleep_detected {"gap_s": 2674, "runs_extended": 0}
 - 2026-11-05T20:55:18+00:00 sleep_detected {"gap_s": 533, "runs_extended": 0}
+- 2026-11-05T20:55:28+00:00 inbox_resolved {"id": "I0127", "status": "approved", "note": "Merge T0235: labelled diagnostic, levels 0-1 verified; follow-ups on main before the burst: correct sec. 0.1 (pos
