@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-05T20:55:52+00:00 from repository state — do not edit_
+_generated 2026-11-05T20:56:01+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0128** [decision] [O007] replan limit reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +14,7 @@ _generated 2026-11-05T20:55:52+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $71.50/$100 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | needs_founder | - | 0/1 | $71.50/$100 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -29,16 +29,13 @@ _generated 2026-11-05T20:55:52+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 33, done: 198, failed: 3, merge: 1, needs_founder: 3, todo: 2
+cancelled: 33, done: 199, failed: 3, needs_founder: 3, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0235 `merge` scientist/investigate: O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with the sliver-forming lines removed, L0-L2 (L2 by founder burst) (attempt 1)
 - T0236 `needs_founder` builder/implement: thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged), with grid survey on the O006 cases and dev layouts (attempt 0)
 - T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T04:14:46+00:00 verified {"task": "T0235"}
-- 2026-11-05T04:14:51+00:00 run_started {"run": "T0240-critic-20261104T201451-9304", "task": "T0240", "role": "critic", "session": "de239e9f-8840-4c5f-b2a6-1520c5a645c6"}
 - 2026-11-05T04:20:09+00:00 run_finished {"run": "T0240-critic-20261104T201451-9304", "status": "completed", "cost": 1.97977, "subtype": "success", "report": "structured_output"}
 - 2026-11-05T04:20:13+00:00 inbox_opened {"id": "I0127", "kind": "protected_change", "subject": "T0235: merge needs founder approval"}
 - 2026-11-05T14:59:47+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
@@ -52,3 +49,5 @@ cancelled: 33, done: 198, failed: 3, merge: 1, needs_founder: 3, todo: 2
 - 2026-11-05T20:46:25+00:00 sleep_detected {"gap_s": 2674, "runs_extended": 0}
 - 2026-11-05T20:55:18+00:00 sleep_detected {"gap_s": 533, "runs_extended": 0}
 - 2026-11-05T20:55:28+00:00 inbox_resolved {"id": "I0127", "status": "approved", "note": "Merge T0235: labelled diagnostic, levels 0-1 verified; follow-ups on main before the burst: correct sec. 0.1 (pos
+- 2026-11-05T20:55:59+00:00 merged {"task": "T0235"}
+- 2026-11-05T20:56:00+00:00 inbox_opened {"id": "I0128", "kind": "decision", "subject": "[O007] replan limit reached"}
