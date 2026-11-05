@@ -289,3 +289,16 @@ solves set the E009 VM size: at 104.8 GB [S], an n2-highmem-16 (128 GB, 108.8 GB
 - [F] Pre-registration provenance (T0232 could not check it from its snapshot): `5570ba2` is an ancestor of the result
   commit, `o007_dev_study2.py` is byte-identical between them, and sec. 0 is unchanged except for the appended
   pre-registration statement. The local run's log starts 4 s after the commit.
+
+## 10. Burst result (founder session, 2026-11-05; `e2-highmem-8`, 273 min, commit 6209fa5)
+- [F] `--full` measured every L2 solve; all levels are complete and `reuse_check` is ok. **`feasible: false`, ruled out
+  by CG > 300 iterations** (sec. 0.2 criterion 2): Case 1a 204 / 252 / **316** and Case 1b 198 / 247 / **318** at L0 / L1
+  / L2. That is the only miss. No solve reached the 400 cap, and every true relative residual met `linear_rtol`.
+- [F] Other CG maxima at L2: Case 2 162, Case 3 249, N-layer 259, manufactured 93, side_by_side_6 253, u_shaped_2 250.
+  Constant-k nulls at L2: 253 and 250 (`constk_cg_max_iters` 253, none missing).
+- [F] Every margin is met at L2: A1 6.8e-4 (margin 0.008); A2 0.0386 K (N-layer; 0.040); Case 1a A2 0.0296 K; A4 cases
+  0.142 K (0.4); **A4 layouts 0.124 K (0.25)**: the Tj-max oscillation risk of sec. 1 item 2 did not occur.
+  Energy balance <= 7.8e-12.
+- [F] Peaks 10-30 GB against estimates of 23-55 GB. Wall per L2 solve 11-86 min on an 8-vCPU E2.
+- [I] This is the CG-only miss that I0124 asks about. The I0124 question was posed before the L2 counts (planner T0233,
+  19:34 UTC). Case 1a's L2 count was logged at 20:15 UTC, so any answer given now is a post-data decision.

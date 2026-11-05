@@ -18,26 +18,7 @@
   1,
   2
  ],
- "levels_missing": {
-  "case1a": [
-   2
-  ],
-  "case1b": [
-   2
-  ],
-  "case2": [
-   2
-  ],
-  "case3": [
-   2
-  ],
-  "side_by_side_6": [
-   2
-  ],
-  "u_shaped_2": [
-   2
-  ]
- },
+ "levels_missing": {},
  "linear_rtol": 1e-11,
  "mandatory_lines": "box-stack mode: x and y lines through every source centroid (built in) and through the frozen reference maximum of every source (extra_lines); layout mode (manufactured case): x and y lines through every frozen reported point and maximum, z lines at their (interface) heights; generator layouts: none (Tj max = max nodal value on the die top face). Snapping: production SNAP_FRACTION 1e-2 of the level-0 cell; every snap recorded and the node at the snapped coordinate reported. Edge grading: production GridRule.edge_grading in both modes; in layout mode the fixed set also holds every layout geometry line (T0227/T0231).",
  "min_cells": 2,
@@ -49,7 +30,7 @@
   "manufactured_data": "4x4x4 / 4x4 Gauss (intorder 7)",
   "stiffness": "2x2x2 Gauss (Q1)"
  },
- "rationale": "not yet verifiable: level 2 missing on ['case1a', 'case1b', 'case2', 'case3', 'side_by_side_6', 'u_shaped_2'] (founder burst: scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study2.py --full\" research/o007_dev2). Pre-registered rule: research/notes/o007-dev-study2.md sec. 0 (commit 5570ba2).",
+ "rationale": "candidate 1 ruled out by measured data: ineligible: CG > 300 iterations. Pre-registered rule: research/notes/o007-dev-study2.md sec. 0 (commit 5570ba2).",
  "refinement_ratio": 2,
  "snap_fraction": 0.01,
  "zrefine": true
