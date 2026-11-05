@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-05T17:35:36+00:00 from repository state — do not edit_
+_generated 2026-11-05T18:20:15+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0127** [protected_change] T0235: merge needs founder approval
@@ -37,7 +37,6 @@ cancelled: 33, done: 198, failed: 3, needs_founder: 4, todo: 2
 - T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T03:07:32+00:00 run_finished {"run": "T0234-planner-20261104T185846-9462", "status": "completed", "cost": 2.037328, "subtype": "success", "report": "structured_output"}
 - 2026-11-05T03:07:32+00:00 inbox_opened {"id": "I0125", "kind": "external_action", "subject": "[O007] [O007] Two founder bursts on the I0124 (c) repair path, and holds so no agent spend happens before
 - 2026-11-05T03:07:32+00:00 inbox_opened {"id": "I0126", "kind": "plan_approval", "subject": "[O007] approve initial plan (5 tasks)"}
 - 2026-11-05T03:07:32+00:00 plan_applied {"objective": "O007", "created": ["T0235", "T0236", "T0237", "T0238", "T0239"], "dropped": 0}
@@ -52,3 +51,4 @@ cancelled: 33, done: 198, failed: 3, needs_founder: 4, todo: 2
 - 2026-11-05T14:59:47+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
 - 2026-11-05T15:55:01+00:00 sleep_detected {"gap_s": 2555, "runs_extended": 0}
 - 2026-11-05T17:35:29+00:00 sleep_detected {"gap_s": 630, "runs_extended": 0}
+- 2026-11-05T18:20:06+00:00 sleep_detected {"gap_s": 2677, "runs_extended": 0}
