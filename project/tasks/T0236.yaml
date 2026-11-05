@@ -4,7 +4,7 @@ title: 'thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (defa
   with grid survey on the O006 cases and dev layouts'
 type: implement
 agent: builder
-status: proposed
+status: needs_founder
 depends_on:
 - T0235
 description: 'Founder I0124 (c), step 2. START ONLY if research/o007_sliver/discriminator.json has verdict
@@ -143,4 +143,8 @@ rationale: 'I0124 (c) step 2, conditional on n1. It turns the sliver diagnosis i
   policy that keeps scope_in''s obligations: one frozen rule, reported points as nodes on all three levels,
   mandatory lines fixed by the frozen references. It is opt-in, so T0228''s frozen grids and cached solves
   stay reproducible.'
-history: []
+history:
+- outcome: founder_hold
+  summary: Held per I0125 until the n1 (T0235) founder burst and its --report are on main with verdict
+    slivers. Release with mfos task retry T0236.
+  at: '2026-11-05T03:42:57+00:00'

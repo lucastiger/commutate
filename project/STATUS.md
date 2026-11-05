@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-05T03:07:35+00:00 from repository state — do not edit_
+_generated 2026-11-05T03:43:22+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0125** [external_action] [O007] [O007] Two founder bursts on the I0124 (c) repair path, and holds so no agent spend happens before them
-- **I0126** [plan_approval] [O007] approve initial plan (5 tasks)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -26,24 +25,18 @@ _generated 2026-11-05T03:07:35+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 38 | $67.36 | 1269196 | 652986 | 51 | 0 |
+| O007 | 39 | $67.36 | 1269196 | 652986 | 51 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 32, done: 197, failed: 3, needs_founder: 2, proposed: 5
+cancelled: 33, done: 197, failed: 3, needs_founder: 3, running: 1, todo: 2
 
 - T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0229 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen graded rule against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0235 `proposed` scientist/investigate: O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with the sliver-forming lines removed, L0-L2 (L2 by founder burst) (attempt 0)
-- T0236 `proposed` builder/implement: thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged), with grid survey on the O006 cases and dev layouts (attempt 0)
-- T0237 `proposed` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 plus sliver_policy on the O006 cases and dev layouts (founder burst, deterministic --report) (attempt 0)
-- T0238 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0239 `proposed` none/experiment: Run E009: scikit-fem thermal reference (graded rule with sliver_policy) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
+- T0235 `running` scientist/investigate: O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with the sliver-forming lines removed, L0-L2 (L2 by founder burst) (attempt 1)
+- T0236 `needs_founder` builder/implement: thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged), with grid survey on the O006 cases and dev layouts (attempt 0)
+- T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-04T19:31:09+00:00 merged {"task": "T0228"}
-- 2026-11-04T19:31:12+00:00 run_started {"run": "T0233-planner-20261104T113112-3700", "task": "T0233", "role": "planner", "session": "9bc5f2d1-db93-44ba-8f3b-a1524c13fad3"}
-- 2026-11-04T21:14:13+00:00 run_finished {"run": "T0233-planner-20261104T113112-3700", "status": "completed", "cost": 0.673057, "subtype": "success", "report": "structured_output"}
 - 2026-11-04T21:14:13+00:00 inbox_opened {"id": "I0124", "kind": "decision", "subject": "[O007] [O007] Decide before the T0228 burst: what happens if the only miss is CG > 300 on a Muzychka-plate L2 so
 - 2026-11-04T21:14:13+00:00 plan_applied {"objective": "O007", "created": [], "dropped": 0}
 - 2026-11-04T21:14:49+00:00 sleep_detected {"gap_s": 6178, "runs_extended": 0}
@@ -56,3 +49,6 @@ cancelled: 32, done: 197, failed: 3, needs_founder: 2, proposed: 5
 - 2026-11-05T03:07:32+00:00 inbox_opened {"id": "I0125", "kind": "external_action", "subject": "[O007] [O007] Two founder bursts on the I0124 (c) repair path, and holds so no agent spend happens before
 - 2026-11-05T03:07:32+00:00 inbox_opened {"id": "I0126", "kind": "plan_approval", "subject": "[O007] approve initial plan (5 tasks)"}
 - 2026-11-05T03:07:32+00:00 plan_applied {"objective": "O007", "created": ["T0235", "T0236", "T0237", "T0238", "T0239"], "dropped": 0}
+- 2026-11-05T03:43:12+00:00 inbox_resolved {"id": "I0125", "status": "approved", "note": "Approve both founder bursts (n1 discriminator incl. the Case 1b extension; n3 re-freeze) and the holds: T0236 unt
+- 2026-11-05T03:43:12+00:00 inbox_resolved {"id": "I0126", "status": "approved", "note": "Plan approved (T0235-T0239); T0236 and T0238 held per I0125; T0229 cancelled (replaced by T0238).", "by": "human"
+- 2026-11-05T03:43:22+00:00 run_started {"run": "T0235-scientist-20261104T194322-2f4a", "task": "T0235", "role": "scientist", "session": "b9dd6cdb-7bd4-4d75-816f-8ef9a61aa4ca"}
