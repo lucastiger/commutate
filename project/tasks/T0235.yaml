@@ -4,7 +4,7 @@ title: 'O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under g
   the sliver-forming lines removed, L0-L2 (L2 by founder burst)'
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: 'Founder I0124 (c), step 1. Decide, before any production change, whether T0228''s CG-only
   miss comes from sliver cells next to near-coincident grid lines or from conditioning of the plates.
@@ -137,4 +137,155 @@ rationale: Kill shot for the I0124 (c) repair path, and failure mode F2's linear
   carried by T0228's eligibility rule. If the decisive variants also exceed 300, no line or snap policy
   can restore headroom, and the path stops before any builder spend. Case 1b is included because it also
   fails (318), and its thinnest cell may not be maximum-line made.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The verdict is ''unmeasured'', the expected state before the founder''s burst. The local L0/L1
+    data suggest the slivers are not the main cause of the CG miss, but only the L2 burst can decide it.
+
+
+    Grid survey (L0, no temperatures):
+
+    - T0228''s minimum neighbour width ratios come from a source-centroid line next to a frozen-maximum
+    line. In Case 1a the s1 maximum line sits 57.2 µm from the centroid, giving two 28.6 µm cells (ratio
+    0.013). In Case 1b it sits 134.8 µm away (ratio 0.031).
+
+    - The 50 µm minimum cell in Case 1b is a grading cell: the 100 µm first offset, split in two. Its
+    neighbour ratio is 0.67, so it does not set the 0.031.
+
+    - Case 2''s ratio of 0.010 also comes from a centroid/maximum-line pair, yet its CG counts were only
+    81/116/162.
+
+
+    Variant choice:
+
+    - centroid_only (maximum lines re'
+  report:
+    summary: 'The verdict is ''unmeasured'', the expected state before the founder''s burst. The local
+      L0/L1 data suggest the slivers are not the main cause of the CG miss, but only the L2 burst can
+      decide it.
+
+
+      Grid survey (L0, no temperatures):
+
+      - T0228''s minimum neighbour width ratios come from a source-centroid line next to a frozen-maximum
+      line. In Case 1a the s1 maximum line sits 57.2 µm from the centroid, giving two 28.6 µm cells (ratio
+      0.013). In Case 1b it sits 134.8 µm away (ratio 0.031).
+
+      - The 50 µm minimum cell in Case 1b is a grading cell: the 100 µm first offset, split in two. Its
+      neighbour ratio is 0.67, so it does not set the 0.031.
+
+      - Case 2''s ratio of 0.010 also comes from a centroid/maximum-line pair, yet its CG counts were
+      only 81/116/162.
+
+
+      Variant choice:
+
+      - centroid_only (maximum lines removed) leaves a minimum ratio of 0.0806 on both plates. It sits
+      where the outermost grading interval (1.17 mm cells) meets 12–14.5 mm far-field cells, a coarsening
+      jump rather than near-coincident lines.
+
+      - Removing the grading lines the survey names makes it worse (0.031), so a sliver_free variant as
+      the packet defines it cannot reach 0.1. It was not registered.
+
+      - centroid_only is the decisive variant for both cases. Section 0 was committed as 79502c0 before
+      any solve.
+
+
+      Local solves (L0/L1, all sanity gates pass):
+
+      - Case 1a: centroid_only 177/235 against max_lines 204/252.
+
+      - Case 1b: centroid_only 188/240 against max_lines 198/247.
+
+      - The drop is small and shrinks with refinement: 13% then 7% on 1a, 5% then 3% on 1b. Counts still
+      grow by 1.28–1.33 per level.
+
+      - A rough extrapolation (not evidence) puts L2 at about 295–312 for 1a and 306–309 for 1b.
+
+
+      Both L2 solves are burst-only (estimated about 23 GB and 27 GB peak); the burst command is in plan.json.'
+    failure_class: model
+    confidence: 0.6
+    root_cause: 'Provisional, and it does not replace the pre-registered verdict, which is ''unmeasured''
+      until the L2 burst. The CG count on the Muzychka Case 1a/1b plates appears to come mainly from the
+      operator and grid, not from the near-coincident centroid/maximum-line slivers. Removing those slivers
+      (centroid_only) cut CG by only 7% (1a) and 3% (1b) at L1, and the counts keep growing by about 1.3
+      per level. This test cannot say which part of ''conditioning'' dominates: weak Robin coupling on
+      the large plate, the 12–14.5 mm × 1 mm far-field cells, or the 0.08 grading-to-far-field jump.'
+    evidence:
+    - '[F] research/o007_sliver/survey.json: Case 1a max_lines minimum ratio 0.0133 is the interval [90.000,
+      90.057] mm between source_centroid(s1) and frozen_max_line(s1), split into two 28.6 um cells. Case
+      1b: 0.0314, centroid s1 to frozen-max s1, 134.8 um. Case 2: 0.0104, centroids s1/s3 to frozen-max
+      s3, 35.7 um.'
+    - '[F] Case 1b''s 50 um minimum cell is the 100 um grading first offset inside the source edge, split
+      in two. Its neighbour ratio is 0.67, so it does not set the minimum ratio; the outer first offset
+      snaps onto the source edge.'
+    - '[F] centroid_only minimum ratio is 0.0806 on both 1a and 1b, at the outermost grading line (3.906
+      mm outside the source edge) next to the 14.53 mm far-field cells. Case 2''s centroid_only ratio
+      is 0.273.'
+    - '[F] survey.json named_line_removal_check: removing the survey-named grading lines lowers the minimum
+      ratio to 0.0306, so a sliver_free variant made by removing or merging the named lines cannot reach
+      0.1.'
+    - '[F] Pre-registration commit 79502c0 (note section 0, survey, plan) came before any solve; results
+      commit 25aae78.'
+    - '[F] discriminator.json: centroid_only CG max per level, Case 1a [177, 235], Case 1b [188, 240].
+      max_lines, copied from T0228: [204, 252, 316] and [198, 247, 318].'
+    - '[F] Every sanity gate passes (sanity_failed is empty): the cg_only count equals meta cg_iterations
+      on every solve, energy balance <= 1e-6, Picard residual < 1e-4 K, true relative residual <= 3.5e-11,
+      and the L0 grid equals the survey grid.'
+    - '[F] Local peak RSS: 0.85 / 2.70 GB (1a), 0.97 / 3.20 GB (1b). Both L2 solves were skipped by the
+      local memory cap (estimates 42.7 and 51.0 GB, against 10 GB).'
+    - '[I] Case 2 has a ratio-0.010 sliver of the same kind with CG 81/116/162, so a sliver of this kind
+      is not sufficient for high CG counts.'
+    alternative_explanations:
+    - explanation: 'Slivers: the near-coincident centroid/maximum-line pairs (ratio 0.013 and 0.031) degrade
+        AMG-CG enough to push L2 above 300.'
+      how_to_discriminate: The pre-registered centroid_only L2 on both plates. Both counts <= 300 gives
+        verdict 'slivers'; any count > 300 refutes it. The L0/L1 drops (7% and 3% at L1) already weigh
+        against slivers being the main cause.
+    - explanation: 'Conditioning, in the narrow physical sense: weak Robin coupling (h = 10 W/(m2 K),
+        k = 10 W/(m K), 300 mm plate) makes the operator nearly Neumann, which caps AMG-PCG performance
+        regardless of slivers.'
+      how_to_discriminate: Not separable in this task. It would need a new pre-registered variant that
+        keeps the grid but changes h or k (diagnostic only), or a comparison with the AMG near-null-space
+        settings.
+    - explanation: 'A grid feature other than slivers: the 12–14.5 mm × 1 mm far-field cell aspect ratio
+        (unchanged across levels under zrefine), or the 0.08 grading-to-far-field coarsening jump, which
+        remains in centroid_only.'
+      how_to_discriminate: A new pre-registered variant with a smaller far-field h0 multiplier, or a grading
+        end matched to the far-field cell. It is outside this task's two-variant limit and was not run.
+    discriminating_tests:
+    - 'RUN (local, about 2 min): centroid_only L0/L1 on Cases 1a and 1b. Result: 177/235 and 188/240,
+      against max_lines 204/252 and 198/247; the drop shrinks with level.'
+    - 'PENDING (founder burst): centroid_only L2 on Cases 1a and 1b. The pre-registered verdict rule decides:
+      ''slivers'' if both are <= 300, ''conditioning'' if either is > 300.'
+    - 'NOT RUN (out of scope; needs a new task and pre-registration): a far-field cell-size or grading-end
+      variant, to separate the grid-feature explanation from physical conditioning.'
+    recommended_actions:
+    - 'Founder: run the L2 burst (L0/L1 are cached and reused): scripts/burst_gcp.sh --cmd "uv run python
+      research/scripts/o007_sliver.py --full" research/o007_sliver. Estimated about 23 GB / 28 min (1a)
+      and 27 GB / 35 min (1b). The --full memory gate needs at least 60 GB physical memory, so e2-highmem-8
+      (64 GB, as in T0228) is enough. Then commit the resulting --report.'
+    - 'If the verdict is ''conditioning'': do not fund I0124 (c) step 2 (the sliver-free snap/max-line
+      builder) as the repair, because even a perfect builder only reaches centroid_only-level grids. Next
+      steps are a founder decision memo: a new pre-registered candidate that changes far-field cell size
+      or the grading end, or a solver change. The 300 rule stays unchanged.'
+    - 'If the verdict is ''slivers'': proceed with I0124 (c) step 2. The builder should reach centroid_only-level
+      ratios (at least 0.08) while keeping the maximum points as nodes.'
+    - 'Note for the critic: the diagnosis is written in research/notes/o007-sliver.md sections 2–3, the
+      packet''s notes path, not research/diagnoses/T0235.md.'
+    files_written:
+    - research/scripts/o007_sliver.py
+    - research/notes/o007-sliver.md
+    - research/o007_sliver/survey.json
+    - research/o007_sliver/plan.json
+    - research/o007_sliver/preregistration.json
+    - research/o007_sliver/discriminator.json
+    - research/o007_sliver/cache/case1a__centroid_only__L0.json
+    - research/o007_sliver/cache/case1a__centroid_only__L1.json
+    - research/o007_sliver/cache/case1b__centroid_only__L0.json
+    - research/o007_sliver/cache/case1b__centroid_only__L1.json
+    - research/o007_sliver/cache/*.spec.json (4)
+    affects_acceptance_criteria: false
+    experiment_drafts: []
