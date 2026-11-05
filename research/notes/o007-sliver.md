@@ -199,3 +199,30 @@ asked.
    size or grading end, as a new pre-registered candidate) or a solver change. Neither changes the 300 rule.
 3. If `slivers`: proceed with I0124 (c) step 2. The builder's acceptance should be centroid_only-level ratios
    (>= 0.08) with the maximum points still nodes.
+
+## 4. Corrections before the L2 burst (founder session, 2026-11-05, review T0240) [post-data, labelled]
+- [F] **Sec. 0.1 is wrong** where it says "No removal or merge of survey-named lines brings these grids to >= 0.1.
+  Reaching 0.1 would need an added line". `named_removal_check` removed only lines labelled `grading_line` and tested
+  no merge. Merging the two 1.17 mm cells of the outermost graded interval (2.34375 mm, split in two by
+  `min_cells = 2`; subdivision lines at 74.766, 105.234, 194.766 and 225.234 mm) raises the minimum lateral ratio
+  from 0.0806 to **0.161** on both plates (T0240).
+- [F] **Founder-session diagnostic of that merge** (not pre-registered; it enters no verdict, criterion or spec):
+  `research/scripts/o007_sliver_merged.py`, output `research/o007_sliver/founder_merged_variant.json`, local, L0 and
+  L1. The centroid_only rows reproduce this task's counts exactly (177/235, 188/240), which checks the harness.
+
+  | case | variant | min ratio L0 | CG max L0 / L1 |
+  |---|---|---|---|
+  | 1a | centroid_only | 0.0806 | 177 / 235 |
+  | 1a | centroid_only + outer graded interval as one cell | 0.1613 | 174 / 231 |
+  | 1b | centroid_only | 0.0806 | 188 / 240 |
+  | 1b | centroid_only + outer graded interval as one cell | 0.1613 | 184 / 238 |
+
+  [I] Raising the worst ratio from 0.081 to 0.161 cuts CG by 1-2 %, against 3-7 % for removing the maximum lines.
+  Neither the slivers nor the 0.08 grading-to-far-field jump sets the count. This supports explanation 2's operator
+  part (weak Robin coupling on the 300 mm plates) over its cell-size parts. Recommendation 2 is amended: a
+  `conditioning` verdict does not by itself rule out a line policy that also fixes the outermost graded cell, but
+  this diagnostic shows that such a policy changes the count by about 2 %, so it would not reach 300 either.
+- [F] **Verdict code fix (before any L2 data):** `worker()` recorded any `RuntimeError`, a Picard failure included,
+  as `cg_failed`, a measured level. Now only a failure whose CG log shows the 400 cap is `cg_failed`. Any other
+  failure is `failed`, which `_variant` treats as a missing level, so it can no longer produce `slivers`.
+- [F] The module docstring no longer points at a non-existent `SLIVER_FREE` constant.

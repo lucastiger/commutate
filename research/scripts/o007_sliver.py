@@ -5,7 +5,7 @@ Question: does T0228's CG-only miss (Case 1a 204/252/316, Case 1b 198/247/318 CG
 candidate 1 (``a_q1h4_graded``, research/o007_dev2/frozen_config.json, production GridRule with edge_grading):
   max_lines      candidate 1 as frozen; values copied from research/o007_dev2/{dev_study.json, plan.json}, not re-solved
   centroid_only  candidate 1 with the frozen-maximum extra_lines removed (built-in source centroid lines kept)
-  sliver_free    only if pre-registered in research/notes/o007-sliver.md sec. 0 (see SLIVER_FREE below)
+  sliver_free    not pre-registered (note sec. 0.1), so not implemented: variant_problem refuses it
 No temperature of any variant is compared with a reference, and none enters any criterion, freeze or spec. Research
 only: moduleforge.solvers.thermal_fem is used unchanged. Pre-registration: note sec. 0, committed before any solve; its
 hash is in research/o007_sliver/preregistration.json and copied to discriminator.json.
@@ -196,9 +196,10 @@ def worker(spec_path: str) -> int:
                    picard_iters=int(r.picard_iters), picard_residual_K=float(r.picard_residual), wall_s=float(r.wall_s),
                    meta_cg_iterations=[int(c) for c in m["cg_iterations"]], grid=D2._lines_stats(r),
                    n_lines=m["n_lines"], grading_lines=m["grading_lines"], snapped_lines=m["snapped_lines"])
-    except RuntimeError as e:  # linear-solve failure (e.g. the CG cap): the count is still the measured CG_LOG
+    except RuntimeError as e:  # a CG-cap failure is a measured count; any other failure (Picard, ...) is a broken run
         g = grid(ser, spec["case"], spec["variant"], spec["level"])
-        out.update(status="cg_failed", error=str(e), dofs=int(DS.count_dofs(g)), grid=grid_stats(g))
+        st = "cg_failed" if any(c["hit_cap"] for c in DS.CG_LOG) else "failed"  # review T0240, before the L2 burst
+        out.update(status=st, error=str(e), dofs=int(DS.count_dofs(g)), grid=grid_stats(g))
     out.update(cg=DS.CG_LOG, cg_max_iters=max((c["iters"] for c in DS.CG_LOG), default=0),
                cg_hit_cap=any(c["hit_cap"] for c in DS.CG_LOG),
                final_true_rel_resid=(DS.CG_LOG[-1]["true_rel"] if DS.CG_LOG else None),
