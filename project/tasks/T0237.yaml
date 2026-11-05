@@ -1,0 +1,141 @@
+id: T0237
+objective: O007
+title: 'O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 plus sliver_policy on the
+  O006 cases and dev layouts (founder burst, deterministic --report)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0235
+- T0236
+description: 'Founder I0124 (c), step 3. Start only if research/o007_sliver/discriminator.json has verdict
+  ''slivers'' and n2 is merged; otherwise stop and report. This study replaces T0228''s infeasible freeze.
+  Write research/scripts/o007_dev_study3.py, reusing o007_dev_study2.py by import (Runner2, worker, memory
+  gate, reuse logic, report and e009_table machinery). Outputs go under research/o007_dev3/. Make no production
+  code change.
+
+
+  (1) Pre-registration. Write section 0 of research/notes/o007-dev-study3.md and commit it before any
+  solve; only grid construction is allowed beforehand. Record the hash in dev_study.json as preregistration_commit.
+  Section 0 fixes:
+
+  - One candidate, a_q1h4_graded_sp: exactly T0228''s candidate 1 (research/o007_dev2/frozen_config.json)
+  plus sliver_policy = benchmarks/o007_sliver_grids.json recommended_sliver_policy, copied verbatim with
+  no tuning.
+
+  - Eligibility: T0228 note sec. 0.2 criteria 1-4, unchanged. That means the gates; CG at most 300 on
+  every L0-L2 solve, the calibration and constant-k solves included (founder I0124: keep the 300 rule);
+  A1 at most 0.008; A2 at most 0.040 K; A4 at most 0.40 K on the cases and 0.25 K on the dev-layout dies;
+  every E009 finest solve at most 217.6 GB, fresh layouts at 1.5 x the larger dev layout. All measured
+  at level 2 on all six cases and both dev layouts. feasible is true only if every criterion is measured
+  at L2 and holds.
+
+  - Reuse. A cached T0228 or T0225 solve is reused only where the production grid under the new rule equals
+  the cached grid line for line (np.array_equal on the x, y and z lines and the material map) at that
+  level, and a fresh L0 re-solve under current code reproduces the cached L0 values within 1e-9 K. Otherwise
+  it is re-solved.
+
+
+  (2) Problems, records and checks are as T0228. Also record, per case, every snap: requested, used, distance
+  and the reported point it moves. Keep the die-centroid-node diagnostic GCI.
+
+
+  (3) Local runs follow T0228''s memory rule. --full mode with burst_command ''scripts/burst_gcp.sh --cmd
+  "uv run python research/scripts/o007_dev_study3.py --full" research/o007_dev3'' in research/o007_dev3/plan.json,
+  listing which L2 solves the burst must run and which are reused.
+
+
+  (4) --report is deterministic. It writes dev_study.json, with the same keys as T0228, and frozen_config.json,
+  with T0228''s keys (cg_eligibility_limit 300 included) plus sliver_policy (list). Before the founder''s
+  burst the expected state is feasible: false with levels_missing. That is a valid completion.
+
+
+  (5) Update the E009 cost table. Record the dev A1/A2/A4 values at L2 for E009''s K1/K2 regression guard.
+  Label every post-data change as such.'
+context_files:
+- project/objectives/O007/objective.yaml
+- project/inbox/I0124.yaml
+- research/notes/o007-dev-study2.md
+- research/scripts/o007_dev_study2.py
+- research/o007_dev2/frozen_config.json
+- research/o007_dev2/dev_study.json
+- research/o007_dev2/plan.json
+- research/notes/o007-sliver.md
+- research/o007_sliver/discriminator.json
+- benchmarks/o007_sliver_grids.json
+- src/moduleforge/solvers/thermal_fem.py
+- research/o007_l2/full.json
+- tools/mfos/mfos/metrics.py
+deliverables:
+- research/scripts/o007_dev_study3.py
+- research/o007_dev3/frozen_config.json
+- research/o007_dev3/dev_study.json
+- research/o007_dev3/plan.json
+- research/notes/o007-dev-study3.md
+touches:
+- research/scripts/o007_dev_study3.py
+- research/o007_dev3/**
+- research/notes/o007-dev-study3.md
+definition_of_done:
+- cmd: null
+  exists: research/o007_dev3/frozen_config.json
+  timeout_s: 60
+- cmd: uv run python -c "import json; from moduleforge.solvers import thermal_fem as F; c = json.load(open('research/o007_dev3/frozen_config.json'));
+    b = json.load(open('benchmarks/o007_sliver_grids.json')); g = c['edge_grading']; assert c['levels']
+    == [0, 1, 2] and c['picard_tol_K'] == 1e-4 and c['cg_eligibility_limit'] == 300 and isinstance(c['feasible'],
+    bool) and c['element_order'] in (1, 2); assert list(c['sliver_policy']) == list(b['recommended_sliver_policy']);
+    assert set(g) == {'first_offset_m', 'ratio', 'max_offset_m', 'min_gap_fraction'}; assert all(k in
+    c for k in ('h0_m', 'near_margin_m', 'dz_max_m', 'nz_min', 'mandatory_lines', 'quadrature', 'linear_rtol',
+    'rationale')); F.GridRule(h0=c['h0_m'], near_margin=c['near_margin_m'], dz_max=c['dz_max_m'], element_order=c['element_order'],
+    edge_grading=(g['first_offset_m'], g['ratio'], g['max_offset_m'], g['min_gap_fraction']), sliver_policy=tuple(c['sliver_policy']))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('research/o007_dev3/dev_study.json')); c = json.load(open('research/o007_dev3/frozen_config.json'));
+    ch = d['chosen']; cs, ls = ch['cases'], ch['layouts']; assert {'case1a', 'case1b', 'case2', 'case3',
+    'nlayer_dbc', 'mms'} <= set(cs) and {'side_by_side_6', 'u_shaped_2'} <= set(ls); assert all('node_count_ratio'
+    in v and 'snaps' in v for v in cs.values()); allv = list(cs.values()) + list(ls.values()); assert
+    all(len(v['levels_run']) >= 2 and len(v['cg_max_per_level']) == len(v['levels_run']) for v in allv);
+    assert all(len(x['argmax_xyz']) == len(ls[k]['levels_run']) and 'gci_K' in x for k in ('side_by_side_6',
+    'u_shaped_2') for x in ls[k]['dies']); assert (not c['feasible']) or all(v['levels_run'] == [0, 1,
+    2] and max(v['cg_max_per_level']) <= 300 for v in allv); assert len(d['preregistration_commit']) >=
+    7"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import subprocess, sys; f = 'research/o007_dev3/frozen_config.json'; a = open(f).read();
+    subprocess.run([sys.executable, 'research/scripts/o007_dev_study3.py', '--report'], check=True); assert
+    open(f).read() == a, 'report is not deterministic'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; p = json.load(open('research/o007_dev3/plan.json')); assert 'o007_dev_study3.py
+    --full' in p['burst_command']"
+  exists: null
+  timeout_s: 60
+- cmd: null
+  exists: research/notes/o007-dev-study3.md
+  timeout_s: 60
+- cmd: uv run ruff check research/scripts/o007_dev_study3.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0234
+created_at: '2026-11-05T03:07:32+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in requires one scikit-fem configuration frozen before E009 registration. T0228's freeze
+  is ruled out, so a new pre-registered freeze under unchanged eligibility (300 CG kept, I0124) is the
+  only route to a feasible configuration for E009. It also checks that the policy does not cost the accuracy
+  margins, the N-layer A2 0.0386 K of 0.040 K above all.
+history: []

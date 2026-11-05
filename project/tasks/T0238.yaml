@@ -1,0 +1,119 @@
+id: T0238
+objective: O007
+title: 'E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy
+  against O006''s frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5)'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0236
+- T0237
+description: 'Replaces T0229. Its brief (project/tasks/T0229.yaml) applies unchanged except for the frozen
+  configuration. That brief covers reuse of E006''s machinery by import, the roles swapped, the config
+  keys, the rows, the metrics and recompute entries exactly as the objective states (max_gci_consistency
+  with ref_gci_cap 0.25 and floor 1e-3; max_gci_capped), the secondary metrics, the gated sanity checks
+  (F1 checks, node_persistence, node_count_growth, constant_refinement_ratio, energy_balance, picard_converged,
+  operating_point, layout_fingerprints, linear_solver_headroom; F5 NOT gated), code_under_test, the memory
+  preflight, the --smoke mode with a non-sealed dev seed, and the design note.
+
+
+  Start only if research/o007_dev3/frozen_config.json has feasible: true, with every case and dev layout
+  measured at levels 0-2 (n3 plus its founder burst). Otherwise stop and report; do not design around
+  an infeasible or provisional configuration.
+
+
+  Changes against T0229:
+
+  - fem_rule is copied verbatim from research/o007_dev3/frozen_config.json. Every scikit-fem solve goes
+  through production thermal_fem with a GridRule built from it, including edge_grading=(first_offset_m,
+  ratio, max_offset_m, min_gap_fraction) and sliver_policy=tuple(sliver_policy). Use no research-side
+  grid emulation.
+
+  - Case rows record every snap (requested, used, distance) of their reported points.
+
+  - The dev A1/A2/A4 regression-guard values, the cost table (cpu_hours_est, timeout_min, VM size) and
+  the CG maxima are taken from research/notes/o007-dev-study3.md and research/o007_dev3/dev_study.json,
+  stating which were measured and which extrapolated.
+
+  - Every row records, per grid solve, cg_max_iterations and linear_rel_residual_max (T0222).'
+context_files:
+- project/objectives/O007/objective.yaml
+- project/tasks/T0229.yaml
+- project/tasks/T0208.yaml
+- experiments/specs/E006.yaml
+- experiments/runners/e006_run.py
+- experiments/runners/e006_series.py
+- experiments/runners/e006_mms.py
+- research/notes/o006-e006-design.md
+- research/o007_dev3/frozen_config.json
+- research/o007_dev3/dev_study.json
+- research/notes/o007-dev-study3.md
+- research/notes/o007-sliver.md
+- benchmarks/o007_sliver_grids.json
+- research/o007_l2/preview.json
+- research/notes/o007-l2-crosscheck-preview.md
+- research/diagnoses/T0198.md
+- project/reviews/OBJ-O007/T0201.json
+- project/reviews/OBJ-O007/T0202.json
+- tools/mfos/mfos/metrics.py
+- tools/mfos/mfos/evaluate.py
+- src/moduleforge/solvers/thermal_fem.py
+deliverables:
+- experiments/drafts/E009.yaml
+- experiments/runners/e009_run.py
+- research/e009/dev_rows.json
+- research/notes/o007-e009-design.md
+touches:
+- experiments/drafts/E009.yaml
+- experiments/runners/e009_run.py
+- research/e009/**
+- research/notes/o007-e009-design.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e009_run.py --smoke --rows-out research/e009/dev_rows.json
+  exists: null
+  timeout_s: 3600
+- cmd: uv run mfos exp check E009 --rows research/e009/dev_rows.json
+  exists: null
+  timeout_s: 600
+- cmd: uv run python -c "s = open('experiments/drafts/E009.yaml').read(); assert all(k in s for k in ['befc5efaf2d50e3c096b41521814e2949885279d702cf38b921a090b80667151',
+    'ca05847b71c54a618c469c52216523b6a376368fa25a427e90cf4f9fdc22fd6b', 'max_case_scaled_err', 'max_abs_err_K',
+    'max_l2_consistency', 'max_conservative_gci_K', 'max_gci_consistency', 'max_gci_capped', 'ref_gci_cap',
+    'fem_lv0', 'fem_lv2', 'l2_lv1', 'l2_lv3', 'dT_const_k', 'sealed_seed', 'node_persistence', 'node_count_growth',
+    'constant_refinement_ratio', 'energy_balance', 'picard_converged', 'operating_point', 'layout_fingerprints',
+    'linear_solver_headroom', 'edge_grading', 'sliver_policy', 'thermal_fem.py'])"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json, yaml; s = yaml.safe_load(open('experiments/drafts/E009.yaml'));
+    c = json.load(open('research/o007_dev3/frozen_config.json')); assert c['feasible'] is True; assert
+    s['config']['fem_rule'] == c; assert s['config']['l2_levels'] == [1, 2, 3] and s['config']['f5_max_K']
+    == 0.25"
+  exists: null
+  timeout_s: 120
+- cmd: null
+  exists: research/notes/o007-e009-design.md
+  timeout_s: 60
+- cmd: uv run ruff check experiments/runners research
+  exists: null
+  timeout_s: 300
+experiment: E009
+risk: high
+model: null
+budget_usd: 7.5
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0234
+created_at: '2026-11-05T03:07:32+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: E009 is the only required experiment and this is its pre-registration. T0229 is pinned to T0228's
+  ruled-out freeze. This replacement pins fem_rule to the re-freeze, so the configuration is frozen before
+  registration as scope_in requires.
+history: []

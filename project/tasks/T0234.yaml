@@ -7,7 +7,7 @@ title: 'Plan O007 (founder approved I0124: (c) repair path. Decided after the L2
   a pre-registered re-freeze with a founder burst. T0229/T0230 wait for a feasible freeze.)'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -38,4 +38,20 @@ trigger: 'founder approved I0124: (c) repair path. Decided after the L2 counts (
   diagnostic), then a sliver-free snap/max-line builder task if slivers are the cause, then a pre-registered
   re-freeze with a founder burst. T0229/T0230 wait for a feasible freeze.'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O007 has used no evaluations and has $34.67 left. The founder''s T0228 burst completed level
+    2, and candidate 1 (graded Q1) is ruled out only by CG headroom: Case 1a 204/252/316 and Case 1b 198/247/318
+    against the pre-registered 300. Every accuracy and A4 margin is met at L2 (A1 6.8e-4, A2 0.0386 K
+    on the N-layer, A4 0.142 K on the cases and 0.124 K on the layouts; no solve at the 400 cap). So research/o007_dev2/frozen_config.json
+    can never become feasible, and T0229/T0230, whose checks are tied to that file, can never complete;
+    I replace them. The most likely killer is that the high count is plate conditioning, not slivers.
+    The data leave this open: Case 2 has the smallest neighbour ratio (0.010) yet only 162 CG at L2. Case
+    1b''s thinnest cell (50 µm) equals half the 100 µm grading first of'
+  created:
+  - T0235
+  - T0236
+  - T0237
+  - T0238
+  - T0239
+  dropped_for_limits: 0

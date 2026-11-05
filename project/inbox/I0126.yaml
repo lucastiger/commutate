@@ -1,0 +1,37 @@
+id: I0126
+kind: plan_approval
+subject: '[O007] approve initial plan (5 tasks)'
+summary: 'O007 has used no evaluations and has $34.67 left. The founder''s T0228 burst completed level
+  2, and candidate 1 (graded Q1) is ruled out only by CG headroom: Case 1a 204/252/316 and Case 1b 198/247/318
+  against the pre-registered 300. Every accuracy and A4 margin is met at L2 (A1 6.8e-4, A2 0.0386 K on
+  the N-layer, A4 0.142 K on the cases and 0.124 K on the layouts; no solve at the 400 cap). So research/o007_dev2/frozen_config.json
+  can never become feasible, and T0229/T0230, whose checks are tied to that file, can never complete;
+  I replace them. The most likely killer is that the high count is plate conditioning, not slivers. The
+  data leave this open: Case 2 has the smallest neighbour ratio (0.010) yet only 162 CG at L2. Case 1b''s
+  thinnest cell (50 µm) equals half the 100 µm grading first offset (the level-0 interval is split into
+  two cells), so 1b''s sliver may come from grading lines rather than maximum lines, and centroid-only
+  lines would not touch it. The discriminator (n1) is therefore the kill shot and comes first. It is a
+  labelled diagnostic on Case 1a as I0124 specifies, extended to Case 1b because 1b fails too and a repair
+  that fixes only 1a cannot make the freeze feasible. The extension costs only founder burst time. The
+  rest of the chain is fixed now: builder policy (n2), pre-registered re-freeze with founder burst (n3),
+  E009 design (n4) and run (n5). Each has a machine-checked start condition: n2''s done-check requires
+  verdict ''slivers'', and n4''s requires feasible: true in the new freeze. If the verdict is ''conditioning''
+  or the re-freeze is infeasible, the chain stops without further spend, and O007 goes to the founder
+  under I0115 (c)/(d) as option (a) of I0124 states. Planned task budget is $21.0 plus reviews, inside
+  the $34.67 left.'
+refs:
+- O007
+- T0235
+- T0236
+- T0237
+- T0238
+- T0239
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-05T03:07:32+00:00'
+resolved_at: null
+resolved_by: null

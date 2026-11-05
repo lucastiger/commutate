@@ -1,0 +1,139 @@
+id: T0235
+objective: O007
+title: 'O007 sliver discriminator (labelled diagnostic): Cases 1a and 1b under graded Q1 candidate 1 with
+  the sliver-forming lines removed, L0-L2 (L2 by founder burst)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: 'Founder I0124 (c), step 1. Decide, before any production change, whether T0228''s CG-only
+  miss comes from sliver cells next to near-coincident grid lines or from conditioning of the plates.
+  The miss was Case 1a 204/252/316 and Case 1b 198/247/318 at L0/L1/L2 against the pre-registered 300.
+  This is a LABELLED DIAGNOSTIC. It is not a candidate configuration, and none of its temperatures enters
+  any criterion, freeze or spec. Make no production code change.
+
+
+  Write research/scripts/o007_sliver.py, reusing by import from research/scripts/o007_dev_study2.py, o007_dev_study.py
+  and o007_probe.py: rule_of(''a_q1h4_graded''), load_refs (check sha256 befc5efa... and ca05847b... first),
+  box_problem, the child-process worker, the memory gate and watchdog, _lines_stats/min_cell_ratio, and
+  the cg_only counter alongside thermal_fem meta[''cg_iterations''] (T0222). Outputs go under research/o007_sliver/.
+
+
+  (1) Grid-only survey. This is allowed before pre-registration; it computes no temperature. For Cases
+  1a and 1b at L0 under candidate 1 exactly (research/o007_dev2/frozen_config.json, the production GridRule
+  with edge_grading), list every lateral interval whose neighbour width ratio is below 0.1. For each,
+  name the lines that bound it: source centroid line, frozen-maximum extra line, grading line, source
+  edge or domain end. Also give its width and its neighbours'' widths. T0228 data to explain: 1a min cell
+  28.6 um (ratio 0.013), 1b 50 um (ratio 0.031, possibly the 100 um grading first offset rather than a
+  maximum line), Case 2 ratio 0.010 but CG only 162.
+
+
+  (2) Pre-registration. Write section 0 of research/notes/o007-sliver.md and commit it before any solve.
+  Record the hash in discriminator.json as preregistration_commit. Section 0 fixes:
+
+  - Variant centroid_only: candidate 1 with the frozen-maximum extra_lines removed, built-in centroid
+  lines kept (T0225 part 1, I0124).
+
+  - Optional, at most one more variant, sliver_free: allowed only if the survey shows that centroid_only
+  leaves a case''s minimum lateral ratio below 0.1. It also removes or merges the survey-named lines,
+  by a rule that depends on geometry only and is written down in full.
+
+  - decisive_variant per case (centroid_only or sliver_free), fixed in section 0.
+
+  - Verdict rule: ''slivers'' iff, on both case1a and case1b, the decisive variant''s CG maximum over
+  every Picard step is <= 300 at every level measured, with L2 measured. ''conditioning'' iff any decisive-variant
+  count exceeds 300 at any level, the 400 cap included. ''unmeasured'' otherwise, i.e. while a decisive
+  L2 is missing and no count exceeds 300.
+
+
+  (3) Records per case and variant: levels_run, cg_max_per_level, DOF, min_ratio_lateral_l0 (min of the
+  x and y ratios at L0, float), min ratios per level, final true relative residual, and wall time. The
+  variant max_lines holds T0228''s values, copied from research/o007_dev2/dev_study.json and plan.json
+  and not re-solved. Do not compare any variant temperature with a reference; maximum points are not nodes
+  in centroid_only.
+
+
+  (4) Runs. L0 and L1 run locally under T0228''s memory rule. Add a --full mode that runs the missing
+  L2 solves and then --report. Write burst_command ''scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_sliver.py
+  --full" research/o007_sliver'' into research/o007_sliver/plan.json, with the estimated peak GB and wall
+  time per L2 solve. --report is deterministic and writes research/o007_sliver/discriminator.json with
+  keys verdict, preregistration_commit, survey, and cases.{case1a,case1b}.{decisive_variant, variants.{max_lines,
+  centroid_only[, sliver_free]}}. Before the founder''s burst, the expected state is verdict ''unmeasured''.
+  That is a valid completion. Label every post-data change as such.'
+context_files:
+- project/objectives/O007/objective.yaml
+- project/inbox/I0124.yaml
+- research/notes/o007-dev-study2.md
+- research/o007_dev2/dev_study.json
+- research/o007_dev2/plan.json
+- research/o007_dev2/frozen_config.json
+- research/scripts/o007_dev_study2.py
+- research/scripts/o007_dev_study.py
+- research/scripts/o007_probe.py
+- research/notes/o007-probe.md
+- src/moduleforge/solvers/thermal_fem.py
+deliverables:
+- research/scripts/o007_sliver.py
+- research/o007_sliver/discriminator.json
+- research/o007_sliver/plan.json
+- research/notes/o007-sliver.md
+touches:
+- research/scripts/o007_sliver.py
+- research/o007_sliver/**
+- research/notes/o007-sliver.md
+definition_of_done:
+- cmd: null
+  exists: research/o007_sliver/discriminator.json
+  timeout_s: 60
+- cmd: uv run python -c "import json; d = json.load(open('research/o007_sliver/discriminator.json'));
+    ds = json.load(open('research/o007_dev2/dev_study.json'))['chosen']['cases']; assert d['verdict']
+    in ('slivers', 'conditioning', 'unmeasured'); assert len(d['preregistration_commit']) >= 7; cs = d['cases'];
+    C = ('case1a', 'case1b'); assert set(C) <= set(cs); assert all(cs[c]['decisive_variant'] in cs[c]['variants']
+    and cs[c]['decisive_variant'] != 'max_lines' and cs[c]['variants']['max_lines']['cg_max_per_level']
+    == ds[c]['cg_max_per_level'] for c in C); assert all(len(x['cg_max_per_level']) == len(x['levels_run'])
+    >= 2 and isinstance(x['min_ratio_lateral_l0'], float) for c in C for x in cs[c]['variants'].values());
+    dv = [cs[c]['variants'][cs[c]['decisive_variant']] for c in C]; assert d['verdict'] != 'slivers' or
+    all(x['levels_run'] == [0, 1, 2] and max(x['cg_max_per_level']) <= 300 for x in dv); assert d['verdict']
+    != 'conditioning' or any(max(x['cg_max_per_level']) > 300 for x in dv); assert d['verdict'] != 'unmeasured'
+    or (any(x['levels_run'] != [0, 1, 2] for x in dv) and all(max(x['cg_max_per_level']) <= 300 for x
+    in dv))"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import subprocess, sys; f = 'research/o007_sliver/discriminator.json'; a = open(f).read();
+    subprocess.run([sys.executable, 'research/scripts/o007_sliver.py', '--report'], check=True); assert
+    open(f).read() == a, 'report is not deterministic'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; p = json.load(open('research/o007_sliver/plan.json')); assert 'o007_sliver.py
+    --full' in p['burst_command']"
+  exists: null
+  timeout_s: 60
+- cmd: null
+  exists: research/notes/o007-sliver.md
+  timeout_s: 60
+- cmd: uv run ruff check research/scripts/o007_sliver.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0234
+created_at: '2026-11-05T03:07:32+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Kill shot for the I0124 (c) repair path, and failure mode F2's linear_solver_headroom risk
+  carried by T0228's eligibility rule. If the decisive variants also exceed 300, no line or snap policy
+  can restore headroom, and the path stops before any builder spend. Case 1b is included because it also
+  fails (318), and its thinnest cell may not be maximum-line made.
+history: []

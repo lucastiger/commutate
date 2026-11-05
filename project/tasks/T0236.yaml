@@ -1,0 +1,146 @@
+id: T0236
+objective: O007
+title: 'thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged),
+  with grid survey on the O006 cases and dev layouts'
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0235
+description: 'Founder I0124 (c), step 2. START ONLY if research/o007_sliver/discriminator.json has verdict
+  ''slivers'', i.e. after the founder''s n1 burst and --report are on main. Otherwise stop at once and
+  report, with no code change. The first done-check enforces this.
+
+
+  Read n1''s survey and its decisive variants first: which lines bound the slivers on Cases 1a and 1b,
+  and what each variant removed. Then add to src/moduleforge/solvers/thermal_fem.py a field `GridRule.sliver_policy:
+  tuple[float, ...] | None = None`.
+
+  - None: every grid in box-stack and layout mode is unchanged, line for line and bitwise.
+
+  - When set, the level-0 lateral line set must reproduce the effect of n1''s decisive variant while keeping
+  the scope_in obligation that every frozen reported point is a node on all three levels. For example:
+  a mandatory line closer than the policy''s tolerance to a kept line snaps onto it, through the existing
+  _merge_lines snap record, with a rule-set tolerance in place of the module SNAP_FRACTION; or grading
+  lines that would form the survey-named slivers are not emitted (_grading_lines). Choose the mechanism
+  that n1''s data support.
+
+  - Every snap is recorded as (requested, used) in the grid and result metadata, as today, and a reported
+  point is the node at `used`.
+
+  - The policy is a function of geometry and the frozen mandatory lines only, never of a solver result.
+
+  - Higher levels bisect, so every level-0 line stays a node.
+
+  - Validate: a tuple of finite floats in a documented valid range, otherwise ValueError.
+
+  - Document the mechanism, its parameters and the measured reason (n1, T0228) in the GridRule and module
+  docstrings.
+
+  - Prefer a tolerance that leaves problems without sub-threshold slivers line-identical, so that T0228''s
+  L2 solves stay reusable and the N-layer A2 margin is untouched: 0.0386 K against 0.040 K, min ratio
+  0.066. This is a preference, not a check.
+
+
+  Tests go in tests/unit/solvers (extend test_thermal_fem_rule.py and test_thermal_fem_grading.py):
+
+  (i) With the default, grids are bitwise unchanged on synthetic box-stack and layout cases with near-coincident
+  mandatory and grading lines. Capture the arrays before the edit.
+
+  (ii) With the policy set, no lateral interval next to a policy-affected line is below the stated ratio;
+  every requested mandatory point maps to a node at L0-L2; the snap record is complete.
+
+  (iii) Validation errors.
+
+  (iv) A small box-stack solve with the policy passes the energy balance at 1e-6.
+
+
+  Also write benchmarks/o007_sliver_grids.py. It builds the L0 grids of the eight T0228 problems (case1a,
+  case1b, case2, case3, nlayer_dbc and mms via the research/scripts helpers T0228 used; side_by_side_6
+  and u_shaped_2 from dev seed 20261101) under T0228 candidate 1 (research/o007_dev2/frozen_config.json),
+  once without and once with the recommended policy, and checks node persistence at L1/L2 from the line
+  arrays without assembling. It writes benchmarks/o007_sliver_grids.json with:
+
+  - recommended_sliver_policy (list of floats);
+
+  - rows, one per problem: problem, dofs_default, dofs_policy, min_cell_ratio_lateral_default, min_cell_ratio_lateral_policy,
+  n_snaps_policy, max_snap_m_policy (float), grid_unchanged (bool) and points_nodes_all_levels (bool).
+
+
+  No change to thermal_fv, thermal_layout or the L2 rule (scope_out).'
+context_files:
+- research/o007_sliver/discriminator.json
+- research/notes/o007-sliver.md
+- research/notes/o007-dev-study2.md
+- research/o007_dev2/frozen_config.json
+- research/o007_dev2/plan.json
+- research/scripts/o007_dev_study2.py
+- research/scripts/o007_dev_study.py
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- tests/unit/solvers/test_thermal_fem_grading.py
+- project/objectives/O007/objective.yaml
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- benchmarks/o007_sliver_grids.py
+- benchmarks/o007_sliver_grids.json
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_*.py
+- benchmarks/o007_sliver_grids.py
+- benchmarks/o007_sliver_grids.json
+definition_of_done:
+- cmd: uv run python -c "import json; d = json.load(open('research/o007_sliver/discriminator.json'));
+    assert d['verdict'] == 'slivers', d['verdict']"
+  exists: null
+  timeout_s: 60
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python benchmarks/o007_sliver_grids.py
+  exists: null
+  timeout_s: 1800
+- cmd: 'uv run python -c "import json; from moduleforge.solvers import thermal_fem as F; b = json.load(open(''benchmarks/o007_sliver_grids.json''));
+    p = json.load(open(''research/o007_dev2/plan.json'')); d = json.load(open(''research/o007_sliver/discriminator.json''))[''cases''];
+    ref = {r[''problem'']: r for r in p[''rows''] if r[''level''] == 0}; rows = {r[''problem'']: r for
+    r in b[''rows'']}; assert {''case1a'', ''case1b'', ''case2'', ''case3'', ''nlayer_dbc'', ''mms''}
+    <= set(rows) and set(ref) <= set(rows); assert all(rows[k][''dofs_default''] == ref[k][''dofs''] and
+    abs(rows[k][''min_cell_ratio_lateral_default''] - ref[k][''min_cell_ratio_lateral'']) <= 1e-12 for
+    k in ref); assert all(r[''points_nodes_all_levels''] is True and isinstance(r[''max_snap_m_policy''],
+    float) and isinstance(r[''grid_unchanged''], bool) for r in rows.values()); assert all(rows[c][''min_cell_ratio_lateral_policy'']
+    >= 0.9 * d[c][''variants''][d[c][''decisive_variant'']][''min_ratio_lateral_l0''] for c in (''case1a'',
+    ''case1b'')); pol = tuple(b[''recommended_sliver_policy'']); assert F.GridRule().sliver_policy is
+    None; F.GridRule(h0=4e-3, near_margin=2e-3, dz_max=1e-3, element_order=1, edge_grading=(1e-4, 2.5,
+    4e-3, 0.5), sliver_policy=pol)"'
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src tests benchmarks
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 1800
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0234
+created_at: '2026-11-05T03:07:32+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'I0124 (c) step 2, conditional on n1. It turns the sliver diagnosis into a production grid
+  policy that keeps scope_in''s obligations: one frozen rule, reported points as nodes on all three levels,
+  mandatory lines fixed by the frozen references. It is opt-in, so T0228''s frozen grids and cached solves
+  stay reproducible.'
+history: []
