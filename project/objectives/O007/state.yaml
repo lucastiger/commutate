@@ -7,11 +7,11 @@ last_verdict: null
 evaluated_runs: {}
 pending_evaluation: null
 pending_review_ref: null
-replans: 6
-max_replans: 5
-needs_replan: false
+replans: 7
+max_replans: 6
+needs_replan: true
 spent_usd: 65.3272
-budget_override_usd: 83.1028
+budget_override_usd: 100.0
 log:
 - 'founder approved I0099: Option (a): ref_gci_cap in max_gci_consistency (committed); E009''s A3 recompute
   uses ref_gci_cap 0.25, floor 0.001 (no replan)'
@@ -25,5 +25,11 @@ log:
 - 'founder approved I0115: Probe first (T0225). Choose (a) edge grading or (b) Q2 finer near sources from
   its go/no-go; (c)/(d) only if both are no_go. (no replan)'
 - 'founder 2026-11-04: one more replan allowed (I0116)'
+- 'founder 2026-11-05: one more replan for the I0124 (c) repair path; budget cap 83.10 -> 100'
+- 'founder approved I0124: (c) repair path. Decided after the L2 counts (Case 1a 316, 1b 318 > 300; every
+  margin met), so (b) would be a post-data weakening of a pre-registered rule and is declined. Keep the
+  300 rule. Plan: sliver discriminator on Case 1a L2 (centroid-only lines, graded Q1, labelled diagnostic),
+  then a sliver-free snap/max-line builder task if slivers are the cause, then a pre-registered re-freeze
+  with a founder burst. T0229/T0230 wait for a feasible freeze.'
 evidence_rules: 2
 frozen_hash: sha256:35b7943c786d5f810977218c3d7af475db63ee0a8f56c4b90b1e79abd4fc8ed5
