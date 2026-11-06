@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-06T06:58:27+00:00 from repository state — do not edit_
+_generated 2026-11-06T15:00:48+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -34,7 +34,6 @@ cancelled: 38, done: 204, failed: 3, needs_founder: 1, todo: 1
 - T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-06T01:39:04+00:00 sleep_detected {"gap_s": 641, "runs_extended": 1}
 - 2026-11-06T01:50:00+00:00 run_finished {"run": "T0246-critic-20261105T173831-44c4", "status": "completed", "cost": 1.450326, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T01:50:04+00:00 inbox_opened {"id": "I0131", "kind": "protected_change", "subject": "T0242: merge needs founder approval"}
 - 2026-11-06T02:14:47+00:00 inbox_resolved {"id": "I0131", "status": "approved", "note": "Merge T0242: opt-in amg_gs_sweeps; T0246 verified default solves bitwise unchanged (9 solves, k(T) and layouts) a
@@ -49,3 +48,4 @@ cancelled: 38, done: 204, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-06T05:28:11+00:00 merged {"task": "T0243"}
 - 2026-11-06T05:28:12+00:00 inbox_opened {"id": "I0133", "kind": "decision", "subject": "[O007] replan limit reached"}
 - 2026-11-06T06:58:10+00:00 inbox_resolved {"id": "I0133", "status": "approved", "note": "No replan: the approved plan (T0244 E009 design held until the dev-study-3 burst reads feasible: true, then T0245
+- 2026-11-06T15:00:44+00:00 sleep_detected {"gap_s": 1248, "runs_extended": 0}
