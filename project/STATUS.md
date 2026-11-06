@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-05T23:04:37+00:00 from repository state — do not edit_
+_generated 2026-11-06T00:10:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0128** [decision] [O007] replan limit reached
@@ -14,7 +14,7 @@ _generated 2026-11-05T23:04:37+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | needs_founder | - | 0/1 | $71.50/$100 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | needs_founder | - | 0/1 | $71.50/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
