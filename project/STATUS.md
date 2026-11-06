@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-06T03:05:37+00:00 from repository state — do not edit_
+_generated 2026-11-06T03:05:51+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0132** [protected_change] T0243: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,12 @@ _generated 2026-11-06T03:05:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 203, failed: 3, merge: 1, needs_founder: 1, todo: 1
+cancelled: 38, done: 203, failed: 3, needs_founder: 2, todo: 1
 
-- T0243 `merge` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report) (attempt 1)
+- T0243 `needs_founder` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report) (attempt 1)
 - T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-06T01:14:13+00:00 sleep_detected {"gap_s": 617, "runs_extended": 1}
 - 2026-11-06T01:22:59+00:00 sleep_detected {"gap_s": 526, "runs_extended": 1}
 - 2026-11-06T01:28:24+00:00 run_finished {"run": "T0242-builder-20261105T165011-45eb", "status": "completed", "cost": 0.419655, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T01:38:26+00:00 verified {"task": "T0242"}
@@ -50,3 +49,4 @@ cancelled: 38, done: 203, failed: 3, merge: 1, needs_founder: 1, todo: 1
 - 2026-11-06T02:57:39+00:00 verified {"task": "T0243"}
 - 2026-11-06T02:57:45+00:00 run_started {"run": "T0247-critic-20261105T185745-b03d", "task": "T0247", "role": "critic", "session": "2c573432-668c-41c3-b352-0d74a5af6262"}
 - 2026-11-06T03:02:31+00:00 run_finished {"run": "T0247-critic-20261105T185745-b03d", "status": "completed", "cost": 2.113396, "subtype": "success", "report": "structured_output"}
+- 2026-11-06T03:05:49+00:00 inbox_opened {"id": "I0132", "kind": "protected_change", "subject": "T0243: merge needs founder approval"}
