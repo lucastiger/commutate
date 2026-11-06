@@ -1,0 +1,52 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "'Every solve bitwise unchanged' holds for the solution, not for ThermalResult.meta",
+      "detail": "With the default None, T, tj_max, tj_mean, energy_balance and cg_iterations are bitwise identical to the pre-change code. Every result's meta dict now carries a new key 'amg_gs_sweeps': None. No repository consumer compares meta key sets, so nothing breaks; the claim's wording is just broader than what is literally true.",
+      "evidence": "Reconstructed pre-change thermal_fem.py (reverse of packet diff, +33/-7 confirmed) vs current, 9 configurations: identical sha256 of T and identical cg/tj/eb in all; meta key diff = {'amg_gs_sweeps'} in all.",
+      "suggested_check": "State the invariant as 'temperature field and solver statistics bitwise unchanged; meta gains amg_gs_sweeps'.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Docstring wall-time figure '+7-10 %' is narrower than the measured data",
+      "detail": "The GridRule and _Solver docstrings say +7-10 % wall time. The founder diagnostic gives +10 %, +5 % (L0) and +10.6 %, +6.6 % (L1). The committed benchmark gives +11 % and +2 %; my rerun gave +4 % and +9 %. The CG figure (-28/-29 %) and the |dT| <= 5e-11 K figure are accurate for the Muzychka cases.",
+      "evidence": "founder_amg_diagnostic.json solve_wall_s 5.0->5.5, 6.1->6.4, 44.3->49.0, 54.2->57.8; benchmark 5.83->6.49, 6.49->6.64; rerun 5.21->5.42, 5.94->6.47.",
+      "suggested_check": "Quote the measured range (about +2 to +11 %, noisy) instead of +7-10 %.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The tests are weaker than the claim they guard",
+      "detail": "The default-path tests check exact CG counts plus sum, max and min to a relative 1e-12, not a bitwise hash. test_default_hierarchy_is_pyamgs_own only checks the field's default value and dataclasses.replace equality; it never inspects the AMG setup its name refers to. No test exercises the option at level > 0. My independent runs cover all three gaps (bitwise equality, propagation at level 1 in layout mode, sweeps=1 identical to default).",
+      "evidence": "tests/unit/solvers/test_thermal_fem_amg.py lines 273-292; the reference values (_BOX, _LAY) do reproduce exactly from the reconstructed pre-change code.",
+      "suggested_check": "Add a sha256 comparison of T for the default path, and a level-1 case with amg_gs_sweeps=2 asserting fewer CG iterations.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The benchmark reproduces only the founder's level-0 rows",
+      "detail": "This matches the claim's stated scope. The founder's level-1 rows (cg 252->180, 247->177) are not reproduced by any committed run, although the production docstring cites the L0/L1 figures.",
+      "evidence": "benchmarks/o007_amg_sweeps.py solves level=0 only.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Reconstructed the pre-change thermal_fem.py by reversing the packet diff in $TMPDIR (git diff --no-index confirmed 33 insertions / 7 deletions, identical to the packet). Ran 9 solves on old and new code: box Q1 L0/L1, box with nonlinear k(T) and 4 Picard steps, box Q2 h=50, legacy h0= keywords, edge-graded rule, layout Q1 L0/L1, layout Q2. All bitwise identical (sha256 of T, cg_iterations, tj_max, energy_balance); only a new meta key.",
+    "Confirmed that the test file's 'captured before the option' reference values (_BOX cg [21,0], sum 197788.3785537942...; _LAY cg [38,34,29,25,19], sum 804041.5712268387...) are produced exactly by the reconstructed old code.",
+    "Reran the benchmark logic with OUT redirected to $TMPDIR (committed file untouched). All fields equal the committed JSON except solve_wall_s, and equal the founder diagnostic level-0 rows bitwise (dofs, cg_max, residuals, dT, energy balance). Peak RSS 1.34 GB.",
+    "Compared the founder diagnostic script (research/scripts/o007_amg_sweeps.py): GS2 = ('gauss_seidel', {'sweep':'symmetric','iterations':2}) as pre/post smoother, identical to the production code path.",
+    "Option effect in layout mode at level 1: CG iterations 52 -> 37 / 27 / 20 for 2 / 4 / 8 sweeps, max |dT| <= 2.4e-10 K, energy balance <= 1.2e-13. sweeps=1 is bitwise equal to the default (pyamg 5.4.1 default is block_gauss_seidel symmetric, the same thing for a scalar problem).",
+    "Input checks: np.int64(3) accepted; True, np.bool_(True), 2.0, 0 and 9 rejected; element_order=2 with sweeps rejected; GridRule is frozen. Only two _Grid constructors exist and both pass rule.amg_gs_sweeps; the single _Solver call site passes it.",
+    "Ran the definition-of-done commands: both inline python checks pass; ruff check src tests benchmarks passes; pytest -m 'not slow' tests/unit: 521 passed, 37 deselected; new AMG tests 13 passed; mfos gate --fast: all gates passed; working tree clean afterwards."
+  ],
+  "caveats": [
+    "'Bitwise unchanged' covers the temperature field and solver statistics (T, tj_max/tj_mean, energy_balance, cg_iterations); ThermalResult.meta gains an 'amg_gs_sweeps' key.",
+    "The benchmark covers level 0 of Muzychka Cases 1a/1b only; the level-1 CG reductions cited in the docstrings rest on the founder's monkeypatch run, not on a run through the production API.",
+    "The wall-time cost of 2 sweeps is noisy (+2 to +11 % across runs), not the +7-10 % stated in the docstrings.",
+    "Bitwise equality was verified for pyamg 5.4.1 on this machine; the repository tests compare to rel 1e-12 for portability."
+  ]
+}
