@@ -1,0 +1,55 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The smoke run fails the node_count_growth gate, and the smoke's exit code ignores gated checks",
+      "detail": "In the committed dev_rows.json, and again in my rerun, node_count_growth FAILS: the minimum ratio is 6.71 against a lower bound of 6.80, on the coarsest step of Cases 1a/2/3 and the manufactured case. The smoke exits 0 whenever the integrity checks pass, so this DoD command cannot catch a regression in any post-solve gate. The pass branch of node_count_growth was never run end to end on frozen-rule grids. The level-to-level DOF ratios recorded in the T0243 dev study for the frozen rule are inside the band (7.25 to 7.81), so I expect the registered run to pass this gate, but the deliverable does not show it.",
+      "evidence": "dev_rows.json meta.checks: node_count_growth passed=False, value=6.7118, threshold=6.8. Dev-study DOFs: case1b 160173->1221025->9529569 (7.62, 7.80); mms 28683->207837->1577913 (7.25, 7.59); fresh plan 251523->1855630->14225251 (7.38, 7.67).",
+      "suggested_check": "Before registration, assert node_count_growth on the dev-study frozen-rule DOF counts with the same lo/hi computation the runner uses.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Design note gives the wrong range for frozen-rule node growth",
+      "detail": "Sec. 9 says the frozen rule measured 7.25-7.62 (T0243). The DOF counts in research/o007_dev3/dev_study.json give up to 7.805 (case1b L1->L2), 7.77 (case1a) and 7.76 (N-layer). Every value is still inside [6.8, 9.2], so no gate is affected; only the documentation is wrong.",
+      "evidence": "9529569/1221025 = 7.805; 7973721/1025661 = 7.774; 13606565/1752579 = 7.764.",
+      "suggested_check": "Correct the range in research/notes/o007-e009-design.md sec. 9.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "F5 works only through A3's ref_gci_cap and is not a gated sanity check",
+      "detail": "The objective's F5 detection text says 'gated check'. The spec makes F5 informational and folds it into A3, where any die with L2 GCI > 0.25 K makes A3 +inf. This gives the response the objective prescribes (A3 not met, INCONCLUSIVE, no redraw), and the note discloses it. I confirmed the runner's per-row a3_ratio applies the cap exactly as mfos.metrics.max_gci_consistency does. Anyone checking the sanity-check list against the objective text should know that F5 is not on it.",
+      "evidence": "E009.yaml metric max_l2_gci_K: 'F5 (NOT gated)'; recompute params ref_gci_cap: 0.25; e009_run.run_layout ratio = inf if s['gci'] > cap.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Lint edit outside the listed deliverables",
+      "detail": "Design note sec. 11.3 discloses a lint-only edit to research/scripts/e002_runner_harness.py (three '# noqa: E402' lines now present). The file is not among the four deliverables. It is not a protected path, and the change is said to be behaviour-neutral. I did not verify that, because the snapshot has no parent commit to diff against.",
+      "evidence": "",
+      "suggested_check": "Diff research/scripts/e002_runner_harness.py against main and confirm the statements and their order are unchanged.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the sha256 of research/o007_dev3/frozen_config.json: 0226b770\u2026120e9a, equal to the spec's fem_rule_file_sha256.",
+    "Ran `uv run mfos exp check E009 --rows research/e009/dev_rows.json`: exit 0. A1 0.0063 satisfied; A2/A3/A4 not satisfied on the smoke grids; the constant-k null fails A1 (0.0251) and A2 (2.52 K), so F3 discriminates.",
+    "Ran `uv run ruff check experiments/runners research`: all checks passed.",
+    "Re-implemented the order-capped GCI from the D0012/D0013 branch definitions in a scratch script, without importing mfos, and applied it to all 106 rows. Row gci and l2_gci agree to 1e-12 with zero mismatches. Each crosscheck row's a3_ratio (including the F5 ref_gci_cap = 0.25, the inf sum and the zero-sum cases) matches my recomputation. T_fem == fem_lv2 and tj_l2 == l2_lv3 on every row.",
+    "Reran the full smoke pipeline into $TMPDIR (exit 0, about 7 min, at most 2.4 GB RSS). All value columns (fem_lv0-2, l2_lv1-3, T_ref, dT_const_k, power_w) reproduce the committed dev_rows.json to at most 1.65e-10 K. Metrics are identical and the same single gate fails (node_count_growth).",
+    "Checked by code reading that _layer_means orders elements the same way as thermal_fem._build_mesh (np.nonzero(g.mat >= 0)). FEM._materials returns one entry per layer, so the F3 constant-k null uses true layer means. The constant-k path fixes k through g.kfun, and its Picard residual is correctly left out of picard_converged.",
+    "Checked that solve_layout builds its grid with the same layout_grid(...) call the runner uses for layer means and preflight, so the grid behind the null and layer means is the grid that was solved.",
+    "Checked that the smoke L2 overrides (H0_MAX, LAT_FRAC, EDGE_FRAC, Z_CELLS) are real module-level constants in thermal_layout, read at call time. The setattr coarsening therefore takes effect: the L2 growth in the smoke is 8.0.",
+    "Checked that ExperimentRun.metric stores float(value) with no finiteness check, so a +inf A3/A4 (the designed F5 outcome) cannot crash the registered run. mfos.metrics._finite_rows still fails closed on non-finite input columns.",
+    "Computed the frozen-rule per-level DOF growth from dev_study.json for every case and both dev layouts, plus the fresh-layout plan: 7.25 to 7.81, inside node_count_growth's [6.8, 9.2]. The preflight check passes (81 GB FEM, 131 GB FV, against 217.6 GB usable on n2-highmem-32)."
+  ],
+  "caveats": [
+    "The smoke rows show only that the pipeline works, on coarsened grids. They are not evidence that the frozen rule meets A1/A2/A4; that rests on the T0243 dev study, which I did not re-run.",
+    "The sandbox denied the DoD's two inline `python -c` assertion commands (frozen-config/spec equality and the spec key-string list) when I ran them as one compound command. Config equality is confirmed indirectly by the runner's fem_rule_frozen check passing in my rerun (it compares config.fem_rule with the frozen file). I did not run the key-string assertion myself.",
+    "The post-solve gates that fail on the smoke grids (node_count_growth) and the +inf A3/A4/F5 values have only been exercised on coarse grids. Behaviour at the frozen rule (growth band, F5 margin at L2 levels 1-3 on the fresh layouts) is inferred from the dev study and the L2 preview, not demonstrated by these deliverables.",
+    "I could not compare the review snapshot (single commit, no parent) with main, so I cannot rule out unlisted edits to other files beyond the disclosed lint edit."
+  ]
+}

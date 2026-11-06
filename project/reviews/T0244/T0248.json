@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The operating_point gate cannot fail",
+      "detail": "calibrate_power raises unless |rise - 60| <= calibration_tol_K (0.25 K), so every value that reaches ctx.op is already within 0.25 K. The gated \u00b11 K operating_point check can therefore never fail. The behaviour is safe (a miss becomes an error result, never a verdict), but this sanity check gives no independent assurance.",
+      "evidence": "e009_run.py calibrate_power returns only when abs(rise - tgt) <= tol; run_layout appends abs(cal - target) to ctx.op; gated_checks compares that against operating_point_tol_K = 1.0.",
+      "suggested_check": "Say in the spec that operating_point is implied by calibration, or gate on the recomputed rise_lv0_K over the dies.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "F4 leakage guard only compares the sealed seed with two dev seeds",
+      "detail": "full() refuses only if the sealed seed equals dev_seed or smoke_fresh_dev_seed. Nothing checks the three fresh fingerprints against layouts already used in development (E006's fresh layouts, the T0243 dev-study layouts, the seed-7 smoke layouts). A collision is unlikely with an mfos-sealed seed, but the objective says the fresh layouts were 'never used before', and that is asserted rather than checked.",
+      "evidence": "fingerprint_check tests only dev fingerprints == config, one fresh layout per family, and 5 distinct fingerprints.",
+      "suggested_check": "Record the known development fingerprints in the spec and assert the fresh ones are not among them.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Registered-run path (full()) is not exercised by the smoke run",
+      "detail": "The smoke run never calls ExperimentRun. An API mismatch would first appear on the burst VM. I checked by reading the code: the run.metric/sanity/domain/rows/notes/seed calls match mfos.evidence.ExperimentRun. All 15 declared sanity names are reported (the smoke meta.checks list matches the spec's sanity_checks), and all 18 spec metrics are recorded in full().",
+      "evidence": "tools/mfos/mfos/evidence.py signatures; the smoke meta checks list has 15 names equal to the spec's.",
+      "suggested_check": "Run full() once ad hoc with MFOS_SPEC_JSON/MFOS_SEED set to a dev seed on the smoke overrides before burning VM hours.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "fem_rule_file_sha256 is recorded in the spec but never checked by the runner",
+      "detail": "fem_rule_frozen instead checks content equality (config.fem_rule == the file on disk) plus the production constants, which is the stronger check. The recorded hash does match the file (0226b770...0e9a).",
+      "evidence": "shasum -a 256 research/o007_dev3/frozen_config.json = 0226b7709e25...a120e9a",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD spec/config check by reading the code, and ran 'uv run mfos exp check E009 --rows research/e009/dev_rows.json': exit 0. The F3 null (dT_const_k) gives 0.0251 scaled and 2.52 K, so it fails both A1 and A2 as required.",
+    "Re-ran the full smoke pipeline into $TMPDIR, so no repository file was touched: exit 0, peak RSS about 2.6 GB. It reproduces all 106 committed dev rows (fem_lv0-2, l2_lv1-3, T_ref, dT_const_k, power_w) to a max abs difference of 1.3e-10, and the same calibrated powers (31.834748 W, 46.903655 W).",
+    "Checked the per-material volume-mean temperatures used to pick the constant-k null's conductivities on a dev layout. _layer_means (which relies on mesh.t element order matching np.nonzero(g.mat >= 0)) agrees with an independent computation from node_value at the structured lattice corners, all 7 materials to 1e-5 K.",
+    "Checked the runner's constant-k override (_const_k_solve: kfun replaced, then _solve_grid(constant_k=True)) against production solve_layout(constant_k=True) with the same k: max |dT| = 0.0 (bitwise identical); amg_gs_sweeps = 2 and energy balance 9e-15.",
+    "Read thermal_fem._solve_grid, layout_grid, solve_layout, box_stack_grid, _build_mesh and thermal_layout.solve_layout_level/build_layout_grid. Both solvers get the same power, h, coolant, k(T), die order and uniform die-top flux, and Tj max is a top-surface quantity in both. Die indexing between FEM tj_max and L2 die{i} is consistent.",
+    "Checked that mfos.metrics.max_gci_consistency with ref_gci_cap = 0.25 matches the runner's per-row a3_ratio logic (F5 makes A3 +inf, divergent gives +inf, zero estimate with nonzero difference gives +inf), and that the A4 recompute (where is_finest) covers both case and crosscheck rows, as the objective requires.",
+    "Checked that E006's Stats.lines and _gate_max are real checks: bisection of every axis, and NaN/inf gives +inf so the gate fails.",
+    "Hashed frozen_config.json: it matches fem_rule_file_sha256. The reference_sha256 check (canonical payload hashes befc5efa/ca05847b) passed in my smoke re-run."
+  ],
+  "caveats": [
+    "Everything checked here is plumbing and physics consistency, on coarsened smoke grids. Whether the frozen Q1 rule meets A1/A2/A4 and node_count_growth on the frozen grids rests on T0243's dev study (level 2 on the burst VM), which I did not reproduce.",
+    "The registered-run path full() was checked only by reading the code against the ExperimentRun API. It has not been executed end to end.",
+    "The cost and memory figures for the fresh layouts (9.3 h scikit-fem, about 105 GB for FV level 3) are extrapolations (marked [S] in the note). The 45 h timeout and n2-highmem-32 sizing depend on them.",
+    "F5 is implemented as ref_gci_cap inside the A3 metric (A3 becomes +inf, so INCONCLUSIVE), not as a gated sanity check. This matches the objective's F5 response and I0099, even though the objective's detection text says 'gated check'.",
+    "The runner uses private thermal_fem names (_solve_grid, _materials, _count_nodes). A rename would fail loudly, and the code is covered by the code_under_test hashes."
+  ]
+}
