@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-06T00:19:49+00:00 from repository state — do not edit_
+_generated 2026-11-06T00:50:11+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
-- **I0129** [external_action] [O007] O007: founder burst for dev study 3 (n2) L2 solves, and a hold on n3 until feasible: true
-- **I0130** [plan_approval] [O007] approve initial plan (4 tasks)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -26,24 +25,16 @@ _generated 2026-11-06T00:19:49+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 41 | $72.90 | 1374031 | 706475 | 55 | 0 |
+| O007 | 42 | $72.90 | 1374031 | 706475 | 55 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 35, done: 200, failed: 3, needs_founder: 3, proposed: 4
+cancelled: 38, done: 200, failed: 3, needs_founder: 1, running: 1, todo: 2
 
-- T0208 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the frozen configuration against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0236 `needs_founder` builder/implement: thermal_fem: opt-in sliver-free line policy GridRule.sliver_policy (default None, every grid unchanged), with grid survey on the O006 cases and dev layouts (attempt 0)
-- T0238 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded rule with sliver_policy against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0242 `proposed` builder/implement: thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (default None, every solve bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic (attempt 0)
-- T0243 `proposed` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report) (attempt 0)
-- T0244 `proposed` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0245 `proposed` none/experiment: Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 2) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
+- T0242 `running` builder/implement: thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (default None, every solve bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic (attempt 1)
+- T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T19:26:40+00:00 sleep_detected {"gap_s": 300, "runs_extended": 0}
-- 2026-11-05T20:01:51+00:00 sleep_detected {"gap_s": 355, "runs_extended": 0}
-- 2026-11-05T20:46:25+00:00 sleep_detected {"gap_s": 2674, "runs_extended": 0}
 - 2026-11-05T20:55:18+00:00 sleep_detected {"gap_s": 533, "runs_extended": 0}
 - 2026-11-05T20:55:28+00:00 inbox_resolved {"id": "I0127", "status": "approved", "note": "Merge T0235: labelled diagnostic, levels 0-1 verified; follow-ups on main before the burst: correct sec. 0.1 (pos
 - 2026-11-05T20:55:59+00:00 merged {"task": "T0235"}
@@ -56,3 +47,6 @@ cancelled: 35, done: 200, failed: 3, needs_founder: 3, proposed: 4
 - 2026-11-06T00:19:46+00:00 inbox_opened {"id": "I0129", "kind": "external_action", "subject": "[O007] O007: founder burst for dev study 3 (n2) L2 solves, and a hold on n3 until feasible: true"}
 - 2026-11-06T00:19:46+00:00 inbox_opened {"id": "I0130", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
 - 2026-11-06T00:19:46+00:00 plan_applied {"objective": "O007", "created": ["T0242", "T0243", "T0244", "T0245"], "dropped": 0}
+- 2026-11-06T00:49:51+00:00 inbox_resolved {"id": "I0129", "status": "approved", "note": "Hold n3 (T0244) until the n2 (T0243) founder burst and --report are on main with feasible: true; any L2 count > 3
+- 2026-11-06T00:49:51+00:00 inbox_resolved {"id": "I0130", "status": "approved", "note": "Plan approved (T0242-T0245): opt-in amg_gs_sweeps, pre-registered re-freeze with 2 sweeps, E009 design and run. T
+- 2026-11-06T00:50:11+00:00 run_started {"run": "T0242-builder-20261105T165011-45eb", "task": "T0242", "role": "builder", "session": "be7dca47-ad65-40ac-86c3-20a291f94ccd"}

@@ -4,7 +4,7 @@ title: 'thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (
   bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic'
 type: implement
 agent: builder
-status: proposed
+status: running
 depends_on: []
 description: 'Founder path (A), I0128; see research/notes/o007-sliver.md sec. 5. Add an opt-in field `GridRule.amg_gs_sweeps:
   int | None = None` to src/moduleforge/solvers/thermal_fem.py.
@@ -114,11 +114,12 @@ model: null
 budget_usd: 5.0
 max_turns: 90
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0242-thermal-fem-opt-in-order-1-amg-smoother-
 pr: null
-runs: []
+runs:
+- T0242-builder-20261105T165011-45eb
 created_by: planner:T0241
 created_at: '2026-11-06T00:19:46+00:00'
 protected_approved: false

@@ -5,7 +5,7 @@ title: 'E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q
   F1-F5)'
 type: design_experiment
 agent: scientist
-status: proposed
+status: needs_founder
 depends_on:
 - T0242
 - T0243
@@ -117,4 +117,8 @@ trigger: null
 rationale: E009 is the only required experiment, and this task is its pre-registration. T0238 was pinned
   to the abandoned sliver_policy freeze. This replacement pins fem_rule to n2's re-freeze, so the configuration
   is frozen before registration, as scope_in requires.
-history: []
+history:
+- outcome: founder_hold
+  summary: 'Held per I0129 until the n2 (T0243) founder burst and its --report are on main with feasible:
+    true. Release with mfos task retry T0244.'
+  at: '2026-11-06T00:49:39+00:00'
