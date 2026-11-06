@@ -49,10 +49,39 @@ def test_default_layout_unchanged():
     _check(F.solve_layout(_toy_layout(), [40.0, 20.0], H, TC, rule=F.GridRule(h0=8e-3)), _LAY)
 
 
-def test_default_hierarchy_is_pyamgs_own():
+def test_default_hierarchy_is_pyamgs_own(monkeypatch):
     rule = F.GridRule(h0=8e-3)
     assert rule.amg_gs_sweeps is None
     assert dataclasses.replace(rule, amg_gs_sweeps=None) == rule
+    seen = []  # the default builds the hierarchy with pyamg's own smoothers: no smoother argument is passed (T0246)
+    orig = F._sa_solver
+    monkeypatch.setattr(F, "_sa_solver", lambda A, **kw: seen.append(kw) or orig(A, **kw))
+    F.solve_box_stack(16e-3, 16e-3, _BAND_LAYERS, 50.0, TC, _BAND_SRC, rule=rule)
+    assert seen and all(kw == {"max_coarse": 500} for kw in seen)
+
+
+def _solve(mode, rule, level):
+    if mode == "box":
+        return F.solve_box_stack(16e-3, 16e-3, _BAND_LAYERS, 50.0, TC, _BAND_SRC, rule=rule, level=level)
+    return F.solve_layout(_toy_layout(), [2.0, 1.0], 50.0, TC, rule=rule, level=level)
+
+
+@pytest.mark.parametrize("mode", ["box", "layout"])
+def test_one_sweep_matches_the_default_at_level_1(mode):
+    """amg_gs_sweeps = 1 is pyamg's default smoothing: same CG counts and temperatures (to 1e-12 K, for portability;
+    bitwise on the capture machine) as None, so the option's plumbing changes nothing but the sweep count (T0246)."""
+    r0, r1 = _solve(mode, F.GridRule(h0=8e-3), 1), _solve(mode, F.GridRule(h0=8e-3, amg_gs_sweeps=1), 1)
+    assert r1.meta["cg_iterations"] == r0.meta["cg_iterations"]
+    assert float(np.abs(r1.T - r0.T).max()) <= 1e-12
+
+
+@pytest.mark.parametrize("mode", ["box", "layout"])
+def test_two_sweeps_cut_cg_at_level_1(mode):
+    """At level 1 too, two sweeps need fewer CG iterations than the default (measured 26 -> 18 box, 52 -> 37 layout)
+    at equal temperatures (|dT| <= 1e-8 K; measured <= 1.6e-10 K) (T0246)."""
+    r0, r2 = _solve(mode, F.GridRule(h0=8e-3), 1), _solve(mode, F.GridRule(h0=8e-3, amg_gs_sweeps=2), 1)
+    assert max(r2.meta["cg_iterations"]) <= 0.85 * max(r0.meta["cg_iterations"])
+    assert float(np.abs(r2.T - r0.T).max()) <= 1e-8
 
 
 @pytest.mark.parametrize("mode", ["box", "layout"])
