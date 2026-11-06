@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-06T15:46:09+00:00 from repository state — do not edit_
+_generated 2026-11-06T15:46:47+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -36,7 +36,6 @@ cancelled: 38, done: 204, failed: 3, review: 1, running: 2, todo: 1
 - T0249 `running` critic/review: Review T0244 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-06T02:54:17+00:00 run_finished {"run": "T0243-scientist-20261105T181528-e901", "status": "completed", "cost": 3.434341, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T02:57:39+00:00 verified {"task": "T0243"}
 - 2026-11-06T02:57:45+00:00 run_started {"run": "T0247-critic-20261105T185745-b03d", "task": "T0247", "role": "critic", "session": "2c573432-668c-41c3-b352-0d74a5af6262"}
 - 2026-11-06T03:02:31+00:00 run_finished {"run": "T0247-critic-20261105T185745-b03d", "status": "completed", "cost": 2.113396, "subtype": "success", "report": "structured_output"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 204, failed: 3, review: 1, running: 2, todo: 1
 - 2026-11-06T15:46:03+00:00 verified {"task": "T0244"}
 - 2026-11-06T15:46:08+00:00 run_started {"run": "T0248-critic-20261106T074608-85a7", "task": "T0248", "role": "critic", "session": "ea070475-44d3-4820-84ac-a68c81a444ae"}
 - 2026-11-06T15:46:09+00:00 run_started {"run": "T0249-critic-20261106T074609-fddc", "task": "T0249", "role": "critic", "session": "d24d73ba-d8d6-46b8-ab35-119f35716bad"}
+- 2026-11-06T15:46:43+00:00 sleep_detected {"gap_s": 866, "runs_extended": 2}
