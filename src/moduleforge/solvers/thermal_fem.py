@@ -177,7 +177,14 @@ class GridRule:
     ``o_k <= max_offset``) outside every source edge, and inside it while ``o < half-width - min_gap_fraction * step``
     (step ``s_0 = o_0``, ``s_k = o_k - o_{k-1}``), at level 0 only (``_grading_lines``). A candidate closer than
     ``min_gap_fraction * s`` to a fixed or an accepted grading line, or outside the domain, is dropped. Higher levels
-    bisect, so every level-0 line is a node at every level."""
+    bisect, so every level-0 line is a node at every level.
+
+    ``amg_gs_sweeps`` (default None: every solve is bitwise unchanged) is an opt-in order-1 preconditioner option: an
+    int 1..8 makes the smoothed-aggregation hierarchy use that many symmetric Gauss-Seidel sweeps as pre- and
+    postsmoother on every level instead of pyamg's default of one. Measured reason: T0228 counted CG 316/318 iterations
+    at L2 on Muzychka Cases 1a/1b and the sliver verdict was conditioning; the founder diagnostic (two sweeps, Cases
+    1a/1b at L0/L1) measured -28/-29 % CG iterations with |dT| <= 5e-11 K and +7-10 % wall time. Not allowed with
+    ``element_order`` 2 (the Q2 p-multigrid sets its own smoothers; the option was measured on order 1 only)."""
 
     h0: float = 2.0e-3
     nz: dict = field(default_factory=lambda: {"baseplate": 2, "solder": 1, "backside_cu": 1, "ceramic": 1, "top_cu": 1,
@@ -192,10 +199,17 @@ class GridRule:
     # max(nz_of(layer), ceil(t / dz_max)) cells at level 0 and 2**level times as many at level l (T0198). Needs zrefine.
     edge_grading: tuple[float, float, float, float] | None = None  # (first_offset_m, ratio, max_offset_m, min_gap_fraction):
     # geometric grading lines around every source edge in x and y (``_grading_lines``); None = no grading (default)
+    amg_gs_sweeps: int | None = None  # order 1 only: symmetric Gauss-Seidel sweeps per AMG smoothing (1..8); None = pyamg default
 
     def __post_init__(self):
         if self.element_order not in (1, 2):
             raise ValueError("element_order must be 1 or 2")
+        if self.amg_gs_sweeps is not None:
+            if isinstance(self.amg_gs_sweeps, bool) or not isinstance(self.amg_gs_sweeps, int | np.integer) \
+                    or not 1 <= self.amg_gs_sweeps <= 8:
+                raise ValueError("amg_gs_sweeps must be None or an int in 1..8")
+            if self.element_order != 1:
+                raise ValueError("amg_gs_sweeps is measured on element_order 1 only")
         if self.dz_max is not None:
             if not self.dz_max > 0.0:
                 raise ValueError("dz_max must be positive")
@@ -412,6 +426,7 @@ class _Grid:
     snaps: dict = field(default_factory=dict)  # per axis: (requested, used) of every snapped mandatory line
     grading: dict = field(default_factory=dict)  # per axis: the accepted edge-grading lines (before snapping)
     rule_grading: tuple | None = None  # GridRule.edge_grading
+    amg_gs_sweeps: int | None = None  # GridRule.amg_gs_sweeps
 
 
 class _BoxMapping(MappingIsoparametric):
@@ -628,16 +643,24 @@ class _Solver:
     near-null constant mode is deflated: ``x = c 1 + y`` with ``c = 1^T b / 1^T A 1`` (the A-orthogonal projection of the
     solution on the constants, i.e. the global energy balance), and CG solves ``A y = b - c A 1``. Without it the
     attainable relative residual of the rise, about eps |A| |x| / |b|, is 1.5e-10 for a uniform 48 K rise over 0.6 K of
-    variation (h = 50), above ``LINEAR_RTOL``; with it the floor scales with the variation of the rise, not its mean."""
+    variation (h = 50), above ``LINEAR_RTOL``; with it the floor scales with the variation of the rise, not its mean.
 
-    def __init__(self, A: sp.csr_matrix, P: sp.csr_matrix | None = None):
+    ``gs_sweeps`` (order 1 only, default None = pyamg's defaults, bitwise unchanged): n symmetric Gauss-Seidel sweeps as
+    pre- and postsmoother on every level (``GridRule.amg_gs_sweeps``; measured -28/-29 % CG iterations on Muzychka Cases
+    1a/1b at L0/L1, |dT| <= 5e-11 K, +7-10 % wall time)."""
+
+    def __init__(self, A: sp.csr_matrix, P: sp.csr_matrix | None = None, gs_sweeps: int | None = None):
         self.A = A
         self.P = P
         self.one = np.ones(A.shape[0])
         self.a1 = A @ self.one
         self.c_den = float(self.one @ self.a1)
         if P is None:
-            self.ml = _sa_solver(A, max_coarse=500)
+            if gs_sweeps is None:
+                self.ml = _sa_solver(A, max_coarse=500)
+            else:
+                gs = ("gauss_seidel", {"sweep": "symmetric", "iterations": int(gs_sweeps)})
+                self.ml = _sa_solver(A, max_coarse=500, presmoother=gs, postsmoother=gs)
             return
         Ac = (P.T @ (A @ P)).tocsr()
         coarse = _sa_solver(Ac, max_coarse=500)
@@ -805,7 +828,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
                 del cb, Tq, kq
 
         A = (_sum_chunks(stiffness_parts()) + Mb).tocsr()
-        lin = _Solver(A, prolong)
+        lin = _Solver(A, prolong, g.amg_gs_sweeps)
         new = lin.solve(rhs, theta)
         cg_stats.append(lin.stats)
         picard += 1
@@ -839,6 +862,7 @@ def _solve_grid(g: _Grid, constant_k: bool, k_const_T: float | None = None, pica
             "lines": {"x": g.x.copy(), "y": g.y.copy(), "z": g.z.copy()},
             "n_lines": {"x": int(g.x.size), "y": int(g.y.size), "z": int(g.z.size)},
             "snapped_lines": {ax: [(float(a), float(b)) for a, b in v] for ax, v in g.snaps.items()},
+            "amg_gs_sweeps": g.amg_gs_sweeps,
             "edge_grading": None if g.rule_grading is None else list(g.rule_grading),
             "grading_lines": {ax: len(v) for ax, v in g.grading.items()},
             "max_snap_m": max([abs(b - a) for v in g.snaps.values() for a, b in v], default=0.0)}
@@ -1046,7 +1070,8 @@ def layout_grid(layout: Layout, power_W: Sequence[float] | float, h: float, T_c:
     return _Grid(xl, yl, zl, mat, [_k_of(m) for m in materials], sources, float(h), float(T_c),
                  ["baseplate", "solder", "backside_cu", "ceramic", "top_cu", "die_attach", "die"],
                  order=rule.element_order, snaps={"x": xsnap, "y": ysnap, "z": zsnap},
-                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading)
+                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading,
+                 amg_gs_sweeps=rule.amg_gs_sweeps)
 
 
 def estimate_dofs(layout: Layout, rule: GridRule | None = None, level: int = 0) -> int:
@@ -1202,7 +1227,8 @@ def box_stack_grid(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c
     srcs = [(s[0], s[1], s[2], s[3], float(zb[-1]), float(s[4])) for s in sources]
     return _Grid(xl, yl, zl, mat, [kf(la) for la in layers], srcs, float(h), float(T_c), order=rule.element_order,
                  source=source, flux=flux, T_inf=T_inf, snaps={"x": xsnap, "y": ysnap, "z": zsnap},
-                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading)
+                 grading={"x": gx, "y": gy}, rule_grading=rule.edge_grading,
+                 amg_gs_sweeps=rule.amg_gs_sweeps)
 
 
 def solve_box_stack(a: float, b: float, layers: Sequence[BoxLayer], h: float, T_c: float,
