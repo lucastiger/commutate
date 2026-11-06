@@ -1,0 +1,50 @@
+{
+  "summary": "Dev study 3 is set up and its local part is done. The result is `feasible: false` with `levels_missing` on 7 problems, which is the expected state before your burst. The candidate is unverified, not ruled out.\n\nThe candidate `a_q1h4_graded_gs2` is T0228's candidate 1 copied key for key, plus `amg_gs_sweeps = 2`. Its grids are line-for-line identical to T0228's at all 24 problem-levels. I pre-registered section 0 and committed it as 1cd23ad8 before any solve, then ran 23 solves locally, one at a time: every L0 and L1, the manufactured case at L2, the calibration solves and 3 constant-k nulls. Nothing was reused; `reused_levels` is [] and `amg_gs_sweeps` is 2 in every record.\n\nResults:\n- **CG headroom:** the maximum over every solve is 180 (Case 1a L1), against the 300 limit. At every level measured, CG counts are 0.68-0.72 \u00d7 T0228's on all 8 problems.\n- **Same answers as T0228:** the consistency check compared 266 values; the largest difference is 3.6e-11 K, Picard counts agree everywhere, and nothing is flagged.\n- **Gates and protocol:** every gate and protocol condition holds.\n- **Not yet decided:** whether the plates stay under 300 at L2 (Case 1a/1b). My projection is about 226 and 228, and it is speculation until the burst runs.\n\nOne finding matters for the burst. Because nothing is reused, the N-layer case must now be solved at L2 on the burst machine. T0228 took that solve from T0225, so it never ran there. Its memory estimate is 77.7 GB, so the machine needs at least 91.4 GB. The e2-highmem-8 that T0228 used would skip it, and `feasible` would stay false. Use the default n2-highmem-32 or an n2-highmem-16.\n\nThe only change made after data is one extra field in `plan.json` (`min_physical_GB_for_full_gate`); it is labelled in the note and affects nothing else. All DoD commands, ruff and `mfos gate --fast` exit 0.",
+  "failure_class": "implementation",
+  "root_cause": "T0228's only miss (CG 316/318 > 300 at L2 on Muzychka Cases 1a/1b) traces to the setting of the order-1 AMG smoother (pyamg's default of one symmetric Gauss-Seidel sweep), not to the grid or the physics. The evidence is the measured CG ratio new/T0228 of 0.711-0.719 at L0 and L1 on every problem, and 0.698/0.680/0.710 at L0/L1/L2 on the manufactured case. These are at the same discrete solution (<= 3.6e-11 K) on identical grids. The L2 count on the plates is still unmeasured, hence moderate confidence.",
+  "confidence": 0.65,
+  "evidence": [
+    "[F] plan.json: under the new rule every grid equals T0228's line for line at every level (x, y, z lines and material map identical, 24 of 24); the script asserts rule == dataclasses.replace(T0228 rule, amg_gs_sweeps=2)",
+    "[F] Pre-registration commit 1cd23ad8 precedes the local run (log starts 18:22:29 and checks ancestry). The only post-data script change is the plan field min_physical_GB_for_full_gate (git diff 1cd23ad8 HEAD: 4 insertions, 1 deletion)",
+    "[F] CG max L0/L1 (new vs T0228): case1a 145/180 vs 204/252; case1b 141/177 vs 198/247; case2 58/83 vs 81/116; case3 85/135 vs 119/189; nlayer 94/136 vs 132/191; side_by_side_6 87/132 vs 122/185; u_shaped_2 92/128 vs 128/179; mms 37/51/66 vs 53/75/93 (L2 measured). Calibration CG 87 and 92; constant-k nulls up to 132",
+    "[F] The cg_only counter equals meta cg_iterations on every solve; meta amg_gs_sweeps is 2 on every solve; reused_levels is [] everywhere; protocol.ok is true",
+    "[F] Consistency diagnostic: 266 values compared; max |T_new - T_T0228| 3.6e-11 K; Picard counts equal; 0 flags at 1e-6 K; calibrated powers agree to < 4e-12 W",
+    "[F] Gates: energy balance <= 3.4e-12; manufactured |Q_out/64.648 W - 1| <= 2.1e-9; Picard residual <= 4.4e-5 K; true relative residual <= 3.8e-11; node-count growth 7.25-7.62; no solve hit the 400 cap",
+    "[F] Wall-time ratio for two sweeps (L1, macOS): 1.084-1.170 (max 1.170 used in the plan); the N-layer ratio of 0.353 is not comparable (T0228's L1 there is a T0225 probe record)",
+    "[F] Manufactured L2: A1 5.0e-5, A2 0.0050 K, A4 0.0187 K; F3 constant-k null 2.51 K off, so the k(T) case still discriminates",
+    "[F] Burst list: 9 solves; N-layer L2 rule estimate 77.7 GB, so --full needs at least 91.4 GB physical memory",
+    "Commands and exit codes: --plan 0; local study 0; --report 0; DoD frozen-config check 0; DoD dev-study check 0; DoD determinism check 0 (re-checked after the final commit, working tree unchanged); DoD plan check 0; note exists 0; ruff check 0; uv run mfos gate --fast 0 ('all gates passed')"
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "E2: on the weakly cooled 300 mm plates, ill-conditioning from the weak Robin coupling grows with refinement faster than the extra smoothing helps. The 28 % reduction would erode at L2, and Cases 1a/1b would approach or exceed 300 again.",
+      "how_to_discriminate": "Measure the per-level CG ratio new/T0228 at L2 on Cases 1a/1b (founder burst). E1 predicts about 0.71 (226/228 iterations); E2 predicts a ratio rising toward 1. Case 1b exceeds 300 only if the ratio passes 0.943. Locally the ratio shows no upward trend: +0.003/+0.005 from L0 to L1 on the plates, and 0.680 to 0.710 from L1 to L2 on the manufactured case."
+    },
+    {
+      "explanation": "Something other than the smoother changed (grid, data, code path), so the new counts are not comparable with T0228's.",
+      "how_to_discriminate": "Already run. The grids are identical line for line, the solutions agree to <= 3.6e-11 K with equal Picard counts (0 flags), and the calibrated powers agree to 4e-12 W. This alternative is rejected on L0/L1 and manufactured L2; the burst's L2 consistency rows re-test it."
+    }
+  ],
+  "discriminating_tests": [
+    "Founder burst: L2 CG on Cases 1a/1b under amg_gs_sweeps=2. A count <= 300 with a ratio of about 0.71 supports E1; above 300, or a ratio above about 0.8, supports E2 and rules out the candidate under the pre-registered rule",
+    "Burst L2 consistency diagnostic: |T_new - T_T0228| at L2 should be about 1e-10 K with equal Picard counts; a flag above 1e-6 K means something other than the smoother changed"
+  ],
+  "recommended_actions": [
+    "Founder: run `scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study3.py --full\" research/o007_dev3` after merge (or with MF_REF=<T0243 branch>) on the default n2-highmem-32 or an n2-highmem-16, NOT e2-highmem-8 (it would skip the N-layer L2, whose 77.7 GB estimate needs at least 91.4 GB physical). 9 solves, about 6.1 h in sequence [S], timeout 19 h",
+    "Planning: if --report then gives feasible: true, use research/o007_dev3/frozen_config.json as E009's frozen configuration and quote this study's L2 A1/A2/A4 (chosen.e009_regression_guard) in E009's K1/K2 guard",
+    "Planning: if any L2 CG count exceeds 300, the candidate is ruled out; any further smoother change needs a new pre-registration and a new task id, with no re-tuning on these cases",
+    "Planning: the E009 cost table's extrapolated wall column (T0228 method) under-predicts T0228's measured L2 walls by about 3.5x (Case 1a L2: 513 s against 1808 s measured); size E009's timeouts from measured burst walls"
+  ],
+  "files_written": [
+    "research/scripts/o007_dev_study3.py",
+    "research/notes/o007-dev-study3.md",
+    "research/o007_dev3/plan.json",
+    "research/o007_dev3/preregistration.json",
+    "research/o007_dev3/dev_study.json",
+    "research/o007_dev3/frozen_config.json",
+    "research/o007_dev3/run_local.log",
+    "research/o007_dev3/cache/ (23 solve records + specs + 2 calibration records)"
+  ],
+  "affects_acceptance_criteria": false,
+  "experiment_drafts": []
+}
