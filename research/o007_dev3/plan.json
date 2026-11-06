@@ -2,105 +2,14 @@
  "amg_gs_sweeps": 2,
  "burst_command": "scripts/burst_gcp.sh --cmd \"uv run python research/scripts/o007_dev_study3.py --full\" research/o007_dev3",
  "burst_note": "Run after this branch is merged (the bundle defaults to main) or with MF_REF=<branch>; the burst resumes from the committed cache and runs only the solves listed in burst_solves.",
- "burst_solves": [
-  {
-   "T0228_peak_GB": 24.61763584,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 1807.796334954,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 7973721,
-   "est_GB_rule": 45.519379873711856,
-   "est_wall_s": 2115.444731786496,
-   "solve": "a_q1h4_graded_gs2__case1a__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 28.984061952,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 2259.5277066320004,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 9529569,
-   "est_GB_rule": 54.4012100929727,
-   "est_wall_s": 2644.0511527212025,
-   "solve": "a_q1h4_graded_gs2__case1b__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 18.274009088,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 924.8899851079996,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 5827289,
-   "est_GB_rule": 33.26609767571532,
-   "est_wall_s": 1082.2865433724833,
-   "solve": "a_q1h4_graded_gs2__case2__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 18.346446848,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 1157.4506889109998,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 5827289,
-   "est_GB_rule": 33.26609767571532,
-   "est_wall_s": 1354.4241211340484,
-   "solve": "a_q1h4_graded_gs2__case3__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 41.930104832,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 2944.280814609,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 13606565,
-   "est_GB_rule": 77.67545428431119,
-   "est_wall_s": 3445.334641815804,
-   "solve": "a_q1h4_graded_gs2__nlayer_dbc__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 29.556436992,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 5133.20997329,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 9483501,
-   "est_GB_rule": 54.138222863795484,
-   "est_wall_s": 6006.772878774833,
-   "solve": "a_q1h4_graded_gs2__side_by_side_6__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 12.120154112,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 2178.374021304,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 3950429,
-   "est_GB_rule": 22.55171435207322,
-   "est_wall_s": 2549.086840219404,
-   "solve": "a_q1h4_graded_gs2__u_shaped_2__L2__kT"
-  },
-  {
-   "T0228_peak_GB": 24.949100544,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 1607.1488578570006,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 9483501,
-   "est_GB_rule": 54.138222863795484,
-   "est_wall_s": 1880.6513315764555,
-   "solve": "a_q1h4_graded_gs2__side_by_side_6__L2__constk"
-  },
-  {
-   "T0228_peak_GB": 10.164711424,
-   "T0228_platform": "linux",
-   "T0228_wall_s": 666.3202532209998,
-   "basis": "[S] T0228 measured (same solve, burst) x two-sweep wall ratio",
-   "dofs": 3950429,
-   "est_GB_rule": 22.55171435207322,
-   "est_wall_s": 779.713755418624,
-   "solve": "a_q1h4_graded_gs2__u_shaped_2__L2__constk"
-  }
- ],
+ "burst_solves": [],
  "burst_totals": {
-  "est_wall_h_sum": 6.071601665783153,
-  "max_T0228_peak_GB": 41.930104832,
-  "max_est_GB_rule": 77.67545428431119,
-  "min_physical_GB_for_full_gate": 91.38288739330729,
-  "n_solves": 9,
-  "recommended_timeout_h": 19
+  "est_wall_h_sum": null,
+  "max_T0228_peak_GB": null,
+  "max_est_GB_rule": null,
+  "min_physical_GB_for_full_gate": 0.0,
+  "n_solves": 0,
+  "recommended_timeout_h": null
  },
  "candidate": "a_q1h4_graded_gs2",
  "grading": [

@@ -212,7 +212,7 @@ the cost rule changed after the first solve.
 - **Gates.**
   - Energy balance <= 3.4e-12 on every solve (largest 3.31e-12, Case 2 L1).
   - Manufactured |Q_out / 64.648 W - 1| <= 2.1e-9.
-  - Picard residual <= 4.4e-5 K.
+  - Picard residual <= 4.8e-5 K (4.71e-5 K on the u_shaped_2 L0 calibration solve cal1, review T0247).
   - Largest true relative residual 3.8e-11 (Case 1b L1); every `linear_rel_residual_max` <= 3.8e-11.
   - Node-count growth 7.25-7.62 per level.
   - No solve hit the 400 cap.
@@ -265,7 +265,7 @@ and centroid-node T, and the constant-k nulls.
 
 - **E1, smoother-limited (supported).** The new/T0228 CG ratio is constant at 0.711-0.719 on L0 and L1 of every box and
   layout problem. On the manufactured case, the only L2 measured, it is 0.698 / 0.680 / 0.710. [I] E2 predicts a ratio
-  that climbs with level toward 1. The manufactured case shows no such climb (+0.03 from L1 to L2, below its L0 value),
+  that climbs with level toward 1. The manufactured case shows no such climb (ratios 0.698 / 0.680 / 0.710; its L2 ratio is 0.012 above L0, review T0247),
   and the plates show none from L0 to L1 (+0.003 to +0.005).
 - **E2, conditioning outgrows the smoother (not excluded).** The weakly cooled 300 mm plates, Cases 1a/1b, have not
   been measured at L2. A ratio near 1 there would need a sharp break between L1 and L2 that no measured problem shows.
@@ -328,3 +328,13 @@ and centroid-node T, and the constant-k nulls.
   `research/o007_dev3/frozen_config.json`. If an L2 count exceeds 300, the candidate is ruled out under the
   pre-registered rule. Any further smoother change then needs a new pre-registration, and no re-tuning on these
   cases.
+
+## Burst result (founder session, 2026-11-06; `e2-custom-12-98304`, 330 min, commit bdb57af)
+- [F] `--full` measured every L2 solve with `amg_gs_sweeps = 2`; nothing reused. **`feasible: true`: candidate
+  a_q1h4_graded_gs2 is eligible on every pre-registered criterion at level 2**, with the 300 rule unchanged.
+- [F] CG max at L0 / L1 / L2: Case 1a 145 / 180 / **224** (T0228: 316), Case 1b 141 / 177 / **227** (318), Case 2
+  58 / 83 / 115, Case 3 85 / 135 / 176, N-layer 94 / 136 / 184, manufactured 37 / 51 / 66, side_by_side_6 87 / 132 / 181,
+  u_shaped_2 92 / 128 / 181; constant-k nulls at L2 180 and 181. The maximum is 227, and every gate holds on every case
+  and layout.
+- [F] Margins at L2 are unchanged from T0228 to about 1e-11 K, as the smoother changes the iterates only: A1 6.8e-4,
+  A2 0.0386 K (N-layer, limit 0.040), A4 cases 0.142 K, A4 layouts 0.124 K. Energy balance <= 7.8e-12. Peaks 10-42 GB.
