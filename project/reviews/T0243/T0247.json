@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Pre-burst deliverable only: the decisive L2 measurements (Cases 1a/1b CG <= 300) are absent",
+      "detail": "The claim reads 'every level re-measured', but locally only L0/L1 (and L2 of the manufactured case) were re-measured; L2 is missing on case1a, case1b, case2, case3, nlayer_dbc, side_by_side_6, u_shaped_2. feasible=false and levels_missing are correctly recorded and the DoD explicitly allows this state, so the deliverable is correct; but the hypothesis (two GS sweeps bring candidate 1 under the 300-CG rule) is untested at the level where T0228 failed.",
+      "evidence": "dev_study.json chosen.levels_missing; run_local.log SKIP lines (est 19.1-65.7 GB > 10 GB local cap); summary.verdict 'unverified: level 2 not run locally'.",
+      "suggested_check": "After the founder burst, re-run --report and re-review the L2 CG counts on case1a/case1b and the per-level new/T0228 ratio.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Note sec. 6 misstates the manufactured-case CG-ratio trend",
+      "detail": "The note says the manufactured case shows no climb '(+0.03 from L1 to L2, below its L0 value)'. The ratios are 0.698 / 0.680 / 0.710, so the L2 ratio is the highest of the three, above L0. The wording mildly overstates support for E1 over E2. It does not change any verdict (L2 would need ~0.94 on Case 1b to exceed 300), and it sits in an [I]-labelled inference. A similar small imprecision: the note's 'Picard residual <= 4.4e-5 K' misses an intermediate calibration solve (u_shaped_2 L0 cal1) at 4.71e-5 K, still below the 1e-4 K gate.",
+      "evidence": "dev_study.json mms consistency_vs_T0228.per_solve cg_ratio 0.698, 0.680, 0.710; cache a_q1h4_graded_gs2__u_shaped_2__L0__kT_cal1.json picard_residual 4.71e-5.",
+      "suggested_check": "Correct the sentence to 'L2 ratio 0.710, +0.012 above L0'.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "DoD determinism check covers only frozen_config.json, which holds no measured values",
+      "detail": "The packet's determinism command compares only frozen_config.json, whose content is constants plus feasible/levels_missing/rationale. A non-deterministic dev_study.json or plan.json would pass it. I re-ran --report in a scratch copy and all three outputs (dev_study.json, frozen_config.json, plan.json) were byte-identical to the committed ones, so there is no defect here, only a weak test.",
+      "evidence": "filecmp on regenerated vs committed outputs: dev_study.json True, frozen_config.json True, plan.json True.",
+      "suggested_check": "Extend the determinism DoD to dev_study.json and plan.json.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Protocol checks (a) and (c) are weaker than described",
+      "detail": "Check (a), meta['amg_gs_sweeps'], is echoed from g.amg_gs_sweeps, the same attribute passed to _Solver, so it is near-tautological. The independent evidence that the smoother was active is the ~0.71x CG drop. Check (c), the CG-counter mismatch, is computed by D2.extend_case over level runs only, not calibration or constant-k solves, and _meta_cg_mismatch returns None (treated as a pass) if meta_cg_iterations is missing. I checked all 23 solves directly: cg_only equals meta_cg_iterations on every one.",
+      "evidence": "thermal_fem.py lines 831, 865; o007_dev_study2.py _meta_cg_mismatch; o007_dev_study3.py protocol() 'x not in (0, None)'.",
+      "suggested_check": "Treat a None mismatch as a failure and extend the check to every record in extend3's solves list.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "dev_study.json contains NaN literals",
+      "detail": "A4_cases_max_gci_K and A4_layouts_max_gci_K are NaN, which is non-standard JSON. Python's json module accepts it; strict consumers would reject it.",
+      "evidence": "run_local.log summary line and dev_study.json summary.",
+      "suggested_check": "Serialize missing GCI as null.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD commands 1, 2, 4 and ruff: all pass.",
+    "Copied the worktree to $TMPDIR and re-ran o007_dev_study3.py --report: dev_study.json, frozen_config.json and plan.json all byte-identical to the committed files (stronger than the DoD, which checks only frozen_config.json).",
+    "Diffed frozen_config.json against research/o007_dev2/frozen_config.json: the only extra key is amg_gs_sweeps; the only differing keys are candidate_id, levels_missing and rationale.",
+    "Verified pre-registration commit 1cd23ad8 in the main repo object store (it is absent from the review snapshot): timestamp 18:22:19, before the run log's 18:22:29 start. The script diff since then is only the disclosed min_physical_GB_for_full_gate plan field; note sec. 0 is unchanged; the run log's first line confirms the ancestry check.",
+    "Confirmed the thermal_fem.py sha256 equals the pre-registration version and the hash recorded in dev_study.json (no production change).",
+    "Read thermal_fem _Solver: amg_gs_sweeps maps to symmetric Gauss-Seidel pre/post smoother iterations; meta echoes the grid attribute passed to the solver.",
+    "Recomputed from raw cache records, independently of the report code: 23 solves, all ok; max energy balance 3.31e-12 (case2 L1); max linear residual 3.8e-11; peak RSS 7.83 GB; cg_only == meta_cg_iterations on all solves; no CG cap hits; manufactured |Q_out/64.6482773 - 1| = 2.1e-9 at L0 and 3e-12 at L2.",
+    "Independent comparison with T0228's cache across 18 matched solves (202 values): max |dT| 3.6e-11 K, identical Picard counts, CG ratios 0.680-0.719; calibrated powers equal to < 4e-12 W.",
+    "Confirmed T0228's L2 CG counts (316/318 on case1a/1b) and the T0242 benchmark (145 at case1a L0 with 2 sweeps vs 204 default).",
+    "Checked plan.json: 9 burst solves, max rule estimate 77.7 GB, so 91.4 GB physical is needed (0.85 gate in DS.Runner.gate); 24/24 grids identical to T0228; burst_gcp.sh default n2-highmem-32 (256 GB) is sufficient.",
+    "Checked the dev2 reuse path (reuse_probe) is not invoked by Runner3.study and that no dev3 record carries reuse/reused_from_T0225."
+  ],
+  "caveats": [
+    "Valid as the pre-burst state only: feasible=false, and L2 is missing on 7 of 8 problems. The study's central question (CG <= 300 at L2 on Cases 1a/1b with two GS sweeps) is unanswered until the founder burst runs.",
+    "The burst must run on a machine with at least 91.4 GB physical memory (e.g. the default n2-highmem-32 or n2-highmem-16); on the 64 GB e2-highmem-8 the N-layer L2 is skipped and feasible stays false.",
+    "L2 CG projections (~226/228) and burst wall-time estimates are extrapolations ([S]), not evidence.",
+    "The criterion-4 memory estimate uses 4964 B/DOF from a single macOS solve (manufactured constant-k L2), which is conservative compared with the Linux burst peaks measured before."
+  ]
+}

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-06T02:57:45+00:00 from repository state — do not edit_
+_generated 2026-11-06T03:05:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -14,7 +14,7 @@ _generated 2026-11-06T02:57:45+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $78.20/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $80.31/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,18 +25,16 @@ _generated 2026-11-06T02:57:45+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 45 | $78.20 | 1480309 | 742433 | 59 | 0 |
+| O007 | 45 | $80.31 | 1508779 | 754566 | 64 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 202, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 1
+cancelled: 38, done: 203, failed: 3, merge: 1, needs_founder: 1, todo: 1
 
-- T0243 `review` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report) (attempt 1)
+- T0243 `merge` scientist/investigate: O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report) (attempt 1)
 - T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0247 `running` critic/review: Review T0243 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-06T00:50:11+00:00 run_started {"run": "T0242-builder-20261105T165011-45eb", "task": "T0242", "role": "builder", "session": "be7dca47-ad65-40ac-86c3-20a291f94ccd"}
 - 2026-11-06T01:14:13+00:00 sleep_detected {"gap_s": 617, "runs_extended": 1}
 - 2026-11-06T01:22:59+00:00 sleep_detected {"gap_s": 526, "runs_extended": 1}
 - 2026-11-06T01:28:24+00:00 run_finished {"run": "T0242-builder-20261105T165011-45eb", "status": "completed", "cost": 0.419655, "subtype": "success", "report": "structured_output"}
@@ -51,3 +49,4 @@ cancelled: 38, done: 202, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-06T02:54:17+00:00 run_finished {"run": "T0243-scientist-20261105T181528-e901", "status": "completed", "cost": 3.434341, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T02:57:39+00:00 verified {"task": "T0243"}
 - 2026-11-06T02:57:45+00:00 run_started {"run": "T0247-critic-20261105T185745-b03d", "task": "T0247", "role": "critic", "session": "2c573432-668c-41c3-b352-0d74a5af6262"}
+- 2026-11-06T03:02:31+00:00 run_finished {"run": "T0247-critic-20261105T185745-b03d", "status": "completed", "cost": 2.113396, "subtype": "success", "report": "structured_output"}
