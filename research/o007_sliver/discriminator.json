@@ -6,32 +6,37 @@
     "centroid_only": {
      "cg_max_per_level": [
       177,
-      235
+      235,
+      305
      ],
      "dofs": [
       125939,
-      952749
+      952749,
+      7405625
      ],
      "energy_balance": [
       1.0547118733938987e-14,
-      4.2099657093785936e-13
+      4.2099657093785936e-13,
+      4.671818487622659e-13
      ],
      "final_true_rel_resid": [
       1.0245807726082894e-11,
-      1.137868466238365e-11
+      1.137868466238365e-11,
+      1.3907269586881485e-11
      ],
-     "levels_missing": [
-      2
-     ],
+     "levels_missing": [],
      "levels_run": [
       0,
-      1
+      1,
+      2
      ],
      "max_true_rel_resid": [
       1.0245807726082894e-11,
-      1.137868466238365e-11
+      1.137868466238365e-11,
+      1.3907269586881485e-11
      ],
      "meta_cg_matches_cg_only": [
+      true,
       true,
       true
      ],
@@ -43,31 +48,38 @@
      ],
      "min_ratio_x": [
       0.0806451612903228,
+      0.08064516129032184,
       0.08064516129032184
      ],
      "min_ratio_y": [
       0.0806451612903228,
+      0.08064516129032184,
       0.08064516129032184
      ],
      "peak_rss_GB": [
       0.847151104,
-      2.7000832
+      2.7000832,
+      22.839525376
      ],
      "picard_residual_K": [
+      0.0,
       0.0,
       0.0
      ],
      "process_wall_s": [
       4.311841582995839,
-      39.360454542096704
+      39.360454542096704,
+      838.376449841
      ],
      "status": [
+      "ok",
       "ok",
       "ok"
      ],
      "wall_s": [
       4.309614875004627,
-      39.33808799996041
+      39.33808799996041,
+      838.063072571
      ]
     },
     "max_lines": {
@@ -117,32 +129,37 @@
     "centroid_only": {
      "cg_max_per_level": [
       188,
-      240
+      240,
+      314
      ],
      "dofs": [
       148837,
-      1134225
+      1134225,
+      8850625
      ],
      "energy_balance": [
       1.1612932837579137e-13,
-      2.289723965986923e-12
+      2.289723965986923e-12,
+      3.482547583644191e-12
      ],
      "final_true_rel_resid": [
       1.5160782519194366e-11,
-      3.487949386530348e-11
+      3.487949386530348e-11,
+      1.0530502497708966e-10
      ],
-     "levels_missing": [
-      2
-     ],
+     "levels_missing": [],
      "levels_run": [
       0,
-      1
+      1,
+      2
      ],
      "max_true_rel_resid": [
       1.5160782519194366e-11,
-      3.494004109769058e-11
+      3.494004109769058e-11,
+      1.0530502497708966e-10
      ],
      "meta_cg_matches_cg_only": [
+      true,
       true,
       true
      ],
@@ -154,31 +171,38 @@
      ],
      "min_ratio_x": [
       0.0806451612903228,
+      0.08064516129032184,
       0.08064516129032184
      ],
      "min_ratio_y": [
       0.0806451612903228,
+      0.08064516129032184,
       0.08064516129032184
      ],
      "peak_rss_GB": [
       0.965640192,
-      3.196452864
+      3.196452864,
+      26.952675328
      ],
      "picard_residual_K": [
       0.0,
-      2.8848035071860068e-12
+      2.8848035071860068e-12,
+      7.37543359718984e-12
      ],
      "process_wall_s": [
       5.263551292009652,
-      47.45140916691162
+      47.45140916691162,
+      1015.8745914850001
      ],
      "status": [
+      "ok",
       "ok",
       "ok"
      ],
      "wall_s": [
       5.260823959019035,
-      47.43089337495621
+      47.43089337495621,
+      1015.533890526
      ]
     },
     "max_lines": {
@@ -249,10 +273,12 @@
    "energy_balance_le_1e-6": true,
    "l0_grid_equals_survey": true,
    "picard_residual_lt_1e-4K": true,
-   "true_rel_resid_le_10x_rtol": true
+   "true_rel_resid_le_10x_rtol": false
   }
  },
- "sanity_failed": [],
+ "sanity_failed": [
+  "case1b/centroid_only"
+ ],
  "survey": {
   "case1a": {
    "centroid_only": {
@@ -1230,6 +1256,6 @@
   }
  },
  "task": "T0235",
- "verdict": "unmeasured",
+ "verdict": "conditioning",
  "verdict_rule": "slivers iff, on both case1a and case1b, the decisive variant's CG maximum over every Picard step is <= 300 at every level measured, with L2 measured; conditioning iff any decisive-variant count exceeds 300 at any level, the 400 cap included; unmeasured otherwise (a decisive L2 missing and no count > 300)"
 }

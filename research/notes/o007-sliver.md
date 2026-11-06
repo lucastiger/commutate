@@ -226,3 +226,25 @@ asked.
   as `cg_failed`, a measured level. Now only a failure whose CG log shows the 400 cap is `cg_failed`. Any other
   failure is `failed`, which `_variant` treats as a missing level, so it can no longer produce `slivers`.
 - [F] The module docstring no longer points at a non-existent `SLIVER_FREE` constant.
+
+## 5. After the burst: the verdict and a preconditioner diagnostic (founder session, 2026-11-05)
+- [F] **Burst** (`e2-highmem-8`, 44 min, commit ab86689): **verdict `conditioning`**. centroid_only CG max at L0/L1/L2
+  is 177/235/**305** (Case 1a) and 188/240/**314** (Case 1b), against max_lines 316 and 318. Removing the
+  maximum lines takes 3.5 % and 1.3 % off at L2. Case 1a passes every sanity gate. Case 1b's L2 true relative
+  residual, 1.05e-10, misses the 10 x rtol gate (1.0e-10) by 5 %, so 1b's L2 is a "broken run" under sec. 0.5. The
+  verdict stands on Case 1a alone (305 > 300).
+- [F] **Preconditioner diagnostic** (not pre-registered, not evidence; `research/scripts/o007_amg_sweeps.py`, output
+  `research/o007_sliver/founder_amg_diagnostic.json`): candidate 1 exactly as frozen (max_lines), L0/L1, with the Q1
+  AMG built three ways by `thermal_fem._sa_solver` (same seed). The default rows reproduce T0228's counts exactly.
+
+  | AMG (order 1) | Case 1a CG L0 / L1 | Case 1b CG L0 / L1 | max dT vs default | solve wall vs default |
+  |---|---|---|---|---|
+  | pyamg default: 1 symmetric GS sweep, theta 0 (production) | 204 / 252 | 198 / 247 | - | - |
+  | thermal_fv's: theta 0.05, filtered Jacobi, fwd/bwd GS | 238 / 295 | 234 / 297 | 7e-11 K | about equal |
+  | **2 symmetric GS sweeps per level** | **145 / 180** | **141 / 177** | **5e-11 K** | **+7-10 %** |
+
+  [I] The excess is the order-1 AMG's smoothing on these weakly cooled plates, not the grid. Two sweeps cut CG by
+  28-29 % at equal temperatures (5e-11 K) for about 10 % more wall time. [S] At the observed L1-to-L2 growth
+  (1.25-1.29), L2 would be about 225-232, inside the pre-registered 300 with margin, the rule unchanged. A solver
+  setting is part of the frozen configuration, so this needs a pre-registered re-freeze of candidate 1 with the new
+  smoother, re-measured at every level. Nothing here changes a verdict or a criterion.
