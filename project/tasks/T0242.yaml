@@ -4,7 +4,7 @@ title: 'thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (
   bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Founder path (A), I0128; see research/notes/o007-sliver.md sec. 5. Add an opt-in field `GridRule.amg_gs_sweeps:
   int | None = None` to src/moduleforge/solvers/thermal_fem.py.
@@ -132,4 +132,54 @@ rationale: 'scope_in requires one frozen scikit-fem configuration used unchanged
   option before any re-freeze. It is opt-in, so T0228''s grids and every existing test stay reproducible.
   The benchmark is the cheapest kill shot: it ties the production option to the founder''s measured diagnostic
   before any study money is spent.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Added the opt-in `GridRule.amg_gs_sweeps` (default None) to thermal_fem.py. It is validated
+    as an int in 1..8, with bool, float and element_order 2 rejected. The rule carries it through `_Grid`
+    into `_Solver` for both `solve_box_stack` and `solve_layout`. With a value n, the order-1 `_sa_solver`
+    call uses symmetric Gauss-Seidel with n iterations as pre- and postsmoother. With None the call is
+    the same as before. `meta[''amg_gs_sweeps'']` records the setting, and both docstrings describe the
+    option and the measured reason. I captured the baseline from the HEAD version of the file. The temperature
+    hash, CG counts and DOFs were identical before and after the edit, for a box stack and a layout. The
+    level-0 benchmark through production `solve_box_stack` reproduces the founder diagnostic exactly: '
+  report:
+    status: completed
+    summary: 'Added the opt-in `GridRule.amg_gs_sweeps` (default None) to thermal_fem.py. It is validated
+      as an int in 1..8, with bool, float and element_order 2 rejected. The rule carries it through `_Grid`
+      into `_Solver` for both `solve_box_stack` and `solve_layout`. With a value n, the order-1 `_sa_solver`
+      call uses symmetric Gauss-Seidel with n iterations as pre- and postsmoother. With None the call
+      is the same as before. `meta[''amg_gs_sweeps'']` records the setting, and both docstrings describe
+      the option and the measured reason. I captured the baseline from the HEAD version of the file. The
+      temperature hash, CG counts and DOFs were identical before and after the edit, for a box stack and
+      a layout. The level-0 benchmark through production `solve_box_stack` reproduces the founder diagnostic
+      exactly: Case 1a CG 204 -> 145 on 135531 DOFs, Case 1b CG 198 -> 141 on 160173 DOFs. The largest
+      |dT| against the default is 4.9e-11 K and the energy balance is 4.7e-13 or better.'
+    checks_run:
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run python benchmarks/o007_amg_sweeps.py
+      exit_code: 0
+    - cmd: 'uv run python -c <done-check: benchmark JSON vs founder_amg_diagnostic.json>'
+      exit_code: 0
+    - cmd: 'uv run python -c <done-check: GridRule validation>'
+      exit_code: 0
+    - cmd: uv run ruff check src tests benchmarks
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_fem_amg.py
+      exit_code: 0
+    concerns:
+    - The bitwise-unchanged test compares CG iteration lists exactly and the temperature sum, max and
+      min to rel 1e-12, not a sha256 of T. A hash could differ across platforms such as Linux CI. I confirmed
+      the sha256 matched before and after the edit on this machine.
+    - The weak-cooling test uses h = 50 W/(m2 K). The layout case uses 2 W and 1 W because the packet's
+      40/20 W overheats the toy layout past the k(T) validity range at that h.
+    - tests/unit has no __init__.py, so the new test file defines its own toy fixtures rather than importing
+      them from test_thermal_fem_solver_stats.py.
+    files_changed:
+    - src/moduleforge/solvers/thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_amg.py
+    - benchmarks/o007_amg_sweeps.py
+    - benchmarks/o007_amg_sweeps.json
