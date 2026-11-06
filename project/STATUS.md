@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-06T00:50:11+00:00 from repository state — do not edit_
+_generated 2026-11-06T01:14:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 38, done: 200, failed: 3, needs_founder: 1, running: 1, todo: 2
 - T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
 
 ## Recent events
-- 2026-11-05T20:55:18+00:00 sleep_detected {"gap_s": 533, "runs_extended": 0}
 - 2026-11-05T20:55:28+00:00 inbox_resolved {"id": "I0127", "status": "approved", "note": "Merge T0235: labelled diagnostic, levels 0-1 verified; follow-ups on main before the burst: correct sec. 0.1 (pos
 - 2026-11-05T20:55:59+00:00 merged {"task": "T0235"}
 - 2026-11-05T20:56:00+00:00 inbox_opened {"id": "I0128", "kind": "decision", "subject": "[O007] replan limit reached"}
@@ -50,3 +49,4 @@ cancelled: 38, done: 200, failed: 3, needs_founder: 1, running: 1, todo: 2
 - 2026-11-06T00:49:51+00:00 inbox_resolved {"id": "I0129", "status": "approved", "note": "Hold n3 (T0244) until the n2 (T0243) founder burst and --report are on main with feasible: true; any L2 count > 3
 - 2026-11-06T00:49:51+00:00 inbox_resolved {"id": "I0130", "status": "approved", "note": "Plan approved (T0242-T0245): opt-in amg_gs_sweeps, pre-registered re-freeze with 2 sweeps, E009 design and run. T
 - 2026-11-06T00:50:11+00:00 run_started {"run": "T0242-builder-20261105T165011-45eb", "task": "T0242", "role": "builder", "session": "be7dca47-ad65-40ac-86c3-20a291f94ccd"}
+- 2026-11-06T01:14:13+00:00 sleep_detected {"gap_s": 617, "runs_extended": 1}
