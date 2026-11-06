@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-06T01:49:59+00:00 from repository state — do not edit_
+_generated 2026-11-06T01:50:06+00:00 from repository state — do not edit_
 
-## Founder inbox (0 open)
-- nothing needs you
+## Founder inbox (1 open)
+- **I0131** [protected_change] T0242: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +14,7 @@ _generated 2026-11-06T01:49:59+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $73.32/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | active | - | 0/1 | $74.77/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,19 +25,16 @@ _generated 2026-11-06T01:49:59+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 43 | $73.31 | 1387927 | 707256 | 55 | 0 |
+| O007 | 43 | $74.77 | 1413364 | 714619 | 59 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 200, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 2
+cancelled: 38, done: 201, failed: 3, needs_founder: 2, todo: 2
 
-- T0242 `review` builder/implement: thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (default None, every solve bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic (attempt 1)
+- T0242 `needs_founder` builder/implement: thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (default None, every solve bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic (attempt 1)
 - T0244 `needs_founder` scientist/design_experiment: E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q1 rule with amg_gs_sweeps = 2 against O006's frozen references, and against the L2 at levels 1-3 on five layouts; A1-A4, K1/K2, F1-F5) (attempt 0)
-- T0246 `running` critic/review: Review T0242 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-06T00:14:58+00:00 inbox_resolved {"id": "I0128", "status": "approved", "note": "Founder 2026-11-05 chose path (A) after the sliver verdict 'conditioning': one more replan (max_replans 7, cap $1
-- 2026-11-06T00:15:05+00:00 run_started {"run": "T0241-planner-20261105T161505-2390", "task": "T0241", "role": "planner", "session": "ca0395ed-cae5-4929-8c9a-0c1c76f47926"}
 - 2026-11-06T00:19:45+00:00 run_finished {"run": "T0241-planner-20261105T161505-2390", "status": "completed", "cost": 1.397019, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T00:19:46+00:00 inbox_opened {"id": "I0129", "kind": "external_action", "subject": "[O007] O007: founder burst for dev study 3 (n2) L2 solves, and a hold on n3 until feasible: true"}
 - 2026-11-06T00:19:46+00:00 inbox_opened {"id": "I0130", "kind": "plan_approval", "subject": "[O007] approve initial plan (4 tasks)"}
@@ -51,3 +48,5 @@ cancelled: 38, done: 200, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-06T01:38:26+00:00 verified {"task": "T0242"}
 - 2026-11-06T01:38:31+00:00 run_started {"run": "T0246-critic-20261105T173831-44c4", "task": "T0246", "role": "critic", "session": "c496b03e-d382-4ca5-93ec-625e0f7a8f6b"}
 - 2026-11-06T01:39:04+00:00 sleep_detected {"gap_s": 641, "runs_extended": 1}
+- 2026-11-06T01:50:00+00:00 run_finished {"run": "T0246-critic-20261105T173831-44c4", "status": "completed", "cost": 1.450326, "subtype": "success", "report": "structured_output"}
+- 2026-11-06T01:50:04+00:00 inbox_opened {"id": "I0131", "kind": "protected_change", "subject": "T0242: merge needs founder approval"}
