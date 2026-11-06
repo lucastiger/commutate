@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-06T01:38:31+00:00 from repository state — do not edit_
+_generated 2026-11-06T01:39:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -36,7 +36,6 @@ cancelled: 38, done: 200, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - T0246 `running` critic/review: Review T0242 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-05T23:03:13+00:00 sleep_detected {"gap_s": 4106, "runs_extended": 0}
 - 2026-11-06T00:14:58+00:00 inbox_resolved {"id": "I0128", "status": "approved", "note": "Founder 2026-11-05 chose path (A) after the sliver verdict 'conditioning': one more replan (max_replans 7, cap $1
 - 2026-11-06T00:15:05+00:00 run_started {"run": "T0241-planner-20261105T161505-2390", "task": "T0241", "role": "planner", "session": "ca0395ed-cae5-4929-8c9a-0c1c76f47926"}
 - 2026-11-06T00:19:45+00:00 run_finished {"run": "T0241-planner-20261105T161505-2390", "status": "completed", "cost": 1.397019, "subtype": "success", "report": "structured_output"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 200, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-06T01:28:24+00:00 run_finished {"run": "T0242-builder-20261105T165011-45eb", "status": "completed", "cost": 0.419655, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T01:38:26+00:00 verified {"task": "T0242"}
 - 2026-11-06T01:38:31+00:00 run_started {"run": "T0246-critic-20261105T173831-44c4", "task": "T0246", "role": "critic", "session": "c496b03e-d382-4ca5-93ec-625e0f7a8f6b"}
+- 2026-11-06T01:39:04+00:00 sleep_detected {"gap_s": 641, "runs_extended": 1}
