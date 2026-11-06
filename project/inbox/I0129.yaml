@@ -1,0 +1,24 @@
+id: I0129
+kind: external_action
+subject: '[O007] O007: founder burst for dev study 3 (n2) L2 solves, and a hold on n3 until feasible:
+  true'
+summary: 'n2 can run only L0/L1 locally. Level 2 of Cases 1a, 1b, 2 and 3 and of both dev layouts needs
+  about 19-46 GB per solve, beyond the local memory rule. n2 therefore completes with feasible: false
+  and levels_missing, as T0228 did. After n2 merges, the founder needs to run the burst_command in research/o007_dev3/plan.json
+  (''scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_dev_study3.py --full" research/o007_dev3'')
+  and commit --report. n3 (E009 design) cannot pass its first done-check until frozen_config.json reads
+  feasible: true. Holding it saves wasted attempts, as I0119 and I0125 did for T0229 and T0238.'
+refs:
+- O007
+- T0241
+options:
+- 'Hold n3 until the n2 burst and --report are on main with feasible: true (as I0119/I0125)'
+- Let n3 start and fail its feasibility check (costs an attempt)
+recommendation: Hold n3 until the n2 burst is in. If the burst shows any count above 300 at L2, or a missed
+  accuracy margin, the re-freeze is infeasible. Then n3 and n4 should not start, and a founder decision
+  is needed under decision_if_fail and inconclusive (no post-data change to the 300 rule).
+status: open
+response: ''
+created_at: '2026-11-06T00:19:46+00:00'
+resolved_at: null
+resolved_by: null

@@ -6,7 +6,7 @@ title: 'Plan O007 (founder approved I0128: Founder 2026-11-05 chose path (A) aft
   1 with it, then E009 (see O007 log and research/notes/o007-sliver.md sec. 5).)'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -36,4 +36,19 @@ trigger: 'founder approved I0128: Founder 2026-11-05 chose path (A) after the sl
   AMG option (2 symmetric GS sweeps per level), a pre-registered re-freeze of candidate 1 with it, then
   E009 (see O007 log and research/notes/o007-sliver.md sec. 5).'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O007 has no evaluation yet ($71.50 of the $110 cap spent; this is replan 8, against a max_replans
+    of 7 that the founder''s I0128 explicitly allows). T0228''s graded Q1 candidate 1 meets every accuracy
+    margin where it was measured, but CG was 316 (Case 1a) and 318 (Case 1b) at L2, above the pre-registered
+    300 rule. The sliver discriminator (T0235 plus burst) read ''conditioning'': removing the maximum
+    lines takes off only 1-4 %. The founder''s preconditioner diagnostic shows the excess comes from the
+    order-1 AMG smoothing, not from the grid. Two symmetric Gauss-Seidel sweeps per level give 145/180
+    and 141/177 at L0/L1, temperatures within 5e-11 K, for about 10 % more wall time. So the sliver_policy
+    chain (T0236, T0237 and the T0238/T0239 pair that depend on it) and the stale T0208 are obsolete a'
+  created:
+  - T0242
+  - T0243
+  - T0244
+  - T0245
+  dropped_for_limits: 0

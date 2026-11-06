@@ -1,0 +1,147 @@
+id: T0243
+objective: O007
+title: 'O007 dev study 3: pre-registered re-freeze of graded Q1 candidate 1 with amg_gs_sweeps = 2 on
+  the O006 cases and dev layouts, every level re-measured (founder burst, deterministic --report)'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0242
+description: 'Founder path (A), I0128, step 2. Replaces T0237 (cancelled). This is a pre-registered re-freeze
+  of T0228''s candidate 1 with n1''s order-1 AMG option. Write research/scripts/o007_dev_study3.py, reusing
+  o007_dev_study2.py by import (Runner2, worker, memory gate, report and e009_table machinery). Outputs
+  go under research/o007_dev3/. Make no production code change.
+
+
+  (1) Pre-registration. Write section 0 of research/notes/o007-dev-study3.md and commit it before any
+  solve; only grid construction is allowed beforehand. Record the commit hash in dev_study.json as preregistration_commit.
+  Section 0 fixes:
+
+  - One candidate, a_q1h4_graded_gs2: research/o007_dev2/frozen_config.json copied key for key (only candidate_id,
+  feasible, levels_missing and rationale may differ), plus amg_gs_sweeps = 2. That is the founder''s value:
+  no tuning and no second candidate. Every solve goes through production thermal_fem with a GridRule that
+  carries amg_gs_sweeps = 2. No monkeypatching of _sa_solver.
+
+  - Eligibility: T0228 note sec. 0.2, criteria 1-4, unchanged. That means: its gates; CG at most 300 on
+  every L0-L2 solve, calibration and constant-k solves included (I0124: the 300 rule is kept); A1 <= 0.008;
+  A2 <= 0.040 K; A4 <= 0.40 K on the cases and <= 0.25 K on the dev-layout dies; every E009 finest solve
+  within 217.6 GB, with fresh layouts taken at 1.5 x the larger dev layout. feasible is true only if every
+  criterion is measured at L2 on all six cases and both dev layouts and holds.
+
+  - No reuse. The solver changed and the founder requires every level re-measured, so every level of every
+  problem is re-solved. No cached T0225, T0228, T0235 or founder-diagnostic solve feeds any value, and
+  reused_levels is [] in every record.
+
+  - Disclose the prior data: T0228''s counts and values at L0-L2; T0235''s centroid_only burst (305/314
+  at L2); the founder diagnostic''s two-sweep L0/L1 counts on Cases 1a/1b (145/180, 141/177). Also state
+  the founder''s projection of about 225-232 at L2, labelled as speculation.
+
+  - A consistency diagnostic (not a criterion and not a gate): per problem, level and reported value,
+  |T_new - T_T0228| wherever T0228 measured that value, with both Picard iteration counts. Flag any value
+  above 1e-6 K where the Picard counts agree.
+
+
+  (2) Problems, records and checks are as T0228. In addition, every case/layout record carries amg_gs_sweeps
+  (from the production result meta) and reused_levels, and every solve records cg_max_iterations and linear_rel_residual_max
+  (T0222). Keep the die-centroid-node diagnostic GCI.
+
+
+  (3) Local runs follow T0228''s memory rule, one child process at a time. Provide a --full mode. Put
+  burst_command ''scripts/burst_gcp.sh --cmd "uv run python research/scripts/o007_dev_study3.py --full"
+  research/o007_dev3'' in research/o007_dev3/plan.json, listing every solve the burst must run with its
+  memory and wall estimates (the extra wall time of two sweeps measured locally).
+
+
+  (4) --report is deterministic. It writes dev_study.json (T0228''s keys) and frozen_config.json (T0228''s
+  keys plus amg_gs_sweeps). Before the founder''s burst the expected state is feasible: false with levels_missing.
+  That is a valid completion.
+
+
+  (5) Update the E009 cost table, and record the dev A1/A2/A4 values at L2 for E009''s K1/K2 regression
+  guard. Label every post-data change as such.'
+context_files:
+- project/objectives/O007/objective.yaml
+- research/notes/o007-dev-study2.md
+- research/scripts/o007_dev_study2.py
+- research/scripts/o007_dev_study.py
+- research/o007_dev2/frozen_config.json
+- research/o007_dev2/dev_study.json
+- research/o007_dev2/plan.json
+- research/notes/o007-sliver.md
+- research/o007_sliver/discriminator.json
+- research/o007_sliver/founder_amg_diagnostic.json
+- benchmarks/o007_amg_sweeps.json
+- src/moduleforge/solvers/thermal_fem.py
+- research/o007_l2/full.json
+- tools/mfos/mfos/metrics.py
+deliverables:
+- research/scripts/o007_dev_study3.py
+- research/o007_dev3/frozen_config.json
+- research/o007_dev3/dev_study.json
+- research/o007_dev3/plan.json
+- research/notes/o007-dev-study3.md
+touches:
+- research/scripts/o007_dev_study3.py
+- research/o007_dev3/**
+- research/notes/o007-dev-study3.md
+definition_of_done:
+- cmd: null
+  exists: research/o007_dev3/frozen_config.json
+  timeout_s: 60
+- cmd: uv run python -c "import json; from moduleforge.solvers import thermal_fem as F; c = json.load(open('research/o007_dev3/frozen_config.json'));
+    c2 = json.load(open('research/o007_dev2/frozen_config.json')); g = c['edge_grading']; assert c['amg_gs_sweeps']
+    == 2 and c['levels'] == [0, 1, 2] and c['picard_tol_K'] == 1e-4 and c['cg_eligibility_limit'] == 300
+    and isinstance(c['feasible'], bool); assert all(c[k] == c2[k] for k in c2 if k not in ('candidate_id',
+    'feasible', 'levels_missing', 'rationale')); F.GridRule(h0=c['h0_m'], near_margin=c['near_margin_m'],
+    dz_max=c['dz_max_m'], element_order=c['element_order'], edge_grading=(g['first_offset_m'], g['ratio'],
+    g['max_offset_m'], g['min_gap_fraction']), amg_gs_sweeps=c['amg_gs_sweeps'])"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('research/o007_dev3/dev_study.json')); c = json.load(open('research/o007_dev3/frozen_config.json'));
+    ch = d['chosen']; cs, ls = ch['cases'], ch['layouts']; assert {'case1a', 'case1b', 'case2', 'case3',
+    'nlayer_dbc', 'mms'} <= set(cs) and {'side_by_side_6', 'u_shaped_2'} <= set(ls); allv = list(cs.values())
+    + list(ls.values()); assert all(len(v['levels_run']) >= 2 and len(v['cg_max_per_level']) == len(v['levels_run'])
+    and v['reused_levels'] == [] and v['amg_gs_sweeps'] == 2 for v in allv); assert all(len(x['argmax_xyz'])
+    == len(ls[k]['levels_run']) and 'gci_K' in x for k in ('side_by_side_6', 'u_shaped_2') for x in ls[k]['dies']);
+    assert (not c['feasible']) or all(v['levels_run'] == [0, 1, 2] and max(v['cg_max_per_level']) <= 300
+    for v in allv); assert len(d['preregistration_commit']) >= 7"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import subprocess, sys; f = 'research/o007_dev3/frozen_config.json'; a = open(f).read();
+    subprocess.run([sys.executable, 'research/scripts/o007_dev_study3.py', '--report'], check=True); assert
+    open(f).read() == a, 'report is not deterministic'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; p = json.load(open('research/o007_dev3/plan.json')); assert 'o007_dev_study3.py
+    --full' in p['burst_command']"
+  exists: null
+  timeout_s: 60
+- cmd: null
+  exists: research/notes/o007-dev-study3.md
+  timeout_s: 60
+- cmd: uv run ruff check research/scripts/o007_dev_study3.py
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0241
+created_at: '2026-11-06T00:19:46+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in requires one scikit-fem configuration frozen before E009 registration. T0228's freeze
+  failed only the CG rule, and a solver setting is part of the frozen configuration. A pre-registered
+  re-freeze under unchanged eligibility is therefore the only route to a feasible configuration. Re-solving
+  every level also guards against the N-layer A2 margin (0.0386 K of 0.040 K) or any other margin moving.
+history: []

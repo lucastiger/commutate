@@ -1,0 +1,134 @@
+id: T0242
+objective: O007
+title: 'thermal_fem: opt-in order-1 AMG smoother option GridRule.amg_gs_sweeps (default None, every solve
+  bitwise unchanged), with a level-0 benchmark that reproduces the founder diagnostic'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Founder path (A), I0128; see research/notes/o007-sliver.md sec. 5. Add an opt-in field `GridRule.amg_gs_sweeps:
+  int | None = None` to src/moduleforge/solvers/thermal_fem.py.
+
+
+  - None (the default): every solve is unchanged bitwise (same AMG hierarchy, same CG iterates, same temperatures)
+  in box-stack and layout mode and for both element orders.
+
+  - n, an int with 1 <= n <= 8 (bool rejected): the order-1 path of `_Solver` builds its smoothed-aggregation
+  hierarchy with presmoother = postsmoother = ("gauss_seidel", {"sweep": "symmetric", "iterations": n}).
+  Pass this to pyamg.smoothed_aggregation_solver through `_sa_solver`; keep AMG_SEED, max_coarse 500,
+  the constant-mode deflation, LINEAR_RTOL and CG_MAXITER. This is exactly the GS2 variant of research/scripts/o007_amg_sweeps.py,
+  selected by the rule instead of a monkeypatch.
+
+  - element_order 2 with amg_gs_sweeps set: ValueError. The Q2 p-multigrid sets its own smoothers by change_smoothers,
+  and the option was measured on order 1 only.
+
+  - Carry the setting from the rule to the solver through _Grid (as rule_grading is carried) for solve_box_stack
+  and solve_layout. Record it in ThermalResult.meta[''amg_gs_sweeps''] (None for the default).
+
+  - Document in the GridRule and _Solver docstrings what the option does, the measured reason, and that
+  the default is unchanged. The reason: T0228 measured CG 316/318 at L2 on Cases 1a/1b; the sliver verdict
+  was conditioning; the founder diagnostic measured -28/-29 % at L0/L1 with |dT| <= 5e-11 K and +7-10
+  % wall time.
+
+
+  Tests go in tests/unit/solvers (a new test_thermal_fem_amg.py, or extend test_thermal_fem_rule.py /
+  test_thermal_fem_solver_stats.py):
+
+  (i) With the default, results are bitwise unchanged on a small box-stack solve and a small layout solve.
+  Capture T and meta[''cg_iterations''] before the edit.
+
+  (ii) amg_gs_sweeps = 2 on a small, weakly cooled box stack (h <= 50 W/(m2 K)): energy balance <= 1e-6,
+  max |T - T_default| <= 1e-8 K, and meta records 2.
+
+  (iii) ValueError for 0, 9, 2.0 and True, and for element_order = 2 with the option set.
+
+
+  Benchmark: write benchmarks/o007_amg_sweeps.py. Build Cases 1a and 1b at level 0 under T0228''s candidate
+  1 exactly (research/o007_dev2/frozen_config.json, max_lines), with the same research/scripts helpers
+  that research/scripts/o007_amg_sweeps.py uses (o007_sliver.variant_problem, o007_dev_study2.rule_of,
+  the refs from o007_dev_study.load_refs). Solve each through production solve_box_stack twice: once with
+  the default rule and once with dataclasses.replace(rule, amg_gs_sweeps=2). No monkeypatching. Write
+  benchmarks/o007_amg_sweeps.json as {''rows'': [...]}, each row with: case, level, amg_gs_sweeps (null
+  or 2), meta_amg_gs_sweeps, dofs, cg_max (= meta[''cg_max_iterations'']), linear_rel_residual_max, max_abs_dT_vs_default_K,
+  energy_balance, solve_wall_s. The done-check requires the CG maxima and DOF to equal the level-0 rows
+  of research/o007_sliver/founder_amg_diagnostic.json exactly (default 204/198, two sweeps 145/141).
+
+
+  No change to thermal_fv, thermal_layout or the L2 rule (scope_out), and no other change to the frozen
+  candidate.'
+context_files:
+- research/notes/o007-sliver.md
+- research/scripts/o007_amg_sweeps.py
+- research/o007_sliver/founder_amg_diagnostic.json
+- research/scripts/o007_sliver.py
+- research/scripts/o007_dev_study2.py
+- research/scripts/o007_dev_study.py
+- research/o007_dev2/frozen_config.json
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_rule.py
+- tests/unit/solvers/test_thermal_fem_solver_stats.py
+- tests/unit/solvers/test_thermal_fem_grading.py
+- project/objectives/O007/objective.yaml
+deliverables:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_amg.py
+- benchmarks/o007_amg_sweeps.py
+- benchmarks/o007_amg_sweeps.json
+touches:
+- src/moduleforge/solvers/thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_*.py
+- benchmarks/o007_amg_sweeps.py
+- benchmarks/o007_amg_sweeps.json
+definition_of_done:
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python benchmarks/o007_amg_sweeps.py
+  exists: null
+  timeout_s: 1800
+- cmd: 'uv run python -c "import json; b = json.load(open(''benchmarks/o007_amg_sweeps.json'')); f = json.load(open(''research/o007_sliver/founder_amg_diagnostic.json''));
+    ref = {(r[''case''], r[''amg'']): r for r in f if r[''level''] == 0}; rows = {(r[''case''], r[''amg_gs_sweeps'']):
+    r for r in b[''rows'']}; assert all(rows[(c, None)][''cg_max''] == ref[(c, ''default'')][''cg_max'']
+    and rows[(c, 2)][''cg_max''] == ref[(c, ''gs_symmetric_x2'')][''cg_max''] and rows[(c, None)][''dofs'']
+    == ref[(c, ''default'')][''dofs''] == rows[(c, 2)][''dofs''] for c in (''case1a'', ''case1b'')); assert
+    all(r[''level''] == 0 and r[''meta_amg_gs_sweeps''] == r[''amg_gs_sweeps''] and r[''max_abs_dT_vs_default_K'']
+    <= 1e-9 and r[''energy_balance''] <= 1e-6 for r in b[''rows''])"'
+  exists: null
+  timeout_s: 120
+- cmd: 'uv run python -c "import pytest; from moduleforge.solvers import thermal_fem as F; assert F.GridRule().amg_gs_sweeps
+    is None; F.GridRule(h0=4e-3, near_margin=2e-3, dz_max=1e-3, element_order=1, edge_grading=(1e-4, 2.5,
+    4e-3, 0.5), amg_gs_sweeps=2); [pytest.raises(ValueError, F.GridRule, **kw) for kw in ({''amg_gs_sweeps'':
+    0}, {''amg_gs_sweeps'': 9}, {''amg_gs_sweeps'': 2.0}, {''amg_gs_sweeps'': True}, {''element_order'':
+    2, ''amg_gs_sweeps'': 2})]"'
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src tests benchmarks
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 1800
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0241
+created_at: '2026-11-06T00:19:46+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'scope_in requires one frozen scikit-fem configuration used unchanged by every E009 case and
+  by O003. A solver setting is part of that configuration, so the smoother must be a production, rule-selected
+  option before any re-freeze. It is opt-in, so T0228''s grids and every existing test stay reproducible.
+  The benchmark is the cheapest kill shot: it ties the production option to the founder''s measured diagnostic
+  before any study money is spent.'
+history: []

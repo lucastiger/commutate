@@ -1,0 +1,35 @@
+id: I0130
+kind: plan_approval
+subject: '[O007] approve initial plan (4 tasks)'
+summary: 'O007 has no evaluation yet ($71.50 of the $110 cap spent; this is replan 8, against a max_replans
+  of 7 that the founder''s I0128 explicitly allows). T0228''s graded Q1 candidate 1 meets every accuracy
+  margin where it was measured, but CG was 316 (Case 1a) and 318 (Case 1b) at L2, above the pre-registered
+  300 rule. The sliver discriminator (T0235 plus burst) read ''conditioning'': removing the maximum lines
+  takes off only 1-4 %. The founder''s preconditioner diagnostic shows the excess comes from the order-1
+  AMG smoothing, not from the grid. Two symmetric Gauss-Seidel sweeps per level give 145/180 and 141/177
+  at L0/L1, temperatures within 5e-11 K, for about 10 % more wall time. So the sliver_policy chain (T0236,
+  T0237 and the T0238/T0239 pair that depend on it) and the stale T0208 are obsolete and are cancelled.
+  The new chain is: (n1) an opt-in, default-bitwise-unchanged GridRule.amg_gs_sweeps in production thermal_fem,
+  then (n2) a pre-registered re-freeze of candidate 1 with sweeps = 2, then (n3) E009''s design, then
+  (n4) E009''s run. n1''s level-0 benchmark is the cheap first kill shot: it must reproduce the founder
+  diagnostic''s CG counts exactly through production code, with no monkeypatch. n2 then re-solves every
+  level, reusing no cached solve, under T0228''s unchanged eligibility rules (300 CG limit kept). What
+  is most likely to kill the path: Case 1a/1b (or Case 3, or a dev layout) still above 300 at L2 even
+  with two sweeps. Next most likely: the N-layer A2 margin (0.0386 K against 0.040 K) shifting on re-solve.
+  Only the founder''s L2 burst of n2 can settle either. E009 keeps its single evaluation, and every acceptance
+  criterion and threshold is untouched.'
+refs:
+- O007
+- T0242
+- T0243
+- T0244
+- T0245
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-06T00:19:46+00:00'
+resolved_at: null
+resolved_by: null
