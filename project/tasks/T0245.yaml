@@ -4,7 +4,7 @@ title: 'Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 
   references and against the L2 (levels 1-3) on five generator layouts'
 type: experiment
 agent: none
-status: todo
+status: needs_founder
 depends_on:
 - T0244
 - T0242
@@ -35,4 +35,8 @@ lens: null
 trigger: null
 rationale: This is the required experiment task for E009 and the only evidence for O007's verdict. It
   replaces T0239 and depends on the code it measures (n1).
-history: []
+history:
+- outcome: awaiting_burst
+  summary: ~20 CPU-h exceeds local limit
+  at: '2026-11-06T20:58:22+00:00'
+  since: 1793998702.985373

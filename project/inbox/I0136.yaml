@@ -1,0 +1,16 @@
+id: I0136
+kind: decision
+subject: E009 needs burst compute (~20 CPU-h)
+summary: 'Run it on an ephemeral VM: `scripts/burst_gcp.sh E009` (Google Cloud) or `scripts/burst.sh E009`.
+  Results copied back into experiments/results/ are picked up automatically (provenance records the host).
+  To run it here instead: `uv run mfos exp run E009`.'
+refs:
+- T0245
+- E009
+options: []
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-06T20:58:22+00:00'
+resolved_at: null
+resolved_by: null

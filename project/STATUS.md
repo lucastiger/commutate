@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-06T20:21:06+00:00 from repository state — do not edit_
+_generated 2026-11-06T20:58:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
-- **I0135** [experiment_registration] register E009 (pre-registration)
+- **I0136** [decision] E009 needs burst compute (~20 CPU-h)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,14 +29,11 @@ _generated 2026-11-06T20:21:06+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 207, failed: 3, todo: 1
+cancelled: 38, done: 207, failed: 3, needs_founder: 1
 
+- T0245 `needs_founder` none/experiment: Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 2) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
 
 ## Recent events
-- 2026-11-06T06:58:10+00:00 inbox_resolved {"id": "I0133", "status": "approved", "note": "No replan: the approved plan (T0244 E009 design held until the dev-study-3 burst reads feasible: true, then T0245
-- 2026-11-06T15:00:44+00:00 sleep_detected {"gap_s": 1248, "runs_extended": 0}
-- 2026-11-06T15:01:24+00:00 run_started {"run": "T0244-scientist-20261106T070124-ec9c", "task": "T0244", "role": "scientist", "session": "02a404ab-c8a2-42ab-8ea8-4ef0c5b69599"}
-- 2026-11-06T15:32:18+00:00 run_finished {"run": "T0244-scientist-20261106T070124-ec9c", "status": "completed", "cost": 5.452102, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T15:46:03+00:00 verified {"task": "T0244"}
 - 2026-11-06T15:46:08+00:00 run_started {"run": "T0248-critic-20261106T074608-85a7", "task": "T0248", "role": "critic", "session": "ea070475-44d3-4820-84ac-a68c81a444ae"}
 - 2026-11-06T15:46:09+00:00 run_started {"run": "T0249-critic-20261106T074609-fddc", "task": "T0249", "role": "critic", "session": "d24d73ba-d8d6-46b8-ab35-119f35716bad"}
@@ -48,3 +45,7 @@ cancelled: 38, done: 207, failed: 3, todo: 1
 - 2026-11-06T20:20:43+00:00 inbox_resolved {"id": "I0134", "status": "approved", "note": "Merge T0244 (E009 design): T0248 and T0249 accept with caveats. full() checked against the ExperimentRun API by r
 - 2026-11-06T20:21:04+00:00 merged {"task": "T0244"}
 - 2026-11-06T20:21:04+00:00 inbox_opened {"id": "I0135", "kind": "experiment_registration", "subject": "register E009 (pre-registration)"}
+- 2026-11-06T20:57:52+00:00 experiment_registered {"id": "E009", "hash": "sha256:7d703f10e909b5281d177919c4d9fe7098e6cd670f1c26f938f3bb872d333c94", "by": "founder"}
+- 2026-11-06T20:57:52+00:00 inbox_resolved {"id": "I0135", "status": "approved", "note": "Register E009: spec matches O007 (A1-A4, K1/K2, F1-F5 via ref_gci_cap per I0099); full() exercised end to end in 
+- 2026-11-06T20:58:22+00:00 inbox_opened {"id": "I0136", "kind": "decision", "subject": "E009 needs burst compute (~20 CPU-h)"}
+- 2026-11-06T20:58:22+00:00 burst_requested {"task": "T0245", "experiment": "E009", "cpu_hours": 20.0}
