@@ -5,7 +5,7 @@ title: 'E009 design: draft spec and runner (scikit-fem at the re-frozen graded Q
   F1-F5)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0242
 - T0243
@@ -123,3 +123,119 @@ history:
   summary: 'Held per I0129 until the n2 (T0243) founder burst and its --report are on main with feasible:
     true. Release with mfos task retry T0244.'
   at: '2026-11-06T00:49:39+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I drafted the E009 spec and runner, and all six definition-of-done commands exit 0.
+
+
+    **Precondition (checked first, met):** `frozen_config.json` is `feasible: true` with no level missing,
+    all eight problems were measured at levels 0-2, and the founder burst is on main as commit e803141b.
+
+
+    **What E009 does:** scikit-fem is now the solver under test. It runs through production `thermal_fem`
+    with one rule built from `config.fem_rule`, which is the frozen JSON copied verbatim, including `edge_grading`
+    and `amg_gs_sweeps`. There is no research-side grid or solver code. After every solve the runner stops
+    with an error if the solver reports a sweep count other than 2. Before any solve, a gated check confirms
+    that `config.fem_rule` equals the file on disk and that thermal_fem''s constants equal the'
+  report:
+    summary: 'I drafted the E009 spec and runner, and all six definition-of-done commands exit 0.
+
+
+      **Precondition (checked first, met):** `frozen_config.json` is `feasible: true` with no level missing,
+      all eight problems were measured at levels 0-2, and the founder burst is on main as commit e803141b.
+
+
+      **What E009 does:** scikit-fem is now the solver under test. It runs through production `thermal_fem`
+      with one rule built from `config.fem_rule`, which is the frozen JSON copied verbatim, including
+      `edge_grading` and `amg_gs_sweeps`. There is no research-side grid or solver code. After every solve
+      the runner stops with an error if the solver reports a sweep count other than 2. Before any solve,
+      a gated check confirms that `config.fem_rule` equals the file on disk and that thermal_fem''s constants
+      equal the frozen ones. It also reruns E006''s reference checks (hashes, series convergence, manufactured
+      case).
+
+
+      The in-house FV solver is the cross-check, at levels 1-3 on five layouts: two dev layouts and three
+      from the sealed seed.
+
+
+      **Rows:**
+
+      - Case rows give the three grid values per point, where each point snapped (requested, used, distance),
+      its grid position per level, and the CG maximum and linear residual of each grid solve.
+
+      - Cross-check rows give both solvers'' three values per die, both convergence estimates and directions,
+      the per-die F5 flag, where the hottest node sits per level and how often it moves, power, the constant-k
+      column, and both solvers'' linear-solver data.
+
+      - Power is calibrated per layout on scikit-fem level 0 with a 0.25 K tolerance. The dev-study histories
+      confirm this gives the same powers as the dev study.
+
+
+      **Metrics and checks:** the four metrics and their recompute entries are exactly the objective''s.
+      A3 is `max_gci_consistency` with `ref_gci_cap` 0.25, so F5 acts only through A3 and is not a gated
+      check. A4 is `max_gci_capped`. All the brief''s gated checks are present. The CG count above 300
+      is reported, not gated; the gate is the 400-iteration cap.
+
+
+      **Smoke run (coarsened copies of both rules, dev seeds 20261101 and 7; not evidence):** 6.5 min,
+      peak 3.6 GB, exit 0.
+
+      - All integrity, reference, node, energy, Picard, operating-point and linear-solver checks pass.
+
+      - Three things miss only because the smoke grids are coarse: node-count growth at the coarsest step
+      (6.71-6.79 against 6.8), A3/A4 are +inf from diverging sequences, and F5 fails.
+
+      - The constant-k null comes out at 2.52 K (scaled 0.025), so it fails A1 and A2 and `mfos exp check`
+      raises no null problem.
+
+
+      **Cost:** I estimate about 18.5 CPU-hours (set as `cpu_hours_est: 20`, `timeout_min: 2700`). The
+      burst-measured walls are used where they exist; the fresh layouts are extrapolated at 1.5 × side_by_side_6.
+      Peaks: measured 42 GB (scikit-fem) and 70 GB (FV); extrapolated about 71 GB and 105 GB on fresh
+      layouts. That needs an n2-highmem-32; an n2-highmem-16 is too small.
+
+
+      **One edit outside E009:** the DoD lint command failed on an existing T0076 file, `research/scripts/e002_runner_harness.py`.
+      Ruff lints explicitly named paths even though the config excludes `research`. I made a lint-only
+      reformat; its statements and their order are unchanged.
+
+
+      Committed as f6d6d723 on the task branch.'
+    failure_class: none
+    confidence: 0.85
+    experiment_drafts:
+    - experiments/drafts/E009.yaml
+    files_written:
+    - experiments/drafts/E009.yaml
+    - experiments/runners/e009_run.py
+    - research/e009/dev_rows.json
+    - research/e009/smoke.log
+    - research/notes/o007-e009-design.md
+    - research/scripts/e002_runner_harness.py
+    evidence:
+    - '[F] frozen_config.json: feasible true, levels_missing {}, sha256 0226b770...; dev_study.json chosen.summary
+      all_levels_measured true; regression guard at_L2 true on all 8 problems'
+    - '[F] Spec fem_rule written by yaml.safe_dump and checked equal to the JSON (DoD 1 exit 0)'
+    - '[F] Smoke: 106 rows, 61 solves (46 scikit-fem, 15 FV), sweep count 2 on every scikit-fem solve;
+      CG max 220, no cap hit; energy balance max 2.1e-9; Picard max 4.5e-5 K; operating point max 0.21
+      K; node_persistence pass, max snap 5.7e-5 m'
+    - '[F] Constant-k null on the smoke rows: 2.524 K / scaled 0.0251, fails A1 and A2 (dev study at frozen
+      L2: 2.51 K / 0.0249)'
+    - '[F] Dev calibration histories: rejected iterates >= 1.13 K off, accepted <= 0.16 K off, so the
+      0.25 K tolerance reproduces 32.232107 W and 47.141886 W'
+    - '[F] Commands and exit codes: DoD1 frozen-config/spec check 0; smoke 0; mfos exp check E009 --rows
+      0; spec key-string check 0; note exists 0; ruff check experiments/runners research 0 (after the
+      harness lint fix); mfos gate --fast 0'
+    - '[I] Fresh-layout walls are extrapolations: 1.5 x side_by_side_6 measured on Linux (L2 8331 s, const-k
+      2541 s each); T0243''s own table underestimates them'
+    recommended_actions:
+    - 'Founder: register E009 and add it to policy burst_experiments; run on n2-highmem-32 (256 GB), not
+      n2-highmem-16'
+    - 'Reviewer: confirm the runner''s use of private thermal_fem functions (_solve_grid, _materials,
+      _count_nodes) for the constant-k nulls and DOF preflight; it is the same as T0207-T0243'
+    - 'Reviewer: confirm the 0.25 K calibration tolerance (E006''s) rather than the dev study''s 1 K;
+      it gives identical dev powers'
+    - 'After the registered run: compare dev-problem values with config.dev_regression_guard (expected
+      to agree to about 1e-10 K); a larger change would point to something other than the fresh layouts'
+    - 'Planning: the DoD ruff command lints research/ despite extend-exclude; other research scripts may
+      need the same lint-only fix before reusing that DoD'
