@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-08T07:12:26+00:00 from repository state — do not edit_
+_generated 2026-11-08T07:13:02+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,17 +25,14 @@ _generated 2026-11-08T07:12:26+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 49 | $90.68 | 1655473 | 821709 | 74 | 0 |
+| O007 | 49 | $90.68 | 1655473 | 821709 | 74 | 1 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 208, failed: 3, running: 1
+cancelled: 38, done: 208, failed: 3, todo: 1
 
-- T0250 `running` critic/review: Review EV-O007-01 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-06T16:06:44+00:00 inbox_opened {"id": "I0134", "kind": "protected_change", "subject": "T0244: merge needs founder approval"}
-- 2026-11-06T16:07:37+00:00 sleep_detected {"gap_s": 691, "runs_extended": 0}
 - 2026-11-06T20:20:43+00:00 inbox_resolved {"id": "I0134", "status": "approved", "note": "Merge T0244 (E009 design): T0248 and T0249 accept with caveats. full() checked against the ExperimentRun API by r
 - 2026-11-06T20:21:04+00:00 merged {"task": "T0244"}
 - 2026-11-06T20:21:04+00:00 inbox_opened {"id": "I0135", "kind": "experiment_registration", "subject": "register E009 (pre-registration)"}
@@ -49,3 +46,5 @@ cancelled: 38, done: 208, failed: 3, running: 1
 - 2026-11-08T00:22:04+00:00 inbox_resolved {"id": "I0136", "status": "approved", "note": "E009 launched on n2d-custom-8-155648-ext (free trial, 8 vCPU; 152 GiB clears the spec's 131 GB preflight bound), 
 - 2026-11-08T07:12:21+00:00 evaluation {"objective": "O007", "id": "EV-O007-01", "verdict": "PASS"}
 - 2026-11-08T07:12:26+00:00 run_started {"run": "T0250-critic-20261107T231226-0cd8", "task": "T0250", "role": "critic", "session": "88b907f8-7fbd-40ce-8f7b-6c2fe200bed2"}
+- 2026-11-08T07:13:00+00:00 run_finished {"run": "T0250-critic-20261107T231226-0cd8", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
+- 2026-11-08T07:13:00+00:00 capacity_backoff {"task": "T0250", "minutes": 1009, "parsed_reset": true}
