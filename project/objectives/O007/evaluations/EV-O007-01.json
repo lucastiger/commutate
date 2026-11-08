@@ -1,0 +1,109 @@
+{
+  "id": "EV-O007-01",
+  "objective": "O007",
+  "timestamp": "2026-11-08T07:12:21+00:00",
+  "criteria_hash": "sha256:81723bc542a25acd7c796ece92af5f8907868f2df37b0ba0a4fd3211956df93d",
+  "evaluator_version": "2.0.0",
+  "results_used": {
+    "E009": "E009-20261107T162152-a3cf"
+  },
+  "validity_problems": [],
+  "pass_checks": [
+    {
+      "id": "A1",
+      "metric": "E009.max_case_scaled_err",
+      "comparator": "<=",
+      "threshold": 0.01,
+      "value": 0.0006803390820250917,
+      "bound_used": 0.0006803390820250917,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.0006803390820250917,
+      "null_value": 0.024936604969575702,
+      "null_bound": 0.024936604969575702
+    },
+    {
+      "id": "A2",
+      "metric": "E009.max_abs_err_K",
+      "comparator": "<=",
+      "threshold": 0.05,
+      "value": 0.038625006251891136,
+      "bound_used": 0.038625006251891136,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.038625006251891136,
+      "null_value": 2.5123302812764337,
+      "null_bound": 2.5123302812764337
+    },
+    {
+      "id": "A3",
+      "metric": "E009.max_l2_consistency",
+      "comparator": "<=",
+      "threshold": 1.0,
+      "value": 0.7611911832234234,
+      "bound_used": 0.7611911832234234,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.7611911832234234,
+      "null_value": null,
+      "null_bound": null
+    },
+    {
+      "id": "A4",
+      "metric": "E009.max_conservative_gci_K",
+      "comparator": "<=",
+      "threshold": 0.5,
+      "value": 0.4385115387487241,
+      "bound_used": 0.4385115387487241,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.4385115387487241,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "fail_checks": [
+    {
+      "id": "K1",
+      "metric": "E009.max_case_scaled_err",
+      "comparator": ">",
+      "threshold": 0.05,
+      "value": 0.0006803390820250917,
+      "bound_used": 0.0006803390820250917,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.0006803390820250917,
+      "null_value": null,
+      "null_bound": null
+    },
+    {
+      "id": "K2",
+      "metric": "E009.max_abs_err_K",
+      "comparator": ">",
+      "threshold": 0.25,
+      "value": 0.038625006251891136,
+      "bound_used": 0.038625006251891136,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.038625006251891136,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "verdict": "PASS",
+  "explanation": "All pass criteria met at the conservative bound",
+  "unused_runs": {},
+  "checks": {
+    "E009": {
+      "on_main": "ok",
+      "spec_in_commit": "ok",
+      "lockfile": "ok",
+      "runner_files": "ok",
+      "code_under_test": "ok",
+      "artifacts": "ok",
+      "registry": "ok",
+      "code_must_match": "n/a: the spec declares no code_must_match",
+      "requires_passed": "n/a: the spec requires no objective"
+    }
+  }
+}
