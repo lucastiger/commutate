@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-08T07:12:17+00:00 from repository state — do not edit_
+_generated 2026-11-08T07:12:26+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -14,7 +14,7 @@ _generated 2026-11-08T07:12:17+00:00 from repository state — do not edit_
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
-| O007 | active | - | 0/1 | $90.68/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O007 | evaluating | PASS | 1/1 | $90.68/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -25,17 +25,15 @@ _generated 2026-11-08T07:12:17+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 48 | $90.68 | 1655473 | 821709 | 74 | 0 |
+| O007 | 49 | $90.68 | 1655473 | 821709 | 74 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 207, failed: 3, needs_founder: 1
+cancelled: 38, done: 208, failed: 3, running: 1
 
-- T0245 `needs_founder` none/experiment: Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 2) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
+- T0250 `running` critic/review: Review EV-O007-01 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-06T15:56:08+00:00 run_finished {"run": "T0249-critic-20261106T074609-fddc", "status": "completed", "cost": 2.197623, "subtype": "success", "report": "structured_output"}
-- 2026-11-06T15:56:08+00:00 run_finished {"run": "T0248-critic-20261106T074608-85a7", "status": "completed", "cost": 2.719169, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T16:06:44+00:00 inbox_opened {"id": "I0134", "kind": "protected_change", "subject": "T0244: merge needs founder approval"}
 - 2026-11-06T16:07:37+00:00 sleep_detected {"gap_s": 691, "runs_extended": 0}
 - 2026-11-06T20:20:43+00:00 inbox_resolved {"id": "I0134", "status": "approved", "note": "Merge T0244 (E009 design): T0248 and T0249 accept with caveats. full() checked against the ExperimentRun API by r
@@ -49,3 +47,5 @@ cancelled: 38, done: 207, failed: 3, needs_founder: 1
 - 2026-11-07T03:52:56+00:00 sleep_detected {"gap_s": 7343, "runs_extended": 0}
 - 2026-11-08T00:21:52+00:00 experiment_minted {"id": "E009", "run": "E009-20261107T162152-a3cf"}
 - 2026-11-08T00:22:04+00:00 inbox_resolved {"id": "I0136", "status": "approved", "note": "E009 launched on n2d-custom-8-155648-ext (free trial, 8 vCPU; 152 GiB clears the spec's 131 GB preflight bound), 
+- 2026-11-08T07:12:21+00:00 evaluation {"objective": "O007", "id": "EV-O007-01", "verdict": "PASS"}
+- 2026-11-08T07:12:26+00:00 run_started {"run": "T0250-critic-20261107T231226-0cd8", "task": "T0250", "role": "critic", "session": "88b907f8-7fbd-40ce-8f7b-6c2fe200bed2"}
