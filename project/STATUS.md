@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-08T00:21:56+00:00 from repository state — do not edit_
+_generated 2026-11-08T00:22:34+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0136** [decision] E009 needs burst compute (~20 CPU-h)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -34,7 +34,6 @@ cancelled: 38, done: 207, failed: 3, needs_founder: 1
 - T0245 `needs_founder` none/experiment: Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 2) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
 
 ## Recent events
-- 2026-11-06T15:46:43+00:00 sleep_detected {"gap_s": 866, "runs_extended": 2}
 - 2026-11-06T15:56:08+00:00 run_finished {"run": "T0249-critic-20261106T074609-fddc", "status": "completed", "cost": 2.197623, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T15:56:08+00:00 run_finished {"run": "T0248-critic-20261106T074608-85a7", "status": "completed", "cost": 2.719169, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T16:06:44+00:00 inbox_opened {"id": "I0134", "kind": "protected_change", "subject": "T0244: merge needs founder approval"}
@@ -49,3 +48,4 @@ cancelled: 38, done: 207, failed: 3, needs_founder: 1
 - 2026-11-07T01:50:34+00:00 sleep_detected {"gap_s": 10927, "runs_extended": 0}
 - 2026-11-07T03:52:56+00:00 sleep_detected {"gap_s": 7343, "runs_extended": 0}
 - 2026-11-08T00:21:52+00:00 experiment_minted {"id": "E009", "run": "E009-20261107T162152-a3cf"}
+- 2026-11-08T00:22:04+00:00 inbox_resolved {"id": "I0136", "status": "approved", "note": "E009 launched on n2d-custom-8-155648-ext (free trial, 8 vCPU; 152 GiB clears the spec's 131 GB preflight bound), 
