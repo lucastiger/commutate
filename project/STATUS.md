@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-08T07:13:02+00:00 from repository state — do not edit_
+_generated 2026-11-08T23:20:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 38, done: 208, failed: 3, todo: 1
 
 
 ## Recent events
-- 2026-11-06T20:20:43+00:00 inbox_resolved {"id": "I0134", "status": "approved", "note": "Merge T0244 (E009 design): T0248 and T0249 accept with caveats. full() checked against the ExperimentRun API by r
 - 2026-11-06T20:21:04+00:00 merged {"task": "T0244"}
 - 2026-11-06T20:21:04+00:00 inbox_opened {"id": "I0135", "kind": "experiment_registration", "subject": "register E009 (pre-registration)"}
 - 2026-11-06T20:57:52+00:00 experiment_registered {"id": "E009", "hash": "sha256:7d703f10e909b5281d177919c4d9fe7098e6cd670f1c26f938f3bb872d333c94", "by": "founder"}
@@ -48,3 +47,4 @@ cancelled: 38, done: 208, failed: 3, todo: 1
 - 2026-11-08T07:12:26+00:00 run_started {"run": "T0250-critic-20261107T231226-0cd8", "task": "T0250", "role": "critic", "session": "88b907f8-7fbd-40ce-8f7b-6c2fe200bed2"}
 - 2026-11-08T07:13:00+00:00 run_finished {"run": "T0250-critic-20261107T231226-0cd8", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-08T07:13:00+00:00 capacity_backoff {"task": "T0250", "minutes": 1009, "parsed_reset": true}
+- 2026-11-08T23:19:28+00:00 sleep_detected {"gap_s": 1221, "runs_extended": 0}
