@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-07T03:53:03+00:00 from repository state — do not edit_
+_generated 2026-11-08T00:21:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0136** [decision] E009 needs burst compute (~20 CPU-h)
@@ -34,7 +34,6 @@ cancelled: 38, done: 207, failed: 3, needs_founder: 1
 - T0245 `needs_founder` none/experiment: Run E009: scikit-fem thermal reference (graded Q1 rule, amg_gs_sweeps = 2) against O006's frozen references and against the L2 (levels 1-3) on five generator layouts (attempt 0)
 
 ## Recent events
-- 2026-11-06T15:46:09+00:00 run_started {"run": "T0249-critic-20261106T074609-fddc", "task": "T0249", "role": "critic", "session": "d24d73ba-d8d6-46b8-ab35-119f35716bad"}
 - 2026-11-06T15:46:43+00:00 sleep_detected {"gap_s": 866, "runs_extended": 2}
 - 2026-11-06T15:56:08+00:00 run_finished {"run": "T0249-critic-20261106T074609-fddc", "status": "completed", "cost": 2.197623, "subtype": "success", "report": "structured_output"}
 - 2026-11-06T15:56:08+00:00 run_finished {"run": "T0248-critic-20261106T074608-85a7", "status": "completed", "cost": 2.719169, "subtype": "success", "report": "structured_output"}
@@ -49,3 +48,4 @@ cancelled: 38, done: 207, failed: 3, needs_founder: 1
 - 2026-11-06T20:58:22+00:00 burst_requested {"task": "T0245", "experiment": "E009", "cpu_hours": 20.0}
 - 2026-11-07T01:50:34+00:00 sleep_detected {"gap_s": 10927, "runs_extended": 0}
 - 2026-11-07T03:52:56+00:00 sleep_detected {"gap_s": 7343, "runs_extended": 0}
+- 2026-11-08T00:21:52+00:00 experiment_minted {"id": "E009", "run": "E009-20261107T162152-a3cf"}
