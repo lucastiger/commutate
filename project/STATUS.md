@@ -1,11 +1,12 @@
 # ModuleForge status
-_generated 2026-11-09T22:14:55+00:00 from repository state — do not edit_
+_generated 2026-11-09T22:15:06+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (5 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
 - **I0150** [protected_change] T0273: merge needs founder approval
 - **I0151** [protected_change] T0274: merge needs founder approval
 - **I0152** [protected_change] T0276: merge needs founder approval
+- **I0153** [protected_change] T0279: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -32,15 +33,14 @@ _generated 2026-11-09T22:14:55+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 235, failed: 3, merge: 1, needs_founder: 3, todo: 4
+cancelled: 38, done: 235, failed: 3, needs_founder: 4, todo: 4
 
 - T0273 `needs_founder` builder/implement: Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured rules (review T0271) (attempt 1)
 - T0274 `needs_founder` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 2)
 - T0276 `needs_founder` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
-- T0279 `merge` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
+- T0279 `needs_founder` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
 
 ## Recent events
-- 2026-11-09T21:29:40+00:00 run_started {"run": "T0283-critic-20261109T132940-0900", "task": "T0283", "role": "critic", "session": "9e90ba3b-5fc5-46ab-b3c4-2bf49714c038"}
 - 2026-11-09T21:30:15+00:00 sleep_detected {"gap_s": 778, "runs_extended": 3}
 - 2026-11-09T21:30:16+00:00 run_finished {"run": "T0274-builder-20261109T125534-7fb6", "status": "completed", "cost": 0.76993, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T21:36:33+00:00 inbox_resolved {"id": "I0149", "status": "approved", "note": "Merge T0270 attempt 2: voltage-based signal spacing classes fix T0277's blocker; T0280 accepts with minor caveats
@@ -55,3 +55,4 @@ cancelled: 38, done: 235, failed: 3, merge: 1, needs_founder: 3, todo: 4
 - 2026-11-09T22:04:35+00:00 run_started {"run": "T0284-critic-20261109T140435-5320", "task": "T0284", "role": "critic", "session": "70a2c165-1131-4a41-affe-6155dd64a875"}
 - 2026-11-09T22:05:08+00:00 sleep_detected {"gap_s": 911, "runs_extended": 1}
 - 2026-11-09T22:11:23+00:00 run_finished {"run": "T0284-critic-20261109T140435-5320", "status": "completed", "cost": 2.383736, "subtype": "success", "report": "structured_output"}
+- 2026-11-09T22:15:04+00:00 inbox_opened {"id": "I0153", "kind": "protected_change", "subject": "T0279: merge needs founder approval"}
