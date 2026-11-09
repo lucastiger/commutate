@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-08T23:20:22+00:00 from repository state — do not edit_
+_generated 2026-11-09T00:54:59+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -25,16 +25,15 @@ _generated 2026-11-08T23:20:22+00:00 from repository state — do not edit_
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
-| O007 | 49 | $90.68 | 1655473 | 821709 | 74 | 1 |
+| O007 | 50 | $90.68 | 1655473 | 821709 | 74 | 1 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 208, failed: 3, todo: 1
+cancelled: 38, done: 208, failed: 3, running: 1
 
+- T0250 `running` critic/review: Review EV-O007-01 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-06T20:21:04+00:00 merged {"task": "T0244"}
-- 2026-11-06T20:21:04+00:00 inbox_opened {"id": "I0135", "kind": "experiment_registration", "subject": "register E009 (pre-registration)"}
 - 2026-11-06T20:57:52+00:00 experiment_registered {"id": "E009", "hash": "sha256:7d703f10e909b5281d177919c4d9fe7098e6cd670f1c26f938f3bb872d333c94", "by": "founder"}
 - 2026-11-06T20:57:52+00:00 inbox_resolved {"id": "I0135", "status": "approved", "note": "Register E009: spec matches O007 (A1-A4, K1/K2, F1-F5 via ref_gci_cap per I0099); full() exercised end to end in 
 - 2026-11-06T20:58:22+00:00 inbox_opened {"id": "I0136", "kind": "decision", "subject": "E009 needs burst compute (~20 CPU-h)"}
@@ -48,3 +47,5 @@ cancelled: 38, done: 208, failed: 3, todo: 1
 - 2026-11-08T07:13:00+00:00 run_finished {"run": "T0250-critic-20261107T231226-0cd8", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-08T07:13:00+00:00 capacity_backoff {"task": "T0250", "minutes": 1009, "parsed_reset": true}
 - 2026-11-08T23:19:28+00:00 sleep_detected {"gap_s": 1221, "runs_extended": 0}
+- 2026-11-09T00:54:53+00:00 sleep_detected {"gap_s": 3665, "runs_extended": 0}
+- 2026-11-09T00:54:59+00:00 run_started {"run": "T0250-critic-20261108T165459-6f84", "task": "T0250", "role": "critic", "session": "88b907f8-7fbd-40ce-8f7b-6c2fe200bed2"}
