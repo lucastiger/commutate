@@ -3,7 +3,7 @@ objective: O003
 title: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Extend DesignRules/DRC and Layout so that O003''s design-rule strictness (scope_in) can
   be stated, measured on a reference and enforced. Develop and test only on generator layouts and synthetic
@@ -92,4 +92,67 @@ trigger: null
 rationale: scope_in design-rule strictness (per-pair spacing T0252, power-net width and bondability T0254)
   and the measurement of rules on the snapped reconstruction; A1/K1 only count candidates under these
   rules.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Implemented all four parts (a–d) and committed them as 178eb740. The DoD pytest runs, ruff,
+    the thermal_fem diff check and `mfos gate --fast` all passed. (a) DesignRules has optional per-pair
+    spacing (DC+/PHASE, PHASE/DC-, DC+/DC-, other), per-class widths (power vs other), and optional max_gate/kelvin_wire_length.
+    All default to None, so behaviour is unchanged. (b) Layout has `signal_wires` (new `SignalWire`: die,
+    pad, net, points, diameter, loop_height) and Die.pads accepts ''kelvin''. Gate/Kelvin copper is ordinary
+    traces with net GATE/KELVIN; to_conductors() skips both. The fingerprint includes signal wires only
+    when present. The seed-0 fingerprints for 12 layouts, recorded before the change, are asserted in
+    tests/regression/test_fingerprints_unchanged.py and still match. (c) check() enf'
+  report:
+    status: completed
+    summary: 'Implemented all four parts (a–d) and committed them as 178eb740. The DoD pytest runs, ruff,
+      the thermal_fem diff check and `mfos gate --fast` all passed. (a) DesignRules has optional per-pair
+      spacing (DC+/PHASE, PHASE/DC-, DC+/DC-, other), per-class widths (power vs other), and optional
+      max_gate/kelvin_wire_length. All default to None, so behaviour is unchanged. (b) Layout has `signal_wires`
+      (new `SignalWire`: die, pad, net, points, diameter, loop_height) and Die.pads accepts ''kelvin''.
+      Gate/Kelvin copper is ordinary traces with net GATE/KELVIN; to_conductors() skips both. The fingerprint
+      includes signal wires only when present. The seed-0 fingerprints for 12 layouts, recorded before
+      the change, are asserted in tests/regression/test_fingerprints_unchanged.py and still match. (c)
+      check() enforces per-pair spacing, per-class width, bondability of the pad-to-copper distance, and
+      signal-wire start/landing/net/length. It also flags plan-view crossings of other-net wires and applies
+      pitch to signal wires. (d) `measure_rules(layout)` returns (DesignRules, record). Tests are in tests/unit/drc/test_drc_net_rules.py:
+      hand-built pass/fail fixtures per rule, and a self-consistency property over generator seeds 0..19,
+      a hand-built gate/Kelvin fixture and generator layouts with synthetic GATE copper and wires.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/drc tests/unit/geometry tests/unit/generate tests/regression
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/drc/rules.py
+    - src/moduleforge/drc/__init__.py
+    - src/moduleforge/geometry/layout.py
+    - src/moduleforge/geometry/__init__.py
+    - tests/unit/drc/test_drc_net_rules.py
+    - tests/regression/test_fingerprints_unchanged.py
+    - tests/unit/geometry/test_layout.py
+    concerns:
+    - The last two commands in the combined DoD run (`pytest -m 'not slow' tests/unit' and `mfos gate
+      --fast`) printed blank exit codes because of a zsh PIPESTATUS quirk. The exit codes listed for them
+      (0) are inferred from their output (581 passed; 'all gates passed'), not read directly. The orchestrator
+      will re-run them anyway.
+    - I edited the existing tests/unit/geometry/test_layout.py by adding 'Layout.signal_wires' to its
+      _CONTAINERS set. That existing completeness test would otherwise fail on the new field. No assertion
+      or tolerance was loosened, and the signal-wire fields are pinned in the new test file.
+    - measure_rules sets max_gate/kelvin_wire_length to max(longest wire, largest pad-to-copper distance)
+      so dies without a wire stay bondable. It sets wire_pitch_diameters=0 with min_wire_pitch equal to
+      the measured smallest pitch.
+    - 'The existing width test is slightly lenient: a trace of exactly width W can fail a rule of exactly
+      W, by up to about 0.5 um. Measured widths (bisection to 1 um) account for this. I did not change
+      that behaviour.'
+    - GATE/KELVIN copper lives in `Layout.traces`, so other code iterating traces by net (for example
+      solvers) will see these extra nets. to_conductors() filters them out. Nothing else was audited.
+    - Generator layouts have no free room for gate/Kelvin strips, so the synthetic generator-based property
+      test adds a GATE strip above the top row with straight gate wires. The full gate-plus-Kelvin geometry
+      is the hand-built fixture.
