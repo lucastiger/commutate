@@ -1,0 +1,76 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The planted-headroom control only shows the search can get back to the twin, not that it can find headroom below the twin; a weak search can fire K1 with every check passing",
+      "detail": "F1(b) gives the search a degraded copy D (L_sub(D) >= 1.25 L_sub(twin)) and requires h_ctrl >= h_plant - w_ctrl, which means L_sub(best_ctrl) <= about L_sub(twin)(1 + 1.25 w_ctrl). The control reuses the same outline, pads, dies and rules, so it is essentially the main search with a different seed. It therefore checks that random search reaches the twin's level, nothing more. Suppose real headroom of 25-30 % exists but 20,000 random draws only reach 5-10 % below the twin. The control passes, w <= 0.05 passes, the twin gates pass, and a checked candidate that is feasible under the optimistic Tj test gives h_hi < 0.10, so K1 fires. At a = 0.76 a kill needs h_sub < 0.113; at a = 0.59 it needs h_sub < 0.153. Such a kill shows that this budget found little below the reference. It does not show the null's statement that the reference is near the optimum for its housing. My best-of-N check on the repository generator shows that 20,000 random draws have not levelled off: the expected best of 5,000 draws is 1.45 % above the best of 20,000, and the best of 10,000 is 0.68 % above. Each doubling still gains about 0.7 %. Nothing in E008 measures whether the search has saturated.",
+      "evidence": "My run: generate_layouts(20000, seed=20261109, family='side_by_side', dies_per_switch=4), L1 loop_inductance at 20 MHz, 382 s. Expected best of N (mean of 100 random subsamples): N=1000: 2.9686 nH (+3.43 % against the best of 20,000), 2500: 2.9326 (+2.17 %), 5000: 2.9118 (+1.45 %), 10000: 2.8899 (+0.68 %), 20000: 2.8703 nH. The 20,000 value is a single draw. The 16 best layouts span 3.7 %. A separate 3,000-draw run (seed 20261108) showed the same trend: 3.115, 3.053, 2.992 and 2.947 nH at N = 100, 300, 1,000 and 3,000.",
+      "suggested_check": "Before K1 is read, require the search to have levelled off on each reference (for example, the L1 best of the first 5,000 candidates within w of the best of all 20,000), or run one larger-budget search; then state a kill as 'not found by this search' unless that check passes.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The h_hi = +inf rule blocks a kill even when the inductance-only best already lies in the null region",
+      "detail": "The inductance-only best (lowest L_sub in the 16-candidate shortlist, no Tj limit) bounds the Tj-constrained headroom from above, within the search's reach, because a Tj-feasible candidate cannot have lower L_sub. If its h_hi is below 0.10, no layout in the searched pool has 10 % headroom at any Tj, so Tj feasibility is irrelevant to the null. K1 still sets h_hi = +inf whenever all 8 checked candidates fail the optimistic Tj test. That is most likely in exactly this case: when the null is true, the lowest-L shortlist tends to hold compact, hot layouts (T0251: the lowest-L arrangements run 2-10 K hotter). The rule was introduced to stop a Tj-blind kill. Applied unconditionally, it also removes legitimate kills and makes INCONCLUSIVE more likely when the null is true. P(K1 fires | null) is not estimated anywhere.",
+      "evidence": "K1 description and D0016 decision 1 (h_hi = +inf whenever no checked candidate passes the optimistic test). F1 reports the inductance-only best only as a secondary column.",
+      "suggested_check": "Define h_hi = min(current rule, h_hi of the inductance-only best computed with its own w), so a reference whose Tj-blind best lies in the null region counts toward K1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The kill side uses the band's upper end for one candidate (the lowest L_sub), not the largest upper end among feasible candidates",
+      "detail": "h_hi = a(1 - r(1 - w)) is computed for the lowest-L_sub candidate that passes the optimistic test. A slightly higher-L_sub candidate with a wider band (its w is neither computed nor gated, because the five-solve set and w <= 0.05 apply only to the selected candidate) can have a higher upper end. For example, at a = 0.763, (r, w) = (0.85, 0.01) gives 0.121 while (0.86, 0.05) gives 0.140. D0009 kills on the upper end of the error band, so taking it from a single point-selected candidate understates that upper end and leans toward a kill near the 0.10 line.",
+      "evidence": "Recomputed in a scratch script: 0.1209 for the selected candidate against 0.1396 as the maximum over the two candidates.",
+      "suggested_check": "Compute e_R for every checked feasible candidate whose L_sub is within w of the selected one, and use the largest h_hi.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The twin gate has no absolute cap, so A1 can pass while headroom against the actual reconstruction is below 0.20",
+      "detail": "Gate F1(a1) allows |1 - L(W)/L(ref)| <= 2 e_R(W, ref) + s_ref. Unlike F1(c), e_R(W, ref) has no cap. The twin is a generator-space simplification, so the offset is likely one-sided: the twin is worse than the reference. Comparing like with like cancels representation bias that all generator layouts share, but not features of the reference that the generator cannot represent. With L_sub = 22.6 nH, L_term = 7 nH, r = 0.70 and w = 0.02, h_lo against the twin is 0.218. Against the reconstruction it is 0.207 at a 2 % twin offset, 0.197 at 4 % and 0.175 at 8 %. The hypothesis text does say the comparison is with the twin, and the founder chose this in D0016. The reconstruction-based ratio is still only a secondary column, while the decision (customer conversations) is about the real reference.",
+      "evidence": "Scratch recomputation of h_lo against the twin and against the reconstruction for twin offsets of 0.02, 0.04 and 0.08.",
+      "suggested_check": "Cap the twin gate at an absolute value (for example 0.05), or require the reconstruction-based h_lo to be reported beside every PASS as a stated limit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "For public references the kill depends on the imported L_term = 7 nH, and a kill carries no sensitivity requirement",
+      "detail": "OD-2 calls 7 nH the smallest published terminal contribution, so 'a kill under it is robust'. That holds only against a larger L_term. With L_sub = 22.6 nH a kill needs h_sub < 0.113 at 7 nH but < 0.082 at L_term = 0. At L_sub = 10 nH it needs h_sub < 0.153 at 7 nH. A substrate headroom between these lines is a kill only because of a terminal value taken from a different module (CPES, S3). The PASS must be reported with its sensitivity, but no comparable statement is required for a kill.",
+      "evidence": "Recomputed verdict boundaries. They match the notes' examples (0.216/0.082, 0.353/0.153, 0.284/0.117). At L_sub = 22.6 nH: 0.276/0.113 at L_term = 7 nH and 0.216/0.082 at L_term = 0.",
+      "suggested_check": "Report every kill with h_hi at L_term = 0, and label a kill that disappears at L_term = 0 as dependent on the assumed terminal inductance.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The twin gates can drop references after the data are in, so the counted set can shrink from 2 to 1",
+      "detail": "A reference that fails either twin gate is excluded, and E008 is INVALID only if none remains. With two public references, the verdict could rest on a single PowerSynth sample design. The rule is pre-registered and does not depend on headroom, so this is not a forking path. It does make 'every reference' a weak statement of generality.",
+      "evidence": "",
+      "suggested_check": "State the number of counted references in the verdict, and route a single-reference verdict to the founder review.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The 'conservative' Tj test is not strictly conservative",
+      "detail": "C004 caveat 2 found 3 of 40 GCIs falling 3-26 % short of the distance to the Richardson limit. A maximum over several dies per layout raises the chance that at least one bound falls short. The effect is about 0.1 K or less against a 2 K limit, and it is disclosed.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-derived the module-level headroom algebra. a(1 - r) equals 1 - (L_best + L_term)/(L_twin + L_term). The PASS and kill boundaries on h_sub are 1 - (1 - 0.2/a)/(1 + w) and 1 - (1 - 0.1/a)/(1 - w). I reproduced the notes' worked examples exactly (0.216/0.082, 0.353/0.153, 0.284/0.117) and extended them to L_sub = 22.6 nH (2D_Case_4's P3 value), L_term = 0 and 17.5 nH, w = 0.05, and small L_sub (3 and 5 nH).",
+    "Checked the F3 batch-and-stop rule against the h_lo and h_hi selection logic. Every candidate below the selected one in L_sub is checked; optimistic passes are a superset of conservative passes; the twin always passes its own Tj test. I found no inconsistency in candidate selection, but the kill-side +inf rule and single-candidate band issues listed above remain.",
+    "Checked the +inf GCI conventions in both interval tests: +inf drops out of lower bounds and fails upper bounds. They are logically valid bounds and lean against a kill.",
+    "Constructed an example in which choosing the lowest-L_sub candidate understates the largest upper band end on the kill side (0.121 against 0.140 at a = 0.763).",
+    "Computed h_lo against the twin and against the reconstruction for twin offsets of 2, 4 and 8 % (0.218 against 0.207, 0.197 and 0.175).",
+    "Ran the repository generator and L1 PEEC on 20,000 DRC-valid side_by_side layouts with 4 dies per switch (seed 20261109, 382 s), plus a 3,000-layout run (seed 20261108), to measure how the best of N random draws changes with N. The expected best of 5,000 is 1.45 % above the best of 20,000 and the best of 10,000 is 0.68 % above, so plain random search has not levelled off at the 20,000-candidate budget. The 16 best layouts span 3.7 %."
+  ],
+  "caveats": [
+    "Within its stated scope a PASS is sound. Headroom is measured against the generator-space twin, at a module level that assumes L_term = 7 nH for public references, on at most 2-3 references, labelled indicative for public references. It does not establish headroom on 'reference layouts' in general or for real commercial derivatives.",
+    "A kill (K1) shows only that this search, with 20,000 random candidates, an L1 screen and a 16-candidate l2_layout re-rank, found less than the kill line below the twin. The planted control certifies that the search reaches the twin's level, not that it can find headroom below the twin. Read a kill as 'not found by this search', not as proof that the reference is near the optimum, unless a search-saturation check is added.",
+    "The probability that K1 fires when the null is true is reduced, and has not been estimated. In the null world the control requires random search to match a near-optimal reference, and the unconditional h_hi = +inf rule blocks kills that the inductance-only best already supports. INCONCLUSIVE, routed to the 2026-11-27 thesis review, remains the most likely outcome, as the notes themselves state.",
+    "The search-saturation evidence comes from the existing generator in its own 70 x 40 mm housing, at L1 only, for a single family and die count. The generalised generator for the reference outlines does not exist yet, so the size of the shortfall on the real references is unknown.",
+    "I did not review the physics-lens items (die-short artifacts, terminal-pad model, AlN law) or provenance."
+  ]
+}
