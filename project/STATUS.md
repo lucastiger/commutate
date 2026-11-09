@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T08:02:37+00:00 from repository state — do not edit_
+_generated 2026-11-09T08:03:15+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -38,7 +38,6 @@ cancelled: 38, done: 215, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - T0265 `running` critic/review: Review T0256 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T07:28:33+00:00 inbox_resolved {"id": "I0141", "status": "approved", "note": "Plan approved (T0256-T0263): build chain on generator housings and 2D_Case_4 per F3; public reconstructions after
 - 2026-11-09T07:28:39+00:00 inbox_resolved {"id": "I0138", "status": "approved", "note": "E008 added to burst_experiments; VM time reserved for the full-fidelity dev rows once the E008 design merges.", "
 - 2026-11-09T07:28:46+00:00 inbox_resolved {"id": "I0139", "status": "approved", "note": "thermal_fem.py confirmed at a216d5fe (EV-O007-01 bytes, revert dd9727cc); metrics patch to be applied on T0261's 
 - 2026-11-09T07:28:46+00:00 run_started {"run": "T0256-builder-20261108T232846-aecb", "task": "T0256", "role": "builder", "session": "4d03165a-cd3e-44be-8f98-60f8bbcf2f02"}
@@ -53,3 +52,4 @@ cancelled: 38, done: 215, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - 2026-11-09T07:55:01+00:00 run_finished {"run": "T0256-builder-20261108T232846-aecb", "status": "completed", "cost": 1.15678, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T08:02:32+00:00 verified {"task": "T0256"}
 - 2026-11-09T08:02:37+00:00 run_started {"run": "T0265-critic-20261109T000237-c0eb", "task": "T0265", "role": "critic", "session": "06f33d6f-2800-49e5-a626-1bd2206de9f0"}
+- 2026-11-09T08:03:10+00:00 sleep_detected {"gap_s": 491, "runs_extended": 2}
