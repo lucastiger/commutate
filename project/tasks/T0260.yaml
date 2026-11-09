@@ -3,7 +3,7 @@ objective: O003
 title: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0258
 description: 'New package src/moduleforge/optimize/ (search.py). A deterministic, resumable driver that
@@ -72,11 +72,12 @@ model: null
 budget_usd: 7.0
 max_turns: 110
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0260-search-driver-per-d0008-f3-with-l1-only-
 pr: null
-runs: []
+runs:
+- T0260-builder-20261109T101956-d50a
 created_by: planner:T0255
 created_at: '2026-11-09T07:20:24+00:00'
 protected_approved: false
