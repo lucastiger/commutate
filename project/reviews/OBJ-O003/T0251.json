@@ -1,0 +1,59 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The day-60 kill (K1) can fire because the shortlist ignores Tj, even when headroom that meets the Tj limit exists",
+      "detail": "Candidates are ranked by inductance only: L1 picks 16 of 20,000, l2_layout orders them, and at most the 8 lowest-L_sub get a thermal check. If none of those 8 passes the optimistic Tj test, the rule sets r = 1 for that reference, so h_hi = a*s_ref <= 0.05. With n = 2 the median is the mean, so one such reference pulls the median h_hi under 0.10 unless the other reference reaches h_hi >= 0.20 (about 0.15 when s_ref = 0.05, a = 1). The control in F1(b) is explicitly inductance-only. Nothing in the design measures search power under the Tj constraint, so a kill cannot separate 'no headroom at <= +2 K' (the null) from 'the 8 lowest-inductance candidates are all too hot'. On the project's own generator the second case is common. Within one family, L1 and Tj move together (median Spearman rho +0.19), so the risk there is small. Across families at the same die count and die size, the lowest-inductance arrangement (side_by_side, about half the L1) has the lowest P60 in nearly every cell. It runs 2-10 K hotter at the reference's 60 K operating point. That is the dense-die mode a generalised in-outline generator is likely to contain. This breaks the claim's parts that 'the thresholds and the sample can resolve the decision' and that no criterion is met by a predictor ignoring decision-relevant information: K1 is met by a search that never looks at Tj when ranking. Remedy: when no checked candidate passes the optimistic test, record that reference as unresolved (INCONCLUSIVE) for K1 instead of r = 1, or add a pre-registered Tj-aware screen or control.",
+      "evidence": "Scratch analysis in $TMPDIR. I rebuilt every P1/P2 layout of research/o006_p1 from design.json (all fingerprints matched) and computed L1 = physics.peec loop_inductance at 20 MHz. P2 within-stratum (15 strata x 10 layouts, Tj at 25 W): Spearman rho(L1, hottest-die Tj) ranges -0.49 to +0.70, median +0.19. In 5 of 51 cases (9.8 %) the lowest-L candidate with >= 10 % headroom is more than 2 K hotter at 60 K. P1 cross-family at fixed (die count, die size) (120 layouts, P60 with k(T)), with dTj = 60 (P60_R/P60_C - 1): side_by_side L1 3.2-5.7 nH against 6.5-12.4 nH for interleaved and u_shaped. In 48 of 81 cases where the reference has a candidate >= 20 % lower in L1, the lowest-L candidate is more than 2 K hotter (56 of 81 above 1.4 K). Example: 5 dies at 5.0 mm, interleaved P60 37.1 W against side_by_side 31.9 W, about +9.8 K. In 32 of 81 cases another candidate with >= 20 % headroom lies within 1.4 K, but it is not the top by L.",
+      "suggested_check": "On the frozen dev generator and 2D_Case_4, run the full F3 pipeline (20,000 L1, top 16, top 8 thermal) on several outlines and count how often none of the 8 passes the optimistic test while an L1-ranked candidate further down with >= 20 % headroom does.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "With n = 1-2 references the median is the mean: a PASS can include a reference that lies in the null region",
+      "detail": "For two references the 'median' is their mean. Per-reference h_lo = (0.40, 0.01) gives a median of 0.205 and a PASS, while one reference shows the null's '< 10 %' outright. The kill side works the same way: (0.25, 0.0) gives 0.125 and no kill. The error band covers discretisation only. There is no between-reference sampling term, so 'established against its null' holds only for the mean of these two layouts, not for 'reference layouts' as in the title. The notes acknowledge this ('one of two references may have less headroom than the median'). It still bears directly on decision_if_pass, which uses the re-layouts in customer conversations.",
+      "evidence": "A1/K1 definitions; median of 2 values = mean; notes paragraph 'Verdict regions for one reference'.",
+      "suggested_check": "State the verdict per reference, or require min over references for A1 when n <= 2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The generator-vs-reconstruction offset allowed by the twin check is not in the headroom band",
+      "detail": "r = L_sub(best)/L_sub(reference) divides a generator-space candidate by a reconstruction-space reference. F1(a) lets the twin differ from the reference by up to 2 e_R + s_ref (as much as about 0.05) and does not deduct that signed offset. If the generator systematically underestimates L relative to the reconstruction, up to about 5 % of 'headroom' is representation offset, the same size as w and of the margins in the verdict regions (for example PASS from 0.216 with a = 1). It is neither in w nor reported as a deduction.",
+      "evidence": "F1(a) tolerance |1 - L(twin)/L(ref)| <= 2 e_R + s_ref; A1 uses L_sub(reference) as the denominator, and w = 2 e_R + s_ref covers discretisation only.",
+      "suggested_check": "Add |1 - L(twin)/L(ref)| to w, or use L_sub(twin) as the denominator and report the reference-based ratio as a secondary column.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The declared null baseline for A1 cannot meet A1, so it checks nothing",
+      "detail": "Putting the twin's L_sub in place of the best candidate's gives r \u2248 1 \u00b1 0.05 and so h_lo \u2248 a(1 - (1 \u00b1 0.05)(1 + w)) <= about 0.05, under 0.20. It fails A1 by construction once F1(a) has passed. It does not test whether a predictor without the decision-relevant information (for example the median L1-pool candidate, or the best DRC-valid candidate at fixed die positions) would also pass A1.",
+      "evidence": "F1 detection text: 'the twin's L_sub in place of the best candidate's, which must fail A1'.",
+      "suggested_check": "Report, as a null with a stated expectation, A1 computed for the best Tj-feasible candidate of a search that does not use the 16-candidate L2 re-rank.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Arithmetic of the verdict regions and K1's ability to fire checked",
+      "detail": "I re-derived the PASS and kill boundaries for h_sub from h = a(1 - r(1 \u00b1 w)). They match the notes for (a, w) = (1, 0.02), (0.59, 0.02) and (0.74, 0.02). K1 can fire whenever r is near 1, because a*w <= 0.05 < 0.10 under F1(c). The kill can fire; the issue is what a kill would mean (first finding).",
+      "evidence": "a = 1: PASS 0.2157, kill 0.0816; a = 10/17: 0.353 and 0.153; a = 20/27: 0.284 and 0.117.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Rebuilt all 150 P2 and 120 P1 thermal layouts of research/o006_p1 from design.json with generate_layouts. All fingerprints matched. Computed L1 loop inductance at 20 MHz for each.",
+    "Within-stratum Spearman correlation between L1 and hottest-die Tj (P2, 25 W, 15 strata of 10): median +0.19. Simulated 'lowest-L candidate with >= 10 % headroom vs +2 K at 60 K': 9.8 % violate.",
+    "Cross-family test at fixed die count and die size (P1 P60 with k(T)): in 48 of 81 cases (59 %) the lowest-L candidate with >= 20 % headroom is more than 2 K hotter, 56 of 81 more than 1.4 K. A candidate with >= 20 % headroom within 1.4 K exists in 32 of 81 but is not the top by L.",
+    "Re-derived the PASS and kill boundaries for single-reference h_sub from the h_lo and h_hi formulas for three (a, w) pairs. All match the notes.",
+    "Checked K1's ability to fire analytically: h_hi >= a w <= 0.05 < 0.10, so K1 can fire whenever r \u2248 1, including r = 1 set by the 'no Tj-feasible checked candidate' rule.",
+    "Checked the median-of-two behaviour: (0.40, 0.01) passes A1 and (0.25, 0.0) does not fire K1."
+  ],
+  "caveats": [
+    "The Tj-blind-shortlist evidence uses the existing 70x40 mm generator's three families as a stand-in. They differ in arrangement and may differ in terminal placement. O003's generalised in-outline generator is not built yet, so whether it has a dense, hot, low-inductance mode is an inference, though a physically plausible one (smaller loop area means closer dies and more thermal coupling).",
+    "Cross-family dTj uses linear scaling from P60 (60 (P60_R/P60_C - 1)). This ignores the curvature from k(T) and level-0 bias (about 0.3-0.9 K, the same sign on every die per P1), so magnitudes near 2 K are approximate. The 5-10 K cases are not sensitive to it.",
+    "I did not assess the physics of the model choices (ideal die shorts, the 7 nH L_term from a different module) or the stack-type spot check. They are outside the statistics lens.",
+    "If the founder treats 'no checked candidate passes Tj' as a judgement call at day 60 (the verdict is a founder decision under D0009/D0010), the practical harm of the first finding is smaller. The pre-registered mapping still records it as a kill."
+  ]
+}

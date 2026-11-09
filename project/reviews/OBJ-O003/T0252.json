@@ -1,0 +1,59 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "K1 can fire because the search never looks at Tj when ranking, and no control tests search power under the Tj limit",
+      "detail": "All 20,000 candidates are ranked by L1 inductance alone; no L1 thermal model exists (O002 is untested). The 16-candidate shortlist is re-ranked by L_sub only. The thermal reference checks at most 8 candidates, in ascending L_sub order. If none of those 8 passes the optimistic Tj test, best = reference, r = 1 and h_hi = a\u00b7w \u2264 0.05, so K1 fires (median h_hi < 0.10). The only search-power control, F1(b), is explicitly 'inductance only (no Tj limit)'. So the failure mode F1 itself names ('the search lacks the power to find headroom that exists') goes undetected for the constrained problem the kill decides: reference near-optimal 'at bounded Tj'. Inductance and Tj trade off steeply here. My Fourier-series check at the 60 K operating point gives about 2 K per mm of die-gap compaction on the default Al2O3/3 mm baseplate stack and about 4\u20136 K per mm on a 2D_Case_2R-like AlN/1 mm baseplate stack. The conservative test leaves about 1.4\u20132 K. PowerSynth's own front on these designs spans 7 nH against 15 \u00b0C (S4). The lowest-L candidates are therefore the ones most likely to break +2 K. A Tj-blind shortlist whose first 8 all fail would record a day-60 kill, even if Tj-feasible candidates ranked 9th or lower, or outside the 16, carry more than 10 % headroom. K1 can then be met by a search that ignores the decision-relevant constraint. A1 is not affected.",
+      "evidence": "Objective F3: 'l2_layout at 0.25 mm on the 16 best by L1 \u2026 the thermal reference on these candidates in ascending L_sub order, in batches of 4 \u2026 at most 8 candidates'. K1: 'the reference when none does'. F1(b): 'inductance only (no Tj limit)'. Scratch box_series runs, n_modes 300 (converged to 1e-4 K at 300 vs 500): AlN-like stack, power fixed at a 5 mm reference gap, gap 3 mm +5.6 K, 2 mm +9.5 K, 1 mm +14.4 K; Al2O3 default stack, reference gap 2.5 mm, gap 2.0 mm +1.05 K, 1.5 mm +2.28 K, 1.0 mm +3.74 K. DRC die_spacing default is 1 mm, and scope_in's strictness rule does not cover die spacing.",
+      "suggested_check": "When no checked candidate passes the optimistic test, map K1 to INCONCLUSIVE instead of r = 1. Or add a planted-headroom control that runs under the Tj limit, or a Tj-aware screen, before K1 can count.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Generator-versus-reconstruction thermal offset is not gated, yet it is a large share of the 2 K budget",
+      "detail": "Candidates are generator layouts. Their Tj is compared with the reconstructed reference R, not with the twin. The twin gate F1(a) checks inductance only. The twin's Tj offset from the reference is listed only as a secondary column. Any systematic thermal difference between the generator's representation and the reconstruction shifts every candidate by the same amount: die-attach footprints, island shapes, staircased copper, snapped die positions. A negative offset can create a PASS (compact, low-L candidates admitted). A positive offset pushes toward the kill. With the measured sensitivity (about 2\u20136 K per mm of die movement), a few tenths of a K moves the feasible set materially.",
+      "evidence": "F1(a) gate: |1 - L_sub(twin)/L_sub(reference)| \u2264 2 e_R + s_ref (inductance only). Notes: 'Secondary: \u2026 the twin's Tj against the reference's (a generator-versus-reconstruction thermal offset)'.",
+      "suggested_check": "Gate |max Tj(twin) \u2212 max Tj(R)| within their summed GCIs, or apply the Tj tests against the twin rather than the reconstruction.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A single net-agnostic spacing rule lets the search narrow high-voltage gaps to the reference's smallest gap anywhere",
+      "detail": "scope_in requires rules 'at least as strict as the reference's smallest trace width, spacing and wire pitch'. DesignRules has one min_spacing for all net pairs. A reference's smallest gap is often between low-voltage gate and Kelvin traces. The search may then place DC+, phase and DC- copper at that gap, where the reference had wider gaps for isolation or partial-discharge reasons. Inductance headroom gained this way is an artifact of the rule, not of layout, and scope_out ('manufacturability') does not cover electrical isolation. Die spacing and die-to-edge margin are also not tied to the reference.",
+      "evidence": "src/moduleforge/drc/rules.py: min_spacing = 1 mm, a single value checked over all trace pairs (lines 92-98). scope_in item 2 wording.",
+      "suggested_check": "Take spacing per power-net pair (DC+/phase/DC\u2212) from the reference and report the headroom with that rule.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The snapping-bias term s_ref can be zero while every edge has moved",
+      "detail": "s_ref = 2|L(snap 0.25)/L(snap 0.5) \u2212 1|. Any edge within \u00b10.125 mm of a 0.5 mm line snaps to the same line on both grids. That gives \u0394 = 0 for that edge, while it has really moved by up to 0.125 mm. Where \u0394 \u2260 0 the doubled term over-covers, so overall the term is probably conservative, but it is not a bound. Narrow DC+/DC\u2212 gaps are where 0.1 mm matters.",
+      "evidence": "Worked by hand: an edge at 0.12 mm snaps to 0.0 on both grids (\u0394 = 0, error 0.12 mm); an edge at 0.2 mm snaps to 0.0 and 0.25 (\u0394 = 0.25, error 0.2 mm).",
+      "suggested_check": "In the dev check, compare L at 0.25 mm cells for the reference snapped to 0.5 mm against a 0.125 mm-snapped or unsnapped reference.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The best-is-reference case has two definitions of h",
+      "detail": "A1 says 'r = 1 and h = 0 when none meets it'. The formula gives h_lo = a(1 \u2212 (1 + s_ref)) = \u2212a\u00b7s_ref and h_hi = a\u00b7s_ref > 0. That is harmless for the thresholds, but the protected metrics function must pick one, and the text should match it.",
+      "evidence": "A1 and K1 descriptions; w = 2 e_R + s_ref with e_R = 0 when best is the reference.",
+      "suggested_check": "State explicitly that h_lo and h_hi follow the formula when best = reference.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-derived the verdict-region algebra in the notes (PASS h_sub \u2265 1 \u2212 (1 \u2212 0.2/a)/(1 + w), kill h_sub < 1 \u2212 (1 \u2212 0.1/a)/(1 \u2212 w)): 0.216/0.082 for a = 1; 0.353/0.153 for L_sub 10 nH; 0.284/0.117 for L_sub 20 nH. All match the draft. Confirmed K1 can fire, since a\u00b7w \u2264 0.05 < 0.10 under F1(c).",
+    "Fourier-series thermal check (moduleforge.solvers.thermal_series.box_series, n_modes convergence checked 200/300/500) of Tj max against die gap at equal power per die, with power fixed so the hottest die rises 60 K. 2D_Case_2R-like AlN/1 mm Cu baseplate stack: about +5.6 K for 5\u21923 mm and +14.4 K for 5\u21921 mm. Default Al2O3 DBC/3 mm baseplate: +1.05 K for 2.5\u21922.0 mm and +3.74 K for 2.5\u21921.0 mm. So the +2 K limit binds within about 0.5\u20131 mm of die compaction.",
+    "Read DRC rules: one net-agnostic min_spacing; default die_spacing 1 mm, outside scope_in's strictness rule. Read the current generator: die gap 1.5\u20132.5 mm, ranked by inductance only.",
+    "Checked the P3 note: L_sub(2D_Case_4) \u2248 22.8 nH, so a \u2248 0.77 at L_term = 7 nH. The lateral ladder 0.5/0.25/0.125 mm was not observed, and the two-level factor 3 bounds the error only for p > 0.415.",
+    "Checked the S3 and S4 facts in research/notes/o003-public-benchmarks.md: 7 nH laminated terminals (line 61), and PowerSynth's Pareto front spanning 7 nH against 15 \u00b0C (line 83).",
+    "Confirmed mfos.metrics.gci_capped and max_gci_consistency exist; headroom_median_lo and headroom_median_hi do not exist yet (planned, protected path)."
+  ],
+  "caveats": [
+    "The sample is small: n = 1\u20132 references, and the median of two is their mean. The draft itself says INCONCLUSIVE is the likely outcome for a true headroom near the cited ~18 % prior. Only extreme outcomes can be resolved.",
+    "Public fallback references are academic PowerSynth sample inputs with no physical terminals. L_term = 7 nH comes from a different module (CPES, S3). A kill is robust only if the true L_term \u2265 7 nH, and modern low-inductance packages can sit below that.",
+    "Model choices shared by every solve are disclosed but not tested here: ideal equipotential die shorts, point-contact pads, no tab model, equal power per die with no electrothermal feedback.",
+    "My thermal checks use the laterally uniform constant-k Fourier series (box_series). It overstates top-copper spreading and leaves out die-attach and die lateral effects, so it is an order-of-magnitude sensitivity check, not O003's thermal reference. The real L1 ranking versus Tj correlation for the future generalised generator could not be measured, because that generator does not exist yet."
+  ]
+}
