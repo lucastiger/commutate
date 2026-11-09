@@ -1,0 +1,66 @@
+id: T0285
+objective: O003
+title: 'Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records
+  (review T0284)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0279
+description: "Follow-up to T0279, from review T0284 (project/reviews/T0279/T0284.json; read it first).\
+  \ Lands before E008's code freeze\n(T0262): F3 voids the run on any change to the driver after freezing.\
+  \ Do not edit src/moduleforge/solvers/thermal_fem.py\n(sha256 a216d5fe...).\n1. One e_R estimator (T0284\
+  \ finding 0). w_ind = 2 e_R(inductance-only best, twin) + s_ref and w_ctrl = 2 e_R(control\n   best,\
+  \ D) come from band_e_R over the stored band solves, exactly as for the A1 best and the near ties; the\
+  \ injected\n   e_R callable is removed from Solvers (or, if kept for tests, never used for any recorded\
+  \ or gating value). Every e_R the\n   driver records names its estimator. Test: a fake band set whose\
+  \ band_e_R differs from a fake callable gives w_ind,\n   w_ctrl and the near-tie set from band_e_R.\n\
+  2. Atomic checkpoint repair (finding 2). Repairing a torn trailing line truncates in place (os.truncate\
+  \ to the last\n   newline) or writes a temp file and renames it; a kill during the repair can lose at\
+  \ most the torn record. Test by\n   simulating a failure between write and rename (or by asserting no\
+  \ full rewrite happens).\n3. Bounded thermal records (findings 1 and 3). The checkpoint stores a whitelist\
+  \ per thermally checked layout: per level,\n   per die Tj max and its node coordinates, node count,\
+  \ layout fingerprint, energy balance, Picard convergence, and the\n   driver's own gci_capped values.\
+  \ Require these fields (raise naming any missing one); never serialise nodal fields or\n   meshes (reject\
+  \ arrays above 10,000 elements with a clear error). Accept mappings and attribute objects (namedtuples\n\
+  \   included) or narrow the Solvers docstring to what is accepted; test both.\nKeep every existing test\
+  \ passing; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T22:42:55+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

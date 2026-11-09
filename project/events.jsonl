@@ -1885,3 +1885,6 @@
 {"ts": "2026-11-09T22:05:08+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 911, "runs_extended": 1}
 {"ts": "2026-11-09T22:11:23+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0284-critic-20261109T140435-5320", "status": "completed", "cost": 2.383736, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-09T22:15:04+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0153", "kind": "protected_change", "subject": "T0279: merge needs founder approval"}
+{"ts": "2026-11-09T22:41:41+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0150", "status": "approved", "note": "Merge T0273: searchable wire feet and multi-wire dies with gate/Kelvin copper; T0281 accepts with caveats; the sampler's float tolerance, the topology-count proof scope and throughput follow in T0282 before E008's freeze. T0259 (twin) may start.", "by": "human"}
+{"ts": "2026-11-09T22:42:55+00:00", "event": "task_added", "actor": "session", "task": "T0285", "reason": "review T0284 follow-up (driver e_R consistency, checkpoint)"}
+{"ts": "2026-11-09T22:42:55+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0285; spec checks from T0283/T0284"}
