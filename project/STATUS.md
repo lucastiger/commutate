@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-09T17:07:36+00:00 from repository state — do not edit_
+_generated 2026-11-09T17:07:50+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0146** [protected_change] T0268: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -21,7 +22,7 @@ _generated 2026-11-09T17:07:36+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 23 | $41.86 | 886824 | 508958 | 44 | 0 |
+| O003 | 24 | $41.86 | 886824 | 508958 | 44 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,15 +30,14 @@ _generated 2026-11-09T17:07:36+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 223, failed: 3, merge: 2, running: 1, todo: 7
+cancelled: 38, done: 223, failed: 3, merge: 1, needs_founder: 1, running: 2, todo: 6
 
 - T0258 `merge` builder/implement: Generalised derivative-layout generator inside a reference's housing (attempt 1)
-- T0268 `merge` builder/implement: Snapping rule and AlN law fixes from review T0264 (before E008's design) (attempt 1)
+- T0268 `needs_founder` builder/implement: Snapping rule and AlN law fixes from review T0264 (before E008's design) (attempt 1)
 - T0269 `running` scientist/design_experiment: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 2)
+- T0270 `running` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 1)
 
 ## Recent events
-- 2026-11-09T16:16:22+00:00 sleep_detected {"gap_s": 337, "runs_extended": 2}
-- 2026-11-09T16:18:19+00:00 run_finished {"run": "T0268-builder-20261109T072044-ab09", "status": "completed", "cost": 0.929276, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T16:51:55+00:00 verified {"task": "T0268"}
 - 2026-11-09T16:51:55+00:00 run_finished {"run": "T0271-critic-20261109T081548-a741", "status": "completed", "cost": 2.273363, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T16:53:52+00:00 task_added {"task": "T0273", "reason": "review T0271 follow-up (major findings 0-1)"}
@@ -51,3 +51,5 @@ cancelled: 38, done: 223, failed: 3, merge: 2, running: 1, todo: 7
 - 2026-11-09T17:04:55+00:00 task_added {"task": "T0274", "reason": "review T0272 follow-up (snap re-check)"}
 - 2026-11-09T17:04:55+00:00 task_amended {"task": "T0262", "reason": "waits for T0274 (snap re-check, review T0272)"}
 - 2026-11-09T17:07:02+00:00 inbox_resolved {"id": "I0145", "status": "approved", "note": "Merge T0258: generator accepted with caveats by T0271; searchable wire feet, multi-wire dies with gate/Kelvin cop
+- 2026-11-09T17:07:47+00:00 inbox_opened {"id": "I0146", "kind": "protected_change", "subject": "T0268: merge needs founder approval"}
+- 2026-11-09T17:07:50+00:00 run_started {"run": "T0270-builder-20261109T090750-e79a", "task": "T0270", "role": "builder", "session": "c56113f0-23df-41b6-962d-cda7db433d10"}
