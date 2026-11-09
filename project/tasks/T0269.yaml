@@ -1,8 +1,8 @@
 id: T0269
 objective: O003
 title: 'Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266)'
-type: implement
-agent: builder
+type: design_experiment
+agent: scientist
 status: todo
 depends_on:
 - T0261
@@ -23,7 +23,11 @@ description: "Follow-up to T0261 (merged), from review T0266 (project/reviews/T0
   \ and make the null-column\n   contract explicit for every row kind the metrics receive (degraded, control_best,\
   \ L1-only null rows, any runner\n   additions): which value L_sub_null_H takes, or which where-filter\
   \ excludes them.\n6. Regenerate research/o003/headroom_metrics.patch with make_patch.py; it must still\
-  \ apply cleanly.\nDo not weaken any test or tolerance."
+  \ apply cleanly.\nDo not weaken any test or tolerance.\n\nROLE FIX (2026-11-09, founder session): reassigned\
+  \ from builder to scientist (design_experiment, as T0261) because every deliverable is under research/o003/**,\
+  \ outside the builder write scope (attempt 1 failed scope_violation only for that reason). Attempt 1's\
+  \ commit 90a8e8e6 is on this branch: check it against items above, run the definition of done, fix anything\
+  \ missing, and report. Do not touch tools/mfos (protected)."
 context_files: []
 deliverables: []
 touches: []
