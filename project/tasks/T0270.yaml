@@ -3,7 +3,7 @@ objective: O003
 title: 'DRC: signal-to-power spacing class and signal-wire checks (review T0267)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0256
 description: "Follow-up to T0256 (merged), from review T0267 (project/reviews/T0256/T0267.json; read it\
@@ -153,3 +153,121 @@ history:
     passes, but it is a change to default behaviour for the signal-wire checks, whereas the spacing fields
     are documented as ''unchanged when unset''.'
   at: '2026-11-09T18:48:37+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Commit dd20a9f0, on top of the rejected attempt 1 (63bd6773), fixes the review blocker. Each
+    gate/Kelvin net now takes its switch''s source potential: HS at PHASE, LS at DC-. The new function
+    `spacing_class(net_a, net_b)` in drc/rules.py is the single classification that both `check()` (via
+    `DesignRules.spacing_for`) and `measure_rules` use. Every class now holds only full-DC-link pairs
+    or only same-potential pairs:
+
+    - `spacing_signal_dcp`: any signal to DC+.
+
+    - `spacing_signal_phase`: LS signal to PHASE.
+
+    - `spacing_signal_dcm`: HS signal to DC-.
+
+    - `spacing_signal_source` (new): a signal to its own source net, gate-drive voltage only.
+
+    - `spacing_signal_hs_ls` (new): HS signal to LS signal. This fixes the review''s major finding.
+
+    - `spacing_other`: same-switch gate/Kelvin pairs and split copper'
+  report:
+    status: completed
+    summary: 'Commit dd20a9f0, on top of the rejected attempt 1 (63bd6773), fixes the review blocker.
+      Each gate/Kelvin net now takes its switch''s source potential: HS at PHASE, LS at DC-. The new function
+      `spacing_class(net_a, net_b)` in drc/rules.py is the single classification that both `check()` (via
+      `DesignRules.spacing_for`) and `measure_rules` use. Every class now holds only full-DC-link pairs
+      or only same-potential pairs:
+
+      - `spacing_signal_dcp`: any signal to DC+.
+
+      - `spacing_signal_phase`: LS signal to PHASE.
+
+      - `spacing_signal_dcm`: HS signal to DC-.
+
+      - `spacing_signal_source` (new): a signal to its own source net, gate-drive voltage only.
+
+      - `spacing_signal_hs_ls` (new): HS signal to LS signal. This fixes the review''s major finding.
+
+      - `spacing_other`: same-switch gate/Kelvin pairs and split copper of one net.
+
+
+      `measure_rules` measures each class as the minimum gap over its own pairs and reports it in the
+      record (`gap_signal_*`). Signal wires:
+
+      - The upper length bound is now the smaller of `max_signal_wire_length` and the per-pad limit; before,
+      the general limit could loosen a stricter per-pad one.
+
+      - `measure_rules` now sets `max_signal_wire_length`, which makes its docstring true.
+
+      - Measured diameter ranges use positive diameters only; non-positive ones are counted in the record,
+      so degenerate layouts neither crash nor give non-physical values.
+
+      - The diameter range check and the non-positive rejection from attempt 1 are kept.
+
+      - The fingerprint uses int(sw.die) and has a test (attempt 1). The edge-margin buffer is hoisted
+      out of the loop in check().
+
+
+      New hand-computed tests:
+
+      - A table test checks the class of every one of the 28 net pairs against the voltage each pair sees.
+
+      - Reference `tight_lv_reference`: the LS gate is 1.0 mm from its own source DC-, and the LS same-switch
+      gap is 1.0 mm. Under its measured rules three derivatives fail: a gate trace 1.0 mm from DC+ against
+      the reference''s 2.0 mm (2.0 passes, 1.99 fails), the HS gate 1.0 mm from DC- against 3.0 mm, and
+      the HS–LS Kelvin gap at 1.5 mm against 3.0 mm.
+
+      - I ran the last two derivatives against attempt 1''s rules.py; it flagged neither.
+
+      - A low-voltage gap at the reference''s 1.0 mm is accepted, so the low-voltage class is not over-strict.
+
+
+      All definition-of-done commands exit 0: 697 fast unit tests passed, and the fast gate passed.'
+    files_changed:
+    - src/moduleforge/drc/rules.py
+    - tests/unit/drc/test_drc_net_rules.py
+    checks_run:
+    - cmd: 'uv run pytest -q tests/unit/drc (first run: 2 failures, one my miscount of the fixture''s
+        sqrt(13) pairs and one a too-tight tolerance on a floored value in my new test)'
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/drc -k tight_lv_reference_measures
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/drc
+      exit_code: 0
+    - cmd: 'uv run ruff check . (first run: unused SIGNAL_NETS import)'
+      exit_code: 1
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/geometry
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: git commit (dd20a9f0)
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run python <script running the two blocker derivatives against attempt-1 rules.py from git
+        show 63bd6773> (both accepted by the old code)
+      exit_code: 0
+    concerns:
+    - Unset signal classes still fall back to spacing_other, then min_spacing, because main's test_other_pair_spacing_fail_and_pass
+      requires it. Hand-written rules that set only spacing_other therefore still apply it to high-voltage
+      signal gaps. measure_rules sets every class the reference has; only classes with no pairs in the
+      reference fall back.
+    - 'Default behaviour change: under DEFAULT_RULES a signal wire with a non-positive diameter or one
+      thicker than max_wire_diameter (0.5 mm) is now a violation, as for power wires. This is documented
+      on DesignRules.'
+    - Two tests already on main changed expected values because spacing_other now covers only the remaining
+      pairs, which the spec requires. test_measure_fixture_values expects gap_other_min sqrt(8) mm instead
+      of 2 mm (it also gained assertions for the new classes), and test_random_fixture_variants_clean_under_own_rules
+      now checks the high-voltage signal-to-power classes. Neither got looser. The MIN, STRICT and MAX
+      field lists and test_defaults_are_unchanged were extended with the new fields.
+    - Compared with attempt 1 (never merged), spacing_signal_phase now covers only LS signals and spacing_signal_dcm
+      only HS signals; HS-to-PHASE and LS-to-DC- pairs are in spacing_signal_source.
+    - 'The voltage classes assume the standard half-bridge wiring documented in geometry/layout.py: HS
+      Kelvin source at PHASE potential, LS at DC- potential.'
+    - 'The branch has two T0270 commits: 63bd6773 from attempt 1 and dd20a9f0 from this one.'
