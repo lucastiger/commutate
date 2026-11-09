@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T17:13:31+00:00 from repository state — do not edit_
+_generated 2026-11-09T17:13:41+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,14 +29,12 @@ _generated 2026-11-09T17:13:31+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 224, failed: 3, merge: 1, running: 2, todo: 6
+cancelled: 38, done: 225, failed: 3, running: 2, todo: 6
 
-- T0268 `merge` builder/implement: Snapping rule and AlN law fixes from review T0264 (before E008's design) (attempt 1)
 - T0269 `running` scientist/design_experiment: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 2)
 - T0270 `running` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 1)
 
 ## Recent events
-- 2026-11-09T16:53:52+00:00 task_added {"task": "T0273", "reason": "review T0271 follow-up (major findings 0-1)"}
 - 2026-11-09T16:53:52+00:00 task_amended {"task": "T0259", "reason": "waits for T0273 (generator wire feet, review T0271)"}
 - 2026-11-09T16:53:52+00:00 task_amended {"task": "T0262", "reason": "waits for T0273 (generator wire feet, review T0271)"}
 - 2026-11-09T16:55:32+00:00 inbox_opened {"id": "I0145", "kind": "protected_change", "subject": "T0258: merge needs founder approval"}
@@ -51,3 +49,4 @@ cancelled: 38, done: 224, failed: 3, merge: 1, running: 2, todo: 6
 - 2026-11-09T17:07:50+00:00 run_started {"run": "T0270-builder-20261109T090750-e79a", "task": "T0270", "role": "builder", "session": "c56113f0-23df-41b6-962d-cda7db433d10"}
 - 2026-11-09T17:08:29+00:00 merged {"task": "T0258"}
 - 2026-11-09T17:08:44+00:00 inbox_resolved {"id": "I0146", "status": "approved", "note": "Merge T0268: snapping and AlN-law fixes accepted with minor caveats by T0272; the full post-snap DRC re-check and
+- 2026-11-09T17:13:36+00:00 merged {"task": "T0268"}
