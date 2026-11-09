@@ -4,7 +4,7 @@ title: 'Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper
   rules (review T0271)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0258
 description: "Follow-up to T0258, from review T0271 (project/reviews/T0258/T0271.json; read it first).\
@@ -70,4 +70,122 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All four items are done and committed as fc44e5a6. Every DoD command passes: generate+drc
+    tests, the fast unit suite (691 passed), ruff, the thermal_fem.py sha check and `mfos gate --fast`.
+
+
+    (1) Wire feet are now parameters. `Params` gains `feet` (per row: fu0, fud, pitch, fv, land_du, land_dv)
+    and `sigfeet` (gate/Kelvin foot offsets within their pads). The sampler draws feet and landings on
+    a 0.125 mm grid, with a clear-of-signal-wires placement. A new test builds the Case 4 reference from
+    a Params vector and asserts every wire''s start and end within 1e-6 m, plus the copper, the die centres
+    and DRC cleanliness. Another test shows the old fixed-foot rule misses the reference wires by more
+    than 0.9 mm.
+
+
+    (2) Multi-wire dies on Case 4. With 2 and 3 wires per die under the default rules, `gene'
+  report:
+    status: completed
+    summary: 'All four items are done and committed as fc44e5a6. Every DoD command passes: generate+drc
+      tests, the fast unit suite (691 passed), ruff, the thermal_fem.py sha check and `mfos gate --fast`.
+
+
+      (1) Wire feet are now parameters. `Params` gains `feet` (per row: fu0, fud, pitch, fv, land_du,
+      land_dv) and `sigfeet` (gate/Kelvin foot offsets within their pads). The sampler draws feet and
+      landings on a 0.125 mm grid, with a clear-of-signal-wires placement. A new test builds the Case
+      4 reference from a Params vector and asserts every wire''s start and end within 1e-6 m, plus the
+      copper, the die centres and DRC cleanliness. Another test shows the old fixed-foot rule misses the
+      reference wires by more than 0.9 mm.
+
+
+      (2) Multi-wire dies on Case 4. With 2 and 3 wires per die under the default rules, `generate` returns
+      DRC-valid candidates with no RuntimeError. To get there I also tightened the sampler''s gate/Kelvin
+      window: it now uses the pad-centre offset instead of the die centre, so it no longer rules out feasible
+      layouts by about 5 mm. With a 2 mm minimum wire pitch, 1 or 2 wires per die are geometrically infeasible,
+      and a test shows why:
+
+      - A power foot can be at most (Kelvin_max − gate_min)/2 = 1.35 mm from the nearer signal wire, which
+      is under 2 mm.
+
+      - 3 wires need 4 mm of a 3.2 mm pad, so the spec raises ValueError.
+
+      - `generate` raises RuntimeError for 1 and 2 wires at 2 mm.
+
+      - The limit is in the module docstring.
+
+      - No DRC rule was relaxed.
+
+
+      (3) Diversity under `measure_rules(Case 4 reference)`. Values used: edge margin 5 mm, power width
+      5 mm, die spacing 6 mm, die edge margin 2 mm, spacings 3/3/5/2 mm. Replaced where measure_rules
+      has nothing meaningful:
+
+      - Max power wire is the reference''s longest wire, 16.151 mm (measure_rules leaves the 15 mm default,
+      which the reference itself violates).
+
+      - Wire pitch stays at the defaults 0.6 mm / 2 diameters, because the measured 10 mm is the distance
+      between different dies'' wires.
+
+      - Signal limits stay at the assumed 25 mm.
+
+
+      Exactly 2 of the 8 sequences are feasible, both split and in orientation x:
+
+      - The reference''s own [PHASEd, DC-l, PHASEl, DC+d], with 5.75 mm slack on the LS dies and 9.35
+      mm on the HS dies.
+
+      - [PHASEd, DC-l, DC+d, PHASEl], with only 1.35 mm slack on the HS dies.
+
+
+      The 6 excluded sequences, by rule and margin:
+
+      - LS pair [DC-l, PHASEd] (2 sequences): max_kelvin_wire_length, short by 2.25 mm.
+
+      - HS pair below the LS pair (4 sequences): max_kelvin_wire_length, short by 24.9 mm.
+
+      - Orientation y (all 8): excluded by sampling, not a closed form. No sampled candidate passes the
+      copper rules, and the best one has a signal wire at least 5 mm over the limit. A scratch run of
+      60,000 draws gave 14.9 mm over.
+
+
+      This is recorded in the test docstrings and the module docstring as a limit of the search space
+      on this housing and these rules.
+
+
+      (4) Minor findings. The housing test is renamed `test_housing_feasible_set_is_exactly_five_sequence_variants`
+      and asserts the exact set of 5 variants. `test_drc_clean_under_spec_rules` now says it only checks
+      that the filter is applied. A new cross-process test checks identical fingerprints for the same
+      seed.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - The sampler's RNG stream changed, so seeded candidates differ from before. Existing seeded tests
+      still pass.
+    - I changed test_every_lateral_parameter_on_the_design_grid. It still asserts the 0.5 mm grid for
+      copper, dies and landing lines (now `vec[4:N_COPPER_PARAMS]`). Wire feet and landings are asserted
+      on the finer 0.125 mm grid as absolute positions, because the reference's own bond points are on
+      0.125 mm.
+    - The reference's own feet (x = 29.125 mm) collide with the assumed Case 4 gate wire (x = 29 mm).
+      The twin DRC check therefore uses the reconstruction without gate/Kelvin pads, which matches the
+      reference (no signal wires, M1/M2).
+    - The orientation-y exclusion is sampling evidence, not a proof. The orientation-x exclusions are
+      closed-form bounds checked against the generator.
+    - The 2 mm pitch case stays infeasible because gate/Kelvin landing points are not parameters. Making
+      them parameters would be a separate scope decision.
+    - The 25 mm signal-wire limit and the Case 4 gate/Kelvin pad positions are still assumptions, as before.
+    - '`mfos gate --fast` and the fast unit suite each take several minutes. The first run of the combined
+      command hit the background time limit and was killed, so I re-ran the gate alone and it passed.'
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - tests/unit/generate/test_derivative.py

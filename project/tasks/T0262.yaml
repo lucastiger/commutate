@@ -95,7 +95,18 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   (four 0.25 mm Case 4 solves at once on n2d-custom-8-81920-ext) when it exists, else from P3 with the
   thread waste stated. --plan reports the schedule''s VM-hours, $ and the machine type (memory sized to
   the concurrency). The registered run goes on a regular VM; the full-fidelity dev run may use MF_GCP_SPOT=auto
-  and runs while T0263 builds the reconstructions.'
+  and runs while T0263 builds the reconstructions.
+
+
+  CALIBRATION RESULT (founder session, 2026-11-09; research/notes/l2-thread-calibration.md, research/l2_thread_calib/summary.txt):
+  on n2d-custom-8-81920-ext (AMD EPYC 7B13, 78 GB usable), four 0.25 mm Case 4 solves at once took 6,268-6,519
+  s pinned to one thread and 5,678-5,862 s with two threads each (OPENBLAS_NUM_THREADS = OMP_NUM_THREADS
+  = MKL_NUM_THREADS = MF_L2_FFT_WORKERS = 2, MF_L2_THREADS = 1), peak 15.9 GB, L equal to P3''s to <=
+  6.3e-14 with identical GMRES iterations. Use two threads each, four 0.25 mm solves at once, as the default
+  schedule; scale time and memory by the --plan unknown counts (Case 4: 4.1 M unknowns at 0.25 mm). A
+  0.5 mm Case 4 solve took 846 s pinned alone. Per-solve cost about $0.24 at the regular $0.612/h; the
+  founder''s projection for two public references is about 40-48 h and $24-29 including thermal, to be
+  replaced by --plan.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

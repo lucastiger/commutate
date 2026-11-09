@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Measured high-voltage signal classes can be stricter than the frozen O003 rule set",
+      "detail": "`measure_rules` measures `spacing_signal_dcm` (HS gate/Kelvin to DC-) and the other signal-to-power classes as the reference's minimum gap within each class. O003's scope_in asks only that 'every other net pair' be at least the reference's smallest gap. Suppose a reference keeps its HS gate copper far from DC- (say 10 mm) while its DC+/DC- gap, at the same DC-link voltage, is 1 mm. Every candidate is then held to 10 mm between DC- and HS signal copper. That still meets 'at least as strict as the reference', and power pairs are already measured per pair the same way. But it can shrink the O003 search space and push toward a false FAIL.",
+      "evidence": "Fixture gaps recomputed independently: GATE_HS\u2013DC- 3.0 mm and KELVIN_HS\u2013DC- 15.30 mm give spacing_signal_dcm = 3.0 mm, while DC+/PHASE is 3.0 mm and DC+/DC- is 4.24 mm. Each high-voltage class has its own minimum rather than one shared full-DC-link minimum.",
+      "suggested_check": "Before freezing E008's rules, compare each measured spacing_signal_* value with the reference's smallest full-DC-link gap and record any class that is much stricter.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Unknown nets still fall into the 'other' class",
+      "detail": "`spacing_class` returns 'other' for any net it does not recognise (e.g. an NTC/thermistor net against DC+). So the guarantee that a high-voltage gap never shares a class with a gate-drive gap holds only for the seven known nets. The docstring says this openly, and the geometry layer defines no other nets today.",
+      "evidence": "spacing_class('NTC','DC+') == 'other' == spacing_class(GATE_HS,'NTC') (scratch run).",
+      "suggested_check": "Add an explicit class, or a DRC error, for nets outside NETS \u222a SIGNAL_NETS before customer references with NTC or auxiliary copper are loaded.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "measure_rules raises OverflowError on an infinite signal-wire diameter",
+      "detail": "`sig_d` keeps only positive diameters, but +inf passes the `> 0` filter, so `_ceil_nm(inf)` raises OverflowError. `check()` on the same layout already raised ValueError before this change (the bond-foot margin buffer). This is not a regression, but the test claim that measuring degenerate diameters 'neither raises nor returns a non-physical value' covers only 0 and negative values.",
+      "evidence": "Scratch run: one signal wire with diameter=inf \u2192 measure_rules raised OverflowError; check raised ValueError 'buffer distance must be finite'. NaN diameter is handled (flagged, excluded from the range).",
+      "suggested_check": "Filter with math.isfinite(d) and d > 0.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Record key gap_other_min silently changed meaning",
+      "detail": "`gap_other_min` used to be the minimum over all non-power pairs, including signal-to-power. Now it covers only same-switch signal pairs and same-net pieces, and `min_spacing` from measure_rules follows it. A grep found no consumers outside the unit tests, which were updated, so there is no effect today.",
+      "evidence": "grep across src, experiments, research, docs and project: no other references to gap_other_min or spacing_other.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every DoD command: thermal_fem.py sha256 prefix a216d5fe3209bcee matches; `ruff check .` passes; `pytest tests/unit/geometry tests/unit/drc` 353 passed; `pytest -m 'not slow' tests/unit` 697 passed; `mfos gate --fast` all gates passed.",
+    "Recomputed every pairwise copper gap of the test fixture with shapely and classified each pair by hand from a node-potential table (HS gate/Kelvin at PHASE, LS at DC-). All values match the test's hand-derived expectations (signal_dcp 2.0, signal_phase 2.0, signal_dcm 3.0, signal_source sqrt(13), hs_ls 3.0, other sqrt(8) mm), and every high-voltage pair falls in a high-voltage class.",
+    "Physics check of the voltage classification: HS signal to DC+ sees V_DC when HS is off; LS signal to PHASE and HS signal to DC- see V_DC when HS is on; signal to its own source net sees only gate-drive voltage. spacing_class matches this, and SIGNAL_SOURCE_NET agrees with the DRC's die-net/wire-net expectations (HS die on DC+ with wires to PHASE, LS die on PHASE with wires to DC-).",
+    "Backward compatibility: with the new signal fields unset, re-implemented the pre-change spacing_for and compared it with the new one over 648 combinations of nets (including unknown nets) and of set/unset spacing_other, min_spacing and power-pair fields. Results identical.",
+    "Self-consistency stress test beyond the author's seeds: 60 new random fixture variants (gaps down to 1.05 mm, thin 25-60 um gate wires mixed with thicker Kelvin wires, and half with a tight GATE_LS arm next to its own DC- source). All were DRC-clean under the defaults and clean under their own measured rules (0 failures).",
+    "Degenerate inputs: a NaN signal-wire diameter is flagged by check and excluded from the measured range; an infinite one crashes measure_rules, but check() already crashed on it before this change.",
+    "Searched src for consumers of min_spacing, spacing_other, measure_rules and signal_wires. Only the DRC itself and snap.py, which calls check() and is therefore class-aware, use them; the generator produces no signal wires, so no experiment results or fingerprints change.",
+    "Confirmed that no protected path (policy.toml) is touched, and that the fingerprint change int(sw.die) leaves hashes of Python-int die indices unchanged."
+  ],
+  "caveats": [
+    "The T0267 review findings and the task's own requirements are not in the repository or the packet, so I could not check 'completely' against them. I inferred completeness from the tests labelled 'review blocker / major / minor' and 'task deliverable'.",
+    "The 'high-voltage never mixed with gate-drive' guarantee covers only the three power nets and the four gate/Kelvin nets; unknown nets still fall into 'other'.",
+    "The measured signal-to-power classes are per class and can be stricter than O003's frozen minimum ('every other net pair at least the reference's smallest gap'). That is acceptable under 'at least as strict', but E008 should record any class that is much stricter than the reference's smallest full-DC-link gap, because it narrows the headroom search.",
+    "Under DEFAULT_RULES, signal wires with a non-positive diameter or a diameter above 0.5 mm are now rejected (a deliberate, documented change). No current generator output has signal wires, so no existing verdict changes."
+  ]
+}
