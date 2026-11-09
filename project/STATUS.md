@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T17:13:41+00:00 from repository state — do not edit_
+_generated 2026-11-09T17:14:21+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 225, failed: 3, running: 2, todo: 6
 - T0270 `running` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 1)
 
 ## Recent events
-- 2026-11-09T16:53:52+00:00 task_amended {"task": "T0259", "reason": "waits for T0273 (generator wire feet, review T0271)"}
 - 2026-11-09T16:53:52+00:00 task_amended {"task": "T0262", "reason": "waits for T0273 (generator wire feet, review T0271)"}
 - 2026-11-09T16:55:32+00:00 inbox_opened {"id": "I0145", "kind": "protected_change", "subject": "T0258: merge needs founder approval"}
 - 2026-11-09T16:55:36+00:00 run_started {"run": "T0272-critic-20261109T085536-fc6e", "task": "T0272", "role": "critic", "session": "c4b7d2f8-d650-4517-8edf-86688d0158bf"}
@@ -50,3 +49,4 @@ cancelled: 38, done: 225, failed: 3, running: 2, todo: 6
 - 2026-11-09T17:08:29+00:00 merged {"task": "T0258"}
 - 2026-11-09T17:08:44+00:00 inbox_resolved {"id": "I0146", "status": "approved", "note": "Merge T0268: snapping and AlN-law fixes accepted with minor caveats by T0272; the full post-snap DRC re-check and
 - 2026-11-09T17:13:36+00:00 merged {"task": "T0268"}
+- 2026-11-09T17:14:15+00:00 sleep_detected {"gap_s": 309, "runs_extended": 2}
