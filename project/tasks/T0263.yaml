@@ -48,7 +48,18 @@ description: 'Only after the F3 freeze (n7 merged); the first step is to run exp
 
   Run no inductance or thermal solve on these references, and no search, generator or twin call on them.
   Solves happen only in the registered E008 or the founder-run pre-registration snapping check. These
-  reconstructions are shared with O004 and frozen.'
+  reconstructions are shared with O004 and frozen.
+
+
+  TWIN-SPACE CHECK (founder session, 2026-11-09; T0259''s report): twin() and degrade() cover only layouts
+  with two orientations, four landing slots and three columns, and raise TwinError / DegradeError otherwise
+  (for example dies in more than one row, a PHASE ring, rotated dies), which excludes that reference under
+  F1(a). This task runs after E008''s code freeze, so after snapping each reconstruction, run twin() and
+  degrade() on it with the per-reference spec built as E008 will (spec_from_layout with the measured rules)
+  - no solver - and report per reference: twin mode (exact or fit), the difference record, L1(W)/L1(ref),
+  L1(D)/L1(twin), or the exact error raised. Do not change the generator, twin or degradation code. If
+  every reference raises, say so first in the report: E008 would be INVALID and the founder decides before
+  registration.'
 context_files:
 - project/objectives/O003/objective.yaml
 - project/decisions/D0007-powersynth-external-use.md

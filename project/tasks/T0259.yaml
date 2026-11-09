@@ -3,7 +3,7 @@ objective: O003
 title: Twin construction and degradation rule (F1(a), F1(b))
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0258
 - T0273
@@ -72,4 +72,105 @@ lens: null
 trigger: null
 rationale: F1(a) twin gates and the twin comparator of A1/K1; F1(b) degradation rule. Both are frozen
   with the generator before any judged reference is loaded (F3).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I added src/moduleforge/generate/twin.py with twin() and degrade(), plus tests/unit/generate/test_twin.py.
+    The DoD commands and the fast gate all exit 0, and the work is committed as fc8405c6.
+
+
+    **Twin.**
+
+    - **Exact case:** if build(spec, params_of(ref)) reproduces the reference''s fingerprint, the twin
+    is the reference itself (mode "exact"). A modified layout with a stale family string fails that test
+    and goes to the fit.
+
+    - **Geometric fit:** otherwise the fit tries the 16 (orientation, slot sequence) candidates in lexicographic
+    order. It reads die rows, wire feet, landing lines, slot bands and columns off the reference geometry,
+    snaps copper to the 0.5 mm grid and feet to the 0.125 mm grid, and keeps the smallest symmetric-difference
+    area. The first candidate wins a tie. No solver is used ('
+  report:
+    status: completed
+    summary: 'I added src/moduleforge/generate/twin.py with twin() and degrade(), plus tests/unit/generate/test_twin.py.
+      The DoD commands and the fast gate all exit 0, and the work is committed as fc8405c6.
+
+
+      **Twin.**
+
+      - **Exact case:** if build(spec, params_of(ref)) reproduces the reference''s fingerprint, the twin
+      is the reference itself (mode "exact"). A modified layout with a stale family string fails that
+      test and goes to the fit.
+
+      - **Geometric fit:** otherwise the fit tries the 16 (orientation, slot sequence) candidates in lexicographic
+      order. It reads die rows, wire feet, landing lines, slot bands and columns off the reference geometry,
+      snaps copper to the 0.5 mm grid and feet to the 0.125 mm grid, and keeps the smallest symmetric-difference
+      area. The first candidate wins a tie. No solver is used (tested by monkeypatching loop_inductance
+      to raise).
+
+      - **Signal-foot repair:** if the twin fails DRC because of gate/Kelvin wires (a spec with signal
+      pads whose reference had none), the repair step moves the signal feet first. It then shifts the
+      power-wire feet along u by up to 1.5 mm, smallest shift first. Any other violation raises TwinError.
+
+      - **Record:** copper area per net, symmetric-difference area per net and in total, die-centre displacements,
+      wire foot and landing displacements, topology, and L1 values at 20 MHz with |1 − L1(W)/L1(ref)|.
+      The L1 values are reported only.
+
+
+      **Twin results (L1 deviation |1 − L1(W)/L1(ref)|).**
+
+      - **Case 4:** 0.17 %, inside the 0.05 dev screen with a large margin. The copper symmetric difference
+      is 0 and the dies do not move. The wire feet move up to 0.25 mm, because the assumed gate/Kelvin
+      pads put a signal wire 0.125 mm from the reference power wire, which the 0.6 mm pitch rule forbids.
+
+      - **Original-generator (halfbridge.generate_layouts) references:** all three families, 2–6 dies.
+      L1 deviation is 0.04–0.26 % (the six reported in the tests: 0.04–0.21 %). Copper, dies and wires
+      match exactly (zero displacement in the test run; the fit also recovers derivative layouts it is
+      given without their family string), with spec = spec_from_layout(ref, DesignRules(), ()). The housing-constant
+      spec (halfbridge_housing_spec) has a fixed 5 mm die, so it cannot match arbitrary halfbridge references.
+
+
+      **Degradation rule.** Every landing slot is narrowed to the DRC minimum width of its net (at least
+      1 mm). The width grows in 0.5 mm steps only when the wire landing point would otherwise sit closer
+      to a band edge than the landing margin. The columns are extended to reach the narrowed bands. Dies,
+      wires and terminals are untouched.
+
+      - **Alternatives tried first:** shifting the die rows along u moved L1 by less than 1 % in the interleaved
+      and U-shaped families. Widening the slot gaps moved it by only 5–20 % there.
+
+      - **Result:** L1(D)/L1(twin) is 1.42 on Case 4 and 1.55–2.97 on the 10 housing references. All are
+      DRC-clean.
+
+      - **Margin:** DEGRADE_MARGIN is 0.10, so the L1 target is 1.375. C002 reports L1 biased 5–14 % low
+      against L2, and the shared family, housing and wires should cancel most of that bias in the ratio.
+      I put the remaining bias spread at about 9 points. degrade() raises DegradeError rather than trying
+      another move if the ratio or DRC fails.
+
+
+      **Tests (12, all pass).** Own-twin fingerprint identity on generated layouts, plus the fingerprint
+      guard on the shortcut. The fit recovers anonymised generated layouts. Determinism and no solver
+      in construction. The Case 4 twin, with the ≤ 0.05 dev screen. Original-generator references with
+      the L1 deviation reported. The difference record against a known 6 mm² change. Degrade on 10 housing
+      references and Case 4, plus determinism and the raise path.'
+    checks_run:
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/generate
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Case 4 degrade ratio is 1.421 against a 1.375 target (margin 0.10), the thinnest of the cases. A
+      larger margin would fail Case 4 with this rule.
+    - The Case 4 twin moves power-wire feet by up to 0.25 mm solely to satisfy the assumed gate/Kelvin
+      pads and the 0.6 mm pitch rule. The pads are an assumption from test_derivative.py, not a fact of
+      the source.
+    - Original-generator references need spec_from_layout(ref, DesignRules(), ()); the halfbridge_housing_spec
+      5 mm die cannot represent them. E008 must build a per-reference spec the same way.
+    - Twin and degrade apply only to two-orientation, four-slot, three-column layouts. A reference outside
+      that space (a PHASE ring around a die row, dies in more than one row, die rotation) raises TwinError,
+      which would exclude it from F1(a).
+    - The degradation margin of 0.10 is reasoned from the C002 bias spread, not measured against l2_layout.
+      E008 still has to verify L_sub(D) >= 1.25 L_sub(twin) at 0.25 mm.
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
