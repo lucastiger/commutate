@@ -1,0 +1,94 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "L1-only null can skip an unchecked lower-L1 candidate and return a cached one further down the order",
+      "detail": "Once the null reaches 8 new solves, it skips the rest of the unchecked candidates in the current batch but still accepts cached A1 results later in that batch. It can therefore look past 8 L1 positions and return a candidate that is not the first in L1 order to meet the conservative test. F1 defines the null as checking the top 16 by L1 in ascending L1 order under the same batch-and-stop rule, which allows at most 8 candidates, and taking the first candidate in L1 order that meets the test. Under that rule this scenario gives null_best = None (positions 1-8 all fail). Under a reach-to-c11 reading it gives c10. The implementation returns c11, which matches neither reading. The column is reported, not gated, so it cannot change A1/K1. But it biases the D0008 comparison (the value of the l2_layout re-rank) toward L1-only, and in this case it equals the full search's best. Because F3 freezes the driver, this would carry into E008.",
+      "evidence": "Scratch run with fake solvers. L1 order c0..c15. L_sub puts c0, c1, c11, c15 first. Only c10 and c11 pass. Result: a1_best=c11, null_best=c11, null_new=8, null solves c2..c9. The thermal log never contains c10, which has lower L1 than c11 and would pass.",
+      "suggested_check": "Stop the null at the first candidate it cannot evaluate in L1 order, or limit it to the first max_checks L1 positions. Add a test that has a cached pass after an unchecked candidate.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Control mode's w includes s_ref, but F1(b) defines w_ctrl = 2 e_R(best of the control, D)",
+      "detail": "run_control returns w = 2 e_R + s_ref, exposes it as SearchResult.w_ind and levelling['w_ind'], and also computes a levelling flag with it. F1(b) gates h_ctrl >= h_plant - w_ctrl with w_ctrl = 2 e_R(control best, D). There is no s_ref term: D is a generator-space degradation of the twin and carries no snapping bias. A runner that takes r.w_ind as w_ctrl gets a gate looser by s_ref. That could let a control that lacks search power pass, so E008 would not be marked INVALID and the K1 kill path would stay open. The e_R row is correct, so the value can be recomputed, but the driver's own w is wrong.",
+      "evidence": "run_control with e_R=0.01 and s_ref=0.01 returns w_ind=0.03. F1(b) gives 0.02. No unit test checks the control's w.",
+      "suggested_check": "Drop s_ref from run_control (or name the field w_ctrl = 2*e), drop the meaningless control levelling flag, and add a test.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Near ties get band solves but no e_R; the A1 best gets no e_R either",
+      "detail": "K1: 'e_R is computed for every shortlisted candidate whose L_sub is at most (1 + w_ind) times that of the inductance-only best, and h_hi is the largest of their h_hi values'. The E008 rows list 'e_R for each pair'. The driver calls Solvers.e_R only for (inductance-only best, twin). There is no e_R for any near tie and none for (A1 best, twin), although F1(c) gates w <= 0.05 on the A1 best. The expensive band solves are recorded, so this needs no new solves. But Solvers.e_R takes layouts, not band vectors, and no band-to-e_R function exists in the repo, so K1's near-tie h_hi cannot be produced from this output as it stands.",
+      "evidence": "Scratch run: L_sub c0=1.0, c1=1.01, c2=1.02, e_R=0.02, s_ref=0.01. near_ties=['c1','c2'], but rows['e_R'] holds only [('c0','inductance_best')]. a1_best=c0 has no 'a1_best' e_R row.",
+      "suggested_check": "Call run.e_R(t, twin, 'near_tie') for each near tie and run.e_R(a1_best, twin, 'a1_best'), and assert c.calls['e_R'] == 1 + len(near_ties) + (a1 distinct).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Thermal checkpoint keeps only tj and gci, dropping F6's gated diagnostics",
+      "detail": "_thermal_fields reduces each thermal result to {tj, gci} before it is stored. F6(a) and (c) are gated: node counts growing by about 8x, the Tj-max node per level, a per-solve fingerprint, energy balance and Picard convergence. These are lost unless the injected wrapper writes its own side store. A resumed run has none of them for cached solves, and each thermal solve takes hours on a VM.",
+      "evidence": "search.py _thermal_fields and _Run.thermal: only tj and gci reach Store.get.",
+      "suggested_check": "Store the full jsonable thermal result, or an 'extra' dict, in the checkpoint.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "GCI that drives the A1 stop rule is taken from the injected solver, not from mfos.metrics.gci_capped",
+      "detail": "scope_in defines GCI_i as mfos.metrics.gci_capped of levels 0-2 with floor 1e-3 K. The driver makes its batch-stop decision with whatever gci the injected thermal callable returns. A wrapper that uses another GCI would silently change which candidates get checked, while the metrics recompute from the tj rows with gci_capped.",
+      "evidence": "conservative_margin(res, tw) uses res['gci'] directly. Nothing compares it with gci_capped(tj0, tj1, tj2, 1e-3).",
+      "suggested_check": "Compute gci in the driver from the stored tj levels with gci_capped(floor=1e-3), or assert that the two agree.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A record appended after a torn checkpoint line is silently lost on the next resume",
+      "detail": "Store skips a torn trailing line but does not truncate it or start a new line. The next record is written onto the torn line, both become invalid JSON, and that record is dropped on the following load. Values are not corrupted, but a solve that may take hours is repeated. The author's torn-line test reloads only once, so it cannot see this.",
+      "evidence": "Scratch run: after the tear plus one append, the third load holds only ['a:l1']. The file line reads '{\"k\": \"b:l1\", \"v\": {\"k\": \"c:thermal\", ...}\\n'.",
+      "suggested_check": "On load, truncate the file after the last valid line, or prefix each append with a newline when the file does not end in one.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Duplicate fingerprints are not deduplicated in the shortlist",
+      "detail": "If the generator ever emits identical layouts, they take several shortlist slots and use up A1/null check slots with cached results. near_ties can then list the inductance-only best's own fingerprint, because ties are compared by index, not fingerprint. The real generator gave 2000/2000 unique fingerprints, so this is theoretical for now. The generalised generator on the 0.5 mm grid has not been checked.",
+      "evidence": "Synthetic generator emitting 'dup' every 7th draw: the shortlist is 16 x 'dup', near_ties contains 'dup' 15 times, and thermal_checked lists 'dup' 16 times. Real generate() with halfbridge_housing_spec(3), seed 123: 2000 draws, 2000 unique.",
+      "suggested_check": "Skip a candidate whose fingerprint is already shortlisted, or document that duplicates count as candidates.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Several tests are vacuous or weak, and none covers the defects above",
+      "detail": "test_control_mode_has_no_thermal_and_uses_d asserts all(... or True ...), which is always true. test_a1_checks... has `assert not set(asc[4:8]) - set(r.thermal_checked) == set()`, whose operator precedence makes it assert that some of the second batch was never checked by anything. That is not what its comment says, and it depends on the null. The main null test makes its key assertion only inside an `if`. No test covers the control's w, e_R for near ties or the A1 best, the null skipping an unchecked candidate, or a reload after a torn line is appended to.",
+      "evidence": "tests/unit/optimize/test_search.py lines in the diff: 495, 553-555, 625.",
+      "suggested_check": "Replace the vacuous asserts and add the adversarial cases listed in the other findings.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Secondary L1 pool-median column not supported by the driver",
+      "detail": "E008 rows include 'the L1 pool median headroom'. The driver records neither the twin's L1 nor any pool statistic beyond the two levelling minima. The column could only be rebuilt from the checkpoint's ':l1' keys, which mix with control-mode keys if the two share a workdir.",
+      "evidence": "_screen keeps only best_first and best_all. The twin's L1 is never computed.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q -m 'not slow' tests/unit/optimize`: 17 passed, 1 deselected. Ran `uv run ruff check src tests`: clean.",
+    "Hashed src/moduleforge/solvers/thermal_fem.py: a216d5fe3209bcee\u2026, which matches the bytes EV-O007-01 evaluated, as F6(b) requires. The diff does not touch the file. `git diff --quiet main` could not be run because this snapshot has no main ref.",
+    "Built an adversarial null scenario with controlled L1 and L_sub orders. The null returned c11 and never checked c10, which has lower L1 and would pass (finding 1).",
+    "Ran run_control with e_R=0.01 and s_ref=0.01: w_ind=0.03, where F1(b)'s w_ctrl is 0.02.",
+    "Ran a near-tie scenario: two near ties were band-solved, but only one e_R row exists (inductance best), and none for the A1 best.",
+    "Ran a synthetic duplicate-fingerprint generator, which exposed a degenerate shortlist and near ties. Ran the real generate() for 2000 candidates (seed 123): all fingerprints unique.",
+    "Tested checkpoint torn-line handling across two resumes: the record appended after the tear is lost.",
+    "Read the code against O003 objective.yaml (F1, F3, A1, K1, scope_in): A1 ascending-L_sub batches of 4 with stop after the first passing batch and cap 8; the conservative margin formula and its +inf rules; L1 shortlist ties by generation index; inductance-only best; near-tie threshold (1+w_ind)\u00b7L_sub(best); levelling flag l1_min_first <= (1+w_ind)\u00b7l1_min_all; twin and reconstruction always solved thermally; band-solve set. All match the spec."
+  ],
+  "caveats": [
+    "The claim holds for the gated core of the driver: L1 screening with the levelling record, the 16-candidate shortlist, ascending-L_sub A1 batches with cap 8, the conservative Tj test including its inf handling, the inductance-only best, the near-tie threshold and band-solve set, determinism, and resume without re-solving.",
+    "It does not hold as 'correct and complete' for the L1-only null (it can pass over an unchecked lower-L1 candidate), the control mode's w (it adds s_ref, which F1(b) does not), or the near-tie and A1-best e_R records (not computed). All three are a few lines each to fix, and should be fixed before the driver's hash is frozen into E008, because F3 voids the run on any change after freezing.",
+    "Until those fixes land, a runner must recompute w_ctrl as 2\u00b7e_R(control best, D) from the e_R row, never use SearchResult.w_ind from run_control, and derive the near-tie and A1-best e_R from the band rows.",
+    "Most adversarial checks used fake solvers. The slow real-L1 test (test_search_slow.py) was not run, and the real l2_layout, thermal and e_R solvers have not yet been wired in, so integration behaviour, including F6 diagnostics and the GCI source, is unverified.",
+    "The definition-of-done check `git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py` was checked indirectly, by the sha256 match and the diff contents, because this review snapshot has no main ref."
+  ]
+}

@@ -1,0 +1,75 @@
+id: T0279
+objective: O003
+title: 'Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal
+  checkpoint (review T0278)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0260
+description: "Follow-up to T0260, from review T0278 (project/reviews/T0260/T0278.json; read it first).\
+  \ Lands before E008's code freeze\n(T0262): F3 voids the run on any change to the driver after freezing.\
+  \ Do not edit src/moduleforge/solvers/thermal_fem.py\n(sha256 a216d5fe...). The objective text (project/objectives/O003/objective.yaml,\
+  \ F1 and K1) is the specification.\n1. L1-only null (finding 0): exactly F1's rule. Take the top 16\
+  \ by L1 in ascending L1 order, batches of 4, at most 8\n   candidates considered in L1 order (reusing\
+  \ cached thermal results, adding at most 8 new checks), stop after the first\n   batch holding a candidate\
+  \ that meets the conservative test, and return the first such candidate in L1 order. Never\n   pass\
+  \ over an unchecked lower-L1 candidate; return None if positions 1-8 all fail. Test with T0278's scenario.\n\
+  2. Control w (finding 1): run_control's w is w_ctrl = 2 e_R(control best, D), with no s_ref term; name\
+  \ it w_ctrl in\n   SearchResult and in the levelling record, and do not compute K1's levelling flag\
+  \ in control mode. Test.\n3. e_R records (finding 2): compute and record e_R for (A1 best, twin) and\
+  \ for every near tie (vs twin), from the band\n   solves already done; add a band-to-e_R function implementing\
+  \ P3's estimator on the ratio (3 |R(0.25) - R(0.5)| +\n   thickness term from 5/3/3, 10/6/6, 20/12/12\
+  \ + 3 |R(12-per-ring) - R(production)|), with hand-computed tests,\n   including the oscillatory thickness\
+  \ case (3 x max).\n4. Thermal checkpoint (finding 3): store the full thermal record each injected solve\
+  \ returns (per level: node counts,\n   Tj-max node, fingerprint, energy balance, Picard convergence,\
+  \ tj, gci), so a resumed run has F6's gated diagnostics.\n5. GCI (finding 4): the batch-stop decision\
+  \ uses mfos.metrics.gci_capped(levels 0-2, floor 1e-3 K) computed by the driver\n   from the returned\
+  \ per-level Tj values, not a gci supplied by the injected callable.\n6. Checkpoint store (finding 5):\
+  \ truncate a torn trailing line on load (or start a new line before appending); test with\n   two reloads.\n\
+  7. Duplicates (finding 6): deduplicate the shortlist by fingerprint (keep the first in L1 order, then\
+  \ take the next\n   unique) and compare near ties by fingerprint; test.\n8. Tests (finding 7): replace\
+  \ the vacuous assertions T0278 names (the 'or True' assertion, the precedence-broken set\n   assertion,\
+  \ the key null assertion inside an if) with assertions that can fail; add a test for each defect above\
+  \ that\n   fails on the old code.\n9. Pool statistics (finding 8): record the twin's L1 and the median\
+  \ L1 headroom of the DRC-valid pool, keeping control\n   and main checkpoints in separate namespaces.\n\
+  Keep every existing test passing that is not one of the vacuous ones; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T18:52:30+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
