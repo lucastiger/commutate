@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Tests never use a nonzero e_R, so the band terms of A1, K1 levelling and both twin gates are unpinned",
+      "detail": "Every hand-computed case builds layouts with zero band offsets except the K1 near-tie case. So e_R = 0 for the A1 best, for the twin/reconstruction gate pair and for the levelling pair. Mutation testing on a scratch copy (27 mutants) left 11 alive. Survivors include: A1 using w = e_R + s_ref instead of 2 e_R + s_ref; F1(a1) with e_R not doubled; F1(a1) reading the 0.5 mm column instead of the pred column; F1(a2) using max(G_W, G_ref) instead of G_W + G_ref; levelling with w = s_ref (e_R dropped) or with the comparator pair; the reconstruction secondary testing Tj against the reconstruction instead of W; reversed tie-break; and the floor and tj_limit_K params ignored. The code is correct on all of these by inspection and by my differential test. But a later edit to this protected evaluator function could break the central w = 2 e_R + s_ref term without any test failing.",
+      "evidence": "In-process mutation run against research/o003/test_headroom_metrics.py on a scratch copy: KILLED 16 (optimistic test in A1, no batch stop, twin rule before levelling, near-ties only ind or shared w, a from the twin always, gate without s_ref, snapping check min, max checked 12, T from level 1, counted ignoring a2, strict < in both twin rules and in levelling, no shortlist count, missing-die shortcut always). SURVIVED 11 (listed above).",
+      "suggested_check": "Add one hand-computed case per formula with nonzero band offsets on the A1 best, the twin/reconstruction pair and the levelling pair, plus a gate case where G_W and G_ref are both nonzero.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Thermally checked layouts are not required to carry the reference's die count",
+      "detail": "tj_bounds accepts any non-empty die list. A candidate missing its hottest die row would be judged on the remaining dies and could pass the conservative Tj test it should fail. Scope_in fixes the die count per reference, so the evaluator could require every thermally checked layout to have the twin's die count. As written, runner and evaluator would agree on the malformed rows, so recomputation cannot catch the error. The runner's F6(a) gate is the only protection.",
+      "evidence": "headroom_metrics.py tj_bounds: only `if not dies: raise`. _hr_reference.bounds passes whatever die rows exist for the layout_id. No comparison with len(dies of twin).",
+      "suggested_check": "Raise when a checked layout's die count differs from the twin's.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Fail-closed test only requires one of the two metrics to raise",
+      "detail": "In test_o003_fail_closed, if headroom_min_lo raises, headroom_max_hi_ind is never called. A mutation that A1 rejects but K1 silently accepts would go unnoticed. The comment documents this ('at least one'), but the test then cannot show that each metric fails closed on its own inputs.",
+      "evidence": "`with pytest.raises(ValueError): mx.headroom_min_lo(rows); mx.headroom_max_hi_ind(rows)`",
+      "suggested_check": "Assert separately for each metric whose inputs the mutation touches.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Two interpretation choices not listed in the contract's \u00a75",
+      "detail": "(1) Levelling uses w_ind = 2 e_R(ind, W) + s_ref even when the twin rule will then decide K1. Under the twin rule's 'e_R = 0' the threshold would be (1 + s_ref), which is stricter. Since the objective puts levelling before the twin rule, the draft's reading is defensible, and \u00a72 states it, but \u00a75 does not list it for the founder. (2) In the reconstruction-based secondary, a, e_R and the twin rule all switch to the reconstruction, although the objective's A1 text only says 'r against L_sub of the reconstruction'. This is listed in \u00a75.4 and affects only secondary columns.",
+      "evidence": "headroom_metrics.py: `w_lev = 2.0 * ratio_band_estimate(five(ind), five(twin)) + s_ref` computed before the `elif lc <= lsub(ind)` twin rule; `a = lc / (lc + l_term)` with lc taken from the comparator.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Null-column contract leaves runner-added row kinds and other layout roles implicit",
+      "detail": "mfos.metrics.null_column calls float(row[column]) on every row passed to the metric. With no `where` filter that includes degraded and control_best layout rows, any extra layout rows of the L1-only null, and any row kinds the runner adds. \u00a73 says 'every row of every kind' but its bullet list gives values only for candidate, twin/reconstruction, reference and die rows. A row without L_sub_null_H makes the whole recompute entry fail ('cannot recompute from the rows'). The failure is closed, but it would cost a run.",
+      "evidence": "tools/mfos/mfos/evaluate.py null_values -> mx.null_column(rows, 'column', ...) -> [float(row[column]) for row in rows]",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. `uv run pytest -q research/o003/test_headroom_metrics.py` gave 22 passed. `git apply --check research/o003/headroom_metrics.patch` succeeded. `uv run ruff check research/o003` gave All checks passed; `--show-files` confirmed the three files are actually linted despite the repo's `extend-exclude research`.",
+    "Patch sync: I ran research/o003/make_patch.py by mistake and it rewrote headroom_metrics.patch. `git status` and `git diff` afterwards were empty, so the committed patch is byte-identical to one regenerated from the draft. Nothing in the repository was changed.",
+    "Exported HEAD with git archive into $TMPDIR, applied the patch to tools/mfos/mfos/metrics.py and tests/mfos/test_metrics.py, and ran the patched tests/mfos/test_metrics.py with the patched mfos first on sys.path: 48 passed. Ruff with the repo config is clean on both patched files. The DoD only checks that the patch applies; this checks that the applied patch works.",
+    "Read O003 objective v5 (scope_in Tj limit, A1, K1, F1, F3, notes) and checked each rule against the code. Twin rule against the lowest eligible candidate. Conservative test max(T+G)(C) - max(T-G)(W) <= 2 K, with +inf GCI dies dropping out of W's lower bound. F3 batches of 4, stopping after the first batch with an eligible candidate, at most 8. Levelling checked before the twin rule, the twin rule before near ties. Near-tie band (1 + w_ind) L(ind), each candidate with its own e_R. a = L_C/(L_C + L_term). Gate F1(a1) uses 2 e_R + s_ref; gate F1(a2) uses G_W + G_ref with G the largest per-die gci_capped.",
+    "Checked ratio_middle_term against P3's middle_term source: same branches, and 1.25|e21| r^p/(r^p - 1) with r^p = e32/e21 is independent of r. Checked against Roache's medium-grid GCI form.",
+    "Wrote my own implementation of A1/K1 from the objective text, sharing only gci_capped. Compared it with the draft on 3000 random references: nonzero band offsets, on- and off-grid snapping with and without the snapping check, random 3-level Tj sequences (oscillatory, divergent and +inf GCIs), exact L_sub ties, twin and reconstruction comparators, and L_term overrides 0 and 17.5 nH. Results: 2908 counted, 2347 with a non-twin A1 best, 1428 with multiple K1 near ties, 5302 finite values compared. 0 mismatches in counted flags, h_lo or h_hi (rel_tol 1e-12), and the +inf (non-levelled) cases agree.",
+    "Mutation testing of the author's tests: 27 mutants of the rule logic, 16 killed and 11 survived (see findings). I first wrote the 'twin rule before levelling' mutant incorrectly; written correctly, it is killed by test_o003_non_levelled_is_inf_and_checked_before_the_twin_rule.",
+    "Read the evaluator path (evaluate.py _recompute, metric_value, null_values; models.RecomputeSpec and NullSpec). The dispatch lambdas match compute()'s keyword call. Null rows use the `__null__` pred, which the draft honours, and the twin null gives -a s_ref < 0.20, so A1 is not non-discriminating. A +inf K1 survives serialisation (models.py ser_json_inf_nan='constants'), and math.isclose(inf, inf) passes the runner/evaluator agreement check."
+  ],
+  "caveats": [
+    "Correctness was established by an independent implementation that reads the objective the same way on the documented interpretation choices: Tj tested against W in the reconstruction secondary, levelling w taken from the (ind, twin) pair, and the literal +inf-G pass of F1(a2). If the founder reads those differently, the matching cases change too.",
+    "The draft's own tests do not pin the e_R doubling in A1's w, the e_R term of the F1(a1) gate, the G_W + G_ref sum of F1(a2), or the e_R part of the levelling threshold. These terms are correct now but unprotected against regression in the evaluator.",
+    "Die-count consistency across thermally checked layouts is left to the runner's F6(a) sanity gate; the metric does not enforce it.",
+    "The row contract needs L_sub_null_H on every row of every kind passed to the metric, including runner-added kinds and degraded/control layout rows; one missing value makes the whole recompute entry fail."
+  ]
+}
