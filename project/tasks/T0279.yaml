@@ -4,7 +4,7 @@ title: 'Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best
   checkpoint (review T0278)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0260
 description: "Follow-up to T0260, from review T0278 (project/reviews/T0260/T0278.json; read it first).\
@@ -73,4 +73,70 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All nine T0278 findings are fixed in src/moduleforge/optimize/search.py, with tests, and committed
+    as 4846cb48. Every DoD command exits 0. thermal_fem.py is untouched and its hash still matches.
+
+
+    1. **Null:** the L1-only null now looks only at the first 8 L1 positions, in batches of 4, reuses
+    cached thermal results, and stops after the first batch with a pass. It returns the first passing
+    candidate in L1 order, or None. T0278''s scenario now returns None; the old code returned c11.
+
+    2. **Control w:** `run_control` now gives `w_ctrl = 2 e_R`, with no `s_ref` term, in `SearchResult.w_ctrl`
+    and `levelling["w_ctrl"]`. It no longer computes the levelling flag.
+
+    3. **e_R:** a new `band_e_R` implements P3''s estimator on the ratio, with hand-computed tests (monotone,
+    oscillatory and non-converging th'
+  report:
+    status: completed
+    summary: "All nine T0278 findings are fixed in src/moduleforge/optimize/search.py, with tests, and\
+      \ committed as 4846cb48. Every DoD command exits 0. thermal_fem.py is untouched and its hash still\
+      \ matches.\n\n1. **Null:** the L1-only null now looks only at the first 8 L1 positions, in batches\
+      \ of 4, reuses cached thermal results, and stops after the first batch with a pass. It returns the\
+      \ first passing candidate in L1 order, or None. T0278's scenario now returns None; the old code\
+      \ returned c11.\n2. **Control w:** `run_control` now gives `w_ctrl = 2 e_R`, with no `s_ref` term,\
+      \ in `SearchResult.w_ctrl` and `levelling[\"w_ctrl\"]`. It no longer computes the levelling flag.\n\
+      3. **e_R:** a new `band_e_R` implements P3's estimator on the ratio, with hand-computed tests (monotone,\
+      \ oscillatory and non-converging thickness cases). The driver records e_R for (A1 best, twin) and\
+      \ for every near tie from the band solves already done, plus `SearchResult.w_a1`. The injected `Solvers.e_R`\
+      \ is still used for the inductance-only best, so `w_ind` is unchanged.\n4. **Thermal checkpoint:**\
+      \ the full thermal record of each solve is stored in the checkpoint and exposed as `rows[\"thermal\"\
+      ]`.\n5. **GCI:** the batch-stop decision uses `gci_capped` with a 1e-3 K floor, computed in the\
+      \ driver from the per-level Tj. The callable's own gci is kept as `gci_reported` and never used.\n\
+      6. **Checkpoint store:** loading now repairs a torn trailing line, so a later append is no longer\
+      \ lost. A complete line missing only its newline is kept. Tested across two reloads.\n7. **Duplicates:**\
+      \ the shortlist is de-duplicated by fingerprint, and near ties are compared by fingerprint.\n8.\
+      \ **Tests:**\n   - Replaced the three vacuous assertions.\n   - Added tests for each defect.\n \
+      \  - Changed two existing tests to match the new behaviour:\n     - The L1 call count is now 201\
+      \ because the twin's L1 is computed.\n     - The inf-GCI test now feeds diverging Tj levels, since\
+      \ the driver computes GCI itself.\n9. **Pool statistics:** the levelling record now holds the twin's\
+      \ L1, the pool median L1 and the median L1 headroom against the twin. Checkpoint keys are namespaced\
+      \ `main:` and `control:`.\n\nI did not run the new tests against the old code. The null defect rests\
+      \ on T0278's evidence."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/optimize/search.py
+    - tests/unit/optimize/test_search.py
+    concerns:
+    - Checkpoint key format changed to <ns>:<fp>:<kind>, so checkpoints written by the old driver will
+      not resume. The driver is not yet frozen, so this should be fine.
+    - Two existing tests were edited for deliberate behaviour changes (an L1 call count of 201 instead
+      of 200, and the inf-GCI test now using diverging Tj levels). Both still assert the same properties.
+    - 'The band vector order is assumed to follow research/o003/headroom_metrics.py: 0.25 mm production,
+      then 0.5 mm production, 5/3/3, 20/12/12, wire-12. The E008 runner''s band callable must return that
+      order.'
+    - Solvers.e_R is still injected for the inductance-only best, as before. A runner should make it consistent
+      with band_e_R.
+    - Control mode computes no pool statistics, since the packet asks only for namespace separation there.

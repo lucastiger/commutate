@@ -1,0 +1,56 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "A finite but implausible floor or Tj limit still silently changes A1",
+      "detail": "The guard rejects only null, non-finite or negative values of floor, and null, non-finite or non-positive values of tj_limit_K. The change's own justification is that an infinite floor zeroed every GCI and so made a divergent candidate eligible. A finite floor of 1e3 does exactly the same thing, and 1e3 is a one-character typo of the intended 1e-3. Likewise tj_limit_K = 1e300 makes a candidate 150 K hotter than W eligible. The rule text sets no upper bound, so the code should not invent one. As written, though, 'fail-closed parameter values' covers the nan/inf instance of the failure, not the whole class.",
+      "evidence": "Candidate dies (350, 350.5, 351.5), so rho = 2 and GCI = +inf. With the default floor, headroom_min_lo = -0.011765 (= -a s_ref). With floor 1.0 it is unchanged. With floor 1e3 or 1e9 it is +0.108235, with no error. A candidate at 500 K gives -0.011765 by default and +0.108235 with tj_limit_K = 1e300.",
+      "suggested_check": "Have the E008 spec review pin floor = 1e-3 and tj_limit_K = 2.0 exactly, or have the runner assert those values, so that a typo cannot pass.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The F3 shortcut's use of the comparator, not the twin, is untested (a reviewer mutant survives)",
+      "detail": "I replaced `if lc <= lsub(order[0]):` in the F3 missing-die-rows shortcut with `if lsub(twin) <= lsub(order[0]):`, and the full test file still passes. The code is correct: under comparator=reconstruction it raises when the reconstruction lies above order[0] and candidate die rows are missing. The mutant would instead silently take the twin rule. This is the same line as T0275 finding 0, and the change added the analogous comparator mutant for the optimistic twin rule (opt_twin_rule_vs_twin_in_recon) but not for this one. It does not falsify the two branches the claim names.",
+      "evidence": "Case: twin 10.0 nH, reconstruction 10.1 nH, c00 at 10.05 nH, no candidate die rows, s_ref 0.02. Comparator twin gives -0.011765. Comparator reconstruction raises 'a candidate F3 checks has no die rows'. Of 10 reviewer mutants, 'shortcut_vs_twin' SURVIVED and the other 9 were killed.",
+      "suggested_check": "Add that case as a test and add the mutant to check_mutants.py.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Type leniency: numpy bool accepted, Python bool rejected",
+      "detail": "_hr_num rejects a Python bool with the message 'missing' but accepts np.True_ as 1.0. It also parses strings such as '1e-3'. Every non-finite value, string 'nan' included, raises. A YAML spec cannot produce numpy bools, so this does not matter in practice.",
+      "evidence": "Probes: floor = np.True_ ACCEPTED, tj_limit_K = np.True_ ACCEPTED, floor = 'nan' ValueError, floor = [1e-3] TypeError, floor = -0.0 accepted (>= 0 holds).",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Small inaccuracies in the test comment and the provenance reference",
+      "detail": "test_o003_valid_parameter_values_at_their_bounds_are_accepted calls _good_rows() 'the zero-band case', but c00 there has a 0.05 nH band (the claim about Tj is still right). The row contract cites commit 3ab1197c for the T0269 test file, but that commit is not in this snapshot. I rebuilt that file by cutting the current test file at the 'T0275 gaps (T0276)' marker.",
+      "evidence": "git cat-file -t 3ab1197c: 'Not a valid object name'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q research/o003/test_headroom_metrics.py`: 105 passed.",
+    "Ran `uv run python research/o003/check_mutants.py`: 110 of 110 mutants killed, 0 survived, 0 errors (exit 0). 11 + 54 + 36 + 9 = 110 matches the row contract.",
+    "Ran `uv run ruff check .`: all checks passed. thermal_fem.py sha256 starts with a216d5fe3209bcee, as required.",
+    "Ran `uv run mfos gate --fast`: 'all gates passed', exit 0.",
+    "Rebuilt headroom_metrics.patch in memory with make_patch's functions: byte-identical to the committed file (1122 lines). `git apply --check` applies cleanly to tools/mfos/mfos/metrics.py and tests/mfos/test_metrics.py.",
+    "Pre-fix behaviour, with _hr_check_params monkeypatched to a no-op: nan tj_limit_K gives A1 = -a s_ref = -0.011765 silently; inf floor makes a divergent candidate eligible (A1 = +0.108); a negative floor already raised in gci_capped. This confirms the motivation in the docs.",
+    "Negative control: with the guard disabled, the full test file fails in exactly 22 tests, all test_o003_fail_closed_parameter_values cases (11 values x 2 metrics), as the row contract states.",
+    "Rebuilt the pre-T0276 test file by cutting at the T0276 marker and ran the 9 new mutants against it: all 9 survive, so the new section is what kills them.",
+    "Wrote 10 mutants of my own and ran them through check_mutants.run_against: guard moved after the admissible check, floor 0 rejected, opt rule using best, opt rule using order[0], shortcut strict, shortcut using batch[-1], guard only for lo, tj check skipped when floor is present, opt rule strict against the twin (all killed), and shortcut against the twin instead of the comparator (SURVIVED, reported as a finding).",
+    "Re-derived by hand the expected values in the two new branch tests: K1 = a(1 - 0.8 x 0.98) with the c01 near tie smaller; the control's twin rule at c04 = 12 nH; the optimistic twin rule at equality with FULL_BAND; and the reconstruction value ar(1 - (10.05/10.1)(1 - s)) with ar = 10.1/17.1 and the F1(a1) margin 0.0099 <= 0.02.",
+    "Adversarial values: floor 1e3 or 1e9 and tj_limit_K 1e300 are accepted and change A1 (finding 1). String, numpy and list inputs: every non-finite value fails closed (finding 3)."
+  ],
+  "caveats": [
+    "The guard closes only non-finite, null and wrong-sign values. A plausible-looking but wrong finite floor or tj_limit_K, such as the typo 1e3 for 1e-3, still changes A1 without raising, so the registered spec values must be checked when the spec is reviewed.",
+    "The fail-closed claim covers floor and tj_limit_K. comparator and L_term_H are still checked lazily, only once a counted reference is reached. They still fail closed, because with no counted reference the metric raises 'no counted reference', but the error message differs.",
+    "The F3 shortcut's comparator-versus-twin case under comparator=reconstruction is still untested. The code is correct, but a regression there would not be caught.",
+    "Under .mfos/policy.toml the fast gate runs ruff on src/tests/experiments/runners and the unit tests, neither of which covers research/o003. Its passing is therefore not evidence about this change."
+  ]
+}
