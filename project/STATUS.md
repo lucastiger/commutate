@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T16:55:36+00:00 from repository state — do not edit_
+_generated 2026-11-09T16:56:14+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -38,7 +38,6 @@ cancelled: 38, done: 222, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - T0272 `running` critic/review: Review T0268 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T15:58:34+00:00 task_amended {"task": "T0260", "reason": "depends on T0258 only: parallel with T0259"}
 - 2026-11-09T15:58:34+00:00 task_amended {"task": "T0262", "reason": "deps T0259/T0268/T0269/T0270; concurrent thread-pinned run plan"}
 - 2026-11-09T16:10:46+00:00 run_finished {"run": "T0258-builder-20261109T074201-4b0e", "status": "completed", "cost": 2.50992, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T16:15:42+00:00 verified {"task": "T0258"}
@@ -53,3 +52,4 @@ cancelled: 38, done: 222, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - 2026-11-09T16:55:32+00:00 inbox_opened {"id": "I0145", "kind": "protected_change", "subject": "T0258: merge needs founder approval"}
 - 2026-11-09T16:55:36+00:00 run_started {"run": "T0272-critic-20261109T085536-fc6e", "task": "T0272", "role": "critic", "session": "c4b7d2f8-d650-4517-8edf-86688d0158bf"}
 - 2026-11-09T16:55:36+00:00 run_started {"run": "T0269-scientist-20261109T085536-a855", "task": "T0269", "role": "scientist", "session": "9fb499ad-58f5-47ca-8142-66b24370155d"}
+- 2026-11-09T16:56:09+00:00 sleep_detected {"gap_s": 2272, "runs_extended": 2}
