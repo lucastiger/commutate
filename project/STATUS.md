@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T08:56:01+00:00 from repository state — do not edit_
+_generated 2026-11-09T08:56:40+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -39,7 +39,6 @@ cancelled: 38, done: 217, failed: 3, needs_founder: 2, review: 1, running: 1, to
 - T0267 `running` critic/review: Review T0256 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T07:55:01+00:00 run_finished {"run": "T0256-builder-20261108T232846-aecb", "status": "completed", "cost": 1.15678, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T08:02:32+00:00 verified {"task": "T0256"}
 - 2026-11-09T08:02:37+00:00 run_started {"run": "T0265-critic-20261109T000237-c0eb", "task": "T0265", "role": "critic", "session": "06f33d6f-2800-49e5-a626-1bd2206de9f0"}
 - 2026-11-09T08:03:10+00:00 sleep_detected {"gap_s": 491, "runs_extended": 2}
@@ -54,3 +53,4 @@ cancelled: 38, done: 217, failed: 3, needs_founder: 2, review: 1, running: 1, to
 - 2026-11-09T08:47:56+00:00 run_finished {"run": "T0256-builder-20261109T001733-7d0d", "status": "completed", "cost": 4.146169, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T08:55:56+00:00 verified {"task": "T0256"}
 - 2026-11-09T08:56:01+00:00 run_started {"run": "T0267-critic-20261109T005601-e161", "task": "T0267", "role": "critic", "session": "fda4c413-fbaf-49f9-88db-8eb5fd6a8fc6"}
+- 2026-11-09T08:56:35+00:00 sleep_detected {"gap_s": 520, "runs_extended": 1}
