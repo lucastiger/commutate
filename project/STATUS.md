@@ -1,10 +1,8 @@
 # ModuleForge status
-_generated 2026-11-09T22:50:42+00:00 from repository state — do not edit_
+_generated 2026-11-09T23:00:06+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0152** [protected_change] T0276: merge needs founder approval
-- **I0153** [protected_change] T0279: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -31,17 +29,15 @@ _generated 2026-11-09T22:50:42+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 236, failed: 3, needs_founder: 2, running: 3, todo: 3
+cancelled: 38, done: 236, failed: 3, merge: 2, running: 3, todo: 3
 
 - T0259 `running` builder/implement: Twin construction and degradation rule (F1(a), F1(b)) (attempt 1)
 - T0274 `running` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 3)
-- T0276 `needs_founder` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
-- T0279 `needs_founder` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
+- T0276 `merge` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
+- T0279 `merge` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
 - T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 
 ## Recent events
-- 2026-11-09T22:04:35+00:00 run_started {"run": "T0284-critic-20261109T140435-5320", "task": "T0284", "role": "critic", "session": "70a2c165-1131-4a41-affe-6155dd64a875"}
-- 2026-11-09T22:05:08+00:00 sleep_detected {"gap_s": 911, "runs_extended": 1}
 - 2026-11-09T22:11:23+00:00 run_finished {"run": "T0284-critic-20261109T140435-5320", "status": "completed", "cost": 2.383736, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T22:15:04+00:00 inbox_opened {"id": "I0153", "kind": "protected_change", "subject": "T0279: merge needs founder approval"}
 - 2026-11-09T22:41:41+00:00 inbox_resolved {"id": "I0150", "status": "approved", "note": "Merge T0273: searchable wire feet and multi-wire dies with gate/Kelvin copper; T0281 accepts with caveats; the sa
@@ -55,3 +51,5 @@ cancelled: 38, done: 236, failed: 3, needs_founder: 2, running: 3, todo: 3
 - 2026-11-09T22:47:54+00:00 run_started {"run": "T0274-builder-20261109T144754-c0bf", "task": "T0274", "role": "builder", "session": "61334f90-7c1d-40c0-b50b-c43555d30135"}
 - 2026-11-09T22:50:30+00:00 loop_stopped {"reason": "STOP file"}
 - 2026-11-09T22:50:36+00:00 loop_started {"pid": 37260}
+- 2026-11-09T22:53:01+00:00 inbox_resolved {"id": "I0152", "status": "approved", "note": "Merge T0276: fail-closed floor and tj_limit_K, two branches covered; T0283 accepts with minor caveats; exact spec
+- 2026-11-09T22:53:03+00:00 inbox_resolved {"id": "I0153", "status": "approved", "note": "Merge T0279: exact L1-only null, w_ctrl without s_ref, e_R for the A1 best and near ties; T0284 accepts with cave
