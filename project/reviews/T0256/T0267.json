@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Signal-to-power HV gaps fall under the single `spacing_other` value, so measured rules let them shrink to the low-voltage gate/Kelvin gap",
+      "detail": "`spacing_for` has a value for each of the three power-net pairs. Every other pair goes to one `spacing_other` bucket. The code's own comment says HS gate/Kelvin copper sits at PHASE potential and LS gate/Kelvin copper at DC- potential. So GATE_HS/KELVIN_HS to DC+, GATE_LS/KELVIN_LS to PHASE, GATE_LS to DC+ and HS-signal to LS-signal gaps all see the full DC-link voltage, the same as the power pairs. They are lumped with ~20 V pairs (gate to Kelvin of the same switch) and 0 V pairs (KELVIN_HS to PHASE). `measure_rules` sets `spacing_other` to the minimum over that whole bucket. On a reference whose tightest 'other' gap is a low-voltage gate/Kelvin gap, the measured rules therefore let any HV signal-to-power gap shrink to that value. The DC+/PHASE gap stays protected. This undercuts the stated purpose of keeping HV gaps from shrinking to a signal gap (see the comment on test_hv_gap_cannot_shrink_to_a_signal_gap). Default verdicts are unaffected. I cannot see the task spec, so it may have prescribed this 3+1 class model. That is why this is major and not a blocker.",
+      "evidence": "Scratch run. Reference: the test fixture with the KELVIN_HS strip 1.0 mm above the GATE_HS strip, clean under DEFAULT_RULES (check(ref) == []). measure_rules(ref) gives spacing_dcp_phase = 2.999999 mm and spacing_other = 1.0 mm. Derivative: GATE_HS copper moved from 2.0 mm to 1.0 mm from DC+ copper. check(derivative, measured_rules) == []. Shrinking DC+/PHASE from 3 mm to 2 mm under the same rules is flagged as min_spacing.",
+      "suggested_check": "Map each signal net to its reference potential (GATE_HS/KELVIN_HS to PHASE, GATE_LS/KELVIN_LS to DC-) and apply the corresponding power-pair spacing to cross-potential pairs, with a test that the derivative above is flagged.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Signal wires get no diameter or length range check; measure_rules crashes or returns nonsense on such layouts",
+      "detail": "Power wires are checked against min/max_wire_diameter and min/max_wire_length. `_check_signal` has no equivalent. A layout whose signal wires have diameter 0 or a negative diameter is clean under DEFAULT_RULES. On that default-clean layout `measure_rules` raises ZeroDivisionError (pitch ratio g/dm with dm = 0), which contradicts its docstring guarantee. With negative diameters it returns wire_pitch_diameters \u2248 -173.8. A gate wire of any length also passes when no max_gate_wire_length is set. These inputs are contrived but unguarded.",
+      "evidence": "Scratch run on the fixture, all four signal wires set to diameter 0: check gives [] and measure_rules raises ZeroDivisionError. With diameter -0.1 mm: check gives [] and the measured ratio is -173.77.",
+      "suggested_check": "Add a signal_wire_diameter range check (or validate diameter > 0) and test measure_rules on it.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "Fingerprint depends on the Python type of SignalWire.die",
+      "detail": "The digest hashes `repr(items)`, so a die index of np.int64(0) gives a different fingerprint from int 0 for an otherwise identical layout, and check() accepts both.",
+      "evidence": "with_sig(fx, 0, die=np.int64(0)): check() is clean and the fingerprint differs from the fixture's.",
+      "suggested_check": "Hash int(sw.die).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Small redundant work in check()",
+      "detail": "`_edge_ok` now buffers the substrate outline once per trace instead of once per check. It is negligible at current trace counts (72 measure_rules calls took 1.6 s).",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. The drc/geometry/generate/regression suite gave 325 passed. The fast unit suite (-m 'not slow') gave 636 passed, 37 deselected. ruff check src tests is clean.",
+    "This snapshot has no `main` ref, so `git diff --quiet main -- thermal_fem.py` cannot run here. I exported main's thermal_fem.py from the main checkout and cmp'd it: identical.",
+    "Old-versus-new behaviour: loaded main's drc/rules.py and compared check() verdicts (rule and location) against the new code on 60 generator layouts (seeds 0-4) under 3 rule sets, 180 cases with 1589 violations. 0 differences.",
+    "Fingerprints: diffed main's layout.py against the snapshot. The only hashing change is a loop over signal_wires appended after the terminals, so a layout with an empty list gets the same digest. The generator is not in the diff. A direct digest comparison using main's Layout class was blocked by the sandbox.",
+    "Measure round-trip: on 72 generator layouts (seeds 0-5, all clean under defaults), check(lay, measure_rules(lay)[0]) == [] in every case.",
+    "Measure tightness: making the fixture's GATE_HS strip 2 um thinner is flagged as min_trace_width under rules measured from the original.",
+    "Adversarial HV-spacing construction with a default-clean reference and a derivative that halves the GATE_HS-to-DC+ gap: passes under the measured rules (finding 1).",
+    "Adversarial signal-wire diameters (0, negative, 3 mm): the default DRC accepts 0 and negative; measure_rules raises ZeroDivisionError or returns a negative ratio (finding 2).",
+    "PEEC integration: loop_inductance on the fixture with and without the floating signal copper runs without error or warnings. L = 8.07602 nH vs 8.07603 nH, R identical."
+  ],
+  "caveats": [
+    "Per-net spacing covers HV insulation only between power nets. Gaps from gate/Kelvin copper to the opposite-potential power copper, and between HS and LS signal islands, are governed by the single `spacing_other` value. Measured rules must not be treated as protecting those gaps until signal nets are classified by their reference potential.",
+    "measure_rules guarantees check(layout, measured) == [] only for layouts clean under DEFAULT_RULES with physically valid (positive) signal-wire diameters. Signal-wire diameter and length ranges are not checked by the DRC.",
+    "I could not see the task spec (project/ is not in this snapshot). I judged completeness against the claim title and the code's own docstrings. If the spec prescribed exactly three power pairs plus 'other', finding 1 is a spec-level limitation, not an implementation error.",
+    "The fingerprint-unchanged claim rests on code inspection plus the regression test, which compares against hard-coded constants. I could not recompute those constants with main's code in this sandbox."
+  ]
+}
