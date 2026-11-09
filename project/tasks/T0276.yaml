@@ -1,0 +1,59 @@
+id: T0276
+objective: O003
+title: 'Headroom metrics: fail-closed parameter values and two untested branches (review T0275)'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0269
+description: "Follow-up to T0269, from review T0275 (project/reviews/T0269/T0275.json; read it first).\
+  \ Lands before the protected patch\nresearch/o003/headroom_metrics.patch is applied to tools/mfos (founder,\
+  \ I0139) and before E008's design (T0262). Edit only\nresearch/o003/**; never tools/mfos (protected).\n\
+  1. Fail-closed parameter values (T0275 finding 2): tj_limit_K and floor must be finite and >= 0 (tj_limit_K\
+  \ > 0), else\n   raise ValueError naming the key. Tests: nan, inf, negative for each.\n2. The two surviving\
+  \ probe mutants (findings 0 and 1): add tests that kill (a) order[0] -> batch[0] in _hr_reference's\n\
+  \   missing-die-rows branch (batch 1 has no eligible candidate, batch 2 lacks die rows, L(W) between\
+  \ order[0] and\n   batch[0]: must raise) and (b) dropping 'lc <= lsub(opt)' in the optimistic h_opt_hi\
+  \ twin rule. Add both as named\n   mutants in check_mutants.py.\n3. Regenerate headroom_metrics.patch\
+  \ from the draft, check it applies with patch -p1 to a scratch copy, and run the\n   patched tests/mfos/test_metrics.py\
+  \ against the patched module in that scratch copy (state the command and result).\n   Run check_mutants.py:\
+  \ every mutant killed.\nKeep every existing test passing; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q research/o003/test_headroom_metrics.py
+  exists: null
+  timeout_s: 1200
+- cmd: uv run python research/o003/check_mutants.py
+  exists: null
+  timeout_s: 3600
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T18:15:44+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

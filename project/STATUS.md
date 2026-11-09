@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T18:06:02+00:00 from repository state — do not edit_
+_generated 2026-11-09T18:19:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -10,7 +10,7 @@ _generated 2026-11-09T18:06:02+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $44.54/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $46.23/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-09T18:06:02+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 25 | $44.54 | 942183 | 540975 | 45 | 0 |
+| O003 | 25 | $46.23 | 969175 | 555284 | 53 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,16 +29,12 @@ _generated 2026-11-09T18:06:02+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 225, failed: 3, review: 1, running: 2, todo: 6
+cancelled: 38, done: 226, failed: 3, merge: 1, running: 1, todo: 7
 
-- T0269 `review` scientist/design_experiment: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 2)
+- T0269 `merge` scientist/design_experiment: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 2)
 - T0270 `running` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 1)
-- T0275 `running` critic/review: Review T0269 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T16:56:09+00:00 sleep_detected {"gap_s": 2272, "runs_extended": 2}
-- 2026-11-09T17:04:14+00:00 run_finished {"run": "T0272-critic-20261109T085536-fc6e", "status": "completed", "cost": 1.802128, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T17:04:55+00:00 task_added {"task": "T0274", "reason": "review T0272 follow-up (snap re-check)"}
 - 2026-11-09T17:04:55+00:00 task_amended {"task": "T0262", "reason": "waits for T0274 (snap re-check, review T0272)"}
 - 2026-11-09T17:07:02+00:00 inbox_resolved {"id": "I0145", "status": "approved", "note": "Merge T0258: generator accepted with caveats by T0271; searchable wire feet, multi-wire dies with gate/Kelvin cop
 - 2026-11-09T17:07:47+00:00 inbox_opened {"id": "I0146", "kind": "protected_change", "subject": "T0268: merge needs founder approval"}
@@ -51,3 +47,6 @@ cancelled: 38, done: 225, failed: 3, review: 1, running: 2, todo: 6
 - 2026-11-09T18:05:13+00:00 verified {"task": "T0269"}
 - 2026-11-09T18:05:19+00:00 run_started {"run": "T0275-critic-20261109T100519-7c65", "task": "T0275", "role": "critic", "session": "ed497bc5-fefe-4185-aea7-6f997eab0f2a"}
 - 2026-11-09T18:05:54+00:00 sleep_detected {"gap_s": 2504, "runs_extended": 2}
+- 2026-11-09T18:14:42+00:00 run_finished {"run": "T0275-critic-20261109T100519-7c65", "status": "completed", "cost": 1.691477, "subtype": "success", "report": "structured_output"}
+- 2026-11-09T18:15:44+00:00 task_added {"task": "T0276", "reason": "review T0275 follow-up (metrics fail-closed)"}
+- 2026-11-09T18:15:44+00:00 task_amended {"task": "T0262", "reason": "waits for T0276 (metrics fail-closed, review T0275)"}

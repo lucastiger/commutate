@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Fail-closed branch for missing die rows in F3's second batch is untested",
+      "detail": "`_hr_reference` raises 'a candidate F3 checks has no die rows' when a batch lacks die rows, unless the comparator is at or below the lowest shortlisted candidate (`lc <= lsub(order[0])`). One mutant changes `order[0]` to `batch[0]`. In the case where batch 1 has no eligible candidate, batch 2 lacks die rows and L(W) lies between order[0] and batch[0], that mutant returns the twin-rule value instead of raising, and it survives every test. The returned h_lo is the same either way, because every candidate from batch 2 on has L \u2265 L(W), so the twin rule would decide anyway. Only the fail-closed raise and the reported f3_complete / n_thermal_checked columns are left untested. Remedy: add one case where batch 1 is entirely hot and batch 2 has no die rows, and assert that it raises.",
+      "evidence": "Independent probe via check_mutants.run_against: mutant `shortcut_vs_batch_first` ('if lc <= lsub(order[0])' -> 'if lc <= lsub(batch[0])') SURVIVED; an equivalent no-op mutant also survived, which confirms the harness reports survivors.",
+      "suggested_check": "Add a _o3_case in which c00..c03 are 10 K hot, c04..c15 have no die rows, and twin = 8.2 nH sits between the candidates; expect ValueError('candidate F3 checks has no').",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Twin rule in the optimistic secondary column (h_opt_hi) is untested",
+      "detail": "Replacing `if opt is None or lc <= lsub(opt):` with `if opt is None:` survives all tests. The secondary optimistic h_opt_hi column would then come from r \u2265 1 instead of the twin rule whenever the optimistic pick is at or above the comparator. This affects a reported per-reference column only, not headroom_min_lo or headroom_max_hi_ind.",
+      "evidence": "Probe mutant `opt_no_twin_rule` SURVIVED.",
+      "suggested_check": "Assert h_opt_hi == a*s_ref in a case where the only optimistic-passing candidate has L_sub \u2265 L(W).",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Fail-closed does not cover parameter values (tj_limit_K, floor)",
+      "detail": "Unknown parameter keys raise, and comparator and L_term_H are validated, but `limit = float(params.get('tj_limit_K', 2.0))` and `floor` are not checked to be finite or non-negative. Reading the code: tj_limit_K = nan makes every `<= limit` comparison False, so no candidate is eligible, the twin rule applies and h_lo = \u2212a s_ref. That fails A1 silently instead of raising. The risk is low because params come from a registered spec, not from runner rows.",
+      "evidence": "Code reading, headroom_metrics.py lines 213-214 and 132-135. A runtime confirmation was attempted, but the sandbox denied that command.",
+      "suggested_check": "Require tj_limit_K and floor to be finite and non-negative via _hr_num, with a fail-closed case for each.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Historical negative control and the 11th T0266 survivor cannot be checked from this snapshot",
+      "detail": "The row contract says that with attempt 1's test file, the script reports exactly the 17 attempt-2 survivors and exits 1. It also says the 11th T0266 survivor is a reconstruction. The repository has a single 'review snapshot' commit, and T0266's review text is not in the checkout, so neither statement can be reproduced. The author does disclose the reconstruction.",
+      "evidence": "git log shows one commit; grep for T0266 finds only check_mutants.py, e008_row_contract.md and the packet.",
+      "suggested_check": "Keep attempt 1's test file, or its hash, alongside so the negative control can be re-run.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: pytest on research/o003/test_headroom_metrics.py (80 passed); check_mutants.py (101 of 101 killed, 0 errors); `git apply --check` on the patch (OK); `ruff check research/o003` (clean); thermal_fem.py sha256 prefix = a216d5fe3209bcee; `mfos gate --fast` (all gates passed).",
+    "Regenerated headroom_metrics.patch in memory with make_patch's functions, without writing to the repo. It is byte-identical to the committed patch, so the draft and the patch are in sync.",
+    "Applied the patch with `patch -p1` to scratch copies of the metrics module and test_metrics.py in $TMPDIR. It applied cleanly. Also confirmed the shared-test helpers (NH, _o3_*) sit after the '>>> shared tests' marker and that REPO resolves to the repo root in both locations.",
+    "Tested the mutation harness itself: a semantically equivalent mutant (an added comment) is reported as SURVIVED, so kills are not spurious.",
+    "Ran 14 mutants of my own that are not in the author's list. Killed: n_dies taken from the reconstruction; die count dropped for candidates only; die count dropped for the reconstruction only; counted = a1 or a2; optimistic pick taken from the eligible list; loosened L1 consistency check; gate_a2 with 2\u00b7max; all-inf lower bound replaced by T_max; near-tie w capped at w_ind; K1 twin rule using w_lev; F3 always stopping after batch 1. Survived: F3 shortcut keyed to batch[0] (fail-closed branch only, same value) and the optimistic-column twin rule removed.",
+    "Re-derived by hand the nonzero-band values: E_FULL = 0.015 + 0.005/3 + 0.006 (lateral, the middle-level Richardson term with r^p = 4, wire); the F1(a1) boundary at dl = 0.034 vs 0.03 (2e_R = 0.02 vs 0.01765 against 0.019608); and the F1(a2) GCI values 0.3125 and 0.625 with sum 0.9375. All match the test constants.",
+    "Read mfos evaluate.null_values and metric_value to confirm the row-contract statements: the null is applied to the where-filtered rows, and a null_column failure makes the whole recompute entry fail."
+  ],
+  "caveats": [
+    "The mutation check shows that the tests detect 101 specific edits, plus 12 of my 14 extra probes. Two probe mutants survive: one in a fail-closed branch whose value is unaffected, and one in a secondary reported column. Neither changes the two metric values.",
+    "I could not run the patched tests in tests/mfos/test_metrics.py against the patched mfos metrics module in a scratch copy, because the sandbox denied the command. Equivalence instead rests on two checks: regenerating the patch in memory from the draft reproduces the committed patch byte for byte, and the patch applies cleanly with `patch -p1` to scratch copies.",
+    "Parameter values (tj_limit_K, floor) are not fail-closed; only unknown keys, the comparator and L_term_H are validated.",
+    "The die-count rule compares counts, not die identities. A checked candidate with the twin's count but differently named dies is accepted, which is what the row contract states.",
+    "I could not verify the historical negative control (attempt 1's file reports exactly 17 survivors) or whether T0266's unnamed 11th survivor is the right one."
+  ]
+}
