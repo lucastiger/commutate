@@ -3,7 +3,7 @@ objective: O003
 title: 'Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272)'
 type: implement
 agent: builder
-status: running
+status: todo
 depends_on:
 - T0268
 description: "Follow-up to T0268, from review T0272 (project/reviews/T0268/T0272.json; read it first).\
@@ -62,4 +62,12 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_error
+  summary: agent ended with success
+  failure_output: 'API Error: Unable to connect to API: SSL certificate verification failed (UNABLE_TO_GET_ISSUER_CERT_LOCALLY).
+    The certificate comes from an authority Claude Code doesn''t trust, usually a TLS-inspecting corporate
+    proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
+    the system certificate store · see https://code.claude.com/docs/en/network-config'
+  at: '2026-11-09T20:51:58+00:00'
