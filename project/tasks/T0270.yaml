@@ -3,7 +3,7 @@ objective: O003
 title: 'DRC: signal-to-power spacing class and signal-wire checks (review T0267)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0256
 description: "Follow-up to T0256 (merged), from review T0267 (project/reviews/T0256/T0267.json; read it\
@@ -57,4 +57,55 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Done and committed as 63bd6773. Signal-to-power spacing is now its own DRC rule class, one
+    value per power net: `spacing_signal_dcp`, `spacing_signal_phase` and `spacing_signal_dcm` on `DesignRules`.
+    `measure_rules` measures them from the reference. `spacing_other` now covers only the remaining pairs
+    (signal-signal, and split copper of one net). When a signal-power field is unset it falls back to
+    `spacing_other`, then `min_spacing`, so default verdicts don''t change. A new test shows a gate trace
+    1.0 mm from DC+ fails against the reference''s 2.0 mm signal-to-DC+ gap. Signal wires now get a diameter
+    range check (`signal_wire_diameter`) and a length range check, with `min/max_signal_wire_diameter`
+    and `min/max_signal_wire_length`. `measure_rules` reports the reference''s own ranges, and it no '
+  report:
+    status: completed
+    summary: 'Done and committed as 63bd6773. Signal-to-power spacing is now its own DRC rule class, one
+      value per power net: `spacing_signal_dcp`, `spacing_signal_phase` and `spacing_signal_dcm` on `DesignRules`.
+      `measure_rules` measures them from the reference. `spacing_other` now covers only the remaining
+      pairs (signal-signal, and split copper of one net). When a signal-power field is unset it falls
+      back to `spacing_other`, then `min_spacing`, so default verdicts don''t change. A new test shows
+      a gate trace 1.0 mm from DC+ fails against the reference''s 2.0 mm signal-to-DC+ gap. Signal wires
+      now get a diameter range check (`signal_wire_diameter`) and a length range check, with `min/max_signal_wire_diameter`
+      and `min/max_signal_wire_length`. `measure_rules` reports the reference''s own ranges, and it no
+      longer divides by a zero diameter (tested with zero and negative diameters). The fingerprint hashes
+      `int(sw.die)`, so `np.int64(0)` and `0` give the same digest. `check()` builds the shrunk outline
+      once instead of once per trace.'
+    files_changed:
+    - src/moduleforge/drc/rules.py
+    - src/moduleforge/geometry/layout.py
+    - tests/unit/drc/test_drc_net_rules.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/geometry
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Two existing assertions in test_drc_net_rules.py changed their expected value, because the spec
+      moves the signal-power pairs out of spacing_other. Measured gap_other_min and rules.spacing_other
+      for the fixture went from 2 mm to sqrt(8) mm, and the random-variant check now reads the g1..g4
+      gaps from the gap_signal_* values. Tolerances are unchanged and nothing was loosened.
+    - Default signal-wire length limits are not enforced and the default lower diameter bound is only
+      'positive'. Existing tests need this (80 µm gate wires, signal wires over 15 mm). Measured rules
+      still enforce the reference's own diameter and length ranges.
+    - The signal-power fields are per power net, not per signal net. A signal net's reference potential
+      (GATE_HS/KELVIN_HS at PHASE, GATE_LS/KELVIN_LS at DC-) is not applied; T0267's suggested check was
+      a different design.
