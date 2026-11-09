@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T07:46:10+00:00 from repository state — do not edit_
+_generated 2026-11-09T07:46:48+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 214, failed: 3, review: 1, running: 2, todo: 6
 - T0264 `running` critic/review: Review T0257 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T07:12:09+00:00 run_started {"run": "T0255-planner-20261108T231209-3cdb", "task": "T0255", "role": "planner", "session": "7bb31f2f-6013-4687-9422-e9c4c4adc22a"}
 - 2026-11-09T07:20:23+00:00 run_finished {"run": "T0255-planner-20261108T231209-3cdb", "status": "completed", "cost": 2.278426, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T07:20:24+00:00 inbox_opened {"id": "I0138", "kind": "external_action", "subject": "[O003] Burst compute for E008 and its pre-registration checks"}
 - 2026-11-09T07:20:24+00:00 inbox_opened {"id": "I0139", "kind": "external_action", "subject": "[O003] Protected-path changes before E008 registration"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 214, failed: 3, review: 1, running: 2, todo: 6
 - 2026-11-09T07:40:58+00:00 run_finished {"run": "T0257-builder-20261108T232846-46d1", "status": "completed", "cost": 0.668016, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T07:46:03+00:00 verified {"task": "T0257"}
 - 2026-11-09T07:46:10+00:00 run_started {"run": "T0264-critic-20261108T234610-ec0e", "task": "T0264", "role": "critic", "session": "21868d9f-58be-46e4-8007-1ce89871029b"}
+- 2026-11-09T07:46:43+00:00 sleep_detected {"gap_s": 347, "runs_extended": 2}
