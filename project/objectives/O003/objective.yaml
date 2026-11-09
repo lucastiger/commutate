@@ -3,25 +3,31 @@ title: Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance h
 kind: hypothesis
 priority: 1
 risk: critical
-depends_on: [O006]
+depends_on: [O007]
 unlocks: []
 hypothesis:
   statement: >-
-    For the reference set fixed by D0010 (customer reference layouts shared under NDA by 2026-11-12; otherwise the public
-    PowerSynth 2D_Case_2R and 2D_Case_6), a multi-fidelity search (D0008) inside each reference's own substrate outline,
-    terminal pads, stack, dies, die count, bond-wire count, diameter and loop height, with the reference's gate and Kelvin
-    copper kept as fixed keep-out areas, under design rules at least as strict as the reference's own features, finds a
-    layout whose substrate-level commutation-loop inductance at 20 MHz (between the DC+ and DC- terminal pads, dies as
-    shorts; l2_layout) is at least 20 % below the reference's, while its maximum junction temperature (thermal L2 verified
-    in O006) is at most 2 K above the reference's: the lower end of the error band of the median headroom across the
-    references is at least 0.20.
+    For the reference set fixed by D0010 (customer reference layouts shared under NDA by 2026-11-12 and admissible under
+    scope_in; otherwise, or if none is admissible, the public PowerSynth 2D_Case_2R and 2D_Case_6), a multi-fidelity
+    search (D0008) inside each reference's own substrate outline, terminal pads, stack, dies, die count, bond-wire count,
+    diameter and loop height, with the reference's gate and Kelvin copper kept as fixed keep-out areas, under design rules
+    at least as strict as the reference's own features, finds a layout whose module-level commutation-loop inductance at
+    20 MHz (the substrate-level loop between the DC+ and DC- terminal pads by l2_layout at 0.25 mm cells, dies as shorts,
+    plus a terminal inductance fixed per reference before any solve) is at least 20 % below the reference's, while its
+    maximum junction temperature at equal power per die (the scikit-fem thermal reference verified in O007, claim C004,
+    src/moduleforge/solvers/thermal_fem.py at the frozen rule research/o007_dev3/frozen_config.json) is at most 2 K above
+    the reference's after both layouts' own discretisation estimates are deducted: the lower end of the error band of the
+    median headroom across the references is at least 0.20.
   null_hypothesis: >-
     Reference layouts are already near the loop-inductance optimum for their housing, dies and bonding; re-layout offers
     little (< 10 %) inductance improvement at bounded Tj, and the value proposition does not hold.
   why_it_matters: >-
-    Charter assumption A-T3 and the day-60 kill criterion (2026-11-27), as amended by D0009 and D0010. The only public
-    comparison with a commercial module implies about 18 % substrate-only headroom with terminals fixed
-    (research/notes/o003-public-benchmarks.md, an inference), so the outcome is genuinely uncertain.
+    Charter assumption A-T3 and the day-60 kill criterion (2026-11-27), as amended by D0009, D0010 and D0011. The 20 % and
+    10 % lines concern the loop customers buy, between the module's DC+ and DC- terminals, so headroom is judged on the
+    module-level loop (T0146). The only public comparison with a commercial module (S3 in
+    research/notes/o003-public-benchmarks.md; two different modules, not a same-housing re-layout) shows the
+    substrate-associated loop falling from 9.7 to 4.8 nH: about 50 % at the substrate level, about 18 % of the
+    module-internal loop (an inference). The outcome is genuinely uncertain.
   decision_if_pass: >-
     A-T3's loop-inductance branch is supported (provisionally, D0009, until O004 passes; "indicative" if judged on public
     benchmarks, D0010); use the re-layouts in customer conversations and build the derivative workflow around them.
@@ -32,74 +38,168 @@ hypothesis:
     Founder thesis review on 2026-11-27 (D0010), not continuing by default; test the current-mismatch branch of A-T3
     before any further loop-inductance work.
 scope_in:
-  - the reference set of D0010; references must be SiC MOSFET half-bridges without separate antiparallel diode dies
-    (a customer reference with diode dies is reported and excluded until diode dies are modelled)
-  - re-layout inside each reference's substrate outline with terminal pads, stack, dies, die count, wires per die, wire
+  - >-
+    the reference set of D0010. A customer reference is admissible only if it is a SiC MOSFET half-bridge without
+    separate antiparallel diode dies (a reference with diode dies is reported and excluded until diode dies are
+    modelled) and its NDA permits processing on a cloud VM, recorded per customer in the vault (neither the 0.25 mm
+    inductance level nor the thermal reference's level 2 fits this 16 GB machine at module scale); the permission is asked
+    for in the same request as the layout (founder, 2026-11-09). Admissibility is decided and recorded in E008's spec before any solve on a judged reference. If customers shared
+    layouts by 2026-11-12 but none is admissible, the public fallback of D0010 applies with its label ("public
+    benchmarks, low power, indicative"), and each excluded customer reference is reported by vault id and reason only
+    (D0011). Customer and public references are never mixed in one median
+  - >-
+    re-layout inside each reference's substrate outline with terminal pads, stack, dies, die count, wires per die, wire
     diameter and loop height fixed; the reference's gate and Kelvin copper copied as fixed keep-out areas; design rules
     at least as strict as the reference's smallest trace width, spacing and wire pitch
-  - substrate-level loop inductance by l2_layout at 20 MHz; die footprints snapped to the l2_layout lattice identically
-    in the reference and every candidate (snapping recorded)
-  - Tj by the thermal L2 verified in O006 at its frozen grid rule; coolant 65 °C, uniform h = 5000 W/(m² K), equal power
-    per die set so the reference's hottest die rises 60 K above coolant (or the customer's stated operating point)
+  - >-
+    module-level loop inductance L = L_sub + L_term at 20 MHz. L_sub by l2_layout (code_under_test, no code_must_match on
+    O004, D0009) at 0.25 mm cells (refinement 1, E002's level), between the DC+ and DC- terminal pads, dies as ideal
+    shorts. L_term is one constant per reference, the same for the reference and every candidate, fixed in E008's spec
+    before any solve (D0011): for a customer reference, the customer's own terminal inductance recorded in the vault, or
+    the customer's stated module stray inductance minus the reference's L_sub (floored at 0) if only that is stated; for a
+    public reference, or a customer reference with neither, 7 nH, the Q3D value for the laminated DC terminals of the
+    CPES SiC phase-leg module (S3: Z. Chen, PhD dissertation, Virginia Tech, 2013; research/notes/o003-public-benchmarks.md
+    line 61). A PASS is reported with its sensitivity at L_term = 17.5 nH and at L_term = 0; substrate-level headroom is
+    reported beside it
+  - >-
+    the reference's copper, outlines and die footprints snapped to the 0.5 mm design grid, so that it is meshed exactly at
+    0.5 and 0.25 mm, by a rule frozen in E008's spec before any judged reference is loaded (each edge to the nearest grid
+    line, non-rectangular copper staircased, net spacing and die enclosure re-checked by DRC; every snap recorded); die
+    footprints snapped identically in the reference and every candidate; the snapping bias of L_sub(reference) enters the
+    band (A1, term s_ref)
+  - >-
+    Tj by the scikit-fem thermal reference of claim C004 (src/moduleforge/solvers/thermal_fem.py with the GridRule built
+    key for key from research/o007_dev3/frozen_config.json, candidate a_q1h4_graded_gs2: graded Q1, h0 4 mm, dz_max 1 mm,
+    edge grading, amg_gs_sweeps 2, levels 0-2), steady state, k(T) by Picard; coolant 65 °C, uniform h = 5000 W/(m² K);
+    equal power per die P_ref on every die of every layout of a reference, fixed before any candidate solve from level-0
+    solves of the reference so that its hottest die rises 60 K (+/- 1 K) above the coolant, then used unchanged on every
+    layout and grid of that reference. This operating-point rule is the same for every reference and is recorded in E008's
+    spec before any solve (D0011); a customer's own stated operating point is not judged (founder, 2026-11-09). Per-die
+    Tj max is the maximum nodal value on the die top face at each level (C004)
+  - >-
+    the Tj limit, from each layout's own three grids (C004 caveat 1; D0013). For every die i of a thermally checked layout
+    X (both switches), T_i(X) is the level-2 per-die Tj max and GCI_i(X) = mfos.metrics.gci_capped of its Tj max at levels
+    0, 1 and 2 (floor 1e-3 K), never C004's 0.5 K bound or another layout's value. Conservative test, which chooses the
+    best candidate for h_lo: a candidate C of reference R meets the Tj limit if and only if max_i (T_i(C) + GCI_i(C)) -
+    max_j (T_j(R) - GCI_j(R)) <= 2 K, the highest Tj max C can have minus the lowest R can have (D0013's deduction of
+    both layouts' estimates, in interval form). Optimistic test, which chooses the best candidate for h_hi so that thermal
+    discretisation cannot push toward the kill: C may meet the limit if and only if max_i (T_i(C) - GCI_i(C)) - max_j
+    (T_j(R) + GCI_j(R)) <= 2 K. Both tests run on the same checked set with no extra thermal solves. A die whose GCI is
+    +inf makes an upper bound +inf and drops out of a lower bound (it bounds nothing): such a die on C fails the
+    conservative test, and such a die on R makes every checked candidate pass the optimistic test; these dies are counted
+    (n_tj_inf) and reported. The per-die GCI is used without a multiplier; C004 caveat 2 (on generator geometry 3 of 40
+    scikit-fem GCIs were 3-26 % smaller than the distance to the finite-volume L2's Richardson limit) is stated with the
+    verdict (founder, 2026-11-09)
+  - >-
+    the stack-type spot check required by O007's decision_if_pass and D0013 addendum 2, before any verdict: on at least
+    one reference of every stack type other than C004's default Al2O3 DBC stack (the PowerSynth references use AlN), the
+    A3 metric of O007 (mfos.metrics max_gci_consistency: scikit-fem levels 0-2 against the in-house finite-volume L2 at
+    levels 1-3 of its frozen rule, at the same operating point, floor 1e-3 K, finite-volume estimate cap 0.25 K) is at
+    most 1 on every die
 scope_out:
-  - the current-mismatch branch of A-T3 (no current-sharing model exists yet); gate-loop symmetry
-  - terminal tabs, leads and bus bars (module-level headroom is reported as a secondary metric where the customer's own
-    terminal inductance is known; substrate-level headroom overstates module-level headroom)
-  - modules with separate antiparallel diode dies; die swaps and die-count changes
-  - manufacturability beyond the stated design rules (vendor rules are not available)
+  - >-
+    the current-mismatch branch of A-T3 (no current-sharing model exists yet); gate-loop symmetry; Tj under unequal
+    per-die power
+  - >-
+    terminal tabs, leads and bus bars as geometry. They enter only as the fixed per-reference L_term of scope_in; no tab
+    model, so a change in the tab current path caused by the re-layout is not represented
+  - >-
+    modules with separate antiparallel diode dies; die swaps and die-count changes
+  - >-
+    manufacturability beyond the stated design rules (vendor rules are not available)
 evidence_plan: [E008]
 acceptance:
   required_experiments: [E008]
   pass_all:
     - {id: A1, metric: E008.headroom_median_lo, comparator: ">=", threshold: 0.20, uncertainty: {use: point},
-       description: "median over references of h_lo = 1 - r (1 + w), r = L(best re-layout meeting the Tj limit) / L(reference), w = e_ref + e_best + d_fh (linear sum of both layouts' relative discretisation estimates and the relative L2-FastHenry ratio difference measured in O006 pilot P4, or 2 (e_ref + e_best) if P4 found FastHenry unusable); h = 0 when no candidate meets the Tj limit (the reference is in the pool)"}
+       description: "median over references of h_lo = a (1 - r (1 + w)). r = L_sub(best) / L_sub(reference), best = the lowest-L_sub candidate that meets the conservative Tj test of scope_in among those thermally checked under F3; r = 1 and h = 0 when none meets it (the reference is in the pool). a = L_sub(reference) / (L_sub(reference) + L_term), the module-level factor (scope_in). w = 2 e_R + s_ref: l2_layout's discretisation estimate of the headroom ratio doubled, because O006 pilot P4 found FastHenry not usable at module scale (D0009). e_R is O006 pilot P3's estimator applied to the ratio R = L_sub(best) / L_sub(reference), level by level from the same solves (P3 recommendation 2): 3 |R(0.25 mm) - R(0.5 mm)| + the thickness term of R from 5/3/3, 10/6/6 and 20/12/12 layers at 0.5 mm + 3 |R(wire annuli bisected, 12 filaments per ring) - R(production wire)| at 0.5 mm, linear sum; e_R = 0 when best is the reference. s_ref = 2 |L_sub(reference snapped to 0.25 mm) / L_sub(reference snapped to 0.5 mm) - 1| at 0.25 mm cells, 0 when the reference is already on the 0.5 mm grid. Recomputed from the rows by a new mfos.metrics function (protected path)"}
   fail_any:
     - {id: K1, metric: E008.headroom_median_hi, comparator: "<", threshold: 0.10, uncertainty: {use: point},
-       description: "the day-60 kill of D0009/D0010: median over references of h_hi = 1 - r (1 - w) below 10 %"}
+       description: "the day-60 kill of D0009/D0010: median over references of h_hi = a (1 - r (1 - w)) below 10 %, with a as in A1, and r and w as in A1 but for the best candidate under the optimistic Tj test of scope_in (the lowest-L_sub checked candidate that passes it; the reference when none does). Because r <= 1, h_hi >= a w for every reference, so K1 can fire only if the median of a w is below 0.10. Recomputed from the rows by a new mfos.metrics function (protected path)"}
   max_evaluations: 1
 failure_modes:
   - id: F1
-    description: "The search or the model, not the reference, creates headroom (artifacts)"
-    detection: "gated sanity checks per reference: (a) the reference expressed in the generator's parameter space (its twin) has |h| <= w; (b) a positive control, the same search started from the run's own winner as reference, finds |h| <= w; (c) band width w <= 0.05; declared null baseline column: the median DRC-valid candidate that meets the Tj limit, whose headroom must not reach A1"
-    response: "experimental failure (INVALID): fix the generator or search under a new experiment id"
+    description: "The search or the model, not the reference, creates headroom (artifacts), or the search lacks the power to find headroom that exists"
+    detection: "gated sanity checks per reference: (a) twin: the reference expressed in the generator's parameter space by a construction rule frozen with the generator has |1 - L_sub(twin) / L_sub(reference)| <= 2 e_R(twin, reference) + s_ref; a reference whose twin fails is excluded and reported, and E008 is INVALID only if no reference remains (T0146); (b) planted-headroom search-power control, completed before K1 is read (D0011, T0145, T0146): a degraded copy D of the twin, made by a degradation rule frozen in E008's spec with L_sub(D) >= 1.25 L_sub(twin), is given to the frozen search as its reference, with a new sealed seed and the same budget, inductance only (no Tj limit); the search must reach h_ctrl >= h_plant - w_ctrl, where h_ctrl = 1 - L_sub(best of the control) / L_sub(D), h_plant = 1 - L_sub(twin) / L_sub(D) and w_ctrl = 2 e_R(best of the control, D); (c) band width w <= 0.05 for every reference, for both the h_lo and the h_hi best candidate. Declared null baseline for A1 (null_baselines, kind column): the twin's L_sub in place of the best candidate's, which must fail A1. The median L1 headroom of the whole DRC-valid pool and the inductance-only best (no Tj limit) are reported as secondary columns, not nulls: a random re-layout that beats the reference is evidence of headroom, not an artifact (T0145, T0146). The v2 control that re-ran the search from its own winner is dropped: it was vacuous or failed through a Tj-limit ratchet (T0145, T0146)"
+    response: "experimental failure (INVALID) when (b) or (c) fails or no reference remains after (a): fix the generator or the search under a new experiment id; at day 60 D0011 applies (no verdict counts as INCONCLUSIVE)"
   - id: F2
     description: "Winner's curse and shared model choices"
-    detection: "the winner and its reference re-checked with FastHenry where O006 pilot P4 shows it usable (the ratio difference is part of w); exploitation of model choices both tools share (ideal die shorts, point-contact terminal pads, lattice snapping) is not detectable here and is stated with the verdict; O004's F6 diagnostic covers it later"
+    detection: "no independent inductance cross-check exists at module scale: O006 pilot P4 found FastHenry not usable on the hardware agents may use, so D0009's fallback (l2_layout's estimate doubled) sets w and no FastHenry re-check is run. Each winner's estimate e_best is computed on the winner itself, never transferred from P3's perturbations, so the selection among the shortlist cannot pick a layout whose discretisation error is not in the band. Exploitation of model choices every l2_layout solve shares (ideal die shorts with an equipotential footprint, bilinear point-contact terminal pads, lattice snapping, no tab model) is not detectable here and is stated with the verdict; O004's F6 diagnostic covers it later"
     response: "report"
   - id: F3
     description: "Leakage or forking paths: generator and search tuned on the judged references"
-    detection: "the generalised generator and the search driver are developed only on the generator's own layouts and PowerSynth 2D_Case_4, and frozen (code hashes in E008's spec) before any judged reference is loaded; reconstructions frozen and hashed before any solve; fixed search budget (20,000 DRC-valid L1 candidates per reference, L1 order, thermal L2 down the list until 8 candidates meet the Tj limit or 50 are tried)"
+    detection: "the generalised generator, the twin construction, the degradation rule and the search driver are developed only on the generator's own layouts and PowerSynth 2D_Case_4 (O006 pilot geometry) and frozen (code hashes in E008's spec) before any judged reference is loaded; reconstructions, snapping, L_term and the operating-point rule frozen and hashed before any solve; fixed budget per reference (founder decision, 2026-11-09): 20,000 DRC-valid candidates from E008's sealed seed screened by L1; l2_layout at 0.25 mm on the 16 best by L1 (the D0008 shortlist); the thermal reference on these candidates in ascending L_sub order, in batches of 4, stopping after the first batch that holds a candidate meeting the conservative Tj test, at most 8 candidates (unchecked candidates all have a higher L_sub than every checked one); the control of F1(b) uses the same budget without thermal solves"
     response: "a change after freezing voids the run"
   - id: F4
     description: "Reconstruction errors bias the reference"
-    detection: "public references: the same frozen reconstructions as O004; customer references: reconstructed from the customer's own files in the vault; the L1 sensitivity of r to assumed dimensions reported; reconstruction errors common to reference and candidates largely cancel in r"
+    detection: "public references: the same frozen reconstructions as O004; customer references: reconstructed from the customer's own files in the vault; the snapping bias s_ref is in w; other reconstruction errors in the copper pattern and wire routing do not cancel in r (T0145), so for public references the verdict is stated as conditional on the frozen reconstruction and the L1 sensitivity of r to the assumed dimensions is reported, not added to w"
     response: "report; founder judgement in the day-60 decision"
   - id: F5
     description: "Customer data leaves its permitted boundary"
-    detection: "E008 rows hold reference ids, vault sha256s and inductance and temperature values only, never geometry; customer runs local unless that customer's NDA permits a VM (recorded per customer before the run)"
+    detection: "E008 rows hold reference ids, vault sha256s and inductance, power and temperature values only, never geometry; a customer reference is processed on a cloud VM only where that customer's NDA permits it (scope_in admissibility, recorded per customer before the run); no customer file enters the repository"
     response: "stop; founder decision; remove leaked data"
-budget: {usd: 150, cpu_hours: 320, wall_days: 25}
+  - id: F6
+    description: "Thermal reference misapplied, or outside its verified scope"
+    detection: "gated sanity checks: (a) every thermally checked layout's estimate comes from its own three grids: per die, three Tj values from three solves of that layout's own geometry (the layout fingerprint recorded per solve), node counts growing by a factor of 8 (+/- 15 %) from each level to the next, and every GCI recomputed by mfos.metrics.gci_capped from those row values (C004 caveat 1); (b) the GridRule equals research/o007_dev3/frozen_config.json (sha256 0226b770...0e9a) key for key, and thermal_fem.py has the bytes EV-O007-01 evaluated, sha256 a216d5fe... (code_must_match on O007, requires_passed O007; every O003 extension stays out of thermal_fem.py, and the AlN k(T) law goes in src/moduleforge/geometry/stack.py); (c) energy balance |Q_out / Q_in - 1| <= 1e-6 and Picard to 1e-4 K on every solve; (d) the reference's level-0 calibration within 60 +/- 1 K before any candidate solve; (e) the stack-type spot check of scope_in. The per-die Tj-max node coordinates per level, and how often they move, are reported (C004 caveat 1)"
+    response: "(a)-(d): experimental failure (INVALID), fix under a new experiment id; (e) failed: no verdict (INVALID), diagnosis of which solver is wrong (mf-diagnosis) and a founder decision, as O007's decision_if_pass requires"
+budget: {usd: 250, cpu_hours: 320, wall_days: 25}
 require_plan_approval: true
 notes: >-
-  PAUSED (D0011, 2026-11-01): not to be approved until O006's pilots P1, P3 and P4 have reported and this draft is
-  revised once for draft reviews T0145/T0146 (planted-headroom search-power control; module-level denominator via a
-  terminal model or the customer's own terminal inductance; band computable for locally processed customer layouts;
-  snapping bias in the band; empty-customer-set rule; operating point fixed per reference before any solve).
-  Draft by the founder session of 2026-11-01, revised after draft reviews T0141 (statistics) and T0142 (physics), which
-  rejected the first draft (undefined error band; tool sample inputs as the only references; n = 2 almost never
-  resolves; leakage through generator development; h undefined when the Tj limit removes the shortlist; null baselines
-  wrongly exempted; free wire count and diameter; gate and Kelvin routing ignored; substrate-only loop called
-  module-internal; lattice versus real die sizes). Founder decision D0010 (customer layouts first, public fallback,
-  INCONCLUSIVE -> thesis review) fixes the reference set by rule before any data. Inputs: D0007, D0008, D0009, D0010, O006
-  (thermal L2 and pilots P3/P4), O004 (frozen public reconstructions, later validation). Timeline: E008 must run by about
-  2026-11-24; O006 must pass first.
-  Build work (planner): (1) reconstructions (public: shared with O004, frozen; customer: in the vault, never committed);
-  (2) a generalised generator producing DRC-valid re-layouts inside a given outline with fixed terminal pads, keep-out
-  areas, stack, dies, die count and wire parameters (today's generator is tied to its own 70 x 40 mm housing); (3) the
-  search driver per D0008 and F3; (4) design-rule strictness per scope_in.
-  E008 design (scientist): sealed seed for candidate generation; rows per reference (reference_id, vault_sha256 or
-  reconstruction hash, L_ref, e_ref, L_best, e_best, d_fh, w, r, h, h_lo, h_hi, tj_ref, tj_best, n_tj_rejected,
-  h_twin, h_control, h_null) and per thermally checked candidate; recompute entries for headroom_median_lo and
-  headroom_median_hi (new mfos.metrics functions: protected path, founder approval needed); the null column per F1;
-  secondary metrics: per-reference headroom, module-level headroom where terminal inductance is known, die-snapping
-  sensitivity. The day-60 verdict is a founder decision per D0009/D0010.
+  Version 3, drafted 2026-11-09, for draft review and founder approval. D0011 paused O003 until O006's pilots P1, P3 and
+  P4 had reported and one revision addressed T0145/T0146. The pilots have reported
+  (research/notes/o006-p1-thermal-envelope.md, o006-p3-em-convergence.md with its 2026-11-02 addendum,
+  o006-p4-fasthenry-feasibility.md). O006 did not pass (EV-O006-01 INCONCLUSIVE); its thermal role passed to O007 (D0014),
+  which PASSED (EV-O007-01, claim C004 supported). This revision addresses every D0011, T0145 and T0146 item, so the
+  pause lifts once v3 passes draft review and the founder approves it (decision record D0015).
+  Founder decisions 2026-11-09 (OD-1 to OD-8, D0015): (1) ratio-level band w = 2 e_R + s_ref with F1(c) kept at 0.05,
+  subject to the pre-registration dev check below; (2) L_term = 7 nH (S3) for public references and for customers who
+  state none, a PASS reported with its sensitivity at 17.5 nH and at 0; (3) customer layouts admissible only with that
+  customer's NDA permission to run on a VM, asked for in the same request as the layout; (4) interval-form conservative
+  Tj test for h_lo and optimistic test for h_hi on the same checked set, no GCI multiplier, C004 caveat 2 disclosed; (5)
+  the 60 K rule for every reference; (6) thermal checks in L_sub order in batches of 4, stopping after the first batch
+  that holds a candidate meeting the conservative test, at most 8 per reference; (7) E008 requires the thermal_fem.py
+  bytes EV-O007-01 evaluated (sha256 a216d5fe...; the founder reverts commit 4a39469c), and every O003 extension stays
+  out of thermal_fem.py (the AlN k(T) law goes in src/moduleforge/geometry/stack.py); (8) budget.usd raised from 150 to
+  250.
+  Pre-registration dev check (decision 1): before E008 registration, e_R is measured on at least 4 pairs as different as
+  real re-layouts (the twin against random DRC-valid candidates of the same outline, on 2D_Case_4 and on generator
+  outlines); if any e_R exceeds 0.02, the founder decides before E008 is registered. P3 measured ratio estimates of
+  0.09-0.16 % only on 1-2 mm perturbations of 2D_Case_4, against absolute estimates of about 2.5-3.7 % per layout.
+  Timeline: customer layouts by 2026-11-12 (day 45; none in the vault on 2026-11-09); E008 must run by about 2026-11-24;
+  if O003 has no verdict by 2026-11-27, the day-60 criterion counts as INCONCLUSIVE and the founder holds a thesis
+  review (D0011). The day-60 verdict is a founder decision per D0009/D0010.
+  Verdict regions for one reference (single-reference point headroom h_sub = 1 - r): PASS needs h_sub >= 1 - (1 - 0.20 /
+  a) / (1 + w) and K1 needs h_sub < 1 - (1 - 0.10 / a) / (1 - w). For example, a = 1, w = 0.02: PASS from 0.216, kill
+  below 0.082; L_sub = 10 nH, L_term = 7 nH (a = 0.59), w = 0.02: PASS from 0.353, kill below 0.153; L_sub = 20 nH (a =
+  0.74), w = 0.02: PASS from 0.284, kill below 0.117. With n = 1-2 references the median is one or two numbers, and
+  INCONCLUSIVE is the likely outcome for a true headroom near the cited priors (T0145, T0146); per-reference h_lo and
+  h_hi are reported beside the verdict, and one of two references may have less headroom than the median.
+  History: v1 rejected by T0141 (statistics) and T0142 (physics); v2 (2026-11-01) rejected by T0145 and T0146 (search
+  power, module-level denominator, null baseline, Tj ratchet, band for local customer data, snapping, empty set, operating
+  point). Inputs: D0007, D0008, D0009, D0010, D0011, D0013, D0014, D0015, O007 and C004, O006 pilots P1/P3/P4, O004
+  (frozen public reconstructions, later validation).
+  Build work (planner): (1) reconstructions of 2D_Case_2R and 2D_Case_6 (shared with O004, frozen; GPL rules of D0007),
+  including their thermal stacks (an AlN k(T) law with a citation in src/moduleforge/geometry/stack.py, never in
+  thermal_fem.py) and snapping; customer reconstructions only in the vault, never committed; (2) a generalised generator
+  producing DRC-valid re-layouts inside a given outline with fixed terminal pads, keep-out areas, stack, dies, die count
+  and wire parameters, with die islands and die-attach footprints for the thermal reference (today's generator is tied
+  to its own 70 x 40 mm housing); (3) the twin construction and the degradation rule of F1; (4) the search driver per
+  D0008 and F3; (5) design-rule strictness per scope_in; (6) new mfos.metrics functions headroom_median_lo and
+  headroom_median_hi (the conservative and optimistic Tj tests, a, e_R, w and s_ref), a protected path applied by the
+  founder.
+  E008 design (scientist): sealed seeds for candidate generation and for the control; policy burst_experiments extended
+  to E008 by the founder (agents may not launch VMs); code_must_match on src/moduleforge/solvers/thermal_fem.py with
+  O007 (the bytes EV-O007-01 evaluated, sha256 a216d5fe...) and requires_passed [O007]; no O003 change to
+  thermal_fem.py; l2_layout as code_under_test without code_must_match (D0009). The pre-registration dev check of e_R
+  above runs on development geometry only and its values are recorded in E008's spec. Rows per reference:
+  reference_id, vault_sha256 or reconstruction hash, stack type, L_term, a, P_ref, the five inductance solves (0.5 and
+  0.25 mm, thickness 5/3/3 and 20/12/12, 12-per-ring wires) of the reference, of the h_lo and h_hi best candidates, of
+  the twin, of D and of the control's best, e_R for each pair (best/reference for h_lo and h_hi, twin/reference, control
+  best/D), s_ref, w for h_lo and h_hi, r, h, h_lo, h_hi, h_sub, h_twin, h_plant, h_ctrl, the reference's and each best
+  candidate's interval bounds max_i (T_i + GCI_i) and max_i (T_i - GCI_i), n_thermal_checked, n_tj_rejected, n_tj_inf,
+  the inductance-only best, the L1 pool median headroom, h_lo and h_hi at L_term = 0 and 17.5 nH (sensitivity), the
+  stack-type A3 ratio; rows per thermally checked layout and die: Tj max at levels 0-2, GCI, the Tj-max node per level,
+  node counts and fingerprints; rows per shortlisted candidate: L1 and L_sub at 0.25 mm. Recompute entries for
+  headroom_median_lo and headroom_median_hi; the twin null column per F1; dev rows on 2D_Case_4 and generator layouts
+  checked with mfos exp check before registration. Secondary: per-reference headroom, substrate-level headroom, the
+  twin's Tj against the reference's (a generator-versus-reconstruction thermal offset), die-snapping sensitivity.
