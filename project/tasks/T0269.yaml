@@ -3,7 +3,7 @@ objective: O003
 title: 'Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0261
 description: "Follow-up to T0261 (merged), from review T0266 (project/reviews/T0261/T0266.json; read it\
@@ -52,11 +52,12 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0269-headroom-metrics-nonzero-band-tests-muta
 pr: null
-runs: []
+runs:
+- T0269-builder-20261109T072044-7412
 created_by: founder
 created_at: '2026-11-09T15:17:19+00:00'
 protected_approved: false
