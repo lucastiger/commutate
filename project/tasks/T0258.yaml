@@ -1,0 +1,98 @@
+id: T0258
+objective: O003
+title: Generalised derivative-layout generator inside a reference's housing
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0256
+description: 'New module src/moduleforge/generate/derivative.py (build on generate/halfbridge.py where
+  possible). It provides two things.
+
+  (1) A ReferenceSpec holding: substrate and baseplate outline; stack; terminal pads per net; fixed keep-out
+  copper (the reference''s gate and Kelvin traces, copied unchanged); die footprint, thickness, attach
+  thickness and source/gate/Kelvin pad rectangles; dies per switch; power wires per die, wire diameter
+  and loop height; gate/Kelvin wire diameter; DesignRules (n1). Also spec_from_layout(layout, rules, keepout_nets),
+  which derives the spec from a reconstructed Layout.
+
+  (2) generate(spec, n, seed) -> list[Layout], deterministic in seed (numpy Generator, no global state).
+  Every returned layout is DRC-clean under spec.rules, including the per-pair spacing, width-class and
+  bondability rules of n1, with signal wires from each die''s gate and Kelvin pads to the fixed copper.
+  Every lateral parameter lies on the 0.5 mm design grid, so that l2_layout meshes it exactly at 0.5 and
+  0.25 mm. Die-attach footprints must be valid for thermal_fem.layout_grid. Pads, keep-outs, stack, dies,
+  die count and wire parameters are byte-identical to the spec.
+
+  The parameter space must be rich enough that the twin construction (next task) can express a reference
+  such as 2D_Case_4 and that candidates differ as much as real re-layouts: several topologies (for example
+  side-by-side, interleaved, U-shaped analogues adapted to arbitrary pad positions), die rows or columns,
+  and copper widths and gaps. Expose the parameter vector of every layout (layout -> params) and a deterministic
+  params -> Layout builder; the twin depends on both.
+
+  F3: develop and test only on generator housings (a ReferenceSpec of the 70 x 40 mm housing) and on 2D_Case_4
+  via research/scripts/o006_case4_layout.py (tests may load it by path). For Case 4''s gate and Kelvin
+  wires, use its SIG_* traces as keep-outs and state an assumed maximum signal-wire length; never read
+  2D_Case_2R, 2D_Case_6 or customer data.
+
+  Throughput target: 20,000 DRC-valid candidates per reference must be feasible. Record the measured candidates
+  per second on Case 4 in the module docstring and assert at least 5/s in a test marked slow.
+
+  Tests (tests/unit/generate/test_derivative.py): determinism; DRC-clean under the spec''s rules; on the
+  l2_layout lattice at 0.5 and 0.25 mm; thermal_fem.layout_grid level 0 raises nothing; physics.peec L1
+  returns finite positive loop inductance at 20 MHz on Case 4 candidates; at least 3 distinct topologies
+  among 200 Case 4 candidates; params round-trip (params -> Layout -> params) exact; keep-outs and pads
+  unchanged. thermal_fem.py stays byte-identical. If L1 (physics/peec) needs generalising to arbitrary
+  outlines or baseplates, keep E002''s L1 values unchanged and add a regression test.'
+context_files:
+- project/objectives/O003/objective.yaml
+- project/decisions/D0008-o003-multi-fidelity-search.md
+- src/moduleforge/generate/halfbridge.py
+- src/moduleforge/drc/rules.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/physics/peec/model.py
+- src/moduleforge/solvers/thermal_fem.py
+- research/scripts/o006_case4_layout.py
+- tests/unit/generate/test_halfbridge.py
+deliverables: []
+touches:
+- src/moduleforge/generate/**
+- src/moduleforge/physics/peec/**
+- tests/unit/generate/**
+- tests/unit/physics/peec/**
+- tests/regression/**
+definition_of_done:
+- cmd: null
+  exists: src/moduleforge/generate/derivative.py
+  timeout_s: 900
+- cmd: null
+  exists: tests/unit/generate/test_derivative.py
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit/generate tests/unit/drc tests/unit/physics tests/regression
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Build item (2) of the notes; the search's candidate pool, F1(b)'s control and the twin all
+  rest on it. It must be frozen before any judged reference is loaded (F3).
+history: []

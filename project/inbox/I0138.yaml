@@ -1,0 +1,26 @@
+id: I0138
+kind: external_action
+subject: '[O003] Burst compute for E008 and its pre-registration checks'
+summary: 'Agents may not launch VMs, but E008 and several of its pre-registration checks need more than
+  this 16 GB machine. Needed: (1) add E008 to burst_experiments in .mfos/policy.toml (protected). (2)
+  Once the E008 design task merges, run the full-fidelity dev script on a burst VM (0.25 mm EM, thermal
+  level 2). It produces Case 4''s twin-gate dev rows and the at-least-4-pair band check, the values the
+  founder decides on before registration if any e_R > 0.02 or a twin gate fails. (3) If a judged reference
+  is not already on the 0.5 mm grid, run the snapping check at 0.125 mm cells. On Case 4 this did not
+  finish in 8.7 h (P3 addendum), so it may have to be reported to you as not completable. P3 measured
+  about 2 h of wall time per 0.25 mm solve at Case 4 size, and E008 needs about 35 such solves per reference
+  plus three-level thermal solves. The E008 design task will record cpu_hours_est against the 320 CPU-hour
+  budget and the 2026-11-24 run date.'
+refs:
+- O003
+- T0255
+options:
+- 'Approve: add E008 to burst_experiments now and reserve VM time for the dev rows once the design task
+  merges'
+- Defer until the E008 draft's cost estimate is in
+recommendation: Approve now, so the VM step does not land on the critical path to 2026-11-27.
+status: open
+response: ''
+created_at: '2026-11-09T07:20:24+00:00'
+resolved_at: null
+resolved_by: null

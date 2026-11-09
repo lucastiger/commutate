@@ -1,0 +1,83 @@
+id: T0257
+objective: O003
+title: AlN k(T) law in stack.py and the frozen grid-snapping rule
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Two inputs needed to bring a reference into the model: AlN thermal conductivity and grid
+  snapping.
+
+  (a) Add a cited AlN k(T) law to K_LAWS in src/moduleforge/geometry/stack.py (OD-7: never in thermal_fem.py),
+  normalised as the other laws and valid over K_T_MIN..K_T_MAX. Cite a primary source in the module docstring
+  (for example Slack et al., J. Phys. Chem. Solids 48, 641 (1987), or an equivalent table for polycrystalline/sintered
+  AlN) with the exponent or table and its confidence, as for Si3N4. Tests in tests/unit/geometry/test_stack.py:
+  f(300 K) = 1, monotone decreasing, and the law reproduces its cited points within a stated tolerance.
+  A Layer(''ceramic'', ''AlN'', ...) k_at works, and thermal_fem.layout_grid accepts a Layout with an
+  AlN ceramic at level 0. src/moduleforge/solvers/thermal_fem.py must stay byte-identical.
+
+  (b) New src/moduleforge/geometry/snap.py implementing scope_in''s snapping rule for a parameter grid
+  (0.5, 0.25 and 0.125 mm). Each copper, outline, terminal-pad and die-footprint edge moves to the nearest
+  grid line. Non-rectangular copper is staircased on the grid. Die footprints are snapped identically
+  wherever the same die geometry appears: same input, same output, for the reference and every candidate.
+  Wire end points move with their pads only as far as needed to stay on them. Every snap is recorded (element,
+  before, after, displacement), and the record is returned with the snapped Layout. After snapping, net
+  spacing and die enclosure are re-checked with drc.check under caller-given DesignRules and returned
+  as violations, never silently repaired. Ties at exactly half a grid step resolve by one documented rule.
+  Tests: identity (unchanged fingerprint) on generator layouts, which are already on the 0.5 mm grid;
+  idempotence; every displacement at most half a grid step; staircase area error bounded on a diagonal
+  and a triangular fixture; nets never merged; the snapped layout is exact on the l2_layout lattice at
+  0.5 and 0.25 mm (the same check research/scripts/o006_case4_layout.py uses). Develop on generator layouts
+  and 2D_Case_4 only (F3).'
+context_files:
+- project/objectives/O003/objective.yaml
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- src/moduleforge/solvers/l2_layout.py
+- research/scripts/o006_case4_layout.py
+- tests/unit/geometry/test_stack.py
+deliverables: []
+touches:
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/geometry/snap.py
+- src/moduleforge/geometry/__init__.py
+- tests/unit/geometry/**
+definition_of_done:
+- cmd: null
+  exists: src/moduleforge/geometry/snap.py
+  timeout_s: 900
+- cmd: uv run pytest -q tests/unit/geometry
+  exists: null
+  timeout_s: 1200
+- cmd: uv run python -c "from moduleforge.geometry.stack import K_LAWS; f = K_LAWS['AlN']; assert abs(f(300.0)
+    - 1.0) < 1e-12 and f(400.0) < f(300.0)"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in requires the AlN k(T) law in stack.py (OD-7) for the public references' Tj, and the
+  snapping rule frozen in E008's spec before any judged reference is loaded (s_ref enters w, A1/K1).
+history: []

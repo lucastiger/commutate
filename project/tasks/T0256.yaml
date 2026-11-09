@@ -1,0 +1,94 @@
+id: T0256
+objective: O003
+title: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Extend DesignRules/DRC and Layout so that O003''s design-rule strictness (scope_in) can
+  be stated, measured on a reference and enforced. Develop and test only on generator layouts and synthetic
+  fixtures. Never read or download PowerSynth 2D_Case_2R/2D_Case_6 files or any customer data (F3).
+
+  (a) DesignRules (src/moduleforge/drc/rules.py): add optional per-net-pair minimum spacing (pairs DC+/PHASE,
+  PHASE/DC-, DC+/DC-, each with its own value, plus one value for every other net pair), and minimum width
+  per net class (power nets DC+, PHASE, DC- vs other nets). The defaults must reproduce today''s behaviour
+  exactly: existing tests unchanged, generate_layouts output byte-identical.
+
+  (b) Layout (src/moduleforge/geometry/layout.py): add an optional field for gate and Kelvin-source wires
+  (each with its die index, die pad name ''gate'' or ''kelvin'', and landing net) and allow a ''kelvin''
+  pad in Die.pads. These wires are excluded from to_conductors(), because ideal die shorts would join
+  them to the power path (scope_in). Layout.fingerprint() must cover them when present and must give unchanged
+  digests for layouts without them. Record the fingerprints of generate_layouts(12, seed=0) before the
+  change and assert them in a regression test under tests/regression/.
+
+  (c) DRC check(): enforce per-pair spacing and per-class width. Bondability (scope_in): each die''s gate
+  pad must be within max_gate_wire_length of the fixed gate copper, and its Kelvin pad within max_kelvin_wire_length
+  of the fixed Kelvin copper. Each gate/Kelvin wire must start on its die pad and land on copper of its
+  net. No gate or Kelvin wire may cross, in plan view, any wire (power or signal) of another net. Wire
+  pitch applies to signal wires too.
+
+  (d) measure_rules(layout) -> (DesignRules, record dict). It measures on a given (snapped) layout: the
+  minimum gap of each power-net pair; the smallest gap over all other pairs; the minimum power-net width
+  and the minimum other-net width (bisection to 1 um with the same opening test the DRC uses); the smallest
+  wire pitch; die_spacing; die_edge_margin; edge_margin; the longest gate wire and the longest Kelvin
+  wire. Property test: every generator layout (seeds 0..19, plus layouts with synthetic gate/Kelvin copper
+  and wires) is DRC-clean under its own measured rules. Tightening any measured value by 1 um below what
+  was measured must keep the layout clean, and loosening the spacing check must not be possible. Unit
+  tests for each new rule, with hand-built pass and fail fixtures.'
+context_files:
+- project/objectives/O003/objective.yaml
+- src/moduleforge/drc/rules.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/generate/halfbridge.py
+- tests/unit/drc/test_drc.py
+- tests/unit/geometry/test_layout.py
+- research/scripts/o006_case4_layout.py
+deliverables: []
+touches:
+- src/moduleforge/drc/**
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/geometry/__init__.py
+- tests/unit/drc/**
+- tests/unit/geometry/test_layout.py
+- tests/regression/test_fingerprints_unchanged.py
+definition_of_done:
+- cmd: null
+  exists: tests/unit/drc/test_drc_net_rules.py
+  timeout_s: 900
+- cmd: null
+  exists: tests/regression/test_fingerprints_unchanged.py
+  timeout_s: 900
+- cmd: uv run pytest -q tests/unit/drc tests/unit/geometry tests/unit/generate tests/regression
+  exists: null
+  timeout_s: 1200
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in design-rule strictness (per-pair spacing T0252, power-net width and bondability T0254)
+  and the measurement of rules on the snapped reconstruction; A1/K1 only count candidates under these
+  rules.
+history: []

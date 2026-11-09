@@ -3,7 +3,7 @@ objective: O003
 title: Plan O003 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,23 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O003 v5 was approved on 2026-11-09 with no evidence yet: 0/1 evaluations, no E008 draft, and
+    none of the build work its notes list. The generator is tied to its own 70 x 40 mm housing. The DRC
+    uses one spacing rule for every net and draws no gate or Kelvin wires. There is no AlN k(T) law, snapping
+    rule, twin, degradation rule, search driver or headroom metric, and 2D_Case_2R and 2D_Case_6 have
+    not been reconstructed. The biggest threats to a verdict are failures that make E008 INVALID before
+    any kill or pass, so the cheapest way to a decisive result is to remove them early: (i) a generator
+    whose parameter space cannot express a twin that passes both twin gates (F1(a)); (ii) a band above
+    0.05, or any measured e_R above 0.02 (F1(c) and the pre-registration check); (iii) compute and calendar.'
+  created:
+  - T0256
+  - T0257
+  - T0258
+  - T0259
+  - T0260
+  - T0261
+  - T0262
+  - T0263
+  dropped_for_limits: 0

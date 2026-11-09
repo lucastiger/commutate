@@ -1,0 +1,102 @@
+id: T0263
+objective: O003
+title: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 public fallback), snapped,
+  with measured rules
+type: research
+agent: scientist
+status: proposed
+depends_on:
+- T0262
+description: 'Only after the F3 freeze (n7 merged); the first step is to run experiments/runners/e008_run.py
+  --verify-freeze. Reconstruct the D0010 public fallback references in research/scripts/o003_powersynth_references.py,
+  following research/scripts/o006_case4_layout.py exactly (D0007). Download the GPL-3.0 files of e3da/PowerSynth2-pkg
+  at a pinned commit to a temporary directory outside the repository, record the sha256 of every file
+  read, transcribe geometry facts by hand, and never commit or copy a PowerSynth file.
+
+  For each reference:
+
+  - Copper islands and nets: DC+, PHASE, DC- and the commutation-loop port. Gate and Kelvin copper as
+  fixed keep-out traces; 2D_Case_2R has no Kelvin source per its README.
+
+  - Dies, source/gate/Kelvin pads, power wires, and gate/Kelvin wires as n1''s signal wires.
+
+  - The stack, with ceramic material ''AlN'' (n2''s law).
+
+  - Modelling choices stated with an M-number as in Case 4: loop height assumption, die attach (a non-zero
+  thickness thermal_fem accepts; state the choice), terminal pads at lead footprints.
+
+  - A ReferenceSpec via spec_from_layout (n3).
+
+  - Snapping by geometry/snap.py at 0.5 mm, plus the 0.25 and 0.125 mm variants for the pre-registration
+  snapping check, with every snap recorded. Report whether each reference is already on the 0.5 mm grid
+  (then s_ref = 0).
+
+  - Design rules measured by measure_rules on the snapped reconstruction.
+
+  - L_term = 7 nH (S3).
+
+  - Admissibility: public references, no diode dies (verify, and report any diode die).
+
+  - A reconstruction hash (Layout fingerprint).
+
+  Write outputs to research/o003/references/<ref>.json, with no customer data and no PowerSynth file.
+  --check mode, exit 0 iff all pass: DRC-clean under its own measured rules; exact on the l2_layout lattice
+  at 0.5 and 0.25 mm; thermal_fem.layout_grid level 0 accepts; the sha256 list complete; no PowerSynth
+  file name inside research/. Write research/notes/o003-reference-reconstructions.md with sources, facts,
+  choices, snap records, measured rules and each reference''s unknown count from l2_layout at 0.25 mm
+  (mesh only, no solve).
+
+  Run no inductance or thermal solve on these references, and no search, generator or twin call on them.
+  Solves happen only in the registered E008 or the founder-run pre-registration snapping check. These
+  reconstructions are shared with O004 and frozen.'
+context_files:
+- project/objectives/O003/objective.yaml
+- project/decisions/D0007-powersynth-external-use.md
+- project/decisions/D0010-day60-customer-layout-first.md
+- research/notes/o003-public-benchmarks.md
+- research/scripts/o006_case4_layout.py
+- src/moduleforge/geometry/snap.py
+- src/moduleforge/drc/rules.py
+- src/moduleforge/generate/derivative.py
+- experiments/drafts/E008.yaml
+deliverables: []
+touches:
+- research/scripts/o003_powersynth_references.py
+- research/o003/references/**
+- research/notes/o003-reference-reconstructions.md
+definition_of_done:
+- cmd: null
+  exists: research/notes/o003-reference-reconstructions.md
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python research/scripts/o003_powersynth_references.py --check
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check research/scripts/o003_powersynth_references.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: D0010's default reference set (no customer layout in the vault on 2026-11-09). The reconstruction,
+  snapping, measured rules and L_term must be frozen and hashed before any solve (F3, F4, scope_in). It
+  depends on the code freeze so that no judged reference is loaded before the generator and search are
+  frozen.
+history: []

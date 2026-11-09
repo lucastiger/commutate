@@ -1,0 +1,137 @@
+id: T0262
+objective: O003
+title: 'E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0257
+- T0260
+- T0261
+description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_run.py on mfos.evidence.ExperimentRun,
+  following experiments/specs/E009.yaml and experiments/runners/e009_run.py.
+
+  The spec carries:
+
+  - requires_passed [O007] and code_must_match on src/moduleforge/solvers/thermal_fem.py with O007 (sha256
+  a216d5fe..., the bytes EV-O007-01 evaluated); l2_layout as code_under_test without code_must_match (D0009).
+
+  - GridRule key for key from research/o007_dev3/frozen_config.json (sha256 0226b770...0e9a).
+
+  - Sealed seeds for candidate generation and for the F1(b) control.
+
+  - A freeze block with sha256 of the derivative generator, twin and degradation rule, search driver,
+  snapping rule, DRC and stack.py (F3).
+
+  - The operating-point rule: P_ref from level-0 solves of the reconstruction, hottest die 60 +/- 1 K
+  over 65 C coolant, h = 5000.
+
+  - The L_term rule (7 nH public / customer vault value), the admissibility fields, and the reference-set
+  rule of D0010.
+
+  - Rows exactly as research/o003/e008_row_contract.md (n6) and the objective notes list them. F5: no
+  geometry in rows.
+
+  - Recompute entries for headroom_min_lo and headroom_max_hi_ind, the twin null column (kind column),
+  and the reported L1-only null.
+
+  - Gated sanity checks: F1(a1), (a2), (b), (c); F6(a) own three grids with 8x (+/-15 %) node growth;
+  F6(b) GridRule and code hashes; F6(c) energy balance 1e-6 and Picard 1e-4 K; F6(d) 60 +/- 1 K calibration;
+  F6(e) the stack-type spot check (max_gci_consistency, scikit-fem levels 0-2 against thermal_fv levels
+  1-3, cap 0.25 K, floor 1e-3, <= 1 on every die, on one AlN reference).
+
+  The runner drives src/moduleforge/optimize/search.py with real solvers. Band levels: per-process l2_layout
+  overrides as research/scripts/o006_p3_em_convergence.py does. Every l2_layout and thermal solve runs
+  in a subprocess with checkpointing.
+
+  Modes:
+
+  - --selftest: fake solvers, full row assembly and recompute with research/o003/headroom_metrics.py.
+
+  - --verify-freeze: recomputes the frozen hashes, exit 0 iff all match.
+
+  - --dev: development geometry only, generator housings and 2D_Case_4, never a judged reference. It produces
+  experiments/drafts/E008.dev_rows.json, including the pre-registration band check (e_R on at least 4
+  twin-versus-random-candidate pairs) and Case 4''s twin gates.
+
+  - --plan: lists every solve with memory and time estimates.
+
+  Run --dev locally only at levels that fit 9 GB: 0.5 mm EM, thermal levels 0-1, reduced candidate budget,
+  marked as smoke rows. Write the full-fidelity dev run (0.25 mm, thermal level 2) as a script for the
+  founder''s burst VM; agents never launch VMs.
+
+  Record cpu_hours_est and the peak memory per reference in the spec, from P3''s measured timings (Case
+  4: 0.25 mm about 2 h wall, about 16 GB per solve) scaled by the --plan unknown counts. State whether
+  320 CPU-hours and 2026-11-24 are reachable, and if not, which budget item breaks. Do not load 2D_Case_2R,
+  2D_Case_6 or customer data.'
+context_files:
+- project/objectives/O003/objective.yaml
+- experiments/specs/E009.yaml
+- experiments/runners/e009_run.py
+- experiments/specs/E002.yaml
+- tools/mfos/mfos/evidence.py
+- tools/mfos/mfos/models.py
+- tools/mfos/mfos/metrics.py
+- research/o007_dev3/frozen_config.json
+- research/scripts/o006_p3_em_convergence.py
+- research/notes/o006-p3-em-convergence.md
+- research/scripts/o006_case4_layout.py
+- src/moduleforge/optimize/search.py
+- src/moduleforge/generate/derivative.py
+- src/moduleforge/generate/twin.py
+- research/o003/e008_row_contract.md
+- research/o003/headroom_metrics.py
+deliverables: []
+touches:
+- experiments/drafts/E008.yaml
+- experiments/drafts/E008.dev_rows.json
+- experiments/runners/e008_run.py
+- experiments/runners/e008_*.py
+- research/o003/**
+- research/scripts/o003_*.py
+definition_of_done:
+- cmd: null
+  exists: experiments/drafts/E008.yaml
+  timeout_s: 900
+- cmd: null
+  exists: experiments/runners/e008_run.py
+  timeout_s: 900
+- cmd: null
+  exists: experiments/drafts/E008.dev_rows.json
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Required design task for E008, the only experiment in acceptance.required_experiments. It records
+  the F3 freeze that must precede loading any judged reference, and produces the cost and timeline estimate
+  that decides feasibility before day 60.
+history: []

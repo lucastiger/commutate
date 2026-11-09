@@ -1,0 +1,26 @@
+id: I0140
+kind: question
+subject: '[O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback'
+summary: 'This plan builds the D0010 public fallback (PowerSynth 2D_Case_2R and 2D_Case_6), because the
+  vault held no customer layout on 2026-11-09. The reconstruction task starts only after the code freeze,
+  which is expected after 2026-11-12. If an admissible customer layout arrives by 2026-11-12 (SiC MOSFET
+  half-bridge, no antiparallel diode dies, NDA permits cloud-VM processing, recorded in the vault), the
+  verdict must be judged on customer references only, and they cannot be mixed with public ones. Agents
+  cannot reconstruct customer layouts: that happens only in the vault, never in the repository (F5). A
+  customer path therefore needs a vault-side reconstruction you control, plus a replan. Please record
+  the 2026-11-12 outcome (admissible customer references by vault id, or none) so that the next replan
+  can either keep the public reconstruction task or replace it.'
+refs:
+- O003
+- T0255
+options:
+- 'No admissible customer layout by 2026-11-12: public fallback, label ''public benchmarks, low power,
+  indicative'''
+- 'Admissible customer layout(s) received: founder-run vault reconstruction, then replan'
+recommendation: Record the outcome on 2026-11-12. Until then the build chain is the same for both paths,
+  because it is developed only on generator housings and 2D_Case_4.
+status: open
+response: ''
+created_at: '2026-11-09T07:20:24+00:00'
+resolved_at: null
+resolved_by: null

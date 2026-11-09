@@ -1,0 +1,85 @@
+id: T0260
+objective: O003
+title: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0258
+- T0259
+description: 'New package src/moduleforge/optimize/ (search.py). A deterministic, resumable driver that
+  takes its solvers as injected callables, so tests use fakes and the E008 runner supplies l2_layout,
+  thermal_fem and the e_R estimator: l1(layout), l_sub(layout) at 0.25 mm, band(layout), which returns
+  the five band solves (0.5 mm; thickness 5/3/3 and 20/12/12; 12-per-ring wires), thermal(layout, P) for
+  per-die Tj max at levels 0-2, and e_R(pair).
+
+  Frozen budget (F3, founder 2026-11-09). From a sealed seed, stream generate(spec) until 20,000 DRC-valid
+  candidates exist. Record L1 for all of them, and the lowest L1 among the first 5,000 and among all 20,000
+  (the K1 levelling record). Shortlist the 16 best by L1, then l_sub on each. The inductance-only best
+  is the lowest L_sub. Thermally check shortlisted candidates in ascending L_sub order, in batches of
+  4. Stop after the first batch that holds a candidate meeting the conservative Tj test against the twin
+  W: max_i(T_i(C)+GCI_i(C)) - max_j(T_j(W)-GCI_j(W)) <= 2 K, with the per-die GCI passed in. A GCI of
+  +inf fails C and drops out of W''s lower bound. At most 8 candidates are checked. The twin and the reconstruction
+  are always solved thermally.
+
+  L1-only null (F1, reported): take the top 16 by L1 in ascending L1 order with the same batch-and-stop
+  rule, reusing every thermal result already computed, and add at most 8 new checks. Near ties (K1): band-solve
+  the inductance-only best, then every shortlisted candidate whose L_sub is at most (1 + w_ind) times
+  its L_sub, where w_ind comes from the injected e_R and s_ref. Band solves also run for the reference,
+  the twin and the A1 best.
+
+  Control mode (F1(b)): reference = D, a new sealed seed, the same budget, inductance only, no thermal
+  solves.
+
+  The driver emits rows: per shortlisted candidate, L1 and L_sub; per thermally checked layout and die,
+  Tj at levels 0-2, GCI and fingerprint. It never computes h itself; that belongs to the metrics. Every
+  solve result is checkpointed to disk keyed by layout fingerprint and solve kind, so an interrupted VM
+  run resumes without re-solving. Tests (tests/unit/optimize/) with fake solvers cover: batch-and-stop
+  and the cap of 8, ordering, the null''s reuse, near-tie selection, the levelling record, control mode,
+  resume after interruption, determinism. Add one slow test that runs the real generator and real L1 on
+  a 70 x 40 housing spec with a 300-candidate budget.'
+context_files:
+- project/objectives/O003/objective.yaml
+- project/decisions/D0008-o003-multi-fidelity-search.md
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/solvers/thermal_fem.py
+- src/moduleforge/physics/peec/model.py
+- research/scripts/o006_p3_em_convergence.py
+deliverables: []
+touches:
+- src/moduleforge/optimize/**
+- tests/unit/optimize/**
+definition_of_done:
+- cmd: null
+  exists: src/moduleforge/optimize/search.py
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit/optimize
+  exists: null
+  timeout_s: 1200
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F3's frozen budget and order; the inputs of A1 (Tj-checked best) and K1 (inductance-only best,
+  near ties, levelling); F1(b) control and the reported L1-only null.
+history: []

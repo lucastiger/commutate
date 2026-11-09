@@ -1,0 +1,73 @@
+id: T0259
+objective: O003
+title: Twin construction and degradation rule (F1(a), F1(b))
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0258
+description: 'New module src/moduleforge/generate/twin.py on top of the derivative generator (n3).
+
+  (1) twin(reference_layout, spec) -> (Layout, params, record): a deterministic construction rule that
+  expresses the reference in the generator''s parameter space. This is the comparator for every candidate
+  in A1 and K1. The rule must not use any solver output. It is a geometric fit, for example nearest-parameter
+  matching of copper regions, die positions and wire feet, with ties resolved by a documented order. The
+  twin must be DRC-clean under spec.rules. The record states every geometric difference between twin and
+  reference (copper area per net, symmetric-difference area, die-centre and wire-foot displacements).
+
+  (2) degrade(twin_layout, spec) -> (Layout, record): the frozen degradation rule of F1(b). It produces
+  a DRC-valid D with L_sub(D) >= 1.25 L_sub(twin). The rule is geometric (for example lengthening the
+  commutation path by moving copper or dies within the generator space), and is checked here with L1.
+  Require L1(D)/L1(twin) >= 1.25 (1 + margin), and document the margin chosen to cover L1-versus-L2 disagreement
+  (C002/E002 residuals). E008 checks the 0.25 mm value.
+
+  Tests (tests/unit/generate/test_twin.py): any layout produced by generate(spec) is its own twin (identical
+  fingerprint); determinism; DRC-clean; on Case 4 (research/scripts/o006_case4_layout.py) and on a 70
+  x 40 housing reference built by generate_layouts, the twin''s L1 ratio |1 - L1(W)/L1(ref)| is reported
+  in the record. A test asserts that it is at most 0.05 on Case 4, as a dev screen only; the real gate
+  F1(a1) runs at 0.25 mm in E008. degrade gives L1 ratio >= 1.25 (1 + margin) on 10 generator-housing
+  references and on Case 4. If Case 4''s twin cannot meet 0.05 by L1, report the record and the cause
+  in the task report rather than loosening anything. That would be early evidence that F1(a) may exclude
+  references. F3: generator housings and 2D_Case_4 only.'
+context_files:
+- project/objectives/O003/objective.yaml
+- src/moduleforge/generate/halfbridge.py
+- research/scripts/o006_case4_layout.py
+- src/moduleforge/physics/peec/model.py
+- experiments/specs/E002.yaml
+deliverables: []
+touches:
+- src/moduleforge/generate/twin.py
+- src/moduleforge/generate/__init__.py
+- tests/unit/generate/test_twin.py
+definition_of_done:
+- cmd: null
+  exists: src/moduleforge/generate/twin.py
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit/generate
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F1(a) twin gates and the twin comparator of A1/K1; F1(b) degradation rule. Both are frozen
+  with the generator before any judged reference is loaded (F3).
+history: []

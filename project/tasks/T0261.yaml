@@ -1,0 +1,91 @@
+id: T0261
+objective: O003
+title: Draft headroom_min_lo / headroom_max_hi_ind (protected mfos.metrics) and the E008 row contract
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on: []
+description: 'Draft the two acceptance metrics exactly as A1 and K1 state them, for the founder to apply
+  to the protected tools/mfos/mfos/metrics.py.
+
+  (1) research/o003/headroom_metrics.py, in the style and signature conventions of mfos.metrics (rows
+  as list of dicts, params dict). It implements:
+
+  - e_R for a ratio R, level by level from the same solves, as a linear sum: 3|R(0.25) - R(0.5)|, plus
+  the thickness term of R from 5/3/3, 10/6/6 and 20/12/12 layers at 0.5 mm (P3''s middle-term estimator,
+  research/scripts/o006_p3_em_convergence.py), plus 3|R(12-per-ring) - R(production)|.
+
+  - s_ref; a = L_sub(twin)/(L_sub(twin)+L_term); w = 2 e_R + s_ref.
+
+  - The conservative and optimistic Tj interval tests, with GCI from mfos.metrics.gci_capped (floor 1e-3
+  K) on each layout''s own three levels.
+
+  - The twin rule, applied before any candidate-selection rule.
+
+  - headroom_min_lo: minimum over counted references of h_lo = a(1 - r(1 + w)).
+
+  - headroom_max_hi_ind: the levelling condition checked first (h_hi = +inf if not levelled), then the
+  twin rule, then near ties (the largest h_hi). h_hi = a(1 - r_ind(1 - w_ind)), maximum over counted references.
+
+  - Counted = admissible and passing both twin gates F1(a1) and (a2). Also the sensitivity columns at
+  L_term = 0 and 17.5 nH, and the reconstruction-based secondary values.
+
+  (2) research/o003/e008_row_contract.md: every column each function reads (names, units in SI, row kinds),
+  so the runner can conform.
+
+  (3) research/o003/test_headroom_metrics.py with hand-computed cases: twin case (h_lo = -a s_ref, h_hi
+  = a s_ref); no eligible candidate; non-levelled reference gives +inf and is checked before the twin
+  rule; near-tie maximum; +inf GCI on C fails and on W drops out; single counted reference; references
+  excluded by a twin gate; the notes'' verdict-region examples (a = 1, w = 0.02: PASS from h_sub 0.216,
+  kill below 0.082; L_sub 10 nH, L_term 7 nH: 0.353 / 0.153; L_sub 20 nH: 0.284 / 0.117).
+
+  (4) research/o003/headroom_metrics.patch: a unified diff adding the functions to tools/mfos/mfos/metrics.py
+  (and the compute() dispatch if needed) and the tests to tests/mfos/test_metrics.py, which applies cleanly
+  to main. Do not edit tools/mfos yourself.'
+context_files:
+- project/objectives/O003/objective.yaml
+- tools/mfos/mfos/metrics.py
+- tests/mfos/test_metrics.py
+- research/scripts/o006_p3_em_convergence.py
+- research/notes/o006-p3-em-convergence.md
+- project/decisions/D0017-o003-v5-second-review-fixes.md
+deliverables: []
+touches:
+- research/o003/**
+definition_of_done:
+- cmd: null
+  exists: research/o003/headroom_metrics.py
+  timeout_s: 900
+- cmd: null
+  exists: research/o003/e008_row_contract.md
+  timeout_s: 900
+- cmd: uv run pytest -q research/o003/test_headroom_metrics.py
+  exists: null
+  timeout_s: 600
+- cmd: git apply --check research/o003/headroom_metrics.patch
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check research/o003
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0255
+created_at: '2026-11-09T07:20:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: A1 and K1 are recomputed by new protected mfos.metrics functions (notes build item 6); the
+  row contract fixes what E008 must emit. This can be built in parallel with the generator chain.
+history: []

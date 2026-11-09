@@ -1,0 +1,42 @@
+id: I0141
+kind: plan_approval
+subject: '[O003] approve initial plan (8 tasks)'
+summary: 'O003 v5 was approved on 2026-11-09 with no evidence yet: 0/1 evaluations, no E008 draft, and
+  none of the build work its notes list. The generator is tied to its own 70 x 40 mm housing. The DRC
+  uses one spacing rule for every net and draws no gate or Kelvin wires. There is no AlN k(T) law, snapping
+  rule, twin, degradation rule, search driver or headroom metric, and 2D_Case_2R and 2D_Case_6 have not
+  been reconstructed. The biggest threats to a verdict are failures that make E008 INVALID before any
+  kill or pass, so the cheapest way to a decisive result is to remove them early: (i) a generator whose
+  parameter space cannot express a twin that passes both twin gates (F1(a)); (ii) a band above 0.05, or
+  any measured e_R above 0.02 (F1(c) and the pre-registration check); (iii) compute and calendar. P3 measured
+  about 2 h of wall time per 0.25 mm solve at Case 4 size on a 32-vCPU VM, and each reference needs about
+  35 such solves plus three-level thermal solves. The 0.125 mm snapping check did not finish on Case 4
+  in 8.7 h, and agents cannot launch VMs. F3 forbids loading a judged reference before the generator,
+  twin, degradation rule and search driver are frozen. So this plan builds that chain on generator outlines
+  and 2D_Case_4 only, with independent pieces in parallel: per-net DRC rules and signal wires, then AlN
+  k(T) and snapping, then the generator, then the twin and degradation rule, then the search driver, plus
+  a draft of the protected headroom metrics. It ends with the E008 design task, which records the code-hash
+  freeze and a cost estimate, and only after that the public reconstructions. The reconstructions follow
+  the D0010 default, since no customer layout was in the vault on 2026-11-09. Pre-registration finalisation
+  and the E008 experiment task are deliberately left for the next replan. They need things not available
+  yet: the 2026-11-12 reference-set outcome, the founder-applied metrics patch and founder-run VM dev
+  rows. That replan can also still use 7 of the 8 new-task slots.'
+refs:
+- O003
+- T0256
+- T0257
+- T0258
+- T0259
+- T0260
+- T0261
+- T0262
+- T0263
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-09T07:20:24+00:00'
+resolved_at: null
+resolved_by: null
