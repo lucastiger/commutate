@@ -1,0 +1,78 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Frozen snapping rule contradicts itself on ties for staircased copper",
+      "detail": "The module docstring says ties go to the higher line \"for every element and both axes\". The staircase clause says a cell that is exactly half covered is in. For non-rectilinear (staircased) copper, a left or bottom edge exactly halfway between two lines therefore goes to the LOWER line. Ties go outward, not toward +infinity. Because this text is meant to be frozen in E008's spec, it should describe one behaviour. Fix: limit the tie sentence to vertex and rectangle snapping, and state that staircased edges round outward at ties.",
+      "evidence": "Scratch run: a chamfered polygon with its left edge at x = 20.25 mm, snapped at 0.5 mm, gives x0 = 20.0 mm, while snap_value(20.25 mm) = 20.5 mm.",
+      "suggested_check": "snap_layout on a chamfered trace whose left edge is at (k+0.5)g; compare bounds[0] with snap_value.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "A collapsing hole raises GEOSException, not the documented ValueError",
+      "detail": "The docstring says \"A feature that collapses to zero size raises ValueError.\" A rectilinear hole narrower than the grid instead raises shapely.errors.GEOSException (a LinearRing with 2 points) from the Polygon constructor in _snap_rect_polygon. A caller that catches ValueError to exclude or report a reference would crash instead. A collapsing notch does raise ValueError as documented.",
+      "evidence": "10x10 mm trace with a 0.2x0.2 mm hole at 0.5 mm grid: GEOSException IllegalArgumentException: Invalid number of points in LinearRing found 2. Narrow-notch case: ValueError, as documented.",
+      "suggested_check": "Wrap ring construction and raise ValueError for degenerate rings; add a test with a sub-grid hole.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "AlN citation misattributes 319 W/(m K) as a measurement on the purest crystal",
+      "detail": "The docstring says Slack, Tanzilli, Pohl and Vandersande (1987) give k(300 K) = 319 W/(m K) \"for the purest crystal\" and \"measure k ~ 1/T above ~200 K\". The Ioffe database, citing the same paper, gives 2.85 W/(cm K) as the highest value measured at 300 K, and lists the oxygen-free curve as an estimate. 319 is the paper's estimated intrinsic value. Only the ratio f(T)/f(300) is used, so no number changes, but the citation is inaccurate. I could not confirm that the paper measured anything above 300 K, so support for the 300-480 K range O003 needs (290-480 K) may rest on extrapolation. The author already gives this law medium-low confidence for sintered grades.",
+      "evidence": "WebSearch: Ioffe AlN thermal page quoted as 'Maximal measured value of thermal conductivity at 300 K is 2.85 W cm-1 K-1 [Slack et al. (1987)]'; curve 1 is 'AlN single crystal with no oxygen ... (estimate)'. The Ioffe page could not be fetched directly (TLS error), and the 1987 paper itself was not available.",
+      "suggested_check": "Read Slack et al. 1987, Fig. and abstract: confirm the measured T range and the 285 vs 319 attribution; add one sintered-AlN k(T) data point if available.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The AlN test checks the law against itself",
+      "detail": "test_aln_law_normalised_monotone_and_reproduces_cited_points compares 319*f(T) with 239.25 and 199.375. Those numbers are 319*300/T, computed from the law under test, not values from a published table. Unlike the Al2O3 test, which checks against Incropera's table, nothing independent constrains the AlN slope. The test only fixes normalisation and monotonicity.",
+      "evidence": "Test line: `for Tk, k in ((300.0, 319.0), (400.0, 239.25), (480.0, 199.375))`. The test's own comment calls these 'cited-law points'.",
+      "suggested_check": "Replace the derived points with at least one tabulated k(T) value for AlN from a primary source.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Author tests do not pin the staircase threshold, wire-end relocation, or terminal snapping",
+      "detail": "I ran mutants of snap.py, patched in memory, through the author's own test functions. All tests still pass when (a) the staircase inclusion threshold is changed from 0.5 to 0.3 or to 0.7, (b) wire ends are never moved (_move_into replaced by identity), or (c) terminals are not snapped. Only skipping die snapping was caught (by the lattice test). On the off-grid Case 4 fixture at all three grids, every record is of kind 'edge': the wire-relocation and pad-clip paths never run in the tests. The rule is frozen by code hash, so this is regression risk rather than a wrong result now.",
+      "evidence": "Mutation run: baseline fails [], M2 thr 0.3 fails [], M2b thr 0.7 fails [], M3 wire ends frozen fails [], M6 terminals not snapped fails [], M5 dies not snapped fails ['lattice']. Record kinds on _offgrid_case4: Counter({'edge': 56}) at 0.5, 0.25 and 0.125 mm.",
+      "suggested_check": "Add a fixture whose landing copper edge snaps inward past the wire foot, and one with a die that shrinks under its source pad; assert the 'wire' and 'clip' records and a clean wire_landing/wire_start DRC.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Staircasing drops convex corner cells and inflates 45-degree strips",
+      "detail": "In a staircased polygon, a convex rectilinear corner whose two edges each round outward still loses its corner cell when the area product is below 1/2 (e.g. 0.6*0.6 = 0.36). This leaves a one-cell notch, so 'each edge to the nearest line' does not hold at the corners of non-rectilinear copper. The area error stays within the stated bound. Narrow 45-degree strips gain area because every diagonal cut cell is an exact tie and is included. Both follow from the documented area rule and are inside the stated bound, but they bias L_sub for staircased references. s_ref is meant to absorb this.",
+      "evidence": "Chamfered polygon with edges at 20.2 mm, grid 0.5 mm: bounds snap to 20.0 as expected, but cell [20,20.5]^2 is excluded while its neighbours are included. A 45-degree strip 0.7 mm wide in x: area 7.0 -> 10.0 mm^2 (+43 %).",
+      "suggested_check": "Report s_ref separately for references with non-rectilinear copper.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Only spacing and die-enclosure rules are re-checked; wire and net-split effects of snapping are not reported",
+      "detail": "CHECKED_RULES returns min_spacing and the die rules, plus net_merged. That meets the objective's text ('net spacing and die enclosure re-checked'). Snapping can still create net_split (from staircasing), wire_pitch, wire_length or wire_landing_keepout violations without the caller being told. In one forced (already-invalid) input, a wire end moved 10.9 mm and created an unreported wire_pitch violation. Intermediate wire points also move without a record, although the docstring says every moved coordinate or point is recorded.",
+      "evidence": "Scratch run: trace cut near a wire landing; records show ('wire[1] end', 10.925 mm); post-snap full DRC has wire_pitch: 1; SnapResult.violations == [].",
+      "suggested_check": "Optionally return the full DRC diff (rules newly violated after snapping) alongside CHECKED_RULES.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: `uv run pytest -q tests/unit/geometry` -> 162 passed; the K_LAWS['AlN'] one-liner passes; `uv run ruff check src tests` -> clean.",
+    "`git diff --quiet main -- thermal_fem.py` cannot run in this snapshot (no `main` ref). Instead, sha256 of src/moduleforge/solvers/thermal_fem.py = a216d5fe3209bcee..., which matches the a216d5fe... prefix O003 F-detection (b) requires.",
+    "Checked a case the author's tests skip: Case 4 shifted off-grid, snapped to 0.125 mm and meshed on the 0.125 mm l2_layout lattice. Exact: max relative cell-fill area error 9.7e-16, and the die footprints pass check_on_lattice.",
+    "Adversarial geometries at 0.5 mm: narrow notch (ValueError, as documented); sub-grid hole (GEOSException, not ValueError); thin 45-degree strip (stays one polygon, idempotent, +43 % area); chamfered polygon corner notch; tie behaviour on a staircased left edge (goes down, contrary to the tie clause).",
+    "Mutation tests of tests/unit/geometry/test_snap.py with in-memory patches of snap.py: staircase threshold 0.3 and 0.7, frozen wire ends, unsnapped terminals all survive; unsnapped dies are caught.",
+    "Counted record kinds and full DRC on the off-grid fixture at all three grids: only 'edge' records, and no new DRC violations beyond wire_length, which was already present before snapping.",
+    "Exercised wire-end relocation by cutting landing copper: z untouched and intermediate points shifted linearly (verified); one forced case moved an end 10.9 mm with an unreported wire_pitch violation.",
+    "Checked the AlN citation on the web: Ioffe attributes 285 W/(m K) as the highest value measured at 300 K in Slack et al. 1987; 319 is the estimated oxygen-free value."
+  ],
+  "caveats": [
+    "The AlN law (T/300)^-1 rests on the single-crystal Umklapp argument. Its 300-480 K support in the cited paper is unconfirmed (that range may be extrapolated), and the 319 W/(m K) figure is the estimated intrinsic value, not a measurement. Whether the law is conservative for sintered substrates (170-180 W/(m K)) is the author's reasoning, not data.",
+    "The snapping rule is implemented as documented for rectilinear copper, outlines, terminals and die footprints. For staircased copper, ties round outward rather than up, and convex corners can lose a cell. The frozen-rule text should be reconciled before it is hashed into E008's spec.",
+    "The wire-end relocation and die-pad clipping paths are untested by the author's suite. I exercised them only partly; my last two scratch runs were refused by the sandbox (Bash permission denied), so I could not finish a valid-input wire-relocation check.",
+    "The only re-checks returned are min_spacing, die enclosure/net and net_merged. Snapping-induced net_split, wire_pitch, wire_length and landing-keepout violations are not returned.",
+    "The thermal_fem.py byte-identity was checked by hash, not by `git diff main`, because this review snapshot has no main ref."
+  ]
+}
