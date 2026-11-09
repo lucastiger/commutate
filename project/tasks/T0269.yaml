@@ -3,7 +3,7 @@ objective: O003
 title: 'Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266)'
 type: implement
 agent: builder
-status: running
+status: todo
 depends_on:
 - T0261
 description: "Follow-up to T0261 (merged), from review T0266 (project/reviews/T0261/T0266.json; read it\
@@ -66,4 +66,79 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All six items are done and committed as 90a8e8e6. Every definition-of-done command exits 0.
+    `check_mutants.py` kills all 65 mutants: the 11 survivors named in T0266 and 54 I added. The files
+    are all under research/o003, which the packet''s boundary list does not name. No hook blocked the
+    writes. I did not run the applied patch''s own test file, so the patch is only shown to apply cleanly.
+
+
+    - **Nonzero-band tests:** Cases with e_R > 0 for the A1 best, F1(a1) and F1(a2) (including a case
+    where the two G values differ), the levelling pair, K1 near-ties, the reconstruction secondary, tj_limit_K/floor,
+    equality boundaries and the tie-break. Each expected value is computed by hand in the test.
+
+    - **Die count:** `tj_bounds` takes `n_dies`. A thermally checked layout with any other die count raises. '
+  report:
+    status: completed
+    summary: "All six items are done and committed as 90a8e8e6. Every definition-of-done command exits\
+      \ 0. `check_mutants.py` kills all 65 mutants: the 11 survivors named in T0266 and 54 I added. The\
+      \ files are all under research/o003, which the packet's boundary list does not name. No hook blocked\
+      \ the writes. I did not run the applied patch's own test file, so the patch is only shown to apply\
+      \ cleanly.\n\n- **Nonzero-band tests:** Cases with e_R > 0 for the A1 best, F1(a1) and F1(a2) (including\
+      \ a case where the two G values differ), the levelling pair, K1 near-ties, the reconstruction secondary,\
+      \ tj_limit_K/floor, equality boundaries and the tie-break. Each expected value is computed by hand\
+      \ in the test.\n- **Die count:** `tj_bounds` takes `n_dies`. A thermally checked layout with any\
+      \ other die count raises. That covers the twin, the reconstruction (both metrics) and the candidates\
+      \ F3 checks (A1). The existing tests built layouts with unequal die counts, so I fixed their data\
+      \ to equal counts. I did not change any tolerance or expected value.\n- **Fail-closed:** There is\
+      \ one parametrised test per metric, and each calls only its own metric. Shared mutations, A1-only\
+      \ mutations and K1-only mutations are listed separately.\n- **Contract (`e008_row_contract.md`):**\n\
+      \  - §5 now lists the two T0266 interpretation choices for the founder, as items 8 and 9.\n  - §3\
+      \ gives the `L_sub_null_H` value for every row kind: candidate, twin/reconstruction, degraded/control_best/L1-null\
+      \ layouts, die, reference and runner-added rows. A new test shows extra rows of those kinds change\
+      \ neither metric.\n- **Patch:** Regenerated with `make_patch.py`. `git apply --check` exits 0."
+    files_changed:
+    - research/o003/headroom_metrics.py
+    - research/o003/test_headroom_metrics.py
+    - research/o003/check_mutants.py
+    - research/o003/e008_row_contract.md
+    - research/o003/headroom_metrics.patch
+    checks_run:
+    - cmd: uv run pytest -q research/o003/test_headroom_metrics.py
+      exit_code: 0
+    - cmd: uv run python research/o003/check_mutants.py
+      exit_code: 0
+    - cmd: uv run python research/o003/make_patch.py
+      exit_code: 0
+    - cmd: git apply --check research/o003/headroom_metrics.patch
+      exit_code: 0
+    - cmd: uv run ruff check research/o003
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - The packet's write-scope list (src/**, tests/unit/**, docs/** and so on) does not name research/o003,
+      but the task requires editing it. No hook blocked the writes.
+    - I could not run the patched tests/mfos/test_metrics.py in a scratch copy. A PreToolUse hook blocked
+      that command ('mfos tests' is a founder/orchestrator action). The patch is only shown to apply cleanly.
+      T0266 did run an applied patch (48 passed) for the earlier version.
+    - Two of my first extra mutants were equivalent (the infinite-GCI lower-bound mutant gave f2 - inf
+      = -inf, which changes nothing). I replaced that one with a non-equivalent mutant. Equivalent mutants
+      cannot be killed, so the 65 mutants are non-equivalent only to the extent I could check by reading.
+- attempt: 1
+  outcome: scope_violation
+  summary: edited files outside its write scope
+  failure_output: 'research/o003/check_mutants.py (outside builder write scope)
+
+    research/o003/e008_row_contract.md (outside builder write scope)
+
+    research/o003/headroom_metrics.patch (outside builder write scope)
+
+    research/o003/headroom_metrics.py (outside builder write scope)
+
+    research/o003/test_headroom_metrics.py (outside builder write scope)'
+  at: '2026-11-09T15:41:58+00:00'
