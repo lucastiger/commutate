@@ -16,6 +16,7 @@ depends_on:
 - T0274
 - T0276
 - T0279
+- T0282
 description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_run.py on mfos.evidence.ExperimentRun,
   following experiments/specs/E009.yaml and experiments/runners/e009_run.py.
 
@@ -106,7 +107,14 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   schedule; scale time and memory by the --plan unknown counts (Case 4: 4.1 M unknowns at 0.25 mm). A
   0.5 mm Case 4 solve took 846 s pinned alone. Per-solve cost about $0.24 at the regular $0.612/h; the
   founder''s projection for two public references is about 40-48 h and $24-29 including thermal, to be
-  replaced by --plan.'
+  replaced by --plan.
+
+
+  REPORTING (review T0280, 2026-11-09): measure_rules gives one minimum gap per signal-to-power class,
+  which can be stricter than O003''s frozen minimum (''every other net pair at least the reference''s
+  smallest gap''). The spec records, per reference, each measured class value beside the reference''s
+  smallest full-DC-link gap, and flags any class more than 2x stricter, because it narrows the search
+  (reported, not gated).'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

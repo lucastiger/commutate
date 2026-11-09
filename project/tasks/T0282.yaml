@@ -1,0 +1,65 @@
+id: T0282
+objective: O003
+title: 'Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0273
+description: "Follow-up to T0273, from review T0281 (project/reviews/T0273/T0281.json; read it first).\
+  \ Lands before E008's code freeze\n(T0262). Do not edit src/moduleforge/solvers/thermal_fem.py (sha256\
+  \ a216d5fe...). Do not relax any DRC rule.\n1. Float tolerance (T0281 finding 0). The clearance tests\
+  \ in the wire-foot sampler (_draw_feet's clear() and any similar\n   comparison against a pitch or spacing)\
+  \ accept an exact fit: compare with a stated absolute tolerance of 1e-9 m (the\n   DRC's own snapping\
+  \ scale is nm), consistently with drc.check(), so that a layout the DRC accepts is never rejected by\n\
+  \   the sampler for rounding. Test: Case 4, k = 3 wires per die under measure_rules with the pitch T0281\
+  \ used (0.625 mm)\n   and signal feet at +-0.25 mm: the exact-fit foot is accepted, and generate() finds\
+  \ DRC-valid k = 3 candidates within\n   a stated draw budget. The DRC itself must still reject a pitch\
+  \ 1e-6 m short of the rule.\n2. Feasible topologies under measured rules (finding 1). Re-run the diversity\
+  \ count after item 1. For orientation y,\n   either give a closed-form exclusion like orientation x's,\
+  \ or state in the docstring and test that it is excluded by\n   sampling only, with the draw count;\
+  \ do not assert 'exactly' without a proof.\n3. The 2 mm pitch infeasibility argument (finding 2): state\
+  \ its scope (LS dies over the signal strips' x-range) or extend\n   it to the other placements, with\
+  \ numbers.\n4. Throughput (finding 3): re-measure DRC-valid candidates per second on Case 4 (k = 1 and\
+  \ k = 3, measured rules, an idle\n   machine stated as such) and update the docstring; the E008 L1 screen\
+  \ needs 20,000 candidates per search.\n5. Dead code (finding 4): remove _gf, _Ctx.siglim and the unused\
+  \ cx argument.\nDeterminism as before. Keep every existing test passing; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T21:27:26+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
