@@ -35,12 +35,18 @@ stored in ``Layer.k`` keeps the cited temperature *dependence*. Every law is val
   earlier single exponent -1.15 rested on a misquoted 26 at 400 K and missed the table by 2 % there.)
 * Si3N4: f = (T/300)^-1.0, the Umklapp-limited law of Slack (1973) for a dense, pure lattice; Hirosaki et al., Phys.
   Rev. B 65, 134110 (2002), find k ~ 1/T for high-conductivity beta-Si3N4. Medium confidence for commercial AMB grades.
-* AlN: f = (T/300)^-1.0, the Umklapp-limited law of Slack, Tanzilli, Pohl, Vandersande, J. Phys. Chem. Solids 48, 641
-  (1987), who measure k ~ 1/T above ~200 K for AlN single crystals (k(300 K) = 319 W/(m K) for the purest crystal, so
-  k(400 K) = 239 and k(480 K) = 199 W/(m K) under the law). Sintered substrate AlN (typically 170-180 W/(m K), the value
-  stored in ``Layer.k``) is limited by oxygen and grain-boundary scattering, whose share is temperature-independent, so its
-  true slope is probably shallower than 1/T: the law then overstates the fall of k with T. Medium-low confidence for
-  commercial grades (no sintered-AlN table was consulted); conservative for Tj (a hotter die sees a lower k).
+* AlN: f = (T/300)^-1.0, the Umklapp-limited law for a pure lattice, as argued by Slack, Tanzilli, Pohl, Vandersande,
+  J. Phys. Chem. Solids 48, 641 (1987). In that paper 319 W/(m K) at 300 K is the *estimated intrinsic* (oxygen-free) value
+  of the lattice; the highest value they *measured* at 300 K is about 285 W/(m K) (2.85 W/(cm K), as quoted by the Ioffe
+  database; review T0264, which could not access the paper). Only the ratio f(T)/f(300 K) is used, so neither number enters
+  a result. Under the law k(400 K) = 0.75 k(300 K) and k(480 K) = 0.625 k(300 K). Whether the paper's data reach 300-480 K
+  or this range is an extrapolation of the 1/T trend is NOT confirmed (T0264). Sintered substrate AlN (typically 170-180
+  W/(m K), the value stored in ``Layer.k``) is limited by oxygen and grain-boundary scattering, whose share is
+  temperature-independent, so its true slope is probably shallower than 1/T: the law then overstates the fall of k with T.
+  Low confidence for commercial grades: **no published sintered-AlN k(T) table was found, so the law is NOT independently
+  tested** (T0268 could not retrieve one: only arXiv was reachable and holds no sintered-AlN k(T) data; the open item is
+  recorded in the task report). Conservative for Tj (a hotter die sees a lower k), and it is applied to both layouts of
+  O003's Tj comparison on the same stack, so a slope error shifts both Tj values in the same direction and largely cancels in their difference (not quantified).
 * SAC305 (substrate solder and die attach): Wiedemann-Franz electronic conduction, k ~ L T sigma(T) with
   rho(T) = rho(300 K) [1 + alpha (T - 300 K)] and alpha = 4.2e-3 /K (CRC, temperature coefficient of resistivity of
   tin, 4.2-4.7e-3 /K), so f = (T/300) / (1 + 4.2e-3 (T - 300)). L = 2.44e-8 W Ohm/K^2 and rho = 13 uOhm cm reproduce

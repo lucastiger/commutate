@@ -5,23 +5,35 @@ Rule (all lengths SI, grid ``g`` in m; the grid lines are the integer multiples 
 * **Nearest grid line.** Every copper, outline (substrate and baseplate), terminal-pad and die-footprint edge moves to the
   nearest line, independently per axis: ``u = v / g``, ``k = floor(u + 1/2 + TIE_TOL)``, ``v' = k g``.
 * **Ties** (``u`` exactly half-way between two lines, within ``TIE_TOL`` = 1e-9 cells of float noise) resolve to the
-  *higher* line (round half toward +infinity), for every element and both axes. A coordinate within ``TIE_TOL`` cells of a
-  line is on it. Hence the map is idempotent and a layout that is already on the grid is returned unchanged.
+  *higher* line (round half toward +infinity) for every *vertex or rectangle edge* snap, both axes: rectilinear copper and
+  outline vertices, terminal pads and die footprints. A coordinate within ``TIE_TOL`` cells of a line is on it. Hence the
+  map is idempotent and a layout that is already on the grid is returned unchanged. **Staircased copper has a different tie
+  rule**: an exactly half-covered cell is *in*, so a left or bottom edge exactly half-way between two lines goes to the
+  LOWER line and a right or top edge to the UPPER line, i.e. ties round *outward* (the code is kept as implemented in T0257,
+  because the cell-coverage rule is symmetric in the four directions, whereas "toward +infinity" would bias the copper
+  toward +x/+y).
 * **Rectilinear copper** (all edges axis-parallel, within 1 nm) snaps vertex by vertex, which moves each edge to the nearest
   line. **Non-rectilinear copper** is staircased: a grid cell belongs to the copper iff at least half of its area lies in the
-  original polygon (a cell at exactly half is in). The area error is at most half a cell per boundary cell.
+  original polygon (a cell at exactly half is in). The area error is at most half a cell per boundary cell. Consequences of
+  the cell rule: a convex rectilinear corner of a staircased polygon keeps its corner cell only if the covered area
+  fraction there, the product of the two edges' covered fractions of the cell, is at least 1/2 (two edges 0.6 of a cell
+  inside give 0.36, so the cell is dropped and the corner has a one-cell notch); and every cell cut exactly diagonally (45
+  degree edges) is a tie and is in, so narrow 45 degree strips gain area.
 * **Die footprints** snap edge by edge as a pure function of the die's own rectangle, so the same die at the same place gets
   the same footprint in the reference and in every candidate. Pads on a die (``Die.pads``) are not on the grid by design
   (they are ~0.7 x die size); a pad is only clipped to the snapped footprint when it would leave it.
 * **Wire end points** keep their position unless the pad they sit on (landing copper of their net, or the die source pad at
   the start) no longer contains them, eroded by the same margin ``drc.check`` uses; then they move to the nearest point of
   that region. The points between follow linearly in index; z is untouched.
-* **Record.** ``SnapRecord(element, before, after, displacement)`` for every coordinate or point that moved by more than
+* **Record.** ``SnapRecord(element, before, after, displacement)`` for every coordinate or wire end point that moved by more than
   ``RECORD_TOL``. For edge snaps ``displacement`` is the largest per-axis move (<= g/2); for a staircased polygon it is the
   Hausdorff distance between the old and new boundary and ``kind == 'staircase'`` (can exceed g/2).
 * **Re-check.** ``drc.check`` runs on the snapped layout under the caller's ``DesignRules``; the net-spacing and
   die-enclosure violations (``CHECKED_RULES``) plus an explicit ``net_merged`` test (two nets' copper touching) are
-  returned. Nothing is repaired. A feature that collapses to zero size raises ValueError.
+  returned, together with the snapping-induced ``net_split``, ``wire_pitch``, ``wire_length`` and
+  ``wire_landing_keepout`` violations (``CHECKED_RULES``; each message names the net or wires concerned). Nothing is
+  repaired. A feature (outline, trace, hole, terminal or die) that collapses to zero size or becomes invalid raises
+  ValueError naming it.
 """
 from __future__ import annotations
 
@@ -31,6 +43,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 import shapely
+import shapely.errors
 from shapely.geometry import MultiPolygon, Point, Polygon, box
 from shapely.ops import nearest_points
 
@@ -42,7 +55,8 @@ GRIDS = (0.5e-3, 0.25e-3, 0.125e-3)  # m, the parameter grids of scope_in
 TIE_TOL = 1e-9  # cells
 RECORD_TOL = 1e-12  # m (1 pm): moves below this are float noise, not snaps
 RECT_TOL = 1e-9  # m: an edge is axis-parallel when its other-axis extent is below this
-CHECKED_RULES = ("min_spacing", "die_edge_margin", "die_off_trace", "die_wrong_net")
+CHECKED_RULES = ("min_spacing", "die_edge_margin", "die_off_trace", "die_wrong_net",
+                 "net_split", "wire_pitch", "wire_length", "wire_landing_keepout")
 
 
 @dataclass(frozen=True)
@@ -91,8 +105,11 @@ def _snap_rect_polygon(poly: Polygon, g: float, name: str, rec: list[SnapRecord]
             out.append((sx, sy))
         return out
 
-    res = Polygon(ring(poly.exterior), [ring(i) for i in poly.interiors])
-    res = shapely.remove_repeated_points(res)
+    try:
+        res = Polygon(ring(poly.exterior), [ring(i) for i in poly.interiors])
+        res = shapely.remove_repeated_points(res)
+    except (shapely.errors.GEOSException, ValueError) as e:  # a ring with < 3 distinct points: a feature collapsed
+        raise ValueError(f"{name} (outline or a hole) collapses when snapped to {g * 1e3} mm: {e}") from e
     if res.is_empty or res.area <= 0 or not res.is_valid:
         raise ValueError(f"{name} collapses or becomes invalid when snapped to {g * 1e3} mm")
     return res

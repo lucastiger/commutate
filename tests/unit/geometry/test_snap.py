@@ -186,3 +186,162 @@ def test_snapped_layout_exact_on_l2_lattice(grid, cells):
             assert max(abs(r - e) / e for r, e in fill["area"].values()) < 1e-12
     finally:
         L2.CELL = saved
+
+
+# --- T0268: review T0264 fixes, hand-computed expectations (lengths in mm unless wrapped by MM) -----------------------
+from shapely.geometry import LineString  # noqa: E402
+
+from moduleforge.geometry.layout import Die, Terminal, arc_wire  # noqa: E402
+from moduleforge.geometry.snap import CHECKED_RULES, _move_into  # noqa: E402
+
+
+def _chamfered(xl, xr, yb=20.0, yt=30.0):
+    """Rectangle (mm) with a 2 mm 45-degree chamfer at the top right: non-rectilinear, so it is staircased."""
+    return Polygon([(xl * MM, yb * MM), (xr * MM, yb * MM), (xr * MM, (yt - 2) * MM), ((xr - 2) * MM, yt * MM),
+                    (xl * MM, yt * MM)])
+
+
+def _bounds_mm(poly):
+    return tuple(round(b / MM, 9) for b in poly.bounds)
+
+
+@pytest.mark.parametrize("xl,xl_snapped", [(20.3, 20.5), (20.2, 20.0)])
+def test_staircase_threshold_is_one_half(xl, xl_snapped):
+    # left column cells are covered by (20.5 - xl) / 0.5 = 0.4 (out) or 0.6 (in): a 0.3 or a 0.7 threshold gets one wrong
+    r = _snap_trace(_chamfered(xl, 30.0), 0.5 * MM)
+    assert _bounds_mm(r.layout.traces[0].polygon)[0] == xl_snapped
+    assert any(q.kind == "staircase" for q in r.records)
+
+
+@pytest.mark.parametrize("xr,xr_snapped", [(30.2, 30.0), (30.3, 30.5)])
+def test_staircase_threshold_right_edge(xr, xr_snapped):
+    # right column [30, 30.5] is covered (xr - 30) / 0.5 = 0.4 (out) or 0.6 (in)
+    r = _snap_trace(_chamfered(20.0, xr), 0.5 * MM)
+    assert _bounds_mm(r.layout.traces[0].polygon)[2] == xr_snapped
+
+
+def test_staircase_ties_round_outward_and_differ_from_vertex_snapping():
+    # every edge exactly half-way between lines: cells are exactly half covered, hence in -> left/bottom go DOWN, right/top UP
+    g = 0.5 * MM
+    r = _snap_trace(_chamfered(20.25, 30.25, 20.25, 30.25), g)
+    assert _bounds_mm(r.layout.traces[0].polygon) == (20.0, 20.0, 30.5, 30.5)
+    assert snap_value(20.25 * MM, g) == pytest.approx(20.5 * MM)  # the vertex / rectangle rule goes up instead
+    # a rectilinear polygon with the same left edge takes the vertex rule
+    rect = _snap_trace(Polygon([(20.25 * MM, 20 * MM), (30 * MM, 20 * MM), (30 * MM, 30 * MM), (20.25 * MM, 30 * MM)]), g)
+    assert _bounds_mm(rect.layout.traces[0].polygon)[0] == 20.5
+
+
+@pytest.mark.parametrize("off,corner_in", [(0.145, True), (0.15, False), (0.1, True), (0.2, False)])
+def test_staircase_convex_corner_cell_rule(off, corner_in):
+    # both corner edges are `off` mm inside the cell's lower-left corner (20, 20): the edges cover f = (0.5 - off) / 0.5 of the
+    # cell each, the corner cell f * f = 0.5041 (off .145) / 0.49 (.15) / 0.64 (.1) / 0.36 (.2); in iff f * f >= 1/2
+    poly = _chamfered(20.0 + off, 30.0, 20.0 + off, 30.0)
+    new = _snap_trace(poly, 0.5 * MM).layout.traces[0].polygon
+    from shapely.geometry import Point
+    corner, nb_x, nb_y = Point(20.25 * MM, 20.25 * MM), Point(20.75 * MM, 20.25 * MM), Point(20.25 * MM, 20.75 * MM)
+    assert new.contains(nb_x) and new.contains(nb_y)  # f * 1 = 0.7 .. 0.9 -> in
+    assert new.contains(corner) == corner_in
+
+
+def _wire_fixture(trace_y0=3.3, trace_x=(26.0, 36.0), wires=(((19.0, 4.35), (31.0, 4.35)), ((19.0, 3.7), (31.0, 3.7))),
+                  terminals=None):
+    """HS die 17.3-20.7 x 3-7 mm on DC+ copper, source pad 17.4-20.6 (reaches past the snapped footprint), PHASE copper
+    to its right; straight-in-plane wires (start -> end, mm) with 1 mm sine loop. Grid 0.5 mm."""
+    mm = lambda *v: tuple(x * MM for x in v)  # noqa: E731
+    die = Die(19.0 * MM, 5.0 * MM, 3.4 * MM, 4.0 * MM, "HS", {"source": mm(17.4, 3.5, 20.6, 6.5)})
+    ws = [arc_wire(mm(*a), mm(*b), 0.0, 0.0, 1.0 * MM, 0.3 * MM, "PHASE") for a, b in wires]
+    return Layout(
+        "t", 1, box(*mm(0, 0, 40, 20)),
+        [Trace("DC+", box(*mm(14, 0, 24, 10))), Trace("PHASE", box(*mm(trace_x[0], trace_y0, trace_x[1], 10)))],
+        [die], ws, terminals or {}, box(*mm(0, 0, 40, 20)))
+
+
+def test_wire_end_relocation_and_pad_clip():
+    lay = _wire_fixture()
+    # PHASE copper lower edge 3.3 -> 3.5; landing region eroded by 0.3 mm starts at y = 3.8; wire 1 ends at y = 3.7 -> 3.8
+    r = snap_layout(lay, 0.5 * MM)
+    w0, w1 = r.layout.wires
+    assert np.allclose(w0.points, lay.wires[0].points, atol=1e-15)  # wire 0 ends at y = 4.35 >= 3.8: untouched
+    assert np.allclose(w1.points[0], lay.wires[1].points[0], atol=1e-15)
+    assert w1.points[-1, 0] == pytest.approx(31.0 * MM, abs=1e-12) and w1.points[-1, 1] == pytest.approx(3.8 * MM, abs=1e-12)
+    # interior points follow linearly in index (7 points), z untouched
+    dy = np.arange(7) / 6 * 0.1 * MM
+    assert np.allclose(w1.points[:, 1] - lay.wires[1].points[:, 1], dy, atol=1e-12)
+    assert np.array_equal(w1.points[:, 2], lay.wires[1].points[:, 2])
+    assert np.allclose(w1.points[:, 0], lay.wires[1].points[:, 0], atol=1e-15)
+    rec = [q for q in r.records if q.kind == "wire"]
+    assert [q.element for q in rec] == ["wire[1] end"] and rec[0].displacement == pytest.approx(0.1 * MM, abs=1e-12)
+    # the relocated end is on the landing copper, inside the 0.3 mm margin, so the landing rule is clean
+    assert not [v for v in check(r.layout) if v.rule in ("wire_landing", "wire_start")]
+    # die 17.3-20.7 -> 17.5-20.5 (shrinks); its source pad 17.4-20.6 is clipped to 17.5-20.5
+    clip = [q for q in r.records if q.kind == "clip"]
+    assert len(clip) == 1 and clip[0].element == "die[0] pad source"
+    assert np.allclose(clip[0].after, np.array([17.5, 3.5, 20.5, 6.5]) * MM, atol=1e-12)
+    assert clip[0].displacement == pytest.approx(0.1 * MM, abs=1e-12)
+    assert np.allclose(r.layout.dies[0].pads["source"], np.array([17.5, 3.5, 20.5, 6.5]) * MM, atol=1e-12)
+
+
+def test_move_into_nearest_point_of_region():
+    region = box(0, 0, 2 * MM, 2 * MM)
+    assert _move_into(region, 1 * MM, 1 * MM) == (1 * MM, 1 * MM)  # inside: unchanged
+    assert _move_into(region, 3 * MM, 1 * MM) == pytest.approx((2 * MM, 1 * MM))  # face
+    assert _move_into(region, 3 * MM, 3 * MM) == pytest.approx((2 * MM, 2 * MM))  # corner
+    assert _move_into(region, 1 * MM, -0.5 * MM) == pytest.approx((1 * MM, 0.0))
+
+
+def test_terminal_snapping_value_and_record():
+    tm = Terminal("PHASE", 29.0 * MM - 0.1 * MM, 5.0 * MM, 3.8 * MM, 6.0 * MM)  # x 27.0-30.8 -> 27.0-31.0; y 2-8 on grid
+    lay = _wire_fixture(trace_y0=3.0, wires=(((19.0, 5.0), (31.1, 5.0)),), terminals={"PHASE": tm})
+    r = snap_layout(lay, 0.5 * MM)
+    t = r.layout.terminals["PHASE"]
+    assert (t.cx, t.cy, t.w, t.h) == pytest.approx((29.0 * MM, 5.0 * MM, 4.0 * MM, 6.0 * MM), abs=1e-12)
+    rec = [q for q in r.records if q.element == "terminal PHASE"]
+    assert len(rec) == 1 and rec[0].displacement == pytest.approx(0.2 * MM, abs=1e-12)
+    assert np.allclose(rec[0].after, np.array([27.0, 2.0, 31.0, 8.0]) * MM, atol=1e-12)
+
+
+def test_collapsing_hole_raises_value_error_naming_the_feature():
+    # a 0.15 mm square hole whose edges both snap to 24.0: ring with < 3 distinct points (shapely raises GEOSException)
+    big = box(20 * MM, 20 * MM, 30 * MM, 30 * MM)
+    hole = box(24.05 * MM, 24.05 * MM, 24.2 * MM, 24.2 * MM)
+    with pytest.raises(ValueError, match=r"trace\[0\] DC\+"):
+        _snap_trace(Polygon(big.exterior.coords, [hole.exterior.coords]), 0.5 * MM)
+    # a hole that survives (0.3 -> 0.5 wide) is fine
+    ok = box(24.1 * MM, 24.1 * MM, 24.6 * MM, 24.6 * MM)  # -> 24.0..24.5
+    r = _snap_trace(Polygon(big.exterior.coords, [ok.exterior.coords]), 0.5 * MM)
+    assert len(r.layout.traces[0].polygon.interiors) == 1
+    assert r.layout.traces[0].polygon.area == pytest.approx((100 - 0.25) * MM * MM, rel=1e-9)
+
+
+def test_recheck_reports_snapping_induced_net_split():
+    # two 10 mm squares joined by a 0.1 mm wide diagonal neck: each diagonal cell is 0.0707 / 0.25 = 28 % covered -> dropped
+    neck = LineString([(29 * MM, 29 * MM), (35 * MM, 35 * MM)]).buffer(0.05 * MM, cap_style="flat")
+    poly = box(20 * MM, 20 * MM, 30 * MM, 30 * MM).union(box(34 * MM, 34 * MM, 44 * MM, 44 * MM)).union(neck)
+    assert poly.geom_type == "Polygon"
+    lay = _fixture(poly)
+    lay.dies, lay.wires, lay.terminals = [], [], {}
+    assert not [v for v in check(lay) if v.rule == "net_split"]
+    r = snap_layout(lay, 0.5 * MM)
+    sp = [v for v in r.violations if v.rule == "net_split"]
+    assert len(sp) == 1 and "DC+" in sp[0].message and "2 islands" in sp[0].message
+
+
+def test_recheck_reports_wire_pitch_length_and_landing_keepout():
+    assert {"net_split", "wire_pitch", "wire_length", "wire_landing_keepout"} <= set(CHECKED_RULES)
+    # pitch: wire 1's end moves 0.1 mm toward wire 0 (y 3.7 -> 3.8) and the clearance falls from 0.65 to 0.55 mm < 0.6 mm
+    lay = _wire_fixture()
+    assert not [v for v in check(lay) if v.rule == "wire_pitch"]
+    r = snap_layout(lay, 0.5 * MM)
+    pv = [v for v in r.violations if v.rule == "wire_pitch"]
+    assert len(pv) == 1 and "wires 0/1" in pv[0].message and "5.500e-04" in pv[0].message
+    # length: that move lengthens wire 1 by ~4e-7 m; a limit 1e-8 m above its original length is exceeded only after snapping
+    rules = DesignRules(max_wire_length=lay.wires[1].length + 1e-8)
+    assert not [v for v in check(lay, rules) if v.rule == "wire_length"]
+    lv = [v for v in snap_layout(lay, 0.5 * MM, rules).violations if v.rule == "wire_length"]
+    assert len(lv) == 1 and lv[0].message.startswith("wire 1 ")
+    # keepout: terminal pad right edge 30.8 -> 31.0 reaches the landing point 31.1: clearance 0.3 -> 0.1 mm < 0.3 mm
+    tm = Terminal("PHASE", 28.9 * MM, 5.0 * MM, 3.8 * MM, 6.0 * MM)
+    lay = _wire_fixture(trace_y0=3.0, wires=(((19.0, 5.0), (31.1, 5.0)),), terminals={"PHASE": tm})
+    assert not [v for v in check(lay) if v.rule == "wire_landing_keepout"]
+    kv = [v for v in snap_layout(lay, 0.5 * MM).violations if v.rule == "wire_landing_keepout"]
+    assert len(kv) == 1 and kv[0].message.startswith("wire 0 ")
