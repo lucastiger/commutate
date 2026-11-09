@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T18:05:19+00:00 from repository state — do not edit_
+_generated 2026-11-09T18:06:02+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 225, failed: 3, review: 1, running: 2, todo: 6
 - T0275 `running` critic/review: Review T0269 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T16:55:36+00:00 run_started {"run": "T0269-scientist-20261109T085536-a855", "task": "T0269", "role": "scientist", "session": "9fb499ad-58f5-47ca-8142-66b24370155d"}
 - 2026-11-09T16:56:09+00:00 sleep_detected {"gap_s": 2272, "runs_extended": 2}
 - 2026-11-09T17:04:14+00:00 run_finished {"run": "T0272-critic-20261109T085536-fc6e", "status": "completed", "cost": 1.802128, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T17:04:55+00:00 task_added {"task": "T0274", "reason": "review T0272 follow-up (snap re-check)"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 225, failed: 3, review: 1, running: 2, todo: 6
 - 2026-11-09T17:24:12+00:00 run_finished {"run": "T0269-scientist-20261109T085536-a855", "status": "completed", "cost": 2.679263, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T18:05:13+00:00 verified {"task": "T0269"}
 - 2026-11-09T18:05:19+00:00 run_started {"run": "T0275-critic-20261109T100519-7c65", "task": "T0275", "role": "critic", "session": "ed497bc5-fefe-4185-aea7-6f997eab0f2a"}
+- 2026-11-09T18:05:54+00:00 sleep_detected {"gap_s": 2504, "runs_extended": 2}
