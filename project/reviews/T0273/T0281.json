@@ -1,0 +1,82 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Foot sampler's clear() test has no float tolerance, so the sampler rejects the exact-fit multi-wire foot; k=3 under measured rules is feasible but practically never found",
+      "detail": "In `_draw_feet`, `clear(a0)` checks `abs(...) >= ps` with no epsilon. Take k=3 wires at pitch 0.625 mm with the signal feet spread to +-0.25 mm (the sampler's own spread value). The only legal first foot is one `ps` from the gate wire, and the distance comes out as 0.6249999999999991 mm, below 0.625 mm, for every die u0 I tried. The 'clear' branch (taken with probability 0.6) therefore never accepts it; it can only be hit by chance in the unconstrained branch. Effect under `case4_measured_spec`: over 15000 raw draws the generator accepts 198 layouts at k=1 but only 1 at k=3, and `generate(k=3, 20, max_failures=5000)` raises RuntimeError. Yet the reference topology with 3 wires per die and sampler-reachable feet passes `check` with 0 violations. The claimed default-rule k=2/3 results are not affected. The defect limits the claim of 'searchable wire feet' in tight cases. It also shows that a RuntimeError from the generator is not evidence of infeasibility.",
+      "evidence": "Scratch run: clear() distance 0.6249999999999991 for u0 = 28, 22.5, 31, 17.5. Accepted per 15000 draws: k=1 198, k=3 1. A hand-built Params (case4_reference_params, LS feet 29.375/30/30.625, sigfeet LS (-0.25, 0, 0.25, 0)) on the measured spec with k=3 gives check() == [].",
+      "suggested_check": "Compare with a tolerance (`>= ps - 1e-9`), then re-measure k=3 acceptance under measured rules.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'Exactly 2 feasible' under measured rules rests on the generator's own sampler for orientation y",
+      "detail": "Orientation 0 is excluded by a closed form of necessary conditions, and the feasible pair is witnessed by DRC-clean layouts. I re-ran seeds 6 and 9 and got the same two sequences. Orientation y, however, is excluded only by 12000 draws of `_sample` plus `_quick_ok`, which is the same sampler that, per the finding above, misses feasible regions. The docstring admits 'sampled, not a closed form' but still asserts 'exactly 2 are feasible'.",
+      "evidence": "test_case4_orientation_y_has_no_candidate_under_measured_rules uses D._sample, so it tests the sampler's prior, not the parameter space.",
+      "suggested_check": "Word it as 'none found by the sampler for orientation y' or add a closed-form bound.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The closed-form 2 mm pitch infeasibility proof covers only LS dies that sit over the signal strips' x-range",
+      "detail": "The bound (Kelvin_max - gate_min)/2 = 1.35 mm assumes the LS gate and Kelvin wires run straight down across the source pad. That holds only if the die's signal feet lie within the LS strips' x-range of 25.3..64.7 mm. For a die outside that range the wires run diagonally, and a hand computation gives a power-foot distance of about 3.3 mm for a die at x = 15 mm. Such placements are probably excluded by other constraints (the DC- pad, the 25 mm Kelvin limit), but the test does not show this. The generator's RuntimeError is sampling evidence only; with 20000 draws I still found no candidate.",
+      "evidence": "Keepouts: KELVIN_LS [25,10,65,18], GATE_LS [25,20,65,28]. Pads: gate x [-1.5,-0.5], kelvin [0.5,1.5], source [-1.665,1.835]. generate(2 mm rules, k=1, max_failures=20000) raised RuntimeError.",
+      "suggested_check": "Extend the closed form to dies outside the strips' x-range, or state the assumption.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The throughput paragraph in the docstring was not re-measured after the sampler change",
+      "detail": "The unchanged docstring still states 244-253 DRC-valid candidates/s on Case 4 with k=1. With this commit I measured 53.5/s and 48.1/s, while two other test processes were running. The measurement is inconclusive, but the claim is now unverified.",
+      "evidence": "Scratch timing of D.generate(case4_spec(), 300, seed=1 and seed=2).",
+      "suggested_check": "Re-run the documented timing on an idle machine and update the paragraph.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Dead code left behind",
+      "detail": "`_gf` is defined but never used. `_Ctx.siglim` is computed but no longer read. `_draw_feet` takes `cx` but never uses it.",
+      "evidence": "grep: `_gf(` appears only at its definition; `siglim` is only assigned.",
+      "suggested_check": "Remove them or use them.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Replaced housing test is stricter, not weaker",
+      "detail": "The old assertions of `test_housing_covers_all_sequences_and_merged_variants` still pass on the new code. The new exact-5-variant set is the same for seeds 3, 5 and 6 at 400 draws.",
+      "evidence": "Scratch run on this commit.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Assumed Case 4 gate/Kelvin pads overlap the source pad by 0.05 mm",
+      "detail": "This comes from the existing test assumption (gate pad y from 1.8 mm, source pad top edge at 1.85 mm), not from this diff. It does not change the 2 mm argument.",
+      "evidence": "case4_spec() die pads.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/generate tests/unit/drc`: 169 passed.",
+    "Ran `uv run pytest -q -m 'not slow' tests/unit`: 691 passed, 38 deselected.",
+    "Ran `uv run ruff check .`: all checks passed. Ran shasum on thermal_fem.py: a216d5fe3209bcee, matches.",
+    "Ran `uv run mfos gate --fast`: exit code 0.",
+    "Checked Params.from_vector index arithmetic by hand: 60 names, the copper block ends at 40, feet at 40..51, sigfeet at 52..59.",
+    "Ran the old housing test assertions on the new code (they pass) and the new exact-5-variant test with seeds 3, 5 and 6 (the same set each time).",
+    "Generated Case 4 under measured rules with seeds 6 and 9: only s1 and s2 appear.",
+    "Built the reference topology with k=1, 2 and 3 wires per die under measured rules: DRC-clean whenever the signal feet are spread.",
+    "Measured accepted layouts per 15000 raw sampler draws under measured rules: k=1 198, k=3 1.",
+    "Reproduced the float comparison in the sampler's clear() test: the exact-fit distance is 0.6249999999999991, below 0.625.",
+    "Re-derived the Case 4 orientation-0 die windows from the keepout bounds; they are consistent with the test.",
+    "Ran the 2 mm pitch case with 20000 draws: RuntimeError, no candidate.",
+    "Measured Case 4 throughput while other test processes were running: 48-54 DRC-valid candidates/s."
+  ],
+  "caveats": [
+    "The multi-wire result is demonstrated under default rules only. Under the measured rules, k=3 is feasible but the sampler almost never finds it (float-tolerance defect in clear()).",
+    "The 'exactly 2 feasible topologies under measured rules' statement is proven by a closed form only for orientation x. Orientation y is excluded by sampling only.",
+    "The 2 mm pitch infeasibility proof assumes vertical signal wires, i.e. LS dies over the signal strips.",
+    "Case 4 gate/Kelvin pads and the 25 mm signal-wire limit are assumptions, so all Case 4 limits hold only under those assumptions."
+  ]
+}
