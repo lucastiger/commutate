@@ -3,7 +3,7 @@ objective: O003
 title: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0258
 description: 'New package src/moduleforge/optimize/ (search.py). A deterministic, resumable driver that
@@ -87,4 +87,84 @@ lens: null
 trigger: null
 rationale: F3's frozen budget and order; the inputs of A1 (Tj-checked best) and K1 (inductance-only best,
   near ties, levelling); F1(b) control and the reported L1-only null.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I added `src/moduleforge/optimize/search.py` with `run_search`, `run_control` and `candidate_stream`,
+    plus 17 fast fake-solver tests and one slow real-generator test. All DoD commands exit 0, and I committed
+    as 3ad9b349.
+
+
+    - **Search and checkpoint:** all solvers are injected through `Solvers`, and layouts are touched only
+    through `fingerprint()`. Every solve goes to an append-only JSONL checkpoint keyed `<fingerprint>:<kind>`.
+    A rerun on the same directory re-solves nothing, and a torn last line is skipped. Only the 16 shortlisted
+    layouts are kept in memory, not all 20,000.
+
+    - **Tests:** they cover batch-and-stop and the cap of 8, ascending L_sub order, the null''s reuse
+    and its 8-new-check cap, near-tie selection at the threshold, the levelling record, control mode with
+    no thermal solves, r'
+  report:
+    status: completed
+    summary: 'I added `src/moduleforge/optimize/search.py` with `run_search`, `run_control` and `candidate_stream`,
+      plus 17 fast fake-solver tests and one slow real-generator test. All DoD commands exit 0, and I
+      committed as 3ad9b349.
+
+
+      - **Search and checkpoint:** all solvers are injected through `Solvers`, and layouts are touched
+      only through `fingerprint()`. Every solve goes to an append-only JSONL checkpoint keyed `<fingerprint>:<kind>`.
+      A rerun on the same directory re-solves nothing, and a torn last line is skipped. Only the 16 shortlisted
+      layouts are kept in memory, not all 20,000.
+
+      - **Tests:** they cover batch-and-stop and the cap of 8, ascending L_sub order, the null''s reuse
+      and its 8-new-check cap, near-tie selection at the threshold, the levelling record, control mode
+      with no thermal solves, resume, and determinism. The slow test runs the real generator and real
+      L1 on the 70 x 40 housing with 300 candidates.
+
+
+      Judgment calls where the packet was ambiguous:
+
+      - **Streaming:** `generate()` returns a list, so the driver calls it in chunks of 250 with sub-seeds
+      from `SeedSequence([seed, k])`. The chunk size changes the candidate stream, so it should be frozen
+      in E008''s spec.
+
+      - **Thermal contract:** `thermal(layout, P)` returns `{"tj": 3 x n_die, "gci": n_die}`. The conservative
+      test uses the level-2 (last) Tj row.
+
+      - **e_R and w_ind:** `e_R((candidate, other))` is called once, for (inductance-only best, twin),
+      and `w_ind = 2*e_R + s_ref`. The pair formulation and the `2*e_R + s_ref` band are from objective.yaml''s
+      A1/K1 description.
+
+      - **Control mode:** `run_control` takes D as the reference, and `e_R` is called for (best, D).
+
+      - **Levelling flag:** this is reported as `levelled` next to the two L1 minima. The driver does
+      not apply the h = +inf rule.
+
+      - **Slow test:** its `l_sub` and thermal solvers are stand-ins, so it exercises the driver with
+      real L1 and the real generator only.
+
+
+      I did not run a 20,000-candidate real run.
+
+
+      <br>
+
+
+      `mfos gate --fast` printed "all gates passed" and the background job exited 0, but it was started
+      in a compound command, so I have no separate exit code for it.'
+    checks_run:
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run pytest -q -m slow tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/optimize/__init__.py
+    - src/moduleforge/optimize/search.py
+    - tests/unit/optimize/__init__.py
+    - tests/unit/optimize/test_search.py
+    - tests/unit/optimize/test_search_slow.py
