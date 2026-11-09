@@ -44,7 +44,7 @@ remove_paths = [
 level = 2                        # 3 for the O000 canary; set 1 for Phase 1 of the migration, raise as trust grows (§22)
 
 [concurrency]
-agents = 2                       # simultaneous Claude sessions (~1 GiB RAM each, compute is remote)
+agents = 3                       # simultaneous Claude sessions (~1 GiB RAM each, compute is remote)
 experiments = 1                  # simultaneous experiment processes (each may use several cores)
 
 [compute]
