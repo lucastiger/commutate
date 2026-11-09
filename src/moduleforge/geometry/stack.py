@@ -35,6 +35,12 @@ stored in ``Layer.k`` keeps the cited temperature *dependence*. Every law is val
   earlier single exponent -1.15 rested on a misquoted 26 at 400 K and missed the table by 2 % there.)
 * Si3N4: f = (T/300)^-1.0, the Umklapp-limited law of Slack (1973) for a dense, pure lattice; Hirosaki et al., Phys.
   Rev. B 65, 134110 (2002), find k ~ 1/T for high-conductivity beta-Si3N4. Medium confidence for commercial AMB grades.
+* AlN: f = (T/300)^-1.0, the Umklapp-limited law of Slack, Tanzilli, Pohl, Vandersande, J. Phys. Chem. Solids 48, 641
+  (1987), who measure k ~ 1/T above ~200 K for AlN single crystals (k(300 K) = 319 W/(m K) for the purest crystal, so
+  k(400 K) = 239 and k(480 K) = 199 W/(m K) under the law). Sintered substrate AlN (typically 170-180 W/(m K), the value
+  stored in ``Layer.k``) is limited by oxygen and grain-boundary scattering, whose share is temperature-independent, so its
+  true slope is probably shallower than 1/T: the law then overstates the fall of k with T. Medium-low confidence for
+  commercial grades (no sintered-AlN table was consulted); conservative for Tj (a hotter die sees a lower k).
 * SAC305 (substrate solder and die attach): Wiedemann-Franz electronic conduction, k ~ L T sigma(T) with
   rho(T) = rho(300 K) [1 + alpha (T - 300 K)] and alpha = 4.2e-3 /K (CRC, temperature coefficient of resistivity of
   tin, 4.2-4.7e-3 /K), so f = (T/300) / (1 + 4.2e-3 (T - 300)). L = 2.44e-8 W Ohm/K^2 and rho = 13 uOhm cm reproduce
@@ -84,6 +90,7 @@ K_LAWS: dict[str, Callable[[float], float]] = {
     "Cu": lambda T: 1.0 - 1.995e-4 * (T - 300.0),
     "Al2O3": _al2o3_law,
     "Si3N4": lambda T: (T / 300.0) ** -1.0,
+    "AlN": lambda T: (T / 300.0) ** -1.0,
     "SAC305": lambda T: (T / 300.0) / (1.0 + 4.2e-3 * (T - 300.0)),
     "4H-SiC": lambda T: (T / 300.0) ** -1.49,
 }

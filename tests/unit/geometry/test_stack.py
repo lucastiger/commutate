@@ -120,3 +120,28 @@ def test_die_layer_thickness_must_be_positive():
         dataclasses.replace(s, die=dataclasses.replace(s.die, thickness=0.0))
     with pytest.raises(ValueError):
         dataclasses.replace(s, die_attach=dataclasses.replace(s.die_attach, thickness=-1e-6))
+
+
+# --- AlN k(T) (T0257) ----------------------------------------------------------------------------------------------
+def test_aln_law_normalised_monotone_and_reproduces_cited_points():
+    f = K_LAWS["AlN"]
+    assert abs(f(300.0) - 1.0) < 1e-12
+    T = np.linspace(K_T_MIN, K_T_MAX, 60)
+    assert np.all(np.diff(f(T)) < 0)
+    # Slack et al. 1987: k = 319 W/(m K) at 300 K and k ~ 1/T, so 239.25 at 400 K and 199.4 at 480 K (cited-law points)
+    for Tk, k in ((300.0, 319.0), (400.0, 239.25), (480.0, 199.375)):
+        assert 319.0 * f(Tk) == pytest.approx(k, rel=1e-3)
+
+
+def test_aln_layer_k_at_and_thermal_grid_accepts_aln_ceramic():
+    from moduleforge.solvers.thermal_fem import layout_grid
+
+    ceramic = Layer("ceramic", "AlN", 0.635e-3, 0.0, 170.0)
+    assert ceramic.k_at(300.0) == 170.0
+    assert ceramic.k_at(400.0) == pytest.approx(170.0 * 300.0 / 400.0, rel=1e-12)
+    lay = generate_layouts(1, seed=3)[0]
+    st = lay.stack
+    layers = tuple(ceramic if la.name == "ceramic" else la for la in st.layers)
+    lay = dataclasses.replace(lay, stack=dataclasses.replace(st, layers=layers))
+    g = layout_grid(lay, 10.0, 5000.0, 300.0, level=0)
+    assert g is not None
