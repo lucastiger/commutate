@@ -3,7 +3,7 @@ objective: O003
 title: 'Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272)'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on:
 - T0268
 description: "Follow-up to T0268, from review T0272 (project/reviews/T0268/T0272.json; read it first).\
@@ -72,3 +72,74 @@ history:
     proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
     the system certificate store · see https://code.claude.com/docs/en/network-config'
   at: '2026-11-09T20:51:58+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'All four review fixes from T0272 are in, every DoD command and the fast gate exit 0, and the
+    work is committed as 8212a9bc. Attempt 1 failed on an API/TLS error but left an uncommitted diff behind.
+    I checked that diff, fixed one gap in it, added two tests, and committed.
+
+
+    1. **Full re-check after snapping (finding 1):** `snap_layout` now runs the full `drc.check` plus
+    the `net_merged` test on both the input and the snapped layout. Every violation of the snapped layout
+    is returned, labelled `induced` (not there before snapping) or `pre-existing`. Two violations count
+    as the same if they share a rule and message, ignoring the numbers (the DRC prints numbers like 1.234e-03).
+    So a spacing violation that is still present but with a new value stays `pre-existing`. `SnapViolation`
+    is a new subcla'
+  report:
+    status: completed
+    summary: "All four review fixes from T0272 are in, every DoD command and the fast gate exit 0, and\
+      \ the work is committed as 8212a9bc. Attempt 1 failed on an API/TLS error but left an uncommitted\
+      \ diff behind. I checked that diff, fixed one gap in it, added two tests, and committed.\n\n1. **Full\
+      \ re-check after snapping (finding 1):** `snap_layout` now runs the full `drc.check` plus the `net_merged`\
+      \ test on both the input and the snapped layout. Every violation of the snapped layout is returned,\
+      \ labelled `induced` (not there before snapping) or `pre-existing`. Two violations count as the\
+      \ same if they share a rule and message, ignoring the numbers (the DRC prints numbers like 1.234e-03).\
+      \ So a spacing violation that is still present but with a new value stays `pre-existing`. `SnapViolation`\
+      \ is a new subclass of `Violation` that adds the `origin` field. `CHECKED_RULES` is kept because\
+      \ an existing test imports it, but it no longer filters anything.\n   - Tests built by hand: a source\
+      \ pad clipped below twice `wire_start_margin` gives an induced `wire_start`; a corner notch from\
+      \ staircasing gives an induced `terminal_off_trace`; a `min_spacing` violation present before snapping\
+      \ is labelled `pre-existing`; a new test covers the same violation whose spacing value changes during\
+      \ snapping (0.4 mm to 0.5 mm) and is still labelled `pre-existing`.\n2. **Docstring contract (finding\
+      \ 0), done by raising rather than narrowing the docstring:** on the staircase path, a hole that\
+      \ ends up fully covered by copper raises `ValueError` naming the feature and the hole. An outline\
+      \ or baseplate outline that splits into several parts raises `ValueError`. A trace that splits is\
+      \ still reported as a `net_split` violation, as before. The previous attempt detected filled holes\
+      \ by counting holes, which missed a filled hole when the trace also split; I replaced it with a\
+      \ check of each hole and added a test for that case. Tests also cover a filled hole in a single-part\
+      \ trace, a hole that survives, and an outline that splits.\n3. **test_stack.py comment:** it now\
+      \ says 319 W/(m K) is Slack et al.'s estimated intrinsic value, and the 400 K and 480 K points come\
+      \ from the 1/T law, not from data.\n4. **stack.py AlN docstring:** it now cites Watari et al., J.\
+      \ Mater. Res. 17(11) (2002), an AlN ceramic measured from 4 to 1000 K with 272 W/(m K) at room temperature,\
+      \ and notes it is a high-purity sample, not a commercial grade. The claim that no AlN-ceramic k(T)\
+      \ data were found is gone. The law itself is unchanged.\n\n`thermal_fem.py` was not touched; its\
+      \ hash still matches."
+    files_changed:
+    - src/moduleforge/geometry/snap.py
+    - src/moduleforge/geometry/stack.py
+    - tests/unit/geometry/test_snap.py
+    - tests/unit/geometry/test_stack.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/geometry tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/geometry/test_snap.py (after adding new tests; first run had a
+        test-geometry mistake, fixed)
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/geometry/test_snap.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Induced and pre-existing violations are matched by rule plus message with the numbers ignored. A
+      pre-existing violation whose integer part changes (for example net_split going from 2 to 3 islands)
+      is labelled 'induced'.
+    - On the staircase path, a hole that opens into the outside edge (becoming a notch) does not raise,
+      because it is not filled. Only fully filled holes raise, as the task asked.
+    - Review T0272's open suggestion to compare the AlN 1/T law with Watari 2002 over 300-480 K was not
+      done; that is outside this task. The docstring says so.
