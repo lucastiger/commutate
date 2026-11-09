@@ -41,7 +41,7 @@ class Die:
     """Switch die: centre (cx, cy), size w x h, switch position 'HS' or 'LS'.
 
     The die back side (drain/collector) is soldered to a trace (DC+ for HS, PHASE for LS). ``pads`` maps a
-    pad name ('source', 'gate') to an absolute rectangle (x0, y0, x1, y1) on the die top.
+    pad name ('source', 'gate', 'kelvin') to an absolute rectangle (x0, y0, x1, y1) on the die top.
     """
 
     cx: float
@@ -70,6 +70,42 @@ class BondWire:
     diameter: float
     loop_height: float
     net: str
+
+    @property
+    def length(self) -> float:
+        return float(np.linalg.norm(np.diff(self.points, axis=0), axis=1).sum())
+
+
+# Gate and Kelvin-source nets, one per switch position: in a half-bridge the HS and LS gates are driven separately,
+# the HS Kelvin source is the HS die source (PHASE potential) and the LS Kelvin source the LS die source (DC-
+# potential), so the four are distinct electrical nets on separate copper.
+GATE_HS = "GATE_HS"
+GATE_LS = "GATE_LS"
+KELVIN_HS = "KELVIN_HS"
+KELVIN_LS = "KELVIN_LS"
+SIGNAL_PADS = ("gate", "kelvin")
+# (die pad name, die switch) -> net of the fixed copper a wire from that pad must land on
+SIGNAL_NET = {("gate", "HS"): GATE_HS, ("gate", "LS"): GATE_LS,
+              ("kelvin", "HS"): KELVIN_HS, ("kelvin", "LS"): KELVIN_LS}
+SIGNAL_NETS = (GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS)
+
+
+@dataclass
+class SignalWire:
+    """Gate or Kelvin-source bond wire: starts on pad ``pad`` ('gate' or 'kelvin') of die ``die`` (index into
+    ``Layout.dies``) and lands on copper of net ``net``, which must be ``SIGNAL_NET[(pad, switch of that die)]``
+    (e.g. 'GATE_HS' for the gate pad of an HS die). 3D polyline ``points`` (N, 3), as for ``BondWire``.
+
+    Signal wires are *not* part of ``Layout.to_conductors()``: the dies are modelled as ideal shorts, which
+    would join them to the power path. ``loop_height`` is a construction parameter, redundant with ``points``.
+    """
+
+    die: int
+    pad: str
+    net: str
+    points: np.ndarray
+    diameter: float
+    loop_height: float
 
     @property
     def length(self) -> float:
@@ -128,9 +164,12 @@ class Layout:
     stack: LayerStack = field(default_factory=default_dbc_stack)
     backside_inset: float = 1.0e-3  # backside Cu is inset from the substrate edge (typical DBC practice)
     wire_sigma: float = SIGMA_AL_WIRE
+    # optional gate / Kelvin-source wires (left out of to_conductors()); the fixed gate and Kelvin copper they land on
+    # is ordinary ``traces`` with a net of SIGNAL_NETS, modelled like any other copper
+    signal_wires: list[SignalWire] = field(default_factory=list)
 
     def fingerprint(self) -> str:
-        """Stable SHA-256 hex digest of the layout IR: every IR field but the two listed last.
+        """Stable SHA-256 hex digest of the layout IR: every IR field but the three listed last.
 
         That includes every input of ``to_conductors()``, which returns the whole ``LayerStack`` (``kind``
         label included).
@@ -154,8 +193,12 @@ class Layout:
         moving a polygon vertex by less than 1 nm if that changes the vertex ``shapely.normalize`` starts the
         ring at.
 
-        Not covered (exactly these two IR fields): ``BondWire.loop_height`` (a generator parameter that is
-        redundant with the hashed wire points) and ``Terminal.net`` (redundant with the hashed dict key).
+        Every ``SignalWire`` (die index, pad, net, 3D points, diameter) is hashed in list order after the
+        terminals. A layout without signal wires therefore has the digest it had before ``signal_wires`` existed.
+
+        Not covered (exactly these three IR fields): ``BondWire.loop_height`` and ``SignalWire.loop_height``
+        (construction parameters that are redundant with the hashed wire points) and ``Terminal.net``
+        (redundant with the hashed dict key).
         """
         h = hashlib.sha256()
 
@@ -186,6 +229,9 @@ class Layout:
         for n in sorted(self.terminals):
             t = self.terminals[n]
             put("term", n, [nm(v) for v in (t.cx, t.cy, t.w, t.h)])
+        for sw in self.signal_wires:
+            put("signal_wire", sw.die, sw.pad, sw.net, np.round(sw.points * 1e9).astype(np.int64).tolist(),
+                nm(sw.diameter))
         return h.hexdigest()
 
     def top_cu_z(self) -> tuple[float, float]:

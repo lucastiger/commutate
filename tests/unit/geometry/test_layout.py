@@ -14,11 +14,13 @@ from moduleforge.geometry import (
     DC_MINUS,
     NETS,
     PHASE,
+    SIGNAL_NET,
     BondWire,
     Die,
     Layer,
     LayerStack,
     Layout,
+    SignalWire,
     Terminal,
     Trace,
     decompose_polygon,
@@ -160,11 +162,12 @@ def test_die_shorts_span_trace_top_to_die_top(layouts):
 # field, or normalised it to a constant, therefore fails the pin. The completeness test below derives the set of IR
 # fields from ``dataclasses.fields`` so that a new IR field cannot go unpinned silently.
 
-FP_EXEMPT = {"BondWire.loop_height", "Terminal.net"}  # exactly the fingerprint docstring's 'Not covered' list
-_IR_CLASSES = (Layout, Trace, Die, BondWire, Terminal, LayerStack, Layer)
+# exactly the fingerprint docstring's 'Not covered' list
+FP_EXEMPT = {"BondWire.loop_height", "SignalWire.loop_height", "Terminal.net"}
+_IR_CLASSES = (Layout, Trace, Die, BondWire, SignalWire, Terminal, LayerStack, Layer)
 # Containers: pinned through the fields of their elements, not as a whole.
-_CONTAINERS = {"Layout.stack", "Layout.traces", "Layout.dies", "Layout.wires", "LayerStack.layers",
-               "LayerStack.die_attach", "LayerStack.die"}
+_CONTAINERS = {"Layout.stack", "Layout.traces", "Layout.dies", "Layout.wires", "Layout.signal_wires",
+               "LayerStack.layers", "LayerStack.die_attach", "LayerStack.die"}
 _DIE_LAYERS = ("die_attach", "die")  # thermal layers above the top Cu, held as LayerStack fields (not in layers)
 # Hashed, but not a free input: LayerStack.__post_init__ forces the layer names to LAYER_ORDER.
 _FIXED = {"Layer.name"}
@@ -211,6 +214,11 @@ FP_PINS = {
     "wire points": (("wires", "*", "points"), _raise_apex),
     "wire diameter": (("wires", "*", "diameter"), lambda v: v * 1.1),
     "wire net": (("wires", "*", "net"), _other_net),
+    "signal wire die": (("signal_wires", "*", "die"), lambda k: k + 1),
+    "signal wire pad": (("signal_wires", "*", "pad"), {"gate": "kelvin", "kelvin": "gate"}.__getitem__),
+    "signal wire net": (("signal_wires", "*", "net"), lambda n: n + "-x"),
+    "signal wire points": (("signal_wires", "*", "points"), _raise_apex),
+    "signal wire diameter": (("signal_wires", "*", "diameter"), lambda v: v * 1.1),
     **{f"terminal {f}": (("terminals", "*", f), lambda v: v + 10 * _UM) for f in ("cx", "cy", "w", "h")},
     "terminal names": (("terminals",), lambda ts: {("AC" if k == PHASE else k): t for k, t in ts.items()}),
     **{f"{n} {f}": (("stack", "layers", LAYER_ORDER.index(n), f), change)
@@ -273,9 +281,22 @@ def _same(a, b):
     return a == b
 
 
+def _g2_layout():
+    """Generator layout plus one gate wire per die (from the gate pad 2 mm outward in x), so that the SignalWire
+    fields are pinned too; the fingerprint does not need the layout to be DRC-clean."""
+    lay = generate_layouts(1, seed=7, dies_per_switch=2)[0]
+    sig = []
+    for k, d in enumerate(lay.dies):
+        x0, y0, x1, y1 = d.pads["gate"]
+        p = np.array([[0.5 * (x0 + x1) + t * 2e-3, 0.5 * (y0 + y1), 1e-3 * (1.0 + np.sin(np.pi * t))]
+                      for t in np.linspace(0.0, 1.0, 5)])
+        sig.append(SignalWire(k, "gate", SIGNAL_NET[("gate", d.switch)], p, 1.25e-4, 1e-3))
+    return dataclasses.replace(lay, signal_wires=sig)
+
+
 @pytest.fixture(scope="module")
 def g2():
-    return generate_layouts(1, seed=7, dies_per_switch=2)[0]
+    return _g2_layout()
 
 
 @pytest.mark.parametrize("name", list(FP_PINS))
@@ -308,11 +329,12 @@ def test_fingerprint_pin_table_covers_every_ir_field(g2):
     # element fields of lists/dicts are pinned on every element, not only the first
     for path, _ in FP_PINS.values():
         for i, key in enumerate(path[:-1]):
-            if key in ("traces", "dies", "wires", "terminals"):
+            if key in ("traces", "dies", "wires", "signal_wires", "terminals"):
                 assert path[i + 1] == "*", path
 
 
-@pytest.mark.parametrize("path", [("wires", 0, "loop_height"), ("terminals", PHASE, "net")])
+@pytest.mark.parametrize("path", [("wires", 0, "loop_height"), ("signal_wires", 0, "loop_height"),
+                                  ("terminals", PHASE, "net")])
 def test_fingerprint_ignores_exactly_the_documented_fields(g2, path):
     assert _field_label(g2, path) in FP_EXEMPT
     changed = _set(g2, path, lambda v: v * 2 if isinstance(v, float) else v + "-x")
@@ -344,6 +366,8 @@ _QUANTUM_PATHS = {
     "die source pad": ("dies", 2, "pads", "source"),
     "wire points": ("wires", 0, "points"),
     "wire diameter": ("wires", 0, "diameter"),
+    "signal wire points": ("signal_wires", 1, "points"),
+    "signal wire diameter": ("signal_wires", 1, "diameter"),
     "terminal cy": ("terminals", DC_MINUS, "cy"),
     "trace polygon": ("traces", 0, "polygon"),
     "substrate outline": ("outline",),
@@ -395,6 +419,7 @@ _ELEMENT_FIELDS = {
     ("traces",): ("net", "polygon"),
     ("dies",): ("cx", "cy", "w", "h", "switch", "thickness", "attach_thickness", "pads"),
     ("wires",): ("points", "diameter", "net"),
+    ("signal_wires",): ("die", "pad", "net", "points", "diameter"),
     ("terminals",): ("cx", "cy", "w", "h"),
     ("stack", "layers"): ("material", "thickness", "sigma", "k"),
 }
@@ -460,8 +485,7 @@ def _same_type_field_pairs(lay):
                 yield f"{type(el).__name__}.{fa.name}<->{fb.name}", (*ep, fa.name), (*ep, fb.name)
 
 
-_FIELD_SWAPS = {name: (pa, pb) for name, pa, pb in _same_type_field_pairs(generate_layouts(1, seed=7,
-                                                                                           dies_per_switch=2)[0])}
+_FIELD_SWAPS = {name: (pa, pb) for name, pa, pb in _same_type_field_pairs(_g2_layout())}
 
 
 @pytest.mark.parametrize("name", list(_FIELD_SWAPS))
@@ -471,12 +495,12 @@ def test_fingerprint_pairs_values_with_their_field(g2, name):
 
 
 def test_fingerprint_repairing_tables_cover_every_element_field(g2):
-    element_classes = {"Trace", "Die", "BondWire", "Terminal", "Layer"}
+    element_classes = {"Trace", "Die", "BondWire", "SignalWire", "Terminal", "Layer"}
     pinned = {_field_label(g2, next(_concrete(g2, path))) for path, _ in FP_PINS.values()}
     swapped = {_field_label(g2, (*c, _keys(_get(g2, c))[0], *f)) for c, f in FP_SWAPS.values() if f}
     assert swapped == {label for label in pinned if label.split(".")[0] in element_classes}
     assert {"Layout.outline<->baseplate_outline", "Die.cx<->cy", "Die.w<->h", "Terminal.cx<->cy",
-            "Layer.sigma<->k"} <= set(_FIELD_SWAPS)
+            "Layer.sigma<->k", "SignalWire.pad<->net"} <= set(_FIELD_SWAPS)
 
 
 def test_fingerprint_order_semantics_match_docstring(g2):
