@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T18:25:07+00:00 from repository state — do not edit_
+_generated 2026-11-09T18:25:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,14 +29,12 @@ _generated 2026-11-09T18:25:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 226, failed: 3, merge: 1, running: 2, todo: 6
+cancelled: 38, done: 227, failed: 3, running: 2, todo: 6
 
 - T0260 `running` builder/implement: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode (attempt 1)
-- T0269 `merge` scientist/design_experiment: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 2)
 - T0270 `running` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 1)
 
 ## Recent events
-- 2026-11-09T17:08:29+00:00 merged {"task": "T0258"}
 - 2026-11-09T17:08:44+00:00 inbox_resolved {"id": "I0146", "status": "approved", "note": "Merge T0268: snapping and AlN-law fixes accepted with minor caveats by T0272; the full post-snap DRC re-check and
 - 2026-11-09T17:13:36+00:00 merged {"task": "T0268"}
 - 2026-11-09T17:14:15+00:00 sleep_detected {"gap_s": 309, "runs_extended": 2}
@@ -51,3 +49,4 @@ cancelled: 38, done: 226, failed: 3, merge: 1, running: 2, todo: 6
 - 2026-11-09T18:19:56+00:00 run_started {"run": "T0260-builder-20261109T101956-d50a", "task": "T0260", "role": "builder", "session": "0124e9de-6329-49e1-8080-31d26131e019"}
 - 2026-11-09T18:20:31+00:00 sleep_detected {"gap_s": 362, "runs_extended": 2}
 - 2026-11-09T18:24:43+00:00 inbox_resolved {"id": "I0147", "status": "approved", "note": "Merge T0269: headroom metric drafts with nonzero-band tests and 101 killed mutants, accepted with minor caveats b
+- 2026-11-09T18:25:14+00:00 merged {"task": "T0269"}
