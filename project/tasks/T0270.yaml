@@ -1,0 +1,59 @@
+id: T0270
+objective: O003
+title: 'DRC: signal-to-power spacing class and signal-wire checks (review T0267)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0256
+description: "Follow-up to T0256 (merged), from review T0267 (project/reviews/T0256/T0267.json; read it\
+  \ first). Lands before the generator\n(T0258) and the search driver are frozen for E008. Do not edit\
+  \ src/moduleforge/solvers/thermal_fem.py (sha256 a216d5fe...).\n1. DesignRules / DRC: spacing between\
+  \ a signal net (GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS) and a power net (DC+, PHASE,\n   DC-) is its\
+  \ own rule class, measured from the reference as its minimum signal-to-power gap (per power net if the\n\
+  \   reference distinguishes them); spacing_other keeps only the remaining pairs. measure_rules reports\
+  \ it; tests with\n   hand-computed layouts show that a gate trace closer to DC+ copper than the reference's\
+  \ signal-to-power gap fails.\n2. Signal wires: diameter and length range checks as for power wires (from\
+  \ the reference's measured signal wires);\n   measure_rules handles layouts with signal wires without\
+  \ crashing and returns physical values (tests).\n3. T0267's notes: make the fingerprint independent\
+  \ of the Python type of SignalWire.die; skip the redundant work in\n   check() if trivial.\nKeep every\
+  \ existing test passing; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/geometry
+  exists: null
+  timeout_s: 1200
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-09T15:21:30+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

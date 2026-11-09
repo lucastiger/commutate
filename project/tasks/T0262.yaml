@@ -63,7 +63,14 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   Record cpu_hours_est and the peak memory per reference in the spec, from P3''s measured timings (Case
   4: 0.25 mm about 2 h wall, about 16 GB per solve) scaled by the --plan unknown counts. State whether
   320 CPU-hours and 2026-11-24 are reachable, and if not, which budget item breaks. Do not load 2D_Case_2R,
-  2D_Case_6 or customer data.'
+  2D_Case_6 or customer data.
+
+
+  FOUNDER CONSTRAINT (2026-11-09): burst compute is a Google Cloud free-trial account capped at 8 vCPUs
+  running at once (one 8-vCPU VM at a time; memory via N2D extended memory up to ~150+ GB). The founder
+  declined a paid upgrade. E008''s cost estimate and run plan must fit this cap: sequential solves, per-solve
+  wall time and memory on 8 vCPUs, total VM-hours and $ against the remaining free credit, and the resulting
+  E008 date. State plainly if the 2026-11-24 date is unreachable and what the earliest date is.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

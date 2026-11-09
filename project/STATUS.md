@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T15:21:27+00:00 from repository state — do not edit_
+_generated 2026-11-09T15:25:44+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,14 +29,13 @@ _generated 2026-11-09T15:21:27+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 220, failed: 3, merge: 1, running: 2, todo: 5
+cancelled: 38, done: 220, failed: 3, merge: 1, running: 2, todo: 6
 
 - T0256 `merge` builder/implement: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement (attempt 2)
 - T0268 `running` builder/implement: Snapping rule and AlN law fixes from review T0264 (before E008's design) (attempt 1)
 - T0269 `running` builder/implement: Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266) (attempt 1)
 
 ## Recent events
-- 2026-11-09T08:56:01+00:00 run_started {"run": "T0267-critic-20261109T005601-e161", "task": "T0267", "role": "critic", "session": "fda4c413-fbaf-49f9-88db-8eb5fd6a8fc6"}
 - 2026-11-09T08:56:35+00:00 sleep_detected {"gap_s": 520, "runs_extended": 1}
 - 2026-11-09T09:02:53+00:00 run_finished {"run": "T0267-critic-20261109T005601-e161", "status": "completed", "cost": 2.114936, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T09:02:56+00:00 inbox_opened {"id": "I0144", "kind": "protected_change", "subject": "T0256: merge needs founder approval"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 220, failed: 3, merge: 1, running: 2, todo: 5
 - 2026-11-09T15:20:44+00:00 run_started {"run": "T0268-builder-20261109T072044-ab09", "task": "T0268", "role": "builder", "session": "3f2597bf-abac-48c6-91a9-d468911b9adc"}
 - 2026-11-09T15:20:44+00:00 run_started {"run": "T0269-builder-20261109T072044-7412", "task": "T0269", "role": "builder", "session": "a9eb87f4-2d35-45df-b37a-bb4b40646287"}
 - 2026-11-09T15:21:25+00:00 inbox_resolved {"id": "I0144", "status": "approved", "note": "Merge T0256 attempt 2: per-switch gate/Kelvin nets fix T0265's blocker; T0267 accepts with caveats (signal-to-pow
+- 2026-11-09T15:21:30+00:00 task_added {"task": "T0270"}
