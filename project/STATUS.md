@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T22:45:35+00:00 from repository state — do not edit_
+_generated 2026-11-09T22:45:54+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -24,7 +24,7 @@ _generated 2026-11-09T22:45:35+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 38 | $68.50 | 1321265 | 732420 | 66 | 0 |
+| O003 | 40 | $68.50 | 1321265 | 732420 | 66 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,17 +32,15 @@ _generated 2026-11-09T22:45:35+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 235, failed: 3, merge: 1, needs_founder: 3, todo: 5
+cancelled: 38, done: 236, failed: 3, needs_founder: 3, running: 2, todo: 3
 
-- T0273 `merge` builder/implement: Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured rules (review T0271) (attempt 1)
+- T0259 `running` builder/implement: Twin construction and degradation rule (F1(a), F1(b)) (attempt 1)
 - T0274 `needs_founder` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 2)
 - T0276 `needs_founder` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
 - T0279 `needs_founder` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
+- T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 
 ## Recent events
-- 2026-11-09T21:42:14+00:00 verified {"task": "T0274"}
-- 2026-11-09T21:45:48+00:00 merged {"task": "T0270"}
-- 2026-11-09T21:49:21+00:00 inbox_opened {"id": "I0151", "kind": "protected_change", "subject": "T0274: merge needs founder approval"}
 - 2026-11-09T21:49:57+00:00 sleep_detected {"gap_s": 1182, "runs_extended": 2}
 - 2026-11-09T21:49:59+00:00 run_finished {"run": "T0279-builder-20261109T125534-34cd", "status": "completed", "cost": 0.68255, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T22:00:40+00:00 verified {"task": "T0279"}
@@ -55,3 +53,6 @@ cancelled: 38, done: 235, failed: 3, merge: 1, needs_founder: 3, todo: 5
 - 2026-11-09T22:41:41+00:00 inbox_resolved {"id": "I0150", "status": "approved", "note": "Merge T0273: searchable wire feet and multi-wire dies with gate/Kelvin copper; T0281 accepts with caveats; the sa
 - 2026-11-09T22:42:55+00:00 task_added {"task": "T0285", "reason": "review T0284 follow-up (driver e_R consistency, checkpoint)"}
 - 2026-11-09T22:42:55+00:00 task_amended {"task": "T0262", "reason": "waits for T0285; spec checks from T0283/T0284"}
+- 2026-11-09T22:45:50+00:00 merged {"task": "T0273"}
+- 2026-11-09T22:45:54+00:00 run_started {"run": "T0259-builder-20261109T144554-9b86", "task": "T0259", "role": "builder", "session": "e721df1d-7eba-4ec6-91c0-69fcf576492a"}
+- 2026-11-09T22:45:54+00:00 run_started {"run": "T0282-builder-20261109T144554-a09a", "task": "T0282", "role": "builder", "session": "c9f9250f-ea94-4e39-a24c-d1e04d1c344e"}

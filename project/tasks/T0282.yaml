@@ -3,7 +3,7 @@ objective: O003
 title: 'Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on:
 - T0273
 description: "Follow-up to T0273, from review T0281 (project/reviews/T0273/T0281.json; read it first).\
@@ -49,11 +49,12 @@ model: null
 budget_usd: 4.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0282-generator-foot-sampler-float-tolerance-t
 pr: null
-runs: []
+runs:
+- T0282-builder-20261109T144554-a09a
 created_by: session
 created_at: '2026-11-09T21:27:26+00:00'
 protected_approved: false
