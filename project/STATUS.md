@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T16:15:48+00:00 from repository state — do not edit_
+_generated 2026-11-09T16:16:28+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 221, failed: 3, review: 1, running: 2, todo: 6
 - T0271 `running` critic/review: Review T0258 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T15:20:40+00:00 merged {"task": "T0261"}
 - 2026-11-09T15:20:44+00:00 run_started {"run": "T0268-builder-20261109T072044-ab09", "task": "T0268", "role": "builder", "session": "3f2597bf-abac-48c6-91a9-d468911b9adc"}
 - 2026-11-09T15:20:44+00:00 run_started {"run": "T0269-builder-20261109T072044-7412", "task": "T0269", "role": "builder", "session": "a9eb87f4-2d35-45df-b37a-bb4b40646287"}
 - 2026-11-09T15:21:25+00:00 inbox_resolved {"id": "I0144", "status": "approved", "note": "Merge T0256 attempt 2: per-switch gate/Kelvin nets fix T0265's blocker; T0267 accepts with caveats (signal-to-pow
@@ -51,3 +50,4 @@ cancelled: 38, done: 221, failed: 3, review: 1, running: 2, todo: 6
 - 2026-11-09T16:10:46+00:00 run_finished {"run": "T0258-builder-20261109T074201-4b0e", "status": "completed", "cost": 2.50992, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T16:15:42+00:00 verified {"task": "T0258"}
 - 2026-11-09T16:15:48+00:00 run_started {"run": "T0271-critic-20261109T081548-a741", "task": "T0271", "role": "critic", "session": "8440b595-0749-446b-8704-66b3a5d9c1c6"}
+- 2026-11-09T16:16:22+00:00 sleep_detected {"gap_s": 337, "runs_extended": 2}
