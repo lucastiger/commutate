@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T04:24:48+00:00 from repository state — do not edit_
+_generated 2026-11-09T05:26:12+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0137** [claim_approval] [O007] approve the wording of claim C004
@@ -33,7 +33,6 @@ cancelled: 38, done: 209, failed: 3
 
 
 ## Recent events
-- 2026-11-08T00:22:04+00:00 inbox_resolved {"id": "I0136", "status": "approved", "note": "E009 launched on n2d-custom-8-155648-ext (free trial, 8 vCPU; 152 GiB clears the spec's 131 GB preflight bound), 
 - 2026-11-08T07:12:21+00:00 evaluation {"objective": "O007", "id": "EV-O007-01", "verdict": "PASS"}
 - 2026-11-08T07:12:26+00:00 run_started {"run": "T0250-critic-20261107T231226-0cd8", "task": "T0250", "role": "critic", "session": "88b907f8-7fbd-40ce-8f7b-6c2fe200bed2"}
 - 2026-11-08T07:13:00+00:00 run_finished {"run": "T0250-critic-20261107T231226-0cd8", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
@@ -48,3 +47,4 @@ cancelled: 38, done: 209, failed: 3
 - 2026-11-09T01:10:30+00:00 sleep_detected {"gap_s": 459, "runs_extended": 0}
 - 2026-11-09T02:19:15+00:00 sleep_detected {"gap_s": 910, "runs_extended": 0}
 - 2026-11-09T04:24:45+00:00 sleep_detected {"gap_s": 7276, "runs_extended": 0}
+- 2026-11-09T05:26:05+00:00 sleep_detected {"gap_s": 3680, "runs_extended": 0}
