@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T09:02:58+00:00 from repository state — do not edit_
+_generated 2026-11-09T15:16:42+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -39,7 +39,6 @@ cancelled: 38, done: 218, failed: 3, needs_founder: 3, todo: 5
 - T0261 `needs_founder` scientist/design_experiment: Draft headroom_min_lo / headroom_max_hi_ind (protected mfos.metrics) and the E008 row contract (attempt 1)
 
 ## Recent events
-- 2026-11-09T08:03:10+00:00 sleep_detected {"gap_s": 491, "runs_extended": 2}
 - 2026-11-09T08:13:38+00:00 run_finished {"run": "T0261-scientist-20261108T235234-8ffb", "status": "completed", "cost": 3.470594, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T08:17:27+00:00 verified {"task": "T0261"}
 - 2026-11-09T08:17:27+00:00 run_finished {"run": "T0265-critic-20261109T000237-c0eb", "status": "completed", "cost": 2.490795, "subtype": "success", "report": "structured_output"}
@@ -54,3 +53,4 @@ cancelled: 38, done: 218, failed: 3, needs_founder: 3, todo: 5
 - 2026-11-09T08:56:35+00:00 sleep_detected {"gap_s": 520, "runs_extended": 1}
 - 2026-11-09T09:02:53+00:00 run_finished {"run": "T0267-critic-20261109T005601-e161", "status": "completed", "cost": 2.114936, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T09:02:56+00:00 inbox_opened {"id": "I0144", "kind": "protected_change", "subject": "T0256: merge needs founder approval"}
+- 2026-11-09T14:53:50+00:00 sleep_detected {"gap_s": 772, "runs_extended": 0}
