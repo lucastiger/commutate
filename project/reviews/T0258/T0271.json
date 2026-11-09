@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Wire-foot placement is not a parameter: multi-wire dies with signal copper yield zero candidates on Case 4",
+      "detail": "build() always puts the k power-wire feet at the source-pad centre, 1 mm apart, shifted 25 % of the pad height towards the landing line. Gate and Kelvin wires go straight to the nearest point of the fixed copper. On Case 4 the LS signal copper lies below the LS dies, so the LS gate and Kelvin wires must pass over the source pad. With 2 wires per die they run 0.415 mm and 0.585 mm from the power wires, which is below the default 0.6 mm minimum pitch. All 1066 candidates that got past sampling and build failed wire_pitch (512 failed nothing else), and generate() raised RuntimeError for 1, 3 and 4 dies per switch. With 1 wire per die, a 2 mm minimum wire pitch also gives zero candidates in 5000 draws: about 1.79 mm separates the signal and power wires, and the generator has no freedom to move them. The 70x40 housing has no signal copper, so its 3-wire tests do not exercise this. Every test that includes signal wires uses wires_per_die=1. It is unproven that the generator works for references with several wires per die and gate/Kelvin copper, which customer modules usually are.",
+      "evidence": "Scratch run on Case 4 spec (test pads, DesignRules(max_wire_length=18e-3, signal limits 25e-3)), wires_per_die=2: 'built 1066; 512 ('wire_pitch',) ...; pitches 4.150e-04 / 5.850e-04 m'. generate(..., max_failures=4000) -> RuntimeError for dies 1/3/4 x wires 2. Measured rules with min_wire_pitch=2e-3 -> RuntimeError in 5000 draws; violations 'signal wire 1 / wire 1 pitch 1.790e-03 m'.",
+      "suggested_check": "Add a test with wires_per_die >= 2 and fixed gate/Kelvin copper (e.g. Case 4 with 2 wires per die). Either add a parameter for the feet's u offset or bias, or document that this case is not supported.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Under the reference's own measured rules the generator collapses to the reference's single topology",
+      "detail": "O003 requires design rules at least as strict as the reference's own. On Case 4, measure_rules gives edge margin 5 mm, power width 5 mm, die spacing 6 mm, DC+/DC- spacing 5 mm and DC+/PHASE spacing 3 mm. Under these rules (wire pitch relaxed to the defaults, because the reconstruction has no signal wires and its measured 10 mm pitch is meaningless), all 150 of 150 candidates have one topology: x/PHASEd-DC-l-PHASEl-DC+d/split. That is the reference's own band sequence. The test requiring at least 3 topologies among 200 passes only under the looser default 1 mm rules. Under O003-strength rules, the interleaved, U-shaped and side-by-side analogues the docstring promises are absent on the only real reference tested. This may be a property of the housing rather than a bug, but nothing tests it.",
+      "evidence": "Scratch: spec_from_layout(case4, measured rules + max_wire_length 18 mm + signal limits 25 mm + min_wire_pitch 0.6 mm, wire_pitch_diameters 2) -> generate(150, seed=3): Counter({'x/PHASEd-DC-l-PHASEl-DC+d/split': 150}). measure_rules(case4 base) printed edge_margin=0.005, min_width_power=0.004999742, die_spacing=0.005999999.",
+      "suggested_check": "Run the diversity test under measure_rules(reference) and report how many sequences are feasible. If only the reference's own sequence survives, state that as a limit of the search space.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Twin test claims 'copper, dies and wires' but checks no wires; twin wire geometry differs from the reference",
+      "detail": "The docstring of test_case4_reference_is_in_the_parameter_space says the reference's own copper, dies and wires are a Params vector. It asserts only copper polygons, die centres and DRC. Because of the fixed foot rule, the twin's wires are not the reference's. Feet move 0.96 mm in x and 0.35-0.6 mm in y, and lengths are 11.49 mm against 12.20 mm (LS, -5.8 %) and 16.62 mm against 16.15 mm (HS, +2.9 %). O003 judges headroom against this twin, so this is consistent by design. The test still overstates how faithful the twin is, and the reference-to-twin gap in L_sub is not shown.",
+      "evidence": "Scratch: build(c4, ref Params from the test) wires: PHASE [30.085 73.475]->[30.085 57.0] 16.621 mm; DC- [30.085 35.725]->[30.085 47.0] 11.487 mm. Reference: PHASE [29.125 73.125]->[29.125 57.125] 16.151 mm; DC- [29.125 35.125]->[29.125 47.125] 12.2 mm.",
+      "suggested_check": "Either assert wire start and end tolerances in the twin test, or reword its docstring to say copper and dies only.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Housing 'covers all sequences' test asserts 4 of 8; DRC-clean test is a tautology",
+      "detail": "test_housing_covers_all_sequences_and_merged_variants asserts at least 4 sequences, and the docstring says only the HS-first sequences are feasible in the 70x40 housing, so the test name overstates coverage. test_drc_clean_under_spec_rules re-runs the same check() that generate() already uses as its filter. It only shows the filter is applied; it is not independent evidence that the layouts are manufacturable. The DRC's own tests carry that burden.",
+      "evidence": "generate(): 'if lay is not None and _quick_ok(...) and not check(lay, spec.rules)'; test asserts check(lay, spec.rules) == [].",
+      "suggested_check": "Rename the test or assert the exact set of feasible sequences.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "One definition-of-done item cannot be evaluated in this snapshot; O003 public references not exercised",
+      "detail": "The snapshot has no 'main' ref (git rev-parse main fails), so 'git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py' cannot run here. The diff in the packet does not touch thermal_fem.py. Geometry for the O003 public fallback references (2D_Case_2R, 2D_Case_6) is not in the repository, so whether the generator works on, or can build a twin of, those references is not shown. The generator is demonstrated only on Case 4 and the synthetic 70x40 housing.",
+      "evidence": "git rev-parse --verify main -> 'fatal: Needed a single revision'; grep finds no Case_2R/Case_6 loaders under research/scripts or src.",
+      "suggested_check": "The orchestrator's provenance check should run the thermal_fem diff against main.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done test set (uv run pytest -q -m 'not slow' tests/unit/generate tests/unit/drc tests/unit/physics tests/regression): 230 passed, 1 deselected. uv run ruff check src tests: all checks passed.",
+    "Read the DRC (drc/rules.py) to confirm generate() filters with the full check(): spacing per net pair, widths, edge and die margins, bondability, signal-wire crossings and pitch. 'DRC-clean' therefore holds by construction, up to how complete the DRC is.",
+    "Measured the Case 4 reference's own rules with measure_rules and ran the generator under them. With signal wires and the measured 10 mm pitch: 0 candidates in 5000 draws. With pitch relaxed to the defaults: 150 of 150 candidates have one topology, the reference's.",
+    "Diagnosed failures on Case 4 by sampling directly with _sample/build/check: 2 wires per die fails wire_pitch on all 1066 built candidates (0.415 and 0.585 mm against 0.6 mm); a 2 mm pitch fails at 1.79 mm.",
+    "Built the Case 4 twin from the test's Params and compared its wires with the reference: feet move up to 0.96 mm, lengths differ by -5.8 % (LS) and +2.9 % (HS); the twin is DRC-clean under measured rules with default pitch.",
+    "Varied die count: 70x40 housing with 1, 2, 4 and 5 dies per switch gives 10 candidates each with 4-5 topologies; Case 4 with 1, 3 and 4 dies per switch and 1 wire per die works.",
+    "Determinism across processes: the same fingerprint (464a60168c1482a4e1a3b800) for housing seed 11, layout 3, in two separate Python processes.",
+    "Throughput on Case 4 (200 candidates, seed 99): 216 valid/s, consistent with the docstring's 244-253/s and far above the slow test's 5/s threshold."
+  ],
+  "caveats": [
+    "Shown only on PowerSynth 2D_Case_4 (1 wire per die, assumed gate/Kelvin pads, assumed 25 mm signal-wire limit) and on the synthetic 70x40 housing with no signal copper. Untested on the O003 references (2D_Case_2R, 2D_Case_6, customer layouts).",
+    "With fixed gate/Kelvin copper, the generator fails (RuntimeError) on Case 4 whenever a die has more than one power wire, or whenever the minimum wire pitch exceeds about 1.79 mm. Wire-foot positions are fixed, not searched.",
+    "Under rules as strict as the Case 4 reference's own (as O003 requires), the generator produces only the reference's own band sequence. The variety of topologies it can produce is shown only under the default 1 mm rules.",
+    "The generator-space twin of Case 4 matches the reference's copper and die positions but not its wires (feet moved up to 0.96 mm, wire lengths -5.8 % / +2.9 %).",
+    "The definition-of-done item 'git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py' could not run in this review snapshot (no main ref). The packet's diff does not touch that file."
+  ]
+}

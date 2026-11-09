@@ -1,0 +1,72 @@
+id: T0273
+objective: O003
+title: 'Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured
+  rules (review T0271)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0258
+description: "Follow-up to T0258, from review T0271 (project/reviews/T0258/T0271.json; read it first).\
+  \ Lands before the twin (T0259) and\nbefore E008's code freeze (T0262). Do not edit src/moduleforge/solvers/thermal_fem.py\
+  \ (sha256 a216d5fe...).\n1. Wire feet as parameters. The power-wire feet on each die's source pad (position\
+  \ along and across the pad, and the\n   spacing of a die's k wires) and their landing points become\
+  \ generator parameters, sampled within the pad and the\n   landing copper, replacing the fixed rule\
+  \ (pad centre, 1 mm apart, 25 % shift). Gate and Kelvin feet may move within\n   their pads too. The\
+  \ parameter space must contain the reference's own wires: a test builds the Case 4 reference\n   (research/scripts/o006_case4_layout.py)\
+  \ from a Params vector and asserts every wire's start and end within 1e-6 m of\n   the reference's,\
+  \ with the copper and die centres. Reason: O003's twin gate F1(a1) allows\n   |1 - L_sub(W)/L_sub(ref)|\
+  \ <= 2 e_R + s_ref (about 0.2-0.5 %); with fixed feet the Case 4 twin's wire lengths differ\n   by -5.8\
+  \ % and +2.9 % (T0271 finding 2).\n2. Multi-wire dies with fixed gate/Kelvin copper (T0271 finding 0).\
+  \ Tests on Case 4 with 2 and 3 wires per die under\n   the default rules, and with a 2 mm minimum wire\
+  \ pitch, each produce DRC-valid candidates without RuntimeError. If a\n   configuration is geometrically\
+  \ infeasible, a test shows why with numbers and the docstring states the limit. Do not\n   relax any\
+  \ DRC rule.\n3. Diversity under the reference's own rules (T0271 finding 1). Run the topology-diversity\
+  \ check under\n   measure_rules(Case 4 reference), stating which measured values are used (and the default\
+  \ used where a measured\n   value is meaningless, e.g. wire pitch with no second wire). Record in the\
+  \ test and the module docstring how many band\n   sequences are feasible, and for each excluded one\
+  \ which rule excludes it and by what margin. If only the reference's\n   own sequence survives, state\
+  \ that as a limit of the search space. Do not loosen rules to create diversity.\n4. T0271's minor findings:\
+  \ the parameter-space test asserts wires (item 1); rename or tighten\n   test_housing_covers_all_sequences_and_merged_variants\
+  \ to assert the exact feasible set; say in\n   test_drc_clean_under_spec_rules that it only checks that\
+  \ the filter is applied.\nDeterminism as before (same seed, same fingerprints across processes). Keep\
+  \ every existing test passing; do not weaken\nany test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T16:53:52+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

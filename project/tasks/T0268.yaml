@@ -3,7 +3,7 @@ objective: O003
 title: Snapping rule and AlN law fixes from review T0264 (before E008's design)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0257
 description: "Follow-up to T0257 (merged), from review T0264 (project/reviews/T0257/T0264.json; read it\
@@ -64,4 +64,58 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Items 1-4 and the AlN citation correction are done and committed (defeada9). The independent
+    AlN k(T) check is not done, so the AlN law is unchanged. (1) Tie rule: I kept the code and fixed the
+    docstring. Vertex and rectangle snapping round ties up; staircased copper rounds ties outward. The
+    docstring also states the convex-corner cell rule and the 45-degree strip inflation. (2) A collapsing
+    hole or ring now raises ValueError naming the feature. (3) CHECKED_RULES now also returns net_split,
+    wire_pitch, wire_length and wire_landing_keepout, and each message names the net or wires. (4) New
+    tests with hand-computed values cover the 0.5 staircase threshold, outward ties, the corner cell,
+    _move_into, wire-end relocation, the die-pad clip, terminal snapping, the hole collapse and the new
+    re-chec'
+  report:
+    status: partial
+    summary: 'Items 1-4 and the AlN citation correction are done and committed (defeada9). The independent
+      AlN k(T) check is not done, so the AlN law is unchanged. (1) Tie rule: I kept the code and fixed
+      the docstring. Vertex and rectangle snapping round ties up; staircased copper rounds ties outward.
+      The docstring also states the convex-corner cell rule and the 45-degree strip inflation. (2) A collapsing
+      hole or ring now raises ValueError naming the feature. (3) CHECKED_RULES now also returns net_split,
+      wire_pitch, wire_length and wire_landing_keepout, and each message names the net or wires. (4) New
+      tests with hand-computed values cover the 0.5 staircase threshold, outward ties, the corner cell,
+      _move_into, wire-end relocation, the die-pad clip, terminal snapping, the hole collapse and the
+      new re-checks. Mutants (threshold 0.3 and 0.7, wire ends never moved, terminals unsnapped, CHECKED_RULES
+      cut back) each fail at least one test. (5) The stack.py docstring now says 319 W/(m K) is the estimated
+      intrinsic value and the highest measured value at 300 K is about 285, and that the law is not independently
+      tested. thermal_fem.py is unchanged. The DoD commands passed; the gate''s exit code is inferred
+      from its "all gates passed" message.'
+    files_changed:
+    - src/moduleforge/geometry/snap.py
+    - src/moduleforge/geometry/stack.py
+    - tests/unit/geometry/test_snap.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/geometry/test_snap.py tests/unit/geometry/test_stack.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'NOT DONE: the independent AlN k(T) check (item 5, second half). I found no published sintered or
+      polycrystalline AlN k(T) table over 300-500 K. The sandbox reached only arXiv. The one PDF I could
+      download (arXiv 1904.00345) cannot be read here. I did not invent a citation, so the law (T/300)^-1
+      is unchanged and O003''s Tj comparison is unchanged. The existing AlN test still compares the law
+      with values derived from itself. A table is needed (for example Touloukian vol. 2 or a manufacturer
+      datasheet), or web access to a publisher or database site.'
+    - Whether Slack et al. 1987 data reach 300-480 K is still unconfirmed; the docstring says so.
+    - The final mfos gate --fast output was 'all gates passed', but my shell did not print its exit status,
+      so exit 0 is inferred from that message. The orchestrator re-runs it anyway.
+    - The convex-corner notch and the 45-degree strip inflation are documented and pinned by tests, not
+      changed in code.
+    - Only wire end points are recorded individually, not interior points; the docstring now says so.

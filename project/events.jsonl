@@ -1795,3 +1795,9 @@
 {"ts": "2026-11-09T16:15:42+00:00", "event": "verified", "actor": "orchestrator", "task": "T0258"}
 {"ts": "2026-11-09T16:15:48+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0271-critic-20261109T081548-a741", "task": "T0271", "role": "critic", "session": "8440b595-0749-446b-8704-66b3a5d9c1c6"}
 {"ts": "2026-11-09T16:16:22+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 337, "runs_extended": 2}
+{"ts": "2026-11-09T16:18:19+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0268-builder-20261109T072044-ab09", "status": "completed", "cost": 0.929276, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-09T16:51:55+00:00", "event": "verified", "actor": "orchestrator", "task": "T0268"}
+{"ts": "2026-11-09T16:51:55+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0271-critic-20261109T081548-a741", "status": "completed", "cost": 2.273363, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-09T16:53:52+00:00", "event": "task_added", "actor": "session", "task": "T0273", "reason": "review T0271 follow-up (major findings 0-1)"}
+{"ts": "2026-11-09T16:53:52+00:00", "event": "task_amended", "actor": "session", "task": "T0259", "reason": "waits for T0273 (generator wire feet, review T0271)"}
+{"ts": "2026-11-09T16:53:52+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0273 (generator wire feet, review T0271)"}
