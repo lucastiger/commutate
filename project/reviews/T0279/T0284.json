@@ -1,0 +1,66 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "e_R of the inductance-only best and of the control best still comes from the injected callable, not the band solves",
+      "detail": "The change computes e_R for the A1 best and the near ties from the stored band solves (band_e_R). Two values still come from Solvers.e_R: w_ind (e_ind = run.e_R(ind_best, twin)) and w_ctrl (run.e_R(control best, D)). This happens even though the bands of ind_best, twin, D and the control best are solved just before. So one search can use two different e_R estimators. w_ind also decides which candidates are near ties and get band solves. The row contract has the metric recompute w_ind from band rows with P3's estimator. If the callable gives a smaller value than band_e_R, the metric's near-tie set will include candidates that have no band columns, and the metric raises (it fails closed). If the callable gives a larger value, the extra band solves are wasted. A callable that implemented P3's estimator would need the five band levels again, which means duplicate 0.25 mm solves that are not checkpointed under the band keys.",
+      "evidence": "search.py:367-368 `e_ind = run.e_R(ind_best[1], twin, ...)`; `w_ind = 2.0 * e_ind + s_ref`. search.py:403-404 `e = run.e_R(best[1], d, ...)`; `w_ctrl = 2.0 * e`. Several of the author's own tests pin the mismatch. test_near_ties_selection_and_bands: bands are [1.0]*5, so band_e_R = 0, but w_ind = 0.05 from the callable's 0.02. test_control_w_is_2_eR_without_s_ref: bands give band_e_R = 0, while w_ctrl = 0.02. test_e_R_recorded...: w_a1 = 0.19 (band-based), while w_ind uses the callable's 0.02. e008_row_contract.md \u00a72 defines e_R(X, C) from the band rows for every pair.",
+      "suggested_check": "Compute e_ind and w_ctrl with run.e_R_from_bands too, or assert that the callable equals band_e_R on the stored bands, and add a test where the two differ.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Thermal results returned as a namedtuple (an 'object with those attributes') now raise",
+      "detail": "The Solvers docstring still says thermal may return 'an object with those attributes'. The old _thermal_fields read res.tj and res.gci, so attribute objects worked. The new _thermal_record runs _jsonable, which turns any tuple, namedtuple included, into a list; rec['tj'] then raises TypeError. A __slots__ object with no __dict__ also falls through and fails. The failure is loud, not silent, but it narrows the documented contract.",
+      "evidence": "Scratch run: _thermal_record(namedtuple('R','tj gci')(tj, zeros(2))) raises TypeError 'list indices must be integers or slices, not str'. A SimpleNamespace works.",
+      "suggested_check": "Handle namedtuples (via _asdict) and slots objects in _jsonable, or narrow the Solvers docstring to mappings.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Torn-line repair rewrites the whole checkpoint non-atomically",
+      "detail": "When the file does not end in a newline, Store.__init__ calls path.write_text(text). This truncates the file to zero and then rewrites everything. If the process is killed during that rewrite, which is the crash/resume situation this code exists for, every stored solve can be lost, including VM-hour thermal and 0.25 mm solves. Truncating in place (os.truncate to `cut`) or writing a temp file and renaming it would avoid this.",
+      "evidence": "search.py:96-106.",
+      "suggested_check": "Replace write_text with f.truncate(cut) on an 'r+' handle, or with an atomic rename.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "\"Full thermal checkpoint\" depends entirely on what the callable returns, and _jsonable serialises arbitrary object graphs",
+      "detail": "The driver checks only that `tj` has three levels. It does not require the fields the objective lists per thermally checked layout: Tj-max node per level, node counts, fingerprints. _jsonable now walks dataclasses and any object __dict__ with no cycle detection and no size limit. If a callable returned thermal_fem.ThermalResult objects directly, the checkpoint would hold the full nodal field T, the node array, and field_eval (an skfem object, possibly cyclic). At module scale that means very large JSONL records, all reloaded into memory on resume. Values that _jsonable cannot convert are written with json default=str, so a fresh run keeps the object in memory while a resumed run gets a string, and fresh and resumed rows can differ.",
+      "evidence": "search.py:140-144 (generic __dict__ branch), 123 (default=str), 161-173 (only tj validated). thermal_fem.ThermalResult carries T, nodes and field_eval (thermal_fem.py:154-168).",
+      "suggested_check": "Validate the required record keys in _thermal_record and reject or strip ndarray fields above a size limit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Changes beyond the stated claim: shortlist de-duplication and new checkpoint key namespace",
+      "detail": "Two changes are not in the claim title. First, the D0008 shortlist is now 16 unique fingerprints: a duplicate is replaced by the next unique layout. Second, all checkpoint keys gain a 'main:'/'control:' prefix, so checkpoints written by the earlier driver are no longer reused. Both look like sound fixes: the row contract requires unique layout_id, and without namespaces the control could reuse main-run keys. They change the frozen search behaviour, though, and should be named in the E008 spec's code hash note.",
+      "evidence": "search.py:283-286, 224-225; test_duplicate_fingerprints_take_one_shortlist_slot...; test_pool_statistics_and_separate_control_namespace.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/optimize`: 29 passed.",
+    "Ran `uv run pytest -q -m 'not slow' tests/unit`: 712 passed, 39 deselected, exit 0.",
+    "Ran `uv run ruff check .`: all checks passed. The policy's fast gate is ruff on src/tests/experiments/runners plus the same fast unit suite, so its commands are covered.",
+    "Computed sha256 of src/moduleforge/solvers/thermal_fem.py: a216d5fe3209bcee\u2026 matches the required prefix.",
+    "Built a brute-force reference of the objective's F1/F3 rules: A1 checks in ascending L_sub, in batches of 4, at most 8, stopping after the first batch with a pass; the L1-only null checks L1 positions 1..8 under the same batch-and-stop rule, reuses A1's results, and returns the first pass in L1 order. Compared it with run_search on 200 random scenarios (random L_sub permutations, 0-3 passing candidates). Checked a1_best, null_best, null_new_checks and the exact multiset of thermal solves: 0 mismatches.",
+    "Compared band_e_R line by line with research/o003/headroom_metrics.ratio_band_estimate and with P3's middle_term in research/scripts/o006_p3_em_convergence.py. Same level order and branch conditions; 1.25|e21| r^p/(r^p-1) with r^p = e32/e21 is the correct Richardson error of the middle (production) level.",
+    "Re-derived the test hand values (0.09 for R = 1.01, 1, 1, 1, 1.02; 0.01875 for the monotone thickness case; gci_capped 0.3125 and 0.125) independently.",
+    "Checked w_ctrl against objective F1(b): w_ctrl = 2 e_R(best of the control, D), with no s_ref. The implementation matches, and the control no longer emits w_ind or levelled.",
+    "Checked that the driver computes GCI with mfos.metrics.gci_capped at floor 1e-3 K on its own three levels, matching scope_in, and that conservative_margin's handling of infinite GCI matches headroom_metrics.tj_bounds/tj_conservative_ok.",
+    "Checked that the pool median headroom 1 - median(L1)/L1(twin) equals the median of the per-candidate headroom: an affine decreasing map preserves the median, including the even-n average.",
+    "Probed _thermal_record with a SimpleNamespace (works) and a namedtuple (raises TypeError).",
+    "Read the replaced and removed tests: the old vacuous assertions (`... or True`, `not set(...) - set(...) == set()`) were replaced with real ones. No tolerance or test was weakened."
+  ],
+  "caveats": [
+    "I did not invoke `uv run mfos gate --fast` itself. Its configured commands (ruff and the fast unit suite) were each run separately and passed.",
+    "The sandbox denied several of my scratch probes, including the direct numeric demonstration that the near-tie set differs between a callable e_R and band-based e_R. That inconsistency is shown by the author's own tests (band_e_R = 0 while w_ind = 0.05 and w_ctrl = 0.02), not by a separate run.",
+    "No production Solvers wiring (runner) exists at this commit. The driver's correctness for E008 therefore assumes a callable that returns {'tj': (3, n_die), plus the record fields the objective requires} and an e_R callable consistent with P3's band estimator. The driver enforces neither the record fields nor that consistency.",
+    "\"Full thermal checkpoint\" means the driver stores whatever the callable returns. Node counts, Tj-max node and fingerprint are present only if the callable supplies them.",
+    "Tie-breaking in L_sub order is by generation index in the driver but by layout_id in the metric. This existed before the change and matters only for exact float ties at a batch boundary."
+  ]
+}
