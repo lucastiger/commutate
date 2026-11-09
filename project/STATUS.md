@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T22:47:54+00:00 from repository state — do not edit_
+_generated 2026-11-09T22:50:42+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -40,8 +40,6 @@ cancelled: 38, done: 236, failed: 3, needs_founder: 2, running: 3, todo: 3
 - T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 
 ## Recent events
-- 2026-11-09T22:00:40+00:00 run_finished {"run": "T0283-critic-20261109T132940-0900", "status": "completed", "cost": 2.321661, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T22:04:30+00:00 inbox_opened {"id": "I0152", "kind": "protected_change", "subject": "T0276: merge needs founder approval"}
 - 2026-11-09T22:04:35+00:00 run_started {"run": "T0284-critic-20261109T140435-5320", "task": "T0284", "role": "critic", "session": "70a2c165-1131-4a41-affe-6155dd64a875"}
 - 2026-11-09T22:05:08+00:00 sleep_detected {"gap_s": 911, "runs_extended": 1}
 - 2026-11-09T22:11:23+00:00 run_finished {"run": "T0284-critic-20261109T140435-5320", "status": "completed", "cost": 2.383736, "subtype": "success", "report": "structured_output"}
@@ -55,3 +53,5 @@ cancelled: 38, done: 236, failed: 3, needs_founder: 2, running: 3, todo: 3
 - 2026-11-09T22:47:42+00:00 inbox_resolved {"id": "I0151", "status": "approved", "note": "Merge T0274: full DRC re-check after snapping (induced/pre-existing), staircase errors, AlN citation and comment 
 - 2026-11-09T22:47:52+00:00 task_failed_attempt {"task": "T0274", "signal": "dod_failed", "action": "repair"}
 - 2026-11-09T22:47:54+00:00 run_started {"run": "T0274-builder-20261109T144754-c0bf", "task": "T0274", "role": "builder", "session": "61334f90-7c1d-40c0-b50b-c43555d30135"}
+- 2026-11-09T22:50:30+00:00 loop_stopped {"reason": "STOP file"}
+- 2026-11-09T22:50:36+00:00 loop_started {"pid": 37260}
