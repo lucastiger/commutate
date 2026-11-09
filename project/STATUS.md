@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T20:55:16+00:00 from repository state — do not edit_
+_generated 2026-11-09T20:55:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -23,7 +23,7 @@ _generated 2026-11-09T20:55:16+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 34 | $60.36 | 1240336 | 703027 | 64 | 0 |
+| O003 | 36 | $60.36 | 1240336 | 703027 | 64 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -31,17 +31,15 @@ _generated 2026-11-09T20:55:16+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 231, failed: 3, merge: 1, needs_founder: 2, running: 1, todo: 5
+cancelled: 38, done: 232, failed: 3, needs_founder: 2, running: 3, todo: 3
 
-- T0260 `merge` builder/implement: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode (attempt 1)
 - T0270 `needs_founder` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 2)
 - T0273 `needs_founder` builder/implement: Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured rules (review T0271) (attempt 1)
+- T0274 `running` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 2)
 - T0276 `running` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
+- T0279 `running` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
 
 ## Recent events
-- 2026-11-09T19:57:47+00:00 task_amended {"task": "T0262", "reason": "measured l2_layout calibration for E008's run plan"}
-- 2026-11-09T20:18:50+00:00 verified {"task": "T0273"}
-- 2026-11-09T20:18:50+00:00 run_finished {"run": "T0280-critic-20261109T114628-cb90", "status": "completed", "cost": 1.675528, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T20:24:52+00:00 inbox_opened {"id": "I0149", "kind": "protected_change", "subject": "T0270: merge needs founder approval"}
 - 2026-11-09T20:24:59+00:00 run_started {"run": "T0281-critic-20261109T122459-d53f", "task": "T0281", "role": "critic", "session": "9d000542-70a1-4d00-8eed-6f76480cadf5"}
 - 2026-11-09T20:24:59+00:00 run_started {"run": "T0274-builder-20261109T122459-ffaf", "task": "T0274", "role": "builder", "session": "f49e74ce-141b-4608-99c5-0ca82a675031"}
@@ -54,3 +52,6 @@ cancelled: 38, done: 231, failed: 3, merge: 1, needs_founder: 2, running: 1, tod
 - 2026-11-09T20:51:57+00:00 loop_started {"pid": 28067}
 - 2026-11-09T20:51:58+00:00 run_finished {"run": "T0274-builder-20261109T122459-ffaf", "status": "error", "cost": 0.352176, "subtype": "success", "report": "missing"}
 - 2026-11-09T20:51:58+00:00 task_failed_attempt {"task": "T0274", "signal": "agent_error", "action": "repair"}
+- 2026-11-09T20:55:31+00:00 merged {"task": "T0260"}
+- 2026-11-09T20:55:34+00:00 run_started {"run": "T0274-builder-20261109T125534-7fb6", "task": "T0274", "role": "builder", "session": "dbb1a2da-7057-46d0-b963-0d143017c4d3"}
+- 2026-11-09T20:55:34+00:00 run_started {"run": "T0279-builder-20261109T125534-34cd", "task": "T0279", "role": "builder", "session": "25b12c4e-010a-40d2-b9c3-cb064ca13f00"}
