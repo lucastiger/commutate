@@ -3,7 +3,7 @@ objective: O003
 title: 'Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0261
 description: "Follow-up to T0261 (merged), from review T0266 (project/reviews/T0261/T0266.json; read it\
@@ -147,3 +147,119 @@ history:
 
     research/o003/test_headroom_metrics.py (outside builder write scope)'
   at: '2026-11-09T15:41:58+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: "All six items are done and committed on branch T0269 (90a8e8e6 from attempt 1, 184e1c18 from\
+    \ this attempt). Every definition-of-done command exits 0.\n\nWhen I checked attempt 1 against the\
+    \ packet:\n- **What held up:** its DoD was green and its 65 mutants were all killed.\n- **What it\
+    \ missed:** it never ran the patched `tests/mfos/test_metrics.py`. I applied the patch to a scratch\
+    \ export of HEAD and ran it: it passed.\n- **Real gaps:** I wrote 36 more mutants of my own and 17\
+    \ of them survived attempt 1's tests.\n  - One of the 17 affects a criterion: K1 taking the minimum\
+    \ instead of the maximum over references. No K1 test had two counted references.\n  - Three were behaviours\
+    \ the row contract called \"tested\" or \"pinned\" that no test covered:\n    - in the reconstruction-based\
+    \ secondary, switching "
+  report:
+    summary: "All six items are done and committed on branch T0269 (90a8e8e6 from attempt 1, 184e1c18\
+      \ from this attempt). Every definition-of-done command exits 0.\n\nWhen I checked attempt 1 against\
+      \ the packet:\n- **What held up:** its DoD was green and its 65 mutants were all killed.\n- **What\
+      \ it missed:** it never ran the patched `tests/mfos/test_metrics.py`. I applied the patch to a scratch\
+      \ export of HEAD and ran it: it passed.\n- **Real gaps:** I wrote 36 more mutants of my own and\
+      \ 17 of them survived attempt 1's tests.\n  - One of the 17 affects a criterion: K1 taking the minimum\
+      \ instead of the maximum over references. No K1 test had two counted references.\n  - Three were\
+      \ behaviours the row contract called \"tested\" or \"pinned\" that no test covered:\n    - in the\
+      \ reconstruction-based secondary, switching the twin rule and the near-tie band to the reconstruction;\n\
+      \    - under the declared null, the twin rule deciding A1 when candidates have no die rows (including\
+      \ the equality case).\n  - The rest:\n    - guards that let bad input through instead of raising:\
+      \ a missing snapping-check key, a duplicate die_id, an invalid comparator, zero or boolean inputs,\
+      \ a non-bool on_grid, and F3 continuing when only part of a batch has die rows;\n    - the near-tie\
+      \ loop cut to two candidates;\n    - the optimistic secondary column (its e_R not doubled, and the\
+      \ None it reports when the candidate has no band solves);\n    - a division by zero in the thickness\
+      \ error term when its two differences are equal.\n\nAttempt 2 added hand-computed tests that kill\
+      \ all 17. The checker now runs 101 mutants and all are killed: T0266's 11, attempt 1's 54 and my\
+      \ 36. As a negative control, the checker run with attempt 1's test file reports exactly the 17 and\
+      \ exits 1. Each fail-closed case now has to raise its own guard's error message, so an unrelated\
+      \ ValueError cannot make it pass. The row contract's claims are corrected and a new §6 describes\
+      \ how the tests are checked. The patch is regenerated and applies cleanly.\n\n**One caveat on item\
+      \ 2:** T0266's text names only 10 of its 11 survivors by name. The 11th mutant in the list is attempt\
+      \ 1's guess at it. My other mutants also cover the other likely readings of it (another dropped,\
+      \ undoubled or mis-paired band term).\n\n`headroom_metrics.py` was not changed in this attempt;\
+      \ attempt 1's die-count rule stands. `tools/mfos` and `thermal_fem.py` were not touched."
+    failure_class: none
+    confidence: 0.9
+    evidence:
+    - 'Definition of done on the final tree (commit 184e1c18). Commands and exit codes: `uv run pytest
+      -q research/o003/test_headroom_metrics.py` exit 0 (80 passed); `uv run python research/o003/check_mutants.py`
+      exit 0 (''101 of 101 mutants killed; 0 survived; 0 errors''); `git apply --check research/o003/headroom_metrics.patch`
+      exit 0, run before and after the commit; `uv run ruff check research/o003` exit 0; `test "$(shasum
+      -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee` exit 0; `uv run
+      mfos gate --fast` exit 0 (''all gates passed''), run before and after the commit.'
+    - 'The same commands on attempt 1''s commit 90a8e8e6 also all exited 0: pytest 62 passed, check_mutants
+      65 of 65 killed, apply 0, ruff 0, sha 0, gate 0.'
+    - 'Applied-patch check (attempt 1 had not run it). `git archive HEAD` into $TMPDIR, `patch -p1` with
+      the regenerated patch, then `PYTHONPATH=<scratch>/tools/mfos python -m pytest tests/mfos/test_metrics.py`:
+      exit 0, 106 passed (26 existing + 80 new). Ruff with the repo config is clean on the patched metrics.py
+      and test_metrics.py (exit 0). The same check on attempt 1''s patch gave 88 passed.'
+    - 'Independent probe: 36 extra textual mutants run against attempt 1''s tests; 17 survived. They were:
+      k1_min_over_references, shortcut_never, shortcut_strict, snap_key_guard_open, dup_die_overwrites,
+      comparator_validation_open, a1_twin_rule_vs_twin_in_recon, k1_twin_rule_vs_twin_in_recon, k1_w_ind_vs_twin,
+      pos_allows_zero, num_accepts_bool, on_grid_bool_check_open, opt_eR_not_doubled, near_ties_only_first_two
+      (named ties_iterate_first8 in the probe), f3_any_has_dies, middle_monotone_le and hi_secondary_fail_raise.
+      After the new tests, 0 of the 36 survive.'
+    - 'Negative control: check_mutants.main() run with TESTS pointed at attempt 1''s test file (git show
+      HEAD~0 before the commit) exits 1 and lists exactly those 17 as ''NO (survived)''; 84 of 101 killed.
+      So the checker can detect surviving mutants.'
+    - 'Hand values for the new tests, all derived from the formulas in headroom_metrics.py and O003 A1/K1:
+
+      - K1 over two references: max = a(1-0.7*0.98) and min A1 = a(1-0.95*1.02), with a = 10/17.
+
+      - The twin-rule switch: twin 10 nH, reconstruction 10.1 nH, candidate 10.05 nH. Against the twin,
+      h_lo = -a*0.02. Against the reconstruction, h_lo = (10.1/17.1)(1-(10.05/10.1)*1.02).
+
+      - The near-tie band switch: e_R(c01, reconstruction) = 3|0.86-9.6/9.9|.
+
+      - Three near ties: the largest h_hi is a(1-0.83*0.38).
+
+      - Optimistic pick c01: GCI 0.625, conservative test 3.125 K > 2 K (fails), optimistic test 1.875
+      K <= 2 K (passes).
+
+      - middle term at |e21| = |e32| = 0.25 gives 0.75, equal to P3 middle_term(1.5, 1.25, 1.0, 2.0).'
+    - Before adding match patterns, I ran each fail-closed mutation against each metric and printed its
+      message. Every one tripped its intended guard, so attempt 1's fail-closed cases were not passing
+      on incidental errors. They now assert it with `_MATCH`, and a test checks that `_MATCH` covers every
+      mutation.
+    files_written:
+    - research/o003/test_headroom_metrics.py
+    - research/o003/check_mutants.py
+    - research/o003/e008_row_contract.md
+    - research/o003/headroom_metrics.patch
+    recommended_actions:
+    - 'Founder: before applying research/o003/headroom_metrics.patch to tools/mfos, decide the two interpretation
+      choices in e008_row_contract.md §5. Item 8: the levelling threshold uses 2 e_R(ind, W) + s_ref even
+      when the twin rule decides K1; the alternative is (1 + s_ref). Item 9: which quantities switch to
+      the reconstruction in the reconstruction-based secondary. Either change would also change the hand
+      values in the matching tests.'
+    - 'Founder: after applying the patch, run `uv run pytest -q tests/mfos/test_metrics.py`. Expect 106
+      passed, as in the scratch-export check. The DoD only checks that the patch applies.'
+    - 'Note for the E008 runner author: K1 is the maximum over counted references. A single counted reference
+      that is not levelled therefore makes K1 = +inf, and the kill criterion cannot fire. This is now
+      stated in contract §2 and tested.'
+    - 'Optional, for whoever owns T0266: confirm which mutant was the unnamed 11th survivor. check_mutants.py
+      uses attempt 1''s reconstruction (a1_best_eR_ignores_comparator), and the other plausible readings
+      are also in the list.'
+    alternative_explanations:
+    - explanation: Mutation testing can only show that the tests detect these particular edits. If the
+        implementation and the hand values share a misreading of the O003 rule text, all mutants could
+        be killed and the metric still be wrong.
+      how_to_discriminate: 'The protection here is T0266''s independent re-implementation: 3000 random
+        references, 0 mismatches. That rests on the same interpretation choices listed in contract §5.
+        A founder ruling on §5 items 8 and 9 settles this; a later differential test against a third implementation
+        would check it.'
+    - explanation: Some surviving mutants could have been equivalent mutants (they behave identically
+        on every valid input), which no test can kill. I would then have been chasing a false gap.
+      how_to_discriminate: For each of the 17 I built a concrete input on which the mutant and the original
+        return different results, and wrote a test from it. All 17 are now killed, so none is equivalent.
+    discriminating_tests:
+    - '`uv run python research/o003/check_mutants.py` with TESTS pointed at attempt 1''s test file: exit
+      1, 17 survivors (negative control, run).'
+    - 'Patched scratch export: `pytest tests/mfos/test_metrics.py` with the patched mfos on PYTHONPATH
+      gave 106 passed (run).'
