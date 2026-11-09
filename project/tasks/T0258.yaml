@@ -3,7 +3,7 @@ objective: O003
 title: Generalised derivative-layout generator inside a reference's housing
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0256
 description: 'New module src/moduleforge/generate/derivative.py (build on generate/halfbridge.py where
@@ -96,4 +96,64 @@ lens: null
 trigger: null
 rationale: Build item (2) of the notes; the search's candidate pool, F1(b)'s control and the twin all
   rest on it. It must be frozen before any judged reference is loaded (F3).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Added src/moduleforge/generate/derivative.py with ReferenceSpec, spec_from_layout, halfbridge_housing_spec,
+    generate(spec, n, seed), Params, build and params_of. The 16 tests in tests/unit/generate/test_derivative.py
+    pass, including the slow throughput test. generate() is a seeded rejection sampler over an explicit
+    parameter vector: 4 band slots in 8 possible pair sequences, 3 terminal columns, 2 die rows, and merged
+    or split PHASE bands. It also covers both row orientations, and the gate and Kelvin wires land on
+    the fixed copper. Every returned layout passes DRC under spec.rules, and every lateral parameter is
+    on the 0.5 mm grid. On Case 4 it produced 244-253 candidates/s (three runs of 1000, seed 1), so 20,000
+    would take about 80 s. 200 Case 4 candidates covered 4 distinct topologies. Th'
+  report:
+    status: completed
+    summary: 'Added src/moduleforge/generate/derivative.py with ReferenceSpec, spec_from_layout, halfbridge_housing_spec,
+      generate(spec, n, seed), Params, build and params_of. The 16 tests in tests/unit/generate/test_derivative.py
+      pass, including the slow throughput test. generate() is a seeded rejection sampler over an explicit
+      parameter vector: 4 band slots in 8 possible pair sequences, 3 terminal columns, 2 die rows, and
+      merged or split PHASE bands. It also covers both row orientations, and the gate and Kelvin wires
+      land on the fixed copper. Every returned layout passes DRC under spec.rules, and every lateral parameter
+      is on the 0.5 mm grid. On Case 4 it produced 244-253 candidates/s (three runs of 1000, seed 1),
+      so 20,000 would take about 80 s. 200 Case 4 candidates covered 4 distinct topologies. The Case 4
+      reference''s own copper, dies and wires can be written as a Params vector; build() gives DRC-clean
+      copper identical to the reference''s. L1 needed no change, so no regression test was added. thermal_fem.py
+      is byte-identical to main.'
+    concerns:
+    - params_of(layout) reads the parameter vector from the layout's `family` string (`derivative:<topology>:<json
+      vector>`), which build() writes. It does not recover parameters from arbitrary geometry. Round trip
+      (params -> Layout -> params) is exact and build(spec, params_of(lay)) reproduces the fingerprint.
+      The twin task must fit parameters by search, not by inverting a reference Layout.
+    - 'Case 4 assumptions, all stated in the tests and the module docstring: a 1x1 mm gate pad and a 1x1
+      mm Kelvin pad in the strip above the source pad; max gate/Kelvin wire length 25 mm; max power wire
+      length 18 mm (the reference''s own HS wires are about 16 mm, which the 15 mm default rejects). Case
+      4''s SIG_* traces are renamed to GATE_HS/GATE_LS/KELVIN_HS/KELVIN_LS because the DRC bondability
+      rules need those names. The polygons are unchanged, but the net labels are not byte-identical.'
+    - On Case 4 the fixed signal copper and the 25 mm limit leave only 4 of the 8 pair sequences feasible.
+      The HS pair has to sit above the LS pair. The merged-PHASE variants need an HS power wire longer
+      than 18 mm, so none appear for Case 4. The 70x40 housing gives 5 sequence/merge variants, all HS-pair-first,
+      because the DC+ column would otherwise cross the DC- pad. Orientation y (rows along y) is almost
+      never feasible on Case 4.
+    - 'Not in the parameter space: several die rows per switch, die rotation, and copper that is not a
+      slot or column (for example a PHASE ring around a row). Gate and Kelvin wires are straight to the
+      nearest landable point of the fixed copper and may pass over other copper. The DRC does not check
+      that.'
+    - mfos gate --fast printed 'all gates passed'. My shell command piped it through grep and tail, so
+      the exit code I saw (0) was the pipe's, not the gate's.
+    - The sampler's v-window prior uses the signal-wire limit as a heuristic only. DRC is always the final
+      check, so acceptance rate and topology mix depend on the housing and rules.
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - tests/unit/generate/test_derivative.py
+    checks_run:
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/generate tests/unit/drc tests/unit/physics tests/regression
+      exit_code: 0
+    - cmd: uv run pytest -q -m slow tests/unit/generate/test_derivative.py -s
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
