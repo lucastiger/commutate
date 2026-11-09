@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T21:45:41+00:00 from repository state — do not edit_
+_generated 2026-11-09T21:49:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -30,9 +30,8 @@ _generated 2026-11-09T21:45:41+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 232, failed: 3, merge: 2, needs_founder: 1, review: 1, running: 2, todo: 4
+cancelled: 38, done: 233, failed: 3, merge: 1, needs_founder: 1, review: 1, running: 2, todo: 4
 
-- T0270 `merge` builder/implement: DRC: signal-to-power spacing class and signal-wire checks (review T0267) (attempt 2)
 - T0273 `needs_founder` builder/implement: Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured rules (review T0271) (attempt 1)
 - T0274 `merge` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 2)
 - T0276 `review` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
@@ -40,7 +39,6 @@ cancelled: 38, done: 232, failed: 3, merge: 2, needs_founder: 1, review: 1, runn
 - T0283 `running` critic/review: Review T0276 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T20:51:57+00:00 loop_started {"pid": 28067}
 - 2026-11-09T20:51:58+00:00 run_finished {"run": "T0274-builder-20261109T122459-ffaf", "status": "error", "cost": 0.352176, "subtype": "success", "report": "missing"}
 - 2026-11-09T20:51:58+00:00 task_failed_attempt {"task": "T0274", "signal": "agent_error", "action": "repair"}
 - 2026-11-09T20:55:31+00:00 merged {"task": "T0260"}
@@ -55,3 +53,4 @@ cancelled: 38, done: 232, failed: 3, merge: 2, needs_founder: 1, review: 1, runn
 - 2026-11-09T21:30:16+00:00 run_finished {"run": "T0274-builder-20261109T125534-7fb6", "status": "completed", "cost": 0.76993, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T21:36:33+00:00 inbox_resolved {"id": "I0149", "status": "approved", "note": "Merge T0270 attempt 2: voltage-based signal spacing classes fix T0277's blocker; T0280 accepts with minor caveats
 - 2026-11-09T21:42:14+00:00 verified {"task": "T0274"}
+- 2026-11-09T21:45:48+00:00 merged {"task": "T0270"}
