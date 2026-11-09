@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The 0.5 K A4 bound holds with a thin margin on held-out layouts and does not carry over to new layouts",
+      "detail": "A4 is 0.124 K on the two development layouts but 0.4385 K on the three fresh layouts, a 12 % margin to 0.5 K. The maximum comes from 7 of the 24 fresh dies, which have observed orders p_obs between 0.28 and 0.44. In these dies the per-die Tj max node moves between levels: the hottest point lies about 0.23 mm off a level-0 line, so the maximum over nodal values jumps when a closer node appears at level 2. The GCI handles this correctly by growing large. The node at the die centroid converges smoothly (GCI 0.05-0.09 K). So (c) is true for the five layouts in E009. It is not evidence that O003 layouts will stay under 0.5 K, because a different geometry can place the maximum further from grid lines.",
+      "evidence": "rows.json crosscheck: fresh_interleaved die 1 has fem 395.641/395.733/395.809, p_obs 0.28, GCI 0.439, tj_max_xyz x 27.5\u219227.5\u219227.734 mm, centroid-node GCI 0.052. Similar for fresh_interleaved dies 2, 5, 6, fresh_u_shaped 1, 5 and fresh_side_by_side 2. Metrics a4_dev_K 0.1236, a4_fresh_K 0.4385.",
+      "suggested_check": "O003 should recompute A4 for every layout it reports rather than inherit the 0.5 K bound from E009.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The per-value FEM GCI is not always conservative against the L2's extrapolated limit",
+      "detail": "I took each solver's own Richardson-extrapolated limit, independently of the runner. For 3 of 40 dies, the distance from FEM level 2 to the L2 limit exceeds the FEM's own GCI, by factors of 1.26, 1.06 and 1.03. The gap between the two limits has mixed sign (27 of 40 negative; for the 32 dies with p > 0.8 the mean is -0.019 K and the range -0.084 to +0.033 K), so it shows no systematic model difference. The claim does not depend on per-value conservativeness: (c) states that the 0.5 K bounds the error, and (b) checks accuracy. Both solvers converge monotonically from opposite sides: FEM level 2 is below L2 level 3 for all 40 dies, with no same-side pairs. That brackets the solution, so each solver's error is at most |diff| \u2264 0.126 K, well under 0.5 K. This is a limit on reading each per-die GCI as a strict bound, not on the claim.",
+      "evidence": "side_by_side_6 die 0: fem_lv2 389.034, L2 Richardson limit 389.077, |err| 0.043 > FEM GCI 0.034. side_by_side_6 die 5: 0.037 vs 0.035. fresh_interleaved die 4: 0.061 vs 0.059. Largest |fem_lv2 - l2_lv3| over all dies: 0.126 K.",
+      "suggested_check": "Treat 0.5 K, or the bracketing gap, as the bound on generator geometry rather than each value's GCI.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Part (a) re-runs the development study rather than testing held-out data",
+      "detail": "The A1, A2 and case A4 values match the dev-study regression guard to within about 3e-11 K. The reference cases were the targets used to select the frozen rule, although only one candidate was evaluated. Part (a) is therefore a deterministic verification against the references, which is legitimate, but it adds no out-of-sample evidence. The only held-out evidence in E009 is (b) and (c) on the three fresh sealed-seed layouts. The case results themselves are clean: errors fall by about 4\u00d7 per level (p_obs 1.70-2.15), and the GCI is 3.3-4.3\u00d7 the true error on every row.",
+      "evidence": "result.json notes regression guard, e.g. case2 dev 0.0006803390823443815 vs run 0.0006803390820250917. Case rows: err_lv0/lv1/lv2 such as -0.2223/-0.0575/-0.0145 for case1a s1.centroid.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Reference points are compared at the snapped node, not at the requested coordinate",
+      "detail": "T_ref is the frozen value at the requested coordinate, while T_fem is taken at the snapped node, up to 17.5 \u00b5m away (nlayer_dbc d1 and d2 centroids). This offset only adds error and is the same on all three levels. The error sequence on those rows still contracts by about 4\u00d7 per level, so the offset is negligible. The row with the largest A2 error (nlayer_dbc d1.mean, -0.0386 K) is a Galerkin mean and has no snap.",
+      "evidence": "e009_run.py lines 215-237 and 285; snap distance_m 1.749e-05 on nlayer_dbc d1.centroid and d2.centroid.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Two case rows are counted as error above GCI only because of the 1 mK floor",
+      "detail": "n_case_err_above_gci = 2 comes from case2 s1.centroid and s1.max. There all level differences fall below the 1e-3 K floor, so the GCI is set to 0, and the true error is at most about 1e-4 K. This is the intended effect of the floor and is immaterial.",
+      "evidence": "case2 s1.max err_lv0/lv1/lv2 -0.0004/-0.0002/-0.0001 K, a4_branch 'exact'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the production thermal_fem.solve_box_stack, with the frozen rule's h0, dz_max, near_margin, edge grading and amg_gs_sweeps, on a 1D problem not in the reference set: a full-face 400 W source, Cu/Al2O3-like/Cu stack, ceramic k(T) = k0/(1+\u03b2(T\u2212T0)), h = 5000. I compared against the Kirchhoff-transform analytic solution (top 568.22529 K, rise 230 K). Errors were -1.4e-6 K at level 0, -5.5e-7 K at level 1 and -3.3e-7 K at level 2, with q_in exactly 400 W. The Picard k(T) path and the convective BC are correct.",
+    "Tabulated all 60 case rows (err at each level, GCI, p_obs, branch, snap distance). Errors contract about 4\u00d7 per level, p_obs is 1.70-2.15, the GCI exceeds the true error by 3.3-4.3\u00d7 on every non-floor row, and the largest A2 error is 0.0386 K on nlayer_dbc d1.mean, below 0.05 K.",
+    "Read mfos.metrics.gci_capped and max_gci_consistency and confirmed they implement Roache's GCI with factors 1.25/3, the order-1 cap, the 1 mK floor and the F5 cap as the spec describes. Hand-computed GCI for fresh_interleaved die 1 (rho 0.823, p 0.28): 1.25\u00b70.076/(2^0.28\u22121) \u2248 0.44 K, matching 0.4385.",
+    "Computed independent Richardson limits for the FEM and L2 sequences on all 40 dies. FEM level 2 is below L2 level 3 on every die, and the two converge from opposite sides, which brackets the solution. The largest |fem_lv2 \u2212 l2_lv3| is 0.126 K. The gap between the limits has mixed sign (27 of 40 negative) with mean -0.019 K on smooth dies. The FEM's own GCI falls short of the distance to the L2 limit on 3 dies, by up to 1.26\u00d7.",
+    "Diagnosed the low p_obs on 7 fresh dies from tj_max_xyz_per_level and the die-centroid node sequences. The cause is the argmax node moving by about 0.23-0.47 mm between levels, not a solver defect; the centroid-node GCI is 0.05-0.09 K.",
+    "Checked in e009_run.py that both solvers report the max over the die top face (FEM: nodal max on the top face; FV: thermal_layout._die_values via surface_stats). Checked that fresh layouts come from E6.fresh_layouts(run.seed), that the run refuses to start without the sealed seed or with a dev seed, and that T_ref is the frozen value compared with the node at the snapped coordinate.",
+    "Confirmed that E006's A3/A4 used L2 levels 0-2, so E009's l2_lv1..3 is 'one level finer than in O006' as claimed.",
+    "Read every sanity check in result.json (reference hashes, fem_rule_frozen, node persistence, growth ratios 7.25-7.8 for nodes and 8.0 for cells, energy balance \u2264 2.1e-9, CG max 228 < 300, operating point within 0.16 K)."
+  ],
+  "caveats": [
+    "Within the claim's stated scope, (c) (A4 \u2264 0.5 K for every reported value) is shown only for the six reference cases and five generator layouts in E009. On held-out layouts A4 reached 0.4385 K, 3.5\u00d7 the development value, because the per-die Tj-max node moves between levels. O003 must recompute A4 for each layout and cannot assume 0.5 K.",
+    "On generator geometry the error bound rests on the fact that FEM and FV converge monotonically from opposite sides on all 40 dies (largest finest-level gap 0.126 K) and on the 0.5 K envelope. It does not rest on each per-die GCI: 3 of 40 FEM GCIs are 3-26 % smaller than the distance to the L2's Richardson limit.",
+    "Part (a) re-runs, deterministically, the references the rule was developed against (regression guard matches to about 1e-11 K). The out-of-sample evidence is limited to three fresh layouts, one per generator family, at a single operating point (65 \u00b0C, h = 5000 W/(m\u00b2 K), 60 K rise).",
+    "I did not re-run the burst-VM finest-level solves. I relied on the code-verified provenance and metric recomputation, and checked the physics on a small independent analytic case. A sandbox denial blocked one attempt to recompute the manufactured case's ceramic k-variation (0.3227) independently; the runner's sanity check and the frozen self-check both report it."
+  ]
+}

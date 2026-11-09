@@ -1,0 +1,93 @@
+id: C004
+statement: 'The scikit-fem thermal reference of D0006 (fallback, adopted by D0014 after O006''s EV-O006-01:
+  steady state, k(T) by Picard iteration, uniform h at the baseplate, Galerkin hexahedra on a conforming
+  grid built from the Layout by its own code, src/moduleforge/solvers/thermal_fem.py extended as needed),
+  on grids from its own frozen grid rule, whose through-thickness cell size is bounded in absolute terms,
+  not by a fixed count per layer (T0198): (a) reproduces the frozen, converged reference solutions of
+  O006 (Muzychka, Culham & Yovanovich 2003 Cases 1a, 1b, 2 and 3; the N-layer Fourier series for the default
+  stack with die attach and SiC die and several die-sized sources; the 3D manufactured solution on the
+  default stack geometry with patterned top copper and k varying by at least 30 % within one layer, k_max/k_min
+  - 1 >= 0.30) within 1 % of each case''s scale and within 0.05 K; (b) agrees with the in-house finite-volume
+  L2 of D0006 (solvers.thermal_fv / thermal_layout at its own frozen rule, one level finer than in O006)
+  on five generator layouts with discrete die islands, die-attach footprints and patterned copper (two
+  development layouts and three fresh layouts, one per generator family) at O003''s operating point (hottest
+  die 60 K above the coolant), within the two solvers'' combined conservative discretisation estimates;
+  and (c) has a conservative discretisation estimate (O006''s A4 estimator, D0012/D0013) of at most 0.5
+  K for every reported value. On generator geometry the 0.5 K bounds the discretisation error; accuracy
+  there is checked by (b).'
+scope: 'Sampled: case: case1a, case1b, case2, case3, mms, nlayer_dbc; coolant_K: 338.15; dies_per_switch:
+  2, 4, 6; family: interleaved, side_by_side, u_shaped; h_W_m2K: 5000.0; layout_fingerprint: 02f6fc1064bf6e677738e51050d7c2ac7b593fb0a4e54c5ab9911129df0536e6,
+  0a25a72a24d09bff63f01b031606d485aea551e0e7789f59611fd2206801e4d9, 1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b,
+  51319fab0ef49705e581a404ab5a358100fac8115c2a0e7328d92316cc56b560, 6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6;
+  target_rise_K: 60.0. Declared scope_in (not checked against the samples): steady-state conduction; the
+  reference cases of O006, unchanged and with the same frozen hashes; the default DBC stack with die attach
+  and SiC die, patterned top copper, die islands and die-attach footprints; constant and temperature-dependent
+  k; one scikit-fem configuration (element order, quadrature, grid rule, solver tolerances) frozen before
+  E009 registration and used unchanged for every case of E009 and by O003. The reference cases are built
+  through the same mesh and assembly code as the layouts (a box-stack mode of thermal_fem, not a separate
+  research solver); the grid rule, with three levels at a constant ratio r = 2 in every direction (x,
+  y and z), with the level-0 through-thickness cell size bounded in absolute terms for every layer. Every
+  reported point value lies at a position that is a mesh node on all three levels (no interpolation inside
+  an element). In box-stack mode, the lines through each source''s centroid and through the frozen reference''s
+  maximum location over each source are mandatory grid lines (fixed by the frozen references, not by any
+  solver result). Area means are Galerkin integrals, and per-die Tj max is the maximum nodal value on
+  the die top face; O003''s operating point on every generator layout, namely 65 °C coolant, h = 5000
+  W/(m² K), k(T), and equal power per die fixed per layout before the comparison from a level-0 solve
+  of the solver under test so that the hottest die rises 60 K (+/- 1 K) above the coolant, then used unchanged
+  by both solvers and on every grid; the registered run on a burst VM if a finest-level solve needs more
+  than the local memory rule allows (founder, 2026-11-02, as for E006 via the policy burst_experiments
+  list)'
+status: proposed
+objective: O007
+evaluation: EV-O007-01
+reviews:
+- T0250
+caveats:
+- Within the claim's stated scope, (c) (A4 ≤ 0.5 K for every reported value) is shown only for the six
+  reference cases and five generator layouts in E009. On held-out layouts A4 reached 0.4385 K, 3.5× the
+  development value, because the per-die Tj-max node moves between levels. O003 must recompute A4 for
+  each layout and cannot assume 0.5 K.
+- 'On generator geometry the error bound rests on the fact that FEM and FV converge monotonically from
+  opposite sides on all 40 dies (largest finest-level gap 0.126 K) and on the 0.5 K envelope. It does
+  not rest on each per-die GCI: 3 of 40 FEM GCIs are 3-26 % smaller than the distance to the L2''s Richardson
+  limit.'
+- Part (a) re-runs, deterministically, the references the rule was developed against (regression guard
+  matches to about 1e-11 K). The out-of-sample evidence is limited to three fresh layouts, one per generator
+  family, at a single operating point (65 °C, h = 5000 W/(m² K), 60 K rise).
+- I did not re-run the burst-VM finest-level solves. I relied on the code-verified provenance and metric
+  recomputation, and checked the physics on a small independent analytic case. A sandbox denial blocked
+  one attempt to recompute the manufactured case's ceramic k-variation (0.3227) independently; the runner's
+  sanity check and the frozen self-check both report it.
+created_at: '2026-11-09T01:01:01+00:00'
+domain:
+  case:
+  - case1a
+  - case1b
+  - case2
+  - case3
+  - mms
+  - nlayer_dbc
+  family:
+  - interleaved
+  - side_by_side
+  - u_shaped
+  dies_per_switch:
+  - 2
+  - 4
+  - 6
+  layout_fingerprint:
+  - 02f6fc1064bf6e677738e51050d7c2ac7b593fb0a4e54c5ab9911129df0536e6
+  - 0a25a72a24d09bff63f01b031606d485aea551e0e7789f59611fd2206801e4d9
+  - 1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b
+  - 51319fab0ef49705e581a404ab5a358100fac8115c2a0e7328d92316cc56b560
+  - 6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6
+  coolant_K:
+  - 338.15
+  h_W_m2K:
+  - 5000.0
+  target_rise_K:
+  - 60.0
+approved_by: null
+approved_at: null
+scope_restrictions: []
+annotations: []
