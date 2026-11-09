@@ -44,6 +44,10 @@ missing or null. A needed band value that is missing raises.
 | `reference_id`, `layout_id`, `die_id` | str | always | `(layout_id, die_id)` must be unique within its reference |
 | `Tj_l0_K`, `Tj_l1_K`, `Tj_l2_K` | K | always | per-die Tj max (maximum nodal value on the die top face) at thermal levels 0, 1 and 2 of **that layout's own** grids. GCI = `gci_capped(l0, l1, l2, floor)` |
 
+**Die count.** scope_in fixes the die count, so every thermally checked layout (the twin, the reconstruction and each
+candidate F3 checks) must carry exactly as many die rows as the twin. Any other count raises (fail closed), in both
+metrics for the reconstruction and in `headroom_min_lo` for candidates. Layouts F3 does not check are not looked at.
+
 Die rows are required for the twin and the reconstruction (F1(a2)) and for every candidate that F3 checks. The function
 recomputes F3's checked set itself: candidates in ascending `L_sub_H` order, in batches of 4, stopping after the first
 batch that holds a candidate meeting the conservative test, at most 8. Die rows of other layouts are ignored, so the
@@ -76,7 +80,8 @@ over counted references. With no counted reference, both raise, so E008 is INVAL
   3. Near ties: take the candidates with L ≤ (1 + w_ind) L(ind). h_hi is the largest of
      a(1 − r_c(1 − 2e_R(c) − s_ref)).
 
-  K1 never reads candidate die rows.
+  K1 never reads candidate die rows. Over references K1 takes the maximum, so a single counted reference that is not
+  levelled makes K1 = +inf, and K1 cannot fire (tested).
 
 ## 3. Spec entries the runner and the spec should use
 - Primary: `{metric: headroom_min_lo, fn: headroom_min_lo, pred: L_sub_H}` and
@@ -86,14 +91,26 @@ over counted references. With no counted reference, both raise, so E008 is INVAL
   `{L_term_H: 1.75e-8}`.
 - Reconstruction-based secondary: `params: {comparator: reconstruction}`.
 - Declared A1 null: `{name: twin_as_best, kind: column, column: L_sub_null_H, applies_to: [headroom_min_lo]}`.
-  `mfos.metrics.null_column` calls `float(row[column])` on **every** row, so every row of every kind must carry
-  `L_sub_null_H`:
-  - candidate rows: the twin's `L_sub_H`;
-  - twin and reconstruction rows: their own `L_sub_H`, so the twin gates are unchanged;
-  - reference and die rows: the twin's `L_sub_H` (the value is unused).
+  `mfos.metrics.null_column` calls `float(row[column])` on **every** row passed to the metric, and a null spec has no
+  `where` filter, so **every row of every kind the runner writes must carry a finite `L_sub_null_H`**. A row without it
+  makes the whole recompute entry fail (closed, but it costs a run). The value, by row kind:
+  - `layout`, role `candidate`: the twin's `L_sub_H` of that reference (the null "twin as best");
+  - `layout`, roles `twin` and `reconstruction`: their own `L_sub_H`, so the twin gates are unchanged;
+  - `layout`, any other role (`degraded` and `control_best` of F1(b), the extra layouts of the L1-only null, any role the
+    runner adds): their own `L_sub_H`. The metrics ignore these rows (tested), so the value is never used;
+  - `die` rows, including the extra thermal rows of the L1-only null: the twin's `L_sub_H` of that reference (unused);
+  - `reference` rows: the twin's `L_sub_H` of that reference (unused; `10e-9` if the reference is inadmissible and has no
+    twin row);
+  - any other row kind the runner adds (it has no `reference_id` to look up): `1e-8`, an arbitrary finite number, unused.
 
-  The null then gives h_lo = −a s_ref ≤ 0 and fails A1 by construction, as the objective says. The candidates' thermal
-  rows are not needed for this, because the twin rule is decided first (tested).
+  The alternative to a value is a recompute entry that excludes the rows, which this contract does not offer: the two
+  headroom metrics read all rows and the null cannot filter. The null then gives h_lo = −a s_ref ≤ 0 and fails A1 by
+  construction, as the objective says. The candidates' thermal rows are not needed for this, because the twin rule is
+  decided first. Under the null every candidate has the twin's L_sub, so F3's order falls back to `layout_id` and its
+  first batch may be candidates the real run never checked thermally. The twin rule (L(W) ≤ L(c), equality included)
+  decides before any of their die rows are read. Tested in
+  `test_o003_twin_rule_needs_no_candidate_dies_also_under_the_declared_null`, and with extra degraded, control_best,
+  L1-null and runner rows in `test_o003_null_column_contract_for_extra_row_kinds`.
 - Runner: compute both metrics with these functions (import them once the patch is applied, or from the draft), so
   that runner and evaluator agree within `rel_tol` 1e-9. K1 may legitimately be +inf (`mfos` serialises it as Infinity).
 
@@ -127,3 +144,26 @@ band solves.
    by the twin rule without candidate die rows. Otherwise any missing die row that F3 needs raises.
 7. **Ordering and ties.** Ascending `L_sub_H`, with ties broken by `layout_id`. The runner must use the same order for
    F3.
+8. **Levelling threshold under the twin rule (T0266 note 1).** Levelling is decided before the twin rule, with
+   w_lev = 2 e_R(ind, W) + s_ref. When the twin rule then decides K1 (L(W) ≤ L(ind)), the rule's "e_R = 0" would give the
+   stricter threshold (1 + s_ref). The code keeps the first reading, because the objective puts levelling first and
+   levelling is a property of the search. Founder: confirm, or ask for (1 + s_ref) whenever the twin rule applies.
+9. **Switches in the reconstruction-based secondary (T0266 note 2).** With `comparator: reconstruction`, these quantities
+   switch from the twin to the reconstruction: a = L/(L + L_term), r, e_R in A1's w, the twin rule's comparison, the
+   near-tie band and each near-tie candidate's w. These do not switch: the Tj test (candidates are tested against W), the
+   levelling pair (ind, W), the F1 gates and the F3 order. The objective's A1 text only says "r against L_sub of the
+   reconstruction", so a, e_R and the twin rule switching is a choice. It affects secondary columns only. Tests pin each
+   of these switches: a and r (`test_o003_sensitivity_and_reconstruction_based_secondary`), e_R in A1 and K1, the Tj
+   test against W and the levelling pair (`test_o003_reconstruction_secondary_uses_the_reconstruction_pair_but_the_twins_tj_and_levelling`),
+   the twin rule and the near-tie band (`test_o003_reconstruction_secondary_switches_the_twin_rule_and_the_near_tie_band`).
+
+## 6. How the tests are checked (T0269)
+`research/o003/check_mutants.py` applies 101 textual mutants of `headroom_metrics.py` in memory, one at a time, and runs
+`test_headroom_metrics.py` against each. It exits 0 only if every mutant fails at least one test. The list includes
+T0266's eleven survivors (T0266 names ten of them; the eleventh is reconstructed, see the script's header), 54 mutants
+added in T0269 attempt 1, and 36 from attempt 2's independent probe. Seventeen of those 36 survived attempt 1's tests
+and are killed by the section "T0269 attempt 2 gaps". One of the 17 decided a criterion: K1 taking the minimum instead
+of the maximum over references. Negative control: with attempt 1's test file the script reports exactly those 17 and
+exits 1. Each fail-closed case must raise its own guard's message (`_MATCH`), so an unrelated ValueError cannot pass
+it. Mutation testing shows only that the tests detect these specific edits. It does not show that the rule text is
+read correctly; that rests on the hand values and on T0266's independent implementation.

@@ -10,7 +10,7 @@
  """
  from __future__ import annotations
  
-@@ -309,6 +312,340 @@
+@@ -309,6 +312,348 @@
          a, b = g[ref_role], g[sel_role]
          vals.append((a[ref] - b[ref]) / (a[pred] - b[pred]))
      return AGG[agg](np.asarray(vals, dtype=float))
@@ -91,14 +91,20 @@
 +    return s
 +
 +
-+def tj_bounds(dies: Sequence[Sequence[float]], floor: float = 1e-3) -> tuple[float, float, float, float, int]:
++def tj_bounds(dies: Sequence[Sequence[float]], floor: float = 1e-3,
++              n_dies: Optional[int] = None) -> tuple[float, float, float, float, int]:
 +    """One layout's Tj interval quantities (O003 scope_in, the Tj limit; C004 caveat 1; D0013). ``dies`` holds, per die,
 +    the Tj max (K) at thermal levels 0, 1, 2 of that layout's own three grids. T_i is the level-2 value and GCI_i =
 +    gci_capped(level 0, 1, 2, floor). Returns (max_i T_i, max_i GCI_i, upper, lower, n_inf): upper = max_i (T_i + GCI_i),
 +    +inf if any GCI_i is +inf; lower = max over the dies with finite GCI of (T_i - GCI_i), -inf if there is none (a die
-+    whose GCI is +inf bounds nothing and drops out of a lower bound); n_inf counts the dies with GCI_i = +inf."""
++    whose GCI is +inf bounds nothing and drops out of a lower bound); n_inf counts the dies with GCI_i = +inf.
++    ``n_dies``, when given, is the die count the layout must carry (scope_in fixes the die count, so every thermally
++    checked layout carries the twin's); any other count raises, because a layout missing its hottest die would be judged on
++    the dies that remain."""
 +    if not dies:
 +        raise ValueError("a thermally checked layout needs at least one die")
++    if n_dies is not None and len(dies) != n_dies:
++        raise ValueError(f"a thermally checked layout has {len(dies)} dies, the twin has {n_dies}")
 +    t_max = g_max = upper = lower = -math.inf
 +    n_inf = 0
 +    for d in dies:
@@ -205,10 +211,12 @@
 +    def has_dies(lay: dict[str, Any]) -> bool:
 +        return bool(t["dies"].get(str(lay["layout_id"])))
 +
++    n_dies = len(t["dies"].get(str(twin["layout_id"]), ()))  # scope_in fixes the die count: the twin's
++
 +    def bounds(lay: dict[str, Any]) -> tuple[float, float, float, float, int]:
 +        if not has_dies(lay):
 +            raise ValueError(f"reference {rid}: no die rows for thermally checked layout {lay['layout_id']}")
-+        return tj_bounds(list(t["dies"][str(lay["layout_id"])].values()), floor)
++        return tj_bounds(list(t["dies"][str(lay["layout_id"])].values()), floor, n_dies)
 +
 +    on_grid = ref.get("on_grid")
 +    snap_cols = ("L_snap025_H", "L_snap05_H", "L_snapchk0125_H", "L_snapchk05_H")
@@ -351,7 +359,7 @@
  
  
  # ------------------------------------------------------------------------------------------------ records adapter
-@@ -374,6 +711,9 @@
+@@ -374,6 +719,9 @@
          rows, ref, group=group, role=role, **(params or {})),
      "optimism_ratio_by_group": lambda rows, pred, ref, group, role, params=None, **_: optimism_ratio_by_group(
          rows, pred, ref, group=group, role=role, **(params or {})),
@@ -370,7 +378,7 @@
  import json
  import math
  from pathlib import Path
-@@ -275,3 +276,235 @@
+@@ -275,3 +276,636 @@
      assert mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": None}) == uncapped
      with pytest.raises(ValueError):
          mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": -0.1})
@@ -398,9 +406,13 @@
 +             "Tj_l1_K": d[1], "Tj_l2_K": d[2]} for i, d in enumerate(dies)]
 +
 +
++ZB = (0.0, 0.0, 0.0, 0.0)  # a zero band: every 0.5 mm column equals the 0.25 mm one
++
++
 +def _o3_case(rid="R1", *, twin=10.0, recon=None, cands=(), l_term=7.0, admissible=True, s_ref=None, l1=(10.0, 10.0),
-+             tw_dies=((350.0,) * 3,) * 2, rec_dies=None, cand_t=350.0, cand_dies=None, no_dies=()):
-+    """One reference: twin and reconstruction (zero band), ``cands`` = [(L_nH, band)] padded to the 16-candidate
++             tw_dies=((350.0,) * 3,) * 2, rec_dies=None, cand_t=350.0, cand_dies=None, no_dies=(), twin_band=ZB,
++             recon_band=ZB):
++    """One reference: twin and reconstruction (zero band unless given), ``cands`` = [(L_nH, band)] padded to the 16-candidate
 +    shortlist with candidates at 1.2 x twin + k x 0.01 nH; candidate dies at cand_t unless cand_dies[k] gives them;
 +    s_ref = None puts the reference on the 0.5 mm grid, else off-grid with L(0.25 snap) / L(0.5 snap) = 1 + s_ref / 2."""
 +    ref = {"kind": "reference", "reference_id": rid, "admissible": admissible, "L_term_H": l_term * NH,
@@ -411,7 +423,8 @@
 +    rows = [ref]
 +    if not admissible:
 +        return rows
-+    rows += [_o3_layout(rid, "twin", "twin", twin), _o3_layout(rid, "recon", "reconstruction", recon or twin)]
++    rows += [_o3_layout(rid, "twin", "twin", twin, twin_band),
++             _o3_layout(rid, "recon", "reconstruction", recon or twin, recon_band)]
 +    rows += _o3_dies(rid, "twin", tw_dies) + _o3_dies(rid, "recon", rec_dies or tw_dies)
 +    full = list(cands) + [(1.2 * twin + 0.01 * k, (0.0, 0.0, 0.0, 0.0)) for k in range(16 - len(cands))]
 +    for k, (lk, band) in enumerate(full):
@@ -500,15 +513,16 @@
 +    a, s = 10.0 / 17.0, 0.02
 +    best = [(8.0, (0.0, 0.0, 0.0, 0.0))]
 +    # on C: die (350, 350.5, 351) has rho = 1 -> +inf -> fails; with (350, 350.5, 350.75) it passes (351.06 - 350 <= 2)
-+    bad = _o3_case(s_ref=s, cands=best, cand_dies={0: [(350.0, 350.5, 351.0)]})
-+    good = _o3_case(s_ref=s, cands=best, cand_dies={0: [(350.0, 350.5, 350.75)]})
++    flat = (350.0, 350.0, 350.0)
++    bad = _o3_case(s_ref=s, cands=best, cand_dies={0: [(350.0, 350.5, 351.0), flat]})
++    good = _o3_case(s_ref=s, cands=best, cand_dies={0: [(350.0, 350.5, 350.75), flat]})
 +    assert mx.headroom_min_lo(bad) == pytest.approx(-a * s)
 +    assert mx.headroom_per_reference(bad)["R1"]["n_tj_inf"] == 1
 +    assert mx.headroom_min_lo(good) == pytest.approx(a * (1 - 0.8 * (1 + s)))
 +    # on W: die B (383, 383.5, 384) diverges and drops out, so W's lower bound is die A's 380 K and a 383 K candidate
 +    # fails (3 K > 2 K); were B counted at 384 K it would pass. The optimistic test passes (W's upper bound is +inf).
 +    tw = [(380.0, 380.0, 380.0), (383.0, 383.5, 384.0)]
-+    rows = _o3_case(s_ref=s, cands=best, tw_dies=tw, rec_dies=[(380.0,) * 3], cand_dies={0: [(383.0,) * 3]})
++    rows = _o3_case(s_ref=s, cands=best, tw_dies=tw, rec_dies=[(380.0,) * 3] * 2, cand_dies={0: [(383.0,) * 3] * 2})
 +    per = mx.headroom_per_reference(rows)["R1"]
 +    assert per["gate_a2"] and per["best_id"] is None and per["h_lo"] == pytest.approx(-a * s)
 +    assert per["opt_id"] == "c00" and per["h_opt_hi"] == pytest.approx(a * (1 - 0.8 * (1 - s)))
@@ -517,13 +531,13 @@
 +def test_o003_f3_batches_and_extra_thermal_rows():
 +    a = 10.0 / 17.0
 +    cands = [(8.0 + 0.1 * k, (0.0, 0.0, 0.0, 0.0)) for k in range(6)]
-+    hot = {k: [(360.0,) * 3] for k in range(4)}
++    hot = {k: [(360.0,) * 3] * 2 for k in range(4)}
 +    rows = _o3_case(cands=cands, cand_dies=hot)  # batch 1 all fail; c04 (8.4 nH) in batch 2 is best
 +    per = mx.headroom_per_reference(rows)["R1"]
 +    assert per["best_id"] == "c04" and per["n_thermal_checked"] == 8
 +    assert per["h_lo"] == pytest.approx(a * (1 - 0.84))
 +    # c02 passes in batch 1: stop after it; batch 2 needs no thermal rows; best is the lowest eligible, c02
-+    rows = _o3_case(cands=cands, cand_dies={0: [(360.0,) * 3], 1: [(360.0,) * 3]}, no_dies=range(4, 16))
++    rows = _o3_case(cands=cands, cand_dies={0: [(360.0,) * 3] * 2, 1: [(360.0,) * 3] * 2}, no_dies=range(4, 16))
 +    assert mx.headroom_per_reference(rows)["R1"]["best_id"] == "c02"
 +    with pytest.raises(ValueError):  # a candidate F3 must check has no thermal rows
 +        mx.headroom_min_lo(_o3_case(cands=cands, no_dies=(1,)))
@@ -535,7 +549,7 @@
 +    excluded = _o3_case("R0", admissible=False)
 +    a1_fail = _o3_case("R2", s_ref=0.02, recon=10.5, cands=[(9.5, (0.0, 0.0, 0.0, 0.0))])  # |1 - 10/10.5| > 0.02
 +    a1_pass = _o3_case("R2", s_ref=0.02, recon=10.15, cands=[(9.5, (0.0, 0.0, 0.0, 0.0))])  # 0.0148 <= 0.02
-+    a2_fail = _o3_case("R3", cands=[(9.5, (0.0, 0.0, 0.0, 0.0))], rec_dies=[(353.0,) * 3])  # 3 K > G sum 0
++    a2_fail = _o3_case("R3", cands=[(9.5, (0.0, 0.0, 0.0, 0.0))], rec_dies=[(353.0,) * 3] * 2)  # 3 K > G sum 0
 +    single = r1 + excluded + a1_fail + a2_fail
 +    per = mx.headroom_per_reference(single)
 +    assert [k for k, v in per.items() if v["counted"]] == ["R1"]
@@ -590,19 +604,414 @@
 +    assert mx.compute("headroom_min_lo", nrows, pred="__null__") == pytest.approx(-a * 0.02)  # fails A1 by construction
 +
 +
-+@pytest.mark.parametrize("mutate", [
-+    lambda rows: rows.append(dict(rows[1])),  # a second twin row (duplicate layout id)
-+    lambda rows: rows.append(dict(rows[0])),  # a second reference row
-+    lambda rows: [r.update(role="candidate") for r in rows if r.get("layout_id") == "recon"],  # no reconstruction
-+    lambda rows: [r.pop("L_sub_c05_H") for r in rows if r.get("layout_id") == "c00" and r["kind"] == "layout"],
-+    lambda rows: rows[0].update(admissible="yes"),
-+    lambda rows: [rows.remove(r) for r in [r for r in rows if r.get("layout_id") == "c15" and r["kind"] == "layout"]],
-+    lambda rows: rows[0].pop("L1_min_all_H"),
-+    lambda rows: rows[0].update(L_term_H=math.nan),
-+])
-+def test_o003_fail_closed(mutate):
-+    rows = _o3_case(s_ref=0.02, cands=[(8.0, (0.0, 0.0, 0.0, 0.0))])
-+    mutate(rows)
-+    with pytest.raises(ValueError):  # at least one of the two metrics must refuse the rows
++
++
++# ------------------------------------------------------------------------------------------------ nonzero band terms (T0269)
++# Every case below has e_R > 0 somewhere the formula uses it, so a dropped, doubled or mis-wired band term changes a value.
++FULL_BAND = (0.05, 0.04, -0.01, 0.02)  # L(0.5) = L + 0.05, L(5/3/3) = L(0.5) + 0.04, L(20/12/12) = L(0.5) - 0.01, wire + 0.02
++# Hand value of e_R(candidate 8.0 nH with FULL_BAND, twin 10 nH with a zero band): R = 0.8 / 0.805 / 0.809 / 0.804 / 0.807;
++# lateral 3 x 0.005; thickness e21 = 0.805 - 0.804 = 0.001, e32 = 0.809 - 0.805 = 0.004, r^p = 4: 1.25 x 0.001 x 4 / 3;
++# wire 3 x 0.002.
++E_FULL = 0.015 + 0.005 / 3 + 0.006
++A_TWIN = 10.0 / 17.0
++
++
++def test_o003_a1_best_with_nonzero_band_uses_two_e_r_plus_s_ref():
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, FULL_BAND)])
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert per["best_id"] == "c00" and per["e_R"] == pytest.approx(E_FULL, rel=1e-9)
++    w = 2 * E_FULL + 0.02
++    assert per["w"] == pytest.approx(w, rel=1e-9)
++    assert mx.headroom_min_lo(rows) == pytest.approx(A_TWIN * (1 - 0.8 * (1 + w)), rel=1e-9)
++    # the same layout is K1's inductance-only best, levelled (L1 equal), alone in its near-tie band (to 8.0 x (1 + w) < 12)
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(A_TWIN * (1 - 0.8 * (1 - w)), rel=1e-9)
++    assert mx.headroom_per_reference(rows)["R1"]["near_tie_h_hi"].keys() == {"c00"}
++
++
++def test_o003_a1_each_band_term_enters_alone():
++    # one nonzero term at a time (the others are zero), so each term of e_R is pinned by itself
++    for band, e in [((0.05, 0, 0, 0), 0.015), ((0, 0.04, 0, 0), 3 * 0.004),
++                    ((0, 0, 0, 0.02), 0.006)]:
++        per = mx.headroom_per_reference(_o3_case(s_ref=0.02, cands=[(8.0, band)]))["R1"]
++        assert per["e_R"] == pytest.approx(e, rel=1e-9), band
++
++
++def test_o003_levelling_threshold_uses_two_e_r_of_the_ind_twin_pair():
++    # w_lev = 2 E_FULL + s_ref = 0.065333: levelled iff L1_first <= 1.065333 L1_all
++    a = A_TWIN
++    w = 2 * E_FULL + 0.02
++    kw = dict(s_ref=0.02, cands=[(8.0, FULL_BAND)])
++    assert mx.headroom_max_hi_ind(_o3_case(**kw, l1=(10.64, 10.0))) == pytest.approx(a * (1 - 0.8 * (1 - w)), rel=1e-9)
++    assert mx.headroom_max_hi_ind(_o3_case(**kw, l1=(10.67, 10.0))) == math.inf
++    assert mx.headroom_per_reference(_o3_case(**kw, l1=(10.64, 10.0)))["R1"]["w_levelling"] == pytest.approx(w, rel=1e-9)
++
++
++def test_o003_twin_gate_inductance_counts_two_e_r():
++    # twin 10 nH vs reconstruction 10.2 nH: |1 - L(W)/L(ref)| = 0.019608. W's 0.5 mm value is 10 + dl, so
++    # e_R = 3 |10 / 10.2 - (10 + dl) / 10.2|, and the gate needs 2 e_R >= 0.019608 (s_ref = 0, on the grid)
++    def per(dl):
++        rows = _o3_case(twin=10.0, recon=10.2, cands=[(9.0, ZB)], twin_band=(dl, 0, 0, 0), recon_band=ZB)
++        return mx.headroom_per_reference(rows)["R1"]
++    ok = per(0.034)  # e_R = 3 x 0.034 / 10.2 = 0.01, 2 e_R = 0.02 >= 0.019608 passes (a single e_R = 0.01 would fail)
++    assert ok["gate_a1"] and ok["counted"]
++    bad = per(0.03)  # e_R = 0.008824, 2 e_R = 0.017647 < 0.019608 fails (the 0.5 mm columns alone: 0.016667 would pass)
++    assert not bad["gate_a1"] and not bad["counted"]
++    with pytest.raises(ValueError, match="no counted reference"):
++        mx.headroom_min_lo(_o3_case(twin=10.0, recon=10.2, cands=[(9.0, ZB)], twin_band=(0.03, 0, 0, 0)))
++    with pytest.raises(ValueError, match="no counted reference"):
++        mx.headroom_max_hi_ind(_o3_case(twin=10.0, recon=10.2, cands=[(9.0, ZB)], twin_band=(0.03, 0, 0, 0)))
++
++
++def test_o003_twin_gate_inductance_adds_s_ref_to_two_e_r():
++    # e_R = 0.008824, 2 e_R = 0.017647; s_ref = 0.002 lifts the threshold to 0.019647 >= 0.019608
++    rows = _o3_case(twin=10.0, recon=10.2, s_ref=0.002, cands=[(9.0, ZB)], twin_band=(0.03, 0, 0, 0))
++    assert mx.headroom_per_reference(rows)["R1"]["gate_a1"]
++    rows = _o3_case(twin=10.0, recon=10.2, s_ref=0.0019, cands=[(9.0, ZB)], twin_band=(0.03, 0, 0, 0))
++    assert not mx.headroom_per_reference(rows)["R1"]["gate_a1"]
++
++
++def test_o003_twin_gate_thermal_adds_the_two_gci_values():
++    # W: die A (350, 350.5, 350.75), GCI 1.25 x 0.25 / (2 - 1) = 0.3125; die B flat. Reconstruction: die A (T - 2, T - 0.5, T),
++    # d1 = 1.5, d2 = 0.5, rho = 1/3, p capped at 1: GCI 1.25 x 0.5 = 0.625. G sum 0.9375; max 0.625.
++    w_dies = [(350.0, 350.5, 350.75), (350.0, 350.0, 350.0)]
++
++    def per(t_ref):
++        rec = [(t_ref - 2.0, t_ref - 0.5, t_ref), (340.0, 340.0, 340.0)]
++        return mx.headroom_per_reference(_o3_case(cands=[(9.0, ZB)], tw_dies=w_dies, rec_dies=rec))["R1"]
++    ok = per(351.6)  # |350.75 - 351.6| = 0.85 <= 0.9375, but > max(G) = 0.625
++    assert ok["gate_a2"] and ok["counted"] and ok["tj_twin"][1] == pytest.approx(0.3125)
++    assert ok["tj_recon"][1] == pytest.approx(0.625)
++    bad = per(351.7)  # 0.95 > 0.9375
++    assert not bad["gate_a2"]
++    assert per(349.9)["gate_a2"] and not per(349.7)["gate_a2"]  # symmetric: 0.85 passes, 1.05 fails
++
++
++RECON_BAND = (-0.1, 0.0, 0.0, 0.0)  # reconstruction 10 nH whose 0.5 mm columns are 9.9 nH
++# e_R(c00, reconstruction) = 3 (8.05 / 9.9 - 0.8) = 0.039394 (all four 0.5 mm levels equal, so only the lateral term);
++# e_R(c00, twin) = 0.015
++E_REC = 3 * (8.05 / 9.9 - 0.8)
++
++
++def _recon_case(**kw):
++    return _o3_case(s_ref=0.02, recon_band=RECON_BAND, cands=[(8.0, (0.05, 0.0, 0.0, 0.0))], **kw)
++
++
++def test_o003_reconstruction_secondary_uses_the_reconstruction_pair_but_the_twins_tj_and_levelling():
++    rec = {"comparator": "reconstruction"}
++    # twin dies flat at 350 K (G = 0); reconstruction die (349.5, 350.0, 350.25): GCI 0.3125, |350.25 - 350| passes F1(a2).
++    # Candidate c00 flat at 351.99 K: 1.99 K above W's lower bound (eligible against W), 2.0525 K above the
++    # reconstruction's (350.25 - 0.3125 = 349.9375) so it would fail were the Tj test run against the reconstruction.
++    rec_dies = [(349.5, 350.0, 350.25), (340.0, 340.0, 340.0)]
++    hot = {0: [(351.99,) * 3] * 2}
++    rows = _recon_case(rec_dies=rec_dies, cand_dies=hot)
++    per = mx.headroom_per_reference(rows, params=rec)["R1"]
++    assert per["counted"] and per["best_id"] == "c00" and per["e_R"] == pytest.approx(E_REC, rel=1e-9)
++    w = 2 * E_REC + 0.02
++    a = 10.0 / 17.0  # the reconstruction is 10 nH too
++    assert mx.headroom_min_lo(rows, params=rec) == pytest.approx(a * (1 - 0.8 * (1 + w)), rel=1e-9)
++    # against the twin's pair e_R would be 0.015: a different number
++    assert mx.headroom_min_lo(rows) == pytest.approx(a * (1 - 0.8 * (1 + 2 * 0.015 + 0.02)), rel=1e-9)
++    # K1 with the reconstruction as comparator: w_ind = 2 E_REC + s_ref
++    assert mx.headroom_max_hi_ind(rows, params=rec) == pytest.approx(a * (1 - 0.8 * (1 - w)), rel=1e-9)
++    # levelling keeps the twin pair: w_lev = 2 x 0.015 + 0.02 = 0.05 (the reconstruction pair would give 2 E_REC + 0.02 =
++    # 0.0988). 10.4 <= 10.5 is levelled, 10.7 is not under the twin pair although the other pair would level it.
++    assert mx.headroom_max_hi_ind(_recon_case(rec_dies=rec_dies, l1=(10.4, 10.0)), params=rec) == pytest.approx(
++        a * (1 - 0.8 * (1 - w)), rel=1e-9)
++    nl = mx.headroom_per_reference(_recon_case(rec_dies=rec_dies, l1=(10.7, 10.0)), params=rec)["R1"]
++    assert nl["w_levelling"] == pytest.approx(0.05, rel=1e-9) and nl["h_hi"] == math.inf
++
++
++def test_o003_tj_limit_and_floor_params_change_the_eligible_set():
++    a, s = A_TWIN, 0.02
++    best = [(8.0, ZB)]
++    flat = lambda t: {0: [(t,) * 3] * 2}  # noqa: E731
++    pos = a * (1 - 0.8 * (1 + s))
++    # W flat at 350 K. Candidate 1.5 K above: eligible at the default 2 K, not at 1 K; 2.5 K above: only at 3 K
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=flat(351.5))) == pytest.approx(pos)
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=flat(351.5)),
++                              params={"tj_limit_K": 1.0}) == pytest.approx(-a * s)
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=flat(352.0))) == pytest.approx(pos)  # exactly 2 K
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=flat(352.5))) == pytest.approx(-a * s)
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=flat(352.5)),
++                              params={"tj_limit_K": 3.0}) == pytest.approx(pos)
++    # floor: die (350, 350.0004, 350.001) has d1 = 0.0004, d2 = 0.0006, both below the default floor 1e-3 K -> GCI 0;
++    # with floor 0, rho = 1.5 -> +inf and the candidate fails
++    small = {0: [(350.0, 350.0004, 350.001)] * 2}
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=small)) == pytest.approx(pos)
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=best, cand_dies=small),
++                              params={"floor": 0.0}) == pytest.approx(-a * s)
++
++
++def test_o003_boundaries_at_equality():
++    a = A_TWIN
++    # on the grid with a zero band, w_lev = 0 and L1_first = L1_all is exactly at the levelling threshold: levelled
++    on_grid = _o3_case(cands=[(8.0, ZB)], l1=(10.0, 10.0))
++    assert mx.headroom_max_hi_ind(on_grid) == pytest.approx(a * (1 - 0.8))
++    # the twin's L_sub equals the lowest candidate's: the twin rule decides (h_hi = a s_ref) although the candidate has a
++    # nonzero band that the near-tie rule would turn into a(2 e_R + s_ref)
++    rows = _o3_case(s_ref=0.02, cands=[(10.0, (0.05, 0, 0, 0))])
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(a * 0.02)
++    assert mx.headroom_min_lo(rows) == pytest.approx(-a * 0.02)
++
++
++def test_o003_near_tie_band_comes_from_the_inductance_only_bests_e_r():
++    # c00 (8.0 nH, e_R = 0.015) gives w_ind = 0.05 and near ties up to 8.4 nH. c01 at 8.35 nH has a wide band (L(0.5) =
++    # 9.35, e_R = 3 x 0.1 = 0.3, w = 0.62) and h_hi = a (1 - 0.835 x 0.38); with w_ind = s_ref alone (8.16) or e_R not
++    # doubled (8.28) it would not be a near tie
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, (0.05, 0, 0, 0)), (8.35, (1.0, 0, 0, 0))])
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert sorted(per["near_tie_h_hi"]) == ["c00", "c01"] and per["w_ind"] == pytest.approx(0.05, rel=1e-9)
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(A_TWIN * (1 - 0.835 * 0.38), rel=1e-9)
++
++
++def test_o003_equal_l_sub_ties_break_by_layout_id_ascending():
++    # c00 and c01 both 8.0 nH, both eligible; c00 has a zero band, c01 a nonzero one: the A1 best is c00 (e_R = 0)
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, ZB), (8.0, (0.05, 0, 0, 0))])
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert per["best_id"] == "c00" and per["ind_id"] == "c00" and per["e_R"] == 0.0
++    assert mx.headroom_min_lo(rows) == pytest.approx(A_TWIN * (1 - 0.8 * 1.02))
++    # K1: both are near ties of each other; the one with the wider band has the larger h_hi (w = 0.05)
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(A_TWIN * (1 - 0.8 * 0.95))
++
++
++def test_o003_die_count_must_be_the_twins_for_every_thermally_checked_layout():
++    assert mx.tj_bounds([(350.0,) * 3] * 2, n_dies=2)[0] == 350.0
++    with pytest.raises(ValueError, match="dies"):
++        mx.tj_bounds([(350.0,) * 3], n_dies=2)
++    one = (350.0,) * 3
++    cands = [(8.0, ZB)]
++    three = {k: [one] * 3 for k in range(4)}  # the four candidates of F3's first batch
++    assert mx.headroom_min_lo(_o3_case(s_ref=0.02, cands=cands, tw_dies=(one,) * 3, cand_dies=three)) > 0  # 3 everywhere
++    # the reconstruction with a die missing: both metrics refuse (both run the twin gates)
++    for metric in (mx.headroom_min_lo, mx.headroom_max_hi_ind):
++        with pytest.raises(ValueError, match="dies"):
++            metric(_o3_case(s_ref=0.02, cands=cands, rec_dies=[one]))
++        with pytest.raises(ValueError, match="dies"):
++            metric(_o3_case(s_ref=0.02, cands=cands, rec_dies=[one] * 3))
++    # a candidate F3 checks, with a die missing (it could otherwise pass on its remaining, cooler dies)
++    with pytest.raises(ValueError, match="dies"):
++        mx.headroom_min_lo(_o3_case(s_ref=0.02, cands=cands, cand_dies={0: [one]}))
++    # a candidate F3 does not check (c10 is beyond the 8 checked) is not looked at, and K1 never reads candidate dies
++    assert mx.headroom_min_lo(_o3_case(s_ref=0.02, cands=cands, cand_dies={10: [one]})) > 0
++    assert mx.headroom_max_hi_ind(_o3_case(s_ref=0.02, cands=cands, cand_dies={0: [one]})) > 0
++
++
++def test_o003_null_column_contract_for_extra_row_kinds():
++    """Degraded and control_best layout rows, L1-only null rows and a runner-added kind carry L_sub_null_H and change
++    nothing: the metrics ignore them (row contract section 3)."""
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, ZB)])
++    extra = [{"kind": "layout", "reference_id": "R1", "layout_id": "deg0", "role": "degraded", "L_sub_H": 11e-9},
++             {"kind": "layout", "reference_id": "R1", "layout_id": "ctl0", "role": "control_best", "L_sub_H": 6e-9},
++             {"kind": "layout", "reference_id": "R1", "layout_id": "l1n0", "role": "l1_null_best", "L_sub_H": 7e-9},
++             {"kind": "die", "reference_id": "R1", "layout_id": "l1n0", "die_id": "d0", "Tj_l0_K": 340.0,
++              "Tj_l1_K": 340.0, "Tj_l2_K": 340.0},
++             {"kind": "runner_note", "text": "no reference"}]
++    base_min, base_max = mx.headroom_min_lo(rows), mx.headroom_max_hi_ind(rows)
++    allrows = rows + extra
++    for r in allrows:
++        r["L_sub_null_H"] = 10.0 * NH if r.get("role") == "candidate" else r.get("L_sub_H", 10.0 * NH)
++    assert mx.headroom_min_lo(allrows) == base_min and mx.headroom_max_hi_ind(allrows) == base_max
++    nulls = mx.null_column(allrows, "column", None, column="L_sub_null_H")  # every row of every kind has a value
++    assert len(nulls) == len(allrows)
++    nrows = [{**r, "__null__": v} for r, v in zip(allrows, nulls, strict=True)]
++    a = A_TWIN
++    assert mx.headroom_min_lo(nrows, pred="__null__") == pytest.approx(-a * 0.02)
++    del allrows[-1]["L_sub_null_H"]  # a row without it: the recompute entry would fail, closed
++    with pytest.raises(KeyError):
++        mx.null_column(allrows, "column", None, column="L_sub_null_H")
++
++
++# ------------------------------------------------------------------------------------------------ T0269 attempt 2 gaps
++# Each case below kills a mutant that survived every test above (check_mutants.py, section "attempt 2").
++
++
++def test_o003_k1_is_the_max_and_a1_the_min_over_counted_references():
++    # R1: c00 at 7 nH; R2: c00 at 9.5 nH (reconstruction 10.15 nH passes F1(a1)); both counted, zero bands, s_ref 0.02
++    a = A_TWIN
++    r1 = _o3_case("R1", s_ref=0.02, cands=[(7.0, ZB)])
++    r2 = _o3_case("R2", s_ref=0.02, recon=10.15, cands=[(9.5, ZB)])
++    assert mx.headroom_max_hi_ind(r1 + r2) == pytest.approx(a * (1 - 0.7 * 0.98))  # R1's, the larger
++    assert mx.headroom_min_lo(r1 + r2) == pytest.approx(a * (1 - 0.95 * 1.02))  # R2's, the smaller
++    # one counted reference that is not levelled (10.5 > 1.02 x 10) makes K1 +inf, whatever the others give
++    r3 = _o3_case("R3", s_ref=0.02, cands=[(9.5, ZB)], l1=(10.5, 10.0))
++    assert mx.headroom_max_hi_ind(r1 + r2 + r3) == math.inf
++
++
++def test_o003_twin_rule_needs_no_candidate_dies_also_under_the_declared_null():
++    a, s = A_TWIN, 0.02
++    # every shortlisted candidate (12 nH and up) is above the twin's 10 nH: the twin rule decides A1 and F3 stops before
++    # any thermal check, with no candidate die rows at all or with die rows on only part of the first batch
++    for no_dies in (range(16), range(1, 16)):
++        per = mx.headroom_per_reference(_o3_case(s_ref=s, no_dies=no_dies))["R1"]
++        assert per["h_lo"] == pytest.approx(-a * s) and not per["f3_complete"] and per["n_thermal_checked"] == 0
++    # equality counts (L(W) <= L(c)): the lowest candidate at exactly 10 nH, no candidate die rows
++    assert mx.headroom_min_lo(_o3_case(s_ref=s, cands=[(10.0, ZB)], no_dies=range(16))) == pytest.approx(-a * s)
++    # a candidate below the twin: the die rows F3 needs are missing, so it raises (fail closed)
++    with pytest.raises(ValueError, match="no die rows"):
++        mx.headroom_min_lo(_o3_case(s_ref=s, cands=[(9.99, ZB)], no_dies=range(16)))
++    # the declared null (row contract section 3): F3 really checked c12..c15 (the four lowest, 8.0..8.3 nH; c12 eligible),
++    # so only they have die rows. Under the null every candidate takes the twin's 10 nH, F3's order falls back to
++    # layout_id (c00..c03, without die rows), and the twin rule (10 <= 10) decides without them: h_lo = -a s_ref
++    cands = [(12.0 + 0.01 * k, ZB) for k in range(12)] + [(8.0 + 0.1 * k, ZB) for k in range(4)]
++    rows = _o3_case(s_ref=s, cands=cands, no_dies=range(12))
++    assert mx.headroom_per_reference(rows)["R1"]["best_id"] == "c12"
++    for r in rows:
++        r["L_sub_null_H"] = 10.0 * NH if r.get("role") == "candidate" else r.get("L_sub_H", 10.0 * NH)
++    nrows = [{**r, "__null__": v} for r, v in zip(rows, mx.null_column(rows, "column", None, column="L_sub_null_H"),
++                                                  strict=True)]
++    assert mx.compute("headroom_min_lo", nrows, pred="__null__") == pytest.approx(-a * s)
++
++
++def test_o003_reconstruction_secondary_switches_the_twin_rule_and_the_near_tie_band():
++    rec, s = {"comparator": "reconstruction"}, 0.02
++    # twin rule: twin 10 nH, reconstruction 10.1 nH (F1(a1): 0.0099 <= 0.02), c00 at 10.05 nH between them, zero bands.
++    # Against the twin the twin rule decides (10 <= 10.05); against the reconstruction it does not (10.1 > 10.05).
++    rows = _o3_case(s_ref=s, recon=10.1, cands=[(10.05, ZB)])
++    a, ar, rr = A_TWIN, 10.1 / 17.1, 10.05 / 10.1
++    assert mx.headroom_min_lo(rows) == pytest.approx(-a * s)
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(a * s)
++    assert mx.headroom_min_lo(rows, params=rec) == pytest.approx(ar * (1 - rr * (1 + s)))
++    assert mx.headroom_max_hi_ind(rows, params=rec) == pytest.approx(ar * (1 - rr * (1 - s)))
++    # near-tie band: w_ind = 2 e_R(ind, comparator) + s_ref. With RECON_BAND, e_R(c00, reconstruction) = E_REC and the
++    # band reaches 8.0 (1 + 2 E_REC + 0.02) = 8.79 nH; against the twin (e_R 0.015) only 8.4 nH. c01 at 8.6 nH has
++    # L(0.5) = 9.6 nH: e_R(c01, reconstruction) = 3 |0.86 - 9.6 / 9.9| (lateral term only) and the largest h_hi.
++    rows = _o3_case(s_ref=s, recon_band=RECON_BAND, cands=[(8.0, (0.05, 0, 0, 0)), (8.6, (1.0, 0, 0, 0))])
++    w1 = 2 * 3 * abs(0.86 - 9.6 / 9.9) + s
++    per_rec = mx.headroom_per_reference(rows, params=rec)["R1"]
++    assert per_rec["w_ind"] == pytest.approx(2 * E_REC + s, rel=1e-9) and sorted(per_rec["near_tie_h_hi"]) == ["c00", "c01"]
++    assert mx.headroom_max_hi_ind(rows, params=rec) == pytest.approx(A_TWIN * (1 - 0.86 * (1 - w1)), rel=1e-9)
++    assert sorted(mx.headroom_per_reference(rows)["R1"]["near_tie_h_hi"]) == ["c00"]
++
++
++def test_o003_near_tie_set_takes_every_candidate_inside_the_band():
++    # w_ind = 2 x 0.015 + 0.02 = 0.05: band to 8.4 nH. c00 8.0 (e_R 0.015), c01 8.1 (zero band), c02 8.3 (L(0.5) = 9.3,
++    # e_R = 3 x 0.1 = 0.3, w = 0.62): three near ties, the third has the largest h_hi = a (1 - 0.83 x 0.38)
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, (0.05, 0, 0, 0)), (8.1, ZB), (8.3, (1.0, 0, 0, 0))])
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert sorted(per["near_tie_h_hi"]) == ["c00", "c01", "c02"]
++    assert per["near_tie_h_hi"]["c01"] == pytest.approx(A_TWIN * (1 - 0.81 * 0.98))
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(A_TWIN * (1 - 0.83 * 0.38), rel=1e-9)
++
++
++def test_o003_optimistic_secondary_with_a_band_and_without_band_solves():
++    w = 2 * E_FULL + 0.02
++    per = mx.headroom_per_reference(_o3_case(s_ref=0.02, cands=[(8.0, FULL_BAND)]))["R1"]
++    assert per["opt_id"] == "c00" and per["h_opt_hi"] == pytest.approx(A_TWIN * (1 - 0.8 * (1 - w)), rel=1e-9)
++    # c00 (8.0 nH) is 10 K hotter than W: fails both tests. c01 (8.2 nH, no band solves) has dies (351, 352, 352.5), GCI
++    # 1.25 x 0.5 = 0.625: conservative 353.125 - 350 > 2 K fails, optimistic 351.875 - 350 <= 2 K passes, so c01 is the
++    # optimistic pick and its column is None (not available). c02 (8.4 nH) is the A1 best. c01 lies outside K1's near-tie
++    # band (8.0 x 1.02 = 8.16 nH), so it needs no band solves there.
++    rows = _o3_case(s_ref=0.02, cands=[(8.0, ZB), (8.2, None), (8.4, ZB)],
++                    cand_dies={0: [(360.0,) * 3] * 2, 1: [(351.0, 352.0, 352.5)] * 2})
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert per["best_id"] == "c02" and per["opt_id"] == "c01" and per["h_opt_hi"] is None
++    assert per["h_lo"] == pytest.approx(A_TWIN * (1 - 0.84 * 1.02))
++    assert per["h_hi"] == pytest.approx(A_TWIN * (1 - 0.8 * 0.98))
++
++
++def test_o003_ratio_middle_term_at_equal_differences():
++    # |e21| = |e32| (exact in binary): r^p = 1, not contracting, so 3 max(|e21|, |e32|) = 0.75, as P3's middle_term
++    spec = importlib.util.spec_from_file_location("o006_p3", REPO / "research" / "scripts" / "o006_p3_em_convergence.py")
++    p3 = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(p3)
++    assert mx.ratio_middle_term(1.5, 1.25, 1.0) == 0.75 == p3.middle_term(1.5, 1.25, 1.0, 2.0)[1]
++
++
++@pytest.mark.parametrize("metric", ["headroom_min_lo", "headroom_max_hi_ind"])
++def test_o003_unknown_comparator_raises(metric):
++    with pytest.raises(ValueError, match="comparator must be twin or reconstruction"):
++        getattr(mx, metric)(_good_rows(), params={"comparator": "Reconstruction"})
++
++
++def _drop_dies(rows, lid, keep=1):
++    ds = [r for r in rows if r["kind"] == "die" and r["layout_id"] == lid]
++    for r in ds[keep:]:
++        rows.remove(r)
++
++
++def _add_die(rows, lid, die_id="dx"):
++    d = next(r for r in rows if r["kind"] == "die" and r["layout_id"] == lid)
++    rows.append({**d, "die_id": die_id or d["die_id"]})
++
++
++# Mutations of a good case that each metric must refuse. Each metric gets its own test, calling only that metric.
++_COMMON = {
++    "second_twin_layout_id": lambda rows: rows.append(dict(rows[1])),
++    "second_reference_row": lambda rows: rows.append(dict(rows[0])),
++    "no_reconstruction": lambda rows: [r.update(role="candidate") for r in rows if r.get("layout_id") == "recon"],
++    "c00_band_column_missing": lambda rows: [r.pop("L_sub_c05_H") for r in rows
++                                             if r.get("layout_id") == "c00" and r["kind"] == "layout"],
++    "admissible_not_bool": lambda rows: rows[0].update(admissible="yes"),
++    "fifteen_candidates": lambda rows: [rows.remove(r) for r in [r for r in rows if r.get("layout_id") == "c15"
++                                                                 and r["kind"] == "layout"]],
++    "L_term_nan": lambda rows: rows[0].update(L_term_H=math.nan),
++    "L_term_negative": lambda rows: rows[0].update(L_term_H=-1e-9),
++    "twin_band_column_missing": lambda rows: [r.pop("L_sub_thk_f_H") for r in rows if r.get("layout_id") == "twin"
++                                              and r["kind"] == "layout"],
++    "recon_die_missing": lambda rows: _drop_dies(rows, "recon"),
++    "recon_die_added": lambda rows: _add_die(rows, "recon"),
++    "twin_die_rows_absent": lambda rows: _drop_dies(rows, "twin", keep=0),
++    "off_grid_without_snap_columns": lambda rows: rows[0].pop("L_snap025_H"),
++    "unknown_layout_without_reference_row": lambda rows: rows.__setitem__(slice(0, 1), []),
++    "off_grid_snap_check_key_missing": lambda rows: rows[0].pop("L_snapchk05_H"),
++    "recon_die_duplicated": lambda rows: _add_die(rows, "recon", die_id=None),
++    "L_term_bool": lambda rows: rows[0].update(L_term_H=True),
++    "on_grid_string": lambda rows: rows[0].update(on_grid="false"),
++}
++_ONLY_A1 = {
++    "best_candidate_die_missing": lambda rows: _drop_dies(rows, "c00"),
++    "checked_candidate_without_dies": lambda rows: _drop_dies(rows, "c01", keep=0),
++    "checked_candidate_tj_nan": lambda rows: [r.update(Tj_l1_K=math.nan) for r in rows
++                                              if r["kind"] == "die" and r["layout_id"] == "c00"],
++    "best_candidate_die_duplicated": lambda rows: _add_die(rows, "c00", die_id=None),
++}
++_ONLY_K1 = {
++    "L1_all_missing": lambda rows: rows[0].pop("L1_min_all_H"),
++    "L1_first_below_all": lambda rows: rows[0].update(L1_min_first5000_H=9.9e-9),
++    "L1_first_missing": lambda rows: rows[0].update(L1_min_first5000_H=None),
++    "L1_all_zero": lambda rows: rows[0].update(L1_min_all_H=0.0),
++}
++# The guard each mutation must trip (the message it raises), so a case cannot pass on an unrelated ValueError.
++_MATCH = {
++    "second_twin_layout_id": "layout twin appears twice", "second_reference_row": "more than one reference row",
++    "no_reconstruction": "exactly one twin and one reconstruction", "c00_band_column_missing": "c00 L_sub_c05_H: missing",
++    "admissible_not_bool": "admissible must be true or false", "fifteen_candidates": "15 candidate rows",
++    "L_term_nan": "L_term_H: nan is not finite", "L_term_negative": "L_term_H must be non-negative",
++    "twin_band_column_missing": "twin L_sub_thk_f_H: missing", "recon_die_missing": "has 1 dies, the twin has 2",
++    "recon_die_added": "has 3 dies, the twin has 2", "twin_die_rows_absent": "no die rows for thermally checked layout twin",
++    "off_grid_without_snap_columns": "off-grid reference row must carry",
++    "unknown_layout_without_reference_row": "no reference row",
++    "off_grid_snap_check_key_missing": "off-grid reference row must carry",
++    "recon_die_duplicated": "die d0 of layout recon appears twice", "L_term_bool": "L_term_H: missing",
++    "on_grid_string": "on_grid must be true or false",
++    "best_candidate_die_missing": "has 1 dies, the twin has 2", "checked_candidate_without_dies": "candidate F3 checks has no",
++    "checked_candidate_tj_nan": "Tj: nan is not finite", "best_candidate_die_duplicated": "die d0 of layout c00 appears twice",
++    "L1_all_missing": "L1_min_all_H: missing", "L1_first_below_all": "first 5,000 is below the lowest of all",
++    "L1_first_missing": "L1_min_first5000_H: missing", "L1_all_zero": "L1_min_all_H: 0.0 is not positive",
++}
++
++
++def _good_rows():
++    return _o3_case(s_ref=0.02, cands=[(8.0, (0.05, 0.0, 0.0, 0.0))])
++
++
++def test_o003_fail_closed_inputs_are_a_good_case_to_begin_with():
++    rows = _good_rows()
++    assert mx.headroom_min_lo(rows) > 0 and mx.headroom_max_hi_ind(rows) > 0
++    assert set(_MATCH) == set(_COMMON) | set(_ONLY_A1) | set(_ONLY_K1)  # every mutation names its guard
++
++
++@pytest.mark.parametrize("name", sorted(_COMMON) + sorted(_ONLY_A1))
++def test_o003_fail_closed_headroom_min_lo(name):
++    rows = _good_rows()
++    ({**_COMMON, **_ONLY_A1})[name](rows)
++    with pytest.raises(ValueError, match=_MATCH[name]):
 +        mx.headroom_min_lo(rows)
++
++
++@pytest.mark.parametrize("name", sorted(_COMMON) + sorted(_ONLY_K1))
++def test_o003_fail_closed_headroom_max_hi_ind(name):
++    rows = _good_rows()
++    ({**_COMMON, **_ONLY_K1})[name](rows)
++    with pytest.raises(ValueError, match=_MATCH[name]):
 +        mx.headroom_max_hi_ind(rows)

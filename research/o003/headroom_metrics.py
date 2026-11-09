@@ -102,14 +102,20 @@ def snapping_bias(on_grid: bool, l_snap025: Any = None, l_snap05: Any = None, l_
     return s
 
 
-def tj_bounds(dies: Sequence[Sequence[float]], floor: float = 1e-3) -> tuple[float, float, float, float, int]:
+def tj_bounds(dies: Sequence[Sequence[float]], floor: float = 1e-3,
+              n_dies: Optional[int] = None) -> tuple[float, float, float, float, int]:
     """One layout's Tj interval quantities (O003 scope_in, the Tj limit; C004 caveat 1; D0013). ``dies`` holds, per die,
     the Tj max (K) at thermal levels 0, 1, 2 of that layout's own three grids. T_i is the level-2 value and GCI_i =
     gci_capped(level 0, 1, 2, floor). Returns (max_i T_i, max_i GCI_i, upper, lower, n_inf): upper = max_i (T_i + GCI_i),
     +inf if any GCI_i is +inf; lower = max over the dies with finite GCI of (T_i - GCI_i), -inf if there is none (a die
-    whose GCI is +inf bounds nothing and drops out of a lower bound); n_inf counts the dies with GCI_i = +inf."""
+    whose GCI is +inf bounds nothing and drops out of a lower bound); n_inf counts the dies with GCI_i = +inf.
+    ``n_dies``, when given, is the die count the layout must carry (scope_in fixes the die count, so every thermally
+    checked layout carries the twin's); any other count raises, because a layout missing its hottest die would be judged on
+    the dies that remain."""
     if not dies:
         raise ValueError("a thermally checked layout needs at least one die")
+    if n_dies is not None and len(dies) != n_dies:
+        raise ValueError(f"a thermally checked layout has {len(dies)} dies, the twin has {n_dies}")
     t_max = g_max = upper = lower = -math.inf
     n_inf = 0
     for d in dies:
@@ -216,10 +222,12 @@ def _hr_reference(t: dict[str, Any], pred: str, params: dict[str, Any], lo: bool
     def has_dies(lay: dict[str, Any]) -> bool:
         return bool(t["dies"].get(str(lay["layout_id"])))
 
+    n_dies = len(t["dies"].get(str(twin["layout_id"]), ()))  # scope_in fixes the die count: the twin's
+
     def bounds(lay: dict[str, Any]) -> tuple[float, float, float, float, int]:
         if not has_dies(lay):
             raise ValueError(f"reference {rid}: no die rows for thermally checked layout {lay['layout_id']}")
-        return tj_bounds(list(t["dies"][str(lay["layout_id"])].values()), floor)
+        return tj_bounds(list(t["dies"][str(lay["layout_id"])].values()), floor, n_dies)
 
     on_grid = ref.get("on_grid")
     snap_cols = ("L_snap025_H", "L_snap05_H", "L_snapchk0125_H", "L_snapchk05_H")
