@@ -6,8 +6,8 @@ import zlib
 import numpy as np
 import pytest
 
-from moduleforge.optimize.search import (SearchConfig, Solvers, candidate_stream, conservative_margin, run_control,
-                                         run_search)
+from moduleforge.optimize.search import (SearchConfig, Solvers, Store, band_e_R, candidate_stream, conservative_margin,
+                                         run_control, run_search)
 
 CFG = SearchConfig(n_candidates=200, n_first=50, shortlist=16, batch=4, max_checks=8, chunk=64)
 
@@ -99,7 +99,7 @@ def test_shortlist_and_levelling_record():
     r = go(c)
     names = [f.name for f in candidate_stream(None, 200, 5, gen, 64)]
     l1 = [c.l1_fn(n) for n in names]
-    assert c.calls["l1"] == 200
+    assert c.calls["l1"] == 200 + 1  # pool + the twin (pool statistics)
     assert r.levelling["l1_min_all"] == min(l1)
     assert r.levelling["l1_min_first"] == min(l1[:50])
     assert r.levelling["l1_min_first"] >= r.levelling["l1_min_all"]
@@ -139,7 +139,8 @@ def test_a1_checks_in_ascending_lsub_batches_stop_after_first_passing_batch():
     assert r.a1_best == asc[1]
     # all four of the first batch were solved even though asc[1] passed
     assert set(asc[:4]) <= set(c.thermal_log)
-    assert not set(asc[4:8]) - set(r.thermal_checked) == set()  # second batch not part of A1 (null may touch)
+    # the second batch is not part of A1: no A1 row for asc[4:8]
+    assert not {x["fingerprint"] for x in r.rows["checks"] if x["role"] == "a1"} & set(asc[4:8])
     a1_rows = [x for x in r.rows["checks"] if x["role"] == "a1"]
     assert [x["fingerprint"] for x in a1_rows] == asc[:4]
 
@@ -164,7 +165,8 @@ def test_inf_gci_candidate_fails():
 
     def f(n):
         if n == asc[0]:
-            return np.full((3, 2), 400.0), np.array([math.inf, 0.1])
+            # die 0 stagnant (d1 = 0 < |d2|): gci_capped = +inf, computed by the driver from these Tj values
+            return np.array([[400.0, 400.0], [400.0, 400.0], [401.0, 400.0]]), np.zeros(2)
         return hot_unless({asc[2]})(n)
     r = go(Counter(thermal_fn=f))
     assert r.a1_best == asc[2]
@@ -192,18 +194,68 @@ def test_null_orders_by_l1_reuses_thermal_and_caps_new_checks():
     # null only solves the first not-yet-checked ones in L1 order
     new = [n for n in cand_log if n not in asc[:8]]
     assert new == [n for n in l1order if n not in asc[:8]][:len(new)]
-    # a candidate already checked by A1 and passing is reused: null_best is first passing in L1 order
-    good = {asc[1], asc[5]}
+
+
+def test_null_is_first_pass_in_l1_order_and_reuses_a1_results():
+    c0 = Counter()
+    r0 = go(c0)
+    l1order = [x["fingerprint"] for x in r0.rows["candidates"]]
+    # l1order[2] (pos 3) and l1order[6] pass; the null returns l1order[2] whatever A1 did
+    good = {l1order[2], l1order[6]}
     c = Counter(thermal_fn=hot_unless(good))
     r = go(c)
-    first_pass = [n for n in l1order if n in good][0]
-    if first_pass in asc[:4]:  # A1 stopped after batch 1: asc[5] is not checked by A1
-        assert r.a1_best == asc[1]
-    assert r.null_best in good
-    # verify the pick is the first passing among those the null could reach
-    reach = [n for n in l1order if n in set(r.thermal_checked)]
-    assert r.null_best == [n for n in reach if n in good][0]
-    assert len([n for n in c.thermal_log if n == r.null_best]) == 1
+    assert r.null_best == l1order[2]
+    # solved at most once, and only the first batch of L1 positions needs looking at
+    assert c.thermal_log.count(l1order[2]) == 1
+
+
+def _l1_scenario():
+    """T0278's scenario: L1 order c0..c15 (the real shortlist), L_sub puts c0, c1, c11, c15 first; c10 and c11 pass."""
+    c0 = Counter()
+    l1order = [x["fingerprint"] for x in go(c0).rows["candidates"]]
+    rank = {n: i for i, n in enumerate(l1order)}
+    first = [l1order[0], l1order[1], l1order[11], l1order[15]]
+
+    def lsub(n):
+        if n in ("ref", "twin"):
+            return 30e-9
+        if n in first:
+            return (10 + first.index(n)) * 1e-9
+        return (20 + rank[n]) * 1e-9
+    return l1order, lsub
+
+
+def test_null_never_passes_over_an_unchecked_lower_l1_candidate_t0278():
+    l1order, lsub = _l1_scenario()
+    good = {l1order[10], l1order[11]}
+    c = Counter(thermal_fn=hot_unless(good), lsub_fn=lsub)
+    r = go(c)
+    # A1 solved c0, c1, c11, c15 (all fail but c11 passes -> a1_best = c11 after the first batch)
+    assert r.a1_best == l1order[11]
+    # F1: the null looks at positions 1-8 only; none of c0..c7 passes -> None (old code returned c11)
+    assert r.null_best is None
+    assert r.null_new_checks <= 8
+    assert l1order[10] not in c.thermal_log and l1order[8] not in c.thermal_log
+    # c10 is the first passing candidate if it is within the first 8 positions
+    good = {l1order[5], l1order[11]}
+    c = Counter(thermal_fn=hot_unless(good), lsub_fn=lsub)
+    assert go(c).null_best == l1order[5]
+
+
+def test_null_stops_after_first_batch_with_a_pass_and_returns_first_in_l1_order():
+    l1order, lsub = _l1_scenario()
+    good = {l1order[3], l1order[2]}
+    c = Counter(thermal_fn=hot_unless(good), lsub_fn=lsub)
+    r = go(c)
+    assert r.null_best == l1order[2]
+    null_rows = [x["fingerprint"] for x in r.rows["checks"] if x["role"] == "null"]
+    assert not set(null_rows) & set(l1order[4:])  # second batch never touched by the null
+    assert l1order[3] in c.thermal_log  # the whole first batch is checked
+    # an A1-cached passing candidate is reused, not re-solved: c1 passes in A1's first batch
+    c = Counter(thermal_fn=hot_unless({l1order[1]}), lsub_fn=lsub)
+    r = go(c)
+    assert r.a1_best == l1order[1] and r.null_best == l1order[1]
+    assert c.thermal_log.count(l1order[1]) == 1
 
 
 def test_null_batch_stop_in_l1_order():
@@ -268,14 +320,27 @@ def test_control_mode_has_no_thermal_and_uses_d():
     r = run_control(None, Fake("D"), 77, c.solvers(), 0.01, None, CFG, gen)
     assert c.calls["thermal"] == 0 and r.a1_best is None and r.null_best is None
     assert c.calls["l1"] == 200 and c.calls["l_sub"] == 16 + 1
-    names = [f.name for f in candidate_stream(None, 200, 77, gen, 64)]
-    assert all(n.startswith(f"s{int(np.random.SeedSequence([77, 0]).generate_state(1)[0])}_") or True for n in names)
+    names = {f.name for f in candidate_stream(None, 200, 77, gen, 64)}
+    assert set(ls_names(r)) <= names  # candidates come from the control's own seed
     ls = {x["fingerprint"]: x["l_sub"] for x in r.rows["candidates"]}
     assert r.inductance_best == min(ls, key=ls.get)
     assert {x["role"] for x in r.rows["band"]} == {"degraded", "control_best"}
     # new seed -> different pool than the search's seed
     r2 = run_control(None, Fake("D"), 78, Counter().solvers(), 0.01, None, CFG, gen)
     assert r2.inductance_best != r.inductance_best
+
+
+def ls_names(r):
+    return [x["fingerprint"] for x in r.rows["candidates"]]
+
+
+def test_control_w_is_2_eR_without_s_ref_and_has_no_levelling_flag():
+    for s_ref in (0.0, 0.01, 0.2):
+        c = Counter(e_R=0.01)
+        r = run_control(None, Fake("D"), 77, c.solvers(), s_ref, None, CFG, gen)
+        assert r.w_ctrl == pytest.approx(0.02)
+        assert r.levelling["w_ctrl"] == pytest.approx(0.02)
+        assert "w_ind" not in r.levelling and "levelled" not in r.levelling and r.w_ind is None
 
 
 def test_resume_after_interruption_does_not_resolve(tmp_path):
@@ -326,3 +391,151 @@ def test_determinism_across_runs():
     a = go(Counter(thermal_fn=hot_unless(set())))
     b = go(Counter(thermal_fn=hot_unless(set())))
     assert a.rows == b.rows and a.levelling == b.levelling and a.thermal_checked == b.thermal_checked
+
+
+def test_e_R_recorded_for_a1_best_and_every_near_tie_from_band_solves():
+    c0 = Counter()
+    asc = [n for _, n in sorted((x["l_sub"], x["fingerprint"]) for x in go(c0).rows["candidates"])]
+    c = Counter(e_R=0.02, thermal_fn=hot_unless({asc[2]}))
+    # band solves differ per layout: L(0.25), L(0.5), thk 5/3/3, thk 20/12/12, wire 12/ring
+    def band(lay):
+        c.calls["band"] += 1
+        if lay.name == "twin":
+            return [10.0, 10.0, 10.0, 10.0, 10.0]
+        return [10.0 + 0.1, 10.0, 10.0, 10.0, 10.0 + 0.2]  # R = 1.01, 1, 1, 1, 1.02
+    s = c.solvers()
+    s.band = band
+    r = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
+    assert r.a1_best == asc[2] and r.near_ties
+    rows = {(x["candidate"], x["role"]): x for x in r.rows["e_R"] if x.get("source") == "band"}
+    assert len(rows) == 1 + len(r.near_ties)
+    for key in [(asc[2], "a1_best")] + [(t, "near_tie") for t in r.near_ties]:
+        assert rows[key]["other"] == "twin"
+        # 3 |1.01 - 1| + 0 (R equal at the three thickness levels) + 3 |1.02 - 1| = 0.09
+        assert rows[key]["e_R"] == pytest.approx(0.09)
+    assert r.w_a1 == pytest.approx(2 * 0.09 + 0.01)
+    assert c.calls["e_R"] == 1  # only the inductance-only best uses the injected callable
+
+
+def test_band_e_R_hand_computed():
+    one = [2.0] * 5
+    assert band_e_R(one, one) == 0.0
+    # lateral only: R(0.25) = 1.1, others 1 -> 3 * 0.1
+    assert band_e_R([2.2, 2.0, 2.0, 2.0, 2.0], one) == pytest.approx(0.3)
+    # wire only: R(wire) = 0.95 -> 3 * 0.05
+    assert band_e_R([2.0, 2.0, 2.0, 2.0, 1.9], one) == pytest.approx(0.15)
+    # monotone thickness: R(5/3/3)=1.04, R(10/6/6)=1.01, R(20/12/12)=1.00 -> e32 = .03, e21 = .01, rp = 3,
+    # term = 1.25 * .01 * 3 / (3 - 1) = 0.01875; R(0.25) = R(0.5) and R(wire) = R(0.5) contribute nothing
+    x = [2.02, 2.02, 2.08, 2.0, 2.02]
+    assert band_e_R(x, one) == pytest.approx(0.01875)
+    # oscillatory thickness: R = 1.00, 1.03, 1.01 -> e21 = .02, e32 = -.03 -> 3 x max = 0.09
+    assert band_e_R([2.06, 2.06, 2.0, 2.02, 2.06], one) == pytest.approx(0.09)
+    # not converging (monotone but |e21| > |e32|): R = 1.04, 1.03, 1.00 -> 3 x .03 = 0.09
+    assert band_e_R([2.06, 2.06, 2.08, 2.0, 2.06], one) == pytest.approx(0.09)
+    # all three terms add linearly: 0.3 + 0.01875 + 0.15 (wire R = 1.03 - 0.05 = 0.98 -> |0.98 - 1.03|... use 1.0)
+    x = [2.0 * 1.1, 2.0, 2.0 * 1.03, 2.0 * 1.0, 2.0 * 0.95]  # R = 1.1, 1, 1.03, 1.00, 0.95
+    # thickness: e21 = 1 - 1 = 0, e32 = .03 -> product 0 -> 3 max = 0.09
+    assert band_e_R(x, one) == pytest.approx(0.3 + 0.09 + 0.15)
+    # it is a ratio: a non-trivial denominator
+    assert band_e_R([4.4, 2.0, 2.0, 2.0, 2.0], [4.0, 2.0, 2.0, 2.0, 2.0]) == pytest.approx(0.3)
+    with pytest.raises(ValueError):
+        band_e_R([1.0] * 4, [1.0] * 4)
+    with pytest.raises(ValueError):
+        band_e_R([1.0, 1.0, 1.0, 1.0, math.nan], one)
+
+
+def test_thermal_record_checkpointed_in_full_and_gci_computed_by_driver(tmp_path):
+    rec = {"tj": np.array([[400.0, 399.0], [400.5, 399.2], [400.75, 399.3]]), "gci": np.array([99.0, 99.0]),
+           "nodes": [100, 800, 6400], "tj_max_node": [[1, 2], [3, 4], [5, 6]], "energy_balance": 1e-4,
+           "picard": {"converged": True, "iters": 4}, "fingerprint": "xyz"}
+    c = Counter(thermal_fn=lambda n: (rec["tj"], rec["gci"]))
+    s = c.solvers()
+    s.thermal = lambda lay, P: dict(rec)
+    run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
+    r = go(Counter(), wd=tmp_path)  # resumed: every thermal solve comes from the checkpoint
+    twin = next(x for x in r.rows["thermal"] if x["fingerprint"] == "twin")["record"]
+    for k in ("nodes", "tj_max_node", "energy_balance", "picard", "fingerprint"):
+        assert twin[k] == rec[k] if not isinstance(rec[k], np.ndarray) else True
+    assert twin["tj_max_node"] == [[1, 2], [3, 4], [5, 6]] and twin["nodes"] == [100, 800, 6400]
+    assert twin["picard"] == {"converged": True, "iters": 4} and twin["fingerprint"] == "xyz"
+    assert twin["gci_reported"] == [99.0, 99.0]
+    # gci_capped on die 0: d1 = .5, d2 = .25, rho = .5 -> p = 1 -> 1.25 * .25 / 1 = 0.3125
+    assert twin["gci"][0] == pytest.approx(0.3125)
+    # die 1: d1 = .2, d2 = .1 -> 1.25 * .1 = 0.125
+    assert twin["gci"][1] == pytest.approx(0.125)
+
+
+def test_batch_stop_uses_driver_gci_not_the_callable_gci():
+    c0 = Counter()
+    asc = [n for _, n in sorted((x["l_sub"], x["fingerprint"]) for x in go(c0).rows["candidates"])]
+    # callable claims gci = 0 for every layout, but the candidate's own levels diverge (gci_capped = inf): fails
+    def f(n):
+        if n == asc[0]:
+            return np.array([[400.0, 400.0], [400.0, 400.0], [401.0, 400.0]]), np.zeros(2)
+        return np.full((3, 2), 400.0), np.zeros(2)
+    r = go(Counter(thermal_fn=f))
+    chk = {x["fingerprint"]: x for x in r.rows["checks"]}
+    assert chk[asc[0]]["margin"] == math.inf and not chk[asc[0]]["passes"]
+    assert r.a1_best == asc[1]
+    # and a callable reporting a huge gci does not make a converged candidate fail
+    r = go(Counter(thermal_fn=lambda n: (np.full((3, 2), 400.0), np.full(2, 50.0))))
+    assert r.a1_best == asc[0]
+
+
+def test_store_truncates_torn_line_and_survives_two_reloads(tmp_path):
+    path = tmp_path / "cp.jsonl"
+    st = Store(path)
+    st.get("a", lambda: 1)
+    with path.open("a") as f:
+        f.write('{"k": "torn", "v": ')
+    st2 = Store(path)  # reload 1: truncates the torn tail
+    assert st2.data == {"a": 1}
+    st2.get("b", lambda: 2)  # appended on a fresh line
+    st3 = Store(path)  # reload 2: b must survive
+    assert st3.data == {"a": 1, "b": 2}
+    st3.get("c", lambda: 3)
+    assert Store(path).data == {"a": 1, "b": 2, "c": 3}
+    # a complete record that only lacks its newline is kept
+    with path.open("a") as f:
+        f.write('{"k": "d", "v": 4}')
+    st4 = Store(path)
+    assert st4.data["d"] == 4
+    st4.get("e", lambda: 5)
+    assert Store(path).data == {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5}
+
+
+def test_duplicate_fingerprints_take_one_shortlist_slot_and_never_tie_with_the_best():
+    def dgen(spec, m, seed):  # every layout appears twice
+        return [Fake(f"s{seed}_{j // 2}") for j in range(m)]
+    c = Counter(e_R=0.2)  # huge band: every shortlisted candidate is a near tie of the best
+    r = run_search(None, Fake("ref"), Fake("twin"), 5, c.solvers(), 50.0, 0.0, None, CFG, dgen)
+    fps = [x["fingerprint"] for x in r.rows["candidates"]]
+    assert len(fps) == 16 == len(set(fps))
+    assert r.inductance_best not in r.near_ties
+    assert len(set(r.near_ties)) == len(r.near_ties)
+    # the kept copy is the first in generation order
+    names = [f.name for f in candidate_stream(None, 200, 5, dgen, 64)]
+    idx = {x["fingerprint"]: x["index"] for x in r.rows["candidates"]}
+    assert all(idx[n] == names.index(n) for n in fps)
+
+
+def test_pool_statistics_and_separate_control_namespace(tmp_path):
+    l1fn = lambda n: 10e-9 * (1 + _u(n, "l1"))  # noqa: E731
+    c = Counter(l1_fn=l1fn, thermal_fn=hot_unless(set()))
+    r = go(c, wd=tmp_path)
+    names = [f.name for f in candidate_stream(None, 200, 5, gen, 64)]
+    med = float(np.median([l1fn(n) for n in names]))
+    assert r.levelling["l1_twin"] == l1fn("twin")
+    assert r.levelling["l1_pool_median"] == pytest.approx(med)
+    assert r.levelling["l1_pool_median_headroom"] == pytest.approx(1 - med / l1fn("twin"))
+    # control run in the same directory: separate namespace, so nothing of the main run is reused or overwritten
+    cc = Counter(l1_fn=l1fn, e_R=0.01)
+    run_control(None, Fake("D"), 5, cc.solvers(), 0.0, tmp_path, CFG, gen)  # same seed on purpose
+    assert cc.calls["l1"] == 200 and cc.calls["l_sub"] == 16 + 1
+    keys = Store(tmp_path / "checkpoint.jsonl").data
+    assert any(k.startswith("main:") for k in keys) and any(k.startswith("control:") for k in keys)
+    assert all(k.split(":")[0] in ("main", "control") for k in keys)
+    # and the main run still resumes cleanly with no solves
+    c2 = Counter(l1_fn=l1fn, thermal_fn=hot_unless(set()))
+    go(c2, wd=tmp_path)
+    assert sum(c2.calls.values()) == 0
