@@ -3,7 +3,7 @@ objective: O003
 title: 'DRC: signal-to-power spacing class and signal-wire checks (review T0267)'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on:
 - T0256
 description: "Follow-up to T0256 (merged), from review T0267 (project/reviews/T0256/T0267.json; read it\
@@ -43,12 +43,13 @@ model: null
 budget_usd: 4.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0270-drc-signal-to-power-spacing-class-and-si
 pr: null
 runs:
 - T0270-builder-20261109T090750-e79a
+- T0270-builder-20261109T104840-0e8f
 created_by: founder
 created_at: '2026-11-09T15:21:30+00:00'
 protected_approved: false
@@ -109,3 +110,46 @@ history:
     - The signal-power fields are per power net, not per signal net. A signal net's reference potential
       (GATE_HS/KELVIN_HS at PHASE, GATE_LS/KELVIN_LS at DC-) is not applied; T0267's suggested check was
       a different design.
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] Signal-to-power class is grouped by power net, not by voltage, so a high-voltage
+    gap can still shrink to a low-voltage gap: The diff''s stated reason for the new class is that a signal-to-power
+    gap ''sees up to the DC-link voltage, unlike a gate-to-Kelvin gap''. That is false for 4 of the 12
+    pairs the class contains. layout.py:80 says the HS Kelvin source is at PHASE potential and the LS
+    Kelvin source at DC- potential. So GATE_HS/KELVIN_HS to PHASE and GATE_LS/KELVIN_LS to DC- see only
+    the gate-drive voltage (about 20 V), while GATE_HS to DC- or GATE_LS to PHASE see the full DC link.
+    measure_rules takes the minimum over each spacing_signal_{dcp,phase,dcm} class. A reference that runs
+    a signal trace next to its own source copper (common practice for gate-loop inductance) therefore
+    sets a small class value, and a derivative can then move a high-voltage pair down to it. This is the
+    same failure the change sets out to fix (a high-voltage gap inheriting a low-voltage gap''s value),
+    only moved inside the new class. A DRC that is meant to guard isolation accepts a 3x cut in a high-voltage
+    clearance on a reference that is DRC-clean under the defaults.
+
+    - [major] The leftover ''signal-signal'' class also mixes HS and LS signals; the new test uses a high-voltage
+    pair as its low-voltage example: The diff''s comments and tests treat the remaining spacing_other
+    pairs as low-voltage (''signal-signal only'', ''unlike a gate-to-Kelvin gap''). But any HS signal
+    net (PHASE potential) against any LS signal net (DC- potential) sees the full DC link. The new test
+    test_hv_signal_to_power_gap_cannot_shrink_to_a_signal_gap builds its ''tight signal gap'' reference
+    from KELVIN_HS to KELVIN_LS at 1.0 mm, which is itself a high-voltage pair. Conversely, a reference
+    with a tight same-switch gate-Kelvin pair (low voltage) lets an HS-to-LS signal gap shrink to that
+    value. This was already possible before the change, but the change''s documentation now states the
+    opposite.
+
+    - [minor] Setting the new max_signal_wire_length loosens a stricter per-pad limit: signal_length_range
+    uses max_signal_wire_length when it is set and ignores max_gate_wire_length / max_kelvin_wire_length.
+    Adding the general limit can therefore silently relax an existing per-pad limit. The upper bound should
+    be the smaller of the two. measure_rules never sets this field, so the measured-rules flow is not
+    affected.
+
+    - [minor] measure_rules docstring says it measures max_signal_wire_length; it does not: The docstring
+    says min/max_signal_wire_length are ''the reference''s own smallest and largest values'', but the
+    code sets only min_signal_wire_length and leaves max_signal_wire_length as None. The upper bound actually
+    comes from max_gate/kelvin_wire_length, which is functionally fine.
+
+    - [note] New default behaviour: signal wires thicker than max_wire_diameter (0.5 mm) are now rejected
+    under DEFAULT_RULES: signal_diameter_range uses max_wire_diameter as its default upper bound, so DEFAULT_RULES
+    add a signal_wire_diameter check that did not exist before. This is reasonable and the full unit suite
+    passes, but it is a change to default behaviour for the signal-wire checks, whereas the spacing fields
+    are documented as ''unchanged when unset''.'
+  at: '2026-11-09T18:48:37+00:00'
