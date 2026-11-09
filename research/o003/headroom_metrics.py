@@ -52,6 +52,18 @@ def _hr_pos(v: Any, name: str) -> float:
     return x
 
 
+def _hr_check_params(p: dict[str, Any]) -> None:
+    """Fail closed on parameter values (T0275 finding 2): floor (K) must be finite and >= 0, tj_limit_K (K) finite and
+    > 0. A nan limit makes every Tj comparison false, so no candidate is eligible and A1 fails silently; gci_capped reads
+    a nan floor as 0 and an infinite one zeroes every GCI, and it rejects a negative floor only once a die is bounded.
+    Checked here, before any row is read, so both metrics refuse the spec. Absent keys take the defaults (floor 1e-3,
+    tj_limit_K 2.0)."""
+    if "floor" in p and _hr_num(p["floor"], "floor") < 0.0:
+        raise ValueError(f"floor: {p['floor']!r} is negative")
+    if "tj_limit_K" in p:
+        _hr_pos(p["tj_limit_K"], "tj_limit_K")
+
+
 def _hr_key(row: dict[str, Any], col: str) -> str:
     if row.get(col) is None:
         raise ValueError(f"a {row.get('kind')} row has no {col}")
@@ -330,11 +342,13 @@ def headroom_per_reference(rows: Rows, pred: str = "L_sub_H", params: Optional[d
     """Every per-reference quantity of O003 A1 and K1 (reported columns; the two metrics below take their min / max).
     ``pred`` names the 0.25 mm-cell L_sub column (the null of F1 substitutes it); ``params`` may hold L_term_H (H, the
     sensitivity at 0 and 17.5 nH), comparator ("twin", or "reconstruction" for the secondary values), floor (K, default
-    1e-3) and tj_limit_K (default 2.0). Unknown keys raise, so a mistyped parameter cannot silently change a metric."""
+    1e-3) and tj_limit_K (default 2.0). Unknown keys raise, so a mistyped parameter cannot silently change a metric; so
+    do a floor that is not finite or is negative and a tj_limit_K that is not finite or not positive."""
     p = dict(params or {})
     unknown = sorted(set(p) - HR_PARAMS)
     if unknown:
         raise ValueError(f"unknown headroom params {unknown}; known: {sorted(HR_PARAMS)}")
+    _hr_check_params(p)
     tables = _hr_tables(rows)
     if not tables:
         raise ValueError("no reference rows")

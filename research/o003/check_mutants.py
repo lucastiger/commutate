@@ -146,6 +146,18 @@ MUTANTS: list[tuple[str, str, str, int]] = [
     ("inadmissible_counted_as_raise", "    if not admissible:\n        return out", "    if not admissible:\n        raise ValueError('x')", 1),
     ("kind_filter_raises", "        if kind not in (\"reference\", \"layout\", \"die\"):\n            continue", "        if kind not in (\"reference\", \"layout\", \"die\"):\n            raise ValueError('x')", 1),
     ("roles_other_raise", "    cands = roles.get(\"candidate\", [])\n", "    cands = roles.get(\"candidate\", [])\n    if set(roles) - {'twin', 'reconstruction', 'candidate'}:\n        raise ValueError('x')\n", 1),
+    # --- added by T0276: review T0275's two surviving probe mutants (findings 0 and 1), killed by the section "T0275 gaps
+    # (T0276)" of test_headroom_metrics.py, and the parameter-value guard (finding 2) ---------------------------------
+    ("t0275_shortcut_vs_batch_first", "                if lc <= lsub(order[0]):  # the comparator",
+     "                if lc <= lsub(batch[0]):  # the comparator", 1),
+    ("t0275_opt_no_twin_rule", "if opt is None or lc <= lsub(opt):", "if opt is None:", 1),
+    ("opt_twin_rule_strict", "if opt is None or lc <= lsub(opt):", "if opt is None or lc < lsub(opt):", 1),
+    ("opt_twin_rule_vs_twin_in_recon", "if opt is None or lc <= lsub(opt):", "if opt is None or lsub(twin) <= lsub(opt):", 1),
+    ("param_values_unchecked", "    _hr_check_params(p)\n", "", 1),
+    ("floor_negative_allowed", "        raise ValueError(f\"floor: {p['floor']!r} is negative\")", "        pass", 1),
+    ("floor_finiteness_unchecked", "_hr_num(p[\"floor\"], \"floor\") < 0.0", "float(p[\"floor\"]) < 0.0", 1),
+    ("tj_limit_unchecked", "    if \"tj_limit_K\" in p:\n        _hr_pos", "    if False:\n        _hr_pos", 1),
+    ("tj_limit_zero_allowed", "_hr_pos(p[\"tj_limit_K\"], \"tj_limit_K\")", "_hr_num(p[\"tj_limit_K\"], \"tj_limit_K\")", 1),
 ]
 
 

@@ -10,7 +10,7 @@
  """
  from __future__ import annotations
  
-@@ -309,6 +312,348 @@
+@@ -309,6 +312,362 @@
          a, b = g[ref_role], g[sel_role]
          vals.append((a[ref] - b[ref]) / (a[pred] - b[pred]))
      return AGG[agg](np.asarray(vals, dtype=float))
@@ -39,6 +39,18 @@
 +    if x <= 0.0:
 +        raise ValueError(f"{name}: {v!r} is not positive")
 +    return x
++
++
++def _hr_check_params(p: dict[str, Any]) -> None:
++    """Fail closed on parameter values (T0275 finding 2): floor (K) must be finite and >= 0, tj_limit_K (K) finite and
++    > 0. A nan limit makes every Tj comparison false, so no candidate is eligible and A1 fails silently; gci_capped reads
++    a nan floor as 0 and an infinite one zeroes every GCI, and it rejects a negative floor only once a die is bounded.
++    Checked here, before any row is read, so both metrics refuse the spec. Absent keys take the defaults (floor 1e-3,
++    tj_limit_K 2.0)."""
++    if "floor" in p and _hr_num(p["floor"], "floor") < 0.0:
++        raise ValueError(f"floor: {p['floor']!r} is negative")
++    if "tj_limit_K" in p:
++        _hr_pos(p["tj_limit_K"], "tj_limit_K")
 +
 +
 +def _hr_key(row: dict[str, Any], col: str) -> str:
@@ -319,11 +331,13 @@
 +    """Every per-reference quantity of O003 A1 and K1 (reported columns; the two metrics below take their min / max).
 +    ``pred`` names the 0.25 mm-cell L_sub column (the null of F1 substitutes it); ``params`` may hold L_term_H (H, the
 +    sensitivity at 0 and 17.5 nH), comparator ("twin", or "reconstruction" for the secondary values), floor (K, default
-+    1e-3) and tj_limit_K (default 2.0). Unknown keys raise, so a mistyped parameter cannot silently change a metric."""
++    1e-3) and tj_limit_K (default 2.0). Unknown keys raise, so a mistyped parameter cannot silently change a metric; so
++    do a floor that is not finite or is negative and a tj_limit_K that is not finite or not positive."""
 +    p = dict(params or {})
 +    unknown = sorted(set(p) - HR_PARAMS)
 +    if unknown:
 +        raise ValueError(f"unknown headroom params {unknown}; known: {sorted(HR_PARAMS)}")
++    _hr_check_params(p)
 +    tables = _hr_tables(rows)
 +    if not tables:
 +        raise ValueError("no reference rows")
@@ -359,7 +373,7 @@
  
  
  # ------------------------------------------------------------------------------------------------ records adapter
-@@ -374,6 +719,9 @@
+@@ -374,6 +733,9 @@
          rows, ref, group=group, role=role, **(params or {})),
      "optimism_ratio_by_group": lambda rows, pred, ref, group, role, params=None, **_: optimism_ratio_by_group(
          rows, pred, ref, group=group, role=role, **(params or {})),
@@ -378,7 +392,7 @@
  import json
  import math
  from pathlib import Path
-@@ -275,3 +276,636 @@
+@@ -275,3 +276,727 @@
      assert mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": None}) == uncapped
      with pytest.raises(ValueError):
          mx.compute("max_gci_consistency", rows, params={**params, "ref_gci_cap": -0.1})
@@ -1015,3 +1029,94 @@
 +    ({**_COMMON, **_ONLY_K1})[name](rows)
 +    with pytest.raises(ValueError, match=_MATCH[name]):
 +        mx.headroom_max_hi_ind(rows)
++
++
++# ------------------------------------------------------------------------------------------------ T0275 gaps (T0276)
++# Parameter values fail closed (T0275 finding 2), and the two probe mutants that survived T0269's tests (findings 0, 1).
++# Each value below names its key in the message. Before T0276, tj_limit_K = nan gave A1 = -a s_ref (every Tj comparison
++# false) and floor = inf zeroed every GCI, so a divergent candidate became eligible; neither raised.
++_BAD_PARAMS = {
++    "floor_nan": ({"floor": math.nan}, "floor: nan is not finite"),
++    "floor_inf": ({"floor": math.inf}, "floor: inf is not finite"),
++    "floor_minus_inf": ({"floor": -math.inf}, "floor: -inf is not finite"),
++    "floor_negative": ({"floor": -1e-3}, "floor: -0.001 is negative"),
++    "floor_none": ({"floor": None}, "floor: missing"),
++    "tj_limit_nan": ({"tj_limit_K": math.nan}, "tj_limit_K: nan is not finite"),
++    "tj_limit_inf": ({"tj_limit_K": math.inf}, "tj_limit_K: inf is not finite"),
++    "tj_limit_minus_inf": ({"tj_limit_K": -math.inf}, "tj_limit_K: -inf is not finite"),
++    "tj_limit_negative": ({"tj_limit_K": -1.0}, "tj_limit_K: -1.0 is not positive"),
++    "tj_limit_zero": ({"tj_limit_K": 0.0}, "tj_limit_K: 0.0 is not positive"),
++    "tj_limit_none": ({"tj_limit_K": None}, "tj_limit_K: missing"),
++}
++
++
++@pytest.mark.parametrize("metric", ["headroom_min_lo", "headroom_max_hi_ind"])
++@pytest.mark.parametrize("name", sorted(_BAD_PARAMS))
++def test_o003_fail_closed_parameter_values(metric, name):
++    params, match = _BAD_PARAMS[name]
++    with pytest.raises(ValueError, match=match):
++        getattr(mx, metric)(_good_rows(), params=params)
++    with pytest.raises(ValueError, match=match):  # checked before any row is read: not "no counted reference"
++        getattr(mx, metric)(_o3_case(admissible=False), params=params)
++    with pytest.raises(ValueError, match=match):  # also through the dispatch, with the other parameter valid
++        mx.compute(metric, _good_rows(), params={"floor": 1e-3, "tj_limit_K": 2.0, **params})
++
++
++def test_o003_valid_parameter_values_at_their_bounds_are_accepted():
++    rows = _good_rows()
++    explicit = {"floor": 1e-3, "tj_limit_K": 2.0}  # the defaults, stated explicitly as the row contract asks
++    assert mx.headroom_min_lo(rows, params=explicit) == mx.headroom_min_lo(rows)
++    assert mx.headroom_max_hi_ind(rows, params=explicit) == mx.headroom_max_hi_ind(rows)
++    # floor 0 is allowed (>= 0); tj_limit_K only needs to be positive: the zero-band case has c00 at W's 350 K, so a
++    # 1e-9 K limit keeps it eligible
++    assert mx.headroom_min_lo(rows, params={"floor": 0.0, "tj_limit_K": 1e-9}) == mx.headroom_min_lo(rows)
++
++
++def test_o003_f3_missing_die_rows_in_batch_two_raise_when_a_candidate_is_below_the_comparator():
++    # T0275 finding 0. c00..c03 (8.0..8.3 nH) are 10 K hotter than W, so batch 1 has no eligible candidate; c04..c15
++    # (the padding, 12.00 nH and up) have no die rows; L(W) = 10 nH lies between order[0] = c00 and batch 2's first, c04.
++    # F3 must check batch 2, so the missing rows raise. The shortcut (no die rows needed) applies only when L(comparator)
++    # is at most the lowest shortlisted L_sub, order[0], not the first of the current batch.
++    a, s = A_TWIN, 0.02
++    cands = [(8.0 + 0.1 * k, ZB) for k in range(4)]
++    hot = {k: [(360.0,) * 3] * 2 for k in range(4)}
++    rows = _o3_case(s_ref=s, cands=cands, cand_dies=hot, no_dies=range(4, 16))
++    with pytest.raises(ValueError, match="candidate F3 checks has no die rows"):
++        mx.headroom_min_lo(rows)
++    with pytest.raises(ValueError, match="candidate F3 checks has no die rows"):
++        mx.headroom_per_reference(rows)
++    # K1 runs no thermal check and needs no candidate die rows: inductance-only best c00, w_ind = s_ref, c01 (8.1 nH) a
++    # near tie with the smaller h_hi
++    assert mx.headroom_max_hi_ind(rows) == pytest.approx(a * (1 - 0.8 * 0.98))
++    # control: the same case with batch 2's die rows present (350 K, as W). F3 checks both batches; c04 (12.00 nH) is
++    # eligible but above W, so the twin rule decides
++    per = mx.headroom_per_reference(_o3_case(s_ref=s, cands=cands, cand_dies=hot, no_dies=range(8, 16)))["R1"]
++    assert per["f3_complete"] and per["checked_ids"] == [f"c{k:02d}" for k in range(8)]
++    assert per["best_id"] is None and per["h_lo"] == pytest.approx(-a * s)
++
++
++def test_o003_optimistic_secondary_applies_the_twin_rule_to_its_own_pick():
++    # T0275 finding 1. c00 (8.0 nH) is 10 K hotter than W and fails both Tj tests. c01 (12.00 nH, the padding) passes both
++    # and is the optimistic pick, with L_sub above L(W) = 10 nH: the twin rule gives h_opt_hi = a s_ref and no opt_id.
++    # Without the rule it would be a (1 - 1.2 x 0.98) < 0.
++    a, s = A_TWIN, 0.02
++    hot0 = {0: [(360.0,) * 3] * 2}
++    per = mx.headroom_per_reference(_o3_case(s_ref=s, cands=[(8.0, ZB)], cand_dies=hot0))["R1"]
++    assert per["checked_ids"] == ["c00", "c01", "c02", "c03"] and per["best_id"] is None
++    assert per["h_lo"] == pytest.approx(-a * s)
++    assert per["opt_id"] is None and per["h_opt_hi"] == pytest.approx(a * s)
++    # equality counts (L(W) <= L(opt)): c01 at exactly 10 nH with FULL_BAND (e_R(c01, twin) = E_FULL, as at 8 nH, since
++    # the band offsets are absolute and W is 10 nH). The twin rule gives a s_ref; past it the band would give
++    # a (1 - 1 x (1 - (2 E_FULL + s_ref))) = a (2 E_FULL + s_ref)
++    per = mx.headroom_per_reference(_o3_case(s_ref=s, cands=[(8.0, ZB), (10.0, FULL_BAND)], cand_dies=hot0))["R1"]
++    assert per["opt_id"] is None and per["h_opt_hi"] == pytest.approx(a * s)
++    assert mx.ratio_band_estimate([10.0, 10.05, 10.09, 10.04, 10.07], [10.0] * 5) == pytest.approx(E_FULL, rel=1e-9)
++    # the rule compares against the comparator (row contract section 5, item 9): twin 10 nH, reconstruction 10.1 nH
++    # (F1(a1): 0.0099 <= 0.02), optimistic pick c01 at 10.05 nH between them, zero bands. Against the twin the rule decides
++    # (a s_ref); against the reconstruction it does not: ar (1 - (10.05 / 10.1) x (1 - s_ref)) with ar = 10.1 / 17.1
++    rows = _o3_case(s_ref=s, recon=10.1, cands=[(8.0, ZB), (10.05, ZB)], cand_dies=hot0)
++    per = mx.headroom_per_reference(rows)["R1"]
++    assert per["opt_id"] is None and per["h_opt_hi"] == pytest.approx(a * s)
++    per = mx.headroom_per_reference(rows, params={"comparator": "reconstruction"})["R1"]
++    ar = 10.1 / 17.1
++    assert per["opt_id"] == "c01" and per["h_opt_hi"] == pytest.approx(ar * (1 - 10.05 / 10.1 * (1 - s)))

@@ -86,7 +86,10 @@ over counted references. With no counted reference, both raise, so E008 is INVAL
 ## 3. Spec entries the runner and the spec should use
 - Primary: `{metric: headroom_min_lo, fn: headroom_min_lo, pred: L_sub_H}` and
   `{metric: headroom_max_hi_ind, fn: headroom_max_hi_ind, pred: L_sub_H}`. Defaults: `floor` 1e-3 K, `tj_limit_K` 2.0.
-  State both explicitly in `params` for readability.
+  State both explicitly in `params` for readability. Both metrics raise, before reading any row, on a `floor` that is
+  null, not finite or negative and on a `tj_limit_K` that is null, not finite or not positive (T0276). Before T0276 a nan
+  `tj_limit_K` gave A1 = -a s_ref without raising, and an infinite `floor` zeroed every GCI, so a divergent candidate
+  became eligible.
 - Sensitivity (reported, not criteria): the same entries under new metric names with `params: {L_term_H: 0.0}` and
   `{L_term_H: 1.75e-8}`.
 - Reconstruction-based secondary: `params: {comparator: reconstruction}`.
@@ -158,12 +161,16 @@ band solves.
    the twin rule and the near-tie band (`test_o003_reconstruction_secondary_switches_the_twin_rule_and_the_near_tie_band`).
 
 ## 6. How the tests are checked (T0269)
-`research/o003/check_mutants.py` applies 101 textual mutants of `headroom_metrics.py` in memory, one at a time, and runs
+`research/o003/check_mutants.py` applies 110 textual mutants of `headroom_metrics.py` in memory, one at a time, and runs
 `test_headroom_metrics.py` against each. It exits 0 only if every mutant fails at least one test. The list includes
 T0266's eleven survivors (T0266 names ten of them; the eleventh is reconstructed, see the script's header), 54 mutants
-added in T0269 attempt 1, and 36 from attempt 2's independent probe. Seventeen of those 36 survived attempt 1's tests
-and are killed by the section "T0269 attempt 2 gaps". One of the 17 decided a criterion: K1 taking the minimum instead
-of the maximum over references. Negative control: with attempt 1's test file the script reports exactly those 17 and
-exits 1. Each fail-closed case must raise its own guard's message (`_MATCH`), so an unrelated ValueError cannot pass
+added in T0269 attempt 1, 36 from attempt 2's independent probe, and 9 from T0276. Seventeen of attempt 2's 36 survived
+attempt 1's tests and are killed by the section "T0269 attempt 2 gaps". One of the 17 decided a criterion: K1 taking the
+minimum instead of the maximum over references. Negative control: with attempt 1's test file the script reports exactly
+those 17 and exits 1. T0276's nine are review T0275's two surviving probes (F3's missing-die-rows shortcut keyed to the
+batch's first candidate instead of `order[0]`; the optimistic column without its twin rule), two more on that twin rule
+(strict comparison; compared against the twin under `comparator: reconstruction`), and five on the parameter-value
+guard. All nine survive the T0269 test file (commit 3ab1197c) and are killed by the section "T0275 gaps (T0276)"; the
+T0276 tests, run against the T0269 draft, fail in exactly the 22 parameter-value cases. Each fail-closed case must raise its own guard's message (`_MATCH`), so an unrelated ValueError cannot pass
 it. Mutation testing shows only that the tests detect these specific edits. It does not show that the rule text is
 read correctly; that rests on the hand values and on T0266's independent implementation.
