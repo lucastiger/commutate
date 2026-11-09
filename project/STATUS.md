@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T22:04:35+00:00 from repository state — do not edit_
+_generated 2026-11-09T22:05:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -41,7 +41,6 @@ cancelled: 38, done: 234, failed: 3, needs_founder: 3, review: 1, running: 1, to
 - T0284 `running` critic/review: Review T0279 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T21:27:26+00:00 task_amended {"task": "T0262", "reason": "waits for T0282; reports measured signal-to-power classes (T0280)"}
 - 2026-11-09T21:29:33+00:00 verified {"task": "T0276"}
 - 2026-11-09T21:29:40+00:00 run_started {"run": "T0283-critic-20261109T132940-0900", "task": "T0283", "role": "critic", "session": "9e90ba3b-5fc5-46ab-b3c4-2bf49714c038"}
 - 2026-11-09T21:30:15+00:00 sleep_detected {"gap_s": 778, "runs_extended": 3}
@@ -56,3 +55,4 @@ cancelled: 38, done: 234, failed: 3, needs_founder: 3, review: 1, running: 1, to
 - 2026-11-09T22:00:40+00:00 run_finished {"run": "T0283-critic-20261109T132940-0900", "status": "completed", "cost": 2.321661, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T22:04:30+00:00 inbox_opened {"id": "I0152", "kind": "protected_change", "subject": "T0276: merge needs founder approval"}
 - 2026-11-09T22:04:35+00:00 run_started {"run": "T0284-critic-20261109T140435-5320", "task": "T0284", "role": "critic", "session": "70a2c165-1131-4a41-affe-6155dd64a875"}
+- 2026-11-09T22:05:08+00:00 sleep_detected {"gap_s": 911, "runs_extended": 1}
