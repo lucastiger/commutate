@@ -3,7 +3,7 @@ objective: O003
 title: AlN k(T) law in stack.py and the frozen grid-snapping rule
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Two inputs needed to bring a reference into the model: AlN thermal conductivity and grid
   snapping.
@@ -81,4 +81,53 @@ lens: null
 trigger: null
 rationale: scope_in requires the AlN k(T) law in stack.py (OD-7) for the public references' Tj, and the
   snapping rule frozen in E008's spec before any judged reference is loaded (s_ref enters w, A1/K1).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: Added the AlN k(T) law to stack.py and a new geometry/snap.py with the frozen snapping rule.
+    All DoD commands and the fast gate pass, and the work is committed. The AlN law is f = (T/300)^-1,
+    cited to Slack et al. 1987 (single crystals, k ~ 1/T above ~200 K). The docstring rates it medium-low
+    confidence for sintered grades, whose real slope is probably shallower. I did not consult a sintered-AlN
+    table. snap_layout(layout, grid, rules) returns a SnapResult with the snapped layout, the snap records
+    and the re-check violations. thermal_fem.py is unchanged.
+  report:
+    status: completed
+    summary: Added the AlN k(T) law to stack.py and a new geometry/snap.py with the frozen snapping rule.
+      All DoD commands and the fast gate pass, and the work is committed. The AlN law is f = (T/300)^-1,
+      cited to Slack et al. 1987 (single crystals, k ~ 1/T above ~200 K). The docstring rates it medium-low
+      confidence for sintered grades, whose real slope is probably shallower. I did not consult a sintered-AlN
+      table. snap_layout(layout, grid, rules) returns a SnapResult with the snapped layout, the snap records
+      and the re-check violations. thermal_fem.py is unchanged.
+    concerns:
+    - The AlN law is the intrinsic Umklapp T^-1 form; no sintered-AlN table was consulted. The docstring
+      says so and rates it medium-low confidence for commercial grades. It is conservative for Tj.
+    - The tie rule (exactly half a step goes to the higher line, or counts as inside for a staircase cell)
+      is systematic, not random. On a 45-degree edge every cut cell sits at an exact tie, so the staircase
+      area error does not cancel. For a 3 mm strip the area error was about 8% at 0.5 mm. The test checks
+      the g^2/2-per-cut-cell bound, not a relative bound.
+    - Staircase records use the Hausdorff distance between old and new boundary as their displacement
+      (kind 'staircase'). This can exceed g/2, up to about g*sqrt(2). The half-step bound applies to edge
+      snaps only, and the tests check it on those.
+    - I only return net-spacing and die-enclosure violations (min_spacing, die_edge_margin, die_off_trace,
+      die_wrong_net) plus an explicit net_merged. Other drc.check rules are filtered out. A feature that
+      collapses to zero size raises ValueError instead of returning a violation.
+    - Wire ends move to the nearest point of the pad shrunk by the DRC landing/start margin, not the bare
+      pad. This can move them slightly more than the bare minimum.
+    - snap.py is not exported from geometry/__init__.py. Import it as moduleforge.geometry.snap.
+    files_changed:
+    - src/moduleforge/geometry/stack.py
+    - src/moduleforge/geometry/snap.py
+    - tests/unit/geometry/test_stack.py
+    - tests/unit/geometry/test_snap.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/geometry
+      exit_code: 0
+    - cmd: uv run python -c "from moduleforge.geometry.stack import K_LAWS; f = K_LAWS['AlN']; assert
+        abs(f(300.0) - 1.0) < 1e-12 and f(400.0) < f(300.0)"
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
