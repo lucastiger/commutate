@@ -1,10 +1,11 @@
 # ModuleForge status
-_generated 2026-11-09T22:04:20+00:00 from repository state — do not edit_
+_generated 2026-11-09T22:04:35+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
 - **I0150** [protected_change] T0273: merge needs founder approval
 - **I0151** [protected_change] T0274: merge needs founder approval
+- **I0152** [protected_change] T0276: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,7 +24,7 @@ _generated 2026-11-09T22:04:20+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 37 | $66.11 | 1316553 | 732334 | 66 | 0 |
+| O003 | 38 | $66.11 | 1316553 | 732334 | 66 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -31,16 +32,15 @@ _generated 2026-11-09T22:04:20+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 234, failed: 3, merge: 1, needs_founder: 2, review: 1, todo: 5
+cancelled: 38, done: 234, failed: 3, needs_founder: 3, review: 1, running: 1, todo: 4
 
 - T0273 `needs_founder` builder/implement: Generator: searchable wire feet, multi-wire dies with gate/Kelvin copper, diversity under measured rules (review T0271) (attempt 1)
 - T0274 `needs_founder` builder/implement: Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272) (attempt 2)
-- T0276 `merge` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
+- T0276 `needs_founder` scientist/design_experiment: Headroom metrics: fail-closed parameter values and two untested branches (review T0275) (attempt 1)
 - T0279 `review` builder/implement: Search driver: exact L1-only null, w_ctrl without s_ref, e_R for A1 best and near ties, full thermal checkpoint (review T0278) (attempt 1)
+- T0284 `running` critic/review: Review T0279 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T21:17:19+00:00 run_finished {"run": "T0276-scientist-20261109T125118-abb8", "status": "completed", "cost": 1.980875, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T21:27:26+00:00 task_added {"task": "T0282", "reason": "review T0281 follow-up (sampler float tolerance)"}
 - 2026-11-09T21:27:26+00:00 task_amended {"task": "T0262", "reason": "waits for T0282; reports measured signal-to-power classes (T0280)"}
 - 2026-11-09T21:29:33+00:00 verified {"task": "T0276"}
 - 2026-11-09T21:29:40+00:00 run_started {"run": "T0283-critic-20261109T132940-0900", "task": "T0283", "role": "critic", "session": "9e90ba3b-5fc5-46ab-b3c4-2bf49714c038"}
@@ -54,3 +54,5 @@ cancelled: 38, done: 234, failed: 3, merge: 1, needs_founder: 2, review: 1, todo
 - 2026-11-09T21:49:59+00:00 run_finished {"run": "T0279-builder-20261109T125534-34cd", "status": "completed", "cost": 0.68255, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T22:00:40+00:00 verified {"task": "T0279"}
 - 2026-11-09T22:00:40+00:00 run_finished {"run": "T0283-critic-20261109T132940-0900", "status": "completed", "cost": 2.321661, "subtype": "success", "report": "structured_output"}
+- 2026-11-09T22:04:30+00:00 inbox_opened {"id": "I0152", "kind": "protected_change", "subject": "T0276: merge needs founder approval"}
+- 2026-11-09T22:04:35+00:00 run_started {"run": "T0284-critic-20261109T140435-5320", "task": "T0284", "role": "critic", "session": "70a2c165-1131-4a41-affe-6155dd64a875"}
