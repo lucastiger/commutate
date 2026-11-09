@@ -1,11 +1,8 @@
 # ModuleForge status
-_generated 2026-11-09T07:20:27+00:00 from repository state — do not edit_
+_generated 2026-11-09T07:28:46+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
-- **I0138** [external_action] [O003] Burst compute for E008 and its pre-registration checks
-- **I0139** [external_action] [O003] Protected-path changes before E008 registration
+## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0141** [plan_approval] [O003] approve initial plan (8 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -24,7 +21,7 @@ _generated 2026-11-09T07:20:27+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 9 | $15.21 | 302482 | 210476 | 11 | 0 |
+| O003 | 11 | $15.21 | 302482 | 210476 | 11 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,23 +29,12 @@ _generated 2026-11-09T07:20:27+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 214, failed: 3, proposed: 8
+cancelled: 38, done: 214, failed: 3, running: 2, todo: 6
 
-- T0256 `proposed` builder/implement: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement (attempt 0)
-- T0257 `proposed` builder/implement: AlN k(T) law in stack.py and the frozen grid-snapping rule (attempt 0)
-- T0258 `proposed` builder/implement: Generalised derivative-layout generator inside a reference's housing (attempt 0)
-- T0259 `proposed` builder/implement: Twin construction and degradation rule (F1(a), F1(b)) (attempt 0)
-- T0260 `proposed` builder/implement: Search driver per D0008/F3 with L1-only null, near ties, levelling record and control mode (attempt 0)
-- T0261 `proposed` scientist/design_experiment: Draft headroom_min_lo / headroom_max_hi_ind (protected mfos.metrics) and the E008 row contract (attempt 0)
-- T0262 `proposed` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 0)
-- T0263 `proposed` scientist/research: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 public fallback), snapped, with measured rules (attempt 0)
+- T0256 `running` builder/implement: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement (attempt 1)
+- T0257 `running` builder/implement: AlN k(T) law in stack.py and the frozen grid-snapping rule (attempt 1)
 
 ## Recent events
-- 2026-11-09T06:44:24+00:00 run_finished {"run": "T0251-critic-20261108T223758-4a63", "status": "completed", "cost": 1.602902, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T06:44:25+00:00 run_finished {"run": "T0252-critic-20261108T223759-1306", "status": "completed", "cost": 1.704452, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T06:51:32+00:00 objective_draft_review {"objective": "O003", "ref": "1a39aa3b2e4087b915b158833aebce9c3090a0a0", "tasks": ["T0253", "T0254"]}
-- 2026-11-09T06:52:05+00:00 run_started {"run": "T0253-critic-20261108T225205-629b", "task": "T0253", "role": "critic", "session": "7288e5c9-0d4a-4659-a3af-657790b87f0b"}
-- 2026-11-09T06:52:06+00:00 run_started {"run": "T0254-critic-20261108T225206-fdf2", "task": "T0254", "role": "critic", "session": "d41207f3-3413-45d8-8a70-0ae3d6d3a414"}
 - 2026-11-09T06:59:06+00:00 run_finished {"run": "T0254-critic-20261108T225206-fdf2", "status": "completed", "cost": 1.733284, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T07:05:02+00:00 run_finished {"run": "T0253-critic-20261108T225205-629b", "status": "completed", "cost": 2.001104, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T07:11:55+00:00 objective_approved {"objective": "O003", "criteria_hash": "sha256:887a2ecefbcf0b10619e92df91ce193a6d5a3e685430ef9a456e398c22e71a62"}
@@ -59,3 +45,8 @@ cancelled: 38, done: 214, failed: 3, proposed: 8
 - 2026-11-09T07:20:24+00:00 inbox_opened {"id": "I0140", "kind": "question", "subject": "[O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback"}
 - 2026-11-09T07:20:24+00:00 inbox_opened {"id": "I0141", "kind": "plan_approval", "subject": "[O003] approve initial plan (8 tasks)"}
 - 2026-11-09T07:20:24+00:00 plan_applied {"objective": "O003", "created": ["T0256", "T0257", "T0258", "T0259", "T0260", "T0261", "T0262", "T0263"], "dropped": 0}
+- 2026-11-09T07:28:33+00:00 inbox_resolved {"id": "I0141", "status": "approved", "note": "Plan approved (T0256-T0263): build chain on generator housings and 2D_Case_4 per F3; public reconstructions after
+- 2026-11-09T07:28:39+00:00 inbox_resolved {"id": "I0138", "status": "approved", "note": "E008 added to burst_experiments; VM time reserved for the full-fidelity dev rows once the E008 design merges.", "
+- 2026-11-09T07:28:46+00:00 inbox_resolved {"id": "I0139", "status": "approved", "note": "thermal_fem.py confirmed at a216d5fe (EV-O007-01 bytes, revert dd9727cc); metrics patch to be applied on T0261's 
+- 2026-11-09T07:28:46+00:00 run_started {"run": "T0256-builder-20261108T232846-aecb", "task": "T0256", "role": "builder", "session": "4d03165a-cd3e-44be-8f98-60f8bbcf2f02"}
+- 2026-11-09T07:28:46+00:00 run_started {"run": "T0257-builder-20261108T232846-46d1", "task": "T0257", "role": "builder", "session": "a3123393-042c-41fe-b0b7-78edbd27c4bf"}
