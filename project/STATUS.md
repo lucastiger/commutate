@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T20:24:59+00:00 from repository state — do not edit_
+_generated 2026-11-09T20:25:47+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -40,7 +40,6 @@ cancelled: 38, done: 230, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - T0281 `running` critic/review: Review T0273 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T18:52:30+00:00 task_added {"task": "T0279", "reason": "review T0278 follow-up (driver majors 0-2)"}
 - 2026-11-09T18:52:30+00:00 task_amended {"task": "T0262", "reason": "waits for T0279 (driver fixes, review T0278)"}
 - 2026-11-09T18:55:09+00:00 inbox_opened {"id": "I0148", "kind": "protected_change", "subject": "T0260: merge needs founder approval"}
 - 2026-11-09T18:55:12+00:00 run_started {"run": "T0273-builder-20261109T105512-f387", "task": "T0273", "role": "builder", "session": "dd37832e-dd82-4e95-895e-d3ac80fb1585"}
@@ -55,3 +54,4 @@ cancelled: 38, done: 230, failed: 3, needs_founder: 2, review: 1, running: 2, to
 - 2026-11-09T20:24:52+00:00 inbox_opened {"id": "I0149", "kind": "protected_change", "subject": "T0270: merge needs founder approval"}
 - 2026-11-09T20:24:59+00:00 run_started {"run": "T0281-critic-20261109T122459-d53f", "task": "T0281", "role": "critic", "session": "9d000542-70a1-4d00-8eed-6f76480cadf5"}
 - 2026-11-09T20:24:59+00:00 run_started {"run": "T0274-builder-20261109T122459-ffaf", "task": "T0274", "role": "builder", "session": "f49e74ce-141b-4608-99c5-0ca82a675031"}
+- 2026-11-09T20:25:38+00:00 sleep_detected {"gap_s": 1774, "runs_extended": 2}
