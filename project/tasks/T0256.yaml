@@ -3,7 +3,7 @@ objective: O003
 title: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement
 type: implement
 agent: builder
-status: review
+status: running
 depends_on: []
 description: 'Extend DesignRules/DRC and Layout so that O003''s design-rule strictness (scope_in) can
   be stated, measured on a reference and enforced. Develop and test only on generator layouts and synthetic
@@ -76,12 +76,13 @@ model: null
 budget_usd: 6.0
 max_turns: 110
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0256-per-net-design-rules-gate-kelvin-signal-
 pr: null
 runs:
 - T0256-builder-20261108T232846-aecb
+- T0256-builder-20261109T001733-7d0d
 created_by: planner:T0255
 created_at: '2026-11-09T07:20:24+00:00'
 protected_approved: false
@@ -156,3 +157,60 @@ history:
     - Generator layouts have no free room for gate/Kelvin strips, so the synthetic generator-based property
       test adds a GATE strip above the top row with straight gate wires. The full gate-plus-Kelvin geometry
       is the hand-built fixture.
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] One GATE and one KELVIN net shared by both switch positions: the DRC passes
+    shorted half-bridges and rejects correctly separated ones: SIGNAL_PADS maps every die''s ''gate''
+    pad to the single net ''GATE'' and every ''kelvin'' pad to ''KELVIN''. The signal_wire_net check forbids
+    any other label, and the existing net_split rule requires each net''s copper to be one connected island.
+    In a half-bridge the HS gate/Kelvin source (Kelvin at PHASE potential) and the LS gate/Kelvin source
+    (Kelvin at DC- potential) are different electrical nets on separate copper. The 2D_Case_4 reconstruction
+    notes, for example, list four separate signal traces: T1 and T2 by the LS dies, T7 and T8 by the HS
+    dies. Three consequences follow.
+
+    (a) The test fixture lands the HS and LS Kelvin wires on the same KELVIN strip, which electrically
+    shorts PHASE to DC-, and lands both gate wires on one GATE strip. The DRC reports this layout clean,
+    and test_fixture_is_clean_under_defaults asserts it.
+
+    (b) An electrically correct layout with separate HS-gate and LS-gate copper fails net_split. So no
+    faithful reconstruction of a half-bridge reference with gate/Kelvin copper (2D_Case_2R, 2D_Case_6,
+    customer references) can be DRC-clean. The generator filters candidates with `if not check(lay)`,
+    so it cannot honour such a reference either.
+
+    (c) signal_bondability and measure_rules measure each pad against the union of all GATE (or KELVIN)
+    copper. A die can therefore count as bondable via the other switch''s gate copper, and a generator
+    could route an HS gate wire to LS gate copper without any violation. That would admit physically invalid
+    candidates into E008.
+
+    The claim ''correctly implements gate/Kelvin signal wires and bondability DRC'' does not hold for
+    the half-bridge topology, which is the only one in scope.
+
+    - [minor] measure_rules'' documented guarantee fails for dies with mixed pad sets: The docstring says
+    check(layout, measure_rules(layout)[0]) is empty whenever check(layout) is. Counterexample: KELVIN
+    copper is present, die 0 has a Kelvin pad and die 1 does not. measure_rules sets max_kelvin_wire_length
+    from die 0. check() then emits ''die 1 has no kelvin pad'', because once a limit is set it requires
+    every die to have the pad. Under default rules the limit is None, so that check is skipped and the
+    layout is clean.
+
+    - [minor] Bondability distance is looser than any wire that passes the start and landing rules: signal_bondability
+    compares the plan distance from the pad rectangle to the copper with the limit. It ignores the 0.15
+    mm foot margin, the 0.3 mm landing margin and the loop arc. So a die can be ''bondable'' when no legal
+    wire of that length exists. This matches the objective''s literal wording (''pad within the reference''s
+    longest gate-wire length of the fixed gate copper''), so it is a limit of validity, not a defect against
+    the spec.
+
+    - [minor] Measured wire pitch: one value across power and signal wires, with wire_pitch_diameters
+    set to 0: measure_rules sets min_wire_pitch to the smallest plan distance over all wire pairs, gate/Kelvin
+    wires included, and sets wire_pitch_diameters to 0. If a reference''s tightest pitch is between two
+    thin signal wires, its heavy power wires may then be placed at that smaller pitch. That is looser
+    than the reference''s own power-wire practice and than the 2-diameter default. This is a stated limit,
+    not a spec violation (''wire pitch at least the reference''s smallest'').
+
+    - [minor] Fingerprint docstring and field-pinning test do not cover SignalWire: Layout.fingerprint()
+    does not hash SignalWire.loop_height, but the docstring still says ''Not covered (exactly these two
+    IR fields)''. tests/unit/geometry/test_layout.py _IR_CLASSES does not include SignalWire, so the generic
+    every-field-is-pinned test does not cover its fields. Only the hand-writt
+
+    ...[truncated; full reviews: project/reviews/T0256/]'
+  at: '2026-11-09T08:17:29+00:00'

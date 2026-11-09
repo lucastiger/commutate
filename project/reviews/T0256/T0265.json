@@ -1,0 +1,71 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "One GATE and one KELVIN net shared by both switch positions: the DRC passes shorted half-bridges and rejects correctly separated ones",
+      "detail": "SIGNAL_PADS maps every die's 'gate' pad to the single net 'GATE' and every 'kelvin' pad to 'KELVIN'. The signal_wire_net check forbids any other label, and the existing net_split rule requires each net's copper to be one connected island. In a half-bridge the HS gate/Kelvin source (Kelvin at PHASE potential) and the LS gate/Kelvin source (Kelvin at DC- potential) are different electrical nets on separate copper. The 2D_Case_4 reconstruction notes, for example, list four separate signal traces: T1 and T2 by the LS dies, T7 and T8 by the HS dies. Three consequences follow.\n(a) The test fixture lands the HS and LS Kelvin wires on the same KELVIN strip, which electrically shorts PHASE to DC-, and lands both gate wires on one GATE strip. The DRC reports this layout clean, and test_fixture_is_clean_under_defaults asserts it.\n(b) An electrically correct layout with separate HS-gate and LS-gate copper fails net_split. So no faithful reconstruction of a half-bridge reference with gate/Kelvin copper (2D_Case_2R, 2D_Case_6, customer references) can be DRC-clean. The generator filters candidates with `if not check(lay)`, so it cannot honour such a reference either.\n(c) signal_bondability and measure_rules measure each pad against the union of all GATE (or KELVIN) copper. A die can therefore count as bondable via the other switch's gate copper, and a generator could route an HS gate wire to LS gate copper without any violation. That would admit physically invalid candidates into E008.\nThe claim 'correctly implements gate/Kelvin signal wires and bondability DRC' does not hold for the half-bridge topology, which is the only one in scope.",
+      "evidence": "Scratch probe built from the test fixture's geometry, run in the worktree:\n- The fixture is clean under default rules: True.\n- The same fixture with the GATE strip split into an HS island (3..13 mm) and an LS island (15..18 mm) gives [('net_split', 'net GATE copper is split into 2 islands')].\n- Code: drc/rules.py signal_wire_net requires SIGNAL_PADS[w.pad] == w.net; net_split runs on every net in layout.traces; the bondability loop uses unary_union(cu) over all copper of the pad's net, without regard to Die.switch.\n- research/scripts/o006_case4_layout.py lines 19-25 (signal traces T1, T2, T7, T8; gate wires BW1/2/7/8; Kelvin wires BW9..12).\n- objective.yaml lines 247-259 (reconstructions with gate and Kelvin copper and wires; generator honours the DRC).",
+      "suggested_check": "Build a half-bridge layout whose HS and LS gate copper and Kelvin copper are separate islands with correct wires: it must be DRC-clean. The current fixture (shared Kelvin strip) must be flagged. Remedy: key the signal nets per switch position (e.g. GATE_HS/GATE_LS, KELVIN_HS/KELVIN_LS), and check landing and bondability against copper of the die's own switch.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "measure_rules' documented guarantee fails for dies with mixed pad sets",
+      "detail": "The docstring says check(layout, measure_rules(layout)[0]) is empty whenever check(layout) is. Counterexample: KELVIN copper is present, die 0 has a Kelvin pad and die 1 does not. measure_rules sets max_kelvin_wire_length from die 0. check() then emits 'die 1 has no kelvin pad', because once a limit is set it requires every die to have the pad. Under default rules the limit is None, so that check is skipped and the layout is clean.",
+      "evidence": "Probe on the fixture with die 1's kelvin pad and its Kelvin wire removed: default check clean = True; measured max_kelvin_wire_length = 7.604989e-3; check under measured rules = [('signal_bondability', 'die 1 has no kelvin pad')].",
+      "suggested_check": "Add the mixed-pad case to assert_self_consistent, and either skip dies without the pad or leave the limit unset in that case.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Bondability distance is looser than any wire that passes the start and landing rules",
+      "detail": "signal_bondability compares the plan distance from the pad rectangle to the copper with the limit. It ignores the 0.15 mm foot margin, the 0.3 mm landing margin and the loop arc. So a die can be 'bondable' when no legal wire of that length exists. This matches the objective's literal wording ('pad within the reference's longest gate-wire length of the fixed gate copper'), so it is a limit of validity, not a defect against the spec.",
+      "evidence": "In the fixture, the LS gate pad is 8.2801 mm from the GATE copper. test_gate_bondability treats a limit of 8.3 mm as clean, yet the shortest plan-view wire meeting both the start and landing margins is 8.9109 mm (computed by hand and by a scratch script).",
+      "suggested_check": "Compare the bondability verdict with whether a straight legal wire within the limit actually exists.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Measured wire pitch: one value across power and signal wires, with wire_pitch_diameters set to 0",
+      "detail": "measure_rules sets min_wire_pitch to the smallest plan distance over all wire pairs, gate/Kelvin wires included, and sets wire_pitch_diameters to 0. If a reference's tightest pitch is between two thin signal wires, its heavy power wires may then be placed at that smaller pitch. That is looser than the reference's own power-wire practice and than the 2-diameter default. This is a stated limit, not a spec violation ('wire pitch at least the reference's smallest').",
+      "evidence": "drc/rules.py measure_rules: `pitch = min(...)` over `layout.wires + layout.signal_wires`, and `wire_pitch_diameters=0.0 if pitch is not None`.",
+      "suggested_check": "Measure power-power and signal pitches separately.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Fingerprint docstring and field-pinning test do not cover SignalWire",
+      "detail": "Layout.fingerprint() does not hash SignalWire.loop_height, but the docstring still says 'Not covered (exactly these two IR fields)'. tests/unit/geometry/test_layout.py _IR_CLASSES does not include SignalWire, so the generic every-field-is-pinned test does not cover its fields. Only the hand-written test_fingerprint_covers_signal_wires does.",
+      "evidence": "geometry/layout.py fingerprint: put('signal_wire', die, pad, net, points, diameter); test_layout.py line 164: _IR_CLASSES = (Layout, Trace, Die, BondWire, Terminal, LayerStack, Layer).",
+      "suggested_check": "Add SignalWire to _IR_CLASSES and SignalWire.loop_height to the 'Not covered' list.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Signal wires skip several checks that apply to power wires",
+      "detail": "Signal wires get no diameter range check, no min/max length check (the max applies only when the bondability limit is set), and no landing keep-out from dies or terminal pads. No check confirms that the gate and Kelvin pads lie on the die. Plan-view crossings between power wires of different nets are caught only by the pitch rule.",
+      "evidence": "drc/rules.py _check_signal compared with the power-wire loop in check().",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran tests/unit/drc/test_drc_net_rules.py and tests/regression/test_fingerprints_unchanged.py: 58 passed.",
+    "Ran uv run pytest -q tests/unit/drc tests/unit/geometry tests/unit/generate tests/regression: 270 passed.",
+    "Ran uv run pytest -q -m 'not slow' tests/unit: 581 passed, 37 deselected (341 s).",
+    "Ran uv run ruff check src tests: all checks passed.",
+    "thermal_fem.py: sha256 a216d5fe3209bcee... (the O007-evaluated bytes) and byte-identical (cmp) to /Users/lukeskywalker/mf/main's copy. The diff does not touch it.",
+    "Read the default-rule code paths: with all new fields None, spacing_for and width_for return min_spacing and min_trace_width, and _check_signal adds nothing when there are no signal wires and no limits. So default DRC behaviour, and with it the generator output and fingerprints, is unchanged.",
+    "Scratch probe: separate HS and LS gate copper islands give a net_split violation, while the fixture with HS and LS Kelvin wires on one shared KELVIN strip is DRC-clean.",
+    "Scratch probe: counterexample to measure_rules' self-consistency guarantee (mixed Kelvin pads lead to signal_bondability 'die 1 has no kelvin pad').",
+    "Hand and script computation: the LS gate pad is 8.2801 mm from the copper, but the shortest wire meeting the start and landing margins is 8.9109 mm, so bondability passes at 8.3 mm with no legal wire possible.",
+    "Checked that the test expectations are independent of the code: fixture gaps 3.0, sqrt(18) and 2.0 mm, widths 8 and 2 mm, die spacing 12 mm and margins 2.5 and 1.5 mm are derived by hand from the geometry, not from the implementation.",
+    "Timing: check() takes about 7 ms and measure_rules about 6 ms per generator layout, so there is no hot-path regression.",
+    "Read objective O003 (scope_in, build work) and the 2D_Case_4 reconstruction notes to confirm references have separate HS and LS gate/Kelvin copper."
+  ],
+  "caveats": [
+    "I could not run the DoD command `git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py` because this review checkout has no `main` ref. Its bytes match O007's sha256 and the main checkout's file.",
+    "I could not recompute the hard-coded pre-change fingerprints with main's code: importing from the main checkout was denied. They are unchanged by construction, because the fingerprint loop over an empty signal_wires list adds nothing and the generator is not modified."
+  ]
+}

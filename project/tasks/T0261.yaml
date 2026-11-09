@@ -3,7 +3,7 @@ objective: O003
 title: Draft headroom_min_lo / headroom_max_hi_ind (protected mfos.metrics) and the E008 row contract
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: 'Draft the two acceptance metrics exactly as A1 and K1 state them, for the founder to apply
   to the protected tools/mfos/mfos/metrics.py.
@@ -89,4 +89,125 @@ lens: null
 trigger: null
 rationale: A1 and K1 are recomputed by new protected mfos.metrics functions (notes build item 6); the
   row contract fixes what E008 must emit. This can be built in parallel with the generator chain.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I''ve drafted O003''s two acceptance metrics for the founder to apply: headroom_min_lo (A1)
+    and headroom_max_hi_ind (K1). Every definition-of-done check exits 0. Commands I ran and their exit
+    codes:
+
+    - `uv run pytest -q research/o003/test_headroom_metrics.py`: 22 passed, exit 0.
+
+    - `git apply --check research/o003/headroom_metrics.patch`: exit 0.
+
+    - `uv run ruff check research/o003`: exit 0.
+
+    - `uv run mfos gate --fast`: "all gates passed", exit 0.
+
+    - `uv run python research/o003/make_patch.py`: wrote the 608-line patch, exit 0.
+
+    - Patched copy, built in a temp folder from make_patch''s own functions (I never touched `tools/mfos`):
+    43 selected tests passed and ruff was clean under the repo config. The 5 deselected tests need E002
+    result files the temp copy does not have.
+
+
+    What I wrote:
+
+    1. `research'
+  report:
+    summary: "I've drafted O003's two acceptance metrics for the founder to apply: headroom_min_lo (A1)\
+      \ and headroom_max_hi_ind (K1). Every definition-of-done check exits 0. Commands I ran and their\
+      \ exit codes:\n- `uv run pytest -q research/o003/test_headroom_metrics.py`: 22 passed, exit 0.\n\
+      - `git apply --check research/o003/headroom_metrics.patch`: exit 0.\n- `uv run ruff check research/o003`:\
+      \ exit 0.\n- `uv run mfos gate --fast`: \"all gates passed\", exit 0.\n- `uv run python research/o003/make_patch.py`:\
+      \ wrote the 608-line patch, exit 0.\n- Patched copy, built in a temp folder from make_patch's own\
+      \ functions (I never touched `tools/mfos`): 43 selected tests passed and ruff was clean under the\
+      \ repo config. The 5 deselected tests need E002 result files the temp copy does not have.\n\nWhat\
+      \ I wrote:\n1. `research/o003/headroom_metrics.py`. The code that goes into `mfos.metrics` sits\
+      \ between markers and is copied verbatim into the patch, so the draft and the patch cannot drift\
+      \ apart. It contains:\n   - the band estimate for the ratio, e_R = 3|R(0.25) − R(0.5)| + P3's middle\
+      \ (thickness) term + 3|R(12-per-ring wires) − R(0.5)|;\n   - s_ref, including the pre-registration\
+      \ snapping check;\n   - the per-die Tj bounds from gci_capped (floor 1e-3 K), and the conservative\
+      \ and optimistic Tj tests (a +inf GCI makes an upper bound +inf and drops out of a lower bound);\n\
+      \   - both twin gates, F1(a1) and F1(a2);\n   - the F3 thermal checks, which the function recomputes\
+      \ itself (ascending L_sub, batches of 4, at most 8);\n   - the twin rule, applied before any candidate-selection\
+      \ rule;\n   - for K1, the rule order levelling (+inf if not levelled), then the twin rule, then\
+      \ near ties (largest h_hi);\n   - a per-reference record of every value;\n   - the sensitivity and\
+      \ reconstruction-based variants via params (`L_term_H`, `comparator`). Unknown params are rejected.\n\
+      \   Both metrics take the minimum or maximum over counted references and raise if no reference is\
+      \ counted, which makes E008 INVALID.\n2. `research/o003/e008_row_contract.md`: three row kinds (reference,\
+      \ layout, die) with SI column names, which columns are required when, the spec entries to use, and\
+      \ the null column.\n3. `research/o003/test_headroom_metrics.py`. It covers every case the packet\
+      \ lists:\n   - twin case: h_lo = −a s_ref, h_hi = +a s_ref;\n   - no eligible candidate;\n   - a\
+      \ non-levelled reference gives +inf, and that is checked before the twin rule;\n   - near-tie maximum;\n\
+      \   - +inf GCI on a candidate fails the conservative test; on the twin it drops out of the lower\
+      \ bound;\n   - single counted reference;\n   - references excluded by each twin gate;\n   - the\
+      \ notes' three verdict-region examples. Their exact boundaries round to 0.216/0.082, 0.353/0.153\
+      \ and 0.284/0.117, and the metrics flip within ±1e-6 of each.\n   Beyond the packet, it also covers\
+      \ the F3 batches, the L_term 0 and 17.5 nH sensitivity, the reconstruction-based values, the dispatch,\
+      \ the declared null through the existing null_column mechanism, and fail-closed inputs. The thickness\
+      \ term is checked against P3's own middle_term on 500 random triples.\n4. `research/o003/headroom_metrics.patch`\
+      \ (applies cleanly to main) and `research/o003/make_patch.py`, which regenerates it.\n\nFacts: everything\
+      \ above was checked by the commands listed. Inferences: the choices in contract §5 are my readings\
+      \ of the objective text and need the founder's confirmation."
+    failure_class: none
+    confidence: 0.8
+    evidence:
+    - '`uv run pytest -q research/o003/test_headroom_metrics.py`: 22 passed, exit 0.'
+    - '`git apply --check research/o003/headroom_metrics.patch`: exit 0. `tools/mfos/mfos/metrics.py`
+      and `tests/mfos/test_metrics.py` show no diff against main, so the patch targets main''s bytes.'
+    - 'Patched `mfos.metrics`, built in `$TMPDIR` from make_patch''s functions: METRICS gains `headroom_min_lo`
+      and `headroom_max_hi_ind`. `pytest -k ''o003 or o006 or o007 or simple or spearman or selection''`:
+      43 passed. `ruff --config pyproject.toml` on both patched files: all checks passed.'
+    - '`uv run ruff check research/o003`: exit 0.'
+    - '`uv run mfos gate --fast`: ''all gates passed'', exit 0.'
+    - 'Verdict-region boundaries computed from the formula in the notes: a = 1 gives 0.21569 / 0.08163;
+      10 nH with 7 nH gives 0.35294 / 0.15306; 20 nH with 7 nH gives 0.28431 / 0.11735. These round to
+      the notes'' 0.216/0.082, 0.353/0.153 and 0.284/0.117, and the metrics change verdict within ±1e-6
+      of each.'
+    - ratio_middle_term matches `o006_p3_em_convergence.middle_term(fc, fm, ff, 2.0)` to rel 1e-9 on 500
+      random triples. Because r^p_obs = e32/e21, the term does not depend on r.
+    alternative_explanations:
+    - explanation: 'Interpretation risk: F1(a2), the thermal twin gate, taken literally passes when either
+        layout has a die with +inf GCI (|Δ| ≤ inf). The founder may instead want such a reference excluded.'
+      how_to_discriminate: Founder reads contract §5 item 1. If exclusion is intended, twin_gate_thermal
+        returns False when G is inf. That is a one-line change, and the test test_o003_inf_gci_on_candidate_fails_and_on_twin_drops_out
+        would need updating.
+    - explanation: 'Interpretation risk: the reconstruction-based secondary keeps the Tj test against
+        the twin W and keeps the levelling flag from the twin pair. A reader could expect the reconstruction
+        to replace W everywhere.'
+      how_to_discriminate: Founder confirms contract §5 item 4. It affects only reported secondary columns,
+        not A1 or K1.
+    - explanation: 'Interpretation risk: when the snapping check could not be completed (null values),
+        s_ref uses only its first term. The objective routes that case to a founder decision before registration
+        rather than to a formula.'
+      how_to_discriminate: Founder decides whether a missing check should raise instead. If so, make the
+        check columns required whenever on_grid is false.
+    discriminating_tests:
+    - 'After the founder applies the patch: `uv run pytest -q tests/mfos/test_metrics.py` in main (it
+      includes the E002 anchors I could not run in the temp copy).'
+    - '`uv run mfos exp check E008 --rows <dev rows>` on the 2D_Case_4 dev rows once the runner writes
+      the row contract: A1 must be recomputable, and the null twin_as_best must give −a s_ref.'
+    recommended_actions:
+    - 'Founder: review the seven interpretations in contract §5, then apply `research/o003/headroom_metrics.patch`
+      to `tools/mfos/mfos/metrics.py` and `tests/mfos/test_metrics.py` (protected path), or regenerate
+      it after any edit with `uv run python research/o003/make_patch.py`.'
+    - 'E008 runner (scientist/engineer): write rows exactly as in `e008_row_contract.md`. Every row of
+      every kind must carry `L_sub_null_H`, because mfos.metrics.null_column reads it from every row.
+      The runner should compute both metrics with these same functions so the evaluator''s recompute agrees
+      to rel_tol 1e-9.'
+    - 'E008 spec: declare recompute entries for both primaries with explicit params (floor 1e-3, tj_limit_K
+      2.0); secondary entries at L_term_H 0 and 1.75e-8 and with comparator ''reconstruction''; and the
+      null `{kind: column, column: L_sub_null_H, applies_to: [headroom_min_lo]}`.'
+    - Keep F1(b), F1(c), F6 and the check that F3's thermal checks ran in the assumed order as runner
+      sanity checks. These functions deliberately do not gate them (contract §4).
+    - These files are uncommitted in the worktree; the packet did not ask for a commit.
+    files_written:
+    - research/o003/headroom_metrics.py
+    - research/o003/test_headroom_metrics.py
+    - research/o003/e008_row_contract.md
+    - research/o003/headroom_metrics.patch
+    - research/o003/make_patch.py
+    experiment_drafts: []
+    affects_acceptance_criteria: false
+    root_cause: ''
