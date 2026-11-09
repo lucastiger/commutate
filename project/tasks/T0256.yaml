@@ -3,7 +3,7 @@ objective: O003
 title: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Extend DesignRules/DRC and Layout so that O003''s design-rule strictness (scope_in) can
   be stated, measured on a reference and enforced. Develop and test only on generator layouts and synthetic
@@ -214,3 +214,139 @@ history:
 
     ...[truncated; full reviews: project/reviews/T0256/]'
   at: '2026-11-09T08:17:29+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Attempt 2 builds on attempt 1 (178eb740) and fixes the review''s blocker and its minor findings.
+    Commit: 5747b710.
+
+
+    **Blocker fixed: gate and Kelvin nets are now per switch position.** There are four nets: GATE_HS,
+    GATE_LS, KELVIN_HS and KELVIN_LS. A new map, SIGNAL_NET, gives the net from the die pad and the die''s
+    switch, e.g. (gate, HS) is GATE_HS. The DRC now checks three things against the die''s own switch
+    only:
+
+    - each signal wire must carry its die''s own net;
+
+    - each wire must land on copper of that net;
+
+    - bondability is measured to that net''s copper alone, so the other switch''s copper no longer counts.
+
+
+    The existing rule that each net''s copper is one connected island now accepts separate HS and LS islands.
+    The new hand-built fixture (four separate signal islands, each wire on its own s'
+  report:
+    status: completed
+    summary: 'Attempt 2 builds on attempt 1 (178eb740) and fixes the review''s blocker and its minor findings.
+      Commit: 5747b710.
+
+
+      **Blocker fixed: gate and Kelvin nets are now per switch position.** There are four nets: GATE_HS,
+      GATE_LS, KELVIN_HS and KELVIN_LS. A new map, SIGNAL_NET, gives the net from the die pad and the
+      die''s switch, e.g. (gate, HS) is GATE_HS. The DRC now checks three things against the die''s own
+      switch only:
+
+      - each signal wire must carry its die''s own net;
+
+      - each wire must land on copper of that net;
+
+      - bondability is measured to that net''s copper alone, so the other switch''s copper no longer counts.
+
+
+      The existing rule that each net''s copper is one connected island now accepts separate HS and LS
+      islands. The new hand-built fixture (four separate signal islands, each wire on its own switch''s
+      copper) is clean under the default rules. A test builds a gate or Kelvin island shared by HS and
+      LS, which is a short, and tries all 12 combinations of island net and wire nets. Every combination
+      is flagged. Other tests show that a die cannot count as bondable through the other switch''s copper,
+      and that an HS gate wire landing on LS gate copper is flagged.
+
+
+      **Minor findings addressed:**
+
+      - **Mixed pad sets:** bondability skips dies that lack the pad. If a die has the pad but the layout
+      has no copper of its net, `measure_rules` leaves that limit unset and records the reason in `record[''signal_unmeasured'']`.
+      Tests cover both cases.
+
+      - **Wire pitch:** `measure_rules` no longer sets `wire_pitch_diameters` to 0. It sets it to the
+      smallest measured ratio of pitch to wire diameter. When the tightest pitch is between thin signal
+      wires, thick power wires keep the layout''s own ratio. A test shows a layout passes on pitch alone
+      but fails on the ratio.
+
+      - **Fingerprint coverage:** the fingerprint docstring now lists `SignalWire.loop_height` as not
+      covered. The pin, swap and rounding tables in `test_layout.py` now include `SignalWire`. The `g2`
+      test fixture gained gate wires, and all existing pins still run on it.
+
+
+      **Unchanged from main:**
+
+      - The fingerprints of `generate_layouts(12, seed=0)`. I recomputed them with main''s code (exported
+      with `git archive` to a temp dir); they match the regression test byte for byte.
+
+      - `to_conductors()` copper handling. Attempt 1 had also dropped gate/Kelvin copper from the model;
+      I reverted that, so only the signal wires are left out, as the task says. Signal copper stays in
+      as floating copper, as main did and as the O006 pilot P3 did for 2D_Case_4.
+
+
+      **Property tests:** all hold under the measured rules, with each value 1 um on the safe side. Pushing
+      any value past the layout''s own feature (1 um, 3 um for widths, 1e-5 relative for the pitch ratio)
+      makes the layout fail. They run on:
+
+      - generator seeds 0..19;
+
+      - 20 random variants of the hand-built fixture;
+
+      - 15 generator layouts with synthetic strips for all four signal nets and 126 kept wires, covering
+      every net.
+
+
+      The test file has 97 tests; the DoD pytest set runs 325 and the fast unit suite 636. Nothing read
+      PowerSynth 2D_Case_2R/2D_Case_6, customer data or `data/holdout`.'
+    files_changed:
+    - src/moduleforge/drc/rules.py
+    - src/moduleforge/geometry/layout.py
+    - src/moduleforge/geometry/__init__.py
+    - tests/unit/drc/test_drc_net_rules.py
+    - tests/unit/geometry/test_layout.py
+    - tests/regression/test_fingerprints_unchanged.py
+    checks_run:
+    - cmd: PYTHONPATH=$TMPDIR/mainsrc/src python -I -c '<generate_layouts(12, seed=0) fingerprints with
+        main code>'
+      exit_code: 0
+    - cmd: uv run ruff check src
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/geometry
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/drc/test_drc_net_rules.py (first two runs failed on test-fixture
+        mistakes, since fixed)
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/drc/test_drc_net_rules.py
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/drc tests/unit/geometry tests/unit/generate tests/regression
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: git diff --quiet main -- src/moduleforge/solvers/thermal_fem.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'Signal copper stays in to_conductors(): attempt 1 had excluded it, and I reverted that to main''s
+      behaviour because the task only says the wires are excluded. So gate/Kelvin copper is modelled as
+      floating copper, as in O006 pilot P3 (M3). Whether it should be in the l2_layout model is a planner
+      or founder decision.'
+    - The existing net_split rule (each net one connected island) still applies to the signal nets. A
+      reference with several separate copper islands for one signal net, for example per-die gate traces
+      joined outside the substrate, would fail DRC. The 2D_Case_4 notes have one island per net; I did
+      not inspect 2D_Case_2R or 2D_Case_6 (F3).
+    - Bondability compares the plan distance from the pad to the copper, as the objective words it. It
+      ignores the bond-foot and landing margins and the loop. When signal wires are drawn, the per-wire
+      length limit closes that gap; for a pad with no wire the check stays optimistic.
+    - When a die has a gate or Kelvin pad but the layout has no copper of its net, measure_rules leaves
+      that limit unset and records why in record['signal_unmeasured']. Whoever writes E008's spec must
+      read that field, or the rule is silently not enforced for that reference.
+    - Signal wires are not checked for diameter range, landing keep-out from dies and terminals, or whether
+      their pads lie on the die (the review's note). None of these is in the task.
+    - 'The measured wire_pitch_diameters is stricter than ''the reference''s smallest wire pitch'' alone,
+      by design (review minor #4). On a sparse reference with mixed diameters it could cut the candidate
+      pool more than the pitch rule would.'
