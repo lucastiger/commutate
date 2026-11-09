@@ -1,0 +1,79 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "K1 can still be met because the search ignores Tj: the kill uses a lower bound to support a claim that needs an upper bound",
+      "detail": "The null says re-layout offers less than 10 % at bounded Tj. To support a kill you need an upper bound on the Tj-constrained headroom. The draft's h_hi instead comes from the lowest-L_sub candidate that passes the optimistic Tj test among at most 8 candidates. Those 8 are ranked by inductance alone. That number is a lower bound on the headroom that can be reached at Tj within +2 K. The only control that certifies search power, F1(b), is inductance-only. D0016's h_hi = +inf rule removes only the case where every checked candidate is hot. Suppose instead that ranks 1-4 are hot with high headroom and a later rank passes the test with modest headroom. Then K1 fires because the search ignored Tj, not because the reference is near-optimal. The reported inductance-only best, which is the actual certified upper bound, does not block the kill. How big the effect can be is limited by the L_sub spread across the checked candidates: about 0.5 sigma of the pool's tail for a single-cluster pool, and more for a pool that mixes families. T0251's own data found the lowest-L candidate with at least 20 % headroom more than 2 K hotter in 48 of 81 cross-family cases. Under the h_hi = +inf rule, a false kill can only fire on a reference whose true Tj-bounded headroom is below roughly 0.10 + a times that spread. This stays below the 20 % thesis line unless the spread is large. So this is major, not a blocker.",
+      "evidence": "Scratch calculation with L_sub(twin) = 10 nH, L_term = 7 nH (a = 0.588) and w = 0.01. Ranks 1-4 are hot with h_sub 0.30-0.27. Rank 6 passes the optimistic test with h_sub 0.16, which gives h_hi = 0.0991 < 0.10, so K1 fires on this reference. The inductance-only best gives h_hi = 0.181. A copy of rank 1 with the dies spread apart (+3 % L) has module-level headroom 0.164. The control in F1(b) is inductance-only, and D0016 rejects any Tj-aware control.",
+      "suggested_check": "Make K1 also require h_hi of the inductance-only best (already computed and reported) to be below 0.10 on every counted reference. This needs no new build work.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "No rule requires dies to stay wire-bondable to the fixed gate and Kelvin copper, so headroom can come from layouts that cannot be gated",
+      "detail": "scope_in keeps the reference's gate and Kelvin copper only as fixed keep-out areas. It fixes wires per die, diameter and loop height for the power wires only. Nothing requires each relocated die's gate pad, or its Kelvin source, to be bondable to that fixed copper: there is no gate-wire length limit and no rule against crossing wires of another net. Reference designers place dies along their gate runners. A search free of that constraint can buy loop-inductance headroom with layouts no customer could build. This is exactly the artifact F1 describes ('the search ... creates headroom'). F1(a)-(c) cannot detect it, because the twin meets the constraint by construction and the candidates are never checked against it. The scope_out clause 'manufacturability beyond the stated design rules' does not cleanly cover this: a die with no gate connection is a circuit that does not work, not a vendor-rule question. A1 could therefore be met by candidates outside the space where the decision is made (decision_if_pass uses the re-layouts in customer conversations).",
+      "evidence": "src/moduleforge/generate/halfbridge.py draws a gate pad on each die but builds no gate wires and no gate copper. DesignRules in src/moduleforge/drc/rules.py has max_wire_length = 15 mm only for the power wires the generator draws. research/notes/o003-public-benchmarks.md line 87 says 2D_Case_2R has 'wire-bonded gate and power loops'. The O003 text never mentions gate or Kelvin wires.",
+      "suggested_check": "Add to scope_in and the DRC a gate/Kelvin bondability rule: each die's gate and Kelvin pad within the reference's longest gate-wire length of its fixed copper, with no crossing of wires from another net. Measure it on the snapped reconstruction, as the other rules are.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The h_hi rule contradicts itself when the twin beats every checked candidate and none of them passes the optimistic Tj test",
+      "detail": "K1 says the best candidate is 'the lowest-L_sub checked candidate that passes it, or the twin when its L_sub is lower' (r = 1, h_hi = a\u00b7s_ref). It also says that a reference whose checked candidates all fail the optimistic test has h_hi = +inf. When the twin's L_sub is below every checked candidate and all of them are hot, the two rules give a\u00b7s_ref and +inf respectively. The twin passes its own optimistic test by construction: max(T-G) - max(T+G) <= 0. So the reason given for +inf (a hot shortlist shows nothing about headroom at +2 K) does not apply. Applying +inf here would block a kill exactly where the search found no headroom at all. The protected metric headroom_max_hi needs one fixed order of the rules.",
+      "evidence": "Text of K1 and of D0016 decisions 1 and 6.",
+      "suggested_check": "State that the twin rule applies before the +inf rule, and add a unit test of headroom_max_hi for this case.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The twin-gate tolerances cover discretisation only, so they in effect require the twin to be identical to the reconstruction",
+      "detail": "F1(a1) allows |1 - L(W)/L(ref)| <= 2 e_R + s_ref. That is about 0.2-0.4 % when s_ref = 0, using P3's ratio estimates of 0.09-0.16 %. F1(a2) allows about G(W) + G(ref), roughly 0.3 K given C004's 0.13-0.17 K per layout. Neither tolerance allows for real differences in how the generator represents the layout (rectangular copper, wire shape). So either the twin is the reconstruction, and the twin comparator changes nothing, or references are excluded, and with n = 2 public references E008 is at risk of being INVALID. That limits whether the sample can resolve the decision.",
+      "evidence": "F1(a1) and (a2) text, and the P3 values quoted in the notes.",
+      "suggested_check": "Before registration, build the frozen twin of 2D_Case_4 and run both twin gates on it as part of the dev rows.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The trace-width rule ignores nets, so power copper can neck down to gate-trace width",
+      "detail": "T0252's spacing fix made spacing depend on the net pair, but trace width is still 'at least the reference's smallest', which is usually a gate or Kelvin trace. The thermal model uses equal power per die with no Joule heating in the copper, so power-copper necks with very high current density cost nothing in either Tj or inductance. This is the same kind of rule artifact as the spacing finding, but it probably buys less inductance, because narrow copper raises L.",
+      "evidence": "scope_in design-rule clause; DesignRules.min_trace_width is a single value.",
+      "suggested_check": "Set the minimum width of the power nets from the reference's own minimum power-net width.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A kill on public references depends on the assumed 7 nH L_term, but sensitivity is stated only for a PASS",
+      "detail": "A smaller L_term makes a kill harder. The PowerSynth test vehicles' real terminals are unknown, and the 7 nH value comes from a different module (CPES laminated terminals). The rows do carry h_hi at 0 and 17.5 nH, but the objective requires reporting that sensitivity only for a PASS.",
+      "evidence": "With L_sub = 10 nH, h_sub = 0.14 and w = 0.02: h_hi = 0.157 at L_term = 0 (no kill), 0.092 at 7 nH (kill), 0.057 at 17.5 nH.",
+      "suggested_check": "Report any kill with its h_hi at L_term = 0 next to it, in the same way as a PASS.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The planted control only shows that the search reaches the twin's level, not that it can find 20 % beyond it",
+      "detail": "The candidate pool is generated from the outline, pads, keep-outs, dies and rules, not from the reference's copper. Under that reading, h_ctrl >= h_plant - w_ctrl reduces to L(best of the control) <= L(W) + w_ctrl\u00b7L(D). The 1.25 degradation only scales a slack of about 0.5 %. So F1(b) shows that a new-seed inductance-only search reaches the reference level. If the reference is well optimised (the null), the control may fail and E008 becomes INVALID. A kill is then possible only if the D0008 search matches the reference designer. That is a coherent rule, but the objective should say so plainly.",
+      "evidence": "F1(b) formulas, and F3's candidate generation (20,000 DRC-valid candidates from the sealed seed, screened by L1).",
+      "suggested_check": "Say in the notes which quantity F1(b) actually certifies.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the per-reference verdict boundaries in the notes (a = 1, w = 0.02: PASS from 0.216, kill below 0.082; L_sub = 10/L_term = 7: 0.353/0.153; L_sub = 20: 0.284/0.117). All match. Added L_sub = 5 nH: a = 0.417, PASS from 0.490, kill below 0.224.",
+    "Derived the module-level headroom a(1 - r) = (L_sub(W) - L_sub(C))/(L_sub(W) + L_term) and confirmed the h_lo and h_hi formulas.",
+    "Monte Carlo check (1e5 trials) of the Tj interval bounds max_i(T_i - G_i) <= true max <= max_i(T_i + G_i): no violations. The conservative and optimistic tests are correctly oriented, and the +inf handling is consistent.",
+    "Built a K1 counter-example in which the kill fires on a candidate that passes the Tj test (h_hi = 0.099) while the inductance-only best gives h_hi = 0.181.",
+    "Checked how a kill responds to L_term (0 / 7 / 17.5 nH -> h_hi 0.157 / 0.092 / 0.057).",
+    "Checked that src/moduleforge/solvers/thermal_fem.py at this commit has sha256 a216d5fe..., and that it supports a baseplate outline larger than the substrate outline, so PowerSynth's 55x60 mm baseplate can be modelled without editing the frozen file.",
+    "Read the generator and DesignRules: no gate or Kelvin wires are modelled, and max_wire_length applies only to power wires. The public-benchmark note confirms that 2D_Case_2R has wire-bonded gate loops.",
+    "Used E002's exploratory within-stratum CV of L2 (about 2-9 %) to bound the spread across the checked candidates, which limits how far a false kill can reach."
+  ],
+  "caveats": [
+    "A kill (K1) is valid only up to the L_sub spread across the at most 8 checked candidates. It certifies that the Tj-bounded headroom is below roughly 0.10 + a times that spread, not below 0.10. Comparing the inductance-only best's h_hi with 0.10 tells you whether a kill is a strict one.",
+    "A PASS (A1) is about layouts whose dies are not required to stay wire-bondable to the fixed gate and Kelvin copper, and whose power copper may neck down to the reference's smallest (gate) trace width. Until those rules are added, a PASS should be stated as conditional on them.",
+    "If the twin rule is not applied before the +inf rule, a reference where the search cannot beat the twin and all checked candidates are hot is wrongly blocked from a kill.",
+    "The twin gates, with discretisation-only tolerances, may exclude references if the generalised generator cannot reproduce the snapped reconstruction exactly. With n = 2 public references that risks INVALID, which D0011 counts as INCONCLUSIVE.",
+    "This is a physics-lens review. I did not re-derive the statistical properties of the min/max aggregation, or P3's e_R estimator beyond its stated form.",
+    "The materiality estimate for the first finding rests on E002's within-stratum spread, not on a run of the O003 generator, which does not exist yet."
+  ]
+}
