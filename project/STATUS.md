@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T23:20:01+00:00 from repository state — do not edit_
+_generated 2026-11-09T23:20:43+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -37,7 +37,6 @@ cancelled: 38, done: 238, failed: 3, review: 1, running: 3, todo: 3
 - T0286 `running` critic/review: Review T0259 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T22:45:54+00:00 run_started {"run": "T0282-builder-20261109T144554-a09a", "task": "T0282", "role": "builder", "session": "c9f9250f-ea94-4e39-a24c-d1e04d1c344e"}
 - 2026-11-09T22:47:42+00:00 inbox_resolved {"id": "I0151", "status": "approved", "note": "Merge T0274: full DRC re-check after snapping (induced/pre-existing), staircase errors, AlN citation and comment 
 - 2026-11-09T22:47:52+00:00 task_failed_attempt {"task": "T0274", "signal": "dod_failed", "action": "repair"}
 - 2026-11-09T22:47:54+00:00 run_started {"run": "T0274-builder-20261109T144754-c0bf", "task": "T0274", "role": "builder", "session": "61334f90-7c1d-40c0-b50b-c43555d30135"}
@@ -52,3 +51,4 @@ cancelled: 38, done: 238, failed: 3, review: 1, running: 3, todo: 3
 - 2026-11-09T23:13:49+00:00 task_amended {"task": "T0263", "reason": "post-freeze twin-space check of each reconstruction (no solves)"}
 - 2026-11-09T23:19:52+00:00 verified {"task": "T0259"}
 - 2026-11-09T23:20:01+00:00 run_started {"run": "T0286-critic-20261109T152001-da2f", "task": "T0286", "role": "critic", "session": "de99bfbb-9811-4c29-849c-edff5e88b233"}
+- 2026-11-09T23:20:35+00:00 sleep_detected {"gap_s": 467, "runs_extended": 3}
