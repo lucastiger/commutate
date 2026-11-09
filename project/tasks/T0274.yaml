@@ -1,0 +1,64 @@
+id: T0274
+objective: O003
+title: 'Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0268
+description: "Follow-up to T0268, from review T0272 (project/reviews/T0268/T0272.json; read it first).\
+  \ Lands before E008's code freeze\n(T0262). Do not edit src/moduleforge/solvers/thermal_fem.py (sha256\
+  \ a216d5fe...).\n1. Full re-check after snapping (T0272 finding 1). snap_layout runs the full drc check()\
+  \ on the snapped layout and reports\n   every violation, each labelled 'induced' (absent before snapping)\
+  \ or 'pre-existing' (present before), instead of\n   filtering to CHECKED_RULES plus net_merged. Tests\
+  \ with hand-built layouts: a source pad clipped below twice\n   wire_start_margin gives an induced wire_start\
+  \ violation; a staircased corner notch that moves a terminal off its copper\n   gives an induced terminal_off_trace\
+  \ violation; a violation present before snapping is labelled pre-existing.\n2. Docstring contract (T0272\
+  \ finding 0): either raise ValueError naming the feature when the staircase path fills a hole\n   or\
+  \ splits an outline into a MultiPolygon, or narrow the docstring to the vertex-snapping path and report\
+  \ those cases as\n   violations. Prefer raising; add tests for both cases.\n3. tests/unit/geometry/test_stack.py\
+  \ line ~131: correct the comment to match the stack.py docstring (319 W/(m K) is Slack\n   et al.'s\
+  \ estimated intrinsic value; the 400 K and 480 K values are the 1/T law, not data).\n4. stack.py AlN\
+  \ docstring (T0272 note 3): cite Watari et al., J. Mater. Res. 17(11) (2002), AlN ceramic 4-1000 K\n\
+  \   (272 W/(m K) at room temperature, high purity, not a commercial 170-180 grade), and remove the claim\
+  \ that no AlN-ceramic\n   k(T) data were found. Do not change the law itself.\nKeep every existing test\
+  \ passing; do not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/geometry tests/unit/drc
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-09T17:04:55+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

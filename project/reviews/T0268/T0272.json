@@ -1,0 +1,65 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The new docstring promises a ValueError for collapsing holes and outlines, but staircased features don't raise one",
+      "detail": "The new snap.py docstring says that 'A feature (outline, trace, hole, terminal or die) that collapses to zero size or becomes invalid raises ValueError naming it.' That holds only on the vertex-snapping path (_snap_rect_polygon, _snap_rect). On the staircase path (_staircase, used for non-rectilinear copper and outlines), a sub-cell hole is filled without any error. A staircased outline whose thin 45-degree neck is dropped becomes a MultiPolygon, again with no error and no violation. The code does no harm here; the documented contract is wider than what the code does.",
+      "evidence": "Scratch run: a chamfered 10x10 mm DC+ trace with a 0.15 mm square hole, snapped at 0.5 mm, gave 'A: no error; holes after = 0', with only a staircase record. An outline made of two squares joined by a 0.1 mm wide 45-degree neck gave 'B: no error; outline type after MultiPolygon violations []'. Rectilinear necks and arms do raise ValueError as documented (cases D and D2).",
+      "suggested_check": "Limit the sentence to the vertex-snapping path, or raise or report when a staircased hole disappears or an outline becomes a MultiPolygon.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The re-check is partial, and 'snapping-induced' violations include ones that existed before snapping",
+      "detail": "snap_layout filters check() down to CHECKED_RULES plus net_merged. Several rules that snapping can change are discarded without notice: wire_start, wire_landing, terminal_off_trace, min_trace_width, edge_margin, die_spacing and die_on_terminal. Two examples from the code: (1) when a source pad is clipped to less than twice wire_start_margin, _erode falls back to the un-eroded pad, so the relocated start can violate wire_start, and that violation is dropped. (2) A staircased corner notch can push a terminal off its copper. The docstring calls the added rules 'snapping-induced', but the code returns every violation of those rules on the snapped layout, including violations already present before snapping; it does not compare against the input. The risk is lower than it sounds. Vertex rounding is monotone and shifts by whole cells, so it preserves rectangle-to-rectangle gaps and widths that are whole multiples of the grid (the 1 mm defaults at 0.5 mm). O003 also measures its rules on the snapped reference.",
+      "evidence": "snap.py line 242: viol = [v for v in check(out, rules) if v.rule in CHECKED_RULES]. Lines 181-183: _erode returns the original polygon when erosion leaves nothing. I could not execute the wire_start counter-example: the sandbox denied that scratch run, so this case is inferred from reading the code.",
+      "suggested_check": "Either return check(snapped) minus check(original) for all rules, or document the excluded rules and why each is excluded.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A test_stack.py comment still repeats the AlN misattribution that the docstring now corrects",
+      "detail": "The corrected stack.py docstring says 319 W/(m K) is Slack et al.'s estimated intrinsic value, not a measurement, and that the 400 K and 480 K values are not confirmed data. tests/unit/geometry/test_stack.py line 131 still reads 'Slack et al. 1987: k = 319 W/(m K) at 300 K and k ~ 1/T, so 239.25 at 400 K and 199.4 at 480 K (cited-law points)'. The test itself only checks that 319*f(T) equals 319*300/T, so it tests the 1/T shape, not agreement with literature.",
+      "evidence": "test_stack.py:131-133 compared with stack.py:38-43.",
+      "suggested_check": "Reword the comment as 'law points from the estimated intrinsic value', not cited data.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The AlN docstring says no sintered-AlN k(T) table was found, but at least one AlN-ceramic dataset over 4-1000 K exists",
+      "detail": "Watari, Nakano, Urabe, Ishizaki, Cao and Mori, J. Mater. Res. 17(11) (2002), measured an AlN ceramic from 4 to 1000 K (272 W/(m K) at room temperature). They report no significant difference from single-crystal AlN between 500 and 1000 K, which suggests single-crystal data above 300 K also exist. That sample is a high-purity ceramic, not a commercial 170-180 W/(m K) grade, so it does not directly test the stored law. The docstring openly says the law is untested and rates it low confidence, which is honest. The statement that the slope error 'largely cancels' between the two layouts is not quantified.",
+      "evidence": "Abstract on cambridge.org (J. Mater. Res. 17, 2002), fetched during this review.",
+      "suggested_check": "Compare the AlN-ceramic k(T) from Watari 2002 with (T/300)^-1 over 300-480 K before E008 is frozen.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Completeness against review T0264 cannot be checked from this repository",
+      "detail": "The claim says the change implements the fixes from review T0264, but the T0264 review report is not in the repository at this commit. I judged the change against its own docstring, the tests and O003's scope_in text. Objective lines 77-81 do not fix a tie rule, so documenting the outward staircase tie, rather than changing the code, is consistent with the objective. Every DoD command passes.",
+      "evidence": "Searching the repository for 'T0264' finds only stack.py. project/objectives/O003/objective.yaml lines 77-81 describe the snapping rule without a tie rule.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/geometry/test_snap.py tests/unit/geometry/test_stack.py`: 46 passed.",
+    "Ran `uv run pytest -q -m 'not slow' tests/unit`: 558 passed, 37 deselected.",
+    "Ran `uv run ruff check .`: all checks passed.",
+    "Hashed thermal_fem.py with sha256: a216d5fe3209bcee\u2026, matching the required prefix, so the file is unchanged.",
+    "Ran `uv run mfos gate --fast`: all gates passed.",
+    "Ran a scratch script of adversarial snap inputs. A staircased trace's sub-cell hole was filled with no ValueError. A staircased outline split into a MultiPolygon with no error. Rectilinear necks and arms that collapse do raise ValueError naming the trace.",
+    "Confirmed the new tests can fail: before the change, GEOSException was not caught as ValueError and net_split, wire_pitch, wire_length and wire_landing_keepout were not in CHECKED_RULES, so the new tests would have failed. The corner-cell parameters (0.5041 vs 0.49) tightly bracket the 1/2 threshold.",
+    "Recomputed the AlN law ratios by hand: 300/400 = 0.75 and 300/480 = 0.625, matching the docstring.",
+    "Checked by reasoning that vertex rounding, floor(u + 1/2), is monotone and shifts by whole cells, so it preserves rectangle gaps that are whole multiples of the cell. This bounds which dropped rules matter.",
+    "Checked the literature: the Ioffe-cited 2.85 W/(cm K) is the maximum measured value at 300 K, and 319 W/(m K) is a theoretical or intrinsic value. Found Watari et al. 2002 (AlN ceramic, 4-1000 K).",
+    "Checked that no protected paths (.mfos/policy.toml) are touched and that nothing else in the repository calls snap_layout."
+  ],
+  "caveats": [
+    "The fixes are mostly documentation plus a wider re-check list. The staircase tie rule is documented, not changed. The AlN law is unchanged and is still not tested against any sintered-AlN data.",
+    "The ValueError-on-collapse contract holds only for vertex-snapped features. On the staircase path, holes can be filled and outlines can become MultiPolygons without any error.",
+    "snap_layout's re-check covers 8 DRC rules plus net_merged. Snapping-induced wire_start, wire_landing, terminal_off_trace, min_trace_width, edge_margin, die_spacing and die_on_terminal violations are dropped. Violations that existed before snapping are reported the same way as induced ones.",
+    "The T0264 review report is not in the repository, so 'completely implements T0264' could only be judged against the change's own stated scope.",
+    "During this review the sandbox denied some scratch-script runs, so the wire_start counter-example is inferred from reading the code, not executed."
+  ]
+}
