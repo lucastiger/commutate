@@ -179,12 +179,13 @@ class GridRule:
     ``min_gap_fraction * s`` to a fixed or an accepted grading line, or outside the domain, is dropped. Higher levels
     bisect, so every level-0 line is a node at every level.
 
-    ``amg_gs_sweeps`` (default None: every solve is bitwise unchanged) is an opt-in order-1 preconditioner option: an
-    int 1..8 makes the smoothed-aggregation hierarchy use that many symmetric Gauss-Seidel sweeps as pre- and
-    postsmoother on every level instead of pyamg's default of one. Measured reason: T0228 counted CG 316/318 iterations
-    at L2 on Muzychka Cases 1a/1b and the sliver verdict was conditioning; the founder diagnostic (two sweeps, Cases
-    1a/1b at L0/L1) measured -28/-29 % CG iterations with |dT| <= 5e-11 K and +7-10 % wall time. Not allowed with
-    ``element_order`` 2 (the Q2 p-multigrid sets its own smoothers; the option was measured on order 1 only)."""
+    ``amg_gs_sweeps`` (default None: temperatures and solver statistics bitwise unchanged; ``meta`` gains the key
+    ``amg_gs_sweeps``) is an opt-in order-1 preconditioner option: an int 1..8 makes the smoothed-aggregation hierarchy
+    use that many symmetric Gauss-Seidel sweeps as pre- and postsmoother on every level instead of pyamg's default of
+    one. Measured reason: T0228 counted CG 316/318 iterations at L2 on Muzychka Cases 1a/1b and the sliver verdict was
+    conditioning; the founder diagnostic (two sweeps, Cases 1a/1b at L0/L1) measured -28/-29 % CG iterations with
+    |dT| <= 5e-11 K and about +2-11 % wall time (noisy, review T0246). Not allowed with ``element_order`` 2 (the Q2
+    p-multigrid sets its own smoothers; the option was measured on order 1 only)."""
 
     h0: float = 2.0e-3
     nz: dict = field(default_factory=lambda: {"baseplate": 2, "solder": 1, "backside_cu": 1, "ceramic": 1, "top_cu": 1,
@@ -647,7 +648,7 @@ class _Solver:
 
     ``gs_sweeps`` (order 1 only, default None = pyamg's defaults, bitwise unchanged): n symmetric Gauss-Seidel sweeps as
     pre- and postsmoother on every level (``GridRule.amg_gs_sweeps``; measured -28/-29 % CG iterations on Muzychka Cases
-    1a/1b at L0/L1, |dT| <= 5e-11 K, +7-10 % wall time)."""
+    1a/1b at L0/L1, |dT| <= 5e-11 K, about +2-11 % wall time, noisy)."""
 
     def __init__(self, A: sp.csr_matrix, P: sp.csr_matrix | None = None, gs_sweeps: int | None = None):
         self.A = A
