@@ -17,8 +17,10 @@ import math
 import numpy as np
 import pytest
 from shapely.geometry import LineString, box
+from shapely.ops import unary_union
 
 from moduleforge.drc import DEFAULT_RULES, DesignRules, check, measure_rules
+from moduleforge.drc.rules import spacing_class
 from moduleforge.generate.halfbridge import generate_layouts
 from moduleforge.geometry import (
     GATE_HS,
@@ -161,8 +163,11 @@ def test_signal_net_map_is_per_switch():
 
 def test_defaults_are_unchanged():
     d = DesignRules()
-    for f in ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other", "min_width_power",
-              "min_width_other", "max_gate_wire_length", "max_kelvin_wire_length"):
+    for f in ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other",
+              "spacing_signal_dcp", "spacing_signal_phase", "spacing_signal_dcm", "spacing_signal_source",
+              "spacing_signal_hs_ls", "min_width_power", "min_width_other", "min_signal_wire_diameter",
+              "max_signal_wire_diameter", "min_signal_wire_length", "max_signal_wire_length", "max_gate_wire_length",
+              "max_kelvin_wire_length"):
         assert getattr(d, f) is None
     assert d.min_spacing == 1e-3 and d.min_trace_width == 1e-3 and d.wire_pitch_diameters == 2.0
 
@@ -511,7 +516,16 @@ def test_measure_fixture_values(fx):
     assert rec["gap_dcp_phase"] == pytest.approx(3e-3, abs=1e-12)
     assert rec["gap_phase_dcm"] == pytest.approx(3e-3, abs=1e-12)
     assert rec["gap_dcp_dcm"] == pytest.approx(math.sqrt(18.0) * 1e-3, abs=1e-12)
-    assert rec["gap_other_min"] == pytest.approx(2e-3, abs=1e-12)
+    # signal-to-power gaps (own rule classes, by voltage): every strip is 2 mm from the power copper it is not
+    # referenced to (HS strips to DC+, LS strips to PHASE); HS signal to DC- is GATE_HS (y 17.5..19.5) to DC- (x 20..,
+    # y 18.5..) 3.0; signal to its own source (GATE_HS/KELVIN_HS to PHASE, GATE_LS to DC-) sqrt(3^2 + 2^2); HS-LS
+    # signal KELVIN_HS/KELVIN_LS 3.0; the remaining (same-switch) pairs are tightest at KELVIN_LS/GATE_LS, sqrt(8)
+    for k in ("gap_signal_dcp", "gap_signal_phase"):
+        assert rec[k] == pytest.approx(2e-3, abs=1e-12)
+    assert rec["gap_signal_dcm"] == pytest.approx(3e-3, abs=1e-12)
+    assert rec["gap_signal_source"] == pytest.approx(math.sqrt(13.0) * 1e-3, abs=1e-12)
+    assert rec["gap_signal_hs_ls"] == pytest.approx(3e-3, abs=1e-12)
+    assert rec["gap_other_min"] == pytest.approx(math.sqrt(8.0) * 1e-3, abs=1e-12)
     assert rec["min_width_power"] == pytest.approx(8e-3, abs=1.2e-6)  # DC- is 8 mm tall
     assert rec["min_width_other"] == pytest.approx(2e-3, abs=1.2e-6)
     assert rec["die_spacing"] == pytest.approx(12e-3, abs=1e-12)  # 24.5 - 12.5
@@ -530,7 +544,13 @@ def test_measure_fixture_values(fx):
     assert rec["max_kelvin_pad_to_copper"] == pytest.approx(5.1e-3, abs=1e-12)
     assert rec["signal_unmeasured"] == {}
     assert rules.spacing_dcp_phase == pytest.approx(3e-3, abs=1e-9)
-    assert rules.spacing_other == pytest.approx(2e-3, abs=1e-9)
+    assert rules.spacing_other == pytest.approx(math.sqrt(8.0) * 1e-3, abs=1e-9)
+    assert rules.spacing_signal_dcp == pytest.approx(2e-3, abs=1e-9)
+    assert rules.spacing_signal_phase == pytest.approx(2e-3, abs=1e-9)
+    assert rules.spacing_signal_dcm == pytest.approx(3e-3, abs=1e-9)
+    assert rules.spacing_signal_source == pytest.approx(math.sqrt(13.0) * 1e-3, abs=1e-9)
+    assert rules.spacing_signal_hs_ls == pytest.approx(3e-3, abs=1e-9)
+    assert rules.min_signal_wire_diameter == pytest.approx(0.1e-3, abs=1e-9) == rules.max_signal_wire_diameter
     assert rules.min_wire_pitch == pytest.approx(0.8e-3, abs=1e-9)
     assert rules.wire_pitch_diameters == pytest.approx(0.8 / 0.3, abs=1e-9)
     assert rules.max_gate_wire_length == pytest.approx(fx.signal_wires[2].length, abs=1e-9)
@@ -572,13 +592,16 @@ def test_measure_without_signal_elements_leaves_those_rules_unset():
     assert "gate" in rec["signal_unmeasured"] and GATE_HS in rec["signal_unmeasured"]["gate"]
 
 
-MIN_FIELDS = ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other", "min_width_power",
-              "min_width_other", "min_wire_pitch", "die_spacing", "die_edge_margin", "edge_margin",
-              "min_spacing", "min_trace_width")
-STRICT_FIELDS = ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other", "min_wire_pitch",
-                 "die_spacing", "die_edge_margin", "edge_margin")  # measured to <= 1 nm: +1 um must fail
+SIGNAL_SPACING_FIELDS = ("spacing_signal_dcp", "spacing_signal_phase", "spacing_signal_dcm", "spacing_signal_source",
+                         "spacing_signal_hs_ls")
+MIN_FIELDS = ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other", *SIGNAL_SPACING_FIELDS,
+              "min_width_power", "min_width_other", "min_signal_wire_diameter", "min_signal_wire_length",
+              "min_wire_pitch", "die_spacing", "die_edge_margin", "edge_margin", "min_spacing", "min_trace_width")
+STRICT_FIELDS = ("spacing_dcp_phase", "spacing_phase_dcm", "spacing_dcp_dcm", "spacing_other", *SIGNAL_SPACING_FIELDS,
+                 "min_wire_pitch", "min_signal_wire_diameter", "min_signal_wire_length", "die_spacing",
+                 "die_edge_margin", "edge_margin")  # measured to <= 1 nm: +1 um must fail
 WIDTH_FIELDS = ("min_width_power", "min_width_other")  # bisected to 1 um: +3 um must fail
-MAX_FIELDS = ("max_gate_wire_length", "max_kelvin_wire_length")
+MAX_FIELDS = ("max_gate_wire_length", "max_kelvin_wire_length", "max_signal_wire_diameter", "max_signal_wire_length")
 
 
 def assert_self_consistent(lay):
@@ -635,7 +658,9 @@ def test_random_fixture_variants_clean_under_own_rules(seed):
               xa=rng.uniform(11.0, 13.0), xb=rng.uniform(11.0, 13.0), yc=rng.uniform(9.0, 14.0),
               xd=rng.uniform(28.0, 31.0), diam=rng.uniform(0.08, 0.2), loop=rng.uniform(0.3, 1.0))
     rules, rec = assert_self_consistent(fixture(**kw))
-    assert rec["gap_other_min"] == pytest.approx(M(min(kw["g1"], kw["g2"], kw["g3"], kw["g4"])), abs=1e-12)
+    # g1..g4 are the high-voltage signal-to-power gaps (HS strips to DC+, LS strips to PHASE); the others are larger
+    sp = [rec[k] for k in ("gap_signal_dcp", "gap_signal_phase", "gap_signal_dcm")]
+    assert min(sp) == pytest.approx(M(min(kw["g1"], kw["g2"], kw["g3"], kw["g4"])), abs=1e-12)
     assert rec["min_width_other"] == pytest.approx(M(min(kw["w1"], kw["w2"], kw["w3"], kw["w4"])), abs=1.2e-6)
     assert rules.max_gate_wire_length is not None and rules.max_kelvin_wire_length is not None
 
@@ -713,3 +738,253 @@ def test_synthetic_signal_layouts_on_generator_geometry():
     assert n_layouts >= 3
     # wires of all four nets were kept, several per net (paralleled dies of one switch share its island)
     assert all(kept.get(n, 0) >= 5 for n in SIGNAL_NETS), kept
+
+
+
+# ---------------------------------------------------------------- T0270: signal-to-power classes, signal-wire ranges
+
+# Potential of each net: DC+, PHASE, DC-; the HS gate/Kelvin nets sit at PHASE potential and the LS ones at DC-
+# potential (up to the gate-drive voltage). A gap sees the full DC link unless both sides share a potential.
+POTENTIAL = {"DC+": "DC+", "PHASE": "PHASE", "DC-": "DC-",
+             GATE_HS: "PHASE", KELVIN_HS: "PHASE", GATE_LS: "DC-", KELVIN_LS: "DC-"}
+SIGNAL_POWER_CLASSES = ("signal_dcp", "signal_phase", "signal_dcm", "signal_source", "signal_hs_ls")
+
+
+@pytest.mark.parametrize("a,b", list(itertools.combinations_with_replacement(
+    ("DC+", "PHASE", "DC-", GATE_HS, KELVIN_HS, GATE_LS, KELVIN_LS), 2)))
+def test_spacing_class_never_mixes_high_and_low_voltage(a, b):
+    # every rule class holds only full-DC-link pairs or only same-potential pairs; the expected class is written
+    # out by hand from the potential table above
+    expect = {
+        frozenset(("DC+", "PHASE")): "dcp_phase", frozenset(("PHASE", "DC-")): "phase_dcm",
+        frozenset(("DC+", "DC-")): "dcp_dcm",
+        frozenset((GATE_HS, "DC+")): "signal_dcp", frozenset((KELVIN_HS, "DC+")): "signal_dcp",
+        frozenset((GATE_LS, "DC+")): "signal_dcp", frozenset((KELVIN_LS, "DC+")): "signal_dcp",
+        frozenset((GATE_LS, "PHASE")): "signal_phase", frozenset((KELVIN_LS, "PHASE")): "signal_phase",
+        frozenset((GATE_HS, "DC-")): "signal_dcm", frozenset((KELVIN_HS, "DC-")): "signal_dcm",
+        frozenset((GATE_HS, "PHASE")): "signal_source", frozenset((KELVIN_HS, "PHASE")): "signal_source",
+        frozenset((GATE_LS, "DC-")): "signal_source", frozenset((KELVIN_LS, "DC-")): "signal_source",
+        frozenset((GATE_HS, GATE_LS)): "signal_hs_ls", frozenset((GATE_HS, KELVIN_LS)): "signal_hs_ls",
+        frozenset((KELVIN_HS, GATE_LS)): "signal_hs_ls", frozenset((KELVIN_HS, KELVIN_LS)): "signal_hs_ls",
+    }.get(frozenset((a, b)), "other")
+    assert spacing_class(a, b) == spacing_class(b, a) == expect
+    hv = POTENTIAL[a] != POTENTIAL[b]
+    assert hv == (expect not in ("signal_source", "other"))
+    # spacing_for reads exactly that field: give every class a distinct value
+    vals = {k: M(1.0 + 0.1 * i) for i, k in enumerate(("dcp_phase", "phase_dcm", "dcp_dcm", "other")
+                                                       + SIGNAL_POWER_CLASSES)}
+    rules = r(min_spacing=M(9.0), **{f"spacing_{k}": v for k, v in vals.items()})
+    assert rules.spacing_for(a, b) == vals[expect]
+
+
+def tight_lv_reference():
+    """Fixture with tight gate-drive-voltage gaps and unchanged high-voltage gaps (hand-computed, mm):
+    GATE_LS gets a 1 mm arm 1.0 above its own source DC- (x 20..38.5, y 27.5..28.5, joined by extending the strip to
+    y 28.5); KELVIN_LS gets a step (x 36..38.5, y 3.5..4.5) 1.0 below GATE_LS (same switch). The step's corner
+    (36, 4.5) is sqrt(5) from PHASE (34, 5.5) and the arm 3.0 / 8.5 from DC+ / GATE_HS, so the high-voltage gaps stay
+    those of the fixture: signal-DC+ 2.0, LS signal-PHASE 2.0, HS signal-DC- 3.0, HS-LS signal 3.0."""
+    lay = replace_trace(fixture(), GATE_LS, [Trace(GATE_LS, unary_union([mmbox(36, 5.5, 38.5, 28.5),
+                                                                         mmbox(20, 27.5, 38.5, 28.5)]))])
+    return replace_trace(lay, KELVIN_LS, [Trace(KELVIN_LS, unary_union([mmbox(20, 1.5, 38.5, 3.5),
+                                                                         mmbox(36, 3.5, 38.5, 4.5)]))])
+
+
+def lumped_per_power_net(lay, power):
+    """The rejected T0270 model: min gap from any gate/Kelvin copper to ``power`` copper."""
+    pw = unary_union([t.polygon for t in lay.traces if t.net == power])
+    return min(t.polygon.distance(pw) for t in lay.traces if t.net in SIGNAL_NETS)
+
+
+def test_tight_lv_reference_measures_each_class_separately():
+    ref = tight_lv_reference()
+    assert check(ref) == []
+    rules, rec = measure_rules(ref)
+    expect = {"gap_signal_dcp": 2.0, "gap_signal_phase": 2.0, "gap_signal_dcm": 3.0, "gap_signal_source": 1.0,
+              "gap_signal_hs_ls": 3.0, "gap_other_min": 1.0, "gap_dcp_phase": 3.0, "gap_phase_dcm": 3.0}
+    for k, v in expect.items():
+        assert rec[k] == pytest.approx(M(v), abs=1e-12), k
+    for f, v in (("spacing_signal_source", 1.0), ("spacing_signal_dcm", 3.0), ("spacing_signal_hs_ls", 3.0),
+                 ("spacing_other", 1.0)):
+        assert M(v) - 2e-9 <= getattr(rules, f) <= M(v), f  # floored to whole nm (<= 1 nm + float round-off)
+    assert check(ref, rules) == []
+    # the lumped model would have given signal-to-DC- 1.0 mm (the LS gate arm to its own source)
+    assert lumped_per_power_net(ref, "DC-") == pytest.approx(1e-3, abs=1e-12)
+
+
+def test_gate_trace_closer_to_dcp_than_reference_fails():
+    # task deliverable: reference signal-to-DC+ gap 2.0 mm (every other signal gap of this reference is <= 1.0 mm
+    # or not a DC+ gap); derivative GATE_HS 1.0 mm above DC+ (y 16.5..18.5): to DC- 3.0, to PHASE sqrt(10)
+    ref = tight_lv_reference()
+    rules, _ = measure_rules(ref)
+    der = replace_trace(ref, GATE_HS, [Trace(GATE_HS, mmbox(3, 16.5, 17, 18.5))])
+    bad = viol(der, rules, "min_spacing")
+    assert len(bad) == 1 and pair(bad[0]) == {GATE_HS, "DC+"}
+    assert "1.000e-03" in bad[0].message and "2.000e-03" in bad[0].message
+    ok = replace_trace(ref, GATE_HS, [Trace(GATE_HS, mmbox(3, 17.5, 17, 19.5))])  # the reference's 2.0 mm passes
+    assert viol(ok, rules, "min_spacing") == []
+    near = replace_trace(ref, GATE_HS, [Trace(GATE_HS, mmbox(3, 17.49, 17, 19.49))])  # 1.99 mm fails
+    assert len(viol(near, rules, "min_spacing")) == 1
+
+
+def test_hv_signal_gap_cannot_shrink_to_a_gate_drive_gap():
+    # review blocker: the reference's LS gate runs 1.0 mm from its own source DC-. A derivative moving the HS gate to
+    # 1.0 mm from DC- (x 3..19: to DC- 1.0, DC+ 2.0, PHASE sqrt(5)) puts the full DC link across 1.0 mm.
+    ref = tight_lv_reference()
+    rules, _ = measure_rules(ref)
+    der = replace_trace(ref, GATE_HS, [Trace(GATE_HS, mmbox(3, 17.5, 19, 19.5))])
+    bad = viol(der, rules, "min_spacing")
+    assert len(bad) == 1 and pair(bad[0]) == {GATE_HS, "DC-"}
+    assert "3.000e-03" in bad[0].message
+    # the per-power-net lumped value (1.0 mm) would have accepted it
+    lumped = dataclasses.replace(rules, spacing_signal_dcm=_floor(lumped_per_power_net(ref, "DC-")))
+    assert viol(der, lumped, "min_spacing") == []
+
+
+def test_hs_ls_signal_gap_cannot_shrink_to_a_same_switch_gap():
+    # review major: the reference's tightest signal-signal gap is KELVIN_LS/GATE_LS 1.0 mm (one switch, gate-drive
+    # voltage); KELVIN_HS/KELVIN_LS (PHASE vs DC- potential) is 3.0. A derivative with KELVIN_HS extended to
+    # x = 18.5 (to KELVIN_LS 1.5, DC+ 2.0, PHASE 2.5) is flagged by the HS-LS class only.
+    ref = tight_lv_reference()
+    rules, _ = measure_rules(ref)
+    der = replace_trace(ref, KELVIN_HS, [Trace(KELVIN_HS, mmbox(3, 1.5, 18.5, 3.5))])
+    bad = viol(der, rules, "min_spacing")
+    assert len(bad) == 1 and pair(bad[0]) == {KELVIN_HS, KELVIN_LS}
+    assert viol(der, dataclasses.replace(rules, spacing_signal_hs_ls=None), "min_spacing") == []  # 1.5 >= other 1.0
+
+
+def test_gate_drive_gap_may_shrink_to_the_reference_gate_drive_gap():
+    # the gate-drive class is not over-strict. Under the tight reference's rules (signal_source 1.0), KELVIN_HS gets a
+    # step 1.0 mm below its own source PHASE: strip x 3..33 y 1.5..3.5 plus step x 19..33 y 3.5..4.5 (corner (19, 4.5)
+    # to DC+ corner (17, 5.5) sqrt(5) > 2.0). KELVIN_LS moves out of the way to x 36..38.5 y 1.0..3.0 (to KELVIN_HS
+    # 3.0, GATE_LS 2.5, PHASE sqrt(2^2 + 2.5^2)).
+    rules, _ = measure_rules(tight_lv_reference())
+    lay = replace_trace(fixture(), KELVIN_HS, [Trace(KELVIN_HS, unary_union([mmbox(3, 1.5, 33, 3.5),
+                                                                             mmbox(19, 3.5, 33, 4.5)]))])
+    lay = replace_trace(lay, KELVIN_LS, [Trace(KELVIN_LS, mmbox(36, 1.0, 38.5, 3.0))])
+    kh = next(t for t in lay.traces if t.net == KELVIN_HS).polygon
+    assert kh.distance(next(t for t in lay.traces if t.net == "PHASE").polygon) == pytest.approx(1e-3, abs=1e-12)
+    assert viol(lay, rules, "min_spacing") == []
+    bad = viol(lay, dataclasses.replace(rules, spacing_signal_source=M(1.01)), "min_spacing")
+    assert len(bad) == 1 and pair(bad[0]) == {KELVIN_HS, "PHASE"}
+
+
+def _floor(v):
+    return math.floor(v * 1e9) / 1e9
+
+
+def test_signal_to_power_is_per_power_net(fx):
+    rules, _ = measure_rules(fx)
+    # fixture: signal-to-DC+ and LS-signal-to-PHASE gaps are 2 mm, HS-signal-to-DC- 3 mm (GATE_HS)
+    assert rules.spacing_signal_dcm > rules.spacing_signal_dcp
+    # GATE_HS moved up to y 18.5..20.5 and lengthened to x 17.5: to DC- 2.5 (< 3.0), to DC+ 3.0, to PHASE
+    # sqrt(2.5^2 + 3^2) = 3.9 (>= the gate-drive class sqrt(13) = 3.61): fails the DC- value only
+    lay = replace_trace(fx, GATE_HS, [Trace(GATE_HS, mmbox(3, 18.5, 17.5, 20.5))])
+    bad = viol(lay, rules, "min_spacing")
+    assert len(bad) == 1 and pair(bad[0]) == {GATE_HS, "DC-"}
+
+
+def test_signal_fields_fall_back_to_spacing_other_then_min_spacing(fx):
+    # unset: the old behaviour (spacing_other governs every non-power pair, min_spacing under it)
+    assert len(viol(fx, r(spacing_other=M(2.01)), "min_spacing")) == 4
+    assert len(viol(fx, r(min_spacing=M(2.01)), "min_spacing")) >= 4
+    # set: the signal values govern their pairs, spacing_other only the remaining ones
+    bad = viol(fx, r(spacing_other=M(2.0), spacing_signal_dcp=M(2.01), spacing_signal_phase=M(2.01)),
+               "min_spacing")
+    assert len(bad) == 4
+    loose = dict(spacing_signal_dcp=M(1.0), spacing_signal_phase=M(1.0), spacing_signal_dcm=M(1.0),
+                 spacing_signal_source=M(1.0), spacing_signal_hs_ls=M(1.0))
+    only_other = viol(fx, r(spacing_other=M(2.9), **loose), "min_spacing")
+    assert len(only_other) == 1 and pair(only_other[0]) == {GATE_LS, KELVIN_LS}  # same switch, sqrt(8) < 2.9
+    # unset HS-LS / gate-drive classes fall back to spacing_other: KELVIN_HS/KELVIN_LS 3.0, signal-source sqrt(13)
+    assert len(viol(fx, r(spacing_other=M(3.01), spacing_signal_dcp=M(1.0), spacing_signal_phase=M(1.0),
+                          spacing_signal_dcm=M(1.0)), "min_spacing")) == 2
+    assert len(viol(fx, r(spacing_other=M(3.7), spacing_signal_dcp=M(1.0), spacing_signal_phase=M(1.0),
+                          spacing_signal_dcm=M(1.0)), "min_spacing")) == 2 + 3  # + GATE_HS, KELVIN_HS to PHASE, GATE_LS to DC-
+
+
+def test_signal_wire_diameter_range(fx):
+    for bad_d in (0.0, -M(0.1), M(0.6)):
+        lay = with_sig(fx, 0, diameter=bad_d)
+        assert "signal_wire_diameter" in rule_names(lay), bad_d
+    assert "signal_wire_diameter" not in rule_names(with_sig(fx, 0, diameter=M(0.025)))  # thin gate wire is fine
+    assert "signal_wire_diameter" in rule_names(with_sig(fx, 0, diameter=0.0), r(min_signal_wire_diameter=-1.0))
+    rr = r(min_signal_wire_diameter=M(0.11))
+    assert [v.rule for v in viol(fx, rr, "signal_wire_diameter")] == ["signal_wire_diameter"] * 4
+    rr = r(max_signal_wire_diameter=M(0.09))
+    assert len(viol(fx, rr, "signal_wire_diameter")) == 4
+    rr = r(min_signal_wire_diameter=M(0.1), max_signal_wire_diameter=M(0.1))
+    assert viol(fx, rr, "signal_wire_diameter") == []
+
+
+def test_signal_wire_length_range(fx):
+    lens = [w.length for w in fx.signal_wires]
+    lo, hi = min(lens), max(lens)
+    assert viol(fx, r(min_signal_wire_length=lo, max_signal_wire_length=hi), "signal_wire_length") == []
+    assert len(viol(fx, r(max_signal_wire_length=hi - 1e-6), "signal_wire_length")) >= 1
+    assert len(viol(fx, r(min_signal_wire_length=lo + 1e-6), "signal_wire_length")) >= 1
+    assert viol(fx, DEFAULT_RULES, "signal_wire_length") == []  # not enforced by default
+
+
+def test_general_signal_length_limit_does_not_loosen_a_per_pad_limit(fx):
+    # review minor: the upper bound is the smaller of the general and the per-pad limit
+    gate = max(w.length for w in fx.signal_wires if w.pad == "gate")
+    tight = r(max_gate_wire_length=gate - 1e-6, max_signal_wire_length=1.0)  # 1 m general limit
+    assert len(viol(fx, tight, "signal_wire_length")) >= 1
+    assert tight.signal_length_range("gate") == (-math.inf, gate - 1e-6)
+    assert r(max_gate_wire_length=1.0, max_signal_wire_length=0.5).signal_length_range("gate")[1] == 0.5
+    assert r(max_signal_wire_length=0.5).signal_length_range("kelvin")[1] == 0.5
+    assert r().signal_length_range("gate") == (-math.inf, math.inf)
+
+
+def test_measure_rules_reports_signal_wire_ranges(fx):
+    rules, rec = measure_rules(fx)
+    lens = [w.length for w in fx.signal_wires]
+    assert rec["signal_wire_length_range"] == (min(lens), max(lens))
+    assert rules.min_signal_wire_length == pytest.approx(min(lens), abs=2e-9)
+    assert rules.min_signal_wire_length <= min(lens)
+    assert rules.max_signal_wire_length == pytest.approx(max(lens), abs=2e-9)
+    assert rules.max_signal_wire_length >= max(lens)
+    assert rec["signal_wire_diameter_range"] == (M(0.1), M(0.1))
+    # a derivative with a 0.2 mm gate wire is outside the reference's measured range
+    assert [v.rule for v in viol(with_sig(fx, 0, diameter=M(0.2)), rules, "signal_wire_diameter")] == \
+        ["signal_wire_diameter"]
+    # a derivative with a shorter wire than any reference signal wire
+    short = with_pts(fx, 0, [list(p) for p in fx.signal_wires[0].points[:2]])
+    assert "signal_wire_length" in rule_names(short, rules)
+
+
+@pytest.mark.parametrize("d", [0.0, -M(0.1)])
+def test_measure_rules_survives_degenerate_signal_wire_diameters(fx, d):
+    lay = fx
+    for k in range(4):
+        lay = with_sig(lay, k, diameter=d)
+    assert "signal_wire_diameter" in rule_names(lay)  # flagged by the DRC ...
+    rules, rec = measure_rules(lay)  # ... and measuring neither raises nor returns a non-physical value
+    assert rec["min_wire_pitch_diameters"] is None or rec["min_wire_pitch_diameters"] > 0
+    assert rules.wire_pitch_diameters > 0
+    assert rec["n_nonpositive_signal_wire_diameters"] == 4
+    assert rec["signal_wire_diameter_range"] is None
+    assert rules.min_signal_wire_diameter is None and rules.max_signal_wire_diameter is None
+    assert "signal_wire_diameter" in rule_names(lay, rules)  # still flagged under the measured rules
+    # one degenerate wire among valid ones: the measured range is that of the valid ones
+    _, rec1 = measure_rules(with_sig(fx, 0, diameter=d))
+    assert rec1["signal_wire_diameter_range"] == (M(0.1), M(0.1))
+    assert rec1["n_nonpositive_signal_wire_diameters"] == 1
+
+
+def test_measure_rules_values_are_physical_with_signal_wires(fx):
+    rules, rec = measure_rules(fx)
+    assert 0 < rec["min_wire_pitch"] < 0.05
+    assert 0 < rec["min_wire_pitch_diameters"] < 100
+    for k in ("gap_signal_dcp", "gap_signal_phase", "gap_signal_dcm", "gap_signal_source", "gap_signal_hs_ls"):
+        assert 0 < rec[k] < 0.04, k  # inside the 40 x 30 mm substrate
+    assert rules.wire_pitch_diameters > 0 and rules.min_signal_wire_diameter > 0
+    assert 0 < rules.min_signal_wire_length <= rules.max_signal_wire_length < 0.05
+
+
+def test_fingerprint_independent_of_die_index_type(fx):
+    base = fx.fingerprint()
+    assert with_sig(fx, 0, die=np.int64(0)).fingerprint() == base
+    assert with_sig(fx, 0, die=np.int32(0)).fingerprint() == base
+    assert with_sig(fx, 0, die=1).fingerprint() != base  # still sensitive to the value
+    assert check(with_sig(fx, 0, die=np.int64(0))) == []

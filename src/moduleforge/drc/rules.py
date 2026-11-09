@@ -41,12 +41,29 @@ class DesignRules:
     # so the wedge footprint does not overhang the metallisation
     wire_start_margin: float = mm_to_m(0.15)
     # Optional per-net-pair spacing; ``None`` = use ``min_spacing`` (the default, so behaviour is unchanged).
-    # ``spacing_other`` applies to every net pair that is not one of the three power pairs (including two
-    # separate pieces of copper of the same net).
+    # The rule class of a copper pair is ``spacing_class`` (below). ``spacing_other`` applies to the pairs no
+    # other class takes: gate/Kelvin copper of the same switch (gate-drive voltage), two separate pieces of copper
+    # of one net (0 V) and unknown nets.
     spacing_dcp_phase: float | None = None
     spacing_phase_dcm: float | None = None
     spacing_dcp_dcm: float | None = None
     spacing_other: float | None = None
+    # Optional signal-to-power spacing (a gate / Kelvin net against DC+, PHASE or DC-), its own rule class, split by
+    # the voltage the gap sees. Each signal net sits at the potential of its switch's source (``SIGNAL_SOURCE_NET``:
+    # HS gate/Kelvin at PHASE, LS gate/Kelvin at DC-, up to the gate-drive voltage), so:
+    #   spacing_signal_dcp    any gate/Kelvin net to DC+        (full DC link: PHASE-DC+ or DC- to DC+)
+    #   spacing_signal_phase  LS gate/Kelvin net to PHASE       (full DC link when the HS switch is on)
+    #   spacing_signal_dcm    HS gate/Kelvin net to DC-         (full DC link when the HS switch is on)
+    #   spacing_signal_source gate/Kelvin net to its own source net (HS to PHASE, LS to DC-): gate-drive voltage only
+    # and, between two signal nets, ``spacing_signal_hs_ls``: HS gate/Kelvin to LS gate/Kelvin (full DC link).
+    # A high-voltage gap therefore never shares a class with a gate-drive-voltage gap. ``None`` = fall back to
+    # ``spacing_other``, then ``min_spacing`` (what governed these pairs before the classes existed, so verdicts are
+    # unchanged when they are unset).
+    spacing_signal_dcp: float | None = None
+    spacing_signal_phase: float | None = None
+    spacing_signal_dcm: float | None = None
+    spacing_signal_source: float | None = None
+    spacing_signal_hs_ls: float | None = None
     # Optional minimum width per net class; ``None`` = use ``min_trace_width``.
     min_width_power: float | None = None  # nets DC+, PHASE, DC-
     min_width_other: float | None = None  # every other net (gate, Kelvin, ...)
@@ -55,21 +72,75 @@ class DesignRules:
     # (``SIGNAL_NET``), and no gate (Kelvin) wire may be longer.
     max_gate_wire_length: float | None = None
     max_kelvin_wire_length: float | None = None
+    # Optional diameter / length range of gate and Kelvin wires, checked like the power-wire ranges. Diameter: a
+    # non-positive diameter is always rejected; ``None`` lower = no further lower bound (gate wires may be much
+    # thinner than power wires); ``None`` upper = ``max_wire_diameter``, as for power wires (so DEFAULT_RULES reject a
+    # signal wire thicker than the thickest allowed power wire). Length: ``None`` = not enforced; the upper bound
+    # is the smaller of ``max_signal_wire_length`` and the per-pad ``max_gate_wire_length`` /
+    # ``max_kelvin_wire_length`` that are set.
+    min_signal_wire_diameter: float | None = None
+    max_signal_wire_diameter: float | None = None
+    min_signal_wire_length: float | None = None
+    max_signal_wire_length: float | None = None
+
+    def signal_diameter_range(self) -> tuple[float, float]:
+        """(lower, upper) signal-wire diameter bound; the DRC also requires a positive diameter."""
+        lo, hi = self.min_signal_wire_diameter, self.max_signal_wire_diameter
+        return (0.0 if lo is None else lo, self.max_wire_diameter if hi is None else hi)
+
+    def signal_length_range(self, pad: str) -> tuple[float, float]:
+        """(lower, upper) length bound of a wire from pad ``pad``; ``-inf`` / ``inf`` where nothing is enforced."""
+        his = [x for x in (self.max_signal_wire_length, _signal_limit(self, pad)) if x is not None]
+        lo = self.min_signal_wire_length
+        return (-math.inf if lo is None else lo, min(his) if his else math.inf)
 
     def spacing_for(self, net_a: str, net_b: str) -> float:
-        """Minimum copper spacing required between nets ``net_a`` and ``net_b``."""
-        pair = frozenset((net_a, net_b))
-        v = {
-            frozenset((DC_PLUS, PHASE)): self.spacing_dcp_phase,
-            frozenset((PHASE, DC_MINUS)): self.spacing_phase_dcm,
-            frozenset((DC_PLUS, DC_MINUS)): self.spacing_dcp_dcm,
-        }.get(pair, self.spacing_other)
+        """Minimum copper spacing required between nets ``net_a`` and ``net_b`` (rule class: ``spacing_class``)."""
+        key = spacing_class(net_a, net_b)
+        v = getattr(self, f"spacing_{key}")
+        if v is None and key.startswith("signal_"):
+            v = self.spacing_other
         return self.min_spacing if v is None else v
 
     def width_for(self, net: str) -> float:
         """Minimum trace width required for copper of net ``net``."""
         v = self.min_width_power if net in NETS else self.min_width_other
         return self.min_trace_width if v is None else v
+
+
+_POWER_PAIRS = {
+    frozenset((DC_PLUS, PHASE)): "dcp_phase",
+    frozenset((PHASE, DC_MINUS)): "phase_dcm",
+    frozenset((DC_PLUS, DC_MINUS)): "dcp_dcm",
+}
+_POWER_KEY = {DC_PLUS: "dcp", PHASE: "phase", DC_MINUS: "dcm"}
+# switch position of each gate / Kelvin net, and the source (reference-potential) net of each switch position
+SIGNAL_SIDE = {net: sw for (_pad, sw), net in SIGNAL_NET.items()}
+SIGNAL_SOURCE_NET = {net: {"HS": PHASE, "LS": DC_MINUS}[sw] for net, sw in SIGNAL_SIDE.items()}
+
+
+def spacing_class(net_a: str, net_b: str) -> str:
+    """Rule class of the copper gap between nets ``net_a`` and ``net_b``: the ``DesignRules.spacing_<class>`` field.
+
+    ``dcp_phase`` / ``phase_dcm`` / ``dcp_dcm`` for the power pairs; ``signal_source`` for a gate/Kelvin net against
+    its own switch's source net (``SIGNAL_SOURCE_NET``); ``signal_dcp`` / ``signal_phase`` / ``signal_dcm`` for a
+    gate/Kelvin net against any other power net; ``signal_hs_ls`` for an HS against an LS gate/Kelvin net; ``other``
+    for everything else (gate/Kelvin nets of one switch, two pieces of one net, unknown nets).
+    """
+    pair = frozenset((net_a, net_b))
+    if pair in _POWER_PAIRS:
+        return _POWER_PAIRS[pair]
+    sa, sb = SIGNAL_SIDE.get(net_a), SIGNAL_SIDE.get(net_b)
+    if sa is not None and sb is not None:
+        return "signal_hs_ls" if sa != sb else "other"
+    for s, p in ((net_a, net_b), (net_b, net_a)):
+        if s in SIGNAL_SIDE and p in _POWER_KEY:
+            return "signal_source" if p == SIGNAL_SOURCE_NET[s] else f"signal_{_POWER_KEY[p]}"
+    return "other"
+
+
+def _signal_limit(rules: DesignRules, pad: str) -> float | None:
+    return rules.max_gate_wire_length if pad == "gate" else rules.max_kelvin_wire_length
 
 
 DEFAULT_RULES = DesignRules()
@@ -152,9 +223,10 @@ def check(layout: Layout, rules: DesignRules = DEFAULT_RULES) -> list[Violation]
                 v.append(Violation("min_spacing", f"traces {i}/{j} ({a.net}/{b.net}) spacing {d:.3e} m < {need:.3e} m",
                                    _pt(a.polygon)))
 
-    # edge margin
+    # edge margin (the shrunk outline is the same for every trace)
+    inner = layout.outline.buffer(-(rules.edge_margin - TOL), **mit)
     for i, t in enumerate(layout.traces):
-        if not _edge_ok(layout, t.polygon, rules.edge_margin):
+        if not inner.contains(t.polygon):
             v.append(Violation("edge_margin", f"trace {i} ({t.net}) closer to substrate edge than margin",
                                _pt(t.polygon)))
 
@@ -266,10 +338,6 @@ def _on_pad(d, name: str, x: float, y: float) -> bool:
     return p is not None and p[0] - TOL <= x <= p[2] + TOL and p[1] - TOL <= y <= p[3] + TOL
 
 
-def _signal_limit(rules: DesignRules, pad: str) -> float | None:
-    return rules.max_gate_wire_length if pad == "gate" else rules.max_kelvin_wire_length
-
-
 def _check_signal(layout: Layout, rules: DesignRules, power_lines: list) -> list[Violation]:
     """Bondability of the gate / Kelvin pads and the geometry of the gate / Kelvin wires.
 
@@ -319,9 +387,14 @@ def _check_signal(layout: Layout, rules: DesignRules, power_lines: list) -> list
         if not any(t.net == w.net and t.polygon.buffer(-(rules.wire_landing_margin - TOL), **mit).contains(end)
                    for t in layout.traces):
             v.append(Violation("signal_wire_landing", f"signal wire {k} does not land on {w.net} Cu", (end.x, end.y)))
-        limit = _signal_limit(rules, w.pad)
-        if limit is not None and w.length > limit + TOL:
-            v.append(Violation("signal_wire_length", f"signal wire {k} length {w.length:.3e} m > {limit:.3e} m", xy))
+        lo, hi = rules.signal_length_range(w.pad)  # hi is the gate / Kelvin limit when set
+        if not (lo - TOL <= w.length <= hi + TOL):
+            v.append(Violation("signal_wire_length", f"signal wire {k} length {w.length:.3e} m outside "
+                               f"[{lo:.3e}, {hi:.3e}] m", xy))
+        dlo, dhi = rules.signal_diameter_range()
+        if not (dlo - TOL <= w.diameter <= dhi + TOL) or not w.diameter > 0:
+            v.append(Violation("signal_wire_diameter", f"signal wire {k} diameter {w.diameter:.3e} m outside "
+                               f"[{dlo:.3e}, {dhi:.3e}] m", xy))
     # plan-view crossings with a wire of another net; pitch applies to every pair involving a signal wire
     nets = [w.net for w in layout.wires] + [w.net for w in layout.signal_wires]
     diams = [w.diameter for w in layout.wires] + [w.diameter for w in layout.signal_wires]
@@ -373,13 +446,6 @@ def _bisect_max(ok, hi: float, tol: float) -> float:
     return lo
 
 
-_POWER_PAIRS = {
-    frozenset((DC_PLUS, PHASE)): "dcp_phase",
-    frozenset((PHASE, DC_MINUS)): "phase_dcm",
-    frozenset((DC_PLUS, DC_MINUS)): "dcp_dcm",
-}
-
-
 def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
     """Measure the design rules a (snapped) layout itself satisfies: ``(rules, record)``.
 
@@ -389,10 +455,15 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
     are only the three power nets, or the gate length without gate copper) stay ``None`` / default in ``rules``
     and ``None`` in ``record``.
 
-    * spacing of each power-net pair (min distance between the copper of the two nets), and one value, the
-      smallest, over every other trace pair (including two separate pieces of the same net);
+    * spacing per rule class (``spacing_class``): the minimum distance between two traces of that class. So each
+      power-net pair; signal-to-power per power net over the high-voltage pairs only (``spacing_signal_dcp``: any
+      gate/Kelvin copper to DC+; ``_phase``: LS gate/Kelvin to PHASE; ``_dcm``: HS gate/Kelvin to DC-), the
+      gate-drive-voltage pairs (gate/Kelvin copper to its own source net) in ``spacing_signal_source``; HS-to-LS
+      signal copper in ``spacing_signal_hs_ls``; and one value, the smallest, over the remaining pairs
+      (``spacing_other``: gate/Kelvin copper of one switch, two separate pieces of one net). A reference whose signal
+      copper runs close to its own source copper therefore does not loosen any high-voltage gap.
       ``min_spacing`` (the fall-back value) is set to ``spacing_other`` if there is one, else to the smallest
-      power-pair gap.
+      class gap.
     * minimum width of power copper and of other copper: bisection to 1 um on the DRC's own opening/neck test
       (``min_trace_width`` falls back like ``min_spacing``).
     * ``min_wire_pitch``: the smallest plan-view centre-line distance over all wire pairs (power and signal);
@@ -401,6 +472,10 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
       wires keep the layout's own pitch-to-diameter ratio instead of inheriting the thin wires' pitch.
     * ``die_spacing``, ``die_edge_margin`` and ``edge_margin`` (the last two by bisection to 1 nm on the DRC's
       own containment test).
+    * signal-wire diameter range and length range (``min/max_signal_wire_diameter``, ``min/max_signal_wire_length``):
+      the reference's own smallest and largest values, rounded outwards by 1 nm, ``None`` without signal wires.
+      Only positive diameters are measured (a non-positive one is a DRC violation under any rules; the record
+      counts them in ``n_nonpositive_signal_wire_diameters``), so the measured values are always physical.
     * ``max_gate_wire_length`` / ``max_kelvin_wire_length``: the longest signal wire of that kind, or the largest
       distance from such a die pad to the copper of its own switch's net when that is larger (a pad without a
       wire). With every pad bonded this is the longest wire, since a wire is at least as long as its pad's plan
@@ -413,8 +488,8 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
     for i in range(len(tr)):
         for j in range(i + 1, len(tr)):
             d = tr[i].polygon.distance(tr[j].polygon)
-            key = _POWER_PAIRS.get(frozenset((tr[i].net, tr[j].net)))
-            if key is None:
+            key = spacing_class(tr[i].net, tr[j].net)
+            if key == "other":
                 other_gap = d if other_gap is None else min(other_gap, d)
             else:
                 gaps[key] = min(gaps.get(key, d), d)
@@ -434,7 +509,10 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
     pairs = [(lines[i].distance(lines[j]), max(all_wires[i].diameter, all_wires[j].diameter))
              for i in range(len(lines)) for j in range(i)]
     pitch = min((g for g, _ in pairs), default=None)
-    pitch_ratio = min((g / dm for g, dm in pairs), default=None)
+    pitch_ratio = min((g / dm for g, dm in pairs if dm > 0), default=None)  # dm <= 0 is a DRC violation anyway
+    sig_d = [w.diameter for w in layout.signal_wires if w.diameter > 0]
+    sig_len = {pad: [w.length for w in layout.signal_wires if w.pad == pad] for pad in SIGNAL_PADS}
+    sig_len_all = [x for xs in sig_len.values() for x in xs]
 
     dsp = min((layout.dies[i].box.distance(layout.dies[j].box)
                for i in range(len(layout.dies)) for j in range(i + 1, len(layout.dies))), default=None)
@@ -479,6 +557,12 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
     sp_other = fl(other_gap)
     base = DesignRules()
     min_sp = sp_other if sp_other is not None else (min(sp.values()) if sp else base.min_spacing)
+    # signal-wire ranges: the reference's own, rounded outwards by 1 nm; a diameter below the power-wire minimum
+    # (e.g. 25 um gate wires) gives a looser lower bound than the default
+    sd_lo = _floor_nm(min(sig_d)) if sig_d else None
+    sd_hi = _ceil_nm(max(sig_d)) if sig_d else None
+    sl_lo = _floor_nm(min(sig_len_all)) if sig_len_all else None
+    sl_hi = _ceil_nm(max(sig_len_all)) if sig_len_all else None
     wp, wo = fl(w_power), fl(w_other)
     min_w = wo if wo is not None else (wp if wp is not None else base.min_trace_width)
     rules = DesignRules(
@@ -493,6 +577,15 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
         spacing_phase_dcm=sp.get("phase_dcm"),
         spacing_dcp_dcm=sp.get("dcp_dcm"),
         spacing_other=sp_other,
+        spacing_signal_dcp=sp.get("signal_dcp"),
+        spacing_signal_phase=sp.get("signal_phase"),
+        spacing_signal_dcm=sp.get("signal_dcm"),
+        spacing_signal_source=sp.get("signal_source"),
+        spacing_signal_hs_ls=sp.get("signal_hs_ls"),
+        min_signal_wire_diameter=sd_lo,
+        max_signal_wire_diameter=sd_hi,
+        min_signal_wire_length=sl_lo,
+        max_signal_wire_length=sl_hi,
         min_width_power=wp,
         min_width_other=wo,
         max_gate_wire_length=rule_len("gate"),
@@ -502,7 +595,15 @@ def measure_rules(layout: Layout) -> tuple[DesignRules, dict]:
         "gap_dcp_phase": gaps.get("dcp_phase"),
         "gap_phase_dcm": gaps.get("phase_dcm"),
         "gap_dcp_dcm": gaps.get("dcp_dcm"),
+        "gap_signal_dcp": gaps.get("signal_dcp"),
+        "gap_signal_phase": gaps.get("signal_phase"),
+        "gap_signal_dcm": gaps.get("signal_dcm"),
+        "gap_signal_source": gaps.get("signal_source"),
+        "gap_signal_hs_ls": gaps.get("signal_hs_ls"),
         "gap_other_min": other_gap,
+        "signal_wire_diameter_range": (min(sig_d), max(sig_d)) if sig_d else None,
+        "n_nonpositive_signal_wire_diameters": sum(1 for w in layout.signal_wires if not w.diameter > 0),
+        "signal_wire_length_range": (min(sig_len_all), max(sig_len_all)) if sig_len_all else None,
         "min_width_power": w_power,
         "min_width_other": w_other,
         "min_wire_pitch": pitch,

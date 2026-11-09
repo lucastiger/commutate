@@ -230,7 +230,7 @@ class Layout:
             t = self.terminals[n]
             put("term", n, [nm(v) for v in (t.cx, t.cy, t.w, t.h)])
         for sw in self.signal_wires:
-            put("signal_wire", sw.die, sw.pad, sw.net, np.round(sw.points * 1e9).astype(np.int64).tolist(),
+            put("signal_wire", int(sw.die), sw.pad, sw.net, np.round(sw.points * 1e9).astype(np.int64).tolist(),
                 nm(sw.diameter))
         return h.hexdigest()
 
