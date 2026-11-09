@@ -19,6 +19,13 @@ Parameter space (all lateral values in mm on the DESIGN_GRID_MM = 0.5 mm grid, i
 * three *columns* (one per power net), each covering its terminal pad and every slot of the net (so the pad may sit at
   any position, even not at an end of the housing); the slots attach to the column's inner edge, on side lo or hi in u.
 * two die *rows* (HS, LS): start u, v of the die edge, gap between dies; and the landing line v of the wires of each row.
+* the *wire feet* of each row (T0273): ``feet`` = (fu0, fud, pitch, fv, land_du, land_dv) in mm.  Wire j of die i starts at
+  u = (source-pad centre of die i) + fu0 + i * fud + (j - (k-1)/2) * pitch, v = pad centre + fv, and lands at (start u +
+  land_du, landing line + land_dv).  ``sigfeet`` = (gate du, gate dv, Kelvin du, Kelvin dv): the gate / Kelvin feet relative to
+  their pad centres (the wires still run straight to the nearest landable fixed copper).  The sampler draws absolute foot and
+  landing positions on a 0.125 mm grid (the reference's own bond points are on it), inside the pad by the start margin; with
+  probability 0.6 it places the power wires clear of the gate / Kelvin wires.  The space contains the Case 4 reference's own
+  wires (test: start and end within 1e-6 m).
 Free ends of the slots, column extensions, die offsets, slot heights and gaps are drawn on the grid; copper widths and
 gaps therefore vary freely.  Gate and Kelvin wires run straight from each die's pad to the nearest point of the fixed
 copper of the die's own switch (``GATE_HS`` ...).  Not in the space: dies in more than one row per switch, die rotation,
@@ -29,8 +36,25 @@ copper islands that are not bands or columns (e.g. a PHASE ring around a die row
 
 Assumptions: the fixed keep-out copper carries the nets GATE_HS / GATE_LS / KELVIN_HS / KELVIN_LS (``spec_from_layout`` can
 rename a reference's own nets for that, e.g. Case 4's SIG_*); the maximum gate / Kelvin wire length is a rule of the spec
-(for Case 4 an assumed 25 mm, see tests; the files give none).  Wire feet are at the source-pad centre moved 25 % of the pad
-height towards the landing line, spread along u at <= 1 mm pitch.
+(for Case 4 an assumed 25 mm, see tests; the files give none).
+
+Limits shown on 2D_Case_4 (tests; its gate / Kelvin pads are assumed, the 25 mm limit is assumed):
+* 2 and 3 power wires per die, default rules: DRC-valid candidates (the LS gate / Kelvin wires cross the source pad at x = 29 /
+  31 mm; the feet are placed between / beside them at >= 0.625 mm).
+* A 2 mm minimum wire pitch is infeasible for 1 or 2 wires per die: a power foot is at most (Kelvin_max - gate_min) / 2 =
+  1.35 mm from the nearer signal wire (the signal feet move only inside their 1 x 1 mm pads and the wires run straight to
+  the copper), and 3 wires need 4 mm of a 3.2 mm pad (ValueError at the spec).  Landing points of the gate / Kelvin wires
+  are not parameters, so the generator cannot steer them away.  No rule is relaxed.
+* Diversity under ``measure_rules(reference)`` (edge margin 5 mm, power width 5 mm, die spacing 6 mm, die edge margin 2 mm,
+  spacings 3 / 3 / 5 mm and 2 mm to the signal copper; max power wire = the reference's longest, 16.151 mm; wire pitch the
+  defaults 0.6 mm / 2 diameters because the measured 10 mm is the pitch between different dies; signal wires 25 mm): of the
+  8 sequences x orientations (x merge variants, which exist for two sequences), exactly 2 are feasible: the reference's own
+  [PHASEd, DC-l, PHASEl, DC+d] and [PHASEd, DC-l, DC+d, PHASEl], both split, orientation x.  Excluded: LS pair
+  [DC-l, PHASEd] (2 sequences) by max_kelvin_wire_length, short by 2.25 mm; HS pair at lower v than the LS pair (4
+  sequences) by max_kelvin_wire_length, short by 24.9 mm; orientation y (all 8) by the copper rules and the signal-wire
+  limit (sampled, not a closed form: best candidate 14.9 mm over).  The second sequence has 1.35 mm of slack.  The search
+  space is therefore nearly the reference's own topology on Case 4 under its own rules; that is a property of the
+  housing and the rules, not loosened here.  (Under the looser default 1 mm rules at least 3 topologies appear, ``test_at_least_three_topologies``.)
 
 Throughput, measured on 2D_Case_4 (2 dies per switch, 1 power wire per die, gate + Kelvin wire per die, max power wire 18 mm,
 signal wires 25 mm; M-series Mac, one process, seed 1, 1000 candidates, three runs): 244-253 DRC-valid candidates / s, i.e.
@@ -71,7 +95,6 @@ from moduleforge.geometry import (
 from moduleforge.geometry.stack import LayerStack
 
 DESIGN_GRID_MM = 0.5
-WIRE_PITCH_MM = 1.0  # nominal spacing of the power wires along u (reduced to fit the source pad)
 SIGNAL_NETS_SET = frozenset(SIGNAL_NETS)
 _MIT = {"join_style": "mitre", "mitre_limit": 10.0}
 
@@ -146,7 +169,7 @@ def _wire_pitch(spec: ReferenceSpec, orient: int) -> float:
     x0, y0, x1, y1 = spec.die.pads["source"]
     wu = _frame_size(orient, x1 - x0, y1 - y0)[0]
     margin = max(spec.rules.wire_start_margin, spec.wire_diameter / 2) + 5e-5
-    pitch = min(mm_to_m(WIRE_PITCH_MM), (wu - 2 * margin) / (k - 1))
+    pitch = (wu - 2 * margin) / (k - 1)  # the widest pitch that fits (the feet are parameters, ``Params.feet``)
     need = max(spec.rules.min_wire_pitch, spec.rules.wire_pitch_diameters * spec.wire_diameter)
     if pitch < need - 1e-9:
         raise ValueError(f"{k} wires do not fit on the source pad at pitch >= {need:.3e} m (orient {orient})")
@@ -224,6 +247,9 @@ def _die_t():
 # ------------------------------------------------------------------------------------------------------------ params
 SLOT_ROLES = ("die", "land")
 _NCOL, _NSLOT = 3, 4
+N_COPPER_PARAMS = 4 + 4 * _NCOL + 4 * _NSLOT + 6 + 2  # entries of the vector before the wire feet
+_FOOT_NAMES = ("fu0", "fud", "pitch", "fv", "land_du", "land_dv")
+_SIG_NAMES = ("gate_du", "gate_dv", "kelvin_du", "kelvin_dv")
 
 
 @dataclass(frozen=True)
@@ -238,16 +264,21 @@ class Params:
     slots: tuple  # per slot in sequence order: (u0, v0, u1, v1)
     rows: tuple  # ((u0, v0, gap) HS, (u0, v0, gap) LS): start u of the first die, v of the die edge, gap between dies
     land: tuple  # (v of the HS wires' landing line, v of the LS wires' landing line)
+    feet: tuple  # per row (HS, LS): (fu0, fud, pitch, fv, land_du, land_dv), the power-wire feet and landings (mm)
+    sigfeet: tuple  # per row (HS, LS): (gate du, gate dv, Kelvin du, Kelvin dv), gate / Kelvin feet from their pad centres
 
     NAMES = (("orient", "hs_first", "hs_die_first", "ls_die_first")
              + tuple(f"col_{n}_{c}" for n in NETS for c in ("u0", "v0", "u1", "v1"))
              + tuple(f"slot{i}_{c}" for i in range(_NSLOT) for c in ("u0", "v0", "u1", "v1"))
-             + tuple(f"row_{s}_{c}" for s in ("HS", "LS") for c in ("u0", "v0", "gap")) + ("land_HS", "land_LS"))
+             + tuple(f"row_{s}_{c}" for s in ("HS", "LS") for c in ("u0", "v0", "gap")) + ("land_HS", "land_LS")
+             + tuple(f"foot_{s}_{c}" for s in ("HS", "LS") for c in _FOOT_NAMES)
+             + tuple(f"sig_{s}_{c}" for s in ("HS", "LS") for c in _SIG_NAMES))
 
     def to_vector(self) -> np.ndarray:
         v = [self.orient, self.hs_first, self.hs_die_first, self.ls_die_first]
         v += [x for c in self.cols for x in c] + [x for s in self.slots for x in s]
         v += [x for r in self.rows for x in r] + list(self.land)
+        v += [x for r in self.feet for x in r] + [x for r in self.sigfeet for x in r]
         return np.array(v, dtype=float)
 
     @classmethod
@@ -261,7 +292,9 @@ class Params:
         slots = tuple(tuple(v[i + 4 * k:i + 4 * k + 4]) for k in range(_NSLOT))
         i += 4 * _NSLOT
         rows = (tuple(v[i:i + 3]), tuple(v[i + 3:i + 6]))
-        return cls(int(v[0]), int(v[1]), int(v[2]), int(v[3]), cols, slots, rows, (v[i + 6], v[i + 7]))
+        feet = (tuple(v[i + 8:i + 14]), tuple(v[i + 14:i + 20]))
+        sigfeet = (tuple(v[i + 20:i + 24]), tuple(v[i + 24:i + 28]))
+        return cls(int(v[0]), int(v[1]), int(v[2]), int(v[3]), cols, slots, rows, (v[i + 6], v[i + 7]), feet, sigfeet)
 
     def sequence(self) -> list[tuple[str, str, str]]:
         return _sequence(self.hs_first, self.hs_die_first, self.ls_die_first)
@@ -349,7 +382,6 @@ def build(spec: ReferenceSpec, p: Params) -> Layout:
     dw, dh = dsp.w, dsp.h
     du, dv = (x * 1e3 for x in fr.size(dw, dh))
     k = spec.wires_per_die
-    pitch = _wire_pitch(spec, p.orient) * 1e3
     dies, wires = [], []
     land = {"HS": p.land[0], "LS": p.land[1]}
     for sw, (u0, v0, gap), net in (("HS", p.rows[0], PHASE), ("LS", p.rows[1], DC_MINUS)):
@@ -359,23 +391,24 @@ def build(spec: ReferenceSpec, p: Params) -> Layout:
             die = Die(cx, cy, dw, dh, sw, pads, dsp.thickness, dsp.attach_thickness)
             dies.append(die)
             pu0, pv0, pu1, pv1 = (c * 1e3 for c in fr.lrect(*pads["source"]))
-            cv = (pv0 + pv1) / 2
-            sgn = 1.0 if land[sw] > cv else -1.0
+            cu, cv = (pu0 + pu1) / 2, (pv0 + pv1) / 2
+            fu0, fud, pit, fv, ldu, ldv = p.feet[0 if sw == "HS" else 1]
             z_start = z_top_cu + die.attach_thickness + die.thickness
             for j in range(k):
-                u = (pu0 + pu1) / 2 + (j - (k - 1) / 2) * pitch
-                s_xy = tuple(mm_to_m(c) for c in fr.pt(u, cv + sgn * 0.25 * (pv1 - pv0)))
-                e_xy = tuple(mm_to_m(c) for c in fr.pt(u, land[sw]))
+                u = cu + fu0 + i * fud + (j - (k - 1) / 2) * pit
+                s_xy = tuple(mm_to_m(c) for c in fr.pt(u, cv + fv))
+                e_xy = tuple(mm_to_m(c) for c in fr.pt(u + ldu, land[sw] + ldv))
                 wires.append(arc_wire(s_xy, e_xy, z_start, z_top_cu, spec.loop_height, spec.wire_diameter, net))
-    sig = _signal_wires(spec, traces, dies, z_top_cu)
+    sig = _signal_wires(spec, traces, dies, z_top_cu, p, fr)
     kw = {} if spec.wire_sigma is None else {"wire_sigma": spec.wire_sigma}
     return Layout(family=_encode(p), dies_per_switch=spec.dies_per_switch, outline=spec.outline, traces=traces,
                   dies=dies, wires=wires, terminals=dict(spec.terminals), baseplate_outline=spec.baseplate_outline,
                   stack=st, backside_inset=spec.backside_inset, signal_wires=sig, **kw)
 
 
-def _signal_wires(spec, traces, dies, z_top_cu):
-    """Straight gate / Kelvin wires from every die pad to the nearest landable point of its switch's fixed copper."""
+def _signal_wires(spec, traces, dies, z_top_cu, p, fr):
+    """Straight gate / Kelvin wires from a foot in every die pad (pad centre + ``p.sigfeet``) to the nearest landable point
+    of its switch's fixed copper."""
     margin = spec.rules.wire_landing_margin + 1e-7
     copper = {}
     for net in SIGNAL_NETS:
@@ -392,7 +425,10 @@ def _signal_wires(spec, traces, dies, z_top_cu):
             if pad not in d.pads or net not in copper:
                 continue
             x0, y0, x1, y1 = d.pads[pad]
-            s = ((x0 + x1) / 2, (y0 + y1) / 2)
+            off = p.sigfeet[0 if d.switch == "HS" else 1]
+            du_, dv_ = off[0:2] if pad == "gate" else off[2:4]
+            lu, lv = fr.pt((x0 + x1) / 2, (y0 + y1) / 2)  # local frame (an involution)
+            s = fr.pt(lu + mm_to_m(du_), lv + mm_to_m(dv_))
             q = nearest_points(copper[net], Point(s))[0]
             w = arc_wire(s, (q.x, q.y), z_top_cu + d.attach_thickness + d.thickness, z_top_cu,
                          spec.signal_loop_height, spec.signal_wire_diameter, net)
@@ -452,6 +488,110 @@ class _Ctx:
         self.siglim = min(lims) * 1e3 if lims else None
 
 
+FOOT_GRID_MM = 0.125  # grid of the wire feet and landings (the reference's own bond points are on it)
+
+
+def _gf(v: float) -> float:
+    return round(float(v) / FOOT_GRID_MM) * FOOT_GRID_MM
+
+
+def _draw_feet(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator, fr: _Frame, row: tuple, sgn: float):
+    """Power-wire feet ``(fu0, fud, pitch, fv)`` and gate / Kelvin feet of one die row (mm); None if the k wires cannot fit.
+
+    Feet are drawn on the 0.125 mm grid inside the source pad (``wire_start_margin`` + 0.05 mm from its edge).  With
+    probability 0.6 the wires are placed clear (by the pitch rule + 25 um) of the plan-view lines of the die's gate and Kelvin
+    wires, which run straight along v when the fixed signal copper lies along v (the case on Case 4); otherwise the draw is
+    unconstrained and the DRC decides."""
+    r = spec.rules
+    u0 = row[0]
+    du, dv = (x * 1e3 for x in fr.size(spec.die.w, spec.die.h))
+    k, n = spec.wires_per_die, spec.dies_per_switch
+    dm, ds = spec.wire_diameter * 1e3, spec.signal_wire_diameter * 1e3
+    pu0, pv0, pu1, pv1 = (c * 1e3 for c in fr.lrect(*spec.die.pads["source"]))
+    m = max(r.wire_start_margin * 1e3, dm / 2) + 0.05
+    hu, hv = (pu1 - pu0) / 2 - m, (pv1 - pv0) / 2 - m
+    if hu < 0 or hv < 0:
+        return None
+    pp = max(r.min_wire_pitch * 1e3, r.wire_pitch_diameters * dm) + 0.025
+    ps = max(r.min_wire_pitch * 1e3, r.wire_pitch_diameters * max(dm, ds)) + 0.025
+    # gate / Kelvin feet: offsets from the pad centres, spread apart with probability 0.5
+    sig, sig_u = [0.0, 0.0, 0.0, 0.0], []  # sig_u: (offset from the die-0 source-pad centre along u) of each signal wire
+    cen = {}
+    for pad in ("gate", "kelvin"):
+        if pad not in spec.die.pads:
+            continue
+        a0, b0, a1, b1 = (c * 1e3 for c in fr.lrect(*spec.die.pads[pad]))
+        ms = max(r.wire_start_margin * 1e3, spec.signal_wire_diameter * 1e3 / 2) + 0.05
+        cen[pad] = ((a0 + a1) / 2, (a1 - a0) / 2 - ms, (b1 - b0) / 2 - ms)
+    if len(cen) == 2 and rng.random() < 0.5:
+        lo_pad = min(cen, key=lambda t: cen[t][0])
+        for pad in cen:
+            ext = math.floor(cen[pad][1] / FOOT_GRID_MM + 1e-9) * FOOT_GRID_MM
+            sig[2 * (pad == "kelvin")] = -ext if pad == lo_pad else ext
+    for q, pad in enumerate(("gate", "kelvin")):
+        if pad not in cen:
+            continue
+        _, hsu, hsv = cen[pad]
+        if sig[2 * q] == 0.0:
+            nu = int(math.floor(hsu / FOOT_GRID_MM + 1e-9)) if hsu > 0 else 0
+            sig[2 * q] = FOOT_GRID_MM * int(rng.integers(-nu, nu + 1))
+        nv = int(math.floor(hsv / FOOT_GRID_MM + 1e-9)) if hsv > 0 else 0
+        sig[2 * q + 1] = FOOT_GRID_MM * int(rng.integers(-nv, nv + 1))
+        sig_u.append(cen[pad][0] + sig[2 * q] - (pu0 + pu1) / 2)
+    pmin = math.ceil(pp / FOOT_GRID_MM - 1e-9) * FOOT_GRID_MM
+    pit = 0.0
+    if k > 1:
+        pmax = math.floor(2 * hu / (k - 1) / FOOT_GRID_MM + 1e-9) * FOOT_GRID_MM
+        if pmax < pmin - 1e-9:
+            return None
+        pit = pmin + FOOT_GRID_MM * int(rng.integers(0, int(round((min(pmax, pmin + 2.0) - pmin) / FOOT_GRID_MM)) + 1))
+    cu0 = u0 + du / 2 + (pu0 + pu1) / 2  # abs u of the die-0 source-pad centre
+    fud = 0.0 if rng.random() < 0.7 else FOOT_GRID_MM * int(rng.integers(-8, 9))
+    span = (k - 1) * pit
+
+    def rel0_range(fd):  # range of the first wire's offset from the die-0 pad centre so that all feet stay inside
+        return (max(-hu - i * fd for i in range(n)), min(hu - span - i * fd for i in range(n)))
+
+    lo, hi = rel0_range(fud)
+    if hi < lo - 1e-9:
+        fud = 0.0
+        lo, hi = rel0_range(fud)
+    if hi < lo - 1e-9:
+        return None
+    ilo, ihi = math.ceil(_gdiv(cu0 + lo)), math.floor(_gdiv(cu0 + hi))
+    if ihi < ilo:
+        return None
+
+    def clear(a0):
+        return all(abs(a0 - cu0 + j * pit + i * fud - su) >= ps for i in range(n) for j in range(k) for su in sig_u)
+
+    a_abs = None
+    if sig_u and rng.random() < 0.6:
+        for _ in range(30):
+            c = (int(rng.integers(ilo, ihi + 1)) * FOOT_GRID_MM)
+            if clear(c):
+                a_abs = c
+                break
+    if a_abs is None:
+        a_abs = int(rng.integers(ilo, ihi + 1)) * FOOT_GRID_MM
+    fu0 = a_abs - cu0 + span / 2
+    pcv = row[1] + dv / 2 + (pv0 + pv1) / 2  # abs v of the source-pad centre
+    jlo, jhi = math.ceil((pcv - hv) / FOOT_GRID_MM - 1e-9), math.floor((pcv + hv) / FOOT_GRID_MM + 1e-9)
+    if jhi < jlo:
+        return None
+    jc = (pcv / FOOT_GRID_MM)
+    if rng.random() < 0.5:  # towards the landing line (the legacy rule put the foot there, 25 % of the pad height out)
+        jlo, jhi = (max(jlo, math.ceil(jc)), jhi) if sgn > 0 else (jlo, min(jhi, math.floor(jc)))
+        if jhi < jlo:
+            jlo = jhi = math.floor(jc) if sgn > 0 else math.ceil(jc)
+    fv = int(rng.integers(jlo, jhi + 1)) * FOOT_GRID_MM - pcv
+    return (fu0, fud, pit, fv), tuple(sig)
+
+
+def _gdiv(x: float) -> float:
+    return x / FOOT_GRID_MM
+
+
 def _pick_end(needed: float, limit: float, free_side: int, rng, extra_max: float):
     """Free end of a band: ``needed`` or further by a random grid amount, clipped at ``limit``; None if infeasible."""
     if (limit - needed) * free_side < -1e-9:
@@ -494,14 +634,27 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
     merge = [seq[i][0] == seq[i + 1][0] and rng.random() < 0.5 for i in range(3)]
     g_min = [0.0 if merge[i] else cx.sp[(seq[i][0], seq[i + 1][0])] for i in range(3)]
     g_ext = [0.0 if merge[i] else rng.uniform(0.0, 12.0 if rng.random() < 0.6 else 2.5) for i in range(3)]
-    reach = None if cx.siglim is None else cx.siglim - dv / 2  # sampling prior; the DRC enforces the real limits
-    # window of each die slot's centre (absolute v) from the signal copper of its switch
+    # window of each die slot's centre (absolute v) from the signal copper of its switch: the gate / Kelvin pad centre
+    # (offset ``q`` from the die centre) within the wire-length limit, less 0.1 mm for the arc (sampling prior only;
+    # the DRC enforces the real limits)
     dwin = {}
-    if reach is not None:
-        for i, (_, role, sw) in enumerate(seq):
-            bs = [bb for kn, bb in sig.items() if role == "die" and kn.endswith("_" + sw)]
-            if bs:
-                dwin[i] = (max(bb[1] for bb in bs) - reach, min(bb[3] for bb in bs) + reach)
+    qpad = {}
+    for pad in ("gate", "kelvin"):
+        if pad in spec.die.pads:
+            _, b0, _, b1 = (c * 1e3 for c in fr.lrect(*spec.die.pads[pad]))
+            qpad[pad] = (b0 + b1) / 2
+    lim_of = {"gate": spec.rules.max_gate_wire_length, "kelvin": spec.rules.max_kelvin_wire_length}
+    for i, (_, role, sw) in enumerate(seq):
+        if role != "die":
+            continue
+        lo_w, hi_w, any_ = -math.inf, math.inf, False
+        for kn, bb in sig.items():
+            pad = "gate" if kn.startswith("GATE") else "kelvin"
+            if kn.endswith("_" + sw) and pad in qpad and lim_of[pad] is not None:
+                reach = lim_of[pad] * 1e3 - 0.1
+                lo_w, hi_w, any_ = max(lo_w, bb[1] - reach - qpad[pad]), min(hi_w, bb[3] + reach - qpad[pad]), True
+        if any_:
+            dwin[i] = (lo_w, hi_w)
     for alpha in (1.0, 0.5, 0.0):  # shrink the random extras until the stack fits where the signal copper is
         hts = [m + _snap(alpha * e) for m, e in zip(h_min, h_ext, strict=True)]
         gaps = [m + _snap(alpha * e) for m, e in zip(g_min, g_ext, strict=True)]
@@ -596,31 +749,41 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
         rows[sw] = (u0, dvs, gap)
         # wire u extent (pad centre along u +- spread): conservative bound = die extent
         wu[sw] = (u0, u0 + ld)
+    feet, sigfeet = {}, {}
     for sw in ("HS", "LS"):
         j = land_idx[sw]
         net = seq[j][0]
         lo, hi = wu[sw]
-        needed = (hi + 0.5) if side[net] < 0 else (lo - 0.5)
+        needed = (hi + 1.0) if side[net] < 0 else (lo - 1.0)  # 0.5 mm plus room for the landing shift along u
         needed = _g_up(needed) if side[net] < 0 else _g_dn(needed)
         end = _pick_end(needed, limit(net, *sv[j]), -side[net], rng, 6.0)
         if end is None or (end - edge[net]) * (-side[net]) < 1.0:
             return None
         ends[j] = end
-        # wire length within the rules (with slack for the arc) along v from the wire foot (source pad centre moved
-        # 25 % of its height towards the landing line)
         sgn = 1.0 if j > die_idx[sw] else -1.0
+        drawn = _draw_feet(spec, cx, rng, fr, rows[sw], sgn)
+        if drawn is None:
+            return None
+        (fu0, fud, pit, fv), sigfeet[sw] = drawn
+        # wire length within the rules (with slack for the arc) along v from the wire foot
         sx0, sy0, sx1, sy1 = fr.lrect(*spec.die.pads["source"])
-        foot = rows[sw][1] + dv / 2 + 1e3 * ((sy0 + sy1) / 2 + sgn * 0.25 * (sy1 - sy0))
+        foot = rows[sw][1] + dv / 2 + 1e3 * (sy0 + sy1) / 2 + fv
         wmin_, wmax_ = spec.rules.min_wire_length * 1e3 + 0.5, spec.rules.max_wire_length * 1e3 - 1.0
         lo_l, hi_l = (foot + wmin_, foot + wmax_) if sgn > 0 else (foot - wmax_, foot - wmin_)
         lo_l, hi_l = _g_up(max(lo_l, sv[j][0] + 0.5)), _g_dn(min(hi_l, sv[j][1] - 0.5))
         if hi_l < lo_l:
             return None
         land[sw] = lo_l + _snap(rng.uniform(0.0, hi_l - lo_l))
+        ldv = 0.0 if rng.random() < 0.6 else FOOT_GRID_MM * int(rng.integers(-3, 4))
+        if not (sv[j][0] + 0.5 <= land[sw] + ldv <= sv[j][1] - 0.5):
+            ldv = 0.0
+        ldu = 0.0 if rng.random() < 0.7 else FOOT_GRID_MM * int(rng.integers(-4, 5))
+        feet[sw] = (fu0, fud, pit, fv, ldu, ldv)
     slots = tuple((edge[seq[i][0]], sv[i][0], ends[i], sv[i][1]) if side[seq[i][0]] < 0
                   else (ends[i], sv[i][0], edge[seq[i][0]], sv[i][1]) for i in range(4))
     return Params(orient, hs_first, hs_die_first, ls_die_first, tuple(cols[n] for n in NETS), slots,
-                  (rows["HS"], rows["LS"]), (land["HS"], land["LS"]))
+                  (rows["HS"], rows["LS"]), (land["HS"], land["LS"]), (feet["HS"], feet["LS"]),
+                  (sigfeet["HS"], sigfeet["LS"]))
 
 
 def _quick_ok(spec: ReferenceSpec, cx: _Ctx, lay: Layout) -> bool:
