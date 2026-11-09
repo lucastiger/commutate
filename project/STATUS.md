@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T15:17:15+00:00 from repository state — do not edit_
+_generated 2026-11-09T15:20:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -30,16 +30,12 @@ _generated 2026-11-09T15:17:15+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 218, failed: 3, merge: 2, needs_founder: 1, todo: 5
+cancelled: 38, done: 219, failed: 3, merge: 1, needs_founder: 1, todo: 7
 
 - T0256 `needs_founder` builder/implement: Per-net design rules, gate/Kelvin signal wires, bondability DRC and rule measurement (attempt 2)
-- T0257 `merge` builder/implement: AlN k(T) law in stack.py and the frozen grid-snapping rule (attempt 1)
 - T0261 `merge` scientist/design_experiment: Draft headroom_min_lo / headroom_max_hi_ind (protected mfos.metrics) and the E008 row contract (attempt 1)
 
 ## Recent events
-- 2026-11-09T08:17:29+00:00 task_failed_attempt {"task": "T0256", "signal": "review_rejected", "action": "repair"}
-- 2026-11-09T08:17:33+00:00 run_started {"run": "T0266-critic-20261109T001733-2e6f", "task": "T0266", "role": "critic", "session": "f4c68552-781b-41dc-8853-d51e60690653"}
-- 2026-11-09T08:17:33+00:00 run_started {"run": "T0256-builder-20261109T001733-7d0d", "task": "T0256", "role": "builder", "session": "4bba9e75-bff3-428f-91b6-836c7f98e680"}
 - 2026-11-09T08:24:43+00:00 run_finished {"run": "T0266-critic-20261109T001733-2e6f", "status": "completed", "cost": 2.304485, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T08:24:47+00:00 inbox_opened {"id": "I0143", "kind": "protected_change", "subject": "T0261: merge needs founder approval"}
 - 2026-11-09T08:47:56+00:00 run_finished {"run": "T0256-builder-20261109T001733-7d0d", "status": "completed", "cost": 4.146169, "subtype": "success", "report": "structured_output"}
@@ -52,3 +48,6 @@ cancelled: 38, done: 218, failed: 3, merge: 2, needs_founder: 1, todo: 5
 - 2026-11-09T15:17:07+00:00 inbox_resolved {"id": "I0142", "status": "approved", "note": "Merge T0257 (AlN law, frozen snapping rule): T0264 accepts with caveats; all addressed in the follow-up builder t
 - 2026-11-09T15:17:13+00:00 inbox_resolved {"id": "I0143", "status": "approved", "note": "Merge T0261 (research drafts only): T0266 accepts with caveats. The protected metrics patch is NOT applied until 
 - 2026-11-09T15:17:14+00:00 sleep_detected {"gap_s": 1403, "runs_extended": 0}
+- 2026-11-09T15:17:19+00:00 task_added {"task": "T0268"}
+- 2026-11-09T15:17:19+00:00 task_added {"task": "T0269"}
+- 2026-11-09T15:17:20+00:00 merged {"task": "T0257"}

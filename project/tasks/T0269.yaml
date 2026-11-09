@@ -1,0 +1,68 @@
+id: T0269
+objective: O003
+title: 'Headroom metrics: nonzero-band tests, mutant check, die-count and fail-closed rules (review T0266)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0261
+description: "Follow-up to T0261 (merged), from review T0266 (project/reviews/T0261/T0266.json; read it\
+  \ first). These metrics decide\nO003's verdict; the founder applies research/o003/headroom_metrics.patch\
+  \ to tools/mfos only after this task. Do not edit\ntools/mfos (protected) or src/moduleforge/solvers/thermal_fem.py\
+  \ (sha256 a216d5fe..., OD-7).\n1. Tests with NONZERO band terms: hand-computed cases with e_R > 0 for\
+  \ the A1 best, the twin/reconstruction gates F1(a1)\n   and F1(a2), the levelling pair and the K1 near-ties,\
+  \ so that each of T0266's 11 surviving mutants fails a test.\n2. research/o003/check_mutants.py: applies\
+  \ each mutant (at least T0266's 11 survivors, listed by name, plus any you add)\n   to an in-memory\
+  \ copy of research/o003/headroom_metrics.py, runs research/o003/test_headroom_metrics.py against it,\n\
+  \   and exits 0 only if EVERY mutant makes at least one test fail (print a table: mutant, killed yes/no).\n\
+  3. tj_bounds / both metrics: every thermally checked layout must carry exactly the twin's die count\
+  \ (scope_in fixes the\n   die count); otherwise raise (fail closed). Test it.\n4. Fail-closed tests:\
+  \ one per metric, each calling only that metric, so each is shown to fail closed on its own inputs.\n\
+  5. research/o003/e008_row_contract.md: list T0266's two interpretation choices (levelling threshold\
+  \ under the twin\n   rule; switches in the reconstruction-based secondary) in section 5 for the founder,\
+  \ and make the null-column\n   contract explicit for every row kind the metrics receive (degraded, control_best,\
+  \ L1-only null rows, any runner\n   additions): which value L_sub_null_H takes, or which where-filter\
+  \ excludes them.\n6. Regenerate research/o003/headroom_metrics.patch with make_patch.py; it must still\
+  \ apply cleanly.\nDo not weaken any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q research/o003/test_headroom_metrics.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python research/o003/check_mutants.py
+  exists: null
+  timeout_s: 1800
+- cmd: git apply --check research/o003/headroom_metrics.patch
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o003
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-09T15:17:19+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

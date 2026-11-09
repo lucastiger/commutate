@@ -1,0 +1,66 @@
+id: T0268
+objective: O003
+title: Snapping rule and AlN law fixes from review T0264 (before E008's design)
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0257
+description: "Follow-up to T0257 (merged), from review T0264 (project/reviews/T0257/T0264.json; read it\
+  \ first). Fix before E008's\ndesign freezes geometry/snap.py and the AlN law (T0262). No change to src/moduleforge/solvers/thermal_fem.py\
+  \ (it must stay\nat sha256 a216d5fe..., EV-O007-01; OD-7).\n1. snap.py: state ONE tie rule that matches\
+  \ the code for every element, including staircased copper (ties round outward\n   for staircased edges,\
+  \ as implemented, or change the code to the stated rule; say which and why).\n2. snap.py: a feature\
+  \ or hole that collapses to zero size raises ValueError as documented (catch shapely's\n   GEOSException\
+  \ from the Polygon constructor and re-raise ValueError with the feature named).\n3. snap.py: the returned\
+  \ re-checks also report snapping-induced net_split, wire_pitch, wire_length and wire-landing\n   keep-out\
+  \ violations (CHECKED_RULES), each with the element it concerns.\n4. Tests that pin, with hand-computed\
+  \ expectations: the staircase inclusion threshold (0.5: a 0.3 and a 0.7 mutant must\n   fail a test),\
+  \ wire-end relocation (_move_into), terminal snapping, the convex-corner cell rule, and items 2-3.\n\
+  5. AlN law (stack.py): correct the citation text (319 W/(m K) is Slack et al. 1987's estimated intrinsic\
+  \ value; the\n   highest measured 300 K value is about 285 W/(m K)). Add an INDEPENDENT check: find\
+  \ a published k(T) table or figure for\n   polycrystalline/sintered AlN over 300-500 K (cite it exactly),\
+  \ and test the normalised law f(T) = k(T)/k(300 K)\n   against it within a stated tolerance. If the\
+  \ published sintered data disagree with (T/300)^-1 by more than that\n   tolerance, replace the law\
+  \ by a cited fit to them (keep f(300 K) = 1) and say so in the docstring; report the change,\n   since\
+  \ O003's Tj test compares layouts on the same stack.\nKeep every existing test passing; do not weaken\
+  \ any test or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/geometry/test_snap.py tests/unit/geometry/test_stack.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-09T15:17:19+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
