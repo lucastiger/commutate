@@ -8,6 +8,10 @@ depends_on:
 - T0257
 - T0260
 - T0261
+- T0259
+- T0268
+- T0269
+- T0270
 description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_run.py on mfos.evidence.ExperimentRun,
   following experiments/specs/E009.yaml and experiments/runners/e009_run.py.
 
@@ -68,9 +72,26 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
 
   FOUNDER CONSTRAINT (2026-11-09): burst compute is a Google Cloud free-trial account capped at 8 vCPUs
   running at once (one 8-vCPU VM at a time; memory via N2D extended memory up to ~150+ GB). The founder
-  declined a paid upgrade. E008''s cost estimate and run plan must fit this cap: sequential solves, per-solve
-  wall time and memory on 8 vCPUs, total VM-hours and $ against the remaining free credit, and the resulting
-  E008 date. State plainly if the 2026-11-24 date is unreachable and what the earliest date is.'
+  declined a paid upgrade. E008''s cost estimate and run plan must fit this cap: per-solve wall time and
+  memory on 8 vCPUs, total VM-hours and $ against the remaining free credit, and the resulting E008 date.
+  State plainly if the 2026-11-24 date is unreachable and what the earliest date is.
+
+
+  RUN PLAN (founder, 2026-11-09; replaces the one-solve-at-a-time premise above). P3''s 0.25 mm VM solves
+  (research/o006_p3/solves/*__lat0.25.json) logged ~62,000-64,000 CPU-s for ~7,000 s wall: about 9 busy
+  cores per solve, two solves on an n2-highmem-32. Linux numpy''s OpenBLAS starts one busy-waiting thread
+  per vCPU in every process. Pinned to one thread, the 0.5 mm Case 4 base solve gives L equal to P3''s
+  to 8e-15 with the same GMRES iterations (founder session, Mac). The runner therefore: (1) starts every
+  l2_layout and thermal subprocess with OPENBLAS_NUM_THREADS, OMP_NUM_THREADS and MKL_NUM_THREADS set,
+  and MF_L2_FFT_WORKERS, at the per-solve thread count research/l2_thread_calib/summary.txt found best
+  (1 if that file is absent), and records them in each solve''s provenance; (2) runs solves concurrently
+  on the one 8-vCPU VM, as many as fit in 0.85 x RAM by their --plan peak estimates, mixing EM, band,
+  thermal and control solves and both references, so that no stage waits for an unrelated one; thermal
+  checks wait only for the shortlist''s L_sub order; (3) takes per-solve wall and memory from research/l2_thread_calib/summary.txt
+  (four 0.25 mm Case 4 solves at once on n2d-custom-8-81920-ext) when it exists, else from P3 with the
+  thread waste stated. --plan reports the schedule''s VM-hours, $ and the machine type (memory sized to
+  the concurrency). The registered run goes on a regular VM; the full-fidelity dev run may use MF_GCP_SPOT=auto
+  and runs while T0263 builds the reconstructions.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

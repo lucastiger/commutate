@@ -6,7 +6,6 @@ agent: builder
 status: todo
 depends_on:
 - T0258
-- T0259
 description: 'New package src/moduleforge/optimize/ (search.py). A deterministic, resumable driver that
   takes its solvers as injected callables, so tests use fakes and the E008 runner supplies l2_layout,
   thermal_fem and the e_R estimator: l1(layout), l_sub(layout) at 0.25 mm, band(layout), which returns
@@ -37,7 +36,12 @@ description: 'New package src/moduleforge/optimize/ (search.py). A deterministic
   run resumes without re-solving. Tests (tests/unit/optimize/) with fake solvers cover: batch-and-stop
   and the cap of 8, ordering, the null''s reuse, near-tie selection, the levelling record, control mode,
   resume after interruption, determinism. Add one slow test that runs the real generator and real L1 on
-  a 70 x 40 housing spec with a 300-candidate budget.'
+  a 70 x 40 housing spec with a 300-candidate budget.
+
+
+  FOUNDER (2026-11-09): this task runs in parallel with T0259. The driver takes the twin W and the degraded
+  copy D as Layout arguments (the E008 runner builds them with generate/twin.py from T0259); do not import
+  or re-implement twin.py here. Tests use generated or hand-made layouts for W and D.'
 context_files:
 - project/objectives/O003/objective.yaml
 - project/decisions/D0008-o003-multi-fidelity-search.md

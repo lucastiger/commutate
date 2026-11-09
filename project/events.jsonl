@@ -1789,3 +1789,5 @@
 {"ts": "2026-11-09T15:41:58+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0269", "signal": "scope_violation", "action": "repair"}
 {"ts": "2026-11-09T15:42:01+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0258-builder-20261109T074201-4b0e", "task": "T0258", "role": "builder", "session": "49b9a6e6-8950-448d-b559-00725c32dfc0"}
 {"ts": "2026-11-09T15:43:46+00:00", "event": "task_amended", "actor": "session", "task": "T0269", "reason": "role builder -> scientist: deliverables are in research/o003 (scope_violation)"}
+{"ts": "2026-11-09T15:58:34+00:00", "event": "task_amended", "actor": "founder", "task": "T0260", "reason": "depends on T0258 only: parallel with T0259"}
+{"ts": "2026-11-09T15:58:34+00:00", "event": "task_amended", "actor": "founder", "task": "T0262", "reason": "deps T0259/T0268/T0269/T0270; concurrent thread-pinned run plan"}

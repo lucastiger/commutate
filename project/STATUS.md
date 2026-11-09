@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T15:43:52+00:00 from repository state — do not edit_
+_generated 2026-11-09T15:59:24+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,8 +35,6 @@ cancelled: 38, done: 221, failed: 3, running: 2, todo: 6
 - T0268 `running` builder/implement: Snapping rule and AlN law fixes from review T0264 (before E008's design) (attempt 1)
 
 ## Recent events
-- 2026-11-09T15:17:13+00:00 inbox_resolved {"id": "I0143", "status": "approved", "note": "Merge T0261 (research drafts only): T0266 accepts with caveats. The protected metrics patch is NOT applied until 
-- 2026-11-09T15:17:14+00:00 sleep_detected {"gap_s": 1403, "runs_extended": 0}
 - 2026-11-09T15:17:19+00:00 task_added {"task": "T0268"}
 - 2026-11-09T15:17:19+00:00 task_added {"task": "T0269"}
 - 2026-11-09T15:17:20+00:00 merged {"task": "T0257"}
@@ -50,3 +48,5 @@ cancelled: 38, done: 221, failed: 3, running: 2, todo: 6
 - 2026-11-09T15:41:58+00:00 task_failed_attempt {"task": "T0269", "signal": "scope_violation", "action": "repair"}
 - 2026-11-09T15:42:01+00:00 run_started {"run": "T0258-builder-20261109T074201-4b0e", "task": "T0258", "role": "builder", "session": "49b9a6e6-8950-448d-b559-00725c32dfc0"}
 - 2026-11-09T15:43:46+00:00 task_amended {"task": "T0269", "reason": "role builder -> scientist: deliverables are in research/o003 (scope_violation)"}
+- 2026-11-09T15:58:34+00:00 task_amended {"task": "T0260", "reason": "depends on T0258 only: parallel with T0259"}
+- 2026-11-09T15:58:34+00:00 task_amended {"task": "T0262", "reason": "deps T0259/T0268/T0269/T0270; concurrent thread-pinned run plan"}
