@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-09T23:08:04+00:00 from repository state — do not edit_
+_generated 2026-11-09T23:08:48+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 238, failed: 3, running: 3, todo: 3
 - T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 
 ## Recent events
-- 2026-11-09T22:41:41+00:00 inbox_resolved {"id": "I0150", "status": "approved", "note": "Merge T0273: searchable wire feet and multi-wire dies with gate/Kelvin copper; T0281 accepts with caveats; the sa
 - 2026-11-09T22:42:55+00:00 task_added {"task": "T0285", "reason": "review T0284 follow-up (driver e_R consistency, checkpoint)"}
 - 2026-11-09T22:42:55+00:00 task_amended {"task": "T0262", "reason": "waits for T0285; spec checks from T0283/T0284"}
 - 2026-11-09T22:45:50+00:00 merged {"task": "T0273"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 238, failed: 3, running: 3, todo: 3
 - 2026-11-09T22:53:03+00:00 inbox_resolved {"id": "I0153", "status": "approved", "note": "Merge T0279: exact L1-only null, w_ctrl without s_ref, e_R for the A1 best and near ties; T0284 accepts with cave
 - 2026-11-09T23:00:17+00:00 merged {"task": "T0276"}
 - 2026-11-09T23:07:56+00:00 merged {"task": "T0279"}
+- 2026-11-09T23:08:40+00:00 sleep_detected {"gap_s": 931, "runs_extended": 3}
