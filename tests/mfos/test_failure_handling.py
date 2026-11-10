@@ -124,6 +124,44 @@ def test_after_two_resumes_a_limited_task_starts_afresh(sandbox):
     assert o._resumable_session(t.model_copy(update={"history": network})) is None
 
 
+TLS = ("API Error: Unable to connect to API: SSL certificate verification failed (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). "
+       "The certificate comes from an authority Claude Code doesn't trust, usually a TLS-inspecting corporate proxy")
+
+
+@pytest.mark.parametrize("text, extra, minutes", [
+    (TLS, {"api_error": "tls_untrusted_ca", "api_error_status": None}, 5),
+    ("", {"api_error": "tls_untrusted_ca"}, 5),  # the CLI's error kind alone is enough
+    ("API Error: Unable to connect to API (ECONNRESET)", {}, 5),
+    ("API Error: Repeated 529 Overloaded errors", {}, 30),  # capacity, not network: the long pause stays
+])
+def test_a_network_fault_gives_the_attempt_back_and_pauses_briefly(sandbox, text, extra, minutes):
+    """2026-11-10: a Wi-Fi fault intercepted TLS; T0262's three attempts died within 2 min on the message above (CLI
+    api_error tls_untrusted_ca), and diagnosis T0303 was spawned for a failure that was not the agent's."""
+    s = Store()
+    o = Orchestrator(s)
+    t = m.Task(id="T9602", objective="O000", title="design", type="design_experiment", agent="scientist",
+               status="running", attempts=3, max_attempts=3)
+    s.save_task(t)
+    n_tasks = len(s.tasks())
+    before = time.time()
+    o._on_run_done(t, RunRecord(run_id="T9602-r", task_id=t.id, role="scientist", session_id="S-9", cwd=".",
+                                started="", status="error", is_error=True, subtype="success", result_text=text,
+                                extra=extra))
+    t = Store().task("T9602")
+    assert (t.status, t.attempts, t.history[-1]["outcome"]) == ("todo", 2, "capacity_backoff")
+    assert t.history[-1]["session"] is None  # a fresh start, not a resume
+    until = float((s.mfos / "backoff_until").read_text())
+    assert before + 60 * minutes - 5 <= until <= time.time() + 60 * minutes + 5
+    assert len(s.tasks()) == n_tasks  # no diagnosis task
+
+
+def test_the_cli_api_error_kind_is_recorded(sandbox):
+    runner = AgentRunner(Store())
+    rec = RunRecord(run_id="r", task_id="T9603", role="critic", session_id="s", cwd=".", started="")
+    runner._account(rec, {"api_error": "tls_untrusted_ca", "api_error_status": None})
+    assert (rec.extra["api_error"], rec.extra["api_error_status"]) == ("tls_untrusted_ca", None)
+
+
 # ------------------------------------------------------------------------------------------------ pause semantics
 def _review(tid, attempts=1):
     return m.Task(id=tid, objective="O000", title=f"review {tid}", type="review", agent="critic", status="running",

@@ -36,8 +36,13 @@ OBJ_IDLE = {"draft", "passed", "failed", "abandoned", "superseded", "needs_found
 # limit" and "limit reached" are the Claude Code CLI's plan-limit messages (O001 critics, 2026-09-30); "can't
 # reach the api server" / ENOTFOUND is its message when the machine has no network, e.g. waking from sleep (T0041,
 # 2026-10-01).
+# The API was never reached: a network fault, not the agent's. 2026-11-10: a Wi-Fi fault intercepted TLS and T0262's
+# three attempts died within 2 min on "Unable to connect to API: SSL certificate verification failed" (CLI api_error
+# tls_untrusted_ca), spawning diagnosis T0303.
+NETWORK_SIGNS = ("can't reach the api server", "unable to connect to api", "enotfound", "econnrefused", "etimedout",
+                 "tls_untrusted_ca")
 CAPACITY_SIGNS = ("rate limit", "usage limit", "session limit", "weekly limit", "limit reached", "overloaded",
-                  "429", "529", "quota", "can't reach the api server", "enotfound", "econnrefused", "etimedout")
+                  "429", "529", "quota") + NETWORK_SIGNS
 
 
 def acquire_loop_lock(store: Store) -> Optional[Any]:
@@ -272,17 +277,20 @@ class Orchestrator:
             self._fail(t, "agent_error", f"run {rec.status}", rec.result_text)
             return
         if rec.status == "error":
-            text = (rec.result_text + " " + rec.subtype).lower()
+            text = (rec.result_text + " " + rec.subtype + " " + str(rec.extra.get("api_error") or "")).lower()
             if any(k in text for k in CAPACITY_SIGNS) or rec.extra.get("api_error_status") == 429:
                 # A usage limit states when it resets: wait until then (+2 min), then resume the same session, so
                 # the work done before the limit is not thrown away (61 of O001's 174 runs died on a limit).
+                # A network fault has no reset time and usually clears in minutes: a short pause, then a fresh start.
                 reset = diagnose.parse_limit_reset(rec.result_text)
-                minutes = int(self.pol.get("limits", {}).get("backoff_minutes", 30))
+                limit = reset is not None or rec.extra.get("api_error_status") == 429 or "limit" in text
+                network = not limit and any(k in text for k in NETWORK_SIGNS)
+                lim = self.pol.get("limits", {})
+                minutes = int(lim.get("network_backoff_minutes", 5) if network else lim.get("backoff_minutes", 30))
                 until = reset.timestamp() + 120 if reset else time.time() + 60 * minutes
                 (self.s.mfos / "backoff_until").write_text(str(until))
                 t.attempts = max(0, t.attempts - 1)  # capacity problems are not the agent's failure
                 t.status = "todo"
-                limit = reset is not None or rec.extra.get("api_error_status") == 429 or "limit" in text
                 t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now(),
                                   "until": dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(),
                                   "session": rec.session_id if limit else None})

@@ -272,7 +272,7 @@ class AgentRunner:
         return rec
 
     def _account(self, rec: RunRecord, data: dict[str, Any]) -> None:
-        """Tokens, models, permission denials and the API error status of a finished run (audit W6)."""
+        """Tokens, models, permission denials and the API error status and kind of a finished run (audit W6)."""
         u = data.get("usage") or {}
         rec.extra["usage"] = {
             "input": int(u.get("input_tokens") or 0),
@@ -290,6 +290,7 @@ class AgentRunner:
             counts[name] = counts.get(name, 0) + 1
         rec.extra["denied_tools"] = counts
         rec.extra["api_error_status"] = data.get("api_error_status")
+        rec.extra["api_error"] = data.get("api_error")  # e.g. tls_untrusted_ca: the API was never reached
         if rec.status == "error":
             err = self.runs_dir / rec.run_id / "stderr.log"
             rec.extra["stderr_tail"] = err.read_text(errors="replace")[-1500:] if err.exists() else ""
