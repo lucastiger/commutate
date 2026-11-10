@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T01:25:13+00:00 from repository state — do not edit_
+_generated 2026-11-10T01:29:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,8 +36,6 @@ cancelled: 38, done: 239, failed: 3, merge: 2, running: 1, todo: 4
 - T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 
 ## Recent events
-- 2026-11-09T22:53:01+00:00 inbox_resolved {"id": "I0152", "status": "approved", "note": "Merge T0276: fail-closed floor and tj_limit_K, two branches covered; T0283 accepts with minor caveats; exact spec
-- 2026-11-09T22:53:03+00:00 inbox_resolved {"id": "I0153", "status": "approved", "note": "Merge T0279: exact L1-only null, w_ctrl without s_ref, e_R for the A1 best and near ties; T0284 accepts with cave
 - 2026-11-09T23:00:17+00:00 merged {"task": "T0276"}
 - 2026-11-09T23:07:56+00:00 merged {"task": "T0279"}
 - 2026-11-09T23:08:40+00:00 sleep_detected {"gap_s": 931, "runs_extended": 3}
@@ -51,3 +49,5 @@ cancelled: 38, done: 239, failed: 3, merge: 2, running: 1, todo: 4
 - 2026-11-09T23:37:26+00:00 run_finished {"run": "T0286-critic-20261109T152001-da2f", "status": "completed", "cost": 1.977708, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T23:38:11+00:00 task_added {"task": "T0287", "reason": "review T0286 follow-up (degradation robustness)"}
 - 2026-11-09T23:38:11+00:00 task_amended {"task": "T0262", "reason": "waits for T0287 (degradation robustness, review T0286)"}
+- 2026-11-10T01:25:18+00:00 inbox_opened {"id": "I0154", "kind": "protected_change", "subject": "T0259: merge needs founder approval"}
+- 2026-11-10T01:27:15+00:00 inbox_resolved {"id": "I0154", "status": "approved", "note": "Merge T0259: twin and degradation rule, Case 4 twin within 0.17 % (L1); T0286 accepts with caveats; degradation t
