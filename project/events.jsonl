@@ -1926,3 +1926,7 @@
 {"ts": "2026-11-10T02:02:18+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0285-builder-20261109T172942-6001", "status": "completed", "cost": 0.485155, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-10T02:20:41+00:00", "event": "verified", "actor": "orchestrator", "task": "T0285"}
 {"ts": "2026-11-10T02:20:48+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0289-critic-20261109T182048-9416", "task": "T0289", "role": "critic", "session": "9adf65d8-b034-4ca0-b19d-42dcd5b4ae10"}
+{"ts": "2026-11-10T02:21:23+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 1146, "runs_extended": 3}
+{"ts": "2026-11-10T02:21:24+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0288-critic-20261109T175810-ade4", "status": "completed", "cost": 2.420049, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-10T02:22:01+00:00", "event": "task_added", "actor": "session", "task": "T0290", "reason": "review T0288 follow-up (_quick_ok tolerance, effective tests)"}
+{"ts": "2026-11-10T02:22:01+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0290; L1 screen throughput (T0288)"}

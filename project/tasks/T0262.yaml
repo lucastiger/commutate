@@ -19,6 +19,7 @@ depends_on:
 - T0282
 - T0285
 - T0287
+- T0290
 description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_run.py on mfos.evidence.ExperimentRun,
   following experiments/specs/E009.yaml and experiments/runners/e009_run.py.
 
@@ -122,7 +123,15 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   SPEC CHECKS (reviews T0283/T0284, 2026-11-09): the metric guards reject only non-finite or wrong-sign
   floor and tj_limit_K, so the spec states floor = 1e-3 K and tj_limit_K = 2.0 K explicitly and --verify-freeze
   asserts those exact values. The runner''s thermal callable returns the record fields the driver whitelists
-  (per level and die: Tj max and its node, node count, fingerprint, energy balance, Picard convergence).'
+  (per level and die: Tj max and its node, node count, fingerprint, energy balance, Picard convergence).
+
+
+  L1 SCREEN THROUGHPUT (review T0288, 2026-11-10): the generator yields DRC-valid candidates at about
+  35 per s (Case 4, measured rules, 1 wire per die) but only 2-2.5 per s with 3 wires per die (machine
+  under load). A 20,000-candidate screen can therefore take minutes or 2-3 h per search. --plan measures
+  the rate on each reference''s spec and schedules every screen (main and control, both references) at
+  the start of the run, beside the reference, snapping-variant, twin and D solves, so the shortlist solves
+  are not delayed; the sealed candidate sequence must not depend on the schedule.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

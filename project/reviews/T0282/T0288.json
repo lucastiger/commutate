@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "New k=3 generation test does not detect the absence of the float-tolerance fix",
+      "detail": "test_case4_k3_measured_rules_exact_fit_foot_and_generation is presented as covering the sampler fix ('before the tolerance fix the sampler found 1 in 15000 draws'), but with D.CLEAR_TOL_MM = 0.0 (pre-fix behaviour) D.generate(spec_k3_measured, 5, seed=1, max_failures=30000) still returns 5 DRC-valid layouts (4.9 s). The hand-built part uses build() directly and never exercises clear(). test_foot_clearance_accepts_exact_fit_but_not_a_real_shortfall tests the helper _far_enough in isolation, not that _draw_feet.clear() calls it. Reverting clear() to a strict >= would leave every test green. The fix itself is effective (see checks); its regression protection is not.",
+      "evidence": "Scratch run: 'tol=0: k3 test generate PASSES ( 5 ) 4.9 s'.",
+      "suggested_check": "Add a deterministic test that drives _draw_feet (or the clear branch) on an exact-fit row and fails when CLEAR_TOL_MM is 0.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "_ls_foot_distance_bound is documented as an upper bound but is a coarse grid maximum that underestimates",
+      "detail": "The 0.25 mm arange grid misses the pad extremes: Kelvin u grid [0.65, 0.9, 1.15] lacks 1.35, gate grid [-1.35, -1.1, -0.85] lacks -0.65, and the source grid stops 0.2 mm short of its top/right edges. At a straight-wire position (45, 35) it returns 1.165 mm, below the proven closed form 1.35 mm. At (66, 30) it gives 1.48 mm against 1.69 mm on a fine endpoint-inclusive grid. The asserted 1.81 mm is a grid artefact; the fine-grid supremum at the worst point (25, 30) is 1.820 mm. The conclusion (< 2 mm in the stated scope) still holds, and the default-rule LS dies cannot reach y < 33 mm anyway.",
+      "evidence": "Fine-grid recomputation (linspace incl. endpoints, max_g/max_k decomposition): (25,30) 1.8202 vs test 1.8111; (66,30) 1.6924 vs 1.4766; (45,35) 1.345 vs 1.165.",
+      "suggested_check": "Use endpoint-inclusive grids (linspace) or the analytic corners, and call the result a grid estimate, not a bound.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Throughput figures are called 'conservative lower bounds' but are not; 'practically unreachable' is overstated",
+      "detail": "Measured here at a similar load (load average ~4.8, with my own test suite running concurrently), all rates were below the documented 'lower bounds': default rules k=1 80/100 per s (doc 153/167); measured rules k=1 35.5/33.9 per s (doc 46/44); measured rules k=3 2.5/2.0 per s (doc 3.1/4.2). Load-dependent single runs give no lower bound, so the E008 time estimates (e.g. 1.3-1.8 h for measured k=3) are optimistic. Without the fix, k=3 yield was 11-12 per 60000 draws against 30-34 with it (~2.7x), and generate(n=5) succeeded in 4.9 s. That is a rate change, not 'practically unreachable'.",
+      "evidence": "Scratch runs: generate() per seed 1/2; 60000-draw yield counts per seed with CLEAR_TOL_MM 1e-6 vs 0.",
+      "suggested_check": "Report rates with the run count and a spread and drop 'lower bound'; replace 'practically unreachable' with the measured ratio.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Same float-strictness class remains in _quick_ok",
+      "detail": "_quick_ok compares ln.distance(q) < min_wire_pitch and w.length > lim without tolerance, while the DRC uses 1e-9 m. Grid-exact separations come out below nominal in shapely (0.02875 vs 0.029375 m lines: 0.0006249999999999971 m). With a 0.625 mm min_wire_pitch, the pre-check would reject a DRC-valid exact fit. It is inert for Case 4 at 0.6 mm (separations are multiples of 0.125 mm) and only reduces yield, never admits invalid layouts.",
+      "evidence": "shapely LineString distance demo in scratch script.",
+      "suggested_check": "Use the same tolerance (TOL / _far_enough) in _quick_ok's pitch and length comparisons.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Minor code nits",
+      "detail": "feet(\"source\") - [x, y] + [x, y] in the test is a no-op. The ilo/ihi ceil/floor in _draw_feet has no epsilon, unlike its neighbours; it is conservative (can only drop a grid point) and inert on Case 4 geometry.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD: pytest tests/unit/generate tests/unit/drc (216 passed); pytest -m 'not slow' tests/unit (755 passed, 39 deselected); ruff check (clean); thermal_fem.py sha256 prefix a216d5fe3209bcee (match); mfos gate --fast (all gates passed).",
+    "Verified drc.check tolerance: TOL = 1e-9 m in drc/rules.py for wire_pitch and signal-wire pitch, consistent with CLEAR_TOL_MM = 1e-6 mm.",
+    "Confirmed the removed symbols (_Ctx.siglim, _gf, cx parameter of _draw_feet) have no remaining users in src/tests/research/experiments/scripts/tools.",
+    "Monkeypatched D.CLEAR_TOL_MM to 0 vs 1e-6 and counted DRC-valid k=3 (measured rules) layouts: 15000 draws seed 1: 1 vs 6 (matches doc; ~88.7% None). 60000 draws: seed 1 11 vs 30, seed 2 12 vs 34.",
+    "Tested the test: with CLEAR_TOL_MM=0, generate(k3 spec, 5, seed=1, max_failures=30000) still succeeds, so the new k=3 test does not discriminate the fix.",
+    "Recomputed the 2 mm foot-distance bound with endpoint-inclusive fine grids and the min(max_g, max_k) decomposition: worst point (25,30) 1.820 mm (< 2 mm, test says 1.81); test function underestimates by up to ~0.2 mm (1.165 vs 1.345 at (45,35)). Scanned die centres x in [25,27] and [64,66] mm, y in [30,34] mm at 0.25 mm steps.",
+    "Checked default rules (min_spacing 1 mm, die_edge_margin 1 mm): LS die centres y >= 33 mm, inside the stated y range [30, 80].",
+    "Reproduced the orientation-y sampling counts: 182 buildable, 0 pass _quick_ok, smallest signal-wire excess 16.99 mm (doc: 182 / 0 / 17 mm).",
+    "Measured throughput (seeds 1, 2) on a loaded machine: default k=1 80/100 per s; measured k=1 35.5/33.9; measured k=3 2.5/2.0. Slow test threshold (>= 5/s) clearly met.",
+    "Demonstrated float noise in shapely distances of grid-exact parallel wires (0.0006249999999999971 m < 0.000625 m), the class left untreated in _quick_ok."
+  ],
+  "caveats": [
+    "The T0281 review findings are not in the repository; 'completely implements' was judged against the three topics in the claim title (foot-sampler tolerance, proof scope, throughput) only.",
+    "The 2 mm-pitch infeasibility is proven (closed form plus numeric grid) only for orientation-x LS dies with centres x in [25, 66] mm, y in [30, 80] mm. HS dies, orientation y and other placements rest on sampling (RuntimeError in 3000 draws), as the docstring says.",
+    "The orientation-x 'exactly 2 feasible sequences' rests on necessary conditions plus generator witnesses; merge variants of the two feasible sequences are observed split only and are not proven infeasible.",
+    "Throughput numbers are machine- and load-dependent; mine were taken with load ~4.8 and my own test suite running concurrently, so neither set is an idle-machine figure."
+  ]
+}
