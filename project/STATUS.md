@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T01:35:49+00:00 from repository state — do not edit_
+_generated 2026-11-10T01:36:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 241, failed: 3, running: 3, todo: 2
 - T0287 `running` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
 
 ## Recent events
-- 2026-11-09T23:19:52+00:00 verified {"task": "T0259"}
 - 2026-11-09T23:20:01+00:00 run_started {"run": "T0286-critic-20261109T152001-da2f", "task": "T0286", "role": "critic", "session": "de99bfbb-9811-4c29-849c-edff5e88b233"}
 - 2026-11-09T23:20:35+00:00 sleep_detected {"gap_s": 467, "runs_extended": 3}
 - 2026-11-09T23:21:19+00:00 run_finished {"run": "T0274-builder-20261109T144754-c0bf", "status": "completed", "cost": 0.371848, "subtype": "success", "report": "structured_output"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 241, failed: 3, running: 3, todo: 2
 - 2026-11-10T01:30:17+00:00 sleep_detected {"gap_s": 7739, "runs_extended": 2}
 - 2026-11-10T01:35:45+00:00 merged {"task": "T0259"}
 - 2026-11-10T01:35:49+00:00 run_started {"run": "T0287-builder-20261109T173549-3fe8", "task": "T0287", "role": "builder", "session": "1e9e5647-fcd8-4415-9d77-cd4c4436a587"}
+- 2026-11-10T01:36:24+00:00 sleep_detected {"gap_s": 367, "runs_extended": 3}
