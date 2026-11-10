@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T15:19:41+00:00 from repository state — do not edit_
+_generated 2026-11-10T15:20:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T15:19:41+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 58 | $99.94 | 1813056 | 941923 | 93 | 0 |
+| O003 | 59 | $99.94 | 1813056 | 941923 | 93 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,13 +29,11 @@ _generated 2026-11-10T15:19:41+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 255, failed: 3, merge: 1, todo: 3
+cancelled: 38, done: 256, failed: 3, running: 1, todo: 2
 
-- T0298 `merge` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
+- T0300 `running` builder/implement: Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review T0299) (attempt 1)
 
 ## Recent events
-- 2026-11-10T08:25:24+00:00 inbox_opened {"id": "I0161", "kind": "protected_change", "subject": "T0293: merge needs founder approval"}
-- 2026-11-10T08:26:00+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
 - 2026-11-10T13:27:27+00:00 inbox_resolved {"id": "I0161", "status": "approved", "note": "Merge T0293: L1-raising fallback walk (2 mm stress 63/72, default population and Case 4 all reach target), merged
 - 2026-11-10T13:27:39+00:00 merged {"task": "T0293"}
 - 2026-11-10T13:27:43+00:00 run_started {"run": "T0298-builder-20261110T052743-dea1", "task": "T0298", "role": "builder", "session": "22128343-cd85-4484-bdf3-dae12f85640c"}
@@ -49,3 +47,5 @@ cancelled: 38, done: 255, failed: 3, merge: 1, todo: 3
 - 2026-11-10T14:55:58+00:00 task_amended {"task": "T0262", "reason": "waits for T0300 (T-junction necks, review T0299); reports twin-vs-reconstruction copper"}
 - 2026-11-10T14:55:58+00:00 task_amended {"task": "T0263", "reason": "twin-space check reports twin copper symdiff, midpoint splits and walk use (review T0299)"}
 - 2026-11-10T15:19:40+00:00 inbox_resolved {"id": "I0162", "status": "approved", "note": "Merge T0298: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record; T02
+- 2026-11-10T15:20:21+00:00 merged {"task": "T0298"}
+- 2026-11-10T15:20:25+00:00 run_started {"run": "T0300-builder-20261110T072025-dabc", "task": "T0300", "role": "builder", "session": "d5d7713a-516e-4b03-ab75-5c47ad62f636"}
