@@ -1949,3 +1949,7 @@
 {"ts": "2026-11-10T03:12:07+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0293 (degradation fallback, review T0291)"}
 {"ts": "2026-11-10T03:17:09+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0157", "kind": "protected_change", "subject": "T0287: merge needs founder approval"}
 {"ts": "2026-11-10T03:17:46+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 384, "runs_extended": 1}
+{"ts": "2026-11-10T03:22:14+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0290-builder-20261109T183005-35cf", "status": "completed", "cost": 0.755394, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-10T03:33:42+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0156", "status": "approved", "note": "Merge T0285: one band-based e_R, atomic checkpoint repair, whitelisted thermal records; T0289 accepts with minor caveats; the estimator import, union near-tie window and record checks follow in T0292 before E008's freeze.", "by": "human"}
+{"ts": "2026-11-10T03:33:44+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0157", "status": "approved", "note": "Merge T0287: degradation target 1.25 x 1.11 reached on the 54-layout population and Case 4, merged-band split, exact-mode DRC; T0291 accepts with caveats; the L1-raising fallback for minimum-width bands and the exact merged split follow in T0293 before E008's freeze.", "by": "human"}
+{"ts": "2026-11-10T03:36:04+00:00", "event": "verified", "actor": "orchestrator", "task": "T0290"}

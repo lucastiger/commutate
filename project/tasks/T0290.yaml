@@ -4,7 +4,7 @@ title: 'Generator: DRC-consistent float tolerance in _quick_ok, tests that fail 
   T0288)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0282
 description: "Follow-up to T0282, from review T0288 (project/reviews/T0282/T0288.json; read it first).\
@@ -62,4 +62,70 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "I made all four T0288 fixes in the generator and committed them as 6919a5ae. All DoD commands\
+    \ exit 0 (see checks_run). `_quick_ok` and the `_draw_feet` ilo/ihi now use the DRC's 1e-9 m tolerance.\
+    \ New tests drive `_draw_feet` and `_quick_ok` on the exact-fit cases and fail when the tolerance\
+    \ is removed. `_ls_foot_distance_bound` is now a proven upper bound. The throughput figures in the\
+    \ docstring are replaced by new measurements.\n\n1. **Tolerances.** I imported the DRC's `TOL` into\
+    \ `derivative.py` as `DRC_TOL`.\n   - `_quick_ok` now accepts a signal wire if `length <= limit +\
+    \ TOL`. It accepts a signal-to-power wire distance if `distance >= min_wire_pitch - TOL`. Copper containment\
+    \ and net spacing already had it.\n   - The ilo/ihi indices in `_draw_feet` use ceil/floor with ±1e-9.\n\
+    \   - I found "
+  report:
+    status: completed
+    summary: "I made all four T0288 fixes in the generator and committed them as 6919a5ae. All DoD commands\
+      \ exit 0 (see checks_run). `_quick_ok` and the `_draw_feet` ilo/ihi now use the DRC's 1e-9 m tolerance.\
+      \ New tests drive `_draw_feet` and `_quick_ok` on the exact-fit cases and fail when the tolerance\
+      \ is removed. `_ls_foot_distance_bound` is now a proven upper bound. The throughput figures in the\
+      \ docstring are replaced by new measurements.\n\n1. **Tolerances.** I imported the DRC's `TOL` into\
+      \ `derivative.py` as `DRC_TOL`.\n   - `_quick_ok` now accepts a signal wire if `length <= limit\
+      \ + TOL`. It accepts a signal-to-power wire distance if `distance >= min_wire_pitch - TOL`. Copper\
+      \ containment and net spacing already had it.\n   - The ilo/ihi indices in `_draw_feet` use ceil/floor\
+      \ with ±1e-9.\n   - I found one other strict comparison, the `land + ldv` window in `_sample`, and\
+      \ gave it 1e-9 as well.\n   - The audit list is in the module docstring.\n   - No DRC rule was changed.\n\
+      2. **Tests.**\n   - `test_draw_feet_clear_branch_accepts_exact_fit` uses a scripted rng to drive\
+      \ the `clear()` branch of `_draw_feet` on the k=3 exact fit (0.625 mm pitch, signal feet at ±0.25\
+      \ mm). The companion test, with `CLEAR_TOL_MM` patched to 0, shows the same call rejecting it.\n\
+      \   - `test_quick_ok_float_tolerance_pitch_and_length` runs `_quick_ok` with a pitch rule and a\
+      \ gate-length limit 5e-10 m tighter than the layout's real distance/length. It also checks the 0.02875\
+      \ vs 0.029375 m shapely distance (below 0.625 mm) and that a 1e-6 m shortfall is still rejected.\
+      \ The companion test sets `DRC_TOL` to 0 and shows both being rejected.\n   - I confirmed the `_quick_ok`\
+      \ pair fails against the original source. For the `_draw_feet` pair, the original source already\
+      \ had the tolerance, so I could only show the failure by patching `CLEAR_TOL_MM` to 0.\n   - The\
+      \ existing k=3 generation test still passes but cannot detect a removed tolerance (T0288 finding\
+      \ 0). I added a docstring note saying so.\n3. **`_ls_foot_distance_bound`.** It now uses endpoint-inclusive\
+      \ grids (h ≤ 0.1 mm) with a stated Lipschitz margin.\n   - It relies on `sup min(d_g, d_k) = sup_p\
+      \ min(sup_g d_g, sup_k d_k)`, because the gate and Kelvin feet are independent.\n   - The bound\
+      \ is per die centre. The scan over centres is still a grid, and the docstring says so.\n   - The\
+      \ largest bound is 1.96 mm at (25, 30), which is above T0288's fine-grid supremum of 1.820 mm and\
+      \ below 2 mm. The docstrings carry the corrected numbers.\n   - The test now asserts `1.820 <= best\
+      \ < 2.0`, plus the two points where the old grid underestimated: ≥1.345 at (45, 35) and ≥1.6924\
+      \ at (66, 30).\n4. **Throughput.** Measured with one process at a load of 3.3/3.6/3.9 at the start\
+      \ and 3.6/3.7/3.9 at the end, one run per seed. The `generate` seed 1 / seed 2 rates are in the\
+      \ table below.\n\n| Rules | Wires per die (k) | Layouts per run | Seed 1 (per s) | Seed 2 (per s)\
+      \ |\n|---|---|---|---|---|\n| Default | 1 | 150 | 95.5 | 113.7 |\n| Default | 3 | 25 | 9.6 | 4.2\
+      \ |\n| Measured | 1 | 60 | 44.1 | 31.8 |\n| Measured | 3 | 8 | 2.2 | 2.9 |\n\n   The docstring no\
+      \ longer calls these lower bounds and no longer says k=3 was \"practically unreachable\". Instead\
+      \ it cites T0288's ~2.7× yield ratio."
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - tests/unit/generate/test_derivative.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - The worst-case foot-distance bound of 1.96 mm (a proven bound at 0.1 mm grid) leaves only a 0.04
+      mm margin to 2 mm. The true supremum is 1.820 mm.
+    - The throughput figures are single runs per seed at a load of about 3.5 and have an unknown spread.
+      They should be re-measured under the load of the E008 run.
