@@ -205,3 +205,146 @@ def test_degrade_narrows_landing_slots_to_the_minimum_width(housing, housing_ref
         wmin = max(np.ceil(housing.rules.min_trace_width * 1e3 / 0.5) * 0.5, 1.0)
         assert wmin - 1e-9 <= v["after_mm"] <= wmin + 1.0  # at most two 0.5 mm steps above the minimum (landing margin)
         assert v["after_mm"] <= v["before_mm"]
+
+
+# ------------------------------------------------------------------------- T0287: merged bands, exact DRC, degradation
+def _transposed(spec):
+    """The housing spec with x and y exchanged (orientation-y tests: build(spec_T, params with orient=1) is the transposed layout)."""
+    from shapely.affinity import affine_transform
+
+    from moduleforge.geometry import Terminal
+    tr = lambda poly: affine_transform(poly, [0, 1, 1, 0, 0, 0])  # noqa: E731
+    die = D.DieSpec(spec.die.h, spec.die.w, spec.die.thickness, spec.die.attach_thickness,
+                    {k: (r[1], r[0], r[3], r[2]) for k, r in spec.die.pads.items()})
+    terms = {k: Terminal(t.net, t.cy, t.cx, t.h, t.w) for k, t in spec.terminals.items()}
+    return dataclasses.replace(spec, outline=tr(spec.outline), baseplate_outline=tr(spec.baseplate_outline), die=die,
+                               terminals=terms)
+
+
+def _overlapping_slots(p):
+    """Total overlap area (mm^2) of any two slots of the parametrisation."""
+    from shapely.geometry import box as bx
+    r = [bx(*s) for s in p.slots]
+    return sum(r[i].intersection(r[j]).area for i in range(4) for j in range(i + 1, 4))
+
+
+@pytest.fixture(scope="module")
+def merged_cases():
+    """(spec, layout) of merged generator layouts, orientation x (housing) and y (transposed spec), 3 dies x 2 wires."""
+    spec = D.halfbridge_housing_spec(3, wires_per_die=2)
+    refs = [r for r in D.generate(spec, 30, seed=11) if D.topology_of(r).endswith("/merged")][:3]
+    assert len(refs) == 3
+    specy = _transposed(spec)
+    out = [(spec, r) for r in refs]
+    for r in refs:
+        ly = D.build(specy, dataclasses.replace(D.params_of(r), orient=1))
+        assert check(ly, specy.rules) == [] and D.topology_of(ly).startswith("y/") and D.topology_of(ly).endswith("/merged")
+        out.append((specy, ly))
+    return out
+
+
+def test_merged_phase_band_is_split_and_labelled(merged_cases):
+    """T0286 finding 0: fit-mode twins of merged generator layouts carry the label 'merged', no overlapping slots and
+    the reference geometry; degrade() is effective on them (the slots are the geometry's, not overlapping ones)."""
+    for spec, ref in merged_cases:
+        anon = dataclasses.replace(ref, family="anonymous")
+        lay, p, rec = W.twin(anon, spec, with_l1=False)
+        assert rec["mode"] in ("fit", "fit+signal_feet")
+        assert rec["topology"] == D.topology_of(ref) and rec["topology"].endswith("/merged")
+        assert _overlapping_slots(p) == 0.0
+        assert D.params_of(ref).sequence() == p.sequence() and p.orient == D.params_of(ref).orient
+        assert rec["symdiff_area_total_mm2"] < 1e-6 and rec["max_die_displacement_mm"] < 1e-6
+        assert rec["max_wire_displacement_mm"] < 0.13
+        # the die slot and the landing slot of the PHASE band meet on the grid line where the generator put it
+        seq, q = p.sequence(), D.params_of(ref)
+        i = next(i for i in range(3) if seq[i][0] == seq[i + 1][0] == "PHASE")
+        assert p.slots[i][3] == p.slots[i + 1][1] == q.slots[i][3] == q.slots[i + 1][1]
+        d, drec = W.degrade(lay, spec)
+        assert check(d, spec.rules) == [] and drec["l1_ratio"] >= _ratio_target()
+
+
+def test_overlapping_unequal_intervals_are_split():
+    """The probe lines of a merged band see different v-intervals (die part vs landing part): nested intervals split at
+    the inner edge.  Checked on the T0286 example: a die slot ending at u = 60.5 beyond the landing slot's end."""
+    spec = D.halfbridge_housing_spec(2, wires_per_die=2)
+    ref = next(r for r in D.generate(spec, 60, seed=29) if D.topology_of(r).endswith("/merged"))
+    _, p, rec = W.twin(dataclasses.replace(ref, family="anonymous"), spec, with_l1=False)
+    assert rec["topology"].endswith("/merged") and _overlapping_slots(p) == 0.0
+
+
+def test_exact_mode_checks_drc(housing, housing_refs):
+    """T0286 finding 3: a layout that is its own twin but violates the spec's rules raises TwinError."""
+    ref = housing_refs[0]
+    strict = dataclasses.replace(housing, rules=DesignRules(min_trace_width=6e-3))
+    assert check(ref, strict.rules)
+    with pytest.raises(W.TwinError):
+        W.twin(ref, strict, with_l1=False)
+
+
+# the 54-layout population of T0286: n = 2, 3, 4 dies x 1, 2, 3 wires per die x 6 seeds
+def _population():
+    for n in (2, 3, 4):
+        for k in (1, 2, 3):
+            spec = D.halfbridge_housing_spec(n, wires_per_die=k)
+            for ref in D.generate(spec, 6, seed=100 * n + k):
+                yield spec, ref
+
+
+def test_degradation_reaches_its_target_on_the_population_and_is_deterministic():
+    """Every layout of the population reaches L1(D)/L1(W) >= 1.25 (1 + 0.11) and is DRC-clean; the ratio distribution
+    is the one stated in the module docstring."""
+    ratios, moves = [], {}
+    for spec, ref in _population():
+        tw, _, _ = W.twin(ref, spec, with_l1=False)
+        d, rec = W.degrade(tw, spec)
+        assert check(d, spec.rules) == []
+        assert rec["l1_ratio"] >= _ratio_target() and rec["l1_ratio"] >= 1.25
+        ratios.append(rec["l1_ratio"])
+        moves[tuple(rec["moves"])] = moves.get(tuple(rec["moves"]), 0) + 1
+    assert len(ratios) == 54
+    lo, med, hi = min(ratios), float(np.median(ratios)), max(ratios)
+    print(f"degradation L1 ratio over 54 layouts: min {lo:.3f}, median {med:.3f}, max {hi:.3f}; moves {moves}")
+    assert lo >= _ratio_target()
+    spec, ref = next(iter(_population()))
+    a, ra = W.degrade(ref, spec)
+    b, rb = W.degrade(ref, spec)
+    assert a.fingerprint() == b.fingerprint() and ra == rb
+
+
+def test_margin_covers_the_stated_l1_bias_spread():
+    """L1 5-14 % below L2: the L1 ratio can exceed the L2 ratio by 0.95 / 0.86 - 1 = 10.5 %; the margin covers it."""
+    assert W.DEGRADE_MARGIN >= 0.95 / 0.86 - 1 and W.DEGRADE_MARGIN >= 0.11
+    assert _ratio_target() / (0.95 / 0.86) >= 1.25 - 1e-12
+
+
+def test_centre_move_rescues_a_narrow_band_miss():
+    """Landing bands that the narrowing alone leaves short of the target (the landing point is off the 0.5 mm grid): the
+    second move centres the landing point in a minimum-width band.  Generator layout n = 3, k = 1, seed 931, index 6."""
+    spec = D.halfbridge_housing_spec(3, wires_per_die=1)
+    ref = D.generate(spec, 25, seed=931, max_failures=3000)[6]
+    p1, _ = W._narrow_landing(D.params_of(ref), spec, centre=False)
+    lay1 = D.build(spec, p1)
+    assert W._l1(lay1) / W._l1(ref) < _ratio_target()  # narrowing alone misses
+    d, rec = W.degrade(ref, spec)
+    assert rec["moves"] == ["narrow_landing", "centre_landing"] and rec["l1_ratio"] >= _ratio_target()
+    assert check(d, spec.rules) == []
+    # the landing points moved by at most 0.25 mm, the dies and the wire feet not at all
+    assert [(x.cx, x.cy) for x in d.dies] == [(x.cx, x.cy) for x in ref.dies]
+    assert all(np.allclose(a.points[0], b.points[0]) for a, b in zip(d.wires, ref.wires, strict=True))
+    assert all(np.linalg.norm(a.points[-1] - b.points[-1]) <= 0.25e-3 + 1e-9 for a, b in zip(d.wires, ref.wires, strict=True))
+
+
+def test_spread_moves_are_used_when_narrowing_is_not_enough():
+    """Stricter copper rule (2 mm minimum width): the landing bands have little to lose; a spread move completes."""
+    spec = D.halfbridge_housing_spec(4, rules=DesignRules(min_trace_width=2e-3), wires_per_die=2)
+    ref = D.generate(spec, 4, seed=942, max_failures=3000)[1]
+    d, rec = W.degrade(ref, spec)
+    assert any(m.startswith("spread") for m in rec["moves"]) and rec["l1_ratio"] >= _ratio_target()
+    assert check(d, spec.rules) == []
+
+
+def test_degrade_error_when_no_move_reaches_the_target():
+    spec = D.halfbridge_housing_spec(4, rules=DesignRules(min_trace_width=2e-3), wires_per_die=1)
+    ref = D.generate(spec, 4, seed=941, max_failures=3000)[2]
+    with pytest.raises(W.DegradeError):
+        W.degrade(ref, spec)

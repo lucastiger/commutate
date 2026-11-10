@@ -7,7 +7,8 @@ Construction (all lengths mm in the local frame u / v of the orientation, see ``
 --------------------------------------------------------------------------------------------
 0. Exact case.  If the reference was built by ``derivative.build`` and ``build(spec, params_of(reference))`` reproduces its
    fingerprint, the twin IS the reference (record ``mode == "exact"``).  This is the inverse map, not a fit; a modified layout
-   whose family string is stale fails the fingerprint test and goes to the fit.
+   whose family string is stale fails the fingerprint test and goes to the fit.  The exact case also runs
+   ``check(layout, spec.rules)`` and raises ``TwinError`` on violations (T0286 finding 3).
 1. Candidates: the 16 pairs (orientation, sequence), enumerated in the order orient 0 / 1, then ``hs_first``, ``hs_die_first``,
    ``ls_die_first`` = 0 / 1 (lexicographic, the first index wins a tie).  A pair is kept when the v-order of the four anchor
    points (HS die row, HS landing line, LS die row, LS landing line) is the order of its slots.
@@ -17,8 +18,12 @@ Construction (all lengths mm in the local frame u / v of the orientation, see ``
      least-squares-free averages over the row (means of the per-wire offsets from the source-pad centres);
    * gate / Kelvin feet: the mean offsets of the reference's signal wires from their pad centres, zero when it has none;
    * slots: the v-interval of the net's copper along the vertical line through the row's first die centre (die slot) or the
-     mean wire landing u (landing slot), and the full horizontal chord of the copper at the slot's mid-v.  Two slots of one
-     net that fall in the same interval (a merged PHASE band) are split on the grid between what each needs;
+     mean wire landing u of the row (landing slot; ``_feet_of`` returns it), and the full horizontal chord of the copper at
+     the slot's mid-v.  Two adjacent slots of one net whose probe intervals overlap (a merged PHASE band; the die part and
+     the landing part generally have different u extents, so the intervals are nested, not equal) are split: if one interval
+     is nested in the other with a common edge, at the inner edge; if they are equal or overlap partly, at the grid line
+     between what each slot needs, inside the overlap.  The topology label ('merged' when the two slots touch) and the
+     slots are then those of the generator (T0286 finding 0);
    * columns: the bounding box of (copper minus the slot rectangles) joined with the terminal pad, if it lies in the copper;
      otherwise the pad rectangle.
    Copper coordinates and die-row starts / gaps are snapped to the 0.5 mm design grid and the wire feet to the 0.125 mm grid
@@ -35,24 +40,51 @@ Construction (all lengths mm in the local frame u / v of the orientation, see ``
 The record states every geometric difference: copper area per net, symmetric-difference area per net and in total, die-centre
 displacements (dies matched per switch by minimum total distance) and power-wire foot / landing displacements.
 
-Degradation (F1(b))
--------------------
-``degrade(twin_layout, spec)`` is one fixed geometric move in the generator space, with no search and no solver in the
-choice: every *landing slot* (the copper band on which the power wires of a die row land, one per switch) is narrowed to the
-design-rule minimum width of its net (``rules.width_for(net)`` rounded up to the 0.5 mm grid, at least 1 mm; wider in 0.5 mm
-steps only if the landing point would otherwise be closer than the landing margin + 0.05 mm to a band edge) around the
-wire landing line, and the columns are extended so that they still reach the narrowed bands.  Dies, wire feet, wire landing
-points, terminals and every other slot stay as they are.  The commutation current runs along these bands between the landing
-points and the DC- / PHASE columns; a partial inductance of a strip over the substrate's image planes scales with 1 / width,
-so narrowing lengthens the effective path.  Moving the die rows along u and widening the slot gaps were tried first: both move
-L1 by less than 20 % in the interleaved and U-shaped families (research notes in the task report), the narrowing by 40 %+.
+Degradation (F1(b)) -- an ordered list of geometric moves
+-----------------------------------------------------------
+``degrade(twin_layout, spec)`` applies deterministic geometric moves in the generator space, in a fixed order, each one
+keeping the layout buildable and DRC-clean (a move whose result is not is skipped, a spread step that is not is the end of
+that move), and stops at the first state with ``L1(D) / L1(twin) >= DEGRADE_RATIO * (1 + DEGRADE_MARGIN)`` (L1 at 20 MHz).  No
+search and no solver in the choice of a move; L1 only decides when to stop.  Dies, die count, wires per die, wire feet,
+terminals and all other slots stay; the columns are extended to cover moved slots.  The order:
 
-The acceptance is checked here by L1 at 20 MHz: ``L1(D) / L1(twin) >= DEGRADE_RATIO * (1 + DEGRADE_MARGIN)`` with
-DEGRADE_RATIO = 1.25 (F1(b): L_sub(D) >= 1.25 L_sub(twin) by l2_layout, checked in E008) and DEGRADE_MARGIN = 0.10.  Why 0.10:
-C002 / E002 found L1 biased low by 5-14 % relative to the converged L2 with family- and die-count-dependent structure; D and
-its twin share the family, housing, die count and wires, so the bias largely cancels in the ratio and the part that does not is
-bounded by the spread of the bias, 14 % - 5 % = 9 points; 0.10 covers it.  ``degrade`` raises ``DegradeError`` if the ratio
-or the DRC fails (it does not try another move).  E008 checks the L_sub ratio at 0.25 mm cells itself.
+1. ``narrow_landing``: every *landing slot* (the copper band on which the power wires of a die row land) is narrowed to the
+   design-rule minimum width of its net (``rules.width_for(net)`` rounded up to the 0.5 mm grid, at least 1 mm; wider in 0.5 mm
+   steps only if the landing point would otherwise be closer than the landing margin + 0.05 mm to a band edge).  The
+   commutation current runs along these bands between the landing points and the DC- / PHASE columns; a partial inductance
+   of a strip over the image planes scales with 1 / width.
+2. ``centre_landing``: as 1, but each wire landing point may move along v by up to w0 (nearest first, on the 0.125 mm foot
+   grid, ties: positive) so that the band reaches the minimum width w0.  A landing point off the 0.5 mm grid otherwise forces
+   a band 0.5 mm wider (T0286: bands 2.0 mm wide could only reach 1.5 mm).  Landing points move by at most 0.25 mm in practice.
+3. ``spread``: slots ``j..3`` (or ``0..j-1``) with the die rows and landing lines they carry are moved by 0.5, 1.0, ... mm in
+   v (up to 20 mm) in the order (j, direction) = (2, up), (2, down), (1, up), (3, up), (1, down), (3, down): the pairs move
+   apart (j = 2) or the landing band moves away from its die row (j = 1, 3: longer wires).  Each step must be DRC-clean
+   (outline, spacing, ``max_wire_length``); the first step that meets the target ends the rule, otherwise the largest
+   feasible step is kept and the next move follows.
+``DegradeError`` is raised when no move reaches the target (or the first move is not even buildable).  Without L1
+(``with_l1=False``) only the first feasible move among 1 and 2 is applied, since nothing says when to stop.  The record lists the moves.
+
+DEGRADE_MARGIN = 0.11.  C002 / E002 found L1 biased low by 5-14 % relative to the converged L2 with family- and die-count
+dependent structure.  D and its twin share the family, housing, die count and wires, so the bias largely cancels in the
+ratio; what does not is bounded by the spread of the bias: the L1 ratio can overstate the L2 ratio by at most
+0.95 / 0.86 - 1 = 10.5 % (twin biased 5 % low, D biased 14 % low), so the margin is at least 0.105; 0.11 gives
+1.25 * 1.11 / 1.105 = 1.2556 >= 1.25.  E008 checks L_sub at 0.25 mm cells itself; this is a screen.
+
+Exploration of the alternatives (T0286 finding 4; generator housing layouts, L1 at 20 MHz, ratios relative to the state after
+move 1 unless stated; scratch runs of T0287):
+* Moving only die rows or slots apart in v (move 3 alone, any j, up to the largest DRC-feasible shift of 0.5-8 mm) raises
+  the ratio by 0-9 %, typically 3-5 %: far less than the 20-40 % that the narrowing gives, which is why it is a late move.
+* Narrowing the die slots to the die plus the die-edge margin: +0.1-2 %.  Trimming the free ends of the slots to the dies /
+  landing points: 0.0 % (copper beyond the current path does not matter).  Both were dropped.
+* Landing-point centring (move 2): rescues the cases where move 1 leaves 1.18-1.34 (bands that stay 0.5 mm wider than the
+  minimum); in a sample of 225 housing layouts (n = 2..4, k = 1..3, 25 seeds each, default 1 mm rules) move 1 alone reached
+  the target on 223, moves 1 + 2 on all 225.
+* With the stricter 2 mm minimum width (72 layouts) the bands of the twin are often already at the rule minimum (nothing to
+  narrow) and 45 of 72 end in ``DegradeError`` after all moves, at ratios 1.0-1.38.  This is the rule's limit, not a bug:
+  a judged reference whose landing bands are already at the minimum width has no room for the F1(b) screen.
+Population of T0286 (n = 2, 3, 4 dies x 1, 2, 3 wires per die x 6 seeds = 54 housing layouts; ``test_degradation_reaches_its_target_...``):
+all reach the target; L1(D) / L1(twin): min 1.415, median 1.887, max 3.328 (move 1 alone on all of them).  2D_Case_4: 1.421
+against the target 1.388.
 """
 from __future__ import annotations
 
@@ -145,14 +177,15 @@ def _match(a: np.ndarray, b: np.ndarray):
 
 
 def _feet_of(ref: Layout, spec: D.ReferenceSpec, o: int, rows):
-    """Wire feet per switch (fu0, fud, pitch, fv, land_du, land_dv) and the landing lines, from the reference wires."""
+    """Wire feet per switch (fu0, fud, pitch, fv, land_du, land_dv), the landing lines and the mean wire landing u, from the
+    reference wires."""
     fr = D._Frame(o)
     k = spec.wires_per_die
     sx = spec.die.pads["source"]
     pu = 0.5 * (D._Frame(o).lrect(*sx)[0] + D._Frame(o).lrect(*sx)[2]) / MM
     pv = 0.5 * (D._Frame(o).lrect(*sx)[1] + D._Frame(o).lrect(*sx)[3]) / MM
     du, dv = (x / MM for x in fr.size(spec.die.w, spec.die.h))
-    feet, land = {}, {}
+    feet, land, landu = {}, {}, {}
     for sw in ("HS", "LS"):
         ds = sorted((d for d in ref.dies if d.switch == sw), key=lambda d: _loc(fr, d.cx, d.cy))
         ws = []
@@ -177,7 +210,8 @@ def _feet_of(ref: Layout, spec: D.ReferenceSpec, o: int, rows):
         feet[sw] = (_snap(cu0 + rel0[0], FOOT_GRID) - cu0, _snap(fud, FOOT_GRID), _snap(pit, FOOT_GRID),
                     _snap(cv0 + fv, FOOT_GRID) - cv0, _snap(ldu, FOOT_GRID), 0.0)
         land[sw] = _snap(lv, FOOT_GRID)
-    return feet, land
+        landu[sw] = float(np.mean([s[1][0] for w in ws for s in w[2]]))  # mean wire landing u (the landing-slot probe)
+    return feet, land, landu
 
 
 def _sigfeet_of(ref: Layout, spec: D.ReferenceSpec, o: int):
@@ -201,7 +235,7 @@ def _sigfeet_of(ref: Layout, spec: D.ReferenceSpec, o: int):
     return out
 
 
-def _fit(ref: Layout, spec: D.ReferenceSpec, o: int, hs_first: int, hdf: int, ldf: int, rows, feet, land, sig):
+def _fit(ref: Layout, spec: D.ReferenceSpec, o: int, hs_first: int, hdf: int, ldf: int, rows, feet, land, sig, landu):
     """Params for one (orientation, sequence) candidate, or None if the sequence does not match the geometry."""
     fr = D._Frame(o)
     seq = D._sequence(hs_first, hdf, ldf)
@@ -209,12 +243,11 @@ def _fit(ref: Layout, spec: D.ReferenceSpec, o: int, hs_first: int, hdf: int, ld
     polys = {n: _flip(next(t.polygon for t in ref.traces if t.net == n), o) for n in NETS}
     anchor = []  # per slot: (probe u, probe v, v-needed range)
     for _, role, sw in seq:
-        u0, v0, gap = rows[sw]
-        ld = spec.dies_per_switch * du + (spec.dies_per_switch - 1) * gap
+        u0, v0, _ = rows[sw]
         if role == "die":
             anchor.append((u0 + du / 2, v0 + dv / 2, (v0, v0 + dv)))
         else:
-            anchor.append((u0 + ld / 2, land[sw], (land[sw], land[sw])))
+            anchor.append((landu[sw], land[sw], (land[sw], land[sw])))
     vs = [a[1] for a in anchor]
     if any(vs[i] > vs[i + 1] + 1e-9 for i in range(3)):
         return None
@@ -224,14 +257,24 @@ def _fit(ref: Layout, spec: D.ReferenceSpec, o: int, hs_first: int, hdf: int, ld
         if iv is None:  # the probe line misses the copper of the net: this (orientation, sequence) does not fit
             return None
         ivs.append(list(iv))
-    # split merged intervals of one net between what each slot needs
+    # split overlapping intervals of one net (a merged band whose die and landing parts are seen by the two probes with
+    # different extents): the boundary is the inner edge of the nested interval, or, if both are equal (or only partly
+    # overlap), the grid line between what each slot needs, inside the overlap
     for i in range(3):
-        if seq[i][0] == seq[i + 1][0] and ivs[i] == ivs[i + 1]:
-            lo_need_top, hi_need_bot = anchor[i][2][1], anchor[i + 1][2][0]
-            s = _snap(0.5 * (lo_need_top + hi_need_bot))
-            if not ivs[i][0] < s < ivs[i][1]:
-                s = 0.5 * (ivs[i][0] + ivs[i][1])
-            ivs[i][1] = ivs[i + 1][0] = s
+        (a0, a1), (b0, b1) = ivs[i], ivs[i + 1]
+        if seq[i][0] != seq[i + 1][0] or min(a1, b1) - max(a0, b0) <= 1e-9:
+            continue
+        if abs(a0 - b0) <= 1e-9 and a1 < b1 - 1e-9:  # lower slot [a0, a1] inside the upper slot's interval
+            ivs[i + 1][0] = a1
+        elif abs(a1 - b1) <= 1e-9 and b0 > a0 + 1e-9:  # upper slot [b0, b1] inside the lower slot's interval
+            ivs[i][1] = b0
+        else:
+            lo, hi = max(a0, b0), min(a1, b1)
+            s_ = _snap(0.5 * (anchor[i][2][1] + anchor[i + 1][2][0]))
+            if not lo < s_ < hi:
+                s_ = 0.5 * (lo + hi)
+            ivs[i][1] = ivs[i + 1][0] = s_
+            ivs[i][0], ivs[i + 1][1] = min(a0, b0), max(a1, b1)
     slots, rects = [], {n: [] for n in NETS}
     for (net, _, _), (a, b) in zip(seq, ivs, strict=True):
         a, b = _snap(a), _snap(b)
@@ -363,23 +406,31 @@ def _repair_signal(spec, p: D.Params, max_shift_mm: float = 1.5):
 
 def twin(reference: Layout, spec: D.ReferenceSpec, with_l1: bool = True) -> tuple[Layout, D.Params, dict]:
     """Generator-space twin W of ``reference`` inside ``spec`` -> (layout, params, record); see the module docstring."""
+    exact = None
     try:
         p0 = D.params_of(reference)
         lay = D.build(spec, p0)
         if lay.fingerprint() == reference.fingerprint():
-            rec = {"mode": "exact", "topology": p0.topology(), **difference_record(reference, lay)}
-            return _finish(reference, lay, p0, rec, with_l1)
+            exact = (lay, p0)
     except ValueError:
-        pass
+        pass  # not a derivative layout, or not one of this spec: the fit
+    if exact is not None:
+        lay, p0 = exact
+        viol = check(lay, spec.rules)  # the shortcut honours the TwinError contract: DRC-clean under spec.rules
+        if viol:
+            raise TwinError("the reference is its own twin but is not DRC-clean under spec.rules: "
+                            + "; ".join(str(v) for v in viol[:5]))
+        rec = {"mode": "exact", "topology": p0.topology(), **difference_record(reference, lay)}
+        return _finish(reference, lay, p0, rec, with_l1)
     best = None
     for o in (0, 1):
         rows = _rows_of(reference, spec, o)
         if rows is None:
             continue
-        feet, land = _feet_of(reference, spec, o, rows)
+        feet, land, landu = _feet_of(reference, spec, o, rows)
         sig = _sigfeet_of(reference, spec, o)
         for hf, hdf, ldf in itertools.product((0, 1), repeat=3):
-            p = _fit(reference, spec, o, hf, hdf, ldf, rows, feet, land, sig)
+            p = _fit(reference, spec, o, hf, hdf, ldf, rows, feet, land, sig, landu)
             if p is None:
                 continue
             try:
@@ -416,51 +467,134 @@ def _finish(reference, lay, p, rec, with_l1):
 
 # ------------------------------------------------------------------------------------------------------- degradation
 DEGRADE_RATIO = 1.25  # F1(b): L_sub(D) >= 1.25 L_sub(twin)
-DEGRADE_MARGIN = 0.10  # covers the L1-versus-L2 disagreement of the ratio (module docstring)
+DEGRADE_MARGIN = 0.11  # covers the L1-versus-L2 disagreement of the ratio (module docstring)
 
 
 class DegradeError(ValueError):
-    """The degradation rule does not give a DRC-clean layout with the required L1 ratio."""
+    """No move of the degradation order gives a DRC-clean layout with the required L1 ratio."""
 
 
-def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) -> tuple[Layout, dict]:
-    """The frozen degradation rule of F1(b) applied to a twin built by ``derivative.build`` -> (D, record)."""
-    p = D.params_of(twin_layout)
+def _replace_slots(p: D.Params, slots, rows=None, land=None, feet=None) -> D.Params:
+    """``p`` with new slots (and optionally rows / landing lines / feet); the columns are extended to cover every slot."""
     seq = p.sequence()
+    cols = []
+    for net, c in zip(NETS, p.cols, strict=True):
+        mine = [slots[i] for i, s in enumerate(seq) if s[0] == net]
+        cols.append((c[0], min([c[1]] + [m[1] for m in mine]), c[2], max([c[3]] + [m[3] for m in mine])))
+    return dataclasses.replace(p, slots=tuple(tuple(s) for s in slots), cols=tuple(cols),
+                               **{k: v for k, v in (("rows", rows), ("land", land), ("feet", feet)) if v is not None})
+
+
+def _narrow_landing(p: D.Params, spec: D.ReferenceSpec, centre: bool):
+    """Move 1 (``centre`` False) / move 2 (True): every landing slot to its net's minimum width, see the module docstring."""
     r = spec.rules
     margin = r.wire_landing_margin * 1e3 + 0.05
-    slots, widths = list(p.slots), {}
-    for i, (net, role, sw) in enumerate(seq):
+    slots, widths, feet = [list(s) for s in p.slots], {}, [list(f) for f in p.feet]
+    for i, (net, role, sw) in enumerate(p.sequence()):
         if role != "land":
             continue
         k = 0 if sw == "HS" else 1
         w0 = max(D._g_up(r.width_for(net) * 1e3), 1.0)
         v_end = p.land[k] + p.feet[k][5]
-        # the narrowest band of width w0, w0 + 0.5, ... on the grid that holds the landing point by ``margin`` on both sides
-        # (position: the lowest edge a = floor_grid(v_end - w / 2) + {0, -0.5, +0.5, ...} that fits)
-        w, a = next((w, a) for w in (w0 + D.DESIGN_GRID_MM * i for i in range(12))
-                    for a in (D._g_dn(v_end - w / 2) + D.DESIGN_GRID_MM * j for j in (0, -1, 1))
-                    if v_end - a >= margin and a + w - v_end >= margin)
+        shifts = [0.0]
+        if centre:  # landing points on the 0.125 mm foot grid, nearest shift first (ties: the positive one)
+            shifts = [0.0] + [s * j * FOOT_GRID for j in range(1, int(w0 / FOOT_GRID) + 1) for s in (1, -1)]
+        pick = None
+        for dv in shifts:
+            ve = v_end + dv
+            # the narrowest band of width w0, w0 + 0.5, ... on the grid that holds the landing point by ``margin`` on both
+            # sides (lowest edge a = floor_grid(ve - w / 2) + {0, -0.5, +0.5} that fits)
+            pick = next(((w, a) for w in (w0 + D.DESIGN_GRID_MM * q for q in range(12))
+                         for a in (D._g_dn(ve - w / 2) + D.DESIGN_GRID_MM * j for j in (0, -1, 1))
+                         if ve - a >= margin and a + w - ve >= margin), None)
+            if pick is not None and (pick[0] <= w0 + 1e-9 or not centre):
+                feet[k][5] = p.feet[k][5] + dv
+                break
+        w, a = pick
         old = slots[i]
-        widths[f"{sw}_landing_{net}"] = {"before_mm": old[3] - old[1], "after_mm": w}
-        slots[i] = (old[0], a, old[2], a + w)
-    cols = []
-    for net, c in zip(NETS, p.cols, strict=True):
-        mine = [slots[i] for i, s in enumerate(seq) if s[0] == net]
-        cols.append((c[0], min([c[1]] + [m[1] for m in mine]), c[2], max([c[3]] + [m[3] for m in mine])))
-    pd = dataclasses.replace(p, slots=tuple(slots), cols=tuple(cols))
+        widths[f"{sw}_landing_{net}"] = {"before_mm": old[3] - old[1], "after_mm": w, "landing_shift_mm": feet[k][5] - p.feet[k][5]}
+        slots[i] = [old[0], a, old[2], a + w]
+    return _replace_slots(p, slots, feet=tuple(tuple(f) for f in feet)), widths
+
+
+def _try(spec, p):
+    """(layout, None) if ``p`` builds and is DRC-clean, else (None, reason)."""
     try:
-        lay = D.build(spec, pd)
+        lay = D.build(spec, p)
     except ValueError as e:
-        raise DegradeError(f"degraded layout cannot be built: {e}") from e
-    viol = check(lay, r)
-    if viol:
-        raise DegradeError("degraded layout is not DRC-clean: " + "; ".join(str(v) for v in viol[:5]))
-    rec = {"rule": "narrow every landing slot to the minimum width of its net", "widths": widths,
-           "target_l1_ratio": DEGRADE_RATIO * (1.0 + DEGRADE_MARGIN), "margin": DEGRADE_MARGIN}
+        return None, f"cannot be built: {e}"
+    viol = check(lay, spec.rules)
+    return (lay, None) if not viol else (None, "not DRC-clean: " + "; ".join(str(v) for v in viol[:3]))
+
+
+def _shifted(p: D.Params, j: int, dv: float, down: bool) -> D.Params:
+    """Slots ``j..3`` (``down`` False) or ``0..j-1`` (True) and the die rows / landing lines they carry, moved by +dv / -dv
+    in v (mm); the columns are extended.  Wire feet and landing offsets stay, so wires move with their rows / bands."""
+    slots, rows, land = [list(s) for s in p.slots], [list(r) for r in p.rows], list(p.land)
+    d = -dv if down else dv
+    for i, (_, role, sw) in enumerate(p.sequence()):
+        if (i < j) != down:
+            continue
+        slots[i][1] += d
+        slots[i][3] += d
+        if role == "die":
+            rows[0 if sw == "HS" else 1][1] += d
+        else:
+            land[0 if sw == "HS" else 1] += d
+    return _replace_slots(p, slots, rows=tuple(tuple(r) for r in rows), land=tuple(land))
+
+
+# the (first moved slot, direction) of the spread moves, in the order tried (module docstring)
+SPREAD_ORDER = ((2, False), (2, True), (1, False), (3, False), (1, True), (3, True))
+SPREAD_STEP_MM = D.DESIGN_GRID_MM
+SPREAD_MAX_MM = 20.0
+
+
+def _moves():
+    """The ordered move families (name, strength steps, map (state, step) -> params).  A family with several steps is applied
+    with growing strength until the target is met or the next step is infeasible; the largest feasible step is kept."""
+    fam = [("narrow_landing", 1, lambda p, spec, q: _narrow_landing(p, spec, centre=False)[0]),
+           ("centre_landing", 1, lambda p, spec, q: _narrow_landing(p, spec, centre=True)[0])]
+    for j, down in SPREAD_ORDER:
+        fam.append((f"spread[{j},{'down' if down else 'up'}]", int(SPREAD_MAX_MM / SPREAD_STEP_MM),
+                    lambda p, spec, q, j=j, down=down: _shifted(p, j, q * SPREAD_STEP_MM, down)))
+    return fam
+
+
+def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) -> tuple[Layout, dict]:
+    """The frozen degradation rule of F1(b) applied to a twin built by ``derivative.build`` -> (D, record)."""
+    target = DEGRADE_RATIO * (1.0 + DEGRADE_MARGIN)
+    p0 = D.params_of(twin_layout)
+    l_tw = _l1(twin_layout) if with_l1 else None
+    rec = {"rule": "ordered geometric moves, see the module docstring", "target_l1_ratio": target,
+           "margin": DEGRADE_MARGIN, "moves": [], "l1_checked": with_l1}
+    p, lay, ratio, why1 = p0, None, None, None
+    for name, steps, make in _moves():
+        kept = None
+        for q in range(1, steps + 1):
+            cand = make(p, spec, q)
+            cl, why = _try(spec, cand)
+            if cl is None:
+                why1 = why1 or f"{name}: {why}"
+                break
+            kept = (cand, cl, q)
+            if not with_l1:
+                break
+            ratio = _l1(cl) / l_tw
+            if ratio >= target:
+                break
+        if kept is not None:
+            p, lay, q = kept
+            rec["moves"].append(name if steps == 1 else f"{name}x{q * SPREAD_STEP_MM:g}mm")
+        if not with_l1 and lay is not None:
+            break  # without L1 only the first (narrowing) move is applied, see the docstring
+        if ratio is not None and ratio >= target:
+            break
+    if lay is None:
+        raise DegradeError(f"no move gives a buildable, DRC-clean layout ({why1})")
+    rec["widths"] = _narrow_landing(p0, spec, centre="centre_landing" in rec["moves"])[1]
     if with_l1:
-        rec["l1_twin_H"], rec["l1_degraded_H"] = _l1(twin_layout), _l1(lay)
-        rec["l1_ratio"] = rec["l1_degraded_H"] / rec["l1_twin_H"]
-        if rec["l1_ratio"] < rec["target_l1_ratio"]:
-            raise DegradeError(f"L1 ratio {rec['l1_ratio']:.3f} < {rec['target_l1_ratio']:.3f}")
+        rec["l1_twin_H"], rec["l1_degraded_H"], rec["l1_ratio"] = l_tw, _l1(lay), _l1(lay) / l_tw
+        if rec["l1_ratio"] < target:
+            raise DegradeError(f"L1 ratio {rec['l1_ratio']:.3f} < {target:.3f} after {rec['moves']}")
     return lay, rec
