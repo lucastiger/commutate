@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-10T14:56:33+00:00 from repository state — do not edit_
+_generated 2026-11-10T15:19:41+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0162** [protected_change] T0298: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -30,12 +29,11 @@ _generated 2026-11-10T14:56:33+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 3
+cancelled: 38, done: 255, failed: 3, merge: 1, todo: 3
 
-- T0298 `needs_founder` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
+- T0298 `merge` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
 
 ## Recent events
-- 2026-11-10T08:20:54+00:00 task_amended {"task": "T0262", "reason": "waits for T0298 (best-split scoring, review T0297); records midpoint-rule splits"}
 - 2026-11-10T08:25:24+00:00 inbox_opened {"id": "I0161", "kind": "protected_change", "subject": "T0293: merge needs founder approval"}
 - 2026-11-10T08:26:00+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
 - 2026-11-10T13:27:27+00:00 inbox_resolved {"id": "I0161", "status": "approved", "note": "Merge T0293: L1-raising fallback walk (2 mm stress 63/72, default population and Case 4 all reach target), merged
@@ -50,3 +48,4 @@ cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 3
 - 2026-11-10T14:55:58+00:00 task_added {"task": "T0300", "reason": "review T0299 follow-up (T-junction necks, split tests)"}
 - 2026-11-10T14:55:58+00:00 task_amended {"task": "T0262", "reason": "waits for T0300 (T-junction necks, review T0299); reports twin-vs-reconstruction copper"}
 - 2026-11-10T14:55:58+00:00 task_amended {"task": "T0263", "reason": "twin-space check reports twin copper symdiff, midpoint splits and walk use (review T0299)"}
+- 2026-11-10T15:19:40+00:00 inbox_resolved {"id": "I0162", "status": "approved", "note": "Merge T0298: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record; T02
