@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T04:18:08+00:00 from repository state — do not edit_
+_generated 2026-11-10T04:18:49+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -30,15 +30,13 @@ _generated 2026-11-10T04:18:08+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 248, failed: 3, needs_founder: 1, running: 2, todo: 3
+cancelled: 38, done: 248, failed: 3, merge: 1, running: 2, todo: 3
 
-- T0290 `needs_founder` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
+- T0290 `merge` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
 - T0292 `running` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `running` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
 
 ## Recent events
-- 2026-11-10T03:17:46+00:00 sleep_detected {"gap_s": 384, "runs_extended": 1}
-- 2026-11-10T03:22:14+00:00 run_finished {"run": "T0290-builder-20261109T183005-35cf", "status": "completed", "cost": 0.755394, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T03:33:42+00:00 inbox_resolved {"id": "I0156", "status": "approved", "note": "Merge T0285: one band-based e_R, atomic checkpoint repair, whitelisted thermal records; T0289 accepts with minor 
 - 2026-11-10T03:33:44+00:00 inbox_resolved {"id": "I0157", "status": "approved", "note": "Merge T0287: degradation target 1.25 x 1.11 reached on the 54-layout population and Case 4, merged-band split, ex
 - 2026-11-10T03:36:04+00:00 verified {"task": "T0290"}
@@ -52,3 +50,5 @@ cancelled: 38, done: 248, failed: 3, needs_founder: 1, running: 2, todo: 3
 - 2026-11-10T04:09:16+00:00 task_added {"task": "T0295", "reason": "review T0294 follow-up (keepout corners)"}
 - 2026-11-10T04:09:16+00:00 task_amended {"task": "T0262", "reason": "waits for T0295 (keepout corners, review T0294)"}
 - 2026-11-10T04:18:04+00:00 inbox_opened {"id": "I0158", "kind": "protected_change", "subject": "T0290: merge needs founder approval"}
+- 2026-11-10T04:18:43+00:00 sleep_detected {"gap_s": 606, "runs_extended": 2}
+- 2026-11-10T04:18:50+00:00 inbox_resolved {"id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes;

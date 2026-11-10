@@ -1963,3 +1963,5 @@
 {"ts": "2026-11-10T04:09:16+00:00", "event": "task_added", "actor": "session", "task": "T0295", "reason": "review T0294 follow-up (keepout corners)"}
 {"ts": "2026-11-10T04:09:16+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0295 (keepout corners, review T0294)"}
 {"ts": "2026-11-10T04:18:04+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0158", "kind": "protected_change", "subject": "T0290: merge needs founder approval"}
+{"ts": "2026-11-10T04:18:43+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 606, "runs_extended": 2}
+{"ts": "2026-11-10T04:18:50+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes; T0294 accepts with caveats; keepout corners consistent with the DRC and true docstrings follow in T0295 before E008's freeze.", "by": "human"}
