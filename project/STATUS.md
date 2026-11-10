@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T14:35:16+00:00 from repository state — do not edit_
+_generated 2026-11-10T14:54:31+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -10,7 +10,7 @@ _generated 2026-11-10T14:35:16+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $98.34/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $99.94/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-10T14:35:16+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 58 | $98.34 | 1785261 | 927193 | 88 | 0 |
+| O003 | 58 | $99.94 | 1813056 | 941923 | 93 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,13 +29,11 @@ _generated 2026-11-10T14:35:16+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 254, failed: 3, review: 1, running: 1, todo: 2
+cancelled: 38, done: 255, failed: 3, review: 1, todo: 2
 
 - T0298 `review` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
-- T0299 `running` critic/review: Review T0298 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T08:05:36+00:00 run_finished {"run": "T0297-critic-20261109T235045-4171", "status": "error", "cost": 3.014905, "subtype": "error_max_budget_usd", "report": "missing"}
 - 2026-11-10T08:05:36+00:00 task_failed_attempt {"task": "T0297", "signal": "agent_error", "action": "repair"}
 - 2026-11-10T08:05:42+00:00 run_started {"run": "T0297-critic-20261110T000542-f34a", "task": "T0297", "role": "critic", "session": "a17f4376-d54d-42c0-a79d-9e94ac38aaad"}
 - 2026-11-10T08:19:53+00:00 run_finished {"run": "T0297-critic-20261110T000542-f34a", "status": "completed", "cost": 2.8043, "subtype": "success", "report": "structured_output"}
@@ -50,3 +48,4 @@ cancelled: 38, done: 254, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-10T14:34:31+00:00 verified {"task": "T0298"}
 - 2026-11-10T14:34:36+00:00 run_started {"run": "T0299-critic-20261110T063436-bbdf", "task": "T0299", "role": "critic", "session": "5c74bcf3-2022-4ffb-8a90-fbeba6e0e079"}
 - 2026-11-10T14:35:10+00:00 sleep_detected {"gap_s": 1244, "runs_extended": 1}
+- 2026-11-10T14:54:30+00:00 run_finished {"run": "T0299-critic-20261110T063436-bbdf", "status": "completed", "cost": 1.601313, "subtype": "success", "report": "structured_output"}

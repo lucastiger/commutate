@@ -1,0 +1,50 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Regression: a column joining the merged band from below or above, inside the slots' u-range, now forces a tie and the midpoint rule decides",
+      "detail": "`_band_copper` removes every u-range where copper continues past lo-0.25 mm or hi+0.25 mm, and it removes that range over the band's full height lo..hi. When the column attaches to the band's lower or upper edge inside the slots' u-extent (a T-junction neck) rather than beside it, this cuts a notch through both slots. Both chords then end at the notch, the band looks rectangular, every candidate ties, and the midpoint-of-needs rule picks the boundary. The old code (scoring on `poly`) found the true step in these cases. This also contradicts the new docstring's statement that 'a column of any width does not move the minimum' for 'an attached column spanning the band's end in v'. The generator always attaches columns beside the slots (derivative.py lines 19-20, 829-830), Case 4 has no merged PHASE band, and 17/17 merged generator layouts still recover their slots. So this does not affect the current O003 references. It does affect real DBC references with a terminal neck in the middle of a pad.",
+      "evidence": "L-band u0-40 x v10-13 plus u0-30 x v13-20 (true boundary 13), die need 11.5, landing line 18. Column below at u20-25 x v0-10: new 14.5, old 13.0. Column below at u25-35: new 14.5, old 13.0. Column above at u20-25 x v20-30: new 14.5, old 13.0. Column below at u5-10: both 13.0.",
+      "suggested_check": "Remove only the copper that is connected to the outside of the strip and lies outside both slots' chord u-ranges (or clip the removed range to u outside the probe chords), and add the T-junction cases above as tests.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "A side column that does not cross either end of the band is still scored and still pulls the split off",
+      "detail": "Columns are detected only by probing at lo-0.25 mm and hi+0.25 mm. A side column whose v-range lies within [lo, hi] is not detected. It stays in the scored copper and in the wider slot's chord, so the T0297 finding-0 bias remains whenever its width is at least the gap beside the narrower slot. The docstring limits the fix to columns that span the band's end, so this is a scope limit, not a contradiction of the text. However, the task title says 'column-adjacent L-bands' without that qualifier. In generator space both slots attach to the column, so there is no bias.",
+      "evidence": "Same L-band with a column at u40-(40+w) x v10-20 (inside the band's v-range): w=12, 15, 25 give 14.5 (test needs, landing 15) under both new and old code. With landing 18, w=25 gives 15.5 under both. The same widths with the column spanning v0-30 give 13.0 (new) against 14.5/15.5 (old).",
+      "suggested_check": "State the restriction in the task or claim text, or also detect columns by connectivity to the strip's u-ends.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The new split test cannot tell the copper minimum from the midpoint fallback",
+      "detail": "In `test_best_split_ignores_attached_column_copper_outside_the_band` the needs are 11.5 and 15.0. Their midpoint, 13.25, rounds to the expected 13.0, so an implementation in which every candidate ties (or none is scored) also passes. I replaced `_band_copper` with a function that returns an empty polygon: all 7 widths still returned 13.0. The test does tell the new code from the old (the old code gives 14.5 for w >= 12), but it does not show that the split is chosen by the minimum symmetric difference. My own run with the landing line at 18 (midpoint 14.75) shows the new code does find 13 there, so the implementation is fine; the test is weak.",
+      "evidence": "Mutant (`_band_copper` -> Polygon()) on the test's inputs: [13.0]*7, all pass.",
+      "suggested_check": "Use needs whose midpoint does not round to the step, for example a landing line at 18 mm.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Module docstring not updated for the `stopped` key",
+      "detail": "`degrade`'s docstring documents `stopped`. The module docstring (lines 52-54 and 95-100) still describes the record as 'the moves, the ones skipped and why' and does not mention that stopped spread families now go to a separate list.",
+      "evidence": "twin.py lines 53, 97-98.",
+      "suggested_check": "Add one clause about `stopped` to the module docstring.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself: `pytest tests/unit/generate` 78 passed; `pytest -m 'not slow' tests/unit` 825 passed, 39 deselected; `ruff check .` clean; thermal_fem.py sha256 prefix = a216d5fe3209bcee; `mfos gate --fast` all gates passed.",
+    "Ran hand-made merged L-bands through `_best_split` under the new code and under the old behaviour (reproduced by monkeypatching `_band_copper` to return `poly`): side columns spanning beyond the band (w = 5-25), side columns inside the band's v-range, and columns attached from below or above at several u-ranges, with both the test's needs and asymmetric needs (landing 18 mm, midpoint 14.75). Result: the targeted case is fixed (13.0 against old 14.5/15.5), side columns inside the band are not fixed, and T-junction columns regress (new 14.5, old 13.0).",
+    "Population check on fresh seeds (99000 + 10n + k; (n,k) = (2,2), (3,1), (4,2), (3,3); 25 layouts each): every one of the 17 merged-band generator layouts recovered the generator's slot v-extents through the fit path (family anonymised).",
+    "Mutation test of the new split test: an empty `_band_copper` still passes all 7 widths, because the needs' midpoint rounds to 13.",
+    "Read `degrade` and `_shifted` to check the disjoint-record claim on every path: `_shifted` cannot raise `DegradeError`, and it always changes the vector for dv > 0. So at q >= 2 only a `_try` failure can end a family, and that now goes to `stopped`. The single-step landing families and the with_l1=False path (q=1 only) cannot put one family name in both `moves` and `skipped`. Walk entries are named `walk[...]`. No other code in the repository reads `rec['skipped']` (git grep)."
+  ],
+  "caveats": [
+    "The `_band_copper` fix is valid for side columns that extend past at least one end of the merged band in v. It is not valid for side columns contained in the band's v-range (bias remains), or for columns joining the band from below or above inside the slots' u-extent (regression to the midpoint rule).",
+    "None of these failure cases occur in the generator's own layouts or in 2D_Case_4 (no merged PHASE band). So the O003 twin fits on current references are unaffected; customer references with a mid-pad terminal neck would be affected.",
+    "The disjoint moves/skipped/stopped record is correct on every path of `degrade` that I traced. Only spread families can produce `stopped`, and only because a `_try` failed at step q >= 2.",
+    "My scratch-script checks were limited to a few hand geometries and 17 generated merged layouts. Two longer scratch scripts were refused by the session's permission layer and were re-run in reduced form."
+  ]
+}
