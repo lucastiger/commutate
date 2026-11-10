@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T02:56:54+00:00 from repository state — do not edit_
+_generated 2026-11-10T02:57:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -38,7 +38,6 @@ cancelled: 38, done: 244, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - T0291 `running` critic/review: Review T0287 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T02:22:01+00:00 task_added {"task": "T0290", "reason": "review T0288 follow-up (_quick_ok tolerance, effective tests)"}
 - 2026-11-10T02:22:01+00:00 task_amended {"task": "T0262", "reason": "waits for T0290; L1 screen throughput (T0288)"}
 - 2026-11-10T02:27:52+00:00 inbox_opened {"id": "I0155", "kind": "protected_change", "subject": "T0282: merge needs founder approval"}
 - 2026-11-10T02:28:32+00:00 sleep_detected {"gap_s": 429, "runs_extended": 2}
@@ -53,3 +52,4 @@ cancelled: 38, done: 244, failed: 3, needs_founder: 1, review: 1, running: 2, to
 - 2026-11-10T02:51:28+00:00 task_added {"task": "T0292", "reason": "review T0289 follow-up (estimator import, near-tie window)"}
 - 2026-11-10T02:51:28+00:00 task_amended {"task": "T0262", "reason": "waits for T0292 (driver, review T0289)"}
 - 2026-11-10T02:56:49+00:00 inbox_opened {"id": "I0156", "kind": "protected_change", "subject": "T0285: merge needs founder approval"}
+- 2026-11-10T02:57:28+00:00 sleep_detected {"gap_s": 393, "runs_extended": 2}
