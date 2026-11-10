@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T06:03:45+00:00 from repository state — do not edit_
+_generated 2026-11-10T06:04:18+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -38,7 +38,6 @@ cancelled: 38, done: 249, failed: 3, merge: 1, needs_founder: 1, review: 1, runn
 - T0296 `running` critic/review: Review T0293 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T04:18:43+00:00 sleep_detected {"gap_s": 606, "runs_extended": 2}
 - 2026-11-10T04:18:50+00:00 inbox_resolved {"id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes;
 - 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
 - 2026-11-10T04:19:34+00:00 run_started {"run": "T0295-builder-20261109T201934-5692", "task": "T0295", "role": "builder", "session": "22ff16e8-a093-45a8-a66d-43d4ef177107"}
@@ -53,3 +52,4 @@ cancelled: 38, done: 249, failed: 3, merge: 1, needs_founder: 1, review: 1, runn
 - 2026-11-10T06:00:16+00:00 inbox_resolved {"id": "I0159", "status": "approved", "note": "Merge T0295: round-join keepout free region, consistent with the DRC's Euclidean spacing (0 of 260 DRC-clean Case
 - 2026-11-10T06:03:40+00:00 inbox_opened {"id": "I0160", "kind": "protected_change", "subject": "T0292: merge needs founder approval"}
 - 2026-11-10T06:03:45+00:00 run_started {"run": "T0296-critic-20261109T220345-06fa", "task": "T0296", "role": "critic", "session": "31dbc478-600a-403c-884b-4d717b6f9316"}
+- 2026-11-10T06:04:18+00:00 sleep_detected {"gap_s": 2274, "runs_extended": 1}
