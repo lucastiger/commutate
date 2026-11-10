@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T19:31:32+00:00 from repository state — do not edit_
+_generated 2026-11-10T19:31:47+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T19:31:32+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 63 | $107.48 | 1929712 | 1013139 | 100 | 0 |
+| O003 | 64 | $107.48 | 1929712 | 1013139 | 100 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,13 +29,11 @@ _generated 2026-11-10T19:31:32+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 258, failed: 3, merge: 1, todo: 2
+cancelled: 38, done: 259, failed: 3, running: 1, todo: 1
 
-- T0300 `merge` builder/implement: Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review T0299) (attempt 2)
+- T0262 `running` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 1)
 
 ## Recent events
-- 2026-11-10T17:15:19+00:00 sleep_detected {"gap_s": 1535, "runs_extended": 1}
-- 2026-11-10T17:33:31+00:00 run_finished {"run": "T0301-critic-20261110T091445-3349", "status": "error", "cost": 1.163615, "subtype": "success", "report": "missing"}
 - 2026-11-10T17:33:31+00:00 task_failed_attempt {"task": "T0301", "signal": "agent_error", "action": "repair"}
 - 2026-11-10T17:33:37+00:00 run_started {"run": "T0301-critic-20261110T093337-66dc", "task": "T0301", "role": "critic", "session": "4fcbb6e6-e00f-4152-815e-bf3054edfe35"}
 - 2026-11-10T17:46:43+00:00 run_finished {"run": "T0301-critic-20261110T093337-66dc", "status": "completed", "cost": 1.315408, "subtype": "success", "report": "structured_output"}
@@ -49,3 +47,5 @@ cancelled: 38, done: 258, failed: 3, merge: 1, todo: 2
 - 2026-11-10T19:05:09+00:00 inbox_opened {"id": "I0163", "kind": "protected_change", "subject": "T0300: merge needs founder approval"}
 - 2026-11-10T19:06:08+00:00 task_amended {"task": "T0262", "reason": "spec lists the twin's documented limitations (review T0302); no further split follow-up"}
 - 2026-11-10T19:31:09+00:00 inbox_resolved {"id": "I0163", "status": "approved", "note": "Merge T0300: band copper = strip copper connected along its horizontal line to the probe chords' common core (nec
+- 2026-11-10T19:31:43+00:00 merged {"task": "T0300"}
+- 2026-11-10T19:31:47+00:00 run_started {"run": "T0262-scientist-20261110T113147-7bd4", "task": "T0262", "role": "scientist", "session": "03e242e2-bd22-4465-99fe-1faa043631d3"}
