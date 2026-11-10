@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T03:40:39+00:00 from repository state — do not edit_
+_generated 2026-11-10T03:41:18+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -37,7 +37,6 @@ cancelled: 38, done: 247, failed: 3, review: 1, running: 3, todo: 2
 - T0294 `running` critic/review: Review T0290 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T02:57:28+00:00 sleep_detected {"gap_s": 393, "runs_extended": 2}
 - 2026-11-10T03:11:23+00:00 run_finished {"run": "T0291-critic-20261109T185020-28d2", "status": "completed", "cost": 2.296246, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T03:12:07+00:00 task_added {"task": "T0293", "reason": "review T0291 follow-up (degradation at minimum width, merged split)"}
 - 2026-11-10T03:12:07+00:00 task_amended {"task": "T0262", "reason": "waits for T0293 (degradation fallback, review T0291)"}
@@ -52,3 +51,4 @@ cancelled: 38, done: 247, failed: 3, review: 1, running: 3, todo: 2
 - 2026-11-10T03:40:38+00:00 run_started {"run": "T0294-critic-20261109T194038-25f5", "task": "T0294", "role": "critic", "session": "fedf5bc2-92fc-4b89-bcfa-0a5cf84f09ba"}
 - 2026-11-10T03:40:39+00:00 run_started {"run": "T0292-builder-20261109T194039-7abc", "task": "T0292", "role": "builder", "session": "ef8584f7-bf10-4ed9-9c17-d805584149cc"}
 - 2026-11-10T03:40:39+00:00 run_started {"run": "T0293-builder-20261109T194039-aeaf", "task": "T0293", "role": "builder", "session": "f5ae19c9-d926-4006-ae6e-59f025cf074f"}
+- 2026-11-10T03:41:13+00:00 sleep_detected {"gap_s": 1141, "runs_extended": 3}
