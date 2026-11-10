@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-10T08:25:10+00:00 from repository state — do not edit_
+_generated 2026-11-10T08:25:26+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0161** [protected_change] T0293: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,12 +30,11 @@ _generated 2026-11-10T08:25:10+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 253, failed: 3, merge: 1, todo: 3
+cancelled: 38, done: 253, failed: 3, needs_founder: 1, todo: 3
 
-- T0293 `merge` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 2)
+- T0293 `needs_founder` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 2)
 
 ## Recent events
-- 2026-11-10T06:28:59+00:00 task_failed_attempt {"task": "T0293", "signal": "review_rejected", "action": "repair"}
 - 2026-11-10T06:29:02+00:00 run_started {"run": "T0293-builder-20261109T222902-2f5a", "task": "T0293", "role": "builder", "session": "e3700c66-d09b-4e4d-bee8-353ad27d26f5"}
 - 2026-11-10T06:34:25+00:00 loop_stopped {"reason": "STOP file"}
 - 2026-11-10T06:34:54+00:00 loop_started {"pid": 56791}
@@ -49,3 +49,4 @@ cancelled: 38, done: 253, failed: 3, merge: 1, todo: 3
 - 2026-11-10T08:19:53+00:00 run_finished {"run": "T0297-critic-20261110T000542-f34a", "status": "completed", "cost": 2.8043, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T08:20:54+00:00 task_added {"task": "T0298", "reason": "review T0297 follow-up (best-split scoring, move record)"}
 - 2026-11-10T08:20:54+00:00 task_amended {"task": "T0262", "reason": "waits for T0298 (best-split scoring, review T0297); records midpoint-rule splits"}
+- 2026-11-10T08:25:24+00:00 inbox_opened {"id": "I0161", "kind": "protected_change", "subject": "T0293: merge needs founder approval"}
