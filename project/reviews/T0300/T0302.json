@@ -1,0 +1,55 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A neck under a slot's probe u is still mis-split end-to-end, because the band's v-range grows into the neck",
+      "detail": "The neck tests pass `ivs=[[10,20],[10,20]]` directly to `_best_split`. In `_fit`, `ivs` comes from `_v_interval(poly, probe_u, probe_v)`. When a neck from below or above covers a probe's u, that interval runs into the neck before `_band_copper` ever runs, so the neck is inside the strip and counted as band copper. Two of the ten `_NECKS` cases, (10,30,0,10) and (10,30,20,30), are geometries for which `_fit` would never produce the hard-coded `ivs`. The fix is correct for `_band_copper` with a given lo/hi, and for necks that do not cover a probe u. The interval logic that causes this was there before this change, and the generator only makes side columns, so this hits references outside the generator family. Still, \"a neck joining the band's lower or upper edge anywhere in u leaves the band as it is\" does not hold for the twin extraction as a whole.",
+      "evidence": "I replayed `_fit`'s `_v_interval` and merge logic on the L-band. Neck (10,30,0,10): raw ivs (0,20),(0,20), boundary 12.5. Neck (10,30,20,30): raw ivs (10,30),(10,30), boundary 17.5. Neck (18,22,0,10): raw ivs (0,20),(10,20), goes to the nested-upper branch, die slot [0,10], which does not hold the die row at 10-11.5. Necks that do not cover a probe u, (20,25), (22,23), (25,35), (30,40), (28,40), (25,30), all give 13.",
+      "suggested_check": "Add one end-to-end test that builds `ivs` with `_v_interval` for a neck under a probe u, or state this limit in the `_best_split` docstring.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Tests do not pin down that the core is the intersection of both probe chords",
+      "detail": "Every hand-made band in the new tests has the narrower slot on top. A mutant that builds the core from the upper probe's chord alone passes all 29 `best_split`/`band_copper` tests. The real code is correct on the mirrored geometry, but the suite would not catch a regression to a one-probe core.",
+      "evidence": "I ran a pytest mutation harness with `-k 'best_split or band_copper'`. Original: pass. `strip`, `union`, `lower_only` and `components` mutants: fail. `upper_only` mutant: pass (rc=0). On an inverted L (lower die slot u 0-30 x v 10-17, upper landing slot u 0-40 x v 17-20, column u 40-52 x v 0-30), the real code gives 17.0, the upper_only mutant gives 14.5, and the midpoint fallback gives 16.0.",
+      "suggested_check": "Add a parametrized inverted-L case (narrower lower slot, column beside it) to `test_best_split_side_column_*`.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Mutation-test docstring describes the empty-copper path wrongly",
+      "detail": "`test_best_split_is_decided_by_the_scored_copper_not_the_midpoint` says that with empty copper \"every candidate ties\". In fact `_chord` returns None for every candidate, nothing is scored, and the `if not scored` fallback picks from the whole grid, not from the candidate window. The result here is the same (14.5), so the assertion is still valid.",
+      "evidence": "`_best_split` lines 329-336: `ch is None` leads to `break`, then `scored` is empty and it returns `min(grid, ...)`.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The horizontal-line rule also drops a slot's own copper beyond a hole or notch",
+      "detail": "A hole inside the wider slot outside the core removes the slot copper beyond it in that slab. This follows from the documented 'connected along its own horizontal line' rule. It did not move the minimum in my test.",
+      "evidence": "L-band with a hole at u 32-35 x v 11-12: strip 327 mm^2, band copper 322 mm^2 (u 35-40 x v 11-12 removed), split 13.0.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all five definition-of-done commands. `uv run pytest -q tests/unit/generate`: 104 passed. `uv run pytest -q -m 'not slow' tests/unit`: 851 passed. `uv run ruff check .`: all checks passed. thermal_fem.py sha256 starts with a216d5fe3209bcee. `uv run mfos gate --fast`: all gates passed.",
+    "Wrote an independent raster reference for the stated `_band_copper` rule (0.05 mm sampling, runs along each row kept if they overlap the intersection of the probe chords). Compared it with `_band_copper` on 150 random L-bands with 1-4 extra boxes each: 0 area mismatches above 0.5 mm^2.",
+    "Random sweep of 200 configurations with 1-3 necks from below or above (outside the strip, any u, widths 0.5-20 mm): `_best_split` always gives 13.",
+    "Random sweep of 200 side columns beside the narrower slot with a gap (any width 1-40 mm, any v-extent crossing zero, one or both band ends): always 13.",
+    "Mutation harness: pytest.main with a plugin that swaps `W._band_copper` for mutants. `strip`, `union`-core, `lower_only`-core and `connected-components` mutants are caught. `upper_only`-core survives.",
+    "Mirrored geometries: inverted L (narrower lower die slot) with side columns and necks gives 17.0 in all 8 cases. Land-below-die sequence with columns and necks gives 14.0 in all 5 cases. The empty-copper midpoint differs in both (16.0 and 14.5), so these cases discriminate.",
+    "Checked that the updated step test discriminates: with empty copper, steps 2, 3 and 4 all give 3.5; the real copper gives 2, 3 and 4.",
+    "Replayed `_fit`'s `_v_interval` and merge logic on the `_NECKS` geometries plus three necks under a probe u: necks covering a probe u give 12.5, 17.5, or a wrong nested split (die slot [0,10]).",
+    "Robustness: a hole beyond the core, a slanted column, a left-side disconnected island and a 0.5 mm bridge to a side column all give 13 with no exceptions.",
+    "Checked the added stopped/skipped docstring sentence against `degrade`: spread-family `make` (`_shifted`/`_replace_slots`) never raises and never leaves the state unchanged, so a family stopped at step q>=2 cannot also land in `skipped`. The statement holds."
+  ],
+  "caveats": [
+    "The neck fix holds for `_band_copper`/`_best_split` given the band's v-range. In the full `_fit` path, a neck that covers a slot's probe u (die-row centre or mean landing u) widens the probe interval and is still mis-split. In practice this covers references with necks not under a probe, which includes every generator-family layout (side columns only).",
+    "The 'proves the minimum' tests discriminate from the midpoint rule and from the T0293 and T0298 rules on the cases given. They do not cover an inverted L (narrower lower slot), so a one-probe-core regression would go undetected.",
+    "The documented restriction stands: copper joined along its horizontal line to both slots' common u-range (a column touching the narrower slot, or a bridge) counts as band copper and can remove the step, in which case the tie rule decides.",
+    "I could not find the T0299 review text in the repository, so 'complete' was judged against the claim title and the docstrings, not against the original finding list."
+  ]
+}
