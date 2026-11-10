@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T04:19:34+00:00 from repository state — do not edit_
+_generated 2026-11-10T05:25:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -10,7 +10,7 @@ _generated 2026-11-10T04:19:34+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $84.40/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $84.82/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-10T04:19:34+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 52 | $84.40 | 1656823 | 884555 | 88 | 0 |
+| O003 | 52 | $84.82 | 1670244 | 886916 | 88 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,14 +29,13 @@ _generated 2026-11-10T04:19:34+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 249, failed: 3, running: 3, todo: 2
+cancelled: 38, done: 249, failed: 3, running: 2, todo: 2, verify: 1
 
 - T0292 `running` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `running` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
-- T0295 `running` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
+- T0295 `verify` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
 
 ## Recent events
-- 2026-11-10T03:36:04+00:00 verified {"task": "T0290"}
 - 2026-11-10T03:36:07+00:00 merged {"task": "T0285"}
 - 2026-11-10T03:40:34+00:00 merged {"task": "T0287"}
 - 2026-11-10T03:40:38+00:00 run_started {"run": "T0294-critic-20261109T194038-25f5", "task": "T0294", "role": "critic", "session": "fedf5bc2-92fc-4b89-bcfa-0a5cf84f09ba"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 249, failed: 3, running: 3, todo: 2
 - 2026-11-10T04:18:50+00:00 inbox_resolved {"id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes;
 - 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
 - 2026-11-10T04:19:34+00:00 run_started {"run": "T0295-builder-20261109T201934-5692", "task": "T0295", "role": "builder", "session": "22ff16e8-a093-45a8-a66d-43d4ef177107"}
+- 2026-11-10T05:08:55+00:00 run_finished {"run": "T0295-builder-20261109T201934-5692", "status": "completed", "cost": 0.423103, "subtype": "success", "report": "structured_output"}

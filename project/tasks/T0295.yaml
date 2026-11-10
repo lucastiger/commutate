@@ -4,7 +4,7 @@ title: 'Generator: pre-check keepouts consistent with the DRC''s Euclidean spaci
   T0294)'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on:
 - T0290
 description: "Follow-up to T0290, from review T0294 (project/reviews/T0290/T0294.json; read it first).\
@@ -62,4 +62,61 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The sampler''s keepout exclusion zones now use a round join, so `_quick_ok` no longer rejects
+    a diagonal-corner placement that `drc.check` accepts. On Case 4 with measured rules (k=1, seed 12345,
+    20,000 `_sample` draws) 2266 candidates were built and 260 were DRC-clean. Zero of those 260 were
+    rejected by `_quick_ok`. With the mitre join put back, the new tests fail: the count test finds 1
+    rejected, which matches T0294''s figure. The docstrings and the tests are rewritten as the packet
+    asks. All DoD commands exit 0, including `uv run mfos gate --fast`, and the work is committed as bb01c66e.
+
+
+    - **Keepout buffer (`_Ctx.free`):** round join with 16 segments per quarter circle, radius `(spacing
+    - 1e-9 m) * cos(pi/64)`. The arc polygon therefore lies inside the true exclusion disc even if the
+    buff'
+  report:
+    status: completed
+    summary: "The sampler's keepout exclusion zones now use a round join, so `_quick_ok` no longer rejects\
+      \ a diagonal-corner placement that `drc.check` accepts. On Case 4 with measured rules (k=1, seed\
+      \ 12345, 20,000 `_sample` draws) 2266 candidates were built and 260 were DRC-clean. Zero of those\
+      \ 260 were rejected by `_quick_ok`. With the mitre join put back, the new tests fail: the count\
+      \ test finds 1 rejected, which matches T0294's figure. The docstrings and the tests are rewritten\
+      \ as the packet asks. All DoD commands exit 0, including `uv run mfos gate --fast`, and the work\
+      \ is committed as bb01c66e.\n\n- **Keepout buffer (`_Ctx.free`):** round join with 16 segments per\
+      \ quarter circle, radius `(spacing - 1e-9 m) * cos(pi/64)`. The arc polygon therefore lies inside\
+      \ the true exclusion disc even if the buffer were circumscribed; the reduction is at most 1.2e-3\
+      \ of the radius, about 6 µm at 5 mm. No DRC rule changed, and `drc.check` still filters every candidate\
+      \ in `generate`. I left the outline edge-margin buffer (`allowed`) as a mitre join.\n- **Docstrings:**\
+      \ the module audit names the comparisons that carry the 1e-9 m tolerance. It also names the grid\
+      \ comparisons with no tolerance that are exact because the operands are multiples of the binary-exact\
+      \ 0.5 mm and 0.125 mm grids. It states that the `_quick_ok` length and pitch tolerances and the\
+      \ ilo/ihi and `land + ldv` tolerances are defensive with no observed effect. Only the `clear()`\
+      \ / `_far_enough` tolerance changes sampled outcomes. `_quick_ok`'s docstring no longer claims it\
+      \ never rejects a DRC-clean layout. It says the guarantee is established on the sampled specs only.\n\
+      - **Tests:**\n  - `_ScriptedRng` now steers by the range of each `integers` draw, not by call number,\
+      \ and the exact-fit `_draw_feet` tests assert only on the returned feet. It still uses a try count\
+      \ of 30 to separate the clear-branch tries from the fallback draw, so it is not fully independent\
+      \ of the sampler's structure.\n  - Three new tests cover the diagonal-corner point, free region\
+      \ versus Euclidean exclusion, and the zero-rejection count."
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - tests/unit/generate/test_derivative.py
+    checks_run:
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - The zero-rejection count covers Case 4 under the measured rules at k=1 with one seed, so the guarantee
+      is not proved for other housings or rule sets.
+    - The scripted RNG still relies on the clear-branch try count (30) to separate the tries from the
+      fallback draw. A refactor that changes that count to 1 would break the without-tolerance test, but
+      any count of at least 2 would not.
