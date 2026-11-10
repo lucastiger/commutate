@@ -43,9 +43,10 @@ stored in ``Layer.k`` keeps the cited temperature *dependence*. Every law is val
   or this range is an extrapolation of the 1/T trend is NOT confirmed (T0264). Sintered substrate AlN (typically 170-180
   W/(m K), the value stored in ``Layer.k``) is limited by oxygen and grain-boundary scattering, whose share is
   temperature-independent, so its true slope is probably shallower than 1/T: the law then overstates the fall of k with T.
-  Low confidence for commercial grades: **no published sintered-AlN k(T) table was found, so the law is NOT independently
-  tested** (T0268 could not retrieve one: only arXiv was reachable and holds no sintered-AlN k(T) data; the open item is
-  recorded in the task report). Conservative for Tj (a hotter die sees a lower k), and it is applied to both layouts of
+  AlN-ceramic k(T) data over 4-1000 K exist: Watari, Nakano, Urabe, Ishizaki, Cao, Mori, J. Mater. Res. 17(11) (2002)
+  (272 W/(m K) at room temperature; a high-purity ceramic, not a commercial 170-180 grade, so it does not directly test
+  the law for the stored value; the law has not been compared with that table). Low confidence for commercial grades.
+  Conservative for Tj (a hotter die sees a lower k), and it is applied to both layouts of
   O003's Tj comparison on the same stack, so a slope error shifts both Tj values in the same direction and largely cancels in their difference (not quantified).
 * SAC305 (substrate solder and die attach): Wiedemann-Franz electronic conduction, k ~ L T sigma(T) with
   rho(T) = rho(300 K) [1 + alpha (T - 300 K)] and alpha = 4.2e-3 /K (CRC, temperature coefficient of resistivity of

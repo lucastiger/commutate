@@ -345,3 +345,88 @@ def test_recheck_reports_wire_pitch_length_and_landing_keepout():
     assert not [v for v in check(lay) if v.rule == "wire_landing_keepout"]
     kv = [v for v in snap_layout(lay, 0.5 * MM).violations if v.rule == "wire_landing_keepout"]
     assert len(kv) == 1 and kv[0].message.startswith("wire 0 ")
+
+
+# --- T0274: full re-check with induced / pre-existing labels; staircase raises on filled holes and split outlines -------
+def test_full_recheck_labels_wire_start_induced_by_clipped_source_pad():
+    # die 17.3-20.74 snaps to 17.5-20.5; source pad 20.3-20.74 is clipped to 20.3-20.5 (0.2 mm < 2 x 0.15 mm margin), so
+    # _erode falls back to the whole pad and the start point (20.5, 4.35), 0.09 mm from the pad edge before, is 0 mm after
+    mm = lambda *v: tuple(x * MM for x in v)  # noqa: E731
+    die = Die(19.02 * MM, 5.0 * MM, 3.44 * MM, 4.0 * MM, "HS", {"source": mm(20.3, 3.5, 20.74, 6.5)})
+    w = arc_wire(mm(20.5, 4.35), mm(31.0, 4.35), 0.0, 0.0, 1.0 * MM, 0.3 * MM, "PHASE")
+    lay = Layout("t", 1, box(*mm(0, 0, 40, 20)),
+                 [Trace("DC+", box(*mm(14, 0, 24, 10))), Trace("PHASE", box(*mm(26, 3, 36, 10)))],
+                 [die], [w], {}, box(*mm(0, 0, 40, 20)))
+    assert not [v for v in check(lay) if v.rule == "wire_start"]
+    r = snap_layout(lay, 0.5 * MM)
+    ws = [v for v in r.violations if v.rule == "wire_start"]
+    assert len(ws) == 1 and ws[0].origin == "induced" and "margin" in ws[0].message
+
+
+def test_full_recheck_labels_terminal_off_trace_induced_by_staircase_notch():
+    # off = 0.2 mm: the corner cell [20, 20.5]^2 has coverage 0.6 * 0.6 = 0.36 < 1/2 and is dropped; the terminal (20.2-21.2)
+    # snaps to 20-21 and now covers the notch
+    lay = _fixture(_chamfered(20.2, 30.0, 20.2, 30.0))
+    lay.dies, lay.wires = [], []
+    lay.terminals = {"DC+": Terminal("DC+", 20.7 * MM, 20.7 * MM, 1.0 * MM, 1.0 * MM)}
+    assert not [v for v in check(lay) if v.rule == "terminal_off_trace"]
+    r = snap_layout(lay, 0.5 * MM)
+    tv = [v for v in r.violations if v.rule == "terminal_off_trace"]
+    assert len(tv) == 1 and tv[0].origin == "induced"
+
+
+def test_full_recheck_labels_pre_existing_violation():
+    # two traces 0.5 mm apart on the grid: min_spacing (1 mm) is violated before and after snapping, nothing moves
+    lay = _case4()
+    lay = dataclasses.replace(lay, traces=[Trace("DC-", box(20 * MM, 45 * MM, 40 * MM, 49.5 * MM)),
+                                           Trace("PHASE", box(20 * MM, 50 * MM, 40 * MM, 60 * MM))])
+    lay.dies, lay.wires, lay.terminals = [], [], {}
+    assert [v for v in check(lay) if v.rule == "min_spacing"]
+    r = snap_layout(lay, 0.5 * MM)
+    ms = [v for v in r.violations if v.rule == "min_spacing"]
+    assert len(ms) == 1 and ms[0].origin == "pre-existing"
+    assert all(v.origin == "pre-existing" for v in r.violations)
+
+
+def test_staircase_filling_a_hole_raises_naming_the_feature():
+    big = _chamfered(20.0, 30.0)
+    hole = box(24.05 * MM, 24.05 * MM, 24.2 * MM, 24.2 * MM)
+    poly = Polygon(big.exterior.coords, [hole.exterior.coords])
+    with pytest.raises(ValueError, match=r"trace\[0\] DC\+.*hole"):
+        _snap_trace(poly, 0.5 * MM)
+    ok = Polygon(big.exterior.coords, [box(24 * MM, 24 * MM, 25 * MM, 25 * MM).exterior.coords])
+    assert len(_snap_trace(ok, 0.5 * MM).layout.traces[0].polygon.interiors) == 1
+
+
+def test_staircased_outline_splitting_into_parts_raises_naming_the_outline():
+    neck = LineString([(29 * MM, 29 * MM), (35 * MM, 35 * MM)]).buffer(0.05 * MM, cap_style="flat")
+    poly = box(20 * MM, 20 * MM, 30 * MM, 30 * MM).union(box(34 * MM, 34 * MM, 44 * MM, 44 * MM)).union(neck)
+    assert poly.geom_type == "Polygon"
+    lay = dataclasses.replace(_case4(), outline=poly)
+    with pytest.raises(ValueError, match=r"outline.*splits"):
+        snap_layout(lay, 0.5 * MM)
+
+
+def test_staircase_filling_a_hole_raises_even_when_the_trace_splits():
+    # two blocks joined by a 0.1 mm 45-degree neck (dropped: the trace splits) and a 0.15 mm hole in one block
+    neck = LineString([(29 * MM, 29 * MM), (35 * MM, 35 * MM)]).buffer(0.05 * MM, cap_style="flat")
+    two = box(20 * MM, 20 * MM, 30 * MM, 30 * MM).union(box(34 * MM, 34 * MM, 44 * MM, 44 * MM)).union(neck)
+    assert two.geom_type == "Polygon"
+    poly = Polygon(two.exterior.coords, [box(24.05 * MM, 24.05 * MM, 24.2 * MM, 24.2 * MM).exterior.coords])
+    with pytest.raises(ValueError, match=r"trace\[0\] DC\+: hole 0 is filled"):
+        _snap_trace(poly, 0.5 * MM)
+    r = _snap_trace(two, 0.5 * MM)  # without the hole the split is reported, not raised
+    assert [v.origin for v in r.violations if v.rule == "net_split"] == ["induced"]
+
+
+def test_pre_existing_violation_matched_with_its_numbers_changed():
+    # gap 0.4 mm (49.6-50.0) -> 0.5 mm after snapping (49.6 -> 49.5): still < 1 mm, same violation with a new spacing value
+    lay = _case4()
+    lay = dataclasses.replace(lay, traces=[Trace("DC-", box(20 * MM, 45 * MM, 40 * MM, 49.6 * MM)),
+                                           Trace("PHASE", box(20 * MM, 50 * MM, 40 * MM, 60 * MM))])
+    lay.dies, lay.wires, lay.terminals = [], [], {}
+    before = [v for v in check(lay) if v.rule == "min_spacing"]
+    r = snap_layout(lay, 0.5 * MM)
+    ms = [v for v in r.violations if v.rule == "min_spacing"]
+    assert len(before) == 1 and len(ms) == 1 and ms[0].message != before[0].message
+    assert ms[0].origin == "pre-existing"

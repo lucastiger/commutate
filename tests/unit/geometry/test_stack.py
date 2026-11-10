@@ -128,7 +128,8 @@ def test_aln_law_normalised_monotone_and_reproduces_cited_points():
     assert abs(f(300.0) - 1.0) < 1e-12
     T = np.linspace(K_T_MIN, K_T_MAX, 60)
     assert np.all(np.diff(f(T)) < 0)
-    # Slack et al. 1987: k = 319 W/(m K) at 300 K and k ~ 1/T, so 239.25 at 400 K and 199.4 at 480 K (cited-law points)
+    # 319 W/(m K) is Slack et al.'s (1987) estimated intrinsic value at 300 K, not a measurement; 239.25 at 400 K and 199.4 at
+    # 480 K are points of the 1/T law applied to it, not data. This checks the law's shape only.
     for Tk, k in ((300.0, 319.0), (400.0, 239.25), (480.0, 199.375)):
         assert 319.0 * f(Tk) == pytest.approx(k, rel=1e-3)
 

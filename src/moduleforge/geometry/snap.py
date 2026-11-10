@@ -28,17 +28,20 @@ Rule (all lengths SI, grid ``g`` in m; the grid lines are the integer multiples 
 * **Record.** ``SnapRecord(element, before, after, displacement)`` for every coordinate or wire end point that moved by more than
   ``RECORD_TOL``. For edge snaps ``displacement`` is the largest per-axis move (<= g/2); for a staircased polygon it is the
   Hausdorff distance between the old and new boundary and ``kind == 'staircase'`` (can exceed g/2).
-* **Re-check.** ``drc.check`` runs on the snapped layout under the caller's ``DesignRules``; the net-spacing and
-  die-enclosure violations (``CHECKED_RULES``) plus an explicit ``net_merged`` test (two nets' copper touching) are
-  returned, together with the snapping-induced ``net_split``, ``wire_pitch``, ``wire_length`` and
-  ``wire_landing_keepout`` violations (``CHECKED_RULES``; each message names the net or wires concerned). Nothing is
-  repaired. A feature (outline, trace, hole, terminal or die) that collapses to zero size or becomes invalid raises
-  ValueError naming it.
+* **Re-check.** The full ``drc.check`` runs on the snapped layout under the caller's ``DesignRules`` and on the input;
+  plus an explicit ``net_merged`` test (two nets' copper touching). Every violation of the snapped layout is returned as a
+  ``SnapViolation`` labelled ``origin == 'induced'`` (no violation of the same rule and message, numbers aside, before
+  snapping) or ``'pre-existing'`` (present before). Nothing is repaired. A feature (outline, trace, hole, terminal or die)
+  that collapses to zero size or becomes invalid raises ValueError naming it. On the staircase path a hole that is filled
+  raises ValueError naming the feature, and so does an outline or baseplate outline that splits into several parts (a
+  trace that splits is reported as a ``net_split`` violation).
 """
 from __future__ import annotations
 
 import copy
 import math
+import re
+from collections import Counter
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -56,7 +59,13 @@ TIE_TOL = 1e-9  # cells
 RECORD_TOL = 1e-12  # m (1 pm): moves below this are float noise, not snaps
 RECT_TOL = 1e-9  # m: an edge is axis-parallel when its other-axis extent is below this
 CHECKED_RULES = ("min_spacing", "die_edge_margin", "die_off_trace", "die_wrong_net",
-                 "net_split", "wire_pitch", "wire_length", "wire_landing_keepout")
+                 "net_split", "wire_pitch", "wire_length", "wire_landing_keepout")  # legacy subset; all rules are reported now
+_NUM = re.compile(r"[-+]?\d+\.\d+e[-+]?\d+")
+
+
+@dataclass(frozen=True)
+class SnapViolation(Violation):
+    origin: str = "induced"  # 'induced' (absent before snapping) | 'pre-existing' (present before)
 
 
 @dataclass(frozen=True)
@@ -115,7 +124,7 @@ def _snap_rect_polygon(poly: Polygon, g: float, name: str, rec: list[SnapRecord]
     return res
 
 
-def _staircase(poly: Polygon, g: float, name: str, rec: list[SnapRecord]):
+def _staircase(poly: Polygon, g: float, name: str, rec: list[SnapRecord], single_part: bool = False):
     """Cells with >= half their area inside ``poly``, merged into rectangles per row run."""
     x0, y0, x1, y1 = poly.bounds
     i0, i1 = math.floor(x0 / g), math.ceil(x1 / g)
@@ -146,17 +155,22 @@ def _staircase(poly: Polygon, g: float, name: str, rec: list[SnapRecord]):
     if not rects:
         raise ValueError(f"{name} vanishes when staircased on {g * 1e3} mm")
     res = shapely.union_all(rects)
+    for h, ring in enumerate(poly.interiors):  # filled: no part of the hole is left without copper
+        if Polygon(ring).difference(res).area <= TIE_TOL * g * g:
+            raise ValueError(f"{name}: hole {h} is filled when staircased on {g * 1e3} mm")
+    if single_part and res.geom_type != "Polygon":
+        raise ValueError(f"{name} splits into {len(res.geoms)} parts when staircased on {g * 1e3} mm")
     hd = shapely.hausdorff_distance(poly.boundary, res.boundary)
     rec.append(SnapRecord(name, (poly.area,), (res.area,), float(hd), "staircase"))
     return res
 
 
-def _snap_polygon(poly, g: float, name: str, rec: list[SnapRecord]):
+def _snap_polygon(poly, g: float, name: str, rec: list[SnapRecord], single_part: bool = False):
     if isinstance(poly, MultiPolygon):
         raise ValueError(f"{name} is a multi-part polygon")
     if _is_rectilinear(poly):
         return _snap_rect_polygon(poly, g, name, rec)
-    return _staircase(poly, g, name, rec)
+    return _staircase(poly, g, name, rec, single_part)
 
 
 def _snap_rect(r, g: float, name: str, rec: list[SnapRecord]):
@@ -190,8 +204,8 @@ def snap_layout(layout: Layout, grid: float, rules: DesignRules = DEFAULT_RULES)
     rec: list[SnapRecord] = []
     out = copy.deepcopy(layout)
 
-    out.outline = _snap_polygon(layout.outline, g, "outline", rec)
-    out.baseplate_outline = _snap_polygon(layout.baseplate_outline, g, "baseplate_outline", rec)
+    out.outline = _snap_polygon(layout.outline, g, "outline", rec, True)
+    out.baseplate_outline = _snap_polygon(layout.baseplate_outline, g, "baseplate_outline", rec, True)
     out.traces = [Trace(t.net, _snap_polygon(t.polygon, g, f"trace[{i}] {t.net}", rec))
                   for i, t in enumerate(layout.traces)]
 
@@ -239,11 +253,28 @@ def snap_layout(layout: Layout, grid: float, rules: DesignRules = DEFAULT_RULES)
                     rec.append(SnapRecord(f"wire[{k}] {'start' if idx == 0 else 'end'}",
                                           (float(pts[idx, 0]), float(pts[idx, 1])), e, float(np.hypot(*dd)), "wire"))
 
-    viol = [v for v in check(out, rules) if v.rule in CHECKED_RULES]
-    for i in range(len(out.traces)):
-        for j in range(i + 1, len(out.traces)):
-            a, b = out.traces[i], out.traces[j]
-            if a.net != b.net and a.polygon.distance(b.polygon) <= 0.0:
-                viol.append(Violation("net_merged", f"traces {i} ({a.net}) and {j} ({b.net}) touch after snapping",
-                                      (float(a.polygon.representative_point().x), float(a.polygon.representative_point().y))))
+    before = Counter(_key(v) for v in _full_check(layout, rules))
+    viol = []
+    for v in _full_check(out, rules):
+        k = _key(v)
+        pre = before[k] > 0
+        if pre:
+            before[k] -= 1
+        viol.append(SnapViolation(v.rule, v.message, v.where, "pre-existing" if pre else "induced"))
     return SnapResult(replace(out), rec, viol)
+
+
+def _key(v: Violation) -> tuple[str, str]:
+    return v.rule, _NUM.sub("#", v.message)
+
+
+def _full_check(lay: Layout, rules: DesignRules) -> list[Violation]:
+    """``drc.check`` plus ``net_merged`` (two nets' copper touching)."""
+    viol = list(check(lay, rules))
+    for i in range(len(lay.traces)):
+        for j in range(i + 1, len(lay.traces)):
+            a, b = lay.traces[i], lay.traces[j]
+            if a.net != b.net and a.polygon.distance(b.polygon) <= 0.0:
+                pt = a.polygon.representative_point()
+                viol.append(Violation("net_merged", f"traces {i} ({a.net}) and {j} ({b.net}) touch", (float(pt.x), float(pt.y))))
+    return viol
