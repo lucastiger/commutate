@@ -4,7 +4,7 @@ title: 'Twin/degrade: L1-raising fallback walk for minimum-width bands, exact me
   T0291)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0287
 description: "Follow-up to T0287, from review T0291 (project/reviews/T0287/T0291.json; read it first)\
@@ -71,4 +71,74 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "All four items are implemented in src/moduleforge/generate/twin.py. On the 2 mm stress, 63\
+    \ of 72 layouts reach the target and 9 do not; the other layout sets have no failures.\n\n1. **Walk:**\
+    \ after moves 1-3, `degrade` runs a deterministic hill-climb. It steps through the column, slot, die-row\
+    \ and landing-line parameters in `Params.NAMES` order, trying -0.5 mm then +0.5 mm on each. At each\
+    \ step it applies the DRC-valid single-parameter change that raises L1 most, until L1(D)/L1(W) >=\
+    \ 1.25 × 1.11. Every step is listed in `rec['moves']` and `rec['walk']`. `DegradeError` is raised\
+    \ only when no valid change raises L1, and it carries `.record` with the walk's terminal state. With\
+    \ `with_l1=False` the walk does not run.\n2. **Stress results (locked in tests):**\n   - 54-layout\
+    \ default population: all"
+  report:
+    status: completed
+    summary: "All four items are implemented in src/moduleforge/generate/twin.py. On the 2 mm stress,\
+      \ 63 of 72 layouts reach the target and 9 do not; the other layout sets have no failures.\n\n1.\
+      \ **Walk:** after moves 1-3, `degrade` runs a deterministic hill-climb. It steps through the column,\
+      \ slot, die-row and landing-line parameters in `Params.NAMES` order, trying -0.5 mm then +0.5 mm\
+      \ on each. At each step it applies the DRC-valid single-parameter change that raises L1 most, until\
+      \ L1(D)/L1(W) >= 1.25 × 1.11. Every step is listed in `rec['moves']` and `rec['walk']`. `DegradeError`\
+      \ is raised only when no valid change raises L1, and it carries `.record` with the walk's terminal\
+      \ state. With `with_l1=False` the walk does not run.\n2. **Stress results (locked in tests):**\n\
+      \   - 54-layout default population: all reach the target without the walk. Ratios are min 1.415,\
+      \ median 1.887, max 3.328.\n   - Case 4: ratio 1.421, no walk, zero failures.\n   - 72 layouts at\
+      \ 2 mm minimum width (seed 1000n+10k+7, 8 layouts per cell): 63 reach the target, down from 45 failures\
+      \ before the walk. They are all DRC-clean, with ratios min 1.3875, median 1.3943, max 2.0866.\n\
+      \   - The 9 failures end at local maxima with ratios 1.206-1.372. They are listed in `tests/regression/test_degrade_walk_stress.py`,\
+      \ which takes about 17 minutes. I did not make the walk any stronger. A judged reference under a\
+      \ 2 mm rule can still raise `DegradeError`.\n3. **Merged-band split:** when both probes see the\
+      \ same interval, the split is the 0.5 mm grid boundary that minimises the symmetric difference with\
+      \ the reference copper (ties: lower boundary). All 18 merged layouts in my seed-7000+10n+k scan,\
+      \ including the earlier n=4/k=3 failures, now have symdiff < 1e-6 mm². The test compares the slots'\
+      \ v-extents with the generator's. Their u-extents are copper chords that can run on into a column,\
+      \ but the copper is identical.\n4. **centre_landing:** a band that no shift admits is skipped and\
+      \ the reason is recorded in `widths` as `skipped`. A move that changes nothing is not applied. `_narrow_landing(centre=False)`\
+      \ now raises `DegradeError` instead of `TypeError` when no width fits. `degrade` catches that and\
+      \ records it in `rec['skipped']`.\n5. **Docstrings and record:**\n   - The margin worst case now\
+      \ reads \"twin biased 14 % low, D 5 % low\", with the Case 4 bias caveat.\n   - Die rows move under\
+      \ the spread and walk moves.\n   - `with_l1=False` is described exactly.\n   - `rec['widths']` reports\
+      \ only the landing move that was applied, or `{}`.\n\nThe 72-layout 2 mm stress is in tests/regression\
+      \ and marked slow, because it would add about 17 minutes to the `tests/unit/generate` DoD run. `tests/unit`\
+      \ keeps a walk test and a terminal-state test on single 2 mm layouts. The population and Case 4\
+      \ distributions are locked there.\n\nthermal_fem.py is untouched (sha256 prefix a216d5fe3209bcee\
+      \ matches). Committed as 137edec2."
+    concerns:
+    - 9 of 72 layouts at the 2 mm minimum width still end in DegradeError at a local maximum of the single-parameter
+      hill-climb (ratios 1.206-1.372). The task only asked for these to be reported, but a judged reference
+      with already-minimum-width bands could still raise.
+    - The walk costs about 1 s per step (roughly 70 candidates, one 25 ms L1 each); the worst layouts
+      took 50-85 s. The full 2 mm regression test takes about 17 minutes alone.
+    - In my runs the `pytest -m 'not slow' tests/unit` run took about 12 minutes while another job was
+      running. The orchestrator's timeouts need to allow for that.
+    - The walk covers copper and die-row parameters only. Wire feet, gate and Kelvin feet are excluded,
+      and there are no compound moves, so layouts that need a coupled change stay stuck.
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
+    - tests/regression/test_degrade_walk_stress.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q -s tests/regression/test_degrade_walk_stress.py
+      exit_code: 0

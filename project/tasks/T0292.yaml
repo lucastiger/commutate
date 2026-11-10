@@ -4,7 +4,7 @@ title: 'Search driver: import the evaluator''s band estimator, union near-tie wi
   (review T0289)'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on:
 - T0285
 description: "Follow-up to T0285, from review T0289 (project/reviews/T0285/T0289.json; read it first).\
@@ -62,4 +62,54 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All four items are done in src/moduleforge/optimize/search.py and tests/unit/optimize/test_search.py,
+    and every DoD command exited 0. The work is committed.
+
+
+    1. **One estimator:** `band_e_R` is now `mfos.metrics.ratio_band_estimate` itself (an alias, not a
+    copy). A test asserts they are the same object.
+
+    2. **Near-tie window:** every shortlisted candidate with L_sub <= (1 + max(w_ind, w_ind_recon)) ·
+    L_sub(ind best) is now band-solved. Here w_ind_recon = 2·e_R(ind, reconstruction) + s_ref. It is exposed
+    as `SearchResult.w_ind_recon` and `levelling["w_ind_recon"]`. A new test with fakes where e_R(ind,
+    recon) = 0.3 and e_R(ind, twin) = 0 checks that the extra candidates are in `near_ties` and band-solved.
+
+    3. **Thermal record checks:** `_thermal_record(res, fingerprint=None)` raises `ValueErro'
+  report:
+    status: completed
+    summary: "All four items are done in src/moduleforge/optimize/search.py and tests/unit/optimize/test_search.py,\
+      \ and every DoD command exited 0. The work is committed.\n\n1. **One estimator:** `band_e_R` is\
+      \ now `mfos.metrics.ratio_band_estimate` itself (an alias, not a copy). A test asserts they are\
+      \ the same object.\n2. **Near-tie window:** every shortlisted candidate with L_sub <= (1 + max(w_ind,\
+      \ w_ind_recon)) · L_sub(ind best) is now band-solved. Here w_ind_recon = 2·e_R(ind, reconstruction)\
+      \ + s_ref. It is exposed as `SearchResult.w_ind_recon` and `levelling[\"w_ind_recon\"]`. A new test\
+      \ with fakes where e_R(ind, recon) = 0.3 and e_R(ind, twin) = 0 checks that the extra candidates\
+      \ are in `near_ties` and band-solved.\n3. **Thermal record checks:** `_thermal_record(res, fingerprint=None)`\
+      \ raises `ValueError` naming the field in these cases:\n   - The fingerprint differs from the layout's.\
+      \ The driver always passes the layout's fingerprint.\n   - `tj` is ragged, has the wrong number\
+      \ of levels, or has no dies.\n   - `tj_max_node` or `nodes` does not have one entry per level, or\
+      \ `tj_max_node` does not have one entry per die.\n   - The serialised record exceeds `MAX_RECORD_BYTES`\
+      \ (1,000,000) in total, counted field by field, so nesting and mappings are included.\n4. **Checkpoint:**\
+      \ `Store` now catches `ValueError`, so a tail split inside a UTF-8 character is truncated like any\
+      \ other torn line. The multibyte test now uses a raw non-ASCII complete line, so byte and character\
+      \ offsets differ. The no-rewrite test also blocks `path.open('w')`. A new test covers the split-character\
+      \ tail.\n\nI changed one existing test, `test_thermal_record_checkpointed_in_full_and_gci_computed_by_driver`.\
+      \ Its fake returned a fixed fingerprint `\"xyz\"`, which the new fingerprint check rejects. The\
+      \ fake now returns each layout's own fingerprint. No tolerance or assertion was loosened."
+    files_changed:
+    - src/moduleforge/optimize/search.py
+    - tests/unit/optimize/test_search.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
