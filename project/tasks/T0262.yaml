@@ -3,7 +3,7 @@ objective: O003
 title: 'E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows'
 type: design_experiment
 agent: scientist
-status: running
+status: todo
 depends_on:
 - T0257
 - T0260
@@ -242,7 +242,7 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 4
+attempts: 3
 max_attempts: 5
 branch: task/T0262-e008-design-draft-spec-and-runner-sealed
 pr: null
@@ -354,4 +354,11 @@ history:
     CA bundle, or add it to the system certificate store · see https://code.claude.com/docs/en/network-config'
   at: '2026-11-10T22:22:30+00:00'
   until: '2026-11-10T22:27:30.606868+00:00'
+  session: null
+- outcome: capacity_backoff
+  summary: 'ER_CERT_LOCALLY). The certificate comes from an authority Claude Code doesn''t trust, usually
+    a TLS-inspecting corporate proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that
+    CA bundle, or add it to the system certificate store · see https://code.claude.com/docs/en/network-config'
+  at: '2026-11-10T22:28:56+00:00'
+  until: '2026-11-10T22:33:56.761724+00:00'
   session: null
