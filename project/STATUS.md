@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T22:21:17+00:00 from repository state — do not edit_
+_generated 2026-11-10T22:22:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,13 +29,10 @@ _generated 2026-11-10T22:21:17+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
+cancelled: 39, done: 259, failed: 3, todo: 2
 
-- T0262 `running` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
 
 ## Recent events
-- 2026-11-10T21:50:20+00:00 run_finished {"run": "T0262-scientist-20261110T134907-8471", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
-- 2026-11-10T21:50:20+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T21:55:33+00:00 run_started {"run": "T0262-scientist-20261110T135533-a7a0", "task": "T0262", "role": "scientist", "session": "85c49ed9-58ff-420f-99fc-4e7a279753b2"}
 - 2026-11-10T21:56:46+00:00 run_finished {"run": "T0262-scientist-20261110T135533-a7a0", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T21:56:46+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
@@ -49,3 +46,5 @@ cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
 - 2026-11-10T22:16:04+00:00 run_finished {"run": "T0262-scientist-20261110T141451-e924", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T22:16:04+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T22:21:17+00:00 run_started {"run": "T0262-scientist-20261110T142117-deca", "task": "T0262", "role": "scientist", "session": "12f1a011-b8df-46f6-b08e-24308602e407"}
+- 2026-11-10T22:22:30+00:00 run_finished {"run": "T0262-scientist-20261110T142117-deca", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
+- 2026-11-10T22:22:30+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
