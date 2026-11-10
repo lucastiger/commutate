@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-10T05:25:33+00:00 from repository state — do not edit_
+_generated 2026-11-10T05:25:51+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0159** [protected_change] T0295: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,15 +30,13 @@ _generated 2026-11-10T05:25:33+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 249, failed: 3, running: 2, todo: 2, verify: 1
+cancelled: 38, done: 249, failed: 3, needs_founder: 1, running: 2, todo: 2
 
 - T0292 `running` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `running` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
-- T0295 `verify` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
+- T0295 `needs_founder` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
 
 ## Recent events
-- 2026-11-10T03:36:07+00:00 merged {"task": "T0285"}
-- 2026-11-10T03:40:34+00:00 merged {"task": "T0287"}
 - 2026-11-10T03:40:38+00:00 run_started {"run": "T0294-critic-20261109T194038-25f5", "task": "T0294", "role": "critic", "session": "fedf5bc2-92fc-4b89-bcfa-0a5cf84f09ba"}
 - 2026-11-10T03:40:39+00:00 run_started {"run": "T0292-builder-20261109T194039-7abc", "task": "T0292", "role": "builder", "session": "ef8584f7-bf10-4ed9-9c17-d805584149cc"}
 - 2026-11-10T03:40:39+00:00 run_started {"run": "T0293-builder-20261109T194039-aeaf", "task": "T0293", "role": "builder", "session": "f5ae19c9-d926-4006-ae6e-59f025cf074f"}
@@ -51,3 +50,5 @@ cancelled: 38, done: 249, failed: 3, running: 2, todo: 2, verify: 1
 - 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
 - 2026-11-10T04:19:34+00:00 run_started {"run": "T0295-builder-20261109T201934-5692", "task": "T0295", "role": "builder", "session": "22ff16e8-a093-45a8-a66d-43d4ef177107"}
 - 2026-11-10T05:08:55+00:00 run_finished {"run": "T0295-builder-20261109T201934-5692", "status": "completed", "cost": 0.423103, "subtype": "success", "report": "structured_output"}
+- 2026-11-10T05:25:45+00:00 verified {"task": "T0295"}
+- 2026-11-10T05:25:49+00:00 inbox_opened {"id": "I0159", "kind": "protected_change", "subject": "T0295: merge needs founder approval"}
