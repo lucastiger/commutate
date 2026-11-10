@@ -56,18 +56,25 @@ def _objective_brief(store: Store, oid: str, with_thresholds: bool = True) -> st
 
 
 def _history(t: m.Task) -> str:
-    if not t.history:
-        return "None. This is the first attempt."
+    # A usage limit or network fault that cut a run off is not an attempt (the loop gives it back), so it is not
+    # listed. T0262 (2026-11-10): the packet listed three copies of a certificate error, which crowded out the real
+    # attempts, and never said that the cut-off run had left its drafts in the checkout.
+    tried = [h for h in t.history if h.get("outcome") != "capacity_backoff"]
     out = []
-    for h in t.history[-3:]:
+    for h in tried[-3:]:
         out.append(f"- attempt {h.get('attempt')}: {h.get('outcome')} — {h.get('summary', '')[:600]}")
         if h.get("failure_output"):
             # All of it (at most 4000 characters as stored): a review lists its findings most severe first, and the
             # last 1500 characters held only T0074's minor findings, not its blocker.
             out.append("  ```\n  " + h["failure_output"].replace("\n", "\n  ") + "\n  ```")
-    return "\n".join(out) + (
-        "\nStart from a fresh look at the code. Do not repeat an approach that already failed "
-        "unless you can say concretely why it will now work.")
+    if out:
+        out.append("Start from a fresh look at the code. Do not repeat an approach that already failed "
+                   "unless you can say concretely why it will now work.")
+    if t.history and t.history[-1].get("outcome") == "capacity_backoff":
+        out.append("The last run of this task was cut off by a usage limit or a network fault, not by its own failure. "
+                   "Whatever it left in this checkout is still here (see `git status` and `git log`): review it and "
+                   "continue from it rather than starting over.")
+    return "\n".join(out) or "None. This is the first attempt."
 
 
 def _dod(t: m.Task) -> str:

@@ -301,6 +301,11 @@ class Orchestrator:
             if diagnose.classify_agent_error(rec.result_text + " " + str(rec.extra.get("stderr_tail", ""))):
                 self._fail(t, "cli_error", f"the Claude Code CLI failed (run {rec.run_id})", rec.result_text)
                 return
+            if rec.subtype == "error_max_budget_usd" and t.type == "review" and rec.structured_output:
+                # The critic submitted its verdict before the cap (the runner read it from the transcript): keep it,
+                # validated like any other. T0297 (2026-11-10) lost a valid verdict this way.
+                self._on_review(t, rec, rec.structured_output)
+                return
             if rec.subtype in ("error_max_turns", "error_max_budget_usd") and t.type not in ("plan", "review"):
                 wt = self.git.wt_root / t.id
                 if wt.exists():
@@ -393,7 +398,8 @@ class Orchestrator:
         path = self.s.project / "reviews" / (t.target or "unknown") / f"{t.id}.json"
         self.s.write_json(path, rv)
         t.status = "done"
-        t.history.append({"outcome": f"review:{rv.verdict}", "summary": f"{len(rv.findings)} findings"})
+        recovered = "; verdict read from the transcript (run ended at its budget cap)" if rec.status == "error" else ""
+        t.history.append({"outcome": f"review:{rv.verdict}", "summary": f"{len(rv.findings)} findings{recovered}"})
         self.s.save_task(t)
         self.git.remove_worktree(self.git.wt_root / f"review-{t.id}")
 

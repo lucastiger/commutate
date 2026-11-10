@@ -109,6 +109,38 @@ def report_from_text(text: str) -> Optional[dict[str, Any]]:
     return obj if isinstance(obj, dict) else None
 
 
+def report_from_transcript(path: Path) -> Optional[dict[str, Any]]:
+    """The last report the agent submitted with its StructuredOutput tool, read from the session transcript.
+
+    For a run the CLI ended at its budget cap, which returns no `structured_output` even when the agent had already
+    submitted one. T0297 (2026-11-10): the critic submitted a valid verdict three times, background jobs it had
+    started kept waking it, and the run ended at its $3 cap; the verdict was discarded and the review paid for twice.
+    Only main-chain calls whose tool result was not an error count; callers still validate the report.
+    """
+    try:
+        lines = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return None
+    calls: dict[str, dict[str, Any]] = {}
+    last = None
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("isSidechain") or row.get("type") not in ("assistant", "user"):
+            continue
+        content = (row.get("message") or {}).get("content")
+        for c in content if isinstance(content, list) else []:
+            if not isinstance(c, dict):
+                continue
+            if c.get("type") == "tool_use" and c.get("name") == "StructuredOutput" and isinstance(c.get("input"), dict):
+                calls[str(c.get("id"))] = c["input"]
+            elif c.get("type") == "tool_result" and str(c.get("tool_use_id")) in calls and not c.get("is_error"):
+                last = calls[str(c["tool_use_id"])]
+    return last
+
+
 class AgentRunner:
     def __init__(self, store: Store):
         self.s = store
@@ -266,6 +298,10 @@ class AgentRunner:
         rec.status = "error" if rec.is_error or rec.subtype.startswith("error") else "completed"
         self._account(rec, data)
         self.archive(rec)
+        if rec.structured_output is None and rec.subtype == "error_max_budget_usd":
+            rec.structured_output = report_from_transcript(self.runs_dir / rec.run_id / "transcript.jsonl")
+            if rec.structured_output is not None:
+                rec.extra["report_source"] = "transcript"
         self.save(rec)
         self.s.event("run_finished", run=rec.run_id, status=rec.status, cost=rec.cost_usd, subtype=rec.subtype,
                      report=rec.extra.get("report_source", "structured_output"))

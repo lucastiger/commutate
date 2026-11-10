@@ -162,6 +162,24 @@ def test_the_cli_api_error_kind_is_recorded(sandbox):
     assert (rec.extra["api_error"], rec.extra["api_error_status"]) == ("tls_untrusted_ca", None)
 
 
+def test_a_packet_leaves_out_cut_off_runs_and_points_to_the_work_they_left(sandbox):
+    """2026-11-10: T0262's packet listed three copies of the certificate error as its previous attempts, and never said
+    that the run the fault cut off had left its drafts in the checkout."""
+    from mfos.packets import _history
+    cut = {"outcome": "capacity_backoff", "summary": TLS, "session": None}
+    tried = {"attempt": 1, "outcome": "dod_failed", "summary": "ruff failed"}
+    t = m.Task(id="T9604", objective="O000", title="x", type="design_experiment", agent="scientist", description="x",
+               history=[tried, cut, cut, cut])
+    h = _history(t)
+    assert "dod_failed — ruff failed" in h and "Start from a fresh look" in h
+    assert "certificate" not in h and "attempt None" not in h
+    assert "cut off by a usage limit or a network fault" in h and "git status" in h
+    only = _history(t.model_copy(update={"history": [cut]}))
+    assert "cut off by a usage limit" in only and "fresh look" not in only and "first attempt" not in only
+    later = _history(t.model_copy(update={"history": [cut, {"attempt": 2, "outcome": "agent_error", "summary": "y"}]}))
+    assert "cut off" not in later and "agent_error — y" in later
+
+
 # ------------------------------------------------------------------------------------------------ pause semantics
 def _review(tid, attempts=1):
     return m.Task(id=tid, objective="O000", title=f"review {tid}", type="review", agent="critic", status="running",
@@ -264,6 +282,63 @@ def test_packets_and_transcripts_are_archived_with_the_run(sandbox, tmp_path, mo
     with tarfile.open(archive) as tar:
         assert f".mfos/runs/{rec.run_id}/packet.md" in tar.getnames()
     assert next((tmp_path / "arch").glob("*.sha256")).read_text().count(".mfos/runs/") >= 3
+
+
+def _submission(uid, report, sidechain=False, error=False):
+    call = {"type": "assistant", "isSidechain": sidechain, "message": {"role": "assistant", "content": [
+        {"type": "tool_use", "id": uid, "name": "StructuredOutput", "input": report}]}}
+    result = {"type": "user", "isSidechain": sidechain, "message": {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": uid, "content": "Structured output provided successfully",
+         **({"is_error": True} if error else {})}]}}
+    return [json.dumps(call), json.dumps(result)]
+
+
+def test_a_verdict_submitted_before_the_budget_cap_is_kept(sandbox, tmp_path, monkeypatch):
+    """2026-11-10: critic T0297 submitted a valid verdict, background jobs it had started kept waking it, and the run
+    ended at its $3 cap with no structured_output; the verdict was discarded and the review paid for twice."""
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
+    proj = tmp_path / "claude" / "projects" / "-x-mf-main"
+    proj.mkdir(parents=True)
+    first = {"verdict": "reject", "findings": [], "independent_checks_performed": ["a"], "caveats": []}
+    last = {"verdict": "accept_with_caveats", "findings": [], "independent_checks_performed": ["re-ran the split"],
+            "caveats": ["band split near a tie"]}
+    rows = (_submission("u1", first) + _submission("u2", last) + _submission("u3", first, sidechain=True)
+            + _submission("u4", {"verdict": "maybe"}, error=True) + ['{"type": "cost-state", "totalCostUSD": 3.01}'])
+    (proj / "sess-cap.jsonl").write_text("\n".join(rows) + "\n")
+    s = Store()
+    t = _review("T9802")
+    s.save_task(t)
+    runner = AgentRunner(s)
+    rec = RunRecord(run_id="T9802-critic-x", task_id="T9802", role="critic", session_id="sess-cap", cwd=str(s.root),
+                    started="", pid=None, deadline=time.time() + 600)
+    runner.save(rec)
+    (runner.runs_dir / rec.run_id / "stdout.json").write_text(json.dumps(
+        {"type": "result", "subtype": "error_max_budget_usd", "is_error": True, "result": "", "session_id": "sess-cap",
+         "total_cost_usd": 3.01, "num_turns": 40}))
+    rec = runner.poll(rec)
+    assert (rec.status, rec.structured_output, rec.extra["report_source"]) == ("error", last, "transcript")
+    Orchestrator(s)._on_run_done(t, rec)
+    t = Store().task("T9802")
+    assert (t.status, t.history[-1]["outcome"]) == ("done", "review:accept_with_caveats")
+    assert "budget cap" in t.history[-1]["summary"]
+    assert json.loads((s.project / "reviews" / "T0001" / "T9802.json").read_text())["caveats"] == last["caveats"]
+
+
+def test_a_budget_cap_without_a_submitted_verdict_is_still_a_failure(sandbox, tmp_path):
+    from mfos.agents import report_from_transcript
+    p = tmp_path / "t.jsonl"
+    p.write_text("\n".join(_submission("u1", {"verdict": "accept"}, error=True)
+                           + _submission("u2", {"verdict": "accept"}, sidechain=True)) + "\nnot json\n")
+    assert report_from_transcript(p) is None and report_from_transcript(tmp_path / "missing.jsonl") is None
+    s = Store()
+    t = _review("T9803")
+    s.save_task(t)
+    Orchestrator(s)._on_run_done(t, RunRecord(run_id="T9803-r", task_id="T9803", role="critic", session_id="x",
+                                              cwd=".", started="", status="error", is_error=True,
+                                              subtype="error_max_budget_usd", result_text=""))
+    t = Store().task("T9803")
+    assert t.status != "done" and t.history[-1]["outcome"] == "agent_error"
+    assert not (s.project / "reviews" / "T0001" / "T9803.json").exists()
 
 
 # ------------------------------------------------------------------------------------------------ founder stops
