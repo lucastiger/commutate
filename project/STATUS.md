@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T21:49:07+00:00 from repository state — do not edit_
+_generated 2026-11-10T21:50:24+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,13 +29,10 @@ _generated 2026-11-10T21:49:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
+cancelled: 39, done: 259, failed: 3, todo: 2
 
-- T0262 `running` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
 
 ## Recent events
-- 2026-11-10T20:00:00+00:00 run_started {"run": "T0303-scientist-20261110T120000-fa35", "task": "T0303", "role": "scientist", "session": "9914f0db-0ed0-4e0f-a4f0-7598171b9cfa"}
-- 2026-11-10T20:00:35+00:00 loop_stopped {"reason": "STOP file"}
 - 2026-11-10T20:01:41+00:00 task_amended {"task": "T0262", "reason": "founder restored attempts 2 and 3 (Wi-Fi TLS interception); diagnosis T0303 cancelled"}
 - 2026-11-10T20:02:00+00:00 loop_started {"pid": 16777}
 - 2026-11-10T20:02:01+00:00 run_interrupted {"run": "T0303-scientist-20261110T120000-fa35", "cost": 0.598113}
@@ -49,3 +46,5 @@ cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
 - 2026-11-10T21:43:54+00:00 run_finished {"run": "T0262-scientist-20261110T134241-9a7e", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T21:43:54+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T21:49:07+00:00 run_started {"run": "T0262-scientist-20261110T134907-8471", "task": "T0262", "role": "scientist", "session": "b01192e3-f0d1-4f94-b651-0b429a54f38a"}
+- 2026-11-10T21:50:20+00:00 run_finished {"run": "T0262-scientist-20261110T134907-8471", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
+- 2026-11-10T21:50:20+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
