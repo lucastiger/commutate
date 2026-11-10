@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     # The orchestrator commits state ticks (project/, experiments/) to main many times a day. They change no code,
-    # so they do not need the 20-minute full gate; .github/workflows/state.yml runs `mfos doctor --ci` on them.
+    # so they do not need this gate; .github/workflows/state.yml runs `mfos doctor --ci` on them.
     # A push that also touches code still runs this workflow. Pull requests and the nightly run are unchanged.
     paths-ignore:
       - "project/**"
@@ -13,13 +13,18 @@ on:
       - "experiments/drafts/**"
       - "experiments/registry.jsonl"
   schedule:
-    - cron: "17 6 * * *"   # nightly full gate on main
+    - cron: "17 6 * * *"   # nightly full gate on main, slow tests included
+  workflow_dispatch:        # the full gate by hand, from the Actions tab
 permissions:
   contents: read
 jobs:
   gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Pushes and pull requests skip the tests marked slow, as every merge's local fast gate does; the nightly and manual
+    # runs are the full gate. 2026-11-10: the slow regression tests/regression/test_degrade_walk_stress.py (T0293, about
+    # 16 min on the M5) took the whole suite past 30 min on GitHub's runner, and every push with code timed out (2be3699).
+    # The suite without slow tests took 8 min on the M5 beside agents (1177 tests); GitHub's runner is about 2.6x slower.
+    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 150 || 45 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +32,9 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-groups --frozen
       - run: uv run ruff check .
-      - run: uv run pytest -q tests
+      - if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: uv run pytest -q -m "not slow" tests
+      - if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: uv run pytest -q tests
       - run: uv run python scripts/check_licenses.py
       - run: uv run mfos doctor --ci
