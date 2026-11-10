@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T03:17:12+00:00 from repository state — do not edit_
+_generated 2026-11-10T03:17:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -38,7 +38,6 @@ cancelled: 38, done: 245, failed: 3, needs_founder: 2, running: 1, todo: 4
 - T0290 `running` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
 
 ## Recent events
-- 2026-11-10T02:30:00+00:00 merged {"task": "T0282"}
 - 2026-11-10T02:30:05+00:00 run_started {"run": "T0290-builder-20261109T183005-35cf", "task": "T0290", "role": "builder", "session": "f16dffb8-15f3-476f-977f-5d855107ff6d"}
 - 2026-11-10T02:32:00+00:00 run_finished {"run": "T0287-builder-20261109T173549-3fe8", "status": "completed", "cost": 1.244318, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T02:50:14+00:00 verified {"task": "T0287"}
@@ -53,3 +52,4 @@ cancelled: 38, done: 245, failed: 3, needs_founder: 2, running: 1, todo: 4
 - 2026-11-10T03:12:07+00:00 task_added {"task": "T0293", "reason": "review T0291 follow-up (degradation at minimum width, merged split)"}
 - 2026-11-10T03:12:07+00:00 task_amended {"task": "T0262", "reason": "waits for T0293 (degradation fallback, review T0291)"}
 - 2026-11-10T03:17:09+00:00 inbox_opened {"id": "I0157", "kind": "protected_change", "subject": "T0287: merge needs founder approval"}
+- 2026-11-10T03:17:46+00:00 sleep_detected {"gap_s": 384, "runs_extended": 1}
