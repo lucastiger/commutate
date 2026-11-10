@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T22:54:50+00:00 from repository state — do not edit_
+_generated 2026-11-10T22:59:59+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T22:54:50+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 80 | $120.64 | 2046881 | 1066298 | 101 | 0 |
+| O003 | 81 | $120.64 | 2046881 | 1066298 | 101 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,11 +29,11 @@ _generated 2026-11-10T22:54:50+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 259, failed: 3, todo: 2
+cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
 
+- T0262 `running` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
 
 ## Recent events
-- 2026-11-10T22:27:43+00:00 run_started {"run": "T0262-scientist-20261110T142743-933b", "task": "T0262", "role": "scientist", "session": "d9b55e11-9d2d-4263-bd8d-0f41ebd7a663"}
 - 2026-11-10T22:28:56+00:00 run_finished {"run": "T0262-scientist-20261110T142743-933b", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T22:28:56+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T22:34:10+00:00 run_started {"run": "T0262-scientist-20261110T143410-b0b9", "task": "T0262", "role": "scientist", "session": "d64e2336-5072-4628-95b0-7e2bfba5d3f9"}
@@ -48,3 +48,4 @@ cancelled: 39, done: 259, failed: 3, todo: 2
 - 2026-11-10T22:53:32+00:00 run_started {"run": "T0262-scientist-20261110T145332-4045", "task": "T0262", "role": "scientist", "session": "130fac71-b3bf-4190-b4ce-2bd874527476"}
 - 2026-11-10T22:54:46+00:00 run_finished {"run": "T0262-scientist-20261110T145332-4045", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T22:54:46+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
+- 2026-11-10T22:59:59+00:00 run_started {"run": "T0262-scientist-20261110T145959-e041", "task": "T0262", "role": "scientist", "session": "ec33a4b5-9724-4f5f-a164-1eac752ec17e"}
