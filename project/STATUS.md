@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-10T06:03:32+00:00 from repository state — do not edit_
+_generated 2026-11-10T06:03:45+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0160** [protected_change] T0292: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -21,7 +22,7 @@ _generated 2026-11-10T06:03:32+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 52 | $86.22 | 1705189 | 898179 | 88 | 0 |
+| O003 | 53 | $86.22 | 1705189 | 898179 | 88 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,15 +30,14 @@ _generated 2026-11-10T06:03:32+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 249, failed: 3, merge: 2, review: 1, todo: 3
+cancelled: 38, done: 249, failed: 3, merge: 1, needs_founder: 1, review: 1, running: 1, todo: 2
 
-- T0292 `merge` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
+- T0292 `needs_founder` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `review` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
 - T0295 `merge` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
+- T0296 `running` critic/review: Review T0293 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T04:09:16+00:00 task_amended {"task": "T0262", "reason": "waits for T0295 (keepout corners, review T0294)"}
-- 2026-11-10T04:18:04+00:00 inbox_opened {"id": "I0158", "kind": "protected_change", "subject": "T0290: merge needs founder approval"}
 - 2026-11-10T04:18:43+00:00 sleep_detected {"gap_s": 606, "runs_extended": 2}
 - 2026-11-10T04:18:50+00:00 inbox_resolved {"id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes;
 - 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
@@ -51,3 +51,5 @@ cancelled: 38, done: 249, failed: 3, merge: 2, review: 1, todo: 3
 - 2026-11-10T05:39:27+00:00 run_finished {"run": "T0293-builder-20261109T194039-aeaf", "status": "completed", "cost": 0.960322, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T05:58:58+00:00 verified {"task": "T0293"}
 - 2026-11-10T06:00:16+00:00 inbox_resolved {"id": "I0159", "status": "approved", "note": "Merge T0295: round-join keepout free region, consistent with the DRC's Euclidean spacing (0 of 260 DRC-clean Case
+- 2026-11-10T06:03:40+00:00 inbox_opened {"id": "I0160", "kind": "protected_change", "subject": "T0292: merge needs founder approval"}
+- 2026-11-10T06:03:45+00:00 run_started {"run": "T0296-critic-20261109T220345-06fa", "task": "T0296", "role": "critic", "session": "31dbc478-600a-403c-884b-4d717b6f9316"}
