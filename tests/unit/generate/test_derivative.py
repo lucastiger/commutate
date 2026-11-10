@@ -344,6 +344,51 @@ def test_case4_min_wire_pitch_2mm_is_geometrically_infeasible(c4):
         dataclasses.replace(c4, wires_per_die=3, rules=rules)
 
 
+def _ls_foot_distance_bound(spec, x, y, ms=0.15, step=0.25):
+    """Upper bound (mm) of the distance of a power foot to the nearer of the die's gate and Kelvin wires, for an orientation-x
+    LS die centred at (x, y) mm: max over the feet in the three pads (inset by ``ms``) of the point-segment distance to the
+    straight signal wire from the foot to the nearest point of the strip's landable copper (strip less the landing margin),
+    wires over the 25 mm limit excluded.  The wire's minimum distance is at most its distance at the foot."""
+    lm = spec.rules.wire_landing_margin * 1e3
+    box_of = {n: tuple(c * 1e3 for c in t.polygon.bounds) for t in spec.keepouts for n in [t.net]}
+    gb, kb = (tuple(np.array(box_of[n]) + np.array([lm, lm, -lm, -lm])) for n in (GATE_LS, KELVIN_LS))
+
+    def feet(pad):
+        (a0, a1), (b0, b1) = _pad_v_and_u(spec, pad)
+        return np.array([(a, b) for a in np.arange(a0 + ms, a1 - ms + 1e-9, step) for b in np.arange(b0 + ms, b1 - ms + 1e-9, step)]) + [x, y]
+
+    def seg(pts, box):
+        end = np.stack([np.clip(pts[:, 0], box[0], box[2]), np.clip(pts[:, 1], box[1], box[3])], -1)
+        return end, np.linalg.norm(end - pts, axis=-1) <= spec.rules.max_gate_wire_length * 1e3
+
+    def dist(p, a, b):
+        ab = b - a
+        t = np.clip(((p[:, None] - a[None]) * ab[None]).sum(-1) / np.maximum((ab * ab).sum(-1), 1e-30)[None], 0, 1)
+        return np.linalg.norm(p[:, None] - (a[None] + t[..., None] * ab[None]), axis=-1)
+
+    g, k, pw = feet("gate"), feet("kelvin"), feet("source") - [x, y] + [x, y]
+    ge, gok = seg(g, gb)
+    ke, kok = seg(k, kb)
+    if not gok.any() or not kok.any():
+        return 0.0
+    dg = np.where(gok[None], dist(pw, g, ge), np.nan)
+    dk = np.where(kok[None], dist(pw, k, ke), np.nan)
+    return float(np.nanmax(np.minimum(dg[:, :, None], dk[:, None, :]).reshape(len(pw), -1)))
+
+
+def test_case4_2mm_pitch_bound_scope_ls_dies(c4):
+    """Scope of the 2 mm argument (T0281 finding 2).  The closed form (1.35 mm) assumes straight signal wires, i.e. LS dies over
+    the strips' x range (25.3..64.7 mm).  Numeric extension over orientation-x LS dies: for die centres x in [25, 66] mm
+    (step 1) and y in [30, 80] mm (step 2.5), with feet on a 0.25 mm grid and diagonal wires, the foot-distance bound stays
+    below 2 mm (largest value 1.81 mm; at the range's ends the wires are diagonal, which is why it exceeds 1.35 mm).  For centres farther out the wires are diagonal and the bound exceeds
+    2 mm (4.8 mm at x = 15, y = 30 mm; T0281's hand value near x = 15 mm was 3.3 mm; for y >= 42.5 mm the 25 mm limit already removes the die), so for those placements, for HS dies and for orientation y the
+    exclusion rests on sampling only (RuntimeError above), not on this argument."""
+    best = max(_ls_foot_distance_bound(c4, x, y) for x in np.arange(25.0, 66.01, 1.0) for y in np.arange(30.0, 80.01, 2.5))
+    assert best == pytest.approx(1.81, abs=0.01)  # not below the closed form's 1.35 mm (straight wires)
+    outside = max(_ls_foot_distance_bound(c4, 15.0, y) for y in np.arange(30.0, 50.01, 2.5))
+    assert outside > 2.0  # the argument does not cover this placement
+
+
 # ------------------------------------------------------------ diversity under the reference's own rules (T0271 finding 1)
 def case4_measured_spec(c4):
     """Case 4 under ``measure_rules(reference)``.  Measured values used as they are: edge margin 5 mm, power width 5 mm,
@@ -453,7 +498,9 @@ def test_case4_topology_diversity_under_measured_rules(c4):
 def test_case4_orientation_y_has_no_candidate_under_measured_rules(c4):
     """Orientation y (dies in rows along y) is excluded by sampling, not by a closed form: of the orientation-y candidates
     drawn, none has copper that is both inside its free region and spaced by the rules, and the best has a gate / Kelvin
-    wire more than 5 mm over the 25 mm limit (14.9 mm in a 60 000-draw scratch run)."""
+    wire more than 5 mm over the 25 mm limit.  Counts (T0282, seed 1, 12000 `_sample` draws): 182 buildable orientation-y
+    candidates, 0 pass `_quick_ok`, smallest signal-wire excess 17 mm (14.9 mm in an earlier 60 000-draw run).  This is evidence
+    about the sampler's prior only; no claim of 'exactly' is made for orientation y."""
     spec = case4_measured_spec(c4)
     cx = D._Ctx(spec)
     rng = np.random.default_rng(1)
@@ -472,6 +519,53 @@ def test_case4_orientation_y_has_no_candidate_under_measured_rules(c4):
         best = min(best, max(w.length for w in lay.signal_wires) - MAX_SIGNAL_WIRE_MM * 1e-3)
     assert n >= 50 and clean == 0
     assert best > 5e-3, best
+
+
+# ------------------------------------------------------------------ float tolerance of the foot sampler (T0281 finding 0)
+def test_foot_clearance_accepts_exact_fit_but_not_a_real_shortfall():
+    """The sampler's clearance comparison has an absolute tolerance of 1e-9 m = 1e-6 mm (drc.check uses 1e-9 m too): the exact-fit
+    distance T0281 measured (0.6249999999999991 mm against the 0.625 mm pitch + 25 um) is accepted, 1e-5 mm short is not."""
+    assert D.CLEAR_TOL_MM == pytest.approx(1e-6)
+    assert D._far_enough(0.6249999999999991, 0.625)
+    assert D._far_enough(0.625 - 0.9e-6, 0.625)
+    assert not D._far_enough(0.625 - 1e-5, 0.625)
+
+
+def test_case4_k3_measured_rules_exact_fit_foot_and_generation(c4):
+    """Case 4 under the measured rules with k = 3 wires per die at the pitch 0.625 mm and the signal feet at +-0.25 mm
+    (T0281's example): the DRC accepts the hand-built layout; generate() finds DRC-valid k = 3 candidates within a stated
+    draw budget (5 candidates, seed 1, max_failures = 30000 consecutive rejected draws; before the tolerance fix the sampler
+    found 1 in 15000 draws).  Measured after the fix: 6 DRC-valid k = 3 layouts per 15000 raw draws, 189 for k = 1."""
+    spec = dataclasses.replace(case4_measured_spec(c4), wires_per_die=3)
+    ref = case4_reference_params()
+    ls = (30.0 - 30.085, 0.0, 0.625, 35.125 - 34.6, 0.0, 0.125)  # feet 29.375 / 30 / 30.625; gate foot 28.75, Kelvin foot 31.25: exactly 0.625 mm
+    hs = (30.0 - 30.085, 0.0, 0.625, 73.125 - 74.6, 0.0, 0.125)
+    p = dataclasses.replace(ref, feet=(hs, ls), sigfeet=((-0.25, 0.0, 0.25, 0.0), (-0.25, 0.0, 0.25, 0.0)))
+    lay = D.build(spec, p)
+    pit = min(lay.wires[i].points[0, :2].tolist()[0] - lay.wires[j].points[0, :2].tolist()[0]
+              for i in range(len(lay.wires)) for j in range(len(lay.wires))
+              if i != j and abs(lay.wires[i].points[0, 1] - lay.wires[j].points[0, 1]) < 1e-9
+              and lay.wires[i].points[0, 0] > lay.wires[j].points[0, 0])
+    assert pit >= 0.625e-3 - 1e-9
+    assert check(lay, spec.rules) == []
+    lays = D.generate(spec, 5, seed=1, max_failures=30000)
+    assert len(lays) == 5
+    for x in lays:
+        assert check(x, spec.rules) == [] and len(x.wires) == 12
+
+
+def test_drc_still_rejects_pitch_1e6_m_short(c4):
+    """The sampler's tolerance does not touch the DRC: a rule 1e-6 m above a layout's smallest wire pitch (power and signal wires) is violated, the
+    layout's own pitch (to 1e-9 m) is not."""
+    spec = dataclasses.replace(c4, wires_per_die=2)
+    lay = D.generate(spec, 1, seed=3)[0]
+    from shapely.geometry import LineString
+    lines = [LineString(w.points[:, :2]) for w in list(lay.wires) + list(lay.signal_wires)]
+    d = min(lines[i].distance(lines[j]) for i in range(len(lines)) for j in range(i))
+    rules = dataclasses.replace(spec.rules, min_wire_pitch=d, wire_pitch_diameters=0.0)
+    assert not [v for v in check(lay, rules) if v.rule == "wire_pitch"]
+    short = dataclasses.replace(rules, min_wire_pitch=d + 1e-6)
+    assert [v for v in check(lay, short) if v.rule == "wire_pitch"]
 
 
 def test_fingerprints_identical_across_processes():

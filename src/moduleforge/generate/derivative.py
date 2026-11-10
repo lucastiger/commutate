@@ -41,28 +41,42 @@ rename a reference's own nets for that, e.g. Case 4's SIG_*); the maximum gate /
 Limits shown on 2D_Case_4 (tests; its gate / Kelvin pads are assumed, the 25 mm limit is assumed):
 * 2 and 3 power wires per die, default rules: DRC-valid candidates (the LS gate / Kelvin wires cross the source pad at x = 29 /
   31 mm; the feet are placed between / beside them at >= 0.625 mm).
-* A 2 mm minimum wire pitch is infeasible for 1 or 2 wires per die: a power foot is at most (Kelvin_max - gate_min) / 2 =
-  1.35 mm from the nearer signal wire (the signal feet move only inside their 1 x 1 mm pads and the wires run straight to
-  the copper), and 3 wires need 4 mm of a 3.2 mm pad (ValueError at the spec).  Landing points of the gate / Kelvin wires
-  are not parameters, so the generator cannot steer them away.  No rule is relaxed.
+* A 2 mm minimum wire pitch: for the LS dies over the signal strips' x range the closed form is a power foot at most
+  (Kelvin_max - gate_min) / 2 = 1.35 mm from the nearer signal wire (the signal feet move only inside their 1 x 1 mm pads
+  and the wires run straight to the copper); 3 wires need 4 mm of a 3.2 mm pad (ValueError at the spec).  SCOPE (T0281
+  finding 2): that is proven only for orientation-x LS dies with centres x in about [25, 66] mm.  A numeric extension (feet on a
+  0.25 mm grid, diagonal wires, 25 mm limit, y in [30, 80] mm; ``test_case4_2mm_pitch_bound_scope_ls_dies``) gives a
+  foot-distance bound of at most 1.81 mm < 2 mm there.  Outside that range the wires are diagonal and the bound exceeds 2 mm
+  (4.8 mm at x = 15, y = 30 mm), so for those placements, HS dies and orientation y the infeasibility rests on sampling only
+  (RuntimeError after 3000 consecutive rejected draws in the test; 20000 in T0281's check).  Landing points of the gate /
+  Kelvin wires are not parameters, so the generator cannot steer them away.  No rule is relaxed.
 * Diversity under ``measure_rules(reference)`` (edge margin 5 mm, power width 5 mm, die spacing 6 mm, die edge margin 2 mm,
   spacings 3 / 3 / 5 mm and 2 mm to the signal copper; max power wire = the reference's longest, 16.151 mm; wire pitch the
   defaults 0.6 mm / 2 diameters because the measured 10 mm is the pitch between different dies; signal wires 25 mm): of the
-  8 sequences x orientations (x merge variants, which exist for two sequences), exactly 2 are feasible: the reference's own
-  [PHASEd, DC-l, PHASEl, DC+d] and [PHASEd, DC-l, DC+d, PHASEl], both split, orientation x.  Excluded: LS pair
-  [DC-l, PHASEd] (2 sequences) by max_kelvin_wire_length, short by 2.25 mm; HS pair at lower v than the LS pair (4
-  sequences) by max_kelvin_wire_length, short by 24.9 mm; orientation y (all 8) by the copper rules and the signal-wire
-  limit (sampled, not a closed form: best candidate 14.9 mm over).  The second sequence has 1.35 mm of slack.  The search
-  space is therefore nearly the reference's own topology on Case 4 under its own rules; that is a property of the
-  housing and the rules, not loosened here.  (Under the looser default 1 mm rules at least 3 topologies appear, ``test_at_least_three_topologies``.)
+  8 sequences x orientations (x merge variants, which exist for two sequences), orientation x has exactly 2 feasible
+  sequences (proved by closed-form necessary conditions, ``orient0_windows`` in the tests, plus DRC-clean witnesses): the
+  reference's own [PHASEd, DC-l, PHASEl, DC+d] and [PHASEd, DC-l, DC+d, PHASEl], both split.  Excluded in orientation x: LS
+  pair [DC-l, PHASEd] (2 sequences) by max_kelvin_wire_length, short by 2.25 mm; HS pair at lower v than the LS pair (4
+  sequences) by max_kelvin_wire_length, short by 24.9 mm.  Orientation y (all 8) is NOT proved infeasible: it is excluded
+  by sampling only: of 12000 ``_sample`` draws (seed 1, after the T0282 float-tolerance fix) 182 orientation-y candidates
+  were buildable, none passed the copper / spacing / signal-wire-limit pre-check, and the smallest signal-wire excess was
+  17 mm.  That is evidence about the sampler's prior, not a bound on the parameter space.  The second sequence has 1.35 mm
+  of slack.  The orientation-x search space is nearly the reference's own topology on Case 4 under its own rules; that is
+  a property of the housing and the rules, not loosened here.  (Under the looser default 1 mm rules at least 3 topologies
+  appear, ``test_at_least_three_topologies``.)
 
-Throughput, measured on 2D_Case_4 (2 dies per switch, 1 power wire per die, gate + Kelvin wire per die, max power wire 18 mm,
-signal wires 25 mm; M-series Mac, one process, seed 1, 1000 candidates, three runs): 244-253 DRC-valid candidates / s, i.e.
-20 000 candidates in about 80 s.  On Case 4 the fixed
-gate / Kelvin copper and the 25 mm limit leave four of the eight pair sequences feasible (HS pair above the LS pair, either
-order inside each pair; the merged-PHASE variants need a longer HS wire than 18 mm); the 70 x 40 housing yields five
-sequence / merge variants (HS pair first only: the DC+ column would cross the DC- pad otherwise).  ``test_throughput_case4``
-(slow) asserts >= 5 / s.
+Throughput, measured on 2D_Case_4 after the T0282 float-tolerance fix (2 dies per switch, gate + Kelvin wire per die, max power
+wire 18 mm, signal wires 25 mm; M-series Mac, one process, seeds 1 and 2, DRC-valid candidates / wall second).  The machine
+was NOT idle: another agent was running (load average 5-6 throughout), so these are conservative lower bounds, not idle
+figures.  Default rules, k = 1: 153 / 167 per s; k = 3: 12 / 7 per s.  Measured rules (``measure_rules``), k = 1: 46 / 44 per
+s; k = 3: 3.1 / 4.2 per s (before the fix k = 3 was practically unreachable).  The E008 L1 screen needs 20 000 candidates
+per search: about 2 min (default rules, k = 1), 7-8 min (measured rules, k = 1), 1.3-1.8 h (measured rules, k = 3).  The
+dominant cost is rejection: about 88 % of the raw draws are None (no feasible band / foot arrangement) and most of the rest
+fail the pre-check or the DRC.  The earlier figure of 244-253 / s was for the default rules, k = 1, with the machine load not recorded, before
+the foot sampler.  On Case 4 the fixed gate / Kelvin copper and the 25 mm limit leave four of the eight pair sequences
+feasible under the default rules (HS pair above the LS pair, either order inside each pair; the merged-PHASE variants need a
+longer HS wire than 18 mm); the 70 x 40 housing yields five sequence / merge variants (HS pair first only: the DC+ column
+would cross the DC- pad otherwise).  ``test_throughput_case4`` (slow) asserts >= 5 / s.
 """
 from __future__ import annotations
 
@@ -484,18 +498,18 @@ class _Ctx:
                 else:
                     i += 1
             self.vwin[o] = wins
-        lims = [x for x in (r.max_gate_wire_length, r.max_kelvin_wire_length) if x is not None]
-        self.siglim = min(lims) * 1e3 if lims else None
 
 
+CLEAR_TOL_MM = 1e-6  # absolute tolerance 1e-9 m of the clearance comparison (the DRC's own snapping scale is nm)
 FOOT_GRID_MM = 0.125  # grid of the wire feet and landings (the reference's own bond points are on it)
 
 
-def _gf(v: float) -> float:
-    return round(float(v) / FOOT_GRID_MM) * FOOT_GRID_MM
+def _far_enough(dist_mm: float, need_mm: float) -> bool:
+    """``dist >= need`` with the absolute tolerance ``CLEAR_TOL_MM`` (1e-9 m), as ``drc.check`` compares (T0281 finding 0)."""
+    return dist_mm >= need_mm - CLEAR_TOL_MM
 
 
-def _draw_feet(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator, fr: _Frame, row: tuple, sgn: float):
+def _draw_feet(spec: ReferenceSpec, rng: np.random.Generator, fr: _Frame, row: tuple, sgn: float):
     """Power-wire feet ``(fu0, fud, pitch, fv)`` and gate / Kelvin feet of one die row (mm); None if the k wires cannot fit.
 
     Feet are drawn on the 0.125 mm grid inside the source pad (``wire_start_margin`` + 0.05 mm from its edge).  With
@@ -563,7 +577,7 @@ def _draw_feet(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator, fr: _Fra
         return None
 
     def clear(a0):
-        return all(abs(a0 - cu0 + j * pit + i * fud - su) >= ps for i in range(n) for j in range(k) for su in sig_u)
+        return all(_far_enough(abs(a0 - cu0 + j * pit + i * fud - su), ps) for i in range(n) for j in range(k) for su in sig_u)
 
     a_abs = None
     if sig_u and rng.random() < 0.6:
@@ -761,7 +775,7 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
             return None
         ends[j] = end
         sgn = 1.0 if j > die_idx[sw] else -1.0
-        drawn = _draw_feet(spec, cx, rng, fr, rows[sw], sgn)
+        drawn = _draw_feet(spec, rng, fr, rows[sw], sgn)
         if drawn is None:
             return None
         (fu0, fud, pit, fv), sigfeet[sw] = drawn
