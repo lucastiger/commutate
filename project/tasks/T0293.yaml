@@ -4,7 +4,7 @@ title: 'Twin/degrade: L1-raising fallback walk for minimum-width bands, exact me
   T0291)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0287
 description: "Follow-up to T0287, from review T0291 (project/reviews/T0287/T0291.json; read it first)\
@@ -189,3 +189,134 @@ history:
     moves 1-3. The test is marked slow and is not part of the definition-of-done commands, so the gate
     does not check the locked 63/72 figure. I ran it separately and it passes.'
   at: '2026-11-10T06:28:59+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'This attempt fixes the review''s blocker: the twin fit put the landing line outside its own
+    slot on rectangular merged PHASE bands. It also covers the review''s minor points. All definition-of-done
+    checks pass, and the 63-of-72 result at the 2 mm minimum width is unchanged.
+
+
+    **Blocker: merged-band split (`_best_split` in src/moduleforge/generate/twin.py).** The fit now only
+    considers boundaries on the 0.5 mm grid at which each slot still holds what it carries:
+
+    - a die slot holds its die row with `rules.die_edge_margin`;
+
+    - a landing slot holds its landing line with `rules.wire_landing_margin`.
+
+
+    If no grid line meets those margins, the fit falls back to boundaries between the die row and the
+    landing line themselves; if that is also empty, to every grid line. Among the candidates it takes
+    the b'
+  report:
+    status: completed
+    summary: 'This attempt fixes the review''s blocker: the twin fit put the landing line outside its
+      own slot on rectangular merged PHASE bands. It also covers the review''s minor points. All definition-of-done
+      checks pass, and the 63-of-72 result at the 2 mm minimum width is unchanged.
+
+
+      **Blocker: merged-band split (`_best_split` in src/moduleforge/generate/twin.py).** The fit now
+      only considers boundaries on the 0.5 mm grid at which each slot still holds what it carries:
+
+      - a die slot holds its die row with `rules.die_edge_margin`;
+
+      - a landing slot holds its landing line with `rules.wire_landing_margin`.
+
+
+      If no grid line meets those margins, the fit falls back to boundaries between the die row and the
+      landing line themselves; if that is also empty, to every grid line. Among the candidates it takes
+      the boundary with the smallest symmetric difference from the reference copper. Ties go to the grid
+      line nearest the midpoint between the die row and the landing line, then to the lower one.
+
+      - **L-shaped bands** (the two slots have different widths): the best boundary is unique and is the
+      generator''s own.
+
+      - **Rectangular bands:** every boundary gives the same copper, so the copper cannot show where the
+      generator put it. The midpoint rule picks one, and the docstring now says so.
+
+      - **Scratch check:** I built 25 rectangular merged layouts from generator layouts. With attempt
+      1''s code, the landing line was outside its slot in all 25. Now that happens in none, and the degradation
+      ratio starting from the twin is close to the one from the generator''s own slots. The review''s
+      example went from 1.50 against 2.61 to 2.695 against 2.61.
+
+
+      **Tests added:**
+
+      - An L-shaped band, checked at three positions of the step.
+
+      - A real tie test on a rectangular band, using the review''s example (boundary at 17.5 mm), including
+      the two fallback cases.
+
+      - 18 rectangular merged layouts. Each checks that each slot holds its die row or landing line with
+      the margins, that the tie choice matches one computed independently in the test, and that degradation
+      from the twin reaches the target. 8 of the 18 recover the generator''s exact boundary.
+
+
+      **Walk record and stress test:**
+
+      - `record[''walk'']` now holds the ratio at the start of the walk (after moves 1-3), the terminal
+      kind (`target_reached`, `local_maximum` or `step_limit`), the terminal ratio and a message.
+
+      - The stress test (tests/regression/test_degrade_walk_stress.py, marked slow, about 11 min) now
+      checks the terminal kind instead of a message that could never match. It no longer records a failure
+      with no walk steps as 1.0, and it locks both start and terminal ratios for the 9 failures.
+
+      - At the 2 mm minimum width, 63 of 72 layouts reach the target (min 1.3875, median 1.3943, max 2.0866)
+      and all are DRC-clean. The other 9 end at a local maximum, at 1.206-1.372 after 48-64 walk steps,
+      starting from 1.003-1.225.
+
+      - The 54-layout default-rule population and Case 4 have no failures.
+
+
+      **Other changes:**
+
+      - `widths_by_move` gives each applied landing move''s widths, measured on the layout state it was
+      applied to; `widths` is the last of them.
+
+      - Docstrings now state exactly what `with_l1=False` does, what moves under degradation, and the
+      walk caveat (next item). The stale comment in `_fit` is fixed.
+
+
+      **Walk hill-climbing on its own screen (review''s minor point):** I documented this rather than
+      changing the rule. A new test checks that one walk result is stable under L1 mesh refinement: 1.3940
+      / 1.3903 / 1.3919 at 4 / 2 / 1 mm, matching the review.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate (baseline, before changes)
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate/test_twin.py -k 'merged or split or overlapping or fit_recovers
+        or housing_references or case4_twin' (first run, attempt-1 test on the old _best_split signature)
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/generate/test_twin.py -k 'split or merged or rectangular or overlapping
+        or walk or terminal or widths or centre or narrow' -s
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate/test_twin.py -k widths
+      exit_code: 0
+    - cmd: uv run pytest -q -s tests/regression/test_degrade_walk_stress.py (run 1)
+      exit_code: 0
+    - cmd: uv run pytest -q -s tests/regression/test_degrade_walk_stress.py (run 2, start ratios locked)
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
+    - tests/regression/test_degrade_walk_stress.py
+    concerns:
+    - On rectangular merged bands the generator's boundary cannot be determined from the copper. The twin
+      uses the midpoint rule and recovers the generator's exact boundary in 8 of 18 test cases. The twin's
+      copper, topology label and L1 do not depend on this choice, but move 1 of the degradation does,
+      so a judged reference with a rectangular PHASE pad gets a deterministic but conventional degradation.
+    - The 72-layout 2 mm stress test is slow (about 11 min) and lives in tests/regression, so the definition-of-done
+      commands and the fast gate do not run it. The fast suite locks only one of its terminal states (2,
+      1, 1) and one walk that reaches the target.
+    - At the 2 mm minimum width, 9 of 72 layouts still raise DegradeError at a local maximum of the walk.
+      A judged reference under such a rule could make F1(b) unusable.
+    - Walk results sit just above the 1.3875 L1 target, and the margin was derived from generator layouts,
+      not walk outputs. The mesh-refinement check covers one case only; E008's L2 ratio remains the evidence.
