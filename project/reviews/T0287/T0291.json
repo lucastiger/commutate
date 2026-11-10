@@ -1,0 +1,60 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Merged-band split recovers the generator's slots only when the probe intervals are nested; equal intervals fall back to a midpoint that can be off by 0.5 mm",
+      "detail": "Sometimes both probes (the die-slot probe and the landing probe at the mean landing u) lie inside the u-range of both rectangles of a merged PHASE band, so they see the same v-interval. The code then splits at snap(mid(land, die-row v0)), which need not be the generator's boundary. The module docstring says 'the slots are then those of the generator', and the new test's docstring says the fit gives 'the reference geometry'. Neither holds in general. The label 'merged' and the absence of overlapping slots, which are the core of T0286 finding 0, held in every case I tried. The old code used the same midpoint fallback for equal intervals, so this is incomplete rather than a regression. The defect is a small PHASE copper difference in the twin, which is reported in its difference record.",
+      "evidence": "I ran 180 fit-mode twins (n = 2..4, k = 1..3, 10 layouts each from seed 7000+10n+k, orientation x and the transposed spec for y). 36 were merged; all 36 had the correct topology label and zero slot overlap. 4 merged cases had symdiff_area_total of 5.25 and 7.0 mm\u00b2 (n=4, k=3, indices 0 and 1, in both orientations). Example: the reference boundary is at v = 24.0 mm, the twin's at 23.5 mm (land_HS = 22.0, LS row v0 = 25.0, midpoint 23.5). The twin's slots were (1.0, 19.5, 60.5, 23.5) and (1.0, 23.5, 50.0, 32.0) against the reference's (8.5, 19.5, 60.5, 24.0) and (8.5, 24.0, 50.0, 32.0).",
+      "suggested_check": "Add the n=4, k=3, seed 7043 merged layouts to test_merged_phase_band_is_split_and_labelled. In the equal-interval case, take the boundary from the v at which the slot chords change, not from the midpoint.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "centre_landing mis-places the band when no landing shift admits the minimum width",
+      "detail": "In _narrow_landing(centre=True), if no shift dv gives a band of width w0 (for example 2\u00b7(wire_landing_margin + 0.05 mm) > w0), the loop ends without a break. `pick` then holds the band computed for the last shift (dv = \u2212w0), but feet[k][5] is never updated. The band is therefore centred on a landing point the wires do not use: wire ends fall outside their band, and landing_shift_mm reads 0. _try's DRC rejects the result, so no wrong D escapes, but move 2 is silently disabled under such rules. Separately, with centre=False, `w, a = pick` raises a TypeError instead of DegradeError if no width up to w0 + 5.5 mm fits.",
+      "evidence": "halfbridge_housing_spec(3, wires_per_die=2), generate(..., 3, seed=5), wire_landing_margin = 0.5 mm and 0.6 mm: centre=True gives landing-point-to-band-edge distances of \u22120.125 to \u22120.375 mm and 12 wire_landing violations in each case. With 0.3 mm (the default) it behaves as documented.",
+      "suggested_check": "Fall back to the dv = 0 pick when no shift reaches w0, and add a test with wire_landing_margin = 0.5 mm.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Margin derivation names the worst case backwards; C002's 5\u201314 % band is assumed to hold for D",
+      "detail": "L2 ratio = L1 ratio \u00d7 (1 \u2212 b_W)/(1 \u2212 b_D), so the L1 ratio overstates the L2 ratio most when the twin is biased 14 % low and D 5 % low. The docstring says the opposite ('twin biased 5 % low, D biased 14 % low'). The 10.5 % bound and the 0.11 margin are numerically correct. The bias band itself comes from C002, measured on generator layouts with L1's 4 mm mesh, not on degraded layouts with 1 mm bands. My L2 check found a twin bias outside that band, although the ratio error stayed inside the margin.",
+      "evidence": "l2_layout.loop_inductance at refinement 0 (0.5 mm cells, about 206 s per solve) on 2D_Case_4: twin 22.85 nH, D 30.29 nH, so the L2 ratio is 1.325 against the L1 ratio of 1.421. L1 bias: twin 15.3 % (outside 5\u201314 %), D 9.2 %. L1 overstates the ratio by 7.2 %, below the 10.5 % the margin allows; the L2 ratio 1.325 is \u2265 1.25.",
+      "suggested_check": "Fix the parenthetical. When E008 runs, record the L2 (0.25 mm) ratio next to the L1 ratio for every D.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Docstring and record inconsistencies in degrade",
+      "detail": "(a) The docstring says 'Dies ... stay', but the spread moves shift die rows by up to 20 mm. (b) It says that with with_l1=False 'only the first feasible move among 1 and 2 is applied'. If both are infeasible, the code applies a 0.5 mm spread[2,up]. (c) rec['widths'] is always computed from p0 by _narrow_landing, even when move 1/2 was not the move applied. It can then report a narrowing that did not happen.",
+      "evidence": "Code reading of degrade() and _moves() in src/moduleforge/generate/twin.py.",
+      "suggested_check": "Align the docstring with the code, and build rec['widths'] from the move actually kept.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Population test does not assert the distribution its docstring claims",
+      "detail": "The test's docstring says 'the ratio distribution is the one stated in the module docstring', but the test only prints min, median and max and asserts min \u2265 target. I reproduced the printed numbers exactly (min 1.415, median 1.887, max 3.328; move 1 alone on all 54), so the stated values are true. They are not locked by the test, though.",
+      "evidence": "pytest -rA output for test_degradation_reaches_its_target_on_the_population_and_is_deterministic.",
+      "suggested_check": "Assert the stated min and median with a small tolerance, or remove the claim from the test docstring.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command. `pytest tests/unit/generate`: 55 passed, and the printed population stats match the docstring (min 1.415, median 1.887, max 3.328; Case 4: 1.421 vs target 1.388). `pytest -m 'not slow' tests/unit`: 789 passed, 39 deselected. `ruff check .`: clean. The thermal_fem.py hash prefix is a216d5fe3209bcee. `mfos gate --fast`: all gates passed.",
+    "Confirmed that test_exact_mode_checks_drc goes through the new exact branch, not the fit branch. Under min_trace_width = 6 mm the rebuilt fingerprint equals the reference's, and the TwinError message is the exact-branch one. The old code would have returned without error, so the test discriminates.",
+    "Merged-band split robustness: 180 fit-mode twins (n = 2..4, k = 1..3, 10 layouts each, orientation x plus the transposed spec for y). 36 were merged. Label and no-overlap were correct in all; 4 had a 5.25\u20137.0 mm\u00b2 symdiff from a midpoint split in the equal-interval case.",
+    "Probed `_narrow_landing(centre=True)` with wire_landing_margin of 0.3, 0.5 and 0.6 mm. For 0.5 and 0.6 mm the band is mis-placed, landings fall outside it, and DRC rejects the result.",
+    "Fresh sample, not the authors' seeds (seed 31337+10n+k, 90 layouts). Default rules: 90/90 reach L1 ratio \u2265 1.3875, all DRC-clean (min 1.404, median 1.894; 89 by move 1, 1 by moves 1+2). 2 mm minimum width: 37/90 DegradeError; every layout returned was DRC-clean and at or above the target.",
+    "Independent L2 spot check of the L1 screen on the tightest case (2D_Case_4) with l2_layout at 0.5 mm cells: L2 ratio 1.325 \u2265 1.25 against L1 1.421, so L1 overstates by 7.2 %, inside the 0.11 margin. The twin's L1 bias is 15.3 % and D's 9.2 %.",
+    "Re-derived the margin bound by hand: worst case (1 \u2212 0.05)/(1 \u2212 0.14) = 1.1047 with the twin biased 14 % low; 1.25 \u00d7 1.11 / 1.1047 = 1.2561 \u2265 1.25. The arithmetic is correct; the docstring's attribution of which layout carries which bias is reversed."
+  ],
+  "caveats": [
+    "'Degradation always reaches 1.25 (1 + margin)' holds for generator housing layouts under the default rules (1 mm minimum width, 0.3 mm landing margin). With a 2 mm minimum width, 41 % of a fresh sample (and 62 % of the authors' sample) end in DegradeError. That is documented, but it means F1(b) cannot be run on references whose landing bands are already at the minimum width.",
+    "The target is an L1 screen. Its margin assumes that D's and the twin's L1 bias lie within C002's 5\u201314 % band. One L2 check (Case 4, 0.5 mm cells, not the 0.25 mm level of E008) found the twin's bias at 15.3 %, outside that band, but the ratio error (7.2 %) stayed inside the margin. Only E008's L_sub check is evidence that L_sub(D) \u2265 1.25 L_sub(twin).",
+    "The merged-band split always gets the label and no-overlap right, but it reproduces the generator's slot boundary only when the probe intervals are nested. When both probes see the same interval, the boundary can be off by 0.5 mm (5\u20137 mm\u00b2 of PHASE copper in 4 of 36 merged cases).",
+    "Moves 2 (centre) and 3 (spread) are covered by one targeted test each; the 54-layout population exercises move 1 only. Move 2 is effectively disabled when 2 \u00d7 (landing margin + 0.05 mm) exceeds the minimum width."
+  ]
+}

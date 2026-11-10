@@ -1944,3 +1944,6 @@
 {"ts": "2026-11-10T02:51:28+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0292 (driver, review T0289)"}
 {"ts": "2026-11-10T02:56:49+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0156", "kind": "protected_change", "subject": "T0285: merge needs founder approval"}
 {"ts": "2026-11-10T02:57:28+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 393, "runs_extended": 2}
+{"ts": "2026-11-10T03:11:23+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0291-critic-20261109T185020-28d2", "status": "completed", "cost": 2.296246, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-10T03:12:07+00:00", "event": "task_added", "actor": "session", "task": "T0293", "reason": "review T0291 follow-up (degradation at minimum width, merged split)"}
+{"ts": "2026-11-10T03:12:07+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0293 (degradation fallback, review T0291)"}
