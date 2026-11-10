@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T01:35:38+00:00 from repository state — do not edit_
+_generated 2026-11-10T01:35:49+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T01:35:38+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 43 | $72.30 | 1419354 | 778010 | 70 | 0 |
+| O003 | 44 | $72.30 | 1419354 | 778010 | 70 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,15 +29,13 @@ _generated 2026-11-10T01:35:38+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 240, failed: 3, merge: 1, running: 2, todo: 3
+cancelled: 38, done: 241, failed: 3, running: 3, todo: 2
 
-- T0259 `merge` builder/implement: Twin construction and degradation rule (F1(a), F1(b)) (attempt 1)
 - T0282 `running` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 - T0285 `running` builder/implement: Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records (review T0284) (attempt 1)
+- T0287 `running` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
 
 ## Recent events
-- 2026-11-09T23:12:50+00:00 run_finished {"run": "T0259-builder-20261109T144554-9b86", "status": "completed", "cost": 1.45179, "subtype": "success", "report": "structured_output"}
-- 2026-11-09T23:13:49+00:00 task_amended {"task": "T0263", "reason": "post-freeze twin-space check of each reconstruction (no solves)"}
 - 2026-11-09T23:19:52+00:00 verified {"task": "T0259"}
 - 2026-11-09T23:20:01+00:00 run_started {"run": "T0286-critic-20261109T152001-da2f", "task": "T0286", "role": "critic", "session": "de99bfbb-9811-4c29-849c-edff5e88b233"}
 - 2026-11-09T23:20:35+00:00 sleep_detected {"gap_s": 467, "runs_extended": 3}
@@ -51,3 +49,5 @@ cancelled: 38, done: 240, failed: 3, merge: 1, running: 2, todo: 3
 - 2026-11-10T01:29:38+00:00 merged {"task": "T0274"}
 - 2026-11-10T01:29:42+00:00 run_started {"run": "T0285-builder-20261109T172942-6001", "task": "T0285", "role": "builder", "session": "8d95525f-9778-46c7-83f8-64ad52b37bc4"}
 - 2026-11-10T01:30:17+00:00 sleep_detected {"gap_s": 7739, "runs_extended": 2}
+- 2026-11-10T01:35:45+00:00 merged {"task": "T0259"}
+- 2026-11-10T01:35:49+00:00 run_started {"run": "T0287-builder-20261109T173549-3fe8", "task": "T0287", "role": "builder", "session": "1e9e5647-fcd8-4415-9d77-cd4c4436a587"}
