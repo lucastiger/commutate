@@ -4,7 +4,7 @@ title: 'Twin: band-copper column removal keeps T-junction necks; split tests tha
   T0299)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0298
 description: "Follow-up to T0298, from review T0299 (project/reviews/T0298/T0299.json; read it first).\
@@ -159,3 +159,118 @@ history:
     title: The module docstring now documents the `stopped` list. It matches the code at twin.py:775 and
     :811 and changes no behaviour.'
   at: '2026-11-10T17:46:45+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I rewrote `_band_copper` in src/moduleforge/generate/twin.py with a new rule. Attempt 1''s
+    rule and T0298''s rule are both gone. The new rule clips the net''s copper to the band''s v-range
+    [lo, hi]. It takes the common u-range of the two slots'' probe chords (the "core"). Working slab by
+    slab between the strip''s vertex v-coordinates, it keeps only the pieces that overlap the core, i.e.
+    copper connected along its own horizontal line to both slots. `_best_split` now passes the two probe
+    points.
+
+
+    What this does on each review finding:
+
+    - **Necks:** copper outside the strip can no longer remove strip copper. Necks at any u, from below
+    or above, recover the step: interior ones, and L-junctions flush with a slot''s end (30-40, 28-40
+    below; 25-30 above). This was attempt 1''s major finding.
+
+    - **Blocker c'
+  report:
+    status: completed
+    summary: 'I rewrote `_band_copper` in src/moduleforge/generate/twin.py with a new rule. Attempt 1''s
+      rule and T0298''s rule are both gone. The new rule clips the net''s copper to the band''s v-range
+      [lo, hi]. It takes the common u-range of the two slots'' probe chords (the "core"). Working slab
+      by slab between the strip''s vertex v-coordinates, it keeps only the pieces that overlap the core,
+      i.e. copper connected along its own horizontal line to both slots. `_best_split` now passes the
+      two probe points.
+
+
+      What this does on each review finding:
+
+      - **Necks:** copper outside the strip can no longer remove strip copper. Necks at any u, from below
+      or above, recover the step: interior ones, and L-junctions flush with a slot''s end (30-40, 28-40
+      below; 25-30 above). This was attempt 1''s major finding.
+
+      - **Blocker cases:** a side column with a nub on its far side, a column 2 mm wider inside the band
+      than at the probe lines, and islands beyond the column all give 13.
+
+      - **Side columns inside the band''s v-range (T0299 finding 1):** now handled, no longer a restriction.
+      This covers full height, partial height, and columns that cross one end and stop inside the band.
+      The part of a column beside the narrower slot, across the gap, is removed. Its part beside the slot
+      it touches stays, which does not move the minimum.
+
+      - **Remaining restriction**, stated in the `_best_split` docstring and tested: a column that fills
+      the gap beside the narrower slot leaves copper with no step, so the tie rule decides (14.5).
+
+
+      Tests (tests/unit/generate/test_twin.py):
+
+      - All hand-made split tests use needs with midpoint 14.75 (grid line 14.5) against the true step
+      13.
+
+      - Each neck case is also run under a copy of the T0298 rule and gives 14.5 there, so every neck
+      case tells the old and new rules apart. This answers the review''s complaint that some neck positions
+      passed under both.
+
+      - Each column case with a column 12 mm or wider is run under the T0293 scoring and is off 13 there.
+
+      - The mutant check (scored copper replaced by an empty polygon) gives 14.5.
+
+      - A direct test checks the exact copper `_band_copper` keeps.
+
+      - The generator merged-band test now asserts that on at least one layout the chosen boundary differs
+      from the midpoint fallback.
+
+      - The module docstring describes `stopped` (kept from attempt 1) and now describes the band copper.
+
+
+      Re-runs requested by the packet:
+
+      - `tests/regression/test_degrade_walk_stress.py` passed with its locked values unchanged: 63/72
+      reach the target, and the 9 local-maximum terminal ratios match. `degrade` never calls the split
+      code, so this result does not depend on the change.
+
+      - Merged-band scan on T0299''s seeds (99000 + 10n + k for (n,k) = (2,2), (3,1), (4,2), (3,3), 25
+      layouts each): 17/17 recover the generator''s slot v-extents with zero symmetric difference. I used
+      T0299''s seeds because I found no other record of T0298''s.
+
+
+      No locked value changed and thermal_fem.py is unmodified. All definition-of-done commands exit 0
+      on the final code. The commit is 71fbf650 on top of attempt 1''s commit.'
+    checks_run:
+    - cmd: 'uv run pytest -q tests/unit/generate (final code: 104 passed)'
+      exit_code: 0
+    - cmd: 'uv run pytest -q -m ''not slow'' tests/unit (final code: 851 passed, 39 deselected)'
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast (all gates passed)
+      exit_code: 0
+    - cmd: uv run pytest -q tests/regression/test_degrade_walk_stress.py (1 passed, 512 s)
+      exit_code: 0
+    - cmd: 'uv run python $TMPDIR/scan.py (merged-band scan, T0299 seeds: 17/17 recovered)'
+      exit_code: 0
+    - cmd: 'uv run python $TMPDIR/chk.py (20 hand-made L-band cases: 19 give 13.0; the gap-filling column
+        gives 14.5 as stated)'
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate/test_twin.py -k 'best_split or band_copper or equal_interval
+        or merged' (33 passed)
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
+    concerns:
+    - 'Remaining restriction (documented and tested): copper connected along its horizontal line to both
+      slots'' common u-range counts as band copper, so a column that fills the gap beside the narrower
+      slot leaves no step and the tie rule decides. A slanted (non-axis-parallel) edge is kept or removed
+      whole within its slab; this is exact only for axis-parallel copper.'
+    - The packet's 'T0298 merged-band scan' seeds are recorded nowhere except review T0299 (99000 + 10n
+      + k), so I used those. The walk stress test does not run the twin or split code (degrade only),
+      so it cannot detect a regression in this change; it shows only that nothing else moved.
+    - The sandbox blocked ps and sysctl, so I could not measure memory. I ran at most two light test or
+      scan processes at a time.
+    - 'There are now two T0300 commits on this branch: attempt 1''s 8a9079f8, then 71fbf650, which replaces
+      its `_band_copper` rule and neck tests and keeps its docstring note on `stopped`.'
