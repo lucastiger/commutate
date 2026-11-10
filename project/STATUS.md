@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T03:40:22+00:00 from repository state — do not edit_
+_generated 2026-11-10T03:40:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T03:40:22+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 48 | $82.50 | 1622006 | 868664 | 84 | 0 |
+| O003 | 51 | $82.50 | 1622006 | 868664 | 84 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,16 +29,14 @@ _generated 2026-11-10T03:40:22+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 246, failed: 3, merge: 1, review: 1, todo: 5
+cancelled: 38, done: 247, failed: 3, review: 1, running: 3, todo: 2
 
-- T0287 `merge` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
 - T0290 `review` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
+- T0292 `running` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
+- T0293 `running` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
+- T0294 `running` critic/review: Review T0290 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T02:50:56+00:00 run_finished {"run": "T0289-critic-20261109T182048-9416", "status": "completed", "cost": 1.906882, "subtype": "success", "report": "structured_output"}
-- 2026-11-10T02:51:28+00:00 task_added {"task": "T0292", "reason": "review T0289 follow-up (estimator import, near-tie window)"}
-- 2026-11-10T02:51:28+00:00 task_amended {"task": "T0262", "reason": "waits for T0292 (driver, review T0289)"}
-- 2026-11-10T02:56:49+00:00 inbox_opened {"id": "I0156", "kind": "protected_change", "subject": "T0285: merge needs founder approval"}
 - 2026-11-10T02:57:28+00:00 sleep_detected {"gap_s": 393, "runs_extended": 2}
 - 2026-11-10T03:11:23+00:00 run_finished {"run": "T0291-critic-20261109T185020-28d2", "status": "completed", "cost": 2.296246, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T03:12:07+00:00 task_added {"task": "T0293", "reason": "review T0291 follow-up (degradation at minimum width, merged split)"}
@@ -50,3 +48,7 @@ cancelled: 38, done: 246, failed: 3, merge: 1, review: 1, todo: 5
 - 2026-11-10T03:33:44+00:00 inbox_resolved {"id": "I0157", "status": "approved", "note": "Merge T0287: degradation target 1.25 x 1.11 reached on the 54-layout population and Case 4, merged-band split, ex
 - 2026-11-10T03:36:04+00:00 verified {"task": "T0290"}
 - 2026-11-10T03:36:07+00:00 merged {"task": "T0285"}
+- 2026-11-10T03:40:34+00:00 merged {"task": "T0287"}
+- 2026-11-10T03:40:38+00:00 run_started {"run": "T0294-critic-20261109T194038-25f5", "task": "T0294", "role": "critic", "session": "fedf5bc2-92fc-4b89-bcfa-0a5cf84f09ba"}
+- 2026-11-10T03:40:39+00:00 run_started {"run": "T0292-builder-20261109T194039-7abc", "task": "T0292", "role": "builder", "session": "ef8584f7-bf10-4ed9-9c17-d805584149cc"}
+- 2026-11-10T03:40:39+00:00 run_started {"run": "T0293-builder-20261109T194039-aeaf", "task": "T0293", "role": "builder", "session": "f5ae19c9-d926-4006-ae6e-59f025cf074f"}
