@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T01:29:42+00:00 from repository state — do not edit_
+_generated 2026-11-10T01:35:38+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -36,7 +36,6 @@ cancelled: 38, done: 240, failed: 3, merge: 1, running: 2, todo: 3
 - T0285 `running` builder/implement: Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records (review T0284) (attempt 1)
 
 ## Recent events
-- 2026-11-09T23:08:40+00:00 sleep_detected {"gap_s": 931, "runs_extended": 3}
 - 2026-11-09T23:12:50+00:00 run_finished {"run": "T0259-builder-20261109T144554-9b86", "status": "completed", "cost": 1.45179, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T23:13:49+00:00 task_amended {"task": "T0263", "reason": "post-freeze twin-space check of each reconstruction (no solves)"}
 - 2026-11-09T23:19:52+00:00 verified {"task": "T0259"}
@@ -51,3 +50,4 @@ cancelled: 38, done: 240, failed: 3, merge: 1, running: 2, todo: 3
 - 2026-11-10T01:27:15+00:00 inbox_resolved {"id": "I0154", "status": "approved", "note": "Merge T0259: twin and degradation rule, Case 4 twin within 0.17 % (L1); T0286 accepts with caveats; degradation t
 - 2026-11-10T01:29:38+00:00 merged {"task": "T0274"}
 - 2026-11-10T01:29:42+00:00 run_started {"run": "T0285-builder-20261109T172942-6001", "task": "T0285", "role": "builder", "session": "8d95525f-9778-46c7-83f8-64ad52b37bc4"}
+- 2026-11-10T01:30:17+00:00 sleep_detected {"gap_s": 7739, "runs_extended": 2}
