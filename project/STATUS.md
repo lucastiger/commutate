@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-10T14:54:31+00:00 from repository state — do not edit_
+_generated 2026-11-10T14:54:38+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0162** [protected_change] T0298: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,12 +30,11 @@ _generated 2026-11-10T14:54:31+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 255, failed: 3, review: 1, todo: 2
+cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 2
 
-- T0298 `review` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
+- T0298 `needs_founder` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
 
 ## Recent events
-- 2026-11-10T08:05:36+00:00 task_failed_attempt {"task": "T0297", "signal": "agent_error", "action": "repair"}
 - 2026-11-10T08:05:42+00:00 run_started {"run": "T0297-critic-20261110T000542-f34a", "task": "T0297", "role": "critic", "session": "a17f4376-d54d-42c0-a79d-9e94ac38aaad"}
 - 2026-11-10T08:19:53+00:00 run_finished {"run": "T0297-critic-20261110T000542-f34a", "status": "completed", "cost": 2.8043, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T08:20:54+00:00 task_added {"task": "T0298", "reason": "review T0297 follow-up (best-split scoring, move record)"}
@@ -49,3 +49,4 @@ cancelled: 38, done: 255, failed: 3, review: 1, todo: 2
 - 2026-11-10T14:34:36+00:00 run_started {"run": "T0299-critic-20261110T063436-bbdf", "task": "T0299", "role": "critic", "session": "5c74bcf3-2022-4ffb-8a90-fbeba6e0e079"}
 - 2026-11-10T14:35:10+00:00 sleep_detected {"gap_s": 1244, "runs_extended": 1}
 - 2026-11-10T14:54:30+00:00 run_finished {"run": "T0299-critic-20261110T063436-bbdf", "status": "completed", "cost": 1.601313, "subtype": "success", "report": "structured_output"}
+- 2026-11-10T14:54:36+00:00 inbox_opened {"id": "I0162", "kind": "protected_change", "subject": "T0298: merge needs founder approval"}
