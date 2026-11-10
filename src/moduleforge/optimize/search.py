@@ -17,7 +17,8 @@ Procedure (``run_search``):
     thermal results reused, stop after the first batch holding a passing candidate, return the first passing
     candidate in L1 order (None if positions 1..max_checks all fail). Never passes over an unchecked candidate.
  5. Band solves: reference, twin, A1 best, inductance-only best, and every shortlisted candidate with
-    L_sub <= (1 + w_ind) * L_sub(inductance-only best), w_ind = 2 e_R(best_ind, twin) + s_ref. Every e_R (that one,
+    L_sub <= (1 + max(w_ind, w_ind_recon)) * L_sub(inductance-only best), w_ind = 2 e_R(best_ind, twin) + s_ref and
+    w_ind_recon = 2 e_R(best_ind, reconstruction) + s_ref (the evaluator's secondary column; union of both windows). Every e_R (that one,
     the A1 best's, every near tie's, and the control best's) is ``band_e_R`` of the stored band solves (P3's estimator
     on the ratio); each recorded e_R row has ``"estimator": "band_e_R"``.
  6. Pool statistics: the twin's L1 and the median L1 (and median L1 headroom vs the twin) of the DRC-valid pool.
@@ -43,10 +44,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from mfos.metrics import gci_capped
+from mfos.metrics import gci_capped, ratio_band_estimate
 
 GCI_FLOOR_K = 1e-3  # scope_in: gci_capped floor, ten times the Picard tolerance
 MAX_RECORD_ARRAY = 10_000  # elements; larger arrays (nodal fields, meshes) are never written to the checkpoint
+MAX_RECORD_BYTES = 1_000_000  # serialised JSON size of one thermal record, mappings and nesting included
 E_R_ESTIMATOR = "band_e_R"  # the one e_R estimator of the driver; every recorded e_R row names it
 # Fields a thermal solve must return per thermally checked layout (all kept in the checkpoint, nothing else is):
 # tj (3, n_die) per-die Tj max at levels 0-2, tj_max_node (node coordinates of those maxima), nodes (node count per
@@ -89,6 +91,7 @@ class SearchResult:
     null_best: str | None
     near_ties: list[str] = field(default_factory=list)
     w_ind: float | None = None
+    w_ind_recon: float | None = None  # 2 e_R(inductance-only best, reconstruction) + s_ref (evaluator's secondary window)
     w_ctrl: float | None = None  # control mode only: 2 e_R(control best, D), no s_ref term (F1(b))
     w_a1: float | None = None  # 2 e_R(A1 best, twin) + s_ref from the band solves
     thermal_checked: list[str] = field(default_factory=list)
@@ -115,13 +118,13 @@ class Store:
                         with path.open("ab") as f:
                             f.write(b"\n")
                         raw += b"\n"
-                    except json.JSONDecodeError:
+                    except ValueError:  # JSONDecodeError, and UnicodeDecodeError for a tail cut inside a character
                         os.truncate(path, cut)
                         raw = raw[:cut]
                 for line in raw.decode().splitlines():
                     try:
                         rec = json.loads(line)
-                    except json.JSONDecodeError:  # torn last line after an interrupted write
+                    except ValueError:  # torn last line after an interrupted write
                         continue
                     self.data[rec["k"]] = rec["v"]
         self.solves = 0  # number of fresh solves in this session
@@ -187,46 +190,48 @@ def _field(res, name):
 _MISSING = object()
 
 
-def _thermal_record(res) -> dict:
+def _thermal_record(res, fingerprint: str | None = None) -> dict:
     """Bounded jsonable thermal record of one solve: exactly ``THERMAL_REQUIRED`` (each must be present) plus ``gci``
     computed here by ``gci_capped`` (floor 1e-3 K) per die. A ``gci`` returned by the callable is kept as
     ``gci_reported`` and never used. ``res`` may be a mapping or an attribute object (namedtuple included); every other
-    field of it (nodal temperatures, node arrays, evaluators) is dropped, never serialised."""
+    field of it (nodal temperatures, node arrays, evaluators) is dropped, never serialised. Checks, each raising
+    ``ValueError`` naming the field: the record's ``fingerprint`` equals ``fingerprint`` (the layout's, when given);
+    ``tj``, ``tj_max_node`` and ``nodes`` have one entry per level (3) and ``tj``/``tj_max_node`` one per die, no ragged
+    rows; the serialised record is at most ``MAX_RECORD_BYTES`` in total."""
     missing = [k for k in THERMAL_REQUIRED if _field(res, k) is _MISSING]
     if missing:
         raise ValueError(f"thermal result lacks required field(s): {', '.join(missing)}")
     rec = {k: _jsonable(_field(res, k)) for k in THERMAL_REQUIRED}
+    if fingerprint is not None and rec["fingerprint"] != fingerprint:
+        raise ValueError(f"thermal result field 'fingerprint' {rec['fingerprint']!r} is not the layout's {fingerprint!r}")
     tj = [[float(x) for x in r] for r in rec["tj"]]
     if len(tj) != 3:
-        raise ValueError("thermal result needs per-die Tj at three levels")
+        raise ValueError("thermal result field 'tj' needs per-die Tj at three levels")
+    n_die = len(tj[0])
+    if n_die == 0 or any(len(r) != n_die for r in tj):
+        raise ValueError("thermal result field 'tj' needs the same non-zero number of dies at every level")
+    for name in ("tj_max_node", "nodes"):
+        v = rec[name]
+        if not isinstance(v, list) or len(v) != 3:
+            raise ValueError(f"thermal result field '{name}' needs one entry per level (3)")
+    if any(not isinstance(r, list) or len(r) != n_die for r in rec["tj_max_node"]):
+        raise ValueError(f"thermal result field 'tj_max_node' needs one entry per die ({n_die}) at every level")
     reported = _field(res, "gci")
     if reported is not _MISSING:
         rec["gci_reported"] = _jsonable(reported)
     rec["tj"] = tj
-    rec["gci"] = [gci_capped(tj[0][i], tj[1][i], tj[2][i], floor=GCI_FLOOR_K) for i in range(len(tj[0]))]
+    rec["gci"] = [gci_capped(tj[0][i], tj[1][i], tj[2][i], floor=GCI_FLOOR_K) for i in range(n_die)]
+    total = 0
+    for k, v in rec.items():
+        total += len(json.dumps(v))
+        if total > MAX_RECORD_BYTES:
+            raise ValueError(f"thermal record exceeds {MAX_RECORD_BYTES} serialised bytes at field '{k}'")
     return rec
 
 
-def band_e_R(x: Sequence[float], c: Sequence[float]) -> float:
-    """e_R of the ratio R = L(x) / L(c) from five band levels each (order in the module docstring): O006 pilot P3's
-    estimator applied to the ratio, level by level (O003 A1):
-    ``3 |R(0.25) - R(0.5)| + thickness term(R(5/3/3), R(10/6/6), R(20/12/12)) + 3 |R(12 per ring) - R(production)|``.
-    3 |.| is Roache's two-level GCI 3 |f2 - f1| / (r - 1) at r = 2; the thickness term for a monotone sequence is
-    1.25 |e21| rp / (rp - 1), rp = e32 / e21, and 3 max(|e21|, |e32|) when the sequence oscillates or diverges
-    (Roache, Verification and Validation in Computational Science and Engineering, 1998, ch. 5)."""
-    xs, cs = [float(v) for v in x], [float(v) for v in c]
-    if len(xs) != 5 or len(cs) != 5:
-        raise ValueError("band_e_R needs five levels per layout")
-    if not all(math.isfinite(v) and v > 0.0 for v in xs + cs):
-        raise ValueError("band_e_R needs finite positive inductances")
-    r025, r05, r_c, r_f, r_w = (a / b for a, b in zip(xs, cs, strict=True))
-    e21, e32 = r05 - r_f, r_c - r05  # middle (production) value against fine and coarse thickness
-    if e21 * e32 > 0.0 and abs(e21) < abs(e32):
-        rp = e32 / e21
-        thick = 1.25 * abs(e21) * rp / (rp - 1.0)
-    else:
-        thick = 3.0 * max(abs(e21), abs(e32))
-    return 3.0 * abs(r025 - r05) + thick + 3.0 * abs(r_w - r05)
+# The one e_R estimator: the evaluator's own function (O006 pilot P3's estimator applied to the ratio, level by level;
+# see its docstring for the formula and the Roache citation), imported, never copied, so the two cannot drift.
+band_e_R = ratio_band_estimate
 
 
 def conservative_margin(cand: dict, twin: dict) -> float:
@@ -274,7 +279,7 @@ class _Run:
         fresh = not self.store.has(key)
 
         def solve():
-            return _thermal_record(self.s.thermal(lay, self.P))
+            return _thermal_record(self.s.thermal(lay, self.P), self.fp(lay))
         res = self.store.get(key, solve)
         if not any(r["fingerprint"] == self.fp(lay) for r in self.rows["thermal"]):
             self.rows["thermal"].append({"fingerprint": self.fp(lay), "role": role, "record": res})
@@ -394,10 +399,14 @@ def run_search(spec, reference, twin, seed: int, solvers: Solvers, P: float, s_r
     run.band(ind_best[1], "inductance_best")
     e_ind = run.e_R_from_bands(ind_best[1], twin, "inductance_best")
     w_ind = 2.0 * e_ind + s_ref
+    # the evaluator's reconstruction-based secondary column uses w = 2 e_R(ind, reconstruction) + s_ref (row contract
+    # item 9): band-solve the union of both windows so no column it needs is missing
+    w_ind_recon = 2.0 * band_e_R(store.data[run.key(ind_best[1], "band")], store.data[run.key(reference, "band")]) + s_ref
+    w_union = max(w_ind, w_ind_recon)
     ties = []
     tie_layouts = []
     for t in asc:
-        if run.fp(t[1]) != run.fp(ind_best[1]) and lsub[t[0]] <= (1.0 + w_ind) * lsub[ind_best[0]]:
+        if run.fp(t[1]) != run.fp(ind_best[1]) and lsub[t[0]] <= (1.0 + w_union) * lsub[ind_best[0]]:
             run.band(t[1], "near_tie")
             ties.append(run.fp(t[1]))
             tie_layouts.append(t[1])
@@ -407,11 +416,12 @@ def run_search(spec, reference, twin, seed: int, solvers: Solvers, P: float, s_r
     for lay in tie_layouts:
         run.e_R_from_bands(lay, twin, "near_tie")
     lev["w_ind"] = w_ind
+    lev["w_ind_recon"] = w_ind_recon
     lev["levelled"] = _levelled(lev, w_ind)
     return SearchResult(rows=run.rows, levelling=lev, inductance_best=run.fp(ind_best[1]),
                         a1_best=run.fp(a1_best[1]) if a1_best else None,
                         null_best=run.fp(null_best[1]) if null_best else None, near_ties=ties, w_ind=w_ind,
-                        w_a1=w_a1, thermal_checked=order, null_new_checks=new)
+                        w_ind_recon=w_ind_recon, w_a1=w_a1, thermal_checked=order, null_new_checks=new)
 
 
 def run_control(spec, d, seed: int, solvers: Solvers, s_ref: float, workdir: str | Path | None,

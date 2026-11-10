@@ -464,14 +464,14 @@ def test_thermal_record_checkpointed_in_full_and_gci_computed_by_driver(tmp_path
            "picard": {"converged": True, "iters": 4}, "fingerprint": "xyz"}
     c = Counter()
     s = c.solvers()
-    s.thermal = lambda lay, P: dict(rec)
+    s.thermal = lambda lay, P: {**rec, "fingerprint": lay.name}  # the record carries its own layout's fingerprint
     run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
     r = go(Counter(), wd=tmp_path)  # resumed: every thermal solve comes from the checkpoint
     twin = next(x for x in r.rows["thermal"] if x["fingerprint"] == "twin")["record"]
-    for k in ("nodes", "tj_max_node", "energy_balance", "picard", "fingerprint"):
+    for k in ("nodes", "tj_max_node", "energy_balance", "picard"):
         assert twin[k] == rec[k] if not isinstance(rec[k], np.ndarray) else True
     assert twin["tj_max_node"] == [[1, 2], [3, 4], [5, 6]] and twin["nodes"] == [100, 800, 6400]
-    assert twin["picard"] == {"converged": True, "iters": 4} and twin["fingerprint"] == "xyz"
+    assert twin["picard"] == {"converged": True, "iters": 4} and twin["fingerprint"] == "twin"
     assert twin["gci_reported"] == [99.0, 99.0]
     # gci_capped on die 0: d1 = .5, d2 = .25, rho = .5 -> p = 1 -> 1.25 * .25 / 1 = 0.3125
     assert twin["gci"][0] == pytest.approx(0.3125)
@@ -588,6 +588,13 @@ def test_torn_line_repair_never_rewrites_the_file(tmp_path, monkeypatch):
         raise AssertionError("full rewrite of the checkpoint")
     monkeypatch.setattr(type(path), "write_text", no_rewrite)
     monkeypatch.setattr(type(path), "write_bytes", no_rewrite)
+    real_open = type(path).open
+
+    def guarded_open(self, mode="r", *a, **k):
+        if "w" in mode:
+            raise AssertionError("full rewrite of the checkpoint (open 'w')")
+        return real_open(self, mode, *a, **k)
+    monkeypatch.setattr(type(path), "open", guarded_open)
     seen = []
     real_truncate = __import__("os").truncate
     monkeypatch.setattr("moduleforge.optimize.search.os.truncate", lambda p, n: (seen.append(n), real_truncate(p, n)))
@@ -597,11 +604,70 @@ def test_torn_line_repair_never_rewrites_the_file(tmp_path, monkeypatch):
 
 def test_torn_multibyte_line_truncates_at_the_byte_offset(tmp_path):
     path = tmp_path / "cp.jsonl"
-    Store(path).get("é", lambda: "ü")
+    # a complete line holding raw (non-ASCII) UTF-8, so that byte offsets and character offsets of the cut differ
+    good = '{"k": "é", "v": "ü"}\n'.encode()
+    assert len(good) > len(good.decode())
+    path.write_bytes(good)
     with path.open("ab") as f:
         f.write('{"k": "ö", "v": '.encode())
     assert Store(path).data == {"é": "ü"}
+    assert path.read_bytes() == good  # cut at the byte offset len(good), not at the character count
     assert Store(path).data == {"é": "ü"}
+
+
+def test_torn_tail_split_inside_a_utf8_character_is_repaired(tmp_path):
+    path = tmp_path / "cp.jsonl"
+    st = Store(path)
+    st.get("a", lambda: 1)
+    good = path.read_bytes()
+    path.write_bytes(good + b'{"k": "' + b"\xc3")  # 0xC3 starts a two-byte character that never finishes
+    assert Store(path).data == {"a": 1}
+    assert path.read_bytes() == good
+    st2 = Store(path)
+    st2.get("b", lambda: 2)
+    assert Store(path).data == {"a": 1, "b": 2}
+
+
+def test_band_e_R_is_the_evaluators_function():
+    from mfos.metrics import ratio_band_estimate
+    assert band_e_R is ratio_band_estimate
+    x, c = [2.2, 2.0, 2.08, 2.0, 1.9], [2.0, 2.0, 2.0, 2.0, 2.0]
+    assert band_e_R(x, c) == ratio_band_estimate(x, c)
+
+
+def test_near_tie_window_is_the_union_of_twin_and_reconstruction_windows():
+    # e_R(ind, twin) = 0 -> twin window s_ref only; e_R(ind, ref) = 0.3 -> w_recon = 0.6 + s_ref: candidates inside the
+    # reconstruction window but outside the twin window are band-solved too
+    c = Counter()
+
+    def band(lay):
+        n = lay.name
+        if n == "twin":
+            return [1.0] * 5
+        if n == "ref":
+            return [1.0, 1.0, 1.0, 1.0, 1.0]
+        return [1.0] * 5
+    ls = {}
+    s = c.solvers()
+    s.band = band
+    r0 = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
+    assert r0.w_ind == pytest.approx(0.01) and r0.w_ind_recon == pytest.approx(0.01)
+    ls = {x["fingerprint"]: x["l_sub"] for x in r0.rows["candidates"]}
+    best = min(ls, key=ls.get)
+
+    def band2(lay):
+        if lay.name == "ref":  # R(0.25) = 1.1 vs the flat candidate: 3 |1.1 - 1| = 0.3 against the reconstruction only
+            return [1.0 / 1.1, 1.0, 1.0, 1.0, 1.0]
+        return [1.0] * 5
+    s.band = band2
+    r = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
+    assert r.w_ind == pytest.approx(0.01) and r.w_ind_recon == pytest.approx(0.6 + 0.01)
+    twin_window = {n for n in ls if n != best and ls[n] <= 1.01 * ls[best]}
+    union = {n for n in ls if n != best and ls[n] <= 1.61 * ls[best]}
+    assert union > twin_window  # the fixture has candidates only the reconstruction window reaches
+    assert set(r.near_ties) == union
+    banded = {x["fingerprint"] for x in r.rows["band"] if x["role"] == "near_tie"}
+    assert union <= banded
 
 
 def _tr(name="x"):
@@ -676,3 +742,49 @@ def test_driver_runs_with_namedtuple_thermal_and_fresh_equals_resumed(tmp_path):
     a = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
     b = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
     assert a.rows == b.rows and a.rows["thermal"]
+
+
+def _rec(**over):
+    r = _tr("fp")
+    r.update(over)
+    return r
+
+
+def test_thermal_record_fingerprint_must_match_the_layout():
+    from moduleforge.optimize.search import _thermal_record
+    assert _thermal_record(_rec(), "fp")["fingerprint"] == "fp"
+    with pytest.raises(ValueError, match="fingerprint"):
+        _thermal_record(_rec(), "other")
+    c = Counter()
+    s = c.solvers()
+    s.thermal = lambda lay, P: thermal_result("not-" + lay.name, np.full((3, 2), 400.0), np.zeros(2))
+    with pytest.raises(ValueError, match="fingerprint"):
+        run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
+
+
+def test_thermal_record_one_entry_per_level_and_die():
+    from moduleforge.optimize.search import _thermal_record
+    bad = [
+        ("tj", [[400.0, 400.0], [400.0, 400.0], [400.0]]),  # ragged tj
+        ("tj", [[400.0, 400.0]] * 2),  # two levels
+        ("tj", [[], [], []]),
+        ("tj_max_node", [[[0.0] * 3] * 2] * 2),  # two levels
+        ("tj_max_node", [[[0.0] * 3] * 2, [[0.0] * 3] * 2, [[0.0] * 3]]),  # a die dropped at level 2
+        ("tj_max_node", [[[0.0] * 3] * 3] * 3),  # a die too many
+        ("nodes", [100, 800]),
+        ("nodes", 6400),
+    ]
+    for field_name, val in bad:
+        with pytest.raises(ValueError, match=field_name):
+            _thermal_record(_rec(**{field_name: val}))
+
+
+def test_thermal_record_total_size_is_capped_across_nesting_and_mappings():
+    from moduleforge.optimize.search import MAX_RECORD_BYTES, _thermal_record
+    assert MAX_RECORD_BYTES <= 1_000_000
+    _thermal_record(_rec(picard={"converged": True, "history": [0.1] * 1000}))  # small nesting is fine
+    nested = {"history": [np.zeros(9000) for _ in range(50)]}  # each array is under the element cap
+    with pytest.raises(ValueError, match="picard"):
+        _thermal_record(_rec(picard=nested))
+    with pytest.raises(ValueError, match="energy_balance"):
+        _thermal_record(_rec(energy_balance={str(i): 0.0 for i in range(100_000)}))
