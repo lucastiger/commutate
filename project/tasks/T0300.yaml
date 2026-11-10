@@ -1,0 +1,70 @@
+id: T0300
+objective: O003
+title: 'Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review
+  T0299)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0298
+description: "Follow-up to T0298, from review T0299 (project/reviews/T0298/T0299.json; read it first).\
+  \ Lands before E008's code\nfreeze (T0262). A twin whose split leaves the reference's step carries copper\
+  \ the reference does not have; with\ndiscretisation-only twin-gate tolerances that can exclude a judged\
+  \ reference under F1(a1), and with both excluded E008\nis INVALID. Develop only on generator layouts\
+  \ and Case 4 (F3); never load 2D_Case_2R, 2D_Case_6 or customer data. Do not\nedit src/moduleforge/solvers/thermal_fem.py\
+  \ (sha256 a216d5fe...). Do not relax any DRC rule or widen any tolerance.\n1. T-junction regression\
+  \ (T0299 finding 0, major). `_band_copper` removes every u-range where copper continues past\n   lo\
+  \ - 0.25 mm or hi + 0.25 mm over the band's full height, so a column joining the band's lower or upper\
+  \ edge inside the\n   slots' u-range (a T-junction neck) notches both slots, every candidate ties and\
+  \ the midpoint rule decides, where the\n   T0293 code found the true step. Remove only copper that connects\
+  \ to the outside of the strip and lies outside both\n   slots' chord u-ranges, or an equivalent. Tests:\
+  \ necks from below and from above, inside each slot's u-range, at several\n   neck widths, each recovering\
+  \ the generator's boundary; T0298's column-adjacent cases still recover theirs.\n2. Side columns inside\
+  \ the band's v-range (finding 1). Detect columns by connectivity to the strip's u-ends if the same\n\
+  \   rule covers it; otherwise state the restriction exactly in the `_best_split` docstring. Either way,\
+  \ a test shows the\n   stated behaviour on that case.\n3. Test strength (finding 2). Every split test\
+  \ uses needs whose midpoint does not round to the expected boundary (for\n   example a landing line\
+  \ at 18 mm), and one test shows that replacing the scored copper with an empty polygon changes\n   the\
+  \ result, so the tests prove the minimum, not the midpoint fallback.\n4. The module docstring describes\
+  \ the `stopped` key (finding 3).\nRe-run tests/regression/test_degrade_walk_stress.py and T0298's merged-band\
+  \ scan (same seeds) and report both; a locked\nvalue changes only with the reason stated in the commit."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate
+  exists: null
+  timeout_s: 3000
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-10T14:55:58+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Review T0299 finding 0 (major) regresses the twin split for T-junction necks; the twin is the
+  baseline of A1/K1 and of twin gate (a1). Fixed before the E008 freeze under the session review policy.
+history: []

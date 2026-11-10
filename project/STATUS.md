@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T14:54:38+00:00 from repository state — do not edit_
+_generated 2026-11-10T14:56:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -30,14 +30,11 @@ _generated 2026-11-10T14:54:38+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 2
+cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 3
 
 - T0298 `needs_founder` builder/implement: Twin: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record (review T0297) (attempt 1)
 
 ## Recent events
-- 2026-11-10T08:05:42+00:00 run_started {"run": "T0297-critic-20261110T000542-f34a", "task": "T0297", "role": "critic", "session": "a17f4376-d54d-42c0-a79d-9e94ac38aaad"}
-- 2026-11-10T08:19:53+00:00 run_finished {"run": "T0297-critic-20261110T000542-f34a", "status": "completed", "cost": 2.8043, "subtype": "success", "report": "structured_output"}
-- 2026-11-10T08:20:54+00:00 task_added {"task": "T0298", "reason": "review T0297 follow-up (best-split scoring, move record)"}
 - 2026-11-10T08:20:54+00:00 task_amended {"task": "T0262", "reason": "waits for T0298 (best-split scoring, review T0297); records midpoint-rule splits"}
 - 2026-11-10T08:25:24+00:00 inbox_opened {"id": "I0161", "kind": "protected_change", "subject": "T0293: merge needs founder approval"}
 - 2026-11-10T08:26:00+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
@@ -50,3 +47,6 @@ cancelled: 38, done: 255, failed: 3, needs_founder: 1, todo: 2
 - 2026-11-10T14:35:10+00:00 sleep_detected {"gap_s": 1244, "runs_extended": 1}
 - 2026-11-10T14:54:30+00:00 run_finished {"run": "T0299-critic-20261110T063436-bbdf", "status": "completed", "cost": 1.601313, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T14:54:36+00:00 inbox_opened {"id": "I0162", "kind": "protected_change", "subject": "T0298: merge needs founder approval"}
+- 2026-11-10T14:55:58+00:00 task_added {"task": "T0300", "reason": "review T0299 follow-up (T-junction necks, split tests)"}
+- 2026-11-10T14:55:58+00:00 task_amended {"task": "T0262", "reason": "waits for T0300 (T-junction necks, review T0299); reports twin-vs-reconstruction copper"}
+- 2026-11-10T14:55:58+00:00 task_amended {"task": "T0263", "reason": "twin-space check reports twin copper symdiff, midpoint splits and walk use (review T0299)"}

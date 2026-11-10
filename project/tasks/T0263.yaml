@@ -59,7 +59,10 @@ description: 'Only after the F3 freeze (n7 merged); the first step is to run exp
   - no solver - and report per reference: twin mode (exact or fit), the difference record, L1(W)/L1(ref),
   L1(D)/L1(twin), or the exact error raised. Do not change the generator, twin or degradation code. If
   every reference raises, say so first in the report: E008 would be INVALID and the founder decides before
-  registration.'
+  registration. Also report per reference (review T0299, 2026-11-10): the symmetric difference between
+  the twin''s copper and the snapped reconstruction''s, per net in mm2 and as a fraction of the net''s
+  area; whether the midpoint rule decided any merged-band split; and whether degradation needed the walk,
+  with its terminal kind and ratio.'
 context_files:
 - project/objectives/O003/objective.yaml
 - project/decisions/D0007-powersynth-external-use.md
