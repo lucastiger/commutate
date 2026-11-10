@@ -178,7 +178,15 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   needed three fixes (T0293, T0298, T0300), and the twin gates catch a wrong split only through L and
   Tj. Report per reference the symmetric difference between the twin W''s copper and the snapped reconstruction''s,
   per net in mm2 and as a fraction of that net''s area, with the twin mode (exact or fit); reported, not
-  gated.'
+  gated.
+
+  - Twin limitations (review T0302, session with founder permission, 2026-11-10): the spec lists the twin
+  construction''s documented restrictions, each with the review that found it: rectangular merged bands
+  are split by the midpoint convention (T0297); a column that fills the gap beside the narrower slot leaves
+  no step, so the tie rule decides (T0300); a neck from below or above that covers a slot''s probe u enters
+  the band''s v-interval and counts as band copper, so the split can be wrong end to end (T0302 finding
+  0); copper is assumed axis-parallel. The twin-copper report above and T0263''s twin-space check are
+  read against this list; the code is not changed after the freeze.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

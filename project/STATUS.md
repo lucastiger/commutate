@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T19:05:12+00:00 from repository state — do not edit_
+_generated 2026-11-10T19:06:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 258, failed: 3, needs_founder: 1, todo: 2
 - T0300 `needs_founder` builder/implement: Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review T0299) (attempt 2)
 
 ## Recent events
-- 2026-11-10T17:14:37+00:00 verified {"task": "T0300"}
 - 2026-11-10T17:14:45+00:00 run_started {"run": "T0301-critic-20261110T091445-3349", "task": "T0301", "role": "critic", "session": "07c88e2d-c7a7-4ff3-b51e-89a46bd18cde"}
 - 2026-11-10T17:15:19+00:00 sleep_detected {"gap_s": 1535, "runs_extended": 1}
 - 2026-11-10T17:33:31+00:00 run_finished {"run": "T0301-critic-20261110T091445-3349", "status": "error", "cost": 1.163615, "subtype": "success", "report": "missing"}
@@ -50,3 +49,4 @@ cancelled: 38, done: 258, failed: 3, needs_founder: 1, todo: 2
 - 2026-11-10T18:51:42+00:00 sleep_detected {"gap_s": 1150, "runs_extended": 1}
 - 2026-11-10T19:05:04+00:00 run_finished {"run": "T0302-critic-20261110T105108-aa59", "status": "completed", "cost": 1.720518, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T19:05:09+00:00 inbox_opened {"id": "I0163", "kind": "protected_change", "subject": "T0300: merge needs founder approval"}
+- 2026-11-10T19:06:08+00:00 task_amended {"task": "T0262", "reason": "spec lists the twin's documented limitations (review T0302); no further split follow-up"}
