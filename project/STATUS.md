@@ -1,8 +1,9 @@
 # ModuleForge status
-_generated 2026-11-10T02:27:35+00:00 from repository state — do not edit_
+_generated 2026-11-10T02:27:57+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
+## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
+- **I0155** [protected_change] T0282: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,15 +30,14 @@ _generated 2026-11-10T02:27:35+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 242, failed: 3, merge: 1, review: 1, running: 2, todo: 3
+cancelled: 38, done: 242, failed: 3, needs_founder: 1, review: 1, running: 2, todo: 3
 
-- T0282 `merge` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
+- T0282 `needs_founder` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 - T0285 `review` builder/implement: Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records (review T0284) (attempt 1)
 - T0287 `running` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
 - T0289 `running` critic/review: Review T0285 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T01:30:17+00:00 sleep_detected {"gap_s": 7739, "runs_extended": 2}
 - 2026-11-10T01:35:45+00:00 merged {"task": "T0259"}
 - 2026-11-10T01:35:49+00:00 run_started {"run": "T0287-builder-20261109T173549-3fe8", "task": "T0287", "role": "builder", "session": "1e9e5647-fcd8-4415-9d77-cd4c4436a587"}
 - 2026-11-10T01:36:24+00:00 sleep_detected {"gap_s": 367, "runs_extended": 3}
@@ -52,3 +52,4 @@ cancelled: 38, done: 242, failed: 3, merge: 1, review: 1, running: 2, todo: 3
 - 2026-11-10T02:21:24+00:00 run_finished {"run": "T0288-critic-20261109T175810-ade4", "status": "completed", "cost": 2.420049, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T02:22:01+00:00 task_added {"task": "T0290", "reason": "review T0288 follow-up (_quick_ok tolerance, effective tests)"}
 - 2026-11-10T02:22:01+00:00 task_amended {"task": "T0262", "reason": "waits for T0290; L1 screen throughput (T0288)"}
+- 2026-11-10T02:27:52+00:00 inbox_opened {"id": "I0155", "kind": "protected_change", "subject": "T0282: merge needs founder approval"}
