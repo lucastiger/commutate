@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T01:58:11+00:00 from repository state — do not edit_
+_generated 2026-11-10T01:58:53+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -37,7 +37,6 @@ cancelled: 38, done: 241, failed: 3, review: 1, running: 3, todo: 2
 - T0288 `running` critic/review: Review T0282 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-09T23:37:26+00:00 verified {"task": "T0274"}
 - 2026-11-09T23:37:26+00:00 run_finished {"run": "T0286-critic-20261109T152001-da2f", "status": "completed", "cost": 1.977708, "subtype": "success", "report": "structured_output"}
 - 2026-11-09T23:38:11+00:00 task_added {"task": "T0287", "reason": "review T0286 follow-up (degradation robustness)"}
 - 2026-11-09T23:38:11+00:00 task_amended {"task": "T0262", "reason": "waits for T0287 (degradation robustness, review T0286)"}
@@ -52,3 +51,4 @@ cancelled: 38, done: 241, failed: 3, review: 1, running: 3, todo: 2
 - 2026-11-10T01:39:01+00:00 run_finished {"run": "T0282-builder-20261109T144554-a09a", "status": "completed", "cost": 1.096165, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T01:58:04+00:00 verified {"task": "T0282"}
 - 2026-11-10T01:58:11+00:00 run_started {"run": "T0288-critic-20261109T175810-ade4", "task": "T0288", "role": "critic", "session": "11f1e435-97d7-42f4-99f5-c4899a6e0b70"}
+- 2026-11-10T01:58:45+00:00 sleep_detected {"gap_s": 1185, "runs_extended": 3}
