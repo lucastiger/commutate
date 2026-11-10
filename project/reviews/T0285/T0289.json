@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "'Bounded' thermal record is bounded per container, not per record",
+      "detail": "_jsonable caps each ndarray/list/tuple at MAX_RECORD_ARRAY elements but applies no cap to Mappings, and nesting multiplies the limit. A whitelisted field (tj_max_node, nodes, picard, energy_balance) can therefore carry a list of several 9,999-element arrays, or a dict with any number of keys. The docstring's 'so nodal fields cannot reach the checkpoint' holds only for a single flat container. The six-field whitelist and the rejection of any single mesh-sized array keep the practical exposure small.",
+      "evidence": "_thermal_record accepted tj_max_node=[np.zeros(9999)]*3 with picard={'history':[np.zeros(9000)]*50} (2,400,271 JSON bytes), and picard={str(i):0.0 for i in range(200000)} (2,889,059 bytes).",
+      "suggested_check": "Count total leaf elements across the whole record, including dict entries, and cap that total.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Multibyte torn-line test cannot tell byte offsets from character offsets",
+      "detail": "Store.get writes json.dumps output with ensure_ascii, so everything before the last newline is ASCII and the character index of the cut equals the byte index. test_torn_multibyte_line_truncates_at_the_byte_offset would also pass with a character-offset os.truncate. Separately, test_torn_line_repair_never_rewrites_the_file blocks write_text/write_bytes but not path.open('w'), although its comment says it does. The implementation itself is correct because it works in bytes.",
+      "evidence": "Reproducing the test's file gave b'{\"k\": \"\\\\u00e9\", \"v\": \"\\\\u00fc\"}\\n{\"k\": \"\\xc3\\xb6\", \"v\": ' with byte cut 31 and character cut 31.",
+      "suggested_check": "Put a raw non-ASCII complete line before the torn tail so the two offsets differ.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Store load crashes when a torn tail is split inside a UTF-8 character",
+      "detail": "json.loads(raw[cut:]) raises UnicodeDecodeError, a ValueError but not a JSONDecodeError, so the repair branch is skipped and Store.__init__ crashes. The driver's own writer emits only ASCII, so only outside corruption (e.g. garbage bytes after a crash) can reach this. Behaviour is unchanged from before (read_text also raised).",
+      "evidence": "Appending bytes '{\"k\": \"' + 0xC3 to a valid checkpoint made Store(p) raise UnicodeDecodeError, and the file was left untouched.",
+      "suggested_check": "Catch ValueError (which covers UnicodeDecodeError) in the repair branch.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "band_e_R duplicates mfos.metrics.ratio_band_estimate",
+      "detail": "The driver has one estimator, but it is a copy of the evaluator's function rather than an import of it, even though the driver already imports gci_capped from mfos.metrics. They are identical today; the copies could drift.",
+      "evidence": "On 100,000 random five-level pairs, including monotone, oscillating and diverging thickness sequences, max |band_e_R - ratio_band_estimate| = 0.0.",
+      "suggested_check": "Import ratio_band_estimate in search.py, or add a test that pins the two to each other.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Near-tie band solves cover only the twin-based window (outside this change)",
+      "detail": "The evaluator's reconstruction-based secondary column switches the K1 near-tie band to w_ind = 2 e_R(ind, reconstruction) + s_ref (row contract item 9). The driver band-solves near ties only within the twin-based window. If e_R(ind, recon) > e_R(ind, twin), five() would find missing band columns and raise. This predates the change.",
+      "evidence": "tools/mfos/mfos/metrics.py lines 617-622 compared with search.py lines 397-403; research/o003/e008_row_contract.md item 9.",
+      "suggested_check": "Band-solve the union of the twin-based and reconstruction-based near-tie windows, or record that the secondary K1 column may be unavailable.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every required check: tests/unit/optimize 36 passed; fast unit tests 776 passed (39 deselected); ruff clean; thermal_fem.py sha256 prefix a216d5fe3209bcee matches; mfos gate --fast: all gates passed.",
+    "Searched with git grep for callers of Solvers/run_search/run_control: none outside the optimize tests, so removing the injected e_R breaks no caller.",
+    "Compared band_e_R with mfos.metrics.ratio_band_estimate on 100,000 random five-level pairs, including monotone, oscillating and diverging thickness sequences: max abs difference 0.0.",
+    "Checked the driver against the evaluator's headroom code (metrics.py lines 601-623) and the O003 K1/A1 text: w_ind, the levelling test and the near-tie window use the same formula (2 e_R(ind, twin) + s_ref with P3's estimator on the ratio).",
+    "Torn-checkpoint simulation over a full run_search (233 records): cut the file mid-record after 3, 116 and 232 records and resumed. New solves were exactly 230, 117 and 1; rows, w_ind, near_ties and a1_best matched a fresh run; the file ended newline-terminated.",
+    "Size-limit probes: nested arrays (2.4 MB) and a 200k-key dict (2.9 MB) were accepted by _thermal_record.",
+    "Torn-tail probe: a tail split inside a UTF-8 character makes Store raise UnicodeDecodeError.",
+    "Test-the-tests: showed the multibyte torn-line test has byte cut = character cut = 31, so it cannot catch a character-offset bug; checked mutations (comparing against the reference instead of the twin, near ties against the wrong comparator) and found the e_R tests would catch them.",
+    "Read thermal_fem.ThermalResult: it has no tj/tj_max_node/fingerprint/picard fields, so a raw result fails loudly (ValueError) and an adapter is required; its field nodes holds coordinates, not counts."
+  ],
+  "caveats": [
+    "'Bounded thermal records' means a whitelist of six fields with a 10,000-element cap per individual array or list. It is not a cap on total record size: dicts are uncapped and nesting multiplies the limit.",
+    "The atomicity of the repair is checked against a process being killed (a single os.truncate call, or a one-byte append). There is no fsync, so durability after a power loss is not covered, and two processes appending to the same checkpoint at once are not protected.",
+    "Thermal records loaded from checkpoints written before this change are reused without the whitelist or required-field check.",
+    "The driver does not check that the record's fingerprint matches the layout's, does not check the shape of tj_max_node or nodes, and silently drops dies from a ragged tj (behaviour that predates this change). The evaluator's gated sanity checks must catch these.",
+    "A thermal adapter must supply node counts under the name nodes; ThermalResult.nodes holds node coordinates."
+  ]
+}
