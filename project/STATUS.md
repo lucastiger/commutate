@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T07:50:45+00:00 from repository state — do not edit_
+_generated 2026-11-10T07:51:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 252, failed: 3, review: 1, running: 1, todo: 2
 - T0297 `running` critic/review: Review T0293 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T06:03:45+00:00 run_started {"run": "T0296-critic-20261109T220345-06fa", "task": "T0296", "role": "critic", "session": "31dbc478-600a-403c-884b-4d717b6f9316"}
 - 2026-11-10T06:04:18+00:00 sleep_detected {"gap_s": 2274, "runs_extended": 1}
 - 2026-11-10T06:04:23+00:00 merged {"task": "T0295"}
 - 2026-11-10T06:06:57+00:00 inbox_resolved {"id": "I0160", "status": "approved", "note": "Merge T0292: driver uses mfos.metrics.ratio_band_estimate itself, band solves on the union of w_ind and w_ind_rec
@@ -50,3 +49,4 @@ cancelled: 38, done: 252, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-10T07:31:50+00:00 run_finished {"run": "T0293-builder-20261109T222902-2f5a", "status": "completed", "cost": 3.385985, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T07:50:40+00:00 verified {"task": "T0293"}
 - 2026-11-10T07:50:45+00:00 run_started {"run": "T0297-critic-20261109T235045-4171", "task": "T0297", "role": "critic", "session": "06deafd8-2d77-476d-83eb-205748ccc097"}
+- 2026-11-10T07:51:19+00:00 sleep_detected {"gap_s": 1171, "runs_extended": 1}
