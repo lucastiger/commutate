@@ -46,7 +46,8 @@ Limits shown on 2D_Case_4 (tests; its gate / Kelvin pads are assumed, the 25 mm 
   and the wires run straight to the copper); 3 wires need 4 mm of a 3.2 mm pad (ValueError at the spec).  SCOPE (T0281
   finding 2): that is proven only for orientation-x LS dies with centres x in about [25, 66] mm.  A numeric extension (feet on a
   0.25 mm grid, diagonal wires, 25 mm limit, y in [30, 80] mm; ``test_case4_2mm_pitch_bound_scope_ls_dies``) gives a
-  foot-distance bound of at most 1.81 mm < 2 mm there.  Outside that range the wires are diagonal and the bound exceeds 2 mm
+  foot-distance bound of at most 1.96 mm < 2 mm there (T0290: the earlier 1.81 mm was a coarse-grid artefact; the bound is now an
+  endpoint-inclusive grid with a Lipschitz margin, the fine-grid supremum at the worst die centre (25, 30) mm is 1.820 mm).  Outside that range the wires are diagonal and the bound exceeds 2 mm
   (4.8 mm at x = 15, y = 30 mm), so for those placements, HS dies and orientation y the infeasibility rests on sampling only
   (RuntimeError after 3000 consecutive rejected draws in the test; 20000 in T0281's check).  Landing points of the gate /
   Kelvin wires are not parameters, so the generator cannot steer them away.  No rule is relaxed.
@@ -65,15 +66,25 @@ Limits shown on 2D_Case_4 (tests; its gate / Kelvin pads are assumed, the 25 mm 
   a property of the housing and the rules, not loosened here.  (Under the looser default 1 mm rules at least 3 topologies
   appear, ``test_at_least_three_topologies``.)
 
-Throughput, measured on 2D_Case_4 after the T0282 float-tolerance fix (2 dies per switch, gate + Kelvin wire per die, max power
-wire 18 mm, signal wires 25 mm; M-series Mac, one process, seeds 1 and 2, DRC-valid candidates / wall second).  The machine
-was NOT idle: another agent was running (load average 5-6 throughout), so these are conservative lower bounds, not idle
-figures.  Default rules, k = 1: 153 / 167 per s; k = 3: 12 / 7 per s.  Measured rules (``measure_rules``), k = 1: 46 / 44 per
-s; k = 3: 3.1 / 4.2 per s (before the fix k = 3 was practically unreachable).  The E008 L1 screen needs 20 000 candidates
-per search: about 2 min (default rules, k = 1), 7-8 min (measured rules, k = 1), 1.3-1.8 h (measured rules, k = 3).  The
+Float-tolerance audit (T0290, after review T0288): every float comparison of a derived quantity against a rule value or a grid
+bound uses the DRC's tolerance (1e-9 m = 1e-6 mm): ``_far_enough`` (feet clearance, CLEAR_TOL_MM), ``_quick_ok`` (signal-wire
+length and signal-power wire distance; copper containment and net spacing already had it), the ilo/ihi grid indices of
+``_draw_feet`` (ceil/floor with +-1e-9 like jlo/jhi, pmin/pmax), the landing-point window ``land + ldv`` in ``_sample``.  The
+other comparisons (``_g_up``/``_g_dn``/``_on_grid``/``_pick_end``/the ValueError of ``_wire_pitch``) already had a tolerance.
+
+Throughput, MEASURED on 2D_Case_4 (T0290; 2 dies per switch, gate + Kelvin wire per die, max power wire 18 mm, signal wires
+25 mm; M-series Mac, one process; DRC-valid candidates per wall second of ``generate`` with seed 1 / seed 2, one run each, so a
+single run has an unknown spread).  The machine was not idle: load average 3.3 / 3.6 / 3.9 (1 / 5 / 15 min) at the start and
+3.6 / 3.7 / 3.9 at the end, other agents running.  These are measurements under that load, not bounds: rates move with the load
+(T0288 measured lower values at a similar load).  Default rules, k = 1: 95.5 / 113.7 per s (150 layouts each); k = 3: 9.6 / 4.2 per
+s (25 each).  Measured rules (``measure_rules``), k = 1: 44.1 / 31.8 per s (60 each); k = 3: 2.2 / 2.9 per s (8 each).  The
+earlier figures (153 / 167, 46 / 44, 12 / 7, 3.1 / 4.2 per s, "conservative lower bounds") were single runs at a load of 5-6 and
+were not bounds.  The E008 L1 screen needs 20 000 candidates per search; at the rates above that is roughly 3 min (default
+rules, k = 1), 9-11 min (measured rules, k = 1), 1.9-2.5 h (measured rules, k = 3), to be re-measured under the load of the
+run.  Without the float-tolerance fix the k = 3 yield on the measured rules was lower by a factor of about 2.7 (T0288: 11-12
+against 30-34 DRC-valid per 60000 raw draws), not zero.  The
 dominant cost is rejection: about 88 % of the raw draws are None (no feasible band / foot arrangement) and most of the rest
-fail the pre-check or the DRC.  The earlier figure of 244-253 / s was for the default rules, k = 1, with the machine load not recorded, before
-the foot sampler.  On Case 4 the fixed gate / Kelvin copper and the 25 mm limit leave four of the eight pair sequences
+fail the pre-check or the DRC.  On Case 4 the fixed gate / Kelvin copper and the 25 mm limit leave four of the eight pair sequences
 feasible under the default rules (HS pair above the LS pair, either order inside each pair; the merged-PHASE variants need a
 longer HS wire than 18 mm); the 70 x 40 housing yields five sequence / merge variants (HS pair first only: the DC+ column
 would cross the DC- pad otherwise).  ``test_throughput_case4`` (slow) asserts >= 5 / s.
@@ -90,6 +101,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import nearest_points, unary_union
 
 from moduleforge.drc import check
+from moduleforge.drc.rules import TOL as DRC_TOL
 from moduleforge.drc.rules import DesignRules
 from moduleforge.geometry import (
     DC_MINUS,
@@ -572,7 +584,7 @@ def _draw_feet(spec: ReferenceSpec, rng: np.random.Generator, fr: _Frame, row: t
         lo, hi = rel0_range(fud)
     if hi < lo - 1e-9:
         return None
-    ilo, ihi = math.ceil(_gdiv(cu0 + lo)), math.floor(_gdiv(cu0 + hi))
+    ilo, ihi = math.ceil(_gdiv(cu0 + lo) - 1e-9), math.floor(_gdiv(cu0 + hi) + 1e-9)  # grid index tolerance as the neighbours
     if ihi < ilo:
         return None
 
@@ -789,7 +801,7 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
             return None
         land[sw] = lo_l + _snap(rng.uniform(0.0, hi_l - lo_l))
         ldv = 0.0 if rng.random() < 0.6 else FOOT_GRID_MM * int(rng.integers(-3, 4))
-        if not (sv[j][0] + 0.5 <= land[sw] + ldv <= sv[j][1] - 0.5):
+        if not (sv[j][0] + 0.5 - 1e-9 <= land[sw] + ldv <= sv[j][1] - 0.5 + 1e-9):
             ldv = 0.0
         ldu = 0.0 if rng.random() < 0.7 else FOOT_GRID_MM * int(rng.integers(-4, 5))
         feet[sw] = (fu0, fud, pit, fv, ldu, ldv)
@@ -802,7 +814,11 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
 
 def _quick_ok(spec: ReferenceSpec, cx: _Ctx, lay: Layout) -> bool:
     """Cheap necessary conditions (a subset of the DRC, tested before the expensive width checks): copper inside its
-    free region, spacing between the power nets, signal-wire length limits, no plan-view crossing of signal and power wires."""
+    free region, spacing between the power nets, signal-wire length limits, no plan-view crossing of signal and power wires.
+
+    Every comparison against a rule value carries the DRC's own tolerance (``drc.rules.TOL`` = 1e-9 m), so the pre-check never
+    rejects a layout ``drc.check`` accepts (T0288 finding 3): signal-wire length ``<= limit + TOL``, signal-to-power wire
+    distance ``>= min_wire_pitch - TOL`` (shapely gives 0.0006249999999999971 m for the grid-exact 0.02875 / 0.029375 m pair)."""
     tr = lay.traces
     for t in tr[:3]:
         if not cx.free[t.net].buffer(1e-9).contains(t.polygon):
@@ -813,13 +829,13 @@ def _quick_ok(spec: ReferenceSpec, cx: _Ctx, lay: Layout) -> bool:
                 return False
     for w in lay.signal_wires:
         lim = spec.rules.max_gate_wire_length if w.pad == "gate" else spec.rules.max_kelvin_wire_length
-        if lim is not None and w.length > lim:
+        if lim is not None and w.length > lim + DRC_TOL:  # the DRC's tolerance (T0288 finding 3)
             return False
     if lay.signal_wires:
         power = [LineString(w.points[:, :2]) for w in lay.wires]
         for sw in lay.signal_wires:
             ln = LineString(sw.points[:, :2])
-            if any(ln.distance(q) < spec.rules.min_wire_pitch for q in power):
+            if any(ln.distance(q) < spec.rules.min_wire_pitch - DRC_TOL for q in power):  # as drc.check (T0288 finding 3)
                 return False
     return True
 
