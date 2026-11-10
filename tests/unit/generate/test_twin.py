@@ -185,6 +185,7 @@ def test_degrade_on_case4(case4):
     tw, _, _ = W.twin(ref, spec, with_l1=False)
     d, rec = W.degrade(tw, spec)
     assert check(d, spec.rules) == [] and rec["l1_ratio"] >= _ratio_target()
+    assert rec["l1_ratio"] == pytest.approx(1.421, abs=1e-3) and rec["walk"] is None  # locked (T0291 finding 4)
     print(f"Case 4 degrade L1 ratio {rec['l1_ratio']:.3f} (target {_ratio_target():.3f})")
 
 
@@ -305,6 +306,9 @@ def test_degradation_reaches_its_target_on_the_population_and_is_deterministic()
     lo, med, hi = min(ratios), float(np.median(ratios)), max(ratios)
     print(f"degradation L1 ratio over 54 layouts: min {lo:.3f}, median {med:.3f}, max {hi:.3f}; moves {moves}")
     assert lo >= _ratio_target()
+    # T0291 finding 4: the distribution stated in the module docstring is locked (move 1 alone on all 54, no walk)
+    assert (lo, med, hi) == pytest.approx((1.415, 1.887, 3.328), abs=1e-3)
+    assert moves == {("narrow_landing",): 54}
     spec, ref = next(iter(_population()))
     a, ra = W.degrade(ref, spec)
     b, rb = W.degrade(ref, spec)
@@ -348,3 +352,243 @@ def test_degrade_error_when_no_move_reaches_the_target():
     ref = D.generate(spec, 4, seed=941, max_failures=3000)[2]
     with pytest.raises(W.DegradeError):
         W.degrade(ref, spec)
+
+
+# ----------------------------------------------------------------------------------------------- T0293
+def test_equal_interval_merged_bands_recover_the_generators_slots(monkeypatch):
+    """T0291 finding 0: merged PHASE bands where both probes see the same v-interval are split on the 0.5 mm grid at the
+    boundary that minimises the symmetric difference, which is the generator's slot boundary (n = 4, k = 3, seed 7043 had
+    5.25 and 7.0 mm^2 of PHASE copper off with the midpoint)."""
+    calls = []
+    orig = W._best_split
+    monkeypatch.setattr(W, "_best_split", lambda *a, **k: calls.append(1) or orig(*a, **k))
+    n_merged = 0
+    for n, k in ((4, 3), (3, 2), (2, 1)):
+        spec = D.halfbridge_housing_spec(n, wires_per_die=k)
+        for ref in D.generate(spec, 10, seed=7000 + 10 * n + k):
+            if not D.topology_of(ref).endswith("/merged"):
+                continue
+            n_merged += 1
+            lay, p, rec = W.twin(dataclasses.replace(ref, family="anonymous"), spec, with_l1=False)
+            assert rec["symdiff_area_total_mm2"] < 1e-6, (n, k)
+            # the slots' v-extents are the generator's (their u-extents are the chords of the copper, which may run on into
+            # a column: same copper, so the symmetric difference above is zero)
+            assert [(s[1], s[3]) for s in p.slots] == [(s[1], s[3]) for s in D.params_of(ref).slots]
+            assert _overlapping_slots(p) == 0.0
+    assert n_merged >= 5 and calls, "the equal-interval branch was never exercised"
+
+
+_SEQ_DIE_LAND = [("PHASE", "die", "LS"), ("PHASE", "land", "HS")]
+_SEQ_LAND_DIE = [("PHASE", "land", "HS"), ("PHASE", "die", "LS")]
+
+
+def test_best_split_is_the_minimum_symmetric_difference_boundary():
+    """_best_split on a hand-made L-shaped band: two stacked rectangles of different u extent; the split must be at the
+    step in the outline (v = 3), not at the midpoint of the needs (die row up to 1, landing line at 5: midpoint 3.0 here
+    too, so a second band with the step at v = 4 checks that the copper, not the midpoint, decides)."""
+    from shapely.geometry import box as bx
+    rules = DesignRules()
+    anchor = [(2.0, 0.5, (0.0, 1.0)), (2.0, 5.0, (5.0, 5.0))]
+    for step in (3.0, 4.0, 2.0):
+        poly = bx(0, 0, 10e-3, step * 1e-3).union(bx(0, step * 1e-3, 6e-3, 7e-3))
+        assert W._best_split(poly, _SEQ_DIE_LAND, [[0.0, 7.0], [0.0, 7.0]], 0, anchor, rules) == pytest.approx(step)
+
+
+def test_best_split_ties_on_a_rectangular_band_go_to_the_midpoint_of_the_needs():
+    """T0293 review (blocker): a rectangular merged band has the same copper for every boundary.  The tie must not go to
+    the lowest grid line (which put the landing line outside its own slot) but, among the boundaries at which each slot
+    holds its need with its margin, to the one nearest the midpoint of the needs (then the lower)."""
+    from shapely.geometry import box as bx
+    rules = DesignRules()  # die edge margin 1.0 mm, landing margin 0.3 mm
+    poly = bx(0, 16.5e-3, 50e-3, 30.5e-3)  # the review's example: v from 16.5 to 30.5 mm, landing line 17.5 mm
+    ivs = [[16.5, 30.5], [16.5, 30.5]]
+    for row_v0, want in ((21.5, 19.5), (22.0, 19.5), (20.0, 18.5), (18.5, 18.0)):
+        # landing slot below (need: the landing line), LS die slot above (need: the die row from row_v0)
+        anchor = [(20.0, 17.5, (17.5, 17.5)), (10.0, row_v0 + 3.0, (row_v0, row_v0 + 6.0))]
+        s = W._best_split(poly, _SEQ_LAND_DIE, ivs, 0, anchor, rules)
+        assert s == pytest.approx(want), row_v0
+        assert 17.5 + rules.wire_landing_margin * 1e3 <= s + 1e-9  # the landing line is inside its slot by the margin
+        if 18.0 <= row_v0 - rules.die_edge_margin * 1e3:  # a grid line exists that meets both margins
+            assert s <= row_v0 - rules.die_edge_margin * 1e3 + 1e-9
+    # the needs leave no grid line with the margins: between the needs themselves (17.5 < s <= 18.0; s = 17.5 would put
+    # the landing line on the boundary)
+    anchor = [(20.0, 17.5, (17.5, 17.5)), (10.0, 21.0, (18.0, 24.0))]
+    assert W._best_split(poly, _SEQ_LAND_DIE, ivs, 0, anchor, rules) == pytest.approx(18.0)
+    # mirrored order (die slot below, landing slot above): the same rule
+    anchor = [(10.0, 20.0, (17.0, 23.0)), (20.0, 28.0, (28.0, 28.0))]
+    assert W._best_split(poly, _SEQ_DIE_LAND, ivs, 0, anchor, rules) == pytest.approx(25.5)
+
+
+def _rectangular_merged(spec, ref):
+    """``ref`` with the two touching PHASE slots given the same u-extent (the wider one's, else the narrower one's), so
+    that the merged band is a rectangle; (slot index, params, layout) or None if neither variant is DRC-clean."""
+    p = D.params_of(ref)
+    seq = p.sequence()
+    i = next(i for i in range(3) if seq[i][0] == seq[i + 1][0] == "PHASE" and p.slots[i + 1][1] == p.slots[i][3])
+    a, b = p.slots[i], p.slots[i + 1]
+    for u0, u1 in ((min(a[0], b[0]), max(a[2], b[2])), (max(a[0], b[0]), min(a[2], b[2]))):
+        sl = list(p.slots)
+        sl[i], sl[i + 1] = (u0, a[1], u1, a[3]), (u0, b[1], u1, b[3])
+        q = dataclasses.replace(p, slots=tuple(sl))
+        try:
+            lay = D.build(spec, q)
+        except ValueError:
+            continue
+        if not check(lay, spec.rules):
+            return i, q, lay
+    return None
+
+
+def test_rectangular_merged_bands_keep_each_slots_contents():
+    """T0293 review (blocker): rectangular merged PHASE bands (both slots with the same u-extent; the generator's sampler
+    never draws them, so they are made from merged generator layouts).  The fit-mode twin has the reference copper, the
+    label 'merged', no overlapping slots, each slot holds its die row / landing line with the rule margins, the boundary
+    is the grid line nearest the midpoint of the needs (independently computed here), and degradation from the twin
+    reaches the target.  Seeds 500 + 10 n + k, the first two merged layouts per (n, k) that have a DRC-clean variant."""
+    n_cases = n_same = 0
+    for n in (2, 3, 4):
+        for k in (1, 2, 3):
+            spec = D.halfbridge_housing_spec(n, wires_per_die=k)
+            rules = spec.rules
+            dv = spec.die.h * 1e3  # orientation x: v = y
+            got = 0
+            for ref in D.generate(spec, 40, seed=500 + 10 * n + k):
+                if got == 2 or not D.topology_of(ref).endswith("/merged"):
+                    continue
+                made = _rectangular_merged(spec, ref)
+                if made is None:
+                    continue
+                got += 1
+                i, q, lay = made
+                tw, p, rec = W.twin(dataclasses.replace(lay, family="anonymous"), spec, with_l1=False)
+                assert rec["mode"] in ("fit", "fit+signal_feet") and rec["topology"] == D.topology_of(lay)
+                assert rec["symdiff_area_total_mm2"] < 1e-6 and _overlapping_slots(p) == 0.0
+                assert p.sequence() == q.sequence()
+                needs, margins = [], []
+                for j in (i, i + 1):
+                    _, role, sw = p.sequence()[j]
+                    s = p.slots[j]
+                    if role == "land":
+                        v = p.land[0 if sw == "HS" else 1]
+                        m = rules.wire_landing_margin * 1e3
+                        assert s[1] + m - 1e-9 <= v <= s[3] - m + 1e-9  # the landing line inside its own slot
+                        needs.append((v, v))
+                    else:
+                        v0 = p.rows[0 if sw == "HS" else 1][1]
+                        m = rules.die_edge_margin * 1e3
+                        assert s[1] + m - 1e-9 <= v0 and v0 + dv <= s[3] - m + 1e-9  # the die row inside its own slot
+                        needs.append((v0, v0 + dv))
+                    margins.append(m)
+                lo_ok, hi_ok = needs[0][1] + margins[0], needs[1][0] - margins[1]
+                grid = [x * 0.5 for x in range(int(np.ceil(lo_ok / 0.5 - 1e-9)), int(np.floor(hi_ok / 0.5 + 1e-9)) + 1)]
+                mid = 0.5 * (needs[0][1] + needs[1][0])
+                assert p.slots[i][3] == min(grid, key=lambda x: (abs(x - mid), x))
+                n_same += p.slots[i][3] == q.slots[i][3]
+                _, drec = W.degrade(tw, spec)
+                assert drec["l1_ratio"] >= _ratio_target()
+                n_cases += 1
+    print(f"rectangular merged bands: {n_cases}, generator boundary recovered in {n_same}")
+    assert n_cases >= 15
+
+
+def _spec_with_landing_margin(spec, m):
+    return dataclasses.replace(spec, rules=dataclasses.replace(spec.rules, wire_landing_margin=m))
+
+
+def test_centre_landing_skips_a_band_that_no_shift_admits_and_records_why():
+    """T0291 finding 1: with a 0.5 mm landing margin no shift of the landing point gives a minimum-width band; the move
+    must not leave the band off the wires' landing point."""
+    spec = D.halfbridge_housing_spec(3, wires_per_die=2)
+    ref = D.generate(spec, 6, seed=5)[0]
+    spec_m = _spec_with_landing_margin(spec, 0.5e-3)
+    p, widths = W._narrow_landing(D.params_of(ref), spec_m, centre=True)
+    assert widths and all("skipped" in v and v["landing_shift_mm"] == 0.0 for v in widths.values())
+    q = D.params_of(ref)
+    assert p.feet == q.feet and p.slots == q.slots  # nothing moved, so every wire still lands on its band
+    # the unchanged move is not applied by degrade() and is listed in `skipped`
+    _, rec = W.degrade(ref, spec_m, with_l1=False)
+    assert "centre_landing" not in rec["moves"]
+
+
+def test_narrow_landing_raises_degrade_error_not_type_error_when_no_width_fits():
+    spec = D.halfbridge_housing_spec(3, wires_per_die=2)
+    ref = D.generate(spec, 2, seed=5)[0]
+    with pytest.raises(W.DegradeError):
+        W._narrow_landing(D.params_of(ref), _spec_with_landing_margin(spec, 8e-3), centre=False)
+
+
+def test_widths_report_only_the_landing_move_that_was_applied():
+    """T0291 finding 3(c): rec['widths'] is empty when neither landing move was applied."""
+    spec = D.halfbridge_housing_spec(3, wires_per_die=2)
+    ref = D.generate(spec, 2, seed=5)[0]
+    _, rec = W.degrade(ref, spec, with_l1=False)
+    assert rec["moves"] == ["narrow_landing"] and set(rec["widths"]) and rec["skipped"] == []
+    # a spread-only result (no landing move applied) reports no widths: the 2 mm rule leaves this layout's bands at the minimum
+    spec2 = D.halfbridge_housing_spec(4, rules=DesignRules(min_trace_width=2e-3), wires_per_die=2)
+    ref2 = D.generate(spec2, 4, seed=942, max_failures=3000)[1]
+    _, rec2 = W.degrade(ref2, spec2)
+    landing = {"narrow_landing", "centre_landing"} & set(rec2["moves"])
+    assert (rec2["widths"] == {}) == (not landing)
+    assert set(rec2["widths_by_move"]) == landing
+    # both landing moves applied (n = 3, k = 1, seed 931, index 6): move 2's widths start where move 1 left the bands, and
+    # the widths reported are those of D's landing slots
+    spec3 = D.halfbridge_housing_spec(3, wires_per_die=1)
+    ref3 = D.generate(spec3, 25, seed=931, max_failures=3000)[6]
+    d3, rec3 = W.degrade(ref3, spec3)
+    wb = rec3["widths_by_move"]
+    assert set(wb) == {"narrow_landing", "centre_landing"} and rec3["widths"] == wb["centre_landing"]
+    for key, v in wb["centre_landing"].items():
+        assert v["before_mm"] == wb["narrow_landing"][key]["after_mm"]
+    p3 = D.params_of(d3)
+    for i, (net, role, sw) in enumerate(p3.sequence()):
+        if role == "land":
+            assert p3.slots[i][3] - p3.slots[i][1] == rec3["widths"][f"{sw}_landing_{net}"]["after_mm"]
+
+
+def test_walk_steps_are_on_the_grid_valid_and_listed():
+    """The walk of T0293 (2 mm rule, n = 2, k = 1, seed 2017 index 7): every step is a +-0.5 mm change of one parameter,
+    the record lists every move, the walk raised L1 at every step and the result is DRC-clean and deterministic."""
+    spec = D.halfbridge_housing_spec(2, rules=DesignRules(min_trace_width=2e-3), wires_per_die=1)
+    ref = D.generate(spec, 8, seed=2017, max_failures=3000)[7]
+    d, rec = W.degrade(ref, spec)
+    assert check(d, spec.rules) == [] and rec["l1_ratio"] >= _ratio_target()
+    steps = rec["walk"]["steps"]
+    assert steps and all(abs(abs(s["delta_mm"]) - 0.5) < 1e-12 and s["parameter"] in D.Params.NAMES for s in steps)
+    ratios = [s["l1_ratio"] for s in steps]
+    assert ratios == sorted(ratios) and len(set(ratios)) == len(ratios)
+    assert rec["moves"][-len(steps):] == [f"walk[{s['parameter']}{s['delta_mm']:+g}mm]" for s in steps]
+    assert rec["walk"]["terminal_state"] == "target reached" and rec["walk"]["terminal"] == W.WALK_TARGET
+    assert rec["walk"]["l1_ratio"] == rec["l1_ratio"] == ratios[-1]
+    assert rec["walk"]["start_l1_ratio"] < _ratio_target() <= rec["l1_ratio"]
+    d2, rec2 = W.degrade(ref, spec)
+    assert d2.fingerprint() == d.fingerprint() and rec2 == rec
+
+
+def test_degrade_error_carries_the_walk_terminal_state():
+    """(2, 1, 1) of the 2 mm stress set: the walk ends at a local maximum; the terminal ratio is locked (as in
+    tests/regression/test_degrade_walk_stress.py) and the record says where the walk started and stopped."""
+    spec = D.halfbridge_housing_spec(2, rules=DesignRules(min_trace_width=2e-3), wires_per_die=1)
+    ref = D.generate(spec, 8, seed=2017, max_failures=3000)[1]
+    with pytest.raises(W.DegradeError) as ei:
+        W.degrade(ref, spec)
+    wk = ei.value.record["walk"]
+    assert wk["terminal"] == W.WALK_LOCAL_MAX and wk["terminal_state"].startswith("local maximum")
+    assert wk["terminal_state"] in str(ei.value)
+    assert wk["l1_ratio"] == pytest.approx(1.3382, abs=1e-3) and wk["l1_ratio"] < _ratio_target()
+    assert wk["steps"] and wk["l1_ratio"] == wk["steps"][-1]["l1_ratio"] and wk["start_l1_ratio"] < wk["l1_ratio"]
+
+
+def test_walk_ratio_is_stable_under_l1_mesh_refinement():
+    """T0293 review: the walk climbs on the L1 screen that judges it.  On the walk case of
+    test_walk_steps_are_on_the_grid_valid_and_listed the ratio stays within 0.5 % under refinement of the L1 mesh (4, 2,
+    1 mm: 1.3940, 1.3903, 1.3919).  A screen-robustness check only; E008's L2 ratio is the evidence."""
+    from moduleforge.physics.peec import loop_inductance
+    spec = D.halfbridge_housing_spec(2, rules=DesignRules(min_trace_width=2e-3), wires_per_die=1)
+    ref = D.generate(spec, 8, seed=2017, max_failures=3000)[7]
+    d, rec = W.degrade(ref, spec)
+    assert rec["walk"]["terminal"] == W.WALK_TARGET and rec["walk"]["steps"]
+    ratios = [loop_inductance(d, [20e6], hmax=h).L_H[0] / loop_inductance(ref, [20e6], hmax=h).L_H[0]
+              for h in (4e-3, 2e-3, 1e-3)]
+    assert ratios[0] == pytest.approx(rec["l1_ratio"], rel=1e-12)
+    assert ratios == pytest.approx([1.3940, 1.3903, 1.3919], abs=1e-3)
+    assert max(ratios) / min(ratios) - 1 < 0.005
