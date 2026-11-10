@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T17:14:45+00:00 from repository state — do not edit_
+_generated 2026-11-10T17:15:24+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 256, failed: 3, review: 1, running: 1, todo: 2
 - T0301 `running` critic/review: Review T0300 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T14:14:27+00:00 run_finished {"run": "T0298-builder-20261110T052743-dea1", "status": "completed", "cost": 0.548323, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T14:34:31+00:00 verified {"task": "T0298"}
 - 2026-11-10T14:34:36+00:00 run_started {"run": "T0299-critic-20261110T063436-bbdf", "task": "T0299", "role": "critic", "session": "5c74bcf3-2022-4ffb-8a90-fbeba6e0e079"}
 - 2026-11-10T14:35:10+00:00 sleep_detected {"gap_s": 1244, "runs_extended": 1}
@@ -50,3 +49,4 @@ cancelled: 38, done: 256, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-10T16:49:45+00:00 run_finished {"run": "T0300-builder-20261110T072025-dabc", "status": "completed", "cost": 0.556406, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T17:14:37+00:00 verified {"task": "T0300"}
 - 2026-11-10T17:14:45+00:00 run_started {"run": "T0301-critic-20261110T091445-3349", "task": "T0301", "role": "critic", "session": "07c88e2d-c7a7-4ff3-b51e-89a46bd18cde"}
+- 2026-11-10T17:15:19+00:00 sleep_detected {"gap_s": 1535, "runs_extended": 1}
