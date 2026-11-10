@@ -4,7 +4,7 @@ title: 'Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merg
   DRC (review T0286)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0259
 description: "Follow-up to T0259, from review T0286 (project/reviews/T0259/T0286.json; read it first).\
@@ -69,4 +69,73 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "All four items are done. Degradation now reaches its target on the 54-layout population and\
+    \ on Case 4. On a stricter 2 mm copper rule it still raises DegradeError on 45 of 72 layouts (see\
+    \ concerns). All DoD commands pass and the work is committed.\n\n1. **Degradation.** DEGRADE_MARGIN\
+    \ is now 0.11. The derivation is in the docstring: the L1 ratio can overstate the L2 ratio by up to\
+    \ 0.95/0.86 − 1 = 10.5 %.\n   - `degrade()` applies an ordered list of moves and stops at the first\
+    \ one that reaches L1(D)/L1(W) ≥ 1.25·1.11 = 1.3875:\n     1. Narrow the landing slots to the rule's\
+    \ minimum width.\n     2. Centre the wire landing point in a minimum-width band. It moves by at most\
+    \ 0.25 mm and fixes bands that narrowing alone leaves 0.5 mm too wide.\n     3. Spread moves: the\
+    \ pairs of slots move apart, or "
+  report:
+    status: completed
+    summary: "All four items are done. Degradation now reaches its target on the 54-layout population\
+      \ and on Case 4. On a stricter 2 mm copper rule it still raises DegradeError on 45 of 72 layouts\
+      \ (see concerns). All DoD commands pass and the work is committed.\n\n1. **Degradation.** DEGRADE_MARGIN\
+      \ is now 0.11. The derivation is in the docstring: the L1 ratio can overstate the L2 ratio by up\
+      \ to 0.95/0.86 − 1 = 10.5 %.\n   - `degrade()` applies an ordered list of moves and stops at the\
+      \ first one that reaches L1(D)/L1(W) ≥ 1.25·1.11 = 1.3875:\n     1. Narrow the landing slots to\
+      \ the rule's minimum width.\n     2. Centre the wire landing point in a minimum-width band. It moves\
+      \ by at most 0.25 mm and fixes bands that narrowing alone leaves 0.5 mm too wide.\n     3. Spread\
+      \ moves: the pairs of slots move apart, or a landing band moves away from its die row, in 0.5 mm\
+      \ steps. Each step must stay DRC-clean.\n   - DegradeError is raised only when none of these reaches\
+      \ the target.\n   - With `with_l1=False` only the first feasible narrowing move is applied, since\
+      \ nothing says when to stop. This is documented in the docstring.\n   - Population (n = 2, 3, 4\
+      \ dies × 1, 2, 3 wires per die × 6 seeds = 54 layouts): L1 ratio min 1.415, median 1.887, max 3.328.\
+      \ Narrowing alone suffices on all 54, and every layout is DRC-clean. Case 4 gives 1.421 against\
+      \ the target 1.388.\n   - The test uses my own seeds. The reviewer's seeds are unknown, so it did\
+      \ not reproduce their two failures directly.\n   - Wider scratch sample: 225 default-rule layouts\
+      \ all reach the target; centring was needed on 2 of them, and both are pinned by a test.\n2. **Merged\
+      \ PHASE bands.**\n   - The landing slot is now probed at the mean wire landing u, as the docstring\
+      \ says.\n   - Overlapping same-net intervals are split: at the inner edge when one is nested in\
+      \ the other, otherwise at the grid line between what each slot needs.\n   - Tests on merged generator\
+      \ layouts, in x and in y (y via a transposed spec): the label is 'merged', no slots overlap, the\
+      \ geometry is recovered (symdiff < 1e-6, dies exact, wires < 0.13 mm), and degrade reaches the target.\n\
+      3. **Exact-mode shortcut.** It now runs `check(lay, spec.rules)` and raises TwinError on violations.\
+      \ A test covers it.\n4. **Docstring and evidence.** The module docstring is rewritten to match the\
+      \ code. It also holds the exploration: spread moves alone add 0–9 % to the ratio, narrowing the\
+      \ die slots adds 0.1–2 %, and trimming slot ends adds 0 %. Both of those were dropped. I put it\
+      \ there because `research/` is outside my write scope.\n\nNew tests cover merged bands (x and y),\
+      \ exact-mode DRC, the 54-layout population plus determinism, the margin arithmetic, the centring\
+      \ move, the spread move, and DegradeError."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - With a stricter 2 mm minimum copper width, a scratch test of mine, 45 of 72 housing layouts end
+      in DegradeError after all moves (ratios 1.0–1.38). The twin's landing bands are already at the rule
+      minimum, so there is nothing to remove. Spread moves add only about 5 %. A judged reference in that
+      situation would still make F1(b), and so E008, INVALID. The docstring states this limit. The 2 mm
+      rule is my own stress setting, not a judged reference's rule.
+    - The fit twin's slot/column decomposition is not unique. On merged layouts the geometry matches (symdiff
+      0) but the parameters differ from the generator's, so the degraded L1 ratio differs somewhat from
+      the exact twin's. In the samples I ran it was 2.39 vs 2.59 and 2.73 vs 2.88, both well above target.
+      The earlier 2.42 vs 1.85 discrepancy is gone.
+    - The exploration notes are in the module docstring, not in research/notes/o003-degradation-rule.md,
+      because research/ is outside my write scope.
+    - The full `-m 'not slow' tests/unit` run takes about 7 minutes.
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
