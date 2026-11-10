@@ -1913,3 +1913,5 @@
 {"ts": "2026-11-09T23:38:11+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0287 (degradation robustness, review T0286)"}
 {"ts": "2026-11-10T01:25:18+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0154", "kind": "protected_change", "subject": "T0259: merge needs founder approval"}
 {"ts": "2026-11-10T01:27:15+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0154", "status": "approved", "note": "Merge T0259: twin and degradation rule, Case 4 twin within 0.17 % (L1); T0286 accepts with caveats; degradation that always reaches 1.25 (1 + margin >= 0.11), the merged-band split and the exact-mode DRC check follow in T0287 before E008's freeze.", "by": "human"}
+{"ts": "2026-11-10T01:29:38+00:00", "event": "merged", "actor": "orchestrator", "task": "T0274"}
+{"ts": "2026-11-10T01:29:42+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0285-builder-20261109T172942-6001", "task": "T0285", "role": "builder", "session": "8d95525f-9778-46c7-83f8-64ad52b37bc4"}
