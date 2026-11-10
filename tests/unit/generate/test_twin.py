@@ -359,9 +359,19 @@ def test_equal_interval_merged_bands_recover_the_generators_slots(monkeypatch):
     """T0291 finding 0: merged PHASE bands where both probes see the same v-interval are split on the 0.5 mm grid at the
     boundary that minimises the symmetric difference, which is the generator's slot boundary (n = 4, k = 3, seed 7043 had
     5.25 and 7.0 mm^2 of PHASE copper off with the midpoint)."""
-    calls = []
-    orig = W._best_split
-    monkeypatch.setattr(W, "_best_split", lambda *a, **k: calls.append(1) or orig(*a, **k))
+    from shapely.geometry import Polygon
+    calls = []  # (boundary chosen, boundary with the scored copper emptied: the midpoint fallback)
+    orig, band = W._best_split, W._band_copper
+
+    def spy(*a, **k):
+        x = orig(*a, **k)
+        W._band_copper = lambda *b, **kk: Polygon()
+        try:
+            calls.append((x, orig(*a, **k)))
+        finally:
+            W._band_copper = band
+        return x
+    monkeypatch.setattr(W, "_best_split", spy)
     n_merged = 0
     for n, k in ((4, 3), (3, 2), (2, 1)):
         spec = D.halfbridge_housing_spec(n, wires_per_die=k)
@@ -376,6 +386,8 @@ def test_equal_interval_merged_bands_recover_the_generators_slots(monkeypatch):
             assert [(s[1], s[3]) for s in p.slots] == [(s[1], s[3]) for s in D.params_of(ref).slots]
             assert _overlapping_slots(p) == 0.0
     assert n_merged >= 5 and calls, "the equal-interval branch was never exercised"
+    # T0299 finding 2: on some of these the midpoint fallback gives another boundary, so the minimum decides
+    assert any(abs(x - m) > 1e-9 for x, m in calls), calls
 
 
 _SEQ_DIE_LAND = [("PHASE", "die", "LS"), ("PHASE", "land", "HS")]
@@ -385,10 +397,11 @@ _SEQ_LAND_DIE = [("PHASE", "land", "HS"), ("PHASE", "die", "LS")]
 def test_best_split_is_the_minimum_symmetric_difference_boundary():
     """_best_split on a hand-made L-shaped band: two stacked rectangles of different u extent; the split must be at the
     step in the outline (v = 3), not at the midpoint of the needs (die row up to 1, landing line at 5: midpoint 3.0 here
-    too, so a second band with the step at v = 4 checks that the copper, not the midpoint, decides)."""
+    too, so a second band with the step at v = 4 checks that the copper, not the midpoint, decides).  The landing line is
+    at 6 mm (midpoint of the needs 3.5): none of the steps 2, 3, 4 is the midpoint (T0299 finding 2)."""
     from shapely.geometry import box as bx
     rules = DesignRules()
-    anchor = [(2.0, 0.5, (0.0, 1.0)), (2.0, 5.0, (5.0, 5.0))]
+    anchor = [(2.0, 0.5, (0.0, 1.0)), (2.0, 6.0, (6.0, 6.0))]
     for step in (3.0, 4.0, 2.0):
         poly = bx(0, 0, 10e-3, step * 1e-3).union(bx(0, step * 1e-3, 6e-3, 7e-3))
         assert W._best_split(poly, _SEQ_DIE_LAND, [[0.0, 7.0], [0.0, 7.0]], 0, anchor, rules) == pytest.approx(step)
@@ -594,21 +607,136 @@ def test_walk_ratio_is_stable_under_l1_mesh_refinement():
     assert max(ratios) / min(ratios) - 1 < 0.005
 
 
-def test_best_split_ignores_attached_column_copper_outside_the_band(  # T0297 finding 0
-):
-    """An L-shaped PHASE band (die slot u 0-40 x v 10-13, landing slot u 0-30 x v 13-20, true boundary 13) with a column
-    at u 40.. spanning v 0-30: the column is outside the band's own v-range 10-20 only partly, and for widths of 10 mm and
-    more (>= the 10 mm gap beside the narrower slot) it used to pull the minimum off the step.  Widths narrower than,
-    equal to and wider than the gap must all recover 13."""
+def _l_band(*extra):
+    """L-shaped PHASE band: die slot u 0-40 x v 10-13, landing slot u 0-30 x v 13-20 (true boundary 13 mm), plus the
+    extra boxes ((u0, u1, v0, v1) in mm)."""
     from shapely.geometry import box as bx
-    rules = DesignRules()
-    anchor = [(20.0, 11.0, (10.0, 11.5)), (15.0, 15.0, (15.0, 15.0))]
-    ivs = [[10.0, 20.0], [10.0, 20.0]]
+    p = bx(0, 10e-3, 40e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3))
+    for u0, u1, v0, v1 in extra:
+        p = p.union(bx(u0 * 1e-3, v0 * 1e-3, u1 * 1e-3, v1 * 1e-3))
+    return p
+
+
+# die row needs 10-11.5 (probe u 20), landing line at 18 (probe u 15): the midpoint of the needs is 14.75 (grid 14.5),
+# not the boundary 13, so a result of 13 is decided by the copper, not by the tie rule
+_L_ANCHOR = [(20.0, 11.0, (10.0, 11.5)), (15.0, 18.0, (18.0, 18.0))]
+_L_MIDPOINT_PICK = 14.5
+
+
+def _l_split(poly):
+    return W._best_split(poly, _SEQ_DIE_LAND, [[10.0, 20.0], [10.0, 20.0]], 0, _L_ANCHOR, DesignRules())
+
+
+def _t0293_rule(poly, lo, hi, probes):
+    """The T0293 scoring (whole net copper, nothing removed), to show which cases a test discriminates."""
+    return poly
+
+
+def _t0298_rule(poly, lo, hi, probes):
+    """The T0298 rule: every u-range where the copper crosses v = lo - 0.25 or hi + 0.25 mm removed over [lo, hi]."""
+    from shapely.geometry import LineString
+    from shapely.geometry import box as bx
+    from shapely.ops import unary_union
+    strip = poly.intersection(bx(-1e6, lo * 1e-3, 1e6, hi * 1e-3))
+    cols = []
+    for v in (lo - 0.25, hi + 0.25):
+        ln = poly.intersection(LineString([(-1.0, v * 1e-3), (1.0, v * 1e-3)]))
+        for g in ([ln] if ln.geom_type == "LineString" else list(getattr(ln, "geoms", []))):
+            if g.geom_type == "LineString" and g.bounds[2] - g.bounds[0] > 1e-9:
+                cols.append(bx(g.bounds[0], lo * 1e-3, g.bounds[2], hi * 1e-3))
+    return strip.difference(unary_union(cols)) if cols else strip
+
+
+def _l_split_under(monkeypatch, rule, poly):
+    with monkeypatch.context() as m:
+        m.setattr(W, "_band_copper", rule)
+        return _l_split(poly)
+
+
+def test_best_split_ignores_attached_column_copper_outside_the_band(monkeypatch):  # T0297 finding 0
+    """The L-band with a column at u 40.. spanning v 0-30: for widths of 10 mm and more (>= the 10 mm gap beside the
+    narrower slot) the T0293 scoring pulled the minimum off the step.  Widths narrower than, equal to and wider than the
+    gap all recover 13 (needs' midpoint 14.75); for 12 mm and wider the T0293 scoring does not, so the case discriminates."""
     for w in (0, 5, 8, 10, 12, 15, 25):
-        poly = bx(0, 10e-3, 40e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3)).union(bx(40e-3, 0, (40 + w) * 1e-3, 30e-3)) \
-            if w else bx(0, 10e-3, 40e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3))
-        got = W._best_split(poly, _SEQ_DIE_LAND, [list(x) for x in ivs], 0, anchor, rules)
-        assert got == pytest.approx(13.0), w
+        poly = _l_band((40, 40 + w, 0, 30)) if w else _l_band()
+        assert _l_split(poly) == pytest.approx(13.0), w
+        if w >= 12:
+            assert _l_split_under(monkeypatch, _t0293_rule, poly) != pytest.approx(13.0), w
+
+
+# (u0, u1, v0, v1) of necks on which the T0298 rule loses the step (it notches both slots and every candidate ties):
+# interior necks from below and from above, and L-junctions flush with a slot's end (T0300 review, major)
+_NECKS = [(20, 25, 0, 10), (25, 35, 0, 10), (10, 30, 0, 10), (22, 23, 0, 10),  # from below, inside the u-range
+          (30, 40, 0, 10), (28, 40, 0, 10),  # from below, flush with the die slot's end (beside the landing slot)
+          (20, 25, 20, 30), (10, 30, 20, 30), (22, 23, 20, 30),  # from above, inside the landing slot's u-range
+          (25, 30, 20, 30)]  # from above, flush with the landing slot's end
+
+
+@pytest.mark.parametrize("neck", _NECKS)
+def test_best_split_keeps_t_junction_necks_from_below_and_above(monkeypatch, neck):  # T0299 finding 0
+    """A column joining the band's lower or upper edge at any u (a T-junction neck inside the slots' u-range, or an
+    L-junction flush with a slot's end) is outside the band's v-range and does not change the band copper: the step at
+    13 is recovered.  On every one of these cases the T0298 rule gives the tie rule's 14.5 instead."""
+    assert _l_split(_l_band(neck)) == pytest.approx(13.0)
+    assert _l_split_under(monkeypatch, _t0298_rule, _l_band(neck)) == pytest.approx(_L_MIDPOINT_PICK)
+
+
+def test_best_split_neck_and_side_columns_together():
+    assert _l_split(_l_band((20, 25, 0, 10), (40, 52, 0, 30), (-8, 0, 0, 30))) == pytest.approx(13.0)
+    assert _l_split(_l_band((30, 40, 0, 10), (40, 55, 0, 30), (25, 30, 20, 30))) == pytest.approx(13.0)
+
+
+@pytest.mark.parametrize("extra", [
+    ((40, 52, 0, 30), (52, 53, 15, 15.5)),  # a 1 x 0.5 mm nub on the column's far side
+    ((40, 52, 0, 30), (40, 54, 10, 20)),  # the column 2 mm wider inside the band than at the probe lines
+    ((40, 52, 0, 30), (55, 58, 12, 18)),  # a disconnected island of the net beyond the column, inside the band
+    ((40, 52, 0, 30), (55, 58, 10, 20)),  # the same island spanning the band's whole v-range
+])
+def test_best_split_side_column_with_copper_beyond_it(monkeypatch, extra):  # T0300 review, blocker
+    """A side column 12 mm wide (wider than the 10 mm gap) with strip copper beyond it: still the step, where the
+    T0293 scoring is pulled off it."""
+    assert _l_split(_l_band(*extra)) == pytest.approx(13.0)
+    assert _l_split_under(monkeypatch, _t0293_rule, _l_band(*extra)) != pytest.approx(13.0)
+
+
+@pytest.mark.parametrize("col", [(40, 45, 10, 20), (40, 52, 10, 20), (40, 55, 10, 20), (40, 65, 10, 20),
+                                 (40, 65, 10, 18), (40, 65, 12, 20), (35, 60, 11, 19), (40, 55, 0, 15)])
+def test_best_split_side_column_inside_the_band_v_range(monkeypatch, col):  # T0299 finding 1
+    """Side columns that cross neither end of the band (inside its v-range, full or partial height), or cross one end
+    and stop inside the band: the part beside the landing slot is not connected to the slots' common u-range along its
+    own horizontal line and is not scored, so every width gives the step.  Wide ones pull the T0293 scoring off it."""
+    assert _l_split(_l_band(col)) == pytest.approx(13.0)
+    if col[1] - col[0] >= 15:
+        assert _l_split_under(monkeypatch, _t0293_rule, _l_band(col)) != pytest.approx(13.0)
+
+
+def test_best_split_column_that_fills_the_step_ties():
+    """Stated restriction (``_best_split`` docstring): a column at u 30-45 touches the landing slot's end and covers the
+    die slot's end, so the copper of the band is the rectangle u 0-45 x v 10-20 and has no step; every candidate ties
+    and the tie rule picks the grid line nearest the needs' midpoint (14.5).  A column at u 35-50 leaves a 5 mm step and
+    gives 13."""
+    assert _l_split(_l_band((30, 45, 0, 30))) == pytest.approx(_L_MIDPOINT_PICK)
+    assert _l_split(_l_band((35, 50, 0, 30))) == pytest.approx(13.0)
+
+
+def test_band_copper_is_the_slots_copper():
+    """``_band_copper`` directly: the L-band with a column 15 mm wide attached to the die slot (u 40-55, v 0-30), a neck
+    from below (u 20-25) and a nub: the kept copper is the L-band plus the column's part beside the die slot (v 10-13)."""
+    from shapely.geometry import box as bx
+    poly = _l_band((40, 55, 0, 30), (20, 25, 0, 10), (55, 56, 15, 16))
+    got = W._band_copper(poly, 10.0, 20.0, [a[:2] for a in _L_ANCHOR])
+    want = bx(0, 10e-3, 55e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3))
+    assert got.symmetric_difference(want).area < 1e-15
+    assert got.area == pytest.approx(55 * 3e-6 + 30 * 7e-6, rel=1e-12)
+
+
+def test_best_split_is_decided_by_the_scored_copper_not_the_midpoint(monkeypatch):  # T0299 finding 2
+    """Mutation check: with the scored copper replaced by an empty polygon every candidate ties and the midpoint rule
+    decides (14.5 for the needs here); the real copper gives 13, so the tests above prove the minimum."""
+    from shapely.geometry import Polygon
+    poly = _l_band((20, 25, 0, 10), (40, 52, 0, 30))
+    assert _l_split(poly) == pytest.approx(13.0)
+    assert _l_split_under(monkeypatch, lambda *a, **k: Polygon(), poly) == pytest.approx(_L_MIDPOINT_PICK)
 
 
 def test_degrade_records_a_stopped_spread_family_apart_from_skipped(monkeypatch):

@@ -23,8 +23,10 @@ Construction (all lengths mm in the local frame u / v of the orientation, see ``
      interval is nested in the other with a common edge, at the inner edge; if both probes see the same interval (or the
      intervals overlap partly), by ``_best_split``: among the 0.5 mm grid lines strictly inside the union at which each slot
      still holds what it carries (its die row with ``rules.die_edge_margin``, its landing line with
-     ``rules.wire_landing_margin``), the one that minimises the symmetric difference of the PHASE copper with the two slot
-     rectangles (each with the chord at its own mid-v); ties: nearest the midpoint between the two needs, then lower.
+     ``rules.wire_landing_margin``), the one that minimises the symmetric difference of the band's own copper (the PHASE
+     copper of the band's v-range connected along its horizontal line to the two probe chords' common u-range,
+     ``_band_copper``) with the two slot rectangles (each with the chord at its own mid-v); ties: nearest the midpoint
+     between the two needs, then lower.
      When the two slots have different u-extents (an L-shaped band) the minimum is unique and is the generator's boundary.
      When they have the same u-extent (a rectangular band, the usual DBC pad that carries one switch's dies and receives
      the other's wires) every boundary gives the same copper, so the copper does not determine it; the midpoint rule then
@@ -97,7 +99,8 @@ stop and the walk is not run: the first feasible move of the order 1, 2, 3 (spre
 applied, and the others are not (a move that is infeasible is skipped for the next one; if none is feasible
 ``DegradeError``).  The record lists the moves, the ones skipped and why, and the landing-band widths of each landing move
 actually applied, measured on the state it was applied to (``widths_by_move``; ``widths`` is the last of them, empty when
-none was applied); see ``degrade``.
+none was applied); see ``degrade``.  A spread family that was applied up to step q-1 because step q >= 2 failed is listed
+under ``stopped``, not ``skipped`` (the two lists are disjoint by family name).
 
 DEGRADE_MARGIN = 0.11.  C002 / E002 found L1 biased low by 5-14 % relative to the converged L2 with family- and die-count
 dependent structure.  D and its twin share the family, housing, die count and wires, so the bias largely cancels in the
@@ -136,7 +139,7 @@ import math
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from shapely.geometry import LineString, Point, box
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from moduleforge.drc import check
@@ -292,9 +295,16 @@ def _best_split(poly, seq, ivs, i: int, anchor, rules) -> float:
     the needs themselves (a landing line strictly inside its slot); if that is empty too, every grid line in ``(lo, hi)``.
     Among the candidates, the boundary that minimises the symmetric difference between the band's own copper and the
     union of the two slot rectangles (each with the horizontal chord of the copper at its own mid-v).  The band's own
-    copper is ``poly`` clipped to the strip ``lo <= v <= hi`` (all u) without the u-ranges where the net's copper
-    continues past the strip's lower or upper edge (``_band_copper``): an attached column spanning the band's end in v is
-    neither scored nor part of a slot's chord, so a column of any width does not move the minimum (T0297 finding 0).  Ties (within
+    copper (``_band_copper``) is ``poly`` clipped to the strip ``lo <= v <= hi`` (all u), keeping only the copper that is
+    connected, along its own horizontal line, to the common u-range of the two slots' probe chords.  Copper outside the
+    strip is never scored, so a column or neck joining the band's lower or upper edge at any u (inside the slots' u-range,
+    flush with a slot's end, beside the slots) leaves the band as it is (T0299 finding 0).  A side column, whether it
+    spans past the band's ends in v or lies inside its v-range, keeps only its part beside the slot it touches at that v;
+    the part that runs on beside the narrower slot across a gap is removed, so a column of any width does not move the
+    minimum (T0297 finding 0, T0299 finding 1).  Restriction: copper connected along its horizontal line to both slots'
+    common u-range is band copper whatever its origin; a column that touches the narrower slot across the step (it fills
+    the gap beside the narrower slot) leaves copper without a step, and the tie rule decides
+    (``test_best_split_column_that_fills_the_step_ties``).  Ties (within
     ``SPLIT_TIE_M2``; a rectangular band, whose copper is the same for every boundary, ties everywhere): the boundary
     nearest to the midpoint of the two needs, then the lower one.  Where the band is not rectangular (different u-extents of the two slots) the minimum is unique and is
     the generator's boundary; where it is rectangular the copper does not determine the boundary and the midpoint rule
@@ -312,7 +322,7 @@ def _best_split(poly, seq, ivs, i: int, anchor, rules) -> float:
         if cands:
             break
     scored = []
-    band = _band_copper(poly, lo, hi)
+    band = _band_copper(poly, lo, hi, [anchor[i][:2], anchor[i + 1][:2]])
     for x in cands:
         rects = []
         for (a, b), pr in (((lo, x), anchor[i][0]), ((x, hi), anchor[i + 1][0])):
@@ -328,22 +338,52 @@ def _best_split(poly, seq, ivs, i: int, anchor, rules) -> float:
     return min((x for sd, x in scored if sd <= sd_min + SPLIT_TIE_M2), key=lambda x: (abs(x - mid), x))
 
 
-BAND_PROBE_MM = 0.25  # distance beyond the band's v-range at which attached copper is detected (half a grid step)
+def _polygonal(g):
+    """The polygonal part of a shapely geometry (an intersection may add the lines and points where pieces only touch)."""
+    parts = [x for x in getattr(g, "geoms", [g]) if x.geom_type in ("Polygon", "MultiPolygon") and x.area > 0.0]
+    return unary_union(parts) if parts else Polygon()
 
 
-def _band_copper(poly, lo: float, hi: float):
-    """The copper of a merged band's own v-range ``lo <= v <= hi`` (mm): ``poly`` clipped to that strip, without the
-    u-ranges where the net's copper continues across the strip's lower edge (v = lo - ``BAND_PROBE_MM``) or upper edge
-    (v = hi + ``BAND_PROBE_MM``).  Those u-ranges are attached columns that span the band's end in v; they are not the
-    slots' copper and must not be scored (T0297 finding 0)."""
-    strip = poly.intersection(box(-1e6, lo * MM, 1e6, hi * MM))
-    cols = []
-    for v in (lo - BAND_PROBE_MM, hi + BAND_PROBE_MM):
-        ln = poly.intersection(LineString([(-1.0, v * MM), (1.0, v * MM)]))
-        for g in ([ln] if ln.geom_type == "LineString" else list(getattr(ln, "geoms", []))):
-            if g.geom_type == "LineString" and g.bounds[2] - g.bounds[0] > 1e-9:
-                cols.append(box(g.bounds[0], lo * MM, g.bounds[2], hi * MM))
-    return strip.difference(unary_union(cols)) if cols else strip
+def _band_copper(poly, lo: float, hi: float, probes):
+    """The copper of a merged band's own v-range ``lo <= v <= hi`` (mm) that belongs to its two slots.
+
+    ``probes`` are the two slots' probe points (u, v) in mm (die-row centre or mean landing u at the landing line).  The
+    strip is ``poly`` clipped to ``lo <= v <= hi`` (all u).  The *core* is the common u-range of the strip's two probe
+    chords (the horizontal chord at each probe's v through its u).  A piece of strip copper is the band's own when, along
+    its own horizontal line, it is connected to the core; every other piece is removed: the part of an attached column
+    that runs on beside the narrower slot across a gap, a column inside the band's v-range that touches only the wider
+    slot or neither, islands.  Computed on horizontal slabs between the strip's vertex v-coordinates: a connected piece of
+    a slab is kept iff it overlaps the core's u-range (exact for axis-parallel copper; a piece with a slanted edge
+    is kept or removed whole within its slab).
+
+    Consequences (T0297 finding 0, T0299 findings 0-1): copper outside the strip is never scored and never removes strip
+    copper, so a column or neck joining the band's lower or upper edge anywhere in u (inside the slots' u-range, flush with
+    a slot's end, or beside the slots) leaves the band as it is; a side column of any width and v-extent (spanning past
+    the band's ends or lying inside its v-range) keeps only its part beside the slot it touches at that v, which does not
+    move the minimum.  If the core is empty (the probe chords do not overlap or a probe misses the strip) nothing is
+    removed."""
+    strip = _polygonal(poly.intersection(box(-1.0, lo * MM, 1.0, hi * MM)))
+    if strip.is_empty:
+        return strip
+    chords = [_chord(strip, v, u) for u, v in probes]
+    if any(ch is None for ch in chords):
+        return strip
+    c0, c1 = max(ch[0] for ch in chords), min(ch[1] for ch in chords)
+    if c1 - c0 <= 1e-9:
+        return strip
+    ys = {lo * MM, hi * MM}  # slab edges in m, the strip's own vertex coordinates (no round trip through mm)
+    for g in getattr(strip, "geoms", [strip]):
+        for ring in [g.exterior, *g.interiors]:
+            ys.update(y for _, y in ring.coords if lo * MM < y < hi * MM)
+    ys = sorted(ys)
+    keep = []
+    for a, b in zip(ys[:-1], ys[1:], strict=True):
+        if b - a <= 1e-12:
+            continue
+        slab = _polygonal(strip.intersection(box(-1.0, a, 1.0, b)))
+        core = box(c0 * MM, a, c1 * MM, b)
+        keep += [g for g in getattr(slab, "geoms", [slab]) if not g.is_empty and g.intersection(core).area > 0.0]
+    return unary_union(keep) if keep else Polygon()
 
 
 def _split_window(seq, i: int, n_lo: float, n_hi: float, rules):
