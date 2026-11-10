@@ -1,0 +1,64 @@
+id: T0295
+objective: O003
+title: 'Generator: pre-check keepouts consistent with the DRC''s Euclidean spacing, true docstrings (review
+  T0294)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0290
+description: "Follow-up to T0290, from review T0294 (project/reviews/T0290/T0294.json; read it first).\
+  \ Lands before E008's code freeze\n(T0262). Edit only src/moduleforge/generate/derivative.py and tests/unit/generate/**.\
+  \ Do not relax any DRC rule. Develop only\non generator layouts and Case 4 (F3).\n1. Keepout corners\
+  \ (T0294 finding 0): the sampler's free region uses keepouts buffered so that it never excludes a\n\
+  \   placement drc.check accepts (Euclidean trace-to-keepout distance): a round join with at least 16\
+  \ segments per quarter\n   circle and a buffer reduced by a stated amount that covers the polygonal\
+  \ approximation, or an equivalent exact test.\n   The DRC still filters every candidate. Test: T0294's\
+  \ diagonal-corner case (a trace diagonal to a keepout corner, accepted\n   by drc.check) is no longer\
+  \ rejected by _quick_ok; count DRC-clean candidates rejected by _quick_ok on Case 4 with\n   measured\
+  \ rules over a stated sample (must be zero).\n2. True docstrings (findings 1-2): state exactly which\
+  \ comparisons carry the DRC tolerance and which grid comparisons are\n   exact by construction (binary-exact\
+  \ 0.5 / 0.125 mm grids), and which of T0290's changes are defensive with no observed\n   effect.\n3.\
+  \ Tests not tied to the RNG call sequence (finding 3): replace the scripted-RNG call counts in the exact-fit\
+  \ _draw_feet\n   tests with assertions on the outcome (the exact-fit foot is accepted), so a behaviour-preserving\
+  \ refactor keeps them valid.\nDeterminism. Keep every existing test passing; do not weaken any test\
+  \ or tolerance."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+  exists: null
+  timeout_s: 2400
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-10T04:09:16+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

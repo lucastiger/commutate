@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "_quick_ok docstring invariant 'never rejects a layout drc.check accepts' is false (mitre vs Euclidean keepout spacing)",
+      "detail": "The new docstring states that, because every rule comparison carries the DRC tolerance, the pre-check never rejects a layout drc.check accepts. Sampling falsifies this. _Ctx.free is built from keepouts buffered with a mitre join, so it has square corners. drc.check tests trace-to-keepout spacing by Euclidean distance (rules.py:220-222). A trace diagonal to a keepout corner is therefore rejected by _quick_ok but accepted by the DRC. The behaviour predates this change and is not a float-tolerance issue, but the change newly asserts the invariant. Frequency is small: 1 of 4520 built candidates, 1 of 525 DRC-clean ones. Suggested remedy: narrow the sentence to the tolerance comparisons, or buffer keepouts with a round join.",
+      "evidence": "Case 4 measured rules, k = 1, rng seed 12345, 40000 draws: qfail_drc_ok = 1. Diagnosis: check(lay) == []; the PHASE trace fails cx.free['PHASE'].buffer(1e-9).contains, with an excess square of 0.25 mm^2 at x 53.5..54 mm, y 80..80.5 mm. The Euclidean distance to the GATE_HS keepout is 2.1213 mm against a required 1.999999 mm; edge-margin containment holds. Default-rules Case 4 (13539 built), measured k = 3 (4645 built) and the 3-die half-bridge housing (9979 built) gave 0 such cases.",
+      "suggested_check": "Property test: for sampled candidates, assert _quick_ok(lay) or check(lay) != [].",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Two of the four source changes have no test that fails without them",
+      "detail": "The claim says the change adds tests that fail without the fixes. That holds for the T0288 fixes: the _quick_ok length and pitch tolerances and the clear() / _far_enough tolerance. It does not hold for the ilo/ihi grid-index tolerance in _draw_feet or for the land + ldv window tolerance in _sample. Reverting either one leaves every generate test passing. Instrumentation found no near-ties in comparable comparisons, so these two changes appear inert on the tested specs.",
+      "evidence": "In-process source mutation through a pytest plugin, tests/unit/generate -m 'not slow'. Baseline: 54 passed. Mutation 'len': test_quick_ok_float_tolerance_pitch_and_length FAILED. 'pitch': same test FAILED. 'clear': test_draw_feet_clear_branch_accepts_exact_fit and test_foot_clearance_accepts_exact_fit_but_not_a_real_shortfall FAILED. 'ilo': 54 passed. 'land': 54 passed.",
+      "suggested_check": "Add a unit test that drives _draw_feet with cu0 + lo on a grid point carrying a 1-ulp error, or state that these two changes are untested hardening.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Audit statement 'every float comparison against a grid bound uses the DRC tolerance' is incomplete",
+      "detail": "Several grid comparisons in the sampler still have no tolerance: math.ceil(jc) / math.floor(jc) in _draw_feet (line 610), hi_l < lo_l (line 800), (end - edge) * (-side) < 1.0 (line 786), and span < smin / span > smax (lines 694/698). Grid values are binary-exact (0.5 and 0.125 mm), and no near-tie occurred in the instrumented runs, so this is a wording issue rather than a live bug.",
+      "evidence": "Instrumented re-exec, 20000 _sample calls each on Case 4 default rules and measured k = 3. jc within (0, 1e-9) of an integer: 0 of 18014 and 0 of 7841. lo_l - hi_l in (0, 1e-9): 0. end - edge within (-1e-9, 0) of 1.0: 0 of 20788 and 0 of 9573.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Exact-fit _draw_feet tests depend on the exact sequence of RNG calls",
+      "detail": "_ScriptedRng and the assertions n == 5 and n == 35 hard-code how many integers() calls _draw_feet makes and in which order. A behaviour-preserving refactor that adds or reorders a draw will break these tests or silently redirect them to another branch. They do catch the clear-tolerance revert today (verified by mutation).",
+      "evidence": "tests/unit/generate/test_derivative.py: _ScriptedRng.integers branches on self.n <= 3 and self.n <= 33; the tests assert n == 5 and n == 35.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The _quick_ok tolerance has no observable effect on sampled candidates",
+      "detail": "Strict and tolerant _quick_ok never disagreed, because the sampler places feet at the pitch + 25 um, away from the tie. The fix is correct and defensive. The test's premise is real: drc.check does accept the shifted-rule layout in test (b) and (c), and shapely returns 0.0008749999999999937 m for that layout's 0.875 mm distance.",
+      "evidence": "40000 draws each: Case 4 measured k = 3, 4623 built, 0 disagreements; measured k = 1, 4650 built, 0; default k = 1, 13470 built, 0. check(lay) at min_wire_pitch = d + 5e-10 gives []; at max_gate_wire_length = longest - 5e-10 gives [].",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the required commands: pytest tests/unit/generate tests/unit/drc gave 232 passed; the fast unit suite gave 789 passed; ruff check is clean; the thermal_fem.py hash prefix is a216d5fe3209bcee; mfos gate --fast reports 'all gates passed'.",
+    "Mutation testing through an in-process source re-exec (no repository files modified): reverting the len, pitch or clear tolerance makes new tests fail; reverting the ilo/ihi or land-window tolerance leaves all 54 generate tests passing.",
+    "Property check, _quick_ok False implies drc.check non-empty, over 40000 draws each on Case 4 default k = 1, measured k = 1, measured k = 3 and the 3-die half-bridge housing: one counterexample (measured k = 1), traced to the square-cornered (mitre) keepout buffer against the DRC's Euclidean spacing check.",
+    "Strict versus tolerant _quick_ok on identical candidates (22743 built in total): 0 disagreements.",
+    "Verified that drc.check itself accepts the test layout at min_wire_pitch = d + 5e-10 and at max_gate_wire_length = longest - 5e-10, so tests (b) and (c) exercise a real DRC-accepts / strict-rejects case.",
+    "Re-derived the Lipschitz argument of _ls_foot_distance_bound by hand: distance to a set is 1-Lipschitz; the Hausdorff shift of the segment g..clip(g) is at most |dg|; wire length = distance to a convex box, 1-Lipschitz; the half-cell diagonal is at most h*sqrt(2)/2. All hold.",
+    "Grid refinement of the bound at (25, 30) mm: 2.160 / 1.962 / 1.891 mm at steps 0.25 / 0.1 / 0.05 mm, consistent with the 1.820 mm supremum plus the margin.",
+    "Finer die-centre scans (0.5 mm over x 25-66, y 30-80; 0.1 mm near the worst corner): maximum 1.9616 mm at (25, 30), no exceedance between the test's grid points.",
+    "Instrumented the sampler's remaining comparisons without a tolerance (jc ceil/floor, hi_l < lo_l, end-edge < 1.0): no near-ties in about 26000 evaluations.",
+    "Re-measured throughput at a load average of about 5: default k = 1 at 96.8 / 101.9 per s, k = 3 at 8.0 / 4.0; measured k = 1 at 40.6 / 34.8, k = 3 at 2.0 / 2.5. Consistent with the documented figures."
+  ],
+  "caveats": [
+    "The float tolerances in _quick_ok match drc.check's 1e-9 m TOL, but the docstring guarantee that _quick_ok never rejects a DRC-clean layout is false. Square-cornered keepout buffers reject some diagonal-corner placements: 1 of 525 DRC-clean candidates on Case 4 with measured rules, k = 1.",
+    "'Tests that fail without the fixes' holds for the T0288 fixes (the _quick_ok tolerances and the clear() tolerance), not for the ilo/ihi and landing-window changes, which no test covers.",
+    "The _quick_ok tolerance fix changes no sampled outcome on Case 4 or the half-bridge housing; it is defensive hardening.",
+    "The 1.96 mm < 2 mm bound is proven per die centre and was checked on finer centre grids; it is still not a proof over the continuum of centres, as the docstring states.",
+    "The property checks used fixed seeds and four specs; other housings or rule sets were not sampled."
+  ]
+}
