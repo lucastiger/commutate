@@ -290,8 +290,11 @@ def _best_split(poly, seq, ivs, i: int, anchor, rules) -> float:
     its margin (``rules.die_edge_margin`` for a die slot, ``rules.wire_landing_margin`` for a landing slot) at or below the
     boundary, the upper slot's need less its margin at or above it.  If no grid line meets the margins, the window between
     the needs themselves (a landing line strictly inside its slot); if that is empty too, every grid line in ``(lo, hi)``.
-    Among the candidates, the boundary that minimises the symmetric difference between the reference copper ``poly`` and
-    the union of the two slot rectangles (each with the horizontal chord of the copper at its own mid-v).  Ties (within
+    Among the candidates, the boundary that minimises the symmetric difference between the band's own copper and the
+    union of the two slot rectangles (each with the horizontal chord of the copper at its own mid-v).  The band's own
+    copper is ``poly`` clipped to the strip ``lo <= v <= hi`` (all u) without the u-ranges where the net's copper
+    continues past the strip's lower or upper edge (``_band_copper``): an attached column spanning the band's end in v is
+    neither scored nor part of a slot's chord, so a column of any width does not move the minimum (T0297 finding 0).  Ties (within
     ``SPLIT_TIE_M2``; a rectangular band, whose copper is the same for every boundary, ties everywhere): the boundary
     nearest to the midpoint of the two needs, then the lower one.  Where the band is not rectangular (different u-extents of the two slots) the minimum is unique and is
     the generator's boundary; where it is rectangular the copper does not determine the boundary and the midpoint rule
@@ -309,19 +312,38 @@ def _best_split(poly, seq, ivs, i: int, anchor, rules) -> float:
         if cands:
             break
     scored = []
+    band = _band_copper(poly, lo, hi)
     for x in cands:
         rects = []
         for (a, b), pr in (((lo, x), anchor[i][0]), ((x, hi), anchor[i + 1][0])):
-            ch = _chord(poly, 0.5 * (a + b), pr)
+            ch = _chord(band, 0.5 * (a + b), pr)
             if ch is None:
                 break
             rects.append(box(_snap(ch[0]) * MM, _snap(a) * MM, _snap(ch[1]) * MM, _snap(b) * MM))
         else:
-            scored.append((poly.symmetric_difference(unary_union(rects)).area, x))
+            scored.append((band.symmetric_difference(unary_union(rects)).area, x))
     if not scored:  # no candidate gives two slot rectangles: the grid line nearest the midpoint of the needs
         return min(grid or [_snap(mid)], key=lambda x: (abs(x - mid), x))
     sd_min = min(sd for sd, _ in scored)
     return min((x for sd, x in scored if sd <= sd_min + SPLIT_TIE_M2), key=lambda x: (abs(x - mid), x))
+
+
+BAND_PROBE_MM = 0.25  # distance beyond the band's v-range at which attached copper is detected (half a grid step)
+
+
+def _band_copper(poly, lo: float, hi: float):
+    """The copper of a merged band's own v-range ``lo <= v <= hi`` (mm): ``poly`` clipped to that strip, without the
+    u-ranges where the net's copper continues across the strip's lower edge (v = lo - ``BAND_PROBE_MM``) or upper edge
+    (v = hi + ``BAND_PROBE_MM``).  Those u-ranges are attached columns that span the band's end in v; they are not the
+    slots' copper and must not be scored (T0297 finding 0)."""
+    strip = poly.intersection(box(-1e6, lo * MM, 1e6, hi * MM))
+    cols = []
+    for v in (lo - BAND_PROBE_MM, hi + BAND_PROBE_MM):
+        ln = poly.intersection(LineString([(-1.0, v * MM), (1.0, v * MM)]))
+        for g in ([ln] if ln.geom_type == "LineString" else list(getattr(ln, "geoms", []))):
+            if g.geom_type == "LineString" and g.bounds[2] - g.bounds[0] > 1e-9:
+                cols.append(box(g.bounds[0], lo * MM, g.bounds[2], hi * MM))
+    return strip.difference(unary_union(cols)) if cols else strip
 
 
 def _split_window(seq, i: int, n_lo: float, n_hi: float, rules):
@@ -734,7 +756,7 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
     that was applied: per landing band ``before_mm`` -- the width in the state the move was applied to --, ``after_mm`` and
     ``landing_shift_mm``; a band that move 2 skipped carries ``skipped`` and is unchanged), ``widths`` (the entry of the
     last landing move applied -- move 2 if applied, else move 1 --, empty if neither was; later spread / walk moves are not
-    in it), ``skipped`` (moves not applied and why) and ``walk`` (None if the walk did not run, else its start ratio, steps,
+    in it), ``skipped`` (moves not applied and why), ``stopped`` (spread families applied up to step q-1 because step q >= 2 failed; disjoint from ``skipped`` by family name) and ``walk`` (None if the walk did not run, else its start ratio, steps,
     terminal kind, terminal ratio and message).  ``DegradeError`` carries the record in its ``record`` attribute.
 
     ``with_l1=False``: no L1 is computed, so nothing says when to stop; the walk is not run.  The moves are tried in the
@@ -746,7 +768,7 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
     p0 = D.params_of(twin_layout)
     l_tw = _l1(twin_layout) if with_l1 else None
     rec = {"rule": "ordered geometric moves and a fallback walk, see the module docstring", "target_l1_ratio": target,
-           "margin": DEGRADE_MARGIN, "moves": [], "skipped": [], "walk": None, "l1_checked": with_l1,
+           "margin": DEGRADE_MARGIN, "moves": [], "skipped": [], "stopped": [], "walk": None, "l1_checked": with_l1,
            "widths_by_move": {}, "widths": {}}
 
     def fail(msg):
@@ -768,7 +790,10 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
                 break
             cl, why = _try(spec, cand)
             if cl is None:
-                rec["skipped"].append(f"{name}: {why}")
+                if q == 1:
+                    rec["skipped"].append(f"{name}: {why}")
+                else:  # step q-1 is applied: the family is stopped, not skipped (T0297 finding 1)
+                    rec["stopped"].append(f"{name}: stopped at step {q - 1} ({why})")
                 break
             kept = (cand, cl, q)
             if not with_l1:

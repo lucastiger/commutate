@@ -592,3 +592,46 @@ def test_walk_ratio_is_stable_under_l1_mesh_refinement():
     assert ratios[0] == pytest.approx(rec["l1_ratio"], rel=1e-12)
     assert ratios == pytest.approx([1.3940, 1.3903, 1.3919], abs=1e-3)
     assert max(ratios) / min(ratios) - 1 < 0.005
+
+
+def test_best_split_ignores_attached_column_copper_outside_the_band(  # T0297 finding 0
+):
+    """An L-shaped PHASE band (die slot u 0-40 x v 10-13, landing slot u 0-30 x v 13-20, true boundary 13) with a column
+    at u 40.. spanning v 0-30: the column is outside the band's own v-range 10-20 only partly, and for widths of 10 mm and
+    more (>= the 10 mm gap beside the narrower slot) it used to pull the minimum off the step.  Widths narrower than,
+    equal to and wider than the gap must all recover 13."""
+    from shapely.geometry import box as bx
+    rules = DesignRules()
+    anchor = [(20.0, 11.0, (10.0, 11.5)), (15.0, 15.0, (15.0, 15.0))]
+    ivs = [[10.0, 20.0], [10.0, 20.0]]
+    for w in (0, 5, 8, 10, 12, 15, 25):
+        poly = bx(0, 10e-3, 40e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3)).union(bx(40e-3, 0, (40 + w) * 1e-3, 30e-3)) \
+            if w else bx(0, 10e-3, 40e-3, 13e-3).union(bx(0, 13e-3, 30e-3, 20e-3))
+        got = W._best_split(poly, _SEQ_DIE_LAND, [list(x) for x in ivs], 0, anchor, rules)
+        assert got == pytest.approx(13.0), w
+
+
+def test_degrade_records_a_stopped_spread_family_apart_from_skipped(monkeypatch):
+    """T0297 finding 1: a spread family whose step q >= 2 fails is applied up to q-1 and recorded in ``stopped``; it is
+    not in ``skipped``, so moves and skipped are disjoint by family name.  The 2 mm rule layout of
+    test_widths_report_only_the_landing_move_that_was_applied needs spread moves; step 2 (1.0 mm) is made to fail."""
+    spec = D.halfbridge_housing_spec(4, rules=DesignRules(min_trace_width=2e-3), wires_per_die=2)
+    ref = D.generate(spec, 4, seed=942, max_failures=3000)[1]
+    last = []
+    orig_shift, orig_try = W._shifted, W._try
+    monkeypatch.setattr(W, "_shifted", lambda p, j, dv, down: (last.append(dv), orig_shift(p, j, dv, down))[1])
+    monkeypatch.setattr(W, "_try", lambda sp, c: (None, "forced") if last and last[-1] == 2 * W.SPREAD_STEP_MM
+                        else orig_try(sp, c))
+    try:
+        _, rec = W.degrade(ref, spec)
+    except W.DegradeError as e:
+        rec = e.record
+    spread = [m for m in rec["moves"] if m.startswith("spread")]
+    assert spread and rec["stopped"], rec["moves"]
+    for st in rec["stopped"]:
+        fam = st.split(":")[0]
+        assert st == f"{fam}: stopped at step 1 (forced)"
+        assert f"{fam}x{W.SPREAD_STEP_MM:g}mm" in rec["moves"]
+        assert not any(sk.split(":")[0] == fam for sk in rec["skipped"])
+    fams = {m.split("x")[0] for m in spread}
+    assert not fams & {sk.split(":")[0] for sk in rec["skipped"]}
