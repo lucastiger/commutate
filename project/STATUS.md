@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T03:35:59+00:00 from repository state — do not edit_
+_generated 2026-11-10T03:40:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,15 +29,12 @@ _generated 2026-11-10T03:35:59+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 245, failed: 3, merge: 2, todo: 4, verify: 1
+cancelled: 38, done: 246, failed: 3, merge: 1, review: 1, todo: 5
 
-- T0285 `merge` builder/implement: Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records (review T0284) (attempt 1)
 - T0287 `merge` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
-- T0290 `verify` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
+- T0290 `review` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
 
 ## Recent events
-- 2026-11-10T02:50:20+00:00 run_started {"run": "T0291-critic-20261109T185020-28d2", "task": "T0291", "role": "critic", "session": "a920280d-669d-40c0-a894-fd1b0910b94d"}
-- 2026-11-10T02:50:55+00:00 sleep_detected {"gap_s": 1136, "runs_extended": 3}
 - 2026-11-10T02:50:56+00:00 run_finished {"run": "T0289-critic-20261109T182048-9416", "status": "completed", "cost": 1.906882, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T02:51:28+00:00 task_added {"task": "T0292", "reason": "review T0289 follow-up (estimator import, near-tie window)"}
 - 2026-11-10T02:51:28+00:00 task_amended {"task": "T0262", "reason": "waits for T0292 (driver, review T0289)"}
@@ -51,3 +48,5 @@ cancelled: 38, done: 245, failed: 3, merge: 2, todo: 4, verify: 1
 - 2026-11-10T03:22:14+00:00 run_finished {"run": "T0290-builder-20261109T183005-35cf", "status": "completed", "cost": 0.755394, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T03:33:42+00:00 inbox_resolved {"id": "I0156", "status": "approved", "note": "Merge T0285: one band-based e_R, atomic checkpoint repair, whitelisted thermal records; T0289 accepts with minor 
 - 2026-11-10T03:33:44+00:00 inbox_resolved {"id": "I0157", "status": "approved", "note": "Merge T0287: degradation target 1.25 x 1.11 reached on the 54-layout population and Case 4, merged-band split, ex
+- 2026-11-10T03:36:04+00:00 verified {"task": "T0290"}
+- 2026-11-10T03:36:07+00:00 merged {"task": "T0285"}
