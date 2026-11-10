@@ -4,7 +4,7 @@ title: 'Twin: band-copper column removal keeps T-junction necks; split tests tha
   T0299)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0298
 description: "Follow-up to T0298, from review T0299 (project/reviews/T0298/T0299.json; read it first).\
@@ -68,4 +68,55 @@ lens: null
 trigger: null
 rationale: Review T0299 finding 0 (major) regresses the twin split for T-junction necks; the twin is the
   baseline of A1/K1 and of twin gate (a1). Fixed before the E008 freeze under the session review policy.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: '`_band_copper` now removes a probe u-range only if it reaches the strip''s u-end, so T-junction
+    necks stay band copper. T0299''s neck cases (and some I added) all recover the generator''s boundary
+    13 with the landing line at 18 mm. T0298''s column-adjacent cases still recover theirs. Side columns
+    inside the band''s v-range are a stated restriction: they look like a wider slot, and a test shows
+    the stated behaviour. The split tests now use needs whose midpoint is not the answer, and a mutant
+    test (empty scored copper) shows the result changes. The module docstring now describes `stopped`.
+    The stress test passes with its locked values unchanged. The merged-band scan on the same seeds recovers
+    17 of 17. The `tests/unit/generate` re-run after my last docstring-only test edit has now also finished
+    w'
+  report:
+    status: completed
+    summary: '`_band_copper` now removes a probe u-range only if it reaches the strip''s u-end, so T-junction
+      necks stay band copper. T0299''s neck cases (and some I added) all recover the generator''s boundary
+      13 with the landing line at 18 mm. T0298''s column-adjacent cases still recover theirs. Side columns
+      inside the band''s v-range are a stated restriction: they look like a wider slot, and a test shows
+      the stated behaviour. The split tests now use needs whose midpoint is not the answer, and a mutant
+      test (empty scored copper) shows the result changes. The module docstring now describes `stopped`.
+      The stress test passes with its locked values unchanged. The merged-band scan on the same seeds
+      recovers 17 of 17. The `tests/unit/generate` re-run after my last docstring-only test edit has now
+      also finished with exit code 0. The work is committed as 8a9079f8.'
+    files_changed:
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_twin.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate (88 passed before the docstring-only test edit; the re-run
+        after it finished with exit code 0)
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit (835 passed, 39 deselected)
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast (printed 'all gates passed'; the background run containing it finished
+        with exit code 0)
+      exit_code: 0
+    - cmd: uv run pytest -q tests/regression/test_degrade_walk_stress.py (1 passed, locked values unchanged)
+      exit_code: 0
+    - cmd: 'merged-band scan, seeds 99000+10n+k for (n,k) = (2,2),(3,1),(4,2),(3,3), 25 layouts each:
+        17 merged, 17 recovered'
+      exit_code: 0
+    concerns:
+    - 'Side column inside the band''s v-range (finding 1): the rule cannot cover it. Such a column looks
+      like a wider slot. At widths of 12 mm and more it still pulls the split to 15.5, which a test locks
+      as the stated restriction. The `_best_split` docstring states it.'
+    - A neck is recognised by the strip having copper on both sides of its u-range. A neck flush with
+      the strip's u-end is treated as a side column; this only notches the end of the band, and the step
+      is still recovered (test case u 35-40).
+    - The scan script is not committed; it was an ad hoc script run through `uv run python`.

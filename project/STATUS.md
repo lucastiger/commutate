@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T15:20:25+00:00 from repository state — do not edit_
+_generated 2026-11-10T17:14:45+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -10,7 +10,7 @@ _generated 2026-11-10T15:20:25+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $99.94/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $100.49/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-10T15:20:25+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 59 | $99.94 | 1813056 | 941923 | 93 | 0 |
+| O003 | 60 | $100.49 | 1814219 | 941923 | 93 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,14 +29,12 @@ _generated 2026-11-10T15:20:25+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 256, failed: 3, running: 1, todo: 2
+cancelled: 38, done: 256, failed: 3, review: 1, running: 1, todo: 2
 
-- T0300 `running` builder/implement: Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review T0299) (attempt 1)
+- T0300 `review` builder/implement: Twin: band-copper column removal keeps T-junction necks; split tests that prove the minimum (review T0299) (attempt 1)
+- T0301 `running` critic/review: Review T0300 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T13:27:27+00:00 inbox_resolved {"id": "I0161", "status": "approved", "note": "Merge T0293: L1-raising fallback walk (2 mm stress 63/72, default population and Case 4 all reach target), merged
-- 2026-11-10T13:27:39+00:00 merged {"task": "T0293"}
-- 2026-11-10T13:27:43+00:00 run_started {"run": "T0298-builder-20261110T052743-dea1", "task": "T0298", "role": "builder", "session": "22128343-cd85-4484-bdf3-dae12f85640c"}
 - 2026-11-10T14:14:27+00:00 run_finished {"run": "T0298-builder-20261110T052743-dea1", "status": "completed", "cost": 0.548323, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T14:34:31+00:00 verified {"task": "T0298"}
 - 2026-11-10T14:34:36+00:00 run_started {"run": "T0299-critic-20261110T063436-bbdf", "task": "T0299", "role": "critic", "session": "5c74bcf3-2022-4ffb-8a90-fbeba6e0e079"}
@@ -49,3 +47,6 @@ cancelled: 38, done: 256, failed: 3, running: 1, todo: 2
 - 2026-11-10T15:19:40+00:00 inbox_resolved {"id": "I0162", "status": "approved", "note": "Merge T0298: best split scored on the band's own copper (column-adjacent L-bands), disjoint move/skip record; T02
 - 2026-11-10T15:20:21+00:00 merged {"task": "T0298"}
 - 2026-11-10T15:20:25+00:00 run_started {"run": "T0300-builder-20261110T072025-dabc", "task": "T0300", "role": "builder", "session": "d5d7713a-516e-4b03-ab75-5c47ad62f636"}
+- 2026-11-10T16:49:45+00:00 run_finished {"run": "T0300-builder-20261110T072025-dabc", "status": "completed", "cost": 0.556406, "subtype": "success", "report": "structured_output"}
+- 2026-11-10T17:14:37+00:00 verified {"task": "T0300"}
+- 2026-11-10T17:14:45+00:00 run_started {"run": "T0301-critic-20261110T091445-3349", "task": "T0301", "role": "critic", "session": "07c88e2d-c7a7-4ff3-b51e-89a46bd18cde"}
