@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-10T06:04:26+00:00 from repository state — do not edit_
+_generated 2026-11-10T06:06:58+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0160** [protected_change] T0292: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -30,14 +29,13 @@ _generated 2026-11-10T06:04:26+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 250, failed: 3, needs_founder: 1, review: 1, running: 1, todo: 2
+cancelled: 38, done: 250, failed: 3, merge: 1, review: 1, running: 1, todo: 2
 
-- T0292 `needs_founder` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
+- T0292 `merge` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `review` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
 - T0296 `running` critic/review: Review T0293 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
 - 2026-11-10T04:19:34+00:00 run_started {"run": "T0295-builder-20261109T201934-5692", "task": "T0295", "role": "builder", "session": "22ff16e8-a093-45a8-a66d-43d4ef177107"}
 - 2026-11-10T05:08:55+00:00 run_finished {"run": "T0295-builder-20261109T201934-5692", "status": "completed", "cost": 0.423103, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T05:25:45+00:00 verified {"task": "T0295"}
@@ -52,3 +50,4 @@ cancelled: 38, done: 250, failed: 3, needs_founder: 1, review: 1, running: 1, to
 - 2026-11-10T06:03:45+00:00 run_started {"run": "T0296-critic-20261109T220345-06fa", "task": "T0296", "role": "critic", "session": "31dbc478-600a-403c-884b-4d717b6f9316"}
 - 2026-11-10T06:04:18+00:00 sleep_detected {"gap_s": 2274, "runs_extended": 1}
 - 2026-11-10T06:04:23+00:00 merged {"task": "T0295"}
+- 2026-11-10T06:06:57+00:00 inbox_resolved {"id": "I0160", "status": "approved", "note": "Merge T0292: driver uses mfos.metrics.ratio_band_estimate itself, band solves on the union of w_ind and w_ind_rec
