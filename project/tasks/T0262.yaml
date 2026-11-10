@@ -134,7 +134,39 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   under load). A 20,000-candidate screen can therefore take minutes or 2-3 h per search. --plan measures
   the rate on each reference''s spec and schedules every screen (main and control, both references) at
   the start of the run, beside the reference, snapping-variant, twin and D solves, so the shortlist solves
-  are not delayed; the sealed candidate sequence must not depend on the schedule.'
+  are not delayed; the sealed candidate sequence must not depend on the schedule.
+
+
+  DEGRADATION, NEAR TIES AND PRE-CHECK (reviews T0296 of T0293, T0292, T0295; session with founder permission,
+  2026-11-10):
+
+  - D must meet its definition (review T0296 finding 3). F1(b) defines D by L_sub(D) >= 1.25 L_sub(twin),
+  but the degradation rule reaches it in L1 (target 1.25 x 1.11), and its fallback walk climbs on L1 itself,
+  ending just above the target (median L1 ratio 1.394 on the 2 mm stress); the 0.11 margin was derived
+  from generator layouts, not walk outputs. Gate, do not only record: for every reference, compute L_sub(D)
+  / L_sub(twin) from the band solves the driver already stores (no new solve), judged at the conservative
+  end of its band with the same band estimator as everywhere else, before K1 is read. Record per reference
+  whether the walk ran (rec[''walk'']) and its steps.
+
+  - Failure consequences are not for the agent to choose. O003 states the response for (b) failing and
+  for twin-gate exclusion, but not for a D that misses 1.25 in L_sub or for a reference where degrade()
+  raises DegradeError (T0293: 9 of 72 layouts at a 2 mm minimum width still do). Write in the spec the
+  consequence the objective''s text implies; where it leaves the case open, list it under a ''founder
+  decisions before registration'' heading in the spec rather than deciding it.
+
+  - Fail fast: build the twin W and the degraded copy D of every reference (L1 only, seconds to about
+  85 s per layout with the walk) before the first l2_layout solve, so a twin-construction failure or DegradeError
+  stops the run before any VM spend and records the reason.
+
+  - Near-tie union (T0292): the driver band-solves every shortlisted candidate inside the union of w_ind
+  and w_ind_recon, a count unknown until the run. --plan reports a range for it (from the dev rows'' e_R
+  values and the shortlist''s L_sub spread), and the cost, VM-hours and E008 date at the upper end of
+  that range as well as the expected one.
+
+  - Pre-check false rejections (T0295): _quick_ok was shown to reject no DRC-clean candidate only on Case
+  4, measured rules, one seed. Per reference, the run reports how many DRC-clean samples _quick_ok rejects
+  over a fixed sealed sample (L0 only), flagged when non-zero because it narrows the search (reported,
+  not gated).'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml
