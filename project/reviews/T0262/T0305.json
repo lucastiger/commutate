@@ -1,0 +1,79 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F6(e) spot check covers only one non-default stack type; the loop overwrites spot_ref",
+      "detail": "Run.drive does `for st in sorted(stack_types - {'Al2O3_default_dbc'}): self.spot_ref = next(...)`. spot_ref is a single string, so each pass of the loop replaces the one before. With two or more non-default stack types, only the last one sorted gets FV levels 1-3 and the F6(e) gate. evaluate() also reads only run.spot_ref. The spec, the spot_jobs docstring and the sanity check all say 'one reference per non-default stack type'. A gated (INVALID-class) check is therefore silently narrowed. The selftest plants only one non-default type, so it cannot catch this. A related gap: _stack_type's signature covers only stack.layers (name, thickness, k). die_attach and die are excluded, so a stack that differs only in die attach is classed as the default and skips F6(e).",
+      "evidence": "experiments/runners/e008_run.py lines 927-929 (loop assigns self.spot_ref) and lines 1126-1137 (a single spot_ref is evaluated); selftest lines 1208-1212 (ref 0 default, ref 1 'other:fakeAlN', so only one non-default type); geometry/stack.py LayerStack has separate die_attach and die fields, which _stack_type (lines 510-515) ignores.",
+      "suggested_check": "Make spot_ref a dict keyed by stack type, evaluate F6(e) for each entry, and add a selftest scenario with two non-default stack types.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "rule_strictness report is always empty because the key prefix is wrong ('spacing_' vs measure_rules' 'gap_')",
+      "detail": "prepare() builds rule_strictness from measured_rules keys that start with 'spacing_' and looks for 'spacing_dcp_dcm' and similar. measure_rules returns 'gap_dcp_phase', 'gap_phase_dcm', 'gap_dcp_dcm', 'gap_other_min' and so on, so the filter matches nothing. The T0280 report the spec's reporting section promises ('each measured spacing class beside the reference's smallest DC-link gap; a class more than 2x stricter is flagged') is never produced, and nothing marks it as missing. The rule is reported, not gated, so the headline metrics are unaffected.",
+      "evidence": "e008_run.py lines 609-613; drc/rules.py lines 597-603 emit 'gap_*' keys; E008.dev_rows.json shows 'rule_strictness': {} for both housing70x40_gen2_0 and 2D_Case_4, even though measured_rules holds gap_dcp_phase=0.006, gap_dcp_dcm=0.0025 and other values.",
+      "suggested_check": "Filter on the 'gap_' keys measure_rules actually returns, and assert in selftest/dev that rule_strictness is non-empty whenever measured gaps exist.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Registered-run path is a stub: full() raises NotImplementedError after the freeze checks; config.references is empty",
+      "detail": "Only selftest, verify-freeze, dev and plan are implemented. full() runs freeze_checks and then raises (empty references, then NotImplementedError: 'judged-reference loading ... is added under a new draft'). The claim says the runner is 'complete', but that holds only for the draft, dev and plan paths. The code that will produce evidence (reference loading, admissibility rows, snapping-check inputs) has not been written or tested. For a draft design this is acceptable, but it is a limit on what was delivered.",
+      "evidence": "e008_run.py lines 1658-1673; E008.yaml config.references: []",
+      "suggested_check": "Before registration, require a selftest of full() on fake references through ExperimentRun.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "recompute_agrees and the selftest 'hand' values are not independent of the implementation",
+      "detail": "recompute_agrees compares mfos.metrics with research/o003/headroom_metrics.py. That file is the draft the mfos.metrics patch was made from, and it imports mfos.metrics itself (gci_capped and others), so the check only proves the patch was applied verbatim. The selftest's hand h_lo and K1 rebuild the twin rule, F3 ordering and levelling independently, but take e_R from the same MX.ratio_band_estimate. A wrong e_R formula would pass both checks.",
+      "evidence": "research/o003/headroom_metrics.py lines 1-3, 18-19; e008_run.py lines 1271, 1284, 1290",
+      "suggested_check": "Add one hand-computed e_R pair (as below) to the selftest as a literal expected value.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Smoke dev rows would fail F6(a) node growth and show a divergent die GCI; they say nothing about F6(a) under the frozen rule",
+      "detail": "gen2_0 node counts are [7232, 48499, 351797], growth 6.706 then 7.254. |6.706/8 - 1| = 0.162 exceeds the 0.15 gate. Die d2 has d1 = -0.0718 K and d2 = -0.1493 K, so |rho| = 2.08 and GCI = +inf. That makes the twin's upper bound +inf, and twin gate a2 passes only vacuously (rhs = inf). These rows use the E009 smoke rule and are labelled not evidence. Still, the dev rows give no check of F6(a) or GCI behaviour under the frozen rule. The plan's proxy reference DOFs (51098 to 365435, ratio 7.15) are inside the 15 % band by only about 4.4 %.",
+      "evidence": "Hand recomputation from E008.dev_rows.json: tj_bounds_twin [397.7599, inf, inf, 396.637, 1] reproduced (d3 oscillatory, rho = -0.153, GCI = 3 x 0.3743 = 1.123, lower bound 397.7599 - 1.123 = 396.637).",
+      "suggested_check": "In the full-fidelity dev run, report F6(a) node growth and per-die GCI under the frozen rule for every dev layout.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F6(c) energy balance is not checked on the FV spot-check solves",
+      "detail": "evaluate() takes worst_eb from FEM thermal records and calibration history only. child_fv records energy_balance, but nothing checks it, although the sanity check says '|Q_out/Q_in - 1| <= 1e-6 on every thermal solve'.",
+      "evidence": "e008_run.py lines 1096-1116 vs 311-318 and 1126-1135",
+      "suggested_check": "Include the FV records' energy_balance in the F6(c) check, or limit its wording to scikit-fem solves.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "FV time rate fv_s_per_cell = 1e-4 has no stated basis, yet it drives the largest single cost item",
+      "detail": "Phase B (FV level 3, 235 M cells: 6.52 h, $23.83, about half of E008's expected USD) comes from fv_s_per_cell = 1e-4. No basis is cited, unlike fem_s_per_dof and the EM rates. Memory (1,500 B/cell, giving 352.7 GB) is cited from E009.",
+      "evidence": "E008.yaml cost_model.fv_s_per_cell; grep finds no measurement of it in experiments/ or research/notes/e008-design.md",
+      "suggested_check": "Measure FV level 1 to 2 wall time on Case 4 locally and state the rate's basis.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: --selftest passed (headroom h_lo 0.21055 matches hand value; twin_best fails F1b_control as planted; levelled K1 0.214); --verify-freeze shows all 6 freeze hashes, the GridRule sha 0226b770 key for key, thermal_fem a216d5fe, metric params and code_must_match O007 OK; ruff clean. The YAML key-presence check was not run separately, but every key it lists was found in the YAML by grep.",
+    "Hand-recomputed e_R for two dev band pairs with the ratio_band_estimate formula: 065e8a: middle term 3 x 0.001013 = 0.003039 plus wire term 3 x 0.000321 = 0.000963, total 0.004002 (stored 0.0040035); ce5a90: 0.00805 + 0.00187 = 0.00992 (stored 0.009922). R ratios also match.",
+    "Hand-recomputed the calibration history with the proportional update P *= 60/rise: 30 -> 53.551 -> 52.316 W, matching the stored values; the final rise 59.927 K is within 0.25 K of target and equals max Tj_l0 - 338.15.",
+    "Hand-recomputed tj_bounds_twin from the die rows using the gci_capped branches (d2 divergent, rho = 2.08; d3 oscillatory, GCI 1.123 K). The lower bound 396.637 K matches the stored value.",
+    "Checked node-growth ratios in the dev rows against the F6(a) gate: 6.706 fails x8 +/- 15 % under the smoke rule.",
+    "Re-derived the cost arithmetic: 45.68 VM-h x 8 = 365.4 vCPU-h; 38.91 h x $0.612 + $23.83 = $47.64; FV L3 234.8 M cells x 1500 B + 0.5 GB = 352.7 GB; EM lat0.5 5770 x 0.25^1.44 s = 0.218 h; FEM T2 candidate 5.35 M DOFs x 2.1e-4 s = 0.312 h and 31.05 GB. All match the YAML.",
+    "Read evaluate(), assemble_rows(), drive(), prepare(), _stack_type() and selftest(). Found the spot_ref overwrite, the 'spacing_' vs 'gap_' key mismatch (checked against drc/rules.py lines 597-603 and the empty rule_strictness in the dev rows), and the FV energy-balance gap.",
+    "Checked whether the recompute cross-check is independent: research/o003/headroom_metrics.py imports mfos.metrics and is the source of its patch, so it is not."
+  ],
+  "caveats": [
+    "The runner is complete for --selftest, --verify-freeze, --dev and --plan only. The registered path (full()) stops after the freeze checks, and config.references is empty.",
+    "F6(e) is correct only when the reference set has at most one non-default stack type (finding 1).",
+    "The T0280 rule-strictness report is not produced at all (finding 2).",
+    "The dev rows are smoke rows (lateral e_R term is zero; E009 smoke thermal rule). They do not support the band check, the twin gates or F6(a) under the frozen rule, as the spec itself says.",
+    "Budget conflict: cpu_hours_est 365.5 (billed vCPU-hours) is above budget.cpu_hours 320. The spec states this openly and leaves it to the founder.",
+    "Two Bash attempts at an inline Python recomputation were denied by the sandbox (one by the mfos guard hook). The dev-row e_R, GCI and calibration figures below were therefore recomputed by hand from the JSON values."
+  ]
+}
