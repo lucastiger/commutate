@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T14:34:36+00:00 from repository state — do not edit_
+_generated 2026-11-10T14:35:16+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 254, failed: 3, review: 1, running: 1, todo: 2
 - T0299 `running` critic/review: Review T0298 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T07:51:19+00:00 sleep_detected {"gap_s": 1171, "runs_extended": 1}
 - 2026-11-10T08:05:36+00:00 run_finished {"run": "T0297-critic-20261109T235045-4171", "status": "error", "cost": 3.014905, "subtype": "error_max_budget_usd", "report": "missing"}
 - 2026-11-10T08:05:36+00:00 task_failed_attempt {"task": "T0297", "signal": "agent_error", "action": "repair"}
 - 2026-11-10T08:05:42+00:00 run_started {"run": "T0297-critic-20261110T000542-f34a", "task": "T0297", "role": "critic", "session": "a17f4376-d54d-42c0-a79d-9e94ac38aaad"}
@@ -50,3 +49,4 @@ cancelled: 38, done: 254, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-10T14:14:27+00:00 run_finished {"run": "T0298-builder-20261110T052743-dea1", "status": "completed", "cost": 0.548323, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T14:34:31+00:00 verified {"task": "T0298"}
 - 2026-11-10T14:34:36+00:00 run_started {"run": "T0299-critic-20261110T063436-bbdf", "task": "T0299", "role": "critic", "session": "5c74bcf3-2022-4ffb-8a90-fbeba6e0e079"}
+- 2026-11-10T14:35:10+00:00 sleep_detected {"gap_s": 1244, "runs_extended": 1}
