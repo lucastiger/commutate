@@ -3,7 +3,7 @@ objective: O003
 title: 'Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0273
 description: "Follow-up to T0273, from review T0281 (project/reviews/T0273/T0281.json; read it first).\
@@ -63,4 +63,69 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "All five items are done and committed as 120a4b35. All DoD commands exit 0. The throughput\
+    \ figures come from a loaded machine, not an idle one (see concerns).\n\n1. **Float tolerance.** The\
+    \ foot sampler's clearance comparison now goes through `_far_enough`, with `CLEAR_TOL_MM` = 1e-6 mm\
+    \ (1e-9 m), matching `drc.check`.\n   - New tests: the exact-fit distance 0.6249999999999991 is accepted\
+    \ and 1e-5 mm short is not.\n   - Case 4, k = 3 under measured rules, pitch 0.625 mm, signal feet\
+    \ at ±0.25 mm: the hand-built layout is DRC-clean, and `generate()` finds 5 valid k = 3 layouts with\
+    \ seed 1 and `max_failures` = 30000.\n   - A rule 1e-6 m above a layout's own wire pitch is still\
+    \ rejected by the DRC.\n   - Yield per 15000 raw draws under measured rules is now 189 for k = 1 and\
+    \ 6 for k = 3 (the review s"
+  report:
+    status: completed
+    summary: "All five items are done and committed as 120a4b35. All DoD commands exit 0. The throughput\
+      \ figures come from a loaded machine, not an idle one (see concerns).\n\n1. **Float tolerance.**\
+      \ The foot sampler's clearance comparison now goes through `_far_enough`, with `CLEAR_TOL_MM` =\
+      \ 1e-6 mm (1e-9 m), matching `drc.check`.\n   - New tests: the exact-fit distance 0.6249999999999991\
+      \ is accepted and 1e-5 mm short is not.\n   - Case 4, k = 3 under measured rules, pitch 0.625 mm,\
+      \ signal feet at ±0.25 mm: the hand-built layout is DRC-clean, and `generate()` finds 5 valid k\
+      \ = 3 layouts with seed 1 and `max_failures` = 30000.\n   - A rule 1e-6 m above a layout's own wire\
+      \ pitch is still rejected by the DRC.\n   - Yield per 15000 raw draws under measured rules is now\
+      \ 189 for k = 1 and 6 for k = 3 (the review saw 198 and 1).\n2. **Topology count.** The existing\
+      \ orientation-x exclusion test still passes after the fix (the same two sequences). The docstring\
+      \ now says orientation x has exactly 2 feasible sequences by closed-form necessary conditions plus\
+      \ DRC-clean witnesses. Orientation y is stated as excluded by sampling only: 12000 `_sample` draws,\
+      \ 182 buildable candidates, 0 passing `_quick_ok`, smallest signal-wire excess 17 mm. The y test\
+      \ docstring has the same counts.\n3. **2 mm pitch scope.** The docstring and a new test now state\
+      \ the scope. The 1.35 mm closed form holds for orientation-x LS dies over the strips' x range. A\
+      \ numeric extension (0.25 mm foot grid, diagonal wires, 25 mm limit) bounds the foot distance at\
+      \ 1.81 mm for die centres x in 25..66 mm and y in 30..80 mm. Outside that range the bound exceeds\
+      \ 2 mm (4.8 mm at x = 15, y = 30 mm), so those placements, HS dies and orientation y rest on sampling\
+      \ only.\n4. **Throughput, re-measured and in the docstring.**\n\n   | Rules | k | Candidates per\
+      \ second |\n   |---|---|---|\n   | default | 1 | 153 / 167 |\n   | default | 3 | 12 / 7 |\n   |\
+      \ measured | 1 | 46 / 44 |\n   | measured | 3 | 3.1 / 4.2 |\n\n   For 20,000 candidates this works\
+      \ out to about 2 min (default rules, k = 1), 7–8 min (measured rules, k = 1) and 1.3–1.8 h (measured\
+      \ rules, k = 3). About 88 % of raw draws are rejected as infeasible before building.\n5. **Dead\
+      \ code.** `_gf`, `_Ctx.siglim` and the unused `cx` argument of `_draw_feet` are removed.\n\n`thermal_fem.py`\
+      \ is untouched (sha a216d5fe3209bcee). No DRC rule or existing test was changed."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Throughput was NOT measured on an idle machine. Another agent kept the load average at 5-7 throughout,
+      and the docstring says so. The figures are lower bounds. The earlier 244-253/s figure is not reproduced
+      and is no longer claimed, but it may partly reflect load.
+    - Measured rules at k = 3 run at only about 3-4 candidates/s, so 20,000 candidates would take 1.3-1.8
+      h. E008 should plan for that or use k = 1/2. I did not change the sampler's prior (about 88 % of
+      draws return None).
+    - The 2 mm numeric extension covers orientation-x LS dies only, with grid resolution 0.25 mm, die
+      x step 1 mm and y step 2.5 mm. Its bound is on the foot distance, not on the whole wire, and not
+      a proof. Outside the covered range, and for HS dies and orientation y, exclusion is by sampling
+      only.
+    - The y-orientation counts (182 buildable, 0 passing the pre-check, smallest excess 17 mm) come from
+      one 12000-draw run with seed 1.
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - tests/unit/generate/test_derivative.py
