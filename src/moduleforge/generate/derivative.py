@@ -66,11 +66,25 @@ Limits shown on 2D_Case_4 (tests; its gate / Kelvin pads are assumed, the 25 mm 
   a property of the housing and the rules, not loosened here.  (Under the looser default 1 mm rules at least 3 topologies
   appear, ``test_at_least_three_topologies``.)
 
-Float-tolerance audit (T0290, after review T0288): every float comparison of a derived quantity against a rule value or a grid
-bound uses the DRC's tolerance (1e-9 m = 1e-6 mm): ``_far_enough`` (feet clearance, CLEAR_TOL_MM), ``_quick_ok`` (signal-wire
-length and signal-power wire distance; copper containment and net spacing already had it), the ilo/ihi grid indices of
-``_draw_feet`` (ceil/floor with +-1e-9 like jlo/jhi, pmin/pmax), the landing-point window ``land + ldv`` in ``_sample``.  The
-other comparisons (``_g_up``/``_g_dn``/``_on_grid``/``_pick_end``/the ValueError of ``_wire_pitch``) already had a tolerance.
+Float-tolerance audit (T0290, after review T0288; worded exactly after review T0294).  Comparisons that carry the DRC's tolerance
+(1e-9 m = 1e-6 mm): ``_far_enough`` (feet clearance, CLEAR_TOL_MM), ``_quick_ok`` (signal-wire length, signal-to-power wire
+distance, copper containment ``buffer(1e-9).contains``, net-to-net spacing), the ilo/ihi grid indices of ``_draw_feet`` and the
+landing-point window ``land + ldv`` in ``_sample`` (ceil/floor with +-1e-9, like jlo/jhi, pmin/pmax), ``_g_up``/``_g_dn``/
+``_on_grid``/``_pick_end``/the ValueError of ``_wire_pitch``.  Comparisons with NO tolerance, exact by construction because the
+operands are multiples of the binary-exact grids 0.5 mm and 0.125 mm (sums and differences of such numbers of moderate size are
+exact in float64): ``math.ceil(jc)`` / ``math.floor(jc)`` in ``_draw_feet``, ``hi_l < lo_l``, ``(end - edge) * (-side) < 1.0``,
+``span < smin`` / ``span > smax`` in ``_sample``.  T0294 instrumented 26 000 evaluations and found no near-tie in them.
+Defensive, no observed effect: the ``_quick_ok`` length / pitch tolerances (strict and tolerant versions never disagreed on 22 743
+built candidates; the sampler places feet at pitch + 25 um, away from the tie) and the ilo/ihi and ``land + ldv`` tolerances (no
+test fails when they are reverted).  Only the ``clear()`` / ``_far_enough`` tolerance changes sampled outcomes (k = 3, measured rules).
+
+Keepout spacing (T0295, after review T0294 finding 0): ``drc.check`` compares trace-to-keepout spacing as a Euclidean distance, so
+the sampler's free region (``_Ctx.free``) subtracts keepouts buffered with a ROUND join (16 segments per quarter circle) of radius
+``(spacing - 1e-9 m) * cos(pi / 64)``; the polygonal arc then lies inside the true exclusion disc, so ``_quick_ok`` rejects no
+placement the DRC accepts through this term (a diagonal placement at a keepout corner is kept).  The earlier mitre join had square
+corners (1 of 525 DRC-clean Case 4 candidates under the measured rules was rejected).  The free region is slightly larger than with
+the mitre join.  MEASURED (T0295, ``test_quick_ok_rejects_no_drc_clean_candidate_case4_measured``): Case 4, measured rules, k = 1, rng
+seed 12345, 20 000 ``_sample`` draws: 2266 built, 260 DRC-clean, 0 of them rejected by ``_quick_ok`` (mitre join: 1 in T0294's run).  ``drc.check`` still filters every candidate in ``generate``.  Not changed: the outline edge margin (``allowed``).
 
 Throughput, MEASURED on 2D_Case_4 (T0290; 2 dies per switch, gate + Kelvin wire per die, max power wire 18 mm, signal wires
 25 mm; M-series Mac, one process; DRC-valid candidates per wall second of ``generate`` with seed 1 / seed 2, one run each, so a
@@ -123,6 +137,13 @@ from moduleforge.geometry.stack import LayerStack
 DESIGN_GRID_MM = 0.5
 SIGNAL_NETS_SET = frozenset(SIGNAL_NETS)
 _MIT = {"join_style": "mitre", "mitre_limit": 10.0}
+# Keepout exclusion zones: round join (the DRC measures trace-to-keepout spacing as a Euclidean distance, so a mitre corner would
+# exclude placements the DRC accepts, T0294 finding 0).  The arc is a polygon with 16 segments per quarter circle; its vertices lie
+# on the circle (inscribed), and the radius is further multiplied by cos(pi / 64) = cos(half the angle of one segment) so that the
+# polygon lies inside the true disc even if a buffer implementation circumscribed it (reduction <= 1.2e-3 of the radius, 6 um at 5 mm).
+_ROUND_SEGS = 16
+_ROUND_SHRINK = math.cos(math.pi / (4 * _ROUND_SEGS))
+_RND = {"join_style": "round", "quad_segs": _ROUND_SEGS}
 
 
 def _g_up(v: float) -> float:
@@ -475,7 +496,7 @@ class _Ctx:
         ko = [(t.net, t.polygon) for t in spec.keepouts]
         self.free = {}
         for n in NETS:
-            cut = [poly.buffer(r.spacing_for(n, kn) - 1e-9, **_MIT) for kn, poly in ko]
+            cut = [poly.buffer((r.spacing_for(n, kn) - 1e-9) * _ROUND_SHRINK, **_RND) for kn, poly in ko]
             self.free[n] = self.allowed.difference(unary_union(cut)) if cut else self.allowed
         self.pads = {n: (t.cx - t.w / 2, t.cy - t.h / 2, t.cx + t.w / 2, t.cy + t.h / 2)
                      for n, t in spec.terminals.items()}
@@ -816,8 +837,10 @@ def _quick_ok(spec: ReferenceSpec, cx: _Ctx, lay: Layout) -> bool:
     """Cheap necessary conditions (a subset of the DRC, tested before the expensive width checks): copper inside its
     free region, spacing between the power nets, signal-wire length limits, no plan-view crossing of signal and power wires.
 
-    Every comparison against a rule value carries the DRC's own tolerance (``drc.rules.TOL`` = 1e-9 m), so the pre-check never
-    rejects a layout ``drc.check`` accepts (T0288 finding 3): signal-wire length ``<= limit + TOL``, signal-to-power wire
+    The rule-value comparisons below carry the DRC's own tolerance (``drc.rules.TOL`` = 1e-9 m) (T0288 finding 3); keepout
+    spacing is tested against a round-joined free region (see the module docstring, T0295), so the float tolerance and the
+    Euclidean keepout distance are covered.  Not proved for every housing: T0295 counted zero DRC-clean candidates rejected on the
+    sampled specs only.  Signal-wire length ``<= limit + TOL``, signal-to-power wire
     distance ``>= min_wire_pitch - TOL`` (shapely gives 0.0006249999999999971 m for the grid-exact 0.02875 / 0.029375 m pair)."""
     tr = lay.traces
     for t in tr[:3]:

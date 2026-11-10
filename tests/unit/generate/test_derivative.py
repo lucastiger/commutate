@@ -13,11 +13,12 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
+from shapely.ops import unary_union
 
 from moduleforge.drc import DesignRules, check, measure_rules
 from moduleforge.generate import derivative as D
-from moduleforge.geometry import GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS, NETS
+from moduleforge.geometry import DC_MINUS, DC_PLUS, PHASE, GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS, NETS
 from moduleforge.physics.peec import loop_inductance
 from moduleforge.solvers import l2_layout as L2
 from moduleforge.solvers import thermal_fem as F
@@ -575,41 +576,42 @@ def test_case4_k3_measured_rules_exact_fit_foot_and_generation(c4):
 
 
 class _ScriptedRng:
-    """Stand-in for ``numpy.random.Generator`` that drives ``_draw_feet`` down one branch: every ``random()`` is 0.0 (spread the
-    signal feet, no foot offset per die, take the clear-placement branch, v towards the landing line); ``integers`` returns 0 for
-    the signal v offsets and the pitch step, then ``want`` (clipped to the range) for the 30 clear-branch tries and 0 for the
-    unconstrained fallback draw (clipped to the lowest index), so the exact-fit foot is returned iff ``clear()`` accepted it."""
+    """Stand-in for ``numpy.random.Generator`` that steers ``_draw_feet`` by the RANGE of each draw, not by the call number: every
+    ``random()`` is 0.0 (spread the signal feet, no foot offset per die, clear-placement branch, v towards the landing line);
+    ``integers(lo, hi)`` returns ``want`` (clipped into the range) for the foot-index draws (``lo > 0``: the grid indices of the
+    foot, around 235) and 0 (clipped) for the others (signal v offset, pitch step, which include 0).  The first ``tries`` foot-index
+    draws return ``want`` (the clear-branch tries); every later one returns the lowest index (the unconstrained fallback).  So the
+    exact-fit foot is returned iff the clear branch accepted it; the assertions only look at the returned feet."""
 
-    def __init__(self, want):
-        self.want, self.n = want, 0
+    def __init__(self, want, tries=30):
+        self.want, self.tries, self.n_idx = want, tries, 0
 
     def random(self):
         return 0.0
 
     def integers(self, lo, hi=None):
-        self.n += 1
-        if self.n <= 3:  # gate v, Kelvin v, pitch step
-            return min(max(0, lo), hi - 1)
-        return min(max(self.want if self.n <= 33 else 0, lo), hi - 1)
+        if lo > 0:
+            self.n_idx += 1
+            return min(max(self.want if self.n_idx <= self.tries else 0, lo), hi - 1)
+        return min(max(0, lo), hi - 1)
 
 
 def _exact_fit_feet(c4):
     """LS row of Case 4 under the measured rules, k = 3: the foot sampler's ``clear`` branch asked for the exact fit (power feet
     29.375 / 30 / 30.625 mm, signal feet 28.75 / 31.25 mm at the die-0 pad: every power-to-signal distance is exactly 0.625 mm).
-    Returns (fu0 of the result, number of ``integers`` draws)."""
+    Returns (spec, result of ``_draw_feet``)."""
     spec = dataclasses.replace(case4_measured_spec(c4), wires_per_die=3)
     rng = _ScriptedRng(want=235)  # 235 * 0.125 mm = 29.375 mm, the first power foot
     out = D._draw_feet(spec, rng, D._Frame(0), case4_reference_params().rows[1], -1.0)
-    return spec, out, rng.n
+    return spec, out
 
 
 def test_draw_feet_clear_branch_accepts_exact_fit(c4):
     """T0288 finding 0: drives ``_draw_feet``'s inner ``clear()`` on the exact-fit k = 3 configuration (pitch 0.625 mm, signal feet
-    at +-0.25 mm).  With the fix the first clear-branch try is accepted (4 ``integers`` draws + the v offset = 5); the companion
-    test ``test_draw_feet_clear_branch_fails_without_tolerance`` shows the same call with ``CLEAR_TOL_MM = 0`` rejects it
-    (all 30 tries, then the fallback), so reverting ``clear()`` to a strict comparison fails one of the two."""
-    spec, out, n = _exact_fit_feet(c4)
-    assert n == 5
+    at +-0.25 mm).  With the fix the exact-fit foot is accepted and returned; the companion test
+    ``test_draw_feet_clear_branch_fails_without_tolerance`` shows the same call with ``CLEAR_TOL_MM = 0`` returns another foot, so
+    reverting ``clear()`` to a strict comparison fails one of the two.  Outcome assertions only (T0294 finding 3)."""
+    spec, out = _exact_fit_feet(c4)
     (fu0, fud, pit, fv), sig = out
     assert pit == pytest.approx(0.625) and sig == (-0.25, 0.0, 0.25, 0.0)
     assert 235 * 0.125 == pytest.approx(29.375) and fu0 - 0.625 == pytest.approx(29.375 - 30.085, abs=1e-9)
@@ -617,11 +619,68 @@ def test_draw_feet_clear_branch_accepts_exact_fit(c4):
 
 def test_draw_feet_clear_branch_fails_without_tolerance(c4, monkeypatch):
     """Companion: with the tolerance removed (CLEAR_TOL_MM = 0, the pre-T0282 behaviour) the exact fit is rejected by ``clear()``
-    in all 30 tries (the distance is 0.6249999999999991 mm < 0.625) and the unconstrained fallback draw is returned instead."""
+    (the distance is 0.6249999999999991 mm < 0.625) and a different foot (the unconstrained fallback) is returned."""
     monkeypatch.setattr(D, "CLEAR_TOL_MM", 0.0)
-    _, out, n = _exact_fit_feet(c4)
-    assert n == 35  # 3 + 30 tries + fallback + v offset
+    _, out = _exact_fit_feet(c4)
     assert out[0][0] - 0.625 != pytest.approx(29.375 - 30.085, abs=1e-9)
+
+
+# ------------------------------------------------------------------ round keepout corners (T0294 finding 0, T0295)
+def test_free_region_keeps_diagonal_keepout_corner_placement(c4):
+    """A point on the 45-degree diagonal of a keepout corner at Euclidean distance 1.01 * spacing is DRC-legal (the DRC measures
+    Euclidean distance) but lies inside the mitre square (it is only 0.71 * spacing away along each axis).  The round-joined
+    free region keeps it, so a trace there is not rejected by ``_quick_ok``'s containment test."""
+    spec = case4_measured_spec(c4)
+    cx = D._Ctx(spec)
+    tested = 0
+    for t in spec.keepouts:
+        sp = spec.rules.spacing_for(PHASE, t.net)
+        x0, y0, x1, y1 = t.polygon.bounds
+        d = 1.01 * sp / np.sqrt(2)
+        for (ex, ey), sx, sy in (((x1, y1), 1, 1), ((x0, y0), -1, -1), ((x1, y0), 1, -1), ((x0, y1), -1, 1)):
+            q = Point(ex + sx * d, ey + sy * d)
+            if cx.allowed.contains(q) and all(k.polygon.distance(q) >= spec.rules.spacing_for(PHASE, k.net) for k in spec.keepouts):
+                assert cx.free[PHASE].contains(q), (t.net, q.wkt)
+                tested += 1
+    assert tested >= 1
+
+
+def test_round_free_region_never_exceeds_euclidean_exclusion(c4):
+    """The free region is a superset of {points at Euclidean distance >= spacing from every keepout} (inside the outline margin):
+    random points of the DRC-legal set are all inside ``free``; and ``free`` contains points the mitre corner would cut."""
+    spec = case4_measured_spec(c4)
+    cx = D._Ctx(spec)
+    rng = np.random.default_rng(7)
+    xmin, ymin, xmax, ymax = cx.allowed.bounds
+    pts = [Point(x, y) for x, y in zip(rng.uniform(xmin, xmax, 4000), rng.uniform(ymin, ymax, 4000), strict=True)]
+    for n in (PHASE, DC_PLUS, DC_MINUS):
+        for q in pts:
+            if cx.allowed.contains(q) and all(k.polygon.distance(q) >= spec.rules.spacing_for(n, k.net) for k in spec.keepouts):
+                assert cx.free[n].buffer(1e-9).contains(q), (n, q.wkt)
+    mit = {n: cx.allowed.difference(unary_union([k.polygon.buffer(spec.rules.spacing_for(n, k.net) - 1e-9, join_style="mitre", mitre_limit=10.0)
+                                                  for k in spec.keepouts])) for n in (PHASE,)}
+    assert cx.free[PHASE].difference(mit[PHASE]).area > 0  # the round corners free some area the square corners cut
+    assert mit[PHASE].difference(cx.free[PHASE]).area < 1e-12
+
+
+def test_quick_ok_rejects_no_drc_clean_candidate_case4_measured(c4):
+    """T0294's count, repeated: Case 4 under the measured rules, k = 1, rng seed 12345, 20000 ``_sample`` draws; every candidate
+    that is built and DRC-clean must pass ``_quick_ok`` (T0294 found 1 of 525 failing with the mitre join).  The number of
+    DRC-clean candidates is asserted > 100 so the test cannot pass vacuously."""
+    spec = case4_measured_spec(c4)
+    cx = D._Ctx(spec)
+    rng = np.random.default_rng(12345)
+    clean = rejected = 0
+    for _ in range(20000):
+        p = D._sample(spec, cx, rng)
+        if p is None:
+            continue
+        lay = D.build(spec, p)
+        if check(lay, spec.rules) == []:
+            clean += 1
+            rejected += not D._quick_ok(spec, cx, lay)
+    assert clean > 100, clean
+    assert rejected == 0, (rejected, clean)
 
 
 def _signal_layout(c4):
