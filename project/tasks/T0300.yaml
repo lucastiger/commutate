@@ -4,7 +4,7 @@ title: 'Twin: band-copper column removal keeps T-junction necks; split tests tha
   T0299)'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on:
 - T0298
 description: "Follow-up to T0298, from review T0299 (project/reviews/T0298/T0299.json; read it first).\
@@ -53,12 +53,13 @@ model: null
 budget_usd: 4.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0300-twin-band-copper-column-removal-keeps-t-
 pr: null
 runs:
 - T0300-builder-20261110T072025-dabc
+- T0300-builder-20261110T094647-e3b4
 created_by: session
 created_at: '2026-11-10T14:55:58+00:00'
 protected_approved: false
@@ -120,3 +121,41 @@ history:
       the strip's u-end is treated as a side column; this only notches the end of the band, and the step
       is still recovered (test case u 35-40).
     - The scan script is not committed; it was an ad hoc script run through `uv run python`.
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] Regression: a side column with any strip copper beyond it is reclassified
+    as a ''neck'' and brings back the T0297 bias: The new rule in `_band_copper` takes a crossing u-range
+    for a neck when `a0 > u_min` and `a1 < u_max`, where `u_min`/`u_max` are the bounds of the whole strip.
+    That is a global test. Any copper of the net inside the band''s v-range on the far side of a side
+    column puts that column strictly inside the bounds, so the column is kept as band copper. Examples
+    are a 1 x 0.5 mm nub, a column 2 mm wider inside the band than at the probe line, or a disconnected
+    island of the net. The kept column then pulls the minimum off the step exactly as in T0297 finding
+    0. The pre-change code gives the correct boundary (13) on every one of these geometries, so the change
+    itself causes the regression. It contradicts the docstring''s guarantee that ''a column of any width
+    does not move the minimum (T0297 finding 0)''. The only restriction the docstring lists is the side
+    column lying inside [lo, hi]. This matters for the decision: the twin is applied to the judged references
+    of O003 (customer NDA layouts, or PowerSynth 2D_Case_2R/6). Those are not generator-built layouts,
+    so irregular column outlines are in scope, and a wrong split changes the twin''s slot rectangles.
+
+    - [major] Flush end-necks (L-junctions) still flatten the L-band to a rectangle; the neck tests''
+    flush positions do not tell the old and new code apart: A neck joining the band''s lower edge flush
+    with the u-end of the wider slot is still classified as a side column. For example u 30-40 or 28-40
+    at v 0-10, which lies under the die slot and beside the narrower landing slot. Removing it across
+    the full [lo, hi] notches the die slot back to the landing slot''s u-extent, so the band turns rectangular,
+    every candidate ties, and the midpoint 14.5 wins instead of 13. This is the same failure mode as T0299
+    finding 0, and the docstring does not list it as a restriction. In `test_best_split_keeps_t_junction_necks_from_below_and_above`,
+    the positions (0,3), (5,10) and (35,40) also pass under the pre-change code: the flush ones are removed
+    as columns and survive only because they are narrower than the 10 mm gap. (35,40) from above (v 20-30)
+    does not touch the band at all, since the landing slot ends at u 30. The test docstring ''Necks of
+    several widths and positions recover the step'' therefore claims more than the tests prove. Only the
+    interior positions (20,25), (25,35), (10,30) and (22,23) discriminate the fix.
+
+    - [minor] One parametrized ''neck'' case is disconnected copper: `_l_band((35, 40, 20, 30))` adds
+    an island that does not touch the landing slot (u 0-30). It exercises the column-removal branch on
+    a separate piece of copper, not a T-junction neck.
+
+    - [note] Doc-only change to the degrade record (''stopped'' vs ''skipped'') falls outside the stated
+    title: The module docstring now documents the `stopped` list. It matches the code at twin.py:775 and
+    :811 and changes no behaviour.'
+  at: '2026-11-10T17:46:45+00:00'

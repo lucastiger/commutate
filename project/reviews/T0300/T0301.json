@@ -1,0 +1,48 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "Regression: a side column with any strip copper beyond it is reclassified as a 'neck' and brings back the T0297 bias",
+      "detail": "The new rule in `_band_copper` takes a crossing u-range for a neck when `a0 > u_min` and `a1 < u_max`, where `u_min`/`u_max` are the bounds of the whole strip. That is a global test. Any copper of the net inside the band's v-range on the far side of a side column puts that column strictly inside the bounds, so the column is kept as band copper. Examples are a 1 x 0.5 mm nub, a column 2 mm wider inside the band than at the probe line, or a disconnected island of the net. The kept column then pulls the minimum off the step exactly as in T0297 finding 0. The pre-change code gives the correct boundary (13) on every one of these geometries, so the change itself causes the regression. It contradicts the docstring's guarantee that 'a column of any width does not move the minimum (T0297 finding 0)'. The only restriction the docstring lists is the side column lying inside [lo, hi]. This matters for the decision: the twin is applied to the judged references of O003 (customer NDA layouts, or PowerSynth 2D_Case_2R/6). Those are not generator-built layouts, so irregular column outlines are in scope, and a wrong split changes the twin's slot rectangles.",
+      "evidence": "L-band from the tests (die slot u0-40 x v10-13, landing slot u0-30 x v13-20, _L_ANCHOR), ivs taken from `_v_interval` probes ([10,20] for both slots):\ncolumn (40,52,0,30) alone: new 13.0, old 13.0\n+ nub (52,53,10.5,11): new 15.5, old 13.0\n+ tab (52,55,14,18): new 15.5, old 13.0\n+ nub (52,52.5,19,20): new 15.5\ncolumn (40,50,0,30) widened to 52 inside v10-20: new 15.5\ncolumn (40,50,0,30) + (50,51,15,16): new 14.5, old 13.0\ncolumn (40,52,0,30) + island (60,62,12,14), so the net is a MultiPolygon: new 15.5\n'old' is the pre-change `_band_copper`, reconstructed from the diff and monkeypatched in.",
+      "suggested_check": "Classify a crossing u-range as a column by its own local geometry, for example whether the copper at that u-range spans the full strip height or adjoins the slots' chords at the probe rows, not by the strip's global u-bounds; add the nub, widened-column and island cases as tests.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Flush end-necks (L-junctions) still flatten the L-band to a rectangle; the neck tests' flush positions do not tell the old and new code apart",
+      "detail": "A neck joining the band's lower edge flush with the u-end of the wider slot is still classified as a side column. For example u 30-40 or 28-40 at v 0-10, which lies under the die slot and beside the narrower landing slot. Removing it across the full [lo, hi] notches the die slot back to the landing slot's u-extent, so the band turns rectangular, every candidate ties, and the midpoint 14.5 wins instead of 13. This is the same failure mode as T0299 finding 0, and the docstring does not list it as a restriction. In `test_best_split_keeps_t_junction_necks_from_below_and_above`, the positions (0,3), (5,10) and (35,40) also pass under the pre-change code: the flush ones are removed as columns and survive only because they are narrower than the 10 mm gap. (35,40) from above (v 20-30) does not touch the band at all, since the landing slot ends at u 30. The test docstring 'Necks of several widths and positions recover the step' therefore claims more than the tests prove. Only the interior positions (20,25), (25,35), (10,30) and (22,23) discriminate the fix.",
+      "evidence": "new and old code both give: neck (30,40,0,10) -> 14.5, (28,40,0,10) -> 14.5, (0,12,0,10) -> 13.0.\nParametrized neck cases under the old code: (20,25), (25,35), (10,30), (22,23) -> 14.5 (they discriminate); (5,10), (0,3), (35,40) -> 13.0 (they do not).",
+      "suggested_check": "Add a flush end-neck at least as wide as the gap, e.g. (30,40,0,10), and either handle it or list it as a stated restriction.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "One parametrized 'neck' case is disconnected copper",
+      "detail": "`_l_band((35, 40, 20, 30))` adds an island that does not touch the landing slot (u 0-30). It exercises the column-removal branch on a separate piece of copper, not a T-junction neck.",
+      "evidence": "The landing slot spans u 0-30 at v 13-20; the box u 35-40 x v 20-30 shares no boundary with the band.",
+      "suggested_check": "Replace it with a neck that touches copper, e.g. (25,30,20,30).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Doc-only change to the degrade record ('stopped' vs 'skipped') falls outside the stated title",
+      "detail": "The module docstring now documents the `stopped` list. It matches the code at twin.py:775 and :811 and changes no behaviour.",
+      "evidence": "twin.py lines 100-101 against 787 and 811-812.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every DoD command: `pytest tests/unit/generate` (88 passed), fast unit suite (835 passed, 39 deselected), `ruff check .` (clean), thermal_fem.py sha256 prefix a216d5fe3209bcee (matches), `mfos gate --fast` (all gates passed).",
+    "Rebuilt the pre-change `_band_copper` from the diff and ran both versions on every new test geometry. The interior necks (20,25), (25,35), (10,30) and (22,23) fail under the old code, so those tests discriminate the fix; (0,3), (5,10) and (35,40) do not.",
+    "Built adversarial geometries with ivs taken from `_v_interval` probes, as the `_fit` path does: side columns carrying a small nub or tab, a column wider inside the band, a disconnected island. The new code returns 15.5 or 14.5 where the old code and the true step give 13.",
+    "Built flush end-necks at the u-end of the wider slot: (30,40) and (28,40) below give 14.5 under both old and new code.",
+    "Read `derivative.generate`'s construction of columns and slots: in the generator family, columns sit at the strip's u-end with no copper beyond them, so the regression affects only non-generator (fit-path) references. Checked O003's objective.yaml: the judged references are customer or PowerSynth layouts, i.e. non-generator."
+  ],
+  "caveats": [
+    "The regression and the flush-neck failure come from hand-built `_best_split` inputs, not from an actual customer or PowerSynth reference; I did not have those layouts. Whether a judged reference has copper beyond a side column inside the merged PHASE band's v-range is unverified.",
+    "On generator-built layouts (side column at the strip's u-end, nothing beyond it) the new classification behaves correctly, and all repository tests pass."
+  ]
+}
