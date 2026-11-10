@@ -160,7 +160,7 @@ class GitOps:
                 return ("conflict" if "CONFLICT" in self.last_error else "error"), None
             msg = ["-m", f"[{t.id}] {t.title}"]
             if t.approval:
-                msg += ["-m", f"Founder-Approved: {t.approval}"]
+                msg += ["-m", f"Founder-Approved: {t.approval}\n{self.s.founder_trailer}"]
             self.s.git("commit", "--allow-empty", *msg)
             return "merged", None
         # github mode

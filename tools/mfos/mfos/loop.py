@@ -1185,8 +1185,20 @@ class Orchestrator:
         if staged == ["project/STATUS.md"]:  # a fresher timestamp alone is not worth a commit
             self.s.git("reset", "-q", "--", "project/STATUS.md", check=False)
             return
-        self.s.git("commit", "-q", "-m", f"chore(state): {why}", check=False)
+        msg = f"chore(state): {why}"
+        if self._records_founder_decision(staged):
+            msg += f"\n\n{self.s.founder_trailer}"
+        self.s.git("commit", "-q", "-m", msg, check=False)
         self._push()
+
+    def _records_founder_decision(self, staged: list[str]) -> bool:
+        """True when a staged inbox item was resolved by the founder: at a terminal ("human") or by a session on
+        their word ("session"). Items the orchestrator closes itself carry no resolver."""
+        for p in staged:
+            if fnmatch.fnmatch(p, "project/inbox/I*.yaml") and (self.s.root / p).exists():
+                if self.s.read_yaml(self.s.root / p, m.InboxItem).resolved_by in ("human", "session"):
+                    return True
+        return False
 
     def _push(self) -> None:
         """Publish main (merges, state, tags) in every mode. The forge box is main's single writer."""

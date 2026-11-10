@@ -110,7 +110,9 @@ def test_level2_every_merge_needs_founder_and_is_traceable(sandbox):
     s = drive()
     assert s.objective_state("O000").status == "passed"
     log = s.git("log", "--format=%B", "-n", "40")
-    assert f"Founder-Approved: {item.id}" in log
+    # GitHub credits the approving founder as co-author of the merge and of the commit recording the approval
+    assert f"Founder-Approved: {item.id}\n{s.founder_trailer}" in log
+    assert s.founder_trailer in s.git("log", "--format=%B", "-n", "1", "--", f"project/inbox/{item.id}.yaml")
     import subprocess
     import sys
     from pathlib import Path
@@ -206,6 +208,20 @@ def test_a_left_over_status_refresh_does_not_block_a_restart(sandbox):
     assert Orchestrator(s).unexpected_changes() == []
     (sandbox / "src" / "moduleforge" / "__init__.py").write_text("# stray\n")
     assert Orchestrator(s).unexpected_changes() == ["src/moduleforge/__init__.py"]
+
+
+def test_state_commits_credit_the_founder_only_for_their_decisions(sandbox):
+    s = Store()
+    o = Orchestrator(s)
+    item = s.add_inbox(kind="question", subject="q", summary="", refs=[])
+    staged = [f"project/inbox/{item.id}.yaml", "project/events.jsonl"]
+    assert not o._records_founder_decision(staged)  # open
+    for by, credited in (("session", True), ("human", True), (None, False)):
+        item.status, item.resolved_by = "answered", by
+        s.save_inbox(item)
+        assert o._records_founder_decision(staged) is credited, by
+    assert not o._records_founder_decision(["project/events.jsonl"])
+    assert s.founder_trailer.startswith("Co-authored-by: ")
 
 
 def test_founder_files_are_never_committed_by_the_bot(sandbox):

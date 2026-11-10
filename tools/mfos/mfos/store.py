@@ -86,6 +86,8 @@ class Store:
         # Founder-authored files (objectives, charter, decisions) are committed under the founder's identity.
         self.founder_env = {**os.environ, "GIT_AUTHOR_NAME": fname, "GIT_AUTHOR_EMAIL": femail,
                             "GIT_COMMITTER_NAME": fname, "GIT_COMMITTER_EMAIL": femail}
+        # Bot commits that carry a founder decision (an approved merge, a resolved inbox item) credit the founder.
+        self.founder_trailer = f"Co-authored-by: {fname} <{femail}>"
 
     # ------------------------------------------------------------------ generic IO
     def _load_policy(self) -> dict[str, Any]:
