@@ -1,9 +1,8 @@
 # ModuleForge status
-_generated 2026-11-10T04:18:49+00:00 from repository state — do not edit_
+_generated 2026-11-10T04:19:34+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0158** [protected_change] T0290: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -22,7 +21,7 @@ _generated 2026-11-10T04:18:49+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 51 | $84.40 | 1656823 | 884555 | 88 | 0 |
+| O003 | 52 | $84.40 | 1656823 | 884555 | 88 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -30,15 +29,13 @@ _generated 2026-11-10T04:18:49+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 248, failed: 3, merge: 1, running: 2, todo: 3
+cancelled: 38, done: 249, failed: 3, running: 3, todo: 2
 
-- T0290 `merge` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
 - T0292 `running` builder/implement: Search driver: import the evaluator's band estimator, union near-tie window, thermal record checks (review T0289) (attempt 1)
 - T0293 `running` builder/implement: Twin/degrade: L1-raising fallback walk for minimum-width bands, exact merged-band split (review T0291) (attempt 1)
+- T0295 `running` builder/implement: Generator: pre-check keepouts consistent with the DRC's Euclidean spacing, true docstrings (review T0294) (attempt 1)
 
 ## Recent events
-- 2026-11-10T03:33:42+00:00 inbox_resolved {"id": "I0156", "status": "approved", "note": "Merge T0285: one band-based e_R, atomic checkpoint repair, whitelisted thermal records; T0289 accepts with minor 
-- 2026-11-10T03:33:44+00:00 inbox_resolved {"id": "I0157", "status": "approved", "note": "Merge T0287: degradation target 1.25 x 1.11 reached on the 54-layout population and Case 4, merged-band split, ex
 - 2026-11-10T03:36:04+00:00 verified {"task": "T0290"}
 - 2026-11-10T03:36:07+00:00 merged {"task": "T0285"}
 - 2026-11-10T03:40:34+00:00 merged {"task": "T0287"}
@@ -52,3 +49,5 @@ cancelled: 38, done: 248, failed: 3, merge: 1, running: 2, todo: 3
 - 2026-11-10T04:18:04+00:00 inbox_opened {"id": "I0158", "kind": "protected_change", "subject": "T0290: merge needs founder approval"}
 - 2026-11-10T04:18:43+00:00 sleep_detected {"gap_s": 606, "runs_extended": 2}
 - 2026-11-10T04:18:50+00:00 inbox_resolved {"id": "I0158", "status": "approved", "note": "Merge T0290: DRC-consistent float tolerance in _quick_ok and _draw_feet, tests that fail without the T0288 fixes;
+- 2026-11-10T04:19:28+00:00 merged {"task": "T0290"}
+- 2026-11-10T04:19:34+00:00 run_started {"run": "T0295-builder-20261109T201934-5692", "task": "T0295", "role": "builder", "session": "22ff16e8-a093-45a8-a66d-43d4ef177107"}
