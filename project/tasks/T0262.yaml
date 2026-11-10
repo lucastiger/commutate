@@ -23,6 +23,7 @@ depends_on:
 - T0292
 - T0293
 - T0295
+- T0298
 description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_run.py on mfos.evidence.ExperimentRun,
   following experiments/specs/E009.yaml and experiments/runners/e009_run.py.
 
@@ -166,7 +167,11 @@ description: 'Draft experiments/drafts/E008.yaml and experiments/runners/e008_ru
   - Pre-check false rejections (T0295): _quick_ok was shown to reject no DRC-clean candidate only on Case
   4, measured rules, one seed. Per reference, the run reports how many DRC-clean samples _quick_ok rejects
   over a fixed sealed sample (L0 only), flagged when non-zero because it narrows the search (reported,
-  not gated).'
+  not gated).
+
+  - Midpoint convention (review T0297 note 2): on rectangular merged bands the copper does not fix the
+  slot boundary and the twin''s midpoint-of-needs rule decides it, which degradation move 1 depends on.
+  Record per reference whether the midpoint rule decided any split, and which.'
 context_files:
 - project/objectives/O003/objective.yaml
 - experiments/specs/E009.yaml

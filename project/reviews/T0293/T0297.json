@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The best-split score counts attached column copper, so an L-shaped band beside a wide column splits off the generator's boundary",
+      "detail": "`_best_split` scores each candidate boundary by the symmetric difference between the net's whole copper (`polys[net]`, columns included) and only the two slot rectangles. If the wider slot runs into an attached column that spans the boundary in v, raising the boundary lets the lower rectangle's chord cover more column. In the score that cancels the non-copper it adds beside the narrower slot. When the column is at least as wide as that gap, the minimum moves away from the true step. The twin then carries extra copper. This contradicts the docstring sentence 'When the two slots have different u-extents (an L-shaped band) the minimum is unique and is the generator's boundary' outside generator space. Generator layouts were never affected: 0 bad results in 475 merged layouts and 56 `_best_split` calls. A judged reference with this geometry would show a nonzero `symdiff_area_total_mm2` in the twin record, so the error is visible rather than silent.",
+      "evidence": "Hand-made PHASE copper: lower die slot u 0-40 \u00d7 v 10-13, upper landing slot u 0-30 \u00d7 v 13-20 (true boundary 13), plus a column at u = 40 spanning v 0-30. Returned boundary for column width 0 / 5 / 8 mm: 13.0 / 13.0 / 13.0. For 10 / 12 / 15 mm: 14.5 / 15.5 / 15.5.",
+      "suggested_check": "Score each candidate against the copper restricted to the band's own v-range (or against rects \u222a (poly minus the band strip)). Add the column-adjacent L-band to `test_best_split_is_the_minimum_symmetric_difference_boundary`.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "`record['skipped']` can list a spread move that was in fact applied",
+      "detail": "In `degrade`'s move loop, a spread family whose step q \u2265 2 fails `_try` appends '<name>: <why>' to `skipped` and breaks, but step q-1 is kept and appended to `moves` as '<name>x<q-1 * 0.5>mm'. The same move then appears in both lists. That contradicts the docstring, which says `skipped` holds 'moves not applied and why'. The geometry and the ratio are unaffected; only the audit record is.",
+      "evidence": "twin.py lines 760-783: `rec['skipped'].append(f\"{name}: {why}\"); break` runs before `if kept is not None: ... rec['moves'].append(...)`, and kept is not reset. Found by reading the code; I did not run it (process limit).",
+      "suggested_check": "Record a failed step q > 1 as 'stopped at step q-1' (or leave it out of `skipped`), and assert in a test that `moves` and `skipped` are disjoint by family name.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The split is exact only for the copper; for rectangular bands the boundary is a convention",
+      "detail": "For rectangular merged bands, the copper does not determine the boundary, and the midpoint-of-needs rule picks it. The docstring says this openly, and that the degradation (move 1 narrows the landing slot) depends on the choice. The rectangular-band test prints `n_same` (how often the generator's boundary is recovered) but does not lock it. So 'exact merged-band split' means exact copper, label and L1; the slot boundary itself is exact only for non-rectangular bands in generator space.",
+      "evidence": "`_best_split` docstring and `test_rectangular_merged_bands_keep_each_slots_contents`, which has no assertion on `n_same`.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The walk is judged by the same L1 screen it climbs, and the 0.11 margin was not derived on walk outputs",
+      "detail": "The walk maximises L1 and stops just above 1.3875 (median 1.394 on the 2 mm set). The 5-14 % L1-versus-L2 bias band behind DEGRADE_MARGIN was measured on generator layouts, not on hill-climbed ones. One case shows mesh stability (1.394 / 1.390 / 1.392), which does not rule out a systematic L1-vs-L2 bias on walk outputs. All of this is stated in the docstring. It caps what a walk-produced D certifies until E008's L2 ratio is recorded.",
+      "evidence": "I re-derived the margin arithmetic: L2 ratio = L1 ratio \u00d7 (1 \u2212 b_W)/(1 \u2212 b_D), worst case 0.86/0.95, and 1.3875 \u00d7 0.86/0.95 = 1.2561 \u2265 1.25. Case 4: 1.421 \u00d7 0.847/0.908 = 1.3255, which matches the stated 1.325.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "`with_l1=False` behaviour changed",
+      "detail": "Without L1, `degrade` used to apply only the first feasible move among 1 and 2. It now applies the first feasible move among 1, 2 and 3, so a 0.5 mm spread can be applied. This is documented. `git grep` finds no callers outside twin.py and its tests, so nothing downstream breaks.",
+      "evidence": "`git grep 'degrade('` over src, experiments, tests and tools.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/generate` (DoD item 1): 69 passed in 123 s.",
+    "Ran `uv run pytest -q -m 'not slow' tests/unit` (DoD item 2; with ruff it is all that `mfos gate --fast` runs, per `.mfos/policy.toml`): 810 passed, 39 deselected in 435 s, exit code 0.",
+    "Ran `uv run ruff check .` (DoD item 3): all checks passed. `git status` is clean.",
+    "Recomputed the thermal_fem.py hash (DoD item 4): `shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16` = a216d5fe3209bcee, which matches.",
+    "Ran the slow regression test `tests/regression/test_degrade_walk_stress.py` (581 s, passed). It reproduced the locked results: 63 of 72 reach the target (ratios min 1.3875, median 1.3943, max 2.0866); 9 stop at local maxima with terminal ratios 1.2058-1.3717 after 48-64 walk steps, starting from 1.0025-1.2251.",
+    "Swept the merged-band split on fresh seeds not used in the author's tests (31000+, 41000+ at 1 mm; 32000+, 42000+ at 2 mm; n = 2-4, k = 1-3). Every merged layout was fitted in forced fit mode (family='anonymous'), and I checked total symmetric difference < 1e-6 mm\u00b2, slot v-extents equal to the generator's, and an equal topology label. Result: 475 merged layouts, 56 `_best_split` calls, 0 failures.",
+    "Built an adversarial input for `_best_split`: an L-shaped PHASE band with an attached column of varying width. The boundary moves off the true step (13 \u2192 14.5 / 15.5) once the column is at least as wide as the gap beside the narrower slot (finding 0).",
+    "Checked that the walk cannot raise L1 by cutting a terminal off its copper: DRC `check` has `terminal_off_trace` (rules.py:328-332), and every walk candidate goes through `_try`, which runs build plus DRC.",
+    "Re-derived the DEGRADE_MARGIN bias algebra and the Case 4 L2 ratio by hand (they agree with the docstring), and checked the docstring's ranges against the locked TERMINAL / START tables in the stress test (1.206-1.372 and 1.003-1.225 agree).",
+    "Checked the walk's parameter range against `Params.NAMES`: indices 4 to `N_COPPER_PARAMS` (40) are exactly 12 column, 16 slot, 6 row and 2 landing entries; feet and signal feet are excluded.",
+    "Checked that no existing test was deleted or loosened: the diff only adds assertions, and it locks the 54-layout distribution and the Case 4 ratio."
+  ],
+  "caveats": [
+    "The merged-band split is exact for generator layouts (0 failures in 475 merged fresh-seed layouts). On judged references whose wider merged slot runs into a column at least as wide as the gap beside the narrower slot, it can pick a non-generator boundary. The twin's symmetric-difference record would show this.",
+    "For rectangular merged bands, 'exact' covers copper, label and L1 only. The slot boundary comes from the midpoint-of-needs convention, and the degraded D depends on it.",
+    "The walk raises L1 (the screen that also decides when it stops) and ends just above the target. The 0.11 margin was derived on generator layouts, not walk outputs, so a walk-produced D meets F1(b)'s 1.25 L_sub ratio only once E008's L2 ratio confirms it.",
+    "At the 2 mm minimum width the walk still fails on 9 of 72 layouts (local maxima at 1.206-1.372; I reproduced this). DegradeError remains a possible outcome for judged references at strict rules."
+  ]
+}

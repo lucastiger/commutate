@@ -1,0 +1,68 @@
+id: T0298
+objective: O003
+title: 'Twin: best split scored on the band''s own copper (column-adjacent L-bands), disjoint move/skip
+  record (review T0297)'
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0293
+description: "Follow-up to T0293, from review T0297 (project/reviews/T0293/T0297.json; read it first).\
+  \ Lands before E008's code\nfreeze (T0262). The twin W is the baseline every candidate is judged against\
+  \ and enters twin gate (a1), so a split that\nleaves the generator's boundary gives W copper the reference\
+  \ does not have. Develop only on generator layouts and Case 4\n(F3); never load 2D_Case_2R, 2D_Case_6\
+  \ or customer data. Do not edit src/moduleforge/solvers/thermal_fem.py (sha256\na216d5fe...). Do not\
+  \ relax any DRC rule or widen any tolerance.\n1. Best-split scoring (T0297 finding 0). `_best_split`\
+  \ scores each candidate boundary by the symmetric difference between\n   the net's whole copper (attached\
+  \ columns included) and the two slot rectangles, so when the wider slot runs into an\n   attached column\
+  \ that spans the boundary in v, the minimum moves off the true step. Score each candidate against the\n\
+  \   copper restricted to the band's own v-range (or an equivalent that excludes attached columns), keeping\
+  \ T0293's\n   slot-content constraints and tie rule. Tests: the column-adjacent L-band the review describes,\
+  \ with a column narrower\n   than the gap and one at least as wide, each recovering the generator's\
+  \ boundary; the existing L-shaped, rectangular and\n   18-layout tests pass unchanged. Scan generator\
+  \ layouts with merged bands (state seeds and count) and report how often\n   the boundary is the generator's,\
+  \ before and after.\n2. Degradation record (T0297 finding 1). A spread family whose step q >= 2 fails\
+  \ is recorded as stopped at step q-1, not\n   as skipped, so `moves` and `skipped` are disjoint by family\
+  \ name; assert that in a test. Geometry and ratios do not\n   change. Run tests/regression/test_degrade_walk_stress.py\
+  \ and report its result; if a locked value changes because of\n   item 1, explain why in the commit\
+  \ and update the lock there.\n3. The `_best_split` docstring states exactly what is scored."
+context_files: []
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate
+  exists: null
+  timeout_s: 3000
+- cmd: uv run pytest -q -m 'not slow' tests/unit
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check .
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-10T08:20:54+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Review T0297 finding 0 can bias the twin, the baseline of A1/K1 and of twin gate (a1); fixed
+  before the E008 freeze under the session review policy.
+history: []
