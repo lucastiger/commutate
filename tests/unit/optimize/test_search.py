@@ -28,9 +28,15 @@ def gen(spec, m, seed):
     return [Fake(f"s{seed}_{j}") for j in range(m)]
 
 
+def thermal_result(name, tj, gci):
+    """A thermal result with every field the driver requires."""
+    return {"tj": tj, "gci": gci, "tj_max_node": [[[0.0, 0.0, 0.0]] * 2] * 3, "nodes": [100, 800, 6400],
+            "fingerprint": name, "energy_balance": 1e-4, "picard": {"converged": True, "iters": 3}}
+
+
 class Counter:
     def __init__(self, thermal_fn=None, lsub_fn=None, e_R=0.0, l1_fn=None):
-        self.calls = {"l1": 0, "l_sub": 0, "band": 0, "thermal": 0, "e_R": 0}
+        self.calls = {"l1": 0, "l_sub": 0, "band": 0, "thermal": 0}
         self.thermal_fn = thermal_fn or (lambda n: (np.full((3, 2), 400.0), np.full(2, 0.1)))
         self.lsub_fn = lsub_fn or (lambda n: 10e-9 * (1 + _u(n, "l1")) * (1 + 0.05 * _u(n, "d")))
         self.l1_fn = l1_fn or (lambda n: 10e-9 * (1 + _u(n, "l1")))
@@ -44,13 +50,19 @@ class Counter:
         return Solvers(
             l1=lambda lay: tick("l1", self.l1_fn(lay.name)),
             l_sub=lambda lay: tick("l_sub", self.lsub_fn(lay.name)),
-            band=lambda lay: tick("band", [1.0] * 5),
-            thermal=lambda lay, P: (self.thermal_log.append(lay.name), tick("thermal", self._th(lay.name)))[1],
-            e_R=lambda pair: tick("e_R", self.eR))
+            band=lambda lay: tick("band", self._band(lay.name)),
+            thermal=lambda lay, P: (self.thermal_log.append(lay.name), tick("thermal", self._th(lay.name)))[1])
+
+    def _band(self, n):
+        # band_e_R(candidate, comparator) = 3 |R(0.25) - R(0.5)| = self.eR for every search candidate; reference,
+        # twin and degraded layouts have a flat band
+        if n in ("ref", "twin", "D"):
+            return [1.0] * 5
+        return [1.0 + self.eR / 3.0, 1.0, 1.0, 1.0, 1.0]
 
     def _th(self, n):
         tj, g = self.thermal_fn(n)
-        return {"tj": tj, "gci": g}
+        return thermal_result(n, tj, g)
 
 
 def hot_unless(good):
@@ -289,7 +301,6 @@ def test_near_ties_selection_and_bands():
     # distinct layouts band-solved (the A1 best may coincide with the inductance-only best: one solve)
     distinct = {x["fingerprint"] for x in r.rows["band"]}
     assert c.calls["band"] == len(distinct) == 3 + (n_a1 if r.a1_best != r.inductance_best else 0) + len(exp)
-    assert c.calls["e_R"] == 1
 
 
 def test_near_ties_respect_threshold_exactly():
@@ -396,7 +407,7 @@ def test_determinism_across_runs():
 def test_e_R_recorded_for_a1_best_and_every_near_tie_from_band_solves():
     c0 = Counter()
     asc = [n for _, n in sorted((x["l_sub"], x["fingerprint"]) for x in go(c0).rows["candidates"])]
-    c = Counter(e_R=0.02, thermal_fn=hot_unless({asc[2]}))
+    c = Counter(thermal_fn=hot_unless({asc[2]}))
     # band solves differ per layout: L(0.25), L(0.5), thk 5/3/3, thk 20/12/12, wire 12/ring
     def band(lay):
         c.calls["band"] += 1
@@ -407,14 +418,17 @@ def test_e_R_recorded_for_a1_best_and_every_near_tie_from_band_solves():
     s.band = band
     r = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
     assert r.a1_best == asc[2] and r.near_ties
+    assert r.w_ind == pytest.approx(2 * 0.09 + 0.01)  # the inductance-only best's e_R is band_e_R too
     rows = {(x["candidate"], x["role"]): x for x in r.rows["e_R"] if x.get("source") == "band"}
-    assert len(rows) == 1 + len(r.near_ties)
+    assert len(rows) == 2 + len(r.near_ties)  # A1 best, inductance-only best, every near tie
+    assert all(x["estimator"] == "band_e_R" for x in r.rows["e_R"])
     for key in [(asc[2], "a1_best")] + [(t, "near_tie") for t in r.near_ties]:
         assert rows[key]["other"] == "twin"
         # 3 |1.01 - 1| + 0 (R equal at the three thickness levels) + 3 |1.02 - 1| = 0.09
         assert rows[key]["e_R"] == pytest.approx(0.09)
     assert r.w_a1 == pytest.approx(2 * 0.09 + 0.01)
-    assert c.calls["e_R"] == 1  # only the inductance-only best uses the injected callable
+    ind = [x for x in r.rows["e_R"] if x["role"] == "inductance_best"]
+    assert len(ind) == 1 and ind[0]["estimator"] == "band_e_R" and ind[0]["e_R"] == pytest.approx(0.09)
 
 
 def test_band_e_R_hand_computed():
@@ -448,7 +462,7 @@ def test_thermal_record_checkpointed_in_full_and_gci_computed_by_driver(tmp_path
     rec = {"tj": np.array([[400.0, 399.0], [400.5, 399.2], [400.75, 399.3]]), "gci": np.array([99.0, 99.0]),
            "nodes": [100, 800, 6400], "tj_max_node": [[1, 2], [3, 4], [5, 6]], "energy_balance": 1e-4,
            "picard": {"converged": True, "iters": 4}, "fingerprint": "xyz"}
-    c = Counter(thermal_fn=lambda n: (rec["tj"], rec["gci"]))
+    c = Counter()
     s = c.solvers()
     s.thermal = lambda lay, P: dict(rec)
     run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
@@ -539,3 +553,126 @@ def test_pool_statistics_and_separate_control_namespace(tmp_path):
     c2 = Counter(l1_fn=l1fn, thermal_fn=hot_unless(set()))
     go(c2, wd=tmp_path)
     assert sum(c2.calls.values()) == 0
+
+
+def test_w_ind_w_ctrl_and_near_ties_come_from_band_e_R_not_from_any_callable():
+    # a band set whose band_e_R is 0.09 against the flat twin / D (3 |1.01 - 1| + 3 |1.02 - 1|); Solvers has no e_R
+    assert "e_R" not in Solvers.__dataclass_fields__
+
+    def band(lay):
+        return [1.0] * 5 if lay.name in ("ref", "twin", "D") else [1.01, 1.0, 1.0, 1.0, 1.02]
+    c = Counter()
+    s = c.solvers()
+    s.band = band
+    r = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, None, CFG, gen)
+    assert r.w_ind == pytest.approx(0.19)
+    ls = {x["fingerprint"]: x["l_sub"] for x in r.rows["candidates"]}
+    best = min(ls, key=ls.get)
+    assert sorted(r.near_ties) == sorted(n for n in ls if n != best and ls[n] <= 1.19 * ls[best])
+    assert r.near_ties  # the 19 % window holds ties that a 1 % window would not
+    rc = run_control(None, Fake("D"), 77, s, 0.5, None, CFG, gen)
+    assert rc.w_ctrl == pytest.approx(0.18)
+    assert all(x["estimator"] == "band_e_R" for x in r.rows["e_R"] + rc.rows["e_R"])
+
+
+def test_torn_line_repair_never_rewrites_the_file(tmp_path, monkeypatch):
+    path = tmp_path / "cp.jsonl"
+    st = Store(path)
+    for i in range(5):
+        st.get(f"k{i}", lambda i=i: i)
+    with path.open("a") as f:
+        f.write('{"k": "torn", "v": ')
+    good = path.read_bytes().rsplit(b"\n", 1)[0] + b"\n"
+    # a full rewrite (write_text / write_bytes / open "w") would fail here; the repair must only truncate
+    def no_rewrite(*a, **k):
+        raise AssertionError("full rewrite of the checkpoint")
+    monkeypatch.setattr(type(path), "write_text", no_rewrite)
+    monkeypatch.setattr(type(path), "write_bytes", no_rewrite)
+    seen = []
+    real_truncate = __import__("os").truncate
+    monkeypatch.setattr("moduleforge.optimize.search.os.truncate", lambda p, n: (seen.append(n), real_truncate(p, n)))
+    assert Store(path).data == {f"k{i}": i for i in range(5)}
+    assert seen == [len(good)] and path.read_bytes() == good
+
+
+def test_torn_multibyte_line_truncates_at_the_byte_offset(tmp_path):
+    path = tmp_path / "cp.jsonl"
+    Store(path).get("é", lambda: "ü")
+    with path.open("ab") as f:
+        f.write('{"k": "ö", "v": '.encode())
+    assert Store(path).data == {"é": "ü"}
+    assert Store(path).data == {"é": "ü"}
+
+
+def _tr(name="x"):
+    return thermal_result(name, np.full((3, 2), 400.0), np.zeros(2))
+
+
+def test_thermal_record_requires_every_field_and_names_the_missing_one():
+    from moduleforge.optimize.search import THERMAL_REQUIRED, _thermal_record
+    for k in THERMAL_REQUIRED:
+        bad = _tr()
+        del bad[k]
+        with pytest.raises(ValueError, match=k):
+            _thermal_record(bad)
+
+
+def test_thermal_record_is_a_whitelist_and_rejects_large_arrays():
+    from moduleforge.optimize.search import MAX_RECORD_ARRAY, _thermal_record
+    res = _tr()
+    res["T"] = np.zeros(10 * MAX_RECORD_ARRAY)  # nodal field: dropped, not serialised
+    res["field_eval"] = object()
+    rec = _thermal_record(res)
+    assert set(rec) == {"tj", "tj_max_node", "nodes", "fingerprint", "energy_balance", "picard", "gci", "gci_reported"}
+    big = _tr()
+    big["nodes"] = np.zeros(MAX_RECORD_ARRAY + 1)
+    with pytest.raises(ValueError, match="10000"):
+        _thermal_record(big)
+    big = _tr()
+    big["tj_max_node"] = np.zeros((MAX_RECORD_ARRAY // 2 + 1, 3))
+    with pytest.raises(ValueError, match="exceeds"):
+        _thermal_record(big)
+    big = _tr()
+    big["picard"] = object()
+    with pytest.raises(TypeError):
+        _thermal_record(big)
+
+
+def test_thermal_record_accepts_mappings_namedtuples_and_attribute_objects():
+    from collections import namedtuple
+    from types import SimpleNamespace
+
+    from moduleforge.optimize.search import THERMAL_REQUIRED, _thermal_record
+    base = _tr("fp")
+    want = _thermal_record(base)
+    del want["gci_reported"]  # attribute objects below carry no gci
+    NT = namedtuple("NT", [*THERMAL_REQUIRED, "T"])
+    nt = NT(*[base[k] for k in THERMAL_REQUIRED], np.zeros(5))
+    assert _thermal_record(nt) == want
+    assert _thermal_record(SimpleNamespace(**{k: base[k] for k in THERMAL_REQUIRED})) == want
+
+    class Slots:
+        __slots__ = THERMAL_REQUIRED
+
+        def __init__(self):
+            for k in THERMAL_REQUIRED:
+                setattr(self, k, base[k])
+    assert _thermal_record(Slots()) == want
+    # a namedtuple missing a field raises naming it
+    with pytest.raises(ValueError, match="picard"):
+        _thermal_record(namedtuple("B", "tj tj_max_node nodes fingerprint energy_balance")(*[base[k] for k in
+                        THERMAL_REQUIRED[:5]]))
+
+
+def test_driver_runs_with_namedtuple_thermal_and_fresh_equals_resumed(tmp_path):
+    from collections import namedtuple
+
+    from moduleforge.optimize.search import THERMAL_REQUIRED
+    NT = namedtuple("NT", THERMAL_REQUIRED)
+    c = Counter()
+    s = c.solvers()
+    s.thermal = lambda lay, P: NT(**{k: v for k, v in thermal_result(lay.name, np.full((3, 2), 400.0),
+                                                                      np.zeros(2)).items() if k in THERMAL_REQUIRED})
+    a = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
+    b = run_search(None, Fake("ref"), Fake("twin"), 5, s, 50.0, 0.01, tmp_path, CFG, gen)
+    assert a.rows == b.rows and a.rows["thermal"]

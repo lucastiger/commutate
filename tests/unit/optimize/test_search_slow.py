@@ -21,7 +21,9 @@ def test_real_generator_real_l1_300_candidates(tmp_path):
         return l1(lay) * 1.01
 
     s = Solvers(l1=l1, l_sub=lsub, band=lambda lay: [l1(lay)] * 5,
-                thermal=lambda lay, P: {"tj": np.full((3, 6), 400.0), "gci": np.full(6, 0.1)}, e_R=lambda p: 0.01)
+                thermal=lambda lay, P: {"tj": np.full((3, 6), 400.0), "tj_max_node": [[[0.0, 0.0, 0.0]] * 6] * 3,
+                                        "nodes": [1, 2, 3], "fingerprint": lay.fingerprint(), "energy_balance": 0.0,
+                                        "picard": {"converged": True}})
     r = run_search(spec, ref, twin, 123, s, 50.0, 0.0, tmp_path, cfg)
     assert r.levelling["n_candidates"] == 300
     ls = [x["l1"] for x in r.rows["candidates"]]
