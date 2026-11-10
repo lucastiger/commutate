@@ -4,7 +4,7 @@ title: 'Search driver: one band-based e_R estimator, atomic checkpoint repair, b
   (review T0284)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0279
 description: "Follow-up to T0279, from review T0284 (project/reviews/T0279/T0284.json; read it first).\
@@ -64,4 +64,53 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All three T0284 fixes are in `src/moduleforge/optimize/search.py`, and every DoD command passes.
+    1) `w_ind` and `w_ctrl` now come from `band_e_R` over the stored band solves, the same as the A1 best
+    and the near ties. The injected `e_R` is removed from `Solvers`, and every recorded e_R row carries
+    `"estimator": "band_e_R"`. 2) A torn trailing line is repaired by `os.truncate` to the last newline,
+    or by appending a newline if the record is complete. There is no full rewrite, and the offsets are
+    byte offsets. 3) Thermal records are a whitelist: `tj`, `tj_max_node`, `nodes`, `fingerprint`, `energy_balance`
+    and `picard` are required, plus the driver''s own `gci`. A missing field raises `ValueError` naming
+    it. Arrays or lists above 10,000 elements raise `ValueError`, and unknown object types rai'
+  report:
+    status: completed
+    summary: 'All three T0284 fixes are in `src/moduleforge/optimize/search.py`, and every DoD command
+      passes. 1) `w_ind` and `w_ctrl` now come from `band_e_R` over the stored band solves, the same as
+      the A1 best and the near ties. The injected `e_R` is removed from `Solvers`, and every recorded
+      e_R row carries `"estimator": "band_e_R"`. 2) A torn trailing line is repaired by `os.truncate`
+      to the last newline, or by appending a newline if the record is complete. There is no full rewrite,
+      and the offsets are byte offsets. 3) Thermal records are a whitelist: `tj`, `tj_max_node`, `nodes`,
+      `fingerprint`, `energy_balance` and `picard` are required, plus the driver''s own `gci`. A missing
+      field raises `ValueError` naming it. Arrays or lists above 10,000 elements raise `ValueError`, and
+      unknown object types raise `TypeError`. Mappings, namedtuples and attribute objects, including `__slots__`
+      ones, are all accepted. `thermal_fem.py` is untouched and its sha matches.'
+    files_changed:
+    - src/moduleforge/optimize/search.py
+    - tests/unit/optimize/test_search.py
+    - tests/unit/optimize/test_search_slow.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Existing tests had to change because the `Solvers` signature changed. The `Counter` fake now supplies
+      band vectors whose `band_e_R` equals its old `e_R` value, and its thermal results carry the now-required
+      fields. `test_e_R_recorded...` now expects the inductance-only best's e_R row as well, and `w_ind`
+      there is 0.19 instead of 0.05. No tolerance was loosened and no test was removed.
+    - '`test_search_slow.py` was edited only to drop `e_R` and add the required thermal fields. I did
+      not run it, because it is marked slow and outside the DoD.'
+    - This changes the driver's frozen behaviour. Checkpoints that hold thermal records without the new
+      fields will raise on fresh solves only. Stored records are reused as-is, and old `:eR` keys are
+      simply ignored. Mention this in the E008 spec's code hash note, as T0284 asked for the earlier changes.
+    - The optional `gci` returned by a thermal callable is still stored as `gci_reported`. It is never
+      used. Say if you want it dropped.
