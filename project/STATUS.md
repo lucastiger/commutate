@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T02:29:54+00:00 from repository state — do not edit_
+_generated 2026-11-10T02:30:05+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -21,7 +21,7 @@ _generated 2026-11-10T02:29:54+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 46 | $76.30 | 1476934 | 803233 | 73 | 0 |
+| O003 | 47 | $76.30 | 1476934 | 803233 | 73 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,16 +29,14 @@ _generated 2026-11-10T02:29:54+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 38, done: 242, failed: 3, merge: 1, review: 1, running: 2, todo: 3
+cancelled: 38, done: 243, failed: 3, review: 1, running: 3, todo: 2
 
-- T0282 `merge` builder/implement: Generator: foot-sampler float tolerance, topology-count proof scope, throughput (review T0281) (attempt 1)
 - T0285 `review` builder/implement: Search driver: one band-based e_R estimator, atomic checkpoint repair, bounded thermal records (review T0284) (attempt 1)
 - T0287 `running` builder/implement: Twin/degrade: degradation always reaches 1.25 (1 + margin >= 0.11), merged-band split, exact-mode DRC (review T0286) (attempt 1)
 - T0289 `running` critic/review: Review T0285 (general) (attempt 1)
+- T0290 `running` builder/implement: Generator: DRC-consistent float tolerance in _quick_ok, tests that fail without the fixes (review T0288) (attempt 1)
 
 ## Recent events
-- 2026-11-10T01:36:24+00:00 sleep_detected {"gap_s": 367, "runs_extended": 3}
-- 2026-11-10T01:39:01+00:00 run_finished {"run": "T0282-builder-20261109T144554-a09a", "status": "completed", "cost": 1.096165, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T01:58:04+00:00 verified {"task": "T0282"}
 - 2026-11-10T01:58:11+00:00 run_started {"run": "T0288-critic-20261109T175810-ade4", "task": "T0288", "role": "critic", "session": "11f1e435-97d7-42f4-99f5-c4899a6e0b70"}
 - 2026-11-10T01:58:45+00:00 sleep_detected {"gap_s": 1185, "runs_extended": 3}
@@ -52,3 +50,5 @@ cancelled: 38, done: 242, failed: 3, merge: 1, review: 1, running: 2, todo: 3
 - 2026-11-10T02:27:52+00:00 inbox_opened {"id": "I0155", "kind": "protected_change", "subject": "T0282: merge needs founder approval"}
 - 2026-11-10T02:28:32+00:00 sleep_detected {"gap_s": 429, "runs_extended": 2}
 - 2026-11-10T02:29:44+00:00 inbox_resolved {"id": "I0155", "status": "approved", "note": "Merge T0282: foot-sampler float tolerance, scoped proofs, re-measured throughput; T0288 accepts with caveats; DRC
+- 2026-11-10T02:30:00+00:00 merged {"task": "T0282"}
+- 2026-11-10T02:30:05+00:00 run_started {"run": "T0290-builder-20261109T183005-35cf", "task": "T0290", "role": "builder", "session": "f16dffb8-15f3-476f-977f-5d855107ff6d"}
