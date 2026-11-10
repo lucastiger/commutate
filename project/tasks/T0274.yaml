@@ -3,7 +3,7 @@ objective: O003
 title: 'Snapping: full DRC re-check with induced/pre-existing labels, docstring fixes (review T0272)'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on:
 - T0268
 description: "Follow-up to T0268, from review T0272 (project/reviews/T0268/T0272.json; read it first).\
@@ -154,3 +154,78 @@ history:
     \ streams\nPython runtime state: core initialized\nOSError: [Errno 9] Bad file descriptor\n\nCurrent\
     \ thread 0x00000001f8e02180 (most recent call first):\n  <no Python frame>\n"
   at: '2026-11-09T22:47:52+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'The T0274 work was already committed in 8212a9bc, and main (up to 2f22fe96, including T0273)
+    was merged into the branch in 196d6f60. On that merged state every DoD command and the fast gate exit
+    0 when I run them, so I changed no code and made no new commit. The working tree is clean.
+
+
+    Why attempt 2 failed: the pytest process died at interpreter startup ("Fatal Python error: init_sys_streams
+    ... OSError: [Errno 9] Bad file descriptor", with no Python frame) before any test code ran. I could
+    not reproduce it: `uv run python` starts normally with stdin closed and with stdin from /dev/null.
+    The same fast unit suite passes on the merged branch (758 passed, 39 deselected). That points to the
+    environment the check ran in, not to the code.
+
+
+    What the branch delivers, checked against the packet:
+
+    1.'
+  report:
+    status: completed
+    summary: "The T0274 work was already committed in 8212a9bc, and main (up to 2f22fe96, including T0273)\
+      \ was merged into the branch in 196d6f60. On that merged state every DoD command and the fast gate\
+      \ exit 0 when I run them, so I changed no code and made no new commit. The working tree is clean.\n\
+      \nWhy attempt 2 failed: the pytest process died at interpreter startup (\"Fatal Python error: init_sys_streams\
+      \ ... OSError: [Errno 9] Bad file descriptor\", with no Python frame) before any test code ran.\
+      \ I could not reproduce it: `uv run python` starts normally with stdin closed and with stdin from\
+      \ /dev/null. The same fast unit suite passes on the merged branch (758 passed, 39 deselected). That\
+      \ points to the environment the check ran in, not to the code.\n\nWhat the branch delivers, checked\
+      \ against the packet:\n1. **Full re-check (T0272 finding 1):** `snap_layout` runs the full `drc.check`,\
+      \ plus the `net_merged` test, on both the input and the snapped layout. It returns every violation\
+      \ of the snapped layout as a `SnapViolation` labelled `origin='induced'` or `'pre-existing'`. Two\
+      \ violations count as the same if they have the same rule and the same message once the numbers\
+      \ are ignored; each earlier violation can match only one later one.\n   - Tests cover: an induced\
+      \ wire_start from a source pad clipped below twice the margin; an induced terminal_off_trace from\
+      \ a staircased corner notch; a pre-existing min_spacing, both unchanged and with its numbers changed.\n\
+      2. **Docstring contract (finding 0), done by raising:** the staircase path raises a ValueError that\
+      \ names the feature and the hole when a hole is filled. This is checked hole by hole, so it also\
+      \ catches a trace that splits. An outline or baseplate outline that splits into a MultiPolygon also\
+      \ raises, naming it. A trace that splits is still reported as a `net_split` violation. Tests cover\
+      \ all of these cases, and the module docstring now describes this behaviour.\n3. **test_stack.py\
+      \ comment:** now says 319 W/(m K) is Slack et al.'s estimated intrinsic value and that the 400 K\
+      \ and 480 K points come from the 1/T law, not from data.\n4. **stack.py AlN docstring:** cites Watari\
+      \ et al., J. Mater. Res. 17(11) (2002), AlN ceramic over 4-1000 K, 272 W/(m K) at room temperature,\
+      \ high purity rather than a commercial 170-180 grade. The claim that no AlN k(T) data were found\
+      \ is gone. The law itself is unchanged.\n\nthermal_fem.py is untouched; its hash check passes."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/geometry tests/unit/drc
+      exit_code: 0
+    - cmd: uv run pytest -q -x -m 'not slow' tests/unit
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: 'uv run python -c ''print("ok")'' 0<&-  (diagnostic: startup with stdin closed)'
+      exit_code: 0
+    - cmd: 'uv run python -c ''print("ok")'' </dev/null  (diagnostic: startup with stdin from /dev/null)'
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/geometry/snap.py
+    - src/moduleforge/geometry/stack.py
+    - tests/unit/geometry/test_snap.py
+    - tests/unit/geometry/test_stack.py
+    concerns:
+    - 'I made no new commit in this attempt: the changes are in 8212a9bc (attempt 2) and the merge with
+      main is 196d6f60. The files listed as changed are relative to main.'
+    - Attempt 2's dod_failed was the pytest interpreter dying at startup (init_sys_streams, EBADF), before
+      any test code ran. I could not reproduce it. If it happens again, check the orchestrator's stdio
+      and file-descriptor setup and the VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv mismatch it warned
+      about; I unset VIRTUAL_ENV for my runs.
+    - Violations before and after snapping are matched by rule plus message with the numbers removed.
+      If one message names a different element index after snapping (for example, a trace that splits
+      and renumbers), it would be labelled induced rather than pre-existing. That errs toward flagging,
+      which is the conservative direction.

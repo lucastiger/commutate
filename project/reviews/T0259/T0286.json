@@ -1,0 +1,71 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Merged PHASE bands are not split as documented: fit-mode twins carry the wrong topology label and overlapping slots, which weakens degrade()",
+      "detail": "The docstring says two slots of one net that fall in the same interval (a merged PHASE band) are split on the grid. The code splits only when the two probe intervals are exactly equal (`ivs[i] == ivs[i+1]`). The two probes are taken at different u: the landing probe sits at the row centre u0+ld/2, not at the 'mean wire landing u' the docstring states. A merged band whose die part and landing part have different u extents therefore gives unequal intervals and is never split. On every merged generator layout I tried (4 of 4 in orientation x, 2 of 2 transposed to y, including fixture housing_refs[2] used by test_fit_recovers\u2026), the fit twin reports topology '.../split' and the PHASE die slot overlaps the landing slot. For example, fit slots (2,16.5,60.5,19.5) and (2,16.5,30,27.5) against the original (7,16.5,60.5,19.5) and (7,19.5,30,27.5). The geometry is still exact (symdiff 0), so the twin as a layout is fine. Two things go wrong: (a) the record's `topology` field is wrong; (b) degrade() runs on the parametrisation, not the geometry, so the narrowed landing slot is partly covered by the die slot. On the fit twin the L1 ratio fell from 2.42 to 1.85, 2.05 to 1.50 and 2.19 to 1.59 compared with the exact twin of the same geometry. In E008 every judged reference goes through fit mode. Yet the 10-reference degrade test only degrades exact-mode twins (family string intact), and no fit test asserts topology.",
+      "evidence": "Scratch run: generate(halfbridge_housing_spec(n,k)) for seeds 29/30/38/49. Results: MISMATCH x/DC+d-PHASEl-PHASEd-DC-l/merged -> split (4/4). Degrade on exact twin vs fit twin: 2.422 vs 1.854, 2.048 vs 1.497, 2.187 vs 1.587, 1.583 vs 1.584.",
+      "suggested_check": "Treat a pair of same-net adjacent slots whose intervals overlap (not only equal ones) as merged and split them. Add a fit-mode test that asserts topology and degrade ratio on a merged reference.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The frozen degradation rule misses its own L1 target on about 4 % of generator layouts (down to 1.18, below F1(b)'s 1.25), which contradicts the 'narrowing by 40 %+' justification",
+      "detail": "I ran degrade() on 54 generator housing layouts (n = 2, 3, 4 dies; 1, 2, 3 wires per die; 6 seeds each). Two raised DegradeError, with L1 ratios 1.183 and 1.317 against the 1.375 target. In the first case both landing bands were already 2.0 mm wide and could only go to 1.5 mm, because the landing point is offset by land_dv and the landing margin applies. The rule then has almost nothing to remove, and even the bare 1.25 of F1(b) is missed. The ratio does not come from meshing: it was 1.183, 1.189 and 1.202 at L1 hmax 4, 2 and 1 mm. Case 4 passes by only 3.3 % (1.421 against 1.375). The rule is frozen and 'does not try another move'. Any judged reference whose landing bands are already near minimum width therefore makes F1(b) impossible, and E008 becomes INVALID for a one-shot evaluation (max_evaluations 1). The implementation is honest: it raises and does not pass silently. But the docstring's empirical claim for choosing this move is false in general, and the 10-reference test (seed 2026) happens to avoid such layouts.",
+      "evidence": "Scratch run output: 'DEG FAIL 2 2 3 x/DC+d-PHASEl-DC-l-PHASEd/split DegradeError L1 ratio 1.183 < 1.375' (widths 2.0 -> 1.5), 'DEG FAIL 4 1 1 x/PHASEl-DC+d-PHASEd-DC-l/split DegradeError L1 ratio 1.317 < 1.375'. Counts: deg_ok 52, deg_fail 2.",
+      "suggested_check": "Before freezing, report the failure rate of degrade() over a few hundred generator layouts and the range of landing-band widths in which it can reach 1.25. Correct the '40 %+' sentence.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The DEGRADE_MARGIN arithmetic understates the worst case of the stated bias range",
+      "detail": "If L1 sits 5-14 % below L2, the ratio L1(D)/L1(W) can overstate L2(D)/L2(W) by up to 0.95/0.86 = 1.105, i.e. 10.5 %, not '9 points'. An L1 ratio of exactly 1.375 is then consistent with an L2 ratio of 1.245 < 1.25. E008 checks L_sub at 0.25 mm itself, so this is only a screen, but the docstring's claim that 0.10 covers it is not quite true.",
+      "evidence": "1.25*1.10*0.86/0.95 = 1.2447",
+      "suggested_check": "Use a margin of at least 0.105, or state that the screen does not fully cover the worst case.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The exact-mode shortcut returns a twin without a DRC check",
+      "detail": "twin() returns mode 'exact' as soon as the fingerprint matches. It never calls check(lay, spec.rules), so a derivative-built layout passed with a stricter spec comes back with violations. That contradicts the TwinError contract ('cannot be expressed as a DRC-clean layout'). Reconstructed references never take this path, so the effect on E008 is nil.",
+      "evidence": "twin(refs[0], spec with min_trace_width=6 mm): mode exact, 2 violations",
+      "suggested_check": "Apply the same DRC check, and the same TwinError, to the exact branch.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Docstring and code disagree on the landing-slot probe; the degradation research notes are not in the repository",
+      "detail": "The docstring says the landing slot is probed at 'the mean wire landing u'. `_fit` uses the row centre u0 + ld/2. This disagreement is also the root of the merged-band failure above. The claim that die-row moves and slot-gap widening were tried first and move L1 by less than 20 % cites 'research notes in the task report', which do not exist in the repository, so it cannot be checked.",
+      "evidence": "twin.py _fit: anchor.append((u0 + ld / 2, land[sw], ...))",
+      "suggested_check": "Align the docstring with the code, or the code with the docstring, and commit the notes under research/.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Fit is robust on paths the tests do not cover",
+      "detail": "The untested orientation-1 path works: on 12 transposed generator layouts the fit recovered every case with symdiff 0, die displacement 0, wire displacement \u2264 0.0625 mm and clean DRC (only the merged label is wrong). For DRC-clean references made non-representable by on-grid 1.5 mm corner notches, 39 of 40 gave DRC-clean twins with L1 deviation \u2264 0.46 %. One raised TwinError, where the notch cut into the terminal-pad region. Off-grid copper (a 0.2 mm buffer) raises TwinError in 2 of 4 cases, which is outside E008's scope because references are snapped to 0.5 mm.",
+      "evidence": "Scratch runs described in the checks list",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: `uv run ruff check src tests` passes; `uv run pytest -q -m 'not slow' tests/unit/generate` gives 46 passed and 1 deselected. Case 4 twin L1 deviation 0.17 %; Case 4 degrade ratio 1.421 against the 1.375 target.",
+    "Fit-mode recovery on 54 generator layouts with the family string stripped (n = 2, 3, 4; k = 1, 2, 3; 6 seeds each): symdiff and die displacement 0 in all cases, but 4 of 4 merged layouts are relabelled 'split'.",
+    "Ran degrade() on the same 54 layouts: 52 pass and 2 raise DegradeError (L1 ratios 1.183 and 1.317).",
+    "Compared degrade() on exact-mode and fit-mode twins of the same merged geometry: the fit-mode ratio is 0.5-0.6 lower in 3 of 4 cases.",
+    "Orientation-1 check: transposed whole layouts and specs (x and y swapped) and ran twin(): 12 of 12 recovered as y/\u2026 with symdiff 0 and clean DRC.",
+    "Adversarial references: on-grid 1.5 mm corner notches (39 of 40 DRC-clean twins, 1 TwinError); 0.5 mm grow/shrink per net (failures only where the perturbed reference was itself DRC-dirty); 0.2 mm off-grid growth (2 of 4 TwinError, outside E008's scope).",
+    "L1 mesh refinement of the degrade ratio (hmax 4, 2, 1 mm) on two generator layouts: 1.405/1.388/1.405 and 1.183/1.189/1.202. Ratios are stable within about 1.5 %, so the failure is not a meshing artefact.",
+    "Recomputed the DEGRADE_MARGIN justification: the worst-case ratio distortion 0.95/0.86 = 1.105 exceeds 1.10.",
+    "Confirmed the exact-mode shortcut skips DRC: a stricter spec returns an 'exact' twin with 2 violations."
+  ],
+  "caveats": [
+    "Valid as a geometric twin construction for references whose copper is on the 0.5 mm grid and close to the 4-slot / 3-column structure. The twin geometry was exact or close in every in-scope case I tried. For references with a merged PHASE band, the record's `topology` label is wrong (it says 'split') and the twin's slot parametrisation is not canonical.",
+    "The degradation rule is valid only for references whose landing bands are well above minimum width. If they are already about 2 mm or less, degrade() raises DegradeError, with L1 ratios as low as 1.18 seen on generator layouts. A frozen rule that raises on a judged reference makes F1(b), and so E008, INVALID. On merged-band references the rule's effect also depends on the fit parametrisation.",
+    "The 1.375 L1 screen does not fully cover the stated 5-14 % L1 bias spread (worst case 1.245 < 1.25). F1(b) is only established by E008's own L_sub check at 0.25 mm.",
+    "I did not load any judged reference (PowerSynth 2D_Case_2R / 2D_Case_6 or customer layouts), per F3. Robustness on those geometries is not assessed.",
+    "I did not run L2 (l2_layout), so the L1-to-L_sub transfer of the degrade ratio is not verified here."
+  ]
+}

@@ -1906,3 +1906,8 @@
 {"ts": "2026-11-09T23:19:52+00:00", "event": "verified", "actor": "orchestrator", "task": "T0259"}
 {"ts": "2026-11-09T23:20:01+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0286-critic-20261109T152001-da2f", "task": "T0286", "role": "critic", "session": "de99bfbb-9811-4c29-849c-edff5e88b233"}
 {"ts": "2026-11-09T23:20:35+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 467, "runs_extended": 3}
+{"ts": "2026-11-09T23:21:19+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0274-builder-20261109T144754-c0bf", "status": "completed", "cost": 0.371848, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-09T23:37:26+00:00", "event": "verified", "actor": "orchestrator", "task": "T0274"}
+{"ts": "2026-11-09T23:37:26+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0286-critic-20261109T152001-da2f", "status": "completed", "cost": 1.977708, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-09T23:38:11+00:00", "event": "task_added", "actor": "session", "task": "T0287", "reason": "review T0286 follow-up (degradation robustness)"}
+{"ts": "2026-11-09T23:38:11+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "waits for T0287 (degradation robustness, review T0286)"}
