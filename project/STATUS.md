@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T21:55:33+00:00 from repository state — do not edit_
+_generated 2026-11-10T21:56:50+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -29,13 +29,10 @@ _generated 2026-11-10T21:55:33+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
+cancelled: 39, done: 259, failed: 3, todo: 2
 
-- T0262 `running` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
 
 ## Recent events
-- 2026-11-10T20:02:00+00:00 loop_started {"pid": 16777}
-- 2026-11-10T20:02:01+00:00 run_interrupted {"run": "T0303-scientist-20261110T120000-fa35", "cost": 0.598113}
 - 2026-11-10T20:02:01+00:00 founder_stopped {"task": "T0303", "run": "T0303-scientist-20261110T120000-fa35", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-10T20:02:06+00:00 run_started {"run": "T0262-scientist-20261110T120206-2f12", "task": "T0262", "role": "scientist", "session": "5bd662df-045d-4504-9d63-f66abbd8889e"}
 - 2026-11-10T21:24:05+00:00 loop_stopped {"reason": "STOP file"}
@@ -49,3 +46,5 @@ cancelled: 39, done: 259, failed: 3, running: 1, todo: 1
 - 2026-11-10T21:50:20+00:00 run_finished {"run": "T0262-scientist-20261110T134907-8471", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T21:50:20+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T21:55:33+00:00 run_started {"run": "T0262-scientist-20261110T135533-a7a0", "task": "T0262", "role": "scientist", "session": "85c49ed9-58ff-420f-99fc-4e7a279753b2"}
+- 2026-11-10T21:56:46+00:00 run_finished {"run": "T0262-scientist-20261110T135533-a7a0", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
+- 2026-11-10T21:56:46+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
