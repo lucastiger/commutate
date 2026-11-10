@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-10T06:15:51+00:00 from repository state — do not edit_
+_generated 2026-11-10T06:16:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 38, done: 251, failed: 3, review: 1, running: 1, todo: 2
 - T0296 `running` critic/review: Review T0293 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-10T05:08:55+00:00 run_finished {"run": "T0295-builder-20261109T201934-5692", "status": "completed", "cost": 0.423103, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T05:25:45+00:00 verified {"task": "T0295"}
 - 2026-11-10T05:25:49+00:00 inbox_opened {"id": "I0159", "kind": "protected_change", "subject": "T0295: merge needs founder approval"}
 - 2026-11-10T05:26:25+00:00 sleep_detected {"gap_s": 1051, "runs_extended": 2}
@@ -50,3 +49,4 @@ cancelled: 38, done: 251, failed: 3, review: 1, running: 1, todo: 2
 - 2026-11-10T06:04:23+00:00 merged {"task": "T0295"}
 - 2026-11-10T06:06:57+00:00 inbox_resolved {"id": "I0160", "status": "approved", "note": "Merge T0292: driver uses mfos.metrics.ratio_band_estimate itself, band solves on the union of w_ind and w_ind_rec
 - 2026-11-10T06:15:44+00:00 merged {"task": "T0292"}
+- 2026-11-10T06:16:26+00:00 sleep_detected {"gap_s": 534, "runs_extended": 1}
