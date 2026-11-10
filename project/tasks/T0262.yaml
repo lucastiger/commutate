@@ -3,7 +3,7 @@ objective: O003
 title: 'E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows'
 type: design_experiment
 agent: scientist
-status: running
+status: failed
 depends_on:
 - T0257
 - T0260
@@ -277,3 +277,11 @@ history:
     proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
     the system certificate store · see https://code.claude.com/docs/en/network-config'
   at: '2026-11-10T19:58:55+00:00'
+- attempt: 3
+  outcome: agent_error
+  summary: agent ended with success
+  failure_output: 'API Error: Unable to connect to API: SSL certificate verification failed (UNABLE_TO_GET_ISSUER_CERT_LOCALLY).
+    The certificate comes from an authority Claude Code doesn''t trust, usually a TLS-inspecting corporate
+    proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
+    the system certificate store · see https://code.claude.com/docs/en/network-config'
+  at: '2026-11-10T19:59:54+00:00'
