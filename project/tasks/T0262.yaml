@@ -242,13 +242,14 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 2
+attempts: 3
 max_attempts: 3
 branch: task/T0262-e008-design-draft-spec-and-runner-sealed
 pr: null
 runs:
 - T0262-scientist-20261110T113147-7bd4
 - T0262-scientist-20261110T115742-be5f
+- T0262-scientist-20261110T115900-b15b
 created_by: planner:T0255
 created_at: '2026-11-09T07:20:24+00:00'
 protected_approved: false
@@ -268,3 +269,11 @@ history:
     proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
     the system certificate store · see https://code.claude.com/docs/en/network-config'
   at: '2026-11-10T19:57:38+00:00'
+- attempt: 2
+  outcome: agent_error
+  summary: agent ended with success
+  failure_output: 'API Error: Unable to connect to API: SSL certificate verification failed (UNABLE_TO_GET_ISSUER_CERT_LOCALLY).
+    The certificate comes from an authority Claude Code doesn''t trust, usually a TLS-inspecting corporate
+    proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
+    the system certificate store · see https://code.claude.com/docs/en/network-config'
+  at: '2026-11-10T19:58:55+00:00'
