@@ -3,7 +3,7 @@ objective: O003
 title: 'E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows'
 type: design_experiment
 agent: scientist
-status: failed
+status: running
 depends_on:
 - T0257
 - T0260
@@ -242,14 +242,15 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 3
-max_attempts: 3
+attempts: 4
+max_attempts: 5
 branch: task/T0262-e008-design-draft-spec-and-runner-sealed
 pr: null
 runs:
 - T0262-scientist-20261110T113147-7bd4
 - T0262-scientist-20261110T115742-be5f
 - T0262-scientist-20261110T115900-b15b
+- T0262-scientist-20261110T120206-2f12
 created_by: planner:T0255
 created_at: '2026-11-09T07:20:24+00:00'
 protected_approved: false
@@ -285,3 +286,8 @@ history:
     proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that CA bundle, or add it to
     the system certificate store · see https://code.claude.com/docs/en/network-config'
   at: '2026-11-10T19:59:54+00:00'
+- attempt: 3
+  outcome: attempts_restored
+  at: '2026-11-10T20:01:41+00:00'
+  summary: 'founder restored attempts 2 and 3: both failed at the first API call on TLS interception (tls_untrusted_ca)
+    during a Wi-Fi fault, not on the task'

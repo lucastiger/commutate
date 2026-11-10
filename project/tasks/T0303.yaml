@@ -3,7 +3,7 @@ objective: O003
 title: Diagnose failure of T0262
 type: investigate
 agent: scientist
-status: running
+status: cancelled
 depends_on: []
 description: 'Task T0262 (''E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate,
   local dev rows'') failed with preliminary class `implementation`: agent ended with success.
@@ -34,7 +34,7 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0303-diagnose-failure-of-t0262
 pr: null
@@ -48,4 +48,8 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 0
+  outcome: founder_stopped
+  summary: T0303-scientist-20261110T120000-fa35 ended (interrupted) while the task was cancelled
+  at: '2026-11-10T20:02:01+00:00'

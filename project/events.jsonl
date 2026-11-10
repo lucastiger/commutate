@@ -2046,3 +2046,9 @@
 {"ts": "2026-11-10T19:59:54+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0262", "signal": "agent_error", "action": "diagnose"}
 {"ts": "2026-11-10T19:59:54+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0303", "about": "T0262", "cls": "implementation"}
 {"ts": "2026-11-10T20:00:00+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0303-scientist-20261110T120000-fa35", "task": "T0303", "role": "scientist", "session": "9914f0db-0ed0-4e0f-a4f0-7598171b9cfa"}
+{"ts": "2026-11-10T20:00:35+00:00", "event": "loop_stopped", "actor": "orchestrator", "reason": "STOP file"}
+{"ts": "2026-11-10T20:01:41+00:00", "event": "task_amended", "actor": "session", "task": "T0262", "reason": "founder restored attempts 2 and 3 (Wi-Fi TLS interception); diagnosis T0303 cancelled"}
+{"ts": "2026-11-10T20:02:00+00:00", "event": "loop_started", "actor": "orchestrator", "pid": 16777}
+{"ts": "2026-11-10T20:02:01+00:00", "event": "run_interrupted", "actor": "orchestrator", "run": "T0303-scientist-20261110T120000-fa35", "cost": 0.598113}
+{"ts": "2026-11-10T20:02:01+00:00", "event": "founder_stopped", "actor": "orchestrator", "task": "T0303", "run": "T0303-scientist-20261110T120000-fa35", "run_status": "interrupted", "task_status": "cancelled"}
+{"ts": "2026-11-10T20:02:06+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0262-scientist-20261110T120206-2f12", "task": "T0262", "role": "scientist", "session": "5bd662df-045d-4504-9d63-f66abbd8889e"}
