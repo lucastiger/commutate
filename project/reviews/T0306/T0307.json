@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "F6(c) Picard criterion is not recorded for the F6(e) finite-volume spot-check solves",
+      "detail": "The claim says F6(c) now covers the spot checks, but only the energy-balance half is applied to them. child_fv records picard_iters and no residual, and evaluate adds FV solves only to worst_eb. The comment says thermal_layout 'reports no Picard residual'. That is true of its meta dict, but solve_layout_level also returns the full ThermalResult, whose meta carries picard_dT. In practice the criterion holds anyway: thermal_fv.solve_steady raises unless dT < picard_tol, and solve_layout_level's default picard_tol is 1e-4 K, equal to gates.picard_tol_K. So no unconverged FV solve can reach evaluate. What is missing is the record, not the enforcement.",
+      "evidence": "src/moduleforge/solvers/thermal_fv.py ~l.517-520 (raise on dT >= picard_tol) and l.542 (meta picard_dT); thermal_layout.solve_layout_level(picard_tol=1e-4) meta drops picard_dT; e008_run.py l.1181-1190 (FV only in worst_eb); E008.yaml gates.picard_tol_K 0.0001.",
+      "suggested_check": "Record r['result'].meta['picard_dT'] in child_fv and fold it into worst_pc, so the spec's 'on every thermal solve' is shown, not only implied.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F6(e) spot-check reference is chosen without regard to admissibility",
+      "detail": "Run.drive sets spot_refs[type] to the first reference of that stack type in reference order. If that reference is inadmissible, evaluate fails the type's F6e check (a3 = inf), even when a later admissible reference of the same type exists. That makes the aggregate F6e_stack_type_spot_check fail for no physical reason. This cannot happen at this commit: nothing sets RefCtx.admissible = False, because judged-reference loading raises NotImplementedError (l.1958). It becomes live once the loader lands.",
+      "evidence": "e008_run.py l.988-989 (selection by stack_type only), l.1201-1205 (inadmissible -> failed check, inf); grep shows admissible is never assigned False.",
+      "suggested_check": "Select the first admissible reference of each type, and fail only when no reference of that type is admissible.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "Provenance hash in the rule_strictness refresh does not match the runner at this commit",
+      "detail": "E008.dev_rows.json rule_strictness_refresh.runner_sha256 is 6b036213\u2026, but experiments/runners/e008_run.py here hashes 19dd7f55\u2026. The content is unaffected: I re-ran rule_strictness from this commit on both stored measured_rules records and got exactly the stored reports. rules_py_sha256 (19a32c76\u2026) does match.",
+      "evidence": "shasum -a 256 experiments/runners/e008_run.py -> 19dd7f55\u2026; recomputation equal = True for both gen2_0 and 2D_Case_4.",
+      "suggested_check": "Re-stamp runner_sha256, or note that later runner edits left rule_strictness unchanged.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Selftest checks the dev thermal report only for structure",
+      "detail": "The selftest checks only that every reference has a report entry and that no layout fails node growth. It does not check the GCI values, n_gci_inf, self_margin, attainable or margin_vs_twin, which feed a founder decision before registration. My hand-built case (2-die twin, a candidate with a divergent die, a candidate with off-window node growth) matched every field: twin GCIs 0.3125 / 0.15625 K, width 0.625 K, margin \u22121.2625 K, growth 9.5 and 6.74 flagged. 'Attainable' (own width \u2264 2 K) is a sufficient test for a candidate identical to the twin, not a necessary one for every candidate. A cooler candidate can still pass when the twin's width exceeds 2 K. The YAML hedges this ('may be unreachable'), and passes_vs_twin is the decision-relevant field.",
+      "evidence": "thermal_report_from_rows on constructed rows; selftest l.1597-1599.",
+      "suggested_check": "Add one literal hand case like the above to the selftest.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "rule_strictness guard also triggers on die_spacing",
+      "detail": "The empty-report guard's regex 'gap|spacing|clearance' matches die_spacing. A measure_rules record with at least two dies and no measured power-net gap therefore raises. I confirmed this: {'die_spacing': 0.002, 'gap_dcp_dcm': None} raises RuntimeError. A real half-bridge reference always has the three power-net gaps, so this is unreachable in practice. It errs toward stopping, not toward silently emptying the report.",
+      "evidence": "uv run python -c '\u2026 m.rule_strictness({\"die_spacing\": 0.002, \"gap_dcp_dcm\": None})' -> RuntimeError.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands: --selftest (passed, 5 scenarios including stack_types with 3 planted failures caught), --verify-freeze (all OK), YAML key grep (missing []), ruff (clean), mfos exp check E008 (exit 0), the thermal_fem.py sha prefix a216d5fe3209bcee (matches), and mfos gate --fast (all gates passed).",
+    "Recomputed the FV cost basis by hand from research/o003/e008_dev/fv_rate_case4_L{0,1}{,_rep}.json and fv_vm_factor.json: mean L1 wall 20.596 s / 3,669,120 box cells = 5.613e-6 s/cell; \u03b2 = ln(20.596/1.925)/ln 8 = 1.140; \u00d75.1 = 2.863e-5; L1/L2/L3 = 0.029/0.312/3.341 h; phase B 3.59 h, $12.63; low/high 1.03/6.76 h. All match the YAML.",
+    "Reproduced the second-route cross-check: VM L3 s per active cell \u00d7 (Case 4 Mac s per active cell / O007's) \u00d7 183.3 M cells = 2.21\u20132.54 h, and 2.37\u20132.77 h after the measured VM L1\u2192L3 exponent. Matches the stated range; the model is conservative against it.",
+    "Regenerated --plan from this commit: expected and upper phase A/B hours, $, billed vCPU-hours, process CPU-hours and sensitivity rows equal the YAML exactly. Also checked 611\u2013739 vCPU-h and $84\u201399 by hand.",
+    "Read drc.rules.measure_rules: its record keys are gap_* (confirming the old spacing_* prefix emptied the report). Re-ran rule_strictness from this commit on both stored dev records: identical to the stored reports. Hand check: gen2_0 6 mm > 2 \u00d7 1.5 mm is flagged, the others are not.",
+    "Probed _stack_type: default DBC \u2192 default; AMB, die k only and ceramic material only \u2192 distinct 'other:' types; kind-only and sigma-only changes \u2192 default. Thermal inputs separate and non-thermal ones do not.",
+    "Checked that the FV and scikit-fem energy_balance are both |Q_out/Q_in \u2212 1| (absolute, not signed), so max() over FV solves is a valid worst case. FV measured values are ~1e-14.",
+    "Checked mfos.metrics.max_gci_consistency / gci_capped / tj_bounds semantics against the evaluate call order: scikit-fem L0\u20132 as p, FV L1\u20133 as r with the 0.25 K reference cap.",
+    "Hand-checked thermal_report_from_rows on constructed rows (GCI branches, +inf die, node-growth window 6.8\u20139.2, self-width, margin vs twin): all fields equal the hand values.",
+    "Confirmed rule_strictness raises on a die_spacing-only record (guard regex over-match; unreachable for real references)."
+  ],
+  "caveats": [
+    "Phase-B FV time (3.34 h solve, 3.59 h with resize) is an extrapolation 64x in cell count, from one measured 8x step (Case 4 L0\u2192L1 on one Mac core, \u03b2 = 1.140). The Mac\u2192VM factor 5.1 was measured on E2, not on the N2D machine E008 uses. Level 2\u20133 of Case 4 was not measured. The stated range of 1.03\u20136.76 h and the second-route estimate of 2.37\u20132.77 h bound it; the model sits above the second route.",
+    "The memory for the 235 M-cell level-3 grid keeps E009's 1,500 B per box cell. That is conservative against the measured 1,199 B per box cell at level 1, but linear memory scaling up to 352 GB has not been measured.",
+    "F6(c)'s Picard bound on the FV spot-check solves holds only because thermal_fv raises at the same 1e-4 K tolerance. If solve_layout_level's default picard_tol changed, the gate would stop holding silently.",
+    "The F6(e) per-type logic is exercised only on fake solvers and fake stack-type labels in the selftest. The registered path's judged-reference loader is not implemented, so the admissibility interaction is untested."
+  ]
+}
