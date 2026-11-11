@@ -2125,3 +2125,6 @@
 {"ts": "2026-11-11T02:19:07+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0308-critic-20261110T181907-65bc", "task": "T0308", "role": "critic", "session": "10028901-0f5c-4944-a53a-f51d62af7450"}
 {"ts": "2026-11-11T02:19:42+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 742, "runs_extended": 2}
 {"ts": "2026-11-11T02:32:05+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0307-critic-20261110T181906-2794", "status": "completed", "cost": 2.330334, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-11T02:32:44+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0308-critic-20261110T181907-65bc", "status": "completed", "cost": 2.272415, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-11T02:33:49+00:00", "event": "task_added", "actor": "session", "task": "T0309", "reason": "reviews T0307/T0308 follow-up (E008 runner, before T0263)"}
+{"ts": "2026-11-11T02:33:49+00:00", "event": "task_amended", "actor": "session", "task": "T0263", "reason": "waits for T0309 (E008 runner fixes from reviews T0307/T0308) so the gates are settled before F3"}

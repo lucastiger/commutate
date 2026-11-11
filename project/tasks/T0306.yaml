@@ -4,7 +4,7 @@ title: 'E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness
   reporting, FV cost basis (reviews T0304, T0305)'
 type: design_experiment
 agent: scientist
-status: review
+status: merge
 depends_on:
 - T0262
 description: "Follow-up to T0262 from its reviews T0304 (physics) and T0305 (numerics), both accept_with_caveats\n\
@@ -297,3 +297,6 @@ history:
       level-1 timing would show whether the factor on the E008 machine is lower.'
     - 'burst_dev.sh at the frozen rule: if the twin or most gen2_0 candidates show a +inf GCI or a self-width
       above 2 K, A1 is unreachable by construction and the founder must decide before registration.'
+- outcome: full_gate_passed
+  summary: 92a4d8091fb1e3b8cff3c07d07731b3d8c8f4390
+  at: '2026-11-11T02:59:24+00:00'

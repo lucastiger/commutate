@@ -1,0 +1,70 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Selftest does not check the content of the new dev-run thermal report",
+      "detail": "thermal_report_from_rows (F6(a) growth, per-die GCI, n_gci_inf, attainable, margin vs twin) is exercised by the selftest only through `sorted(tr) == refs` and `n_layouts_growth_fail == 0`. A version that marks every layout attainable with zero margins, zero +inf GCIs and passes_vs_twin=True leaves the selftest passing (rc 0, no FAIL lines). The function is correct today (my hand check below), but the report feeds the founder's pre-registration decision ('if not attainable on the twin or most candidates, A1 may be unreachable'), so a regression would go unnoticed.",
+      "evidence": "Monkeypatched E.thermal_report_from_rows to overwrite attainable/self_margin_K/n_gci_inf/passes_vs_twin/margin_vs_twin_K, then ran E.selftest(): 'M1 rc 0 []'. The offgrid_tj scenario plants +10 K hot candidates whose margin_vs_twin should exceed 2 K, but nothing asserts it.",
+      "suggested_check": "In offgrid_tj, assert the planted hot fingerprints have passes_vs_twin False and margin_vs_twin_K > 2, and that the twin's self_margin_K equals a hand value.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Stack-type signature reads the stack's die/attach thickness, which the solvers do not use; per-die thickness is not part of the type",
+      "detail": "_stack_signature uses LayerStack.die_attach.thickness and LayerStack.die.thickness. thermal_fem (lines 987-1069) and thermal_layout (263, 286) take die and attach thickness from each Die (d.thickness, d.attach_thickness); the stack's die_attach.thickness is used only for thermal_layout's edge-cell size (line 250). So two references on the same stack whose dies differ only in thickness share a stack type and only one gets the F6(e) spot check. The selftest's 'die attach only' type changes a field the solvers barely use. Ceramic changes such as AlN, the case O003 names, are still caught. The docstring's 'every thermal input of a LayerStack' is literally true, so this is a scope gap, not a wrong result.",
+      "evidence": "src/moduleforge/geometry/stack.py:138-147 (Die.thickness / Die.attach_thickness are the per-die thicknesses); grep shows thermal_fem.py:987-988,1061-1069 and thermal_layout.py:263,286 read d.attach_thickness/d.thickness.",
+      "suggested_check": "Add the sorted set of (Die.thickness, Die.attach_thickness) per layout to the signature, or state that stack type excludes per-die thickness.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F6(e) spot-check reference is chosen without regard to admissibility",
+      "detail": "Run.drive sets spot_refs[st] = the first reference of type st in reference order, before and without checking rc.admissible. If that reference is inadmissible, evaluate fails F6e_stack_type_spot_check:<st> and with it the aggregate check, even when a later admissible reference of the same type exists; that reference never gets the FV solves scheduled. A type whose references are all inadmissible contributes nothing to the verdict but still fails the gate. This fails safe (a void run, never a wrong verdict) and cannot happen in the current runner, since nothing sets admissible=False and full() is not implemented.",
+      "evidence": "e008_run.py:988-989 (spot_refs from all refs) and 1202-1204 (inadmissible gives a failed check, inf).",
+      "suggested_check": "Pick next(rc for rc in refs if rc.stack_type == st and rc.admissible) and skip types with no admissible reference.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "Phase B cost range is partly by judgement",
+      "detail": "All FV cost numbers reproduce exactly from the measurement files, and the model (3.34 h) sits above the second-route estimate (2.37-2.77 h) and above the VM's own level-step exponents (1.04-1.08). The upper bound (exponent 1.28, factor 5.55) is a heuristic, the Mac-to-VM factor was measured on E2 while E008 runs on N2D, and Case 4 was never solved at levels 2-3. The spec states all of this.",
+      "evidence": "Recomputed: s_mac 5.6134e-6, beta 1.13984, factor 5.104, L1/L2/L3 0.029/0.312/3.341 h, low/high 1.03/6.76 h incl. 0.25 h resize.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F6(c) Picard check covers the FV spot checks only implicitly",
+      "detail": "FV results enter the energy-balance check only. thermal_fv raises RuntimeError on Picard non-convergence at picard_tol 1e-4 K (the gate's value), so a completed FV solve meets the gate. The guarantee depends on the solver's default tolerance, not on a runner check.",
+      "evidence": "thermal_fv.py:507-518; thermal_layout.py:325 default picard_tol=1e-4.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "A NaN energy balance would be dropped by max()",
+      "detail": "worst_eb = max([worst_eb, *fv_eb]) ignores a NaN that is not first in the list, so a NaN FV energy balance would pass F6c. This is an existing pattern, now applied to the FV values too. Unlikely in practice.",
+      "evidence": "e008_run.py evaluate, fv_eb aggregation.",
+      "suggested_check": "Use a NaN-aware maximum, or check math.isfinite before comparing.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all seven definition-of-done commands: --selftest (passed; 5 scenarios, stack_types shows a per-type F6e of 64.4 on the planted type), --verify-freeze (all OK), the spec keyword check (ok), ruff (clean), mfos exp check E008 (exit 0), the thermal_fem sha256 prefix a216d5fe3209bcee (matches), mfos gate --fast (all gates passed)",
+    "Recomputed the FV cost basis from fv_rate_case4_L0/L1(_rep).json and fv_vm_factor.json: s_mac=5.613424631e-6 (equal to the spec), beta=1.13984 (equal; pairs 1.1269-1.1526), VM factor mean 5.104, fv_s_per_cell=5.1*s_mac; fv_cost gives L1/L2/L3 wall 0.029/0.312/3.341 h and 6.0/44.53/352.74 GB, as in the plan; sensitivity range 1.03/6.76 h",
+    "Checked the totals by hand: 3.59 h x 3.5188 $/h = $12.63; 38.81+3.59=42.40 and 52.76+3.59=56.35 VM-h; 8x gives 339.2/450.8 vCPU-h; process CPU drop 3.758 h x 1.5 cores = 5.6 h; all VM work 611-739; phase A $/h unchanged at 0.612",
+    "Hand-checked thermal_report_from_rows on constructed rows (well-behaved twin GCI 0.125 K, oscillating candidate GCI 3 K, divergent candidate +inf, node growth 5 and 12.8): every gci/upper/lower/self_margin/attainable/margin_vs_twin/growth_ok value matched",
+    "Mutation test: replaced thermal_report_from_rows with a falsified version; selftest still passed",
+    "Read the solver code: thermal_fv energy_balance is |Q_out/Q_in-1| and Picard non-convergence raises at 1e-4 K; run_control ignores s_ref; the main driver's s_ref is set before its first replay; near_tie_hint uses a default 0 only as a prefetch hint",
+    "Traced which die/attach thicknesses the thermal solvers read against the new stack signature (geometry/stack.py, thermal_fem.py, thermal_layout.py)",
+    "Checked the refreshed rule_strictness values in E008.dev_rows.json against the 2x rule (gen2_0 flags DC+/PHASE 6 mm against 2x1.5 mm; Case 4 flags nothing)"
+  ],
+  "caveats": [
+    "F6(e) stack type covers the substrate layers and the stack's die/die-attach material, k and nominal thickness; per-die thickness differences (Die.thickness, Die.attach_thickness, which the solvers use) do not create a separate type",
+    "The spot-check reference is the first of its type regardless of admissibility; this fails safe (a void run) and is latent until a loader marks references inadmissible",
+    "The new dev-run thermal report is correct on my hand case but its content is not protected by the selftest",
+    "The phase B time rests on a Mac measurement at levels 0-1 scaled by an E2-measured Mac-to-VM factor; N2D speed and Case 4 level 2-3 solves are unmeasured; the range 1.03-6.76 h is partly by judgement",
+    "I could not diff against a parent commit (the worktree has one snapshot commit), so 'complete' was judged from the packet diff and the current file contents"
+  ]
+}
