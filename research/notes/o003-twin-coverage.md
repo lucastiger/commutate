@@ -39,9 +39,9 @@ All three R0 outcomes match the recorded ones [F]:
 
 R3, one measured field relaxed to its effective DRC default ([F] `variants.R3:*`). Variants whose effective rules equal a
 variant already run are reused (`same_effective_rules_as`).
-- **2R:** 22 fields. Only `min_signal_wire_length` (which equals R1) removes the TwinError. Every other single
+- **2R:** 23 fields. Only `min_signal_wire_length` (which equals R1) removes the TwinError. Every other single
   relaxation still raises `signal_wire_length`. **Binding rule: min_signal_wire_length.**
-- **Case 6:** 21 fields. Every one still raises at the candidate filter. **No rule binds**: the failure is structural
+- **Case 6:** 20 fields. Every one still raises at the candidate filter. **No rule binds**: the failure is structural
   (section 3).
 - **Case 4** (DegradeError, terminal ratio L1(D)/L1(W)):
 
@@ -59,8 +59,8 @@ variant already run are reused (`same_effective_rules_as`).
   **Binding rule: min_width_power.** No other single relaxation reaches the target.
 
 **R2 skipped.** One web search and one fetch found no citable minimum gate-wire length for 0.30 mm Al wedge bonds. The
-Tyndall design-rule PDF returned 404. `DesignRules.min_wire_length` = 1.5 mm is marked "placeholder" in
-src/moduleforge/drc/rules.py line 31, so it is not a source.
+Tyndall design-rule PDF returned 404. `DesignRules.min_wire_length` = 1.5 mm (src/moduleforge/drc/rules.py line 31)
+is one of the defaults the module docstring (lines 6-7) calls placeholders, so it is not a source.
 - [I] Any physical minimum at or below 4.597 mm would make R2 behave like R1 on 2R. This rests on no citation.
 
 **Lower bound vs O003 scope_in.**
@@ -95,10 +95,10 @@ Moves 1-3 ([F] `variants.R0.degrade`):
 - All six spreads stop at their first step on `min_spacing`, between the slots and the GATE_HS / GATE_LS keep-outs
   (1.5 mm < 2.0 mm).
 
-The walk ([F] `walk_terminal_blockers`) climbs from 0.996 to 1.232 in 75 steps. At the terminal state, 76 single-step
+The walk ([F] `walk_terminal_blockers`) climbs from 0.996 to 1.232 in 75 steps. At the terminal state, 72 single-step
 candidates exist:
 - 36 are DRC-clean but do not raise L1.
-- The other 40 are rejected by:
+- The other 36 are rejected by (41 rule hits; one candidate can hit two rules):
   - `min_trace_width` 10 (power width; 3 of them also `terminal_off_trace`);
   - `die_edge_margin` 8;
   - `min_spacing` 7 (DC+/DC- 5 mm; keep-out 2 mm);
@@ -188,8 +188,8 @@ opposite directions. No rule is involved.
 - [I] A new flag changes the Params vector and the sampler's draw sequence. So E008's sealed 20,000-candidate stream
   changes for every reference, and E008's dev rows (gen2_0, Case 4) must be re-run.
 - [F] No registered spec depends on derivative/twin. `grep` finds only experiments/runners/e008_run.py,
-  optimize/search.py and the generate tests. experiments/specs has E000-E003 (O000/O001), E006 (O006) and E009 (O007),
-  and no O005 spec. So no O001 or O005 evidence rests on this search space.
+  optimize/search.py and the generate tests. experiments/specs has E000-E003 (O000/O001), E006 (O006), E009 (O007)
+  and E901 (the O901 canary), and no O005 spec. So no O001 or O005 evidence rests on this search space.
 
 ## 4. Item 4: screening checklist
 
@@ -274,3 +274,14 @@ packet, I looked up no other module's geometry.
 - Total compute: about 45 min. That is two full script runs of about 19 min each plus about 5 min of probes, above the
   packet's 30 min. The second run only checks determinism.
 - WebSearch (heavy Al wire minimum length) → no value. WebFetch of the Tyndall PDF → HTTP 404.
+
+## Errata (founder session, 2026-11-11, from review T0315)
+Corrected in place after the merge, with no conclusion changed:
+- R3 field counts (23 for 2R, 20 for Case 6; finding 1a).
+- The Case 4 walk-terminal counts (72 candidates, 36 clean but not raising L1, 36 rejected; finding 0).
+- The rules.py placeholder citation (finding 1b).
+- E901 in the list of registered specs (finding 1c).
+
+Open, for the founder (finding 2): whether O003 scope_in's opening clause, "design rules at least as strict as the
+reference's own", makes the measured minimum gate-wire length a criterion. If it does, dropping it (section 5, change 1)
+is a criteria change (ii), not (i).
