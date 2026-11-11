@@ -1,0 +1,138 @@
+id: T0314
+objective: O003
+title: 'Twin and degradation coverage on the development layouts 2D_Case_2R, 2D_Case_6 and 2D_Case_4:
+  which rule binds and the smallest change (L0/L1 only)'
+type: research
+agent: scientist
+status: running
+depends_on: []
+description: "Diagnosis for the founder (go-ahead 2026-11-11), L0/L1 only. E008 as drafted is INVALID\
+  \ before any VM spend:\nboth D0010 public references raise TwinError (research/notes/o003-reference-reconstructions.md\
+  \ section 6, confirmed by\ncritic T0313, project/reviews/T0263/T0313.json), and on 2D_Case_4 degrade()\
+  \ raises DegradeError under the measured rules\n(L1 ratio 1.232 < 1.388; research/notes/e008-design.md,\
+  \ experiments/drafts/E008.yaml founder decisions), although\ntwin.py's docstring records 1.421 for Case\
+  \ 4 under the default rules. The founder is weighing a new judged reference set,\nwith 2D_Case_2R, 2D_Case_6\
+  \ and 2D_Case_4 all becoming development layouts. The question here: what is the smallest\nrule, twin,\
+  \ degradation or generator change that makes real layouts representable, and does the degraded copy\
+  \ then\nreach its target? Diagnose and prototype; change no frozen code. The founder decides what follows.\n\
+  \nHard limits:\n- L0/L1 only: no l2_layout, thermal or FastHenry solve and no search. Generator calls\
+  \ only inside twin(), degrade() or\n  your prototypes. Keep total compute under about 30 minutes.\n\
+  - Do not edit src/, tests/, experiments/ (specs, drafts, runners), project/objectives, project/decisions\
+  \ or\n  project/claims. Prototype by wrapping or copying functions inside research/scripts/o003_twin_coverage.py.\n\
+  - Build the layouts only from the repository: research/scripts/o003_powersynth_references.py (2R, Case\
+  \ 6) and\n  research/scripts/o006_case4_layout.py (Case 4). Download nothing.\n- Load, fetch or search\
+  \ for no other module's geometry, drawing, CAD file or photo. In particular, do not look up\n  NC State\
+  \ / PREES / Prof. Hopkins modules or the Cree/Wolfspeed CCS050M12CM2 (S14 in\n  research/notes/o003-public-benchmarks.md),\
+  \ and do not follow S14's sources. These may become judged references, and\n  F3 requires that nobody\
+  \ sees them before the freeze. Use the web only for item 1's bonding-process source, never for\n  module\
+  \ layouts.\n- Never read data/holdout/. Use no customer data.\n\nWork in this order. If the budget runs\
+  \ short, finish items 1 and 2 and list what remains.\n1. Rule source. First reproduce the recorded outcomes\
+  \ with E008's own construction:\n   spec_from_layout(reconstruction, measure_rules(reconstruction)[0],\
+  \ keepout_nets), then twin(), then degrade(), all\n   with L1. Expect 2R TwinError on signal_wire_length\
+  \ (4.597 mm outside [5.344, 10.396] mm), Case 6 TwinError (no\n   orientation/sequence), Case 4 twin\
+  \ fit+signal_feet and DegradeError at 1.232. Stop and report if any differs. Then run\n   each layout\
+  \ under these variants:\n   - R1: R0 without min_signal_wire_length.\n   - R2: R0 with a physical minimum\
+  \ gate-wire length for the reconstruction's gate-wire diameter, cited from a\n     wire-bonding process\
+  \ source. Skip R2 and say so if you find no citable value.\n   - R3: diagnostic only. Relax one measured\
+  \ rule at a time to the DRC default, to find which rule binds each failure.\n   Per layout and variant,\
+  \ report: twin mode, any error, difference_record, copper symmetric difference per net (mm2\n   and\
+  \ fraction), L1(W)/L1(ref), the degrade moves and skips, the walk terminal kind, and L1(D)/L1(W) against\
+  \ the\n   1.388 target. Also check E008's lower bound on gate-wire length against O003 scope_in\n  \
+  \ (project/objectives/O003/objective.yaml). Its bondability rule bounds the gate wire only from above\
+  \ (\"within the\n   reference's longest gate-wire length\"). Say whether O003 requires the lower bound\
+  \ or E008 chose it.\n2. The DegradeError mechanism. On Case 4, and on 2R wherever its twin builds:\n\
+  \   - Which rule stops each move and the walk?\n   - Is that rule one O003 scope_in requires of every\
+  \ candidate, such as the reference's own minimum power-net width?\n     Or is it E008's choice?\n  \
+  \ - What is the smallest change to the degradation rule that reaches the target, with D DRC-clean under\
+  \ the same rules\n     as the candidates? Prototype it, for example with new moves, multi-parameter\
+  \ walk steps or restarts.\n   Report the ratio reached and the caveats: the walk climbs on L1, and the\
+  \ 0.11 margin was derived on generator\n   layouts. A smaller planted headroom than F1(b)'s L_sub(D)\
+  \ >= 1.25 L_sub(twin) is a criteria change: flag it as such,\n   do not propose it as a fix.\n3. 2D_Case_6.\
+  \ Check line by line against twin.py's candidate filter why no (orientation, sequence) pair is kept.\n\
+  \   Describe the smallest generator and twin extension that would represent it (switch blocks side by\
+  \ side, wires in\n   opposite directions). Estimate its size in files, functions and tests. Say which\
+  \ E008 freeze hashes it changes, and\n   whether it changes the search space that O001, O005 or E008\
+  \ evidence rests on. Do not implement it.\n4. A fact-level screening checklist for the founder. From\
+  \ the code's own raise sites (twin.py, derivative.py, drc), list\n   every structural feature the twin\
+  \ space cannot represent: for example die rows per switch, a PHASE ring, rotated\n   dies, landing slots,\
+  \ the number of columns, Kelvin wires. For each, say whether 2R, Case 6 and Case 4 show it. Phrase\n\
+  \   each as a yes/no question someone can answer from a datasheet or a verbal description without loading\
+  \ geometry.\n5. Recommendation. Rank the candidate changes by how much they extend coverage against\
+  \ their cost. Mark each:\n   - (i) E008 code or spec change under a new freeze;\n   - (ii) needs an\
+  \ O003 criteria change;\n   - (iii) needs a D0010 or objective decision.\n   Note that every change\
+  \ found here comes after 2R and Case 6 were seen. That is clean only if they become development\n  \
+  \ layouts and the judged references are unseen; otherwise it is a declared deviation under F3.\n6. Short\
+  \ spec reading, with citations: what O003 and E008 say about a verdict when only one reference is counted.\n\
+  \nDeliverables:\n- research/scripts/o003_twin_coverage.py: deterministic, explicit seeds; writes research/o003/twin_coverage/results.json\
+  \ with no timings or timestamps, so a re-run reproduces it byte\n  for byte.\n- research/notes/o003-twin-coverage.md:\
+  \ every statement marked [F] (fact, with the command or file line) or [I] (inference); the item 1 table\
+  \ first;\n  then items 2-6; the commands run with exit codes. It may also correct the two T0263 note\
+  \ points from T0313 findings\n  0 and 1 (the step-3 repair runs and fails; 2R's own voltage-dependent\
+  \ spacing, which the reconstruction does not\n  meet). Do not edit T0263's note."
+context_files:
+- research/notes/o003-reference-reconstructions.md
+- project/reviews/T0263/T0313.json
+- src/moduleforge/generate/twin.py
+- src/moduleforge/drc/rules.py
+- research/scripts/o003_powersynth_references.py
+- research/scripts/o006_case4_layout.py
+- experiments/drafts/E008.yaml
+- research/notes/e008-design.md
+- project/objectives/O003/objective.yaml
+deliverables:
+- research/notes/o003-twin-coverage.md
+- research/scripts/o003_twin_coverage.py
+- research/o003/twin_coverage/results.json
+touches:
+- research/notes/o003-twin-coverage.md
+- research/scripts/o003_twin_coverage.py
+- research/o003/twin_coverage/**
+definition_of_done:
+- cmd: null
+  exists: research/notes/o003-twin-coverage.md
+  timeout_s: 900
+- cmd: uv run python research/scripts/o003_twin_coverage.py --out research/o003/twin_coverage/results.json
+    && git diff --exit-code -- research/o003/twin_coverage/results.json
+  exists: null
+  timeout_s: 2400
+- cmd: uv run ruff check research/scripts/o003_twin_coverage.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests experiments project/objectives project/decisions
+    project/claims
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0314-twin-and-degradation-coverage-on-the-dev
+pr: null
+runs:
+- T0314-scientist-20261111T080102-d51f
+created_by: session
+created_at: '2026-11-11T16:00:34+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder go-ahead 2026-11-11 (session): both public references fail the twin check and Case
+  4 fails degradation, so E008 is INVALID as drafted. Before the founder decides the reference set (D0010
+  / O003 amendment, possible new public modules), find which rules bind and the smallest change that makes
+  real layouts representable. A research task, not investigate, so its merge does not trigger a replan
+  before that decision (I0140 was answered with --no-replan).'
+history: []
