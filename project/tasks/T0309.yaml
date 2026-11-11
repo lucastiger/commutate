@@ -4,7 +4,7 @@ title: 'E008 runner: admissible spot-check references, per-die thickness in stac
   with FV Picard record, thermal-report selftest (reviews T0307, T0308)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0306
 description: "Follow-up to T0306 from its reviews T0307 (physics) and T0308 (numerics), both accept_with_caveats\n\
@@ -91,4 +91,109 @@ rationale: Reviews T0307/T0308 found that F6(e) can fail a stack type on an inad
   on a solver default and drops NaNs, and that the dev thermal report behind a founder decision is not
   protected by the selftest. Fixed before T0263 loads the judged references, under the session review
   policy.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All five T0309 items are done in the E008 runner, its draft spec and the dev rows. Every definition-of-done
+    command exits 0. No frozen value, tolerance, gate, cost model or founder decision changed. thermal_fem.py
+    was not touched.
+
+
+    1. **Spot-check reference.** Run.drive now takes the first admissible reference of each non-default
+    stack type. A type with no admissible reference gets no spot check and no per-type check. It is reported
+    in the evaluation report under F6e.<type> (reference None, with a status) and in the aggregate check''s
+    detail under no_admissible_reference. It is not failed. The spec''s F6e text says this.
+
+    2. **Stack type.** The signature now includes the sorted set of per-die (Die.thickness, Die.attach_thickness).
+    It is taken from the reference layout''s dies and from the deri'
+  report:
+    summary: "All five T0309 items are done in the E008 runner, its draft spec and the dev rows. Every\
+      \ definition-of-done command exits 0. No frozen value, tolerance, gate, cost model or founder decision\
+      \ changed. thermal_fem.py was not touched.\n\n1. **Spot-check reference.** Run.drive now takes the\
+      \ first admissible reference of each non-default stack type. A type with no admissible reference\
+      \ gets no spot check and no per-type check. It is reported in the evaluation report under F6e.<type>\
+      \ (reference None, with a status) and in the aggregate check's detail under no_admissible_reference.\
+      \ It is not failed. The spec's F6e text says this.\n2. **Stack type.** The signature now includes\
+      \ the sorted set of per-die (Die.thickness, Die.attach_thickness). It is taken from the reference\
+      \ layout's dies and from the derivative spec's die, which every twin and candidate is built with.\n\
+      3. **F6(c) on the spot checks.** child_fv now records the finite-volume Picard residual (picard_dT_K)\
+      \ from the solver result, and it is folded into F6c_picard. A record without it counts as NaN. The\
+      \ energy-balance, Picard and A3 maxima are NaN-aware, and every check requires a finite value at\
+      \ or below its tolerance, so a NaN or infinite value fails.\n4. **Thermal report selftest.** The\
+      \ selftest now checks thermal_report_from_rows against a literal hand case:\n   - a twin with per-die\
+      \ GCIs 0.15625 and 0.625 K and width 0.3125 K;\n   - a candidate with a divergent die (GCI inf,\
+      \ n_gci_inf 1);\n   - a candidate with node growth 9.5 (flagged);\n   - a hot candidate with margin_vs_twin_K\
+      \ 10.3125 K and passes_vs_twin False.\n   A version marking every layout attainable, and T0308's\
+      \ falsified version, both fail this check inside the selftest. In offgrid_tj, every planted hot\
+      \ candidate must have passes_vs_twin False with a margin above 2 K, and the twin's width must equal\
+      \ the hand value 0.125 K.\n5. **Small fixes.** The empty-report guard no longer matches die_spacing.\
+      \ The dev rows' runner_sha256 was re-stamped to ae96dda0… after the last runner edit; the T0306\
+      \ stamp is kept under \"previous\", and both dev references show report_unchanged: true.\n\n**Stack-type\
+      \ scenario.** It now has six references whose types come from the real stack-type function and real\
+      \ Die objects:\n- the first AMB reference is inadmissible, so the spot check falls on the second;\n\
+      - an AMB reference that differs only in die thickness gets its own spot check;\n- the default stack\
+      \ with only thicker per-die attach counts as a non-default type;\n- a type with only an inadmissible\
+      \ reference gets no check and is not failed;\n- a NaN energy balance is planted on a level-2 spot-check\
+      \ solve, where a plain max() would drop it, and fails F6(c).\n\n**Mutation check.** The selftest\
+      \ passes on the current runner. It fails on each of eight mutants that put back an old behaviour,\
+      \ one per fix above (record in research/o003/e008_dev/t0309_mutations.json).\n\n**Commands run,\
+      \ all exit 0:**\n- `--selftest`\n- `--verify-freeze` (12 OK)\n- the YAML key check\n- `ruff check\
+      \ experiments/runners/e008_run.py`\n- `mfos exp check E008`\n- the thermal_fem.py sha prefix test\n\
+      - `mfos gate --fast`\n- the refresh script (`refresh_rule_strictness.py T0309`)\n- the mutation\
+      \ script\n\n**Facts from the real dev layouts (layout building only, no solves):** gen2_0 is the\
+      \ default type with dies [[0.00018, 5e-05]]. 2D_Case_4 is non-default (other:61c8dd23d7d1) with\
+      \ dies [[0.00017999999999999998, 0.0]].\n\n**Open point.** The signature compares thicknesses by\
+      \ exact float equality, so a thickness that differs from the default only by rounding makes a separate\
+      \ type. That errs toward more spot checks, never fewer, but at Case 4 size one spot check is the\
+      \ ~416 GB job. I did not change this.\n\nNo commit was made."
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '`uv run python experiments/runners/e008_run.py --selftest` exit 0. The stack_types scenario has
+      6 references and 38 checks with 5 planned failures: F6e on the first checked type, the aggregate
+      F6e, F6c_energy_balance:fake2 (1e-3), F6c_energy_balance:fake3 (NaN) and F6c_picard:fake4 (5e-4
+      K)'
+    - '`--verify-freeze` exit 0 (12 OK lines, no FAIL); the YAML key check exit 0; `ruff check experiments/runners/e008_run.py`
+      exit 0; `uv run mfos exp check E008` exit 0; the thermal_fem.py sha256 prefix a216d5fe3209bcee test
+      exit 0; `uv run mfos gate --fast` exit 0 (''all gates passed'')'
+    - 'research/o003/e008_dev/t0309_mutations.json: the unmutated selftest returns 0. Each of M1 (spot
+      reference ignores admissibility), M2 (per-die thickness left out of the signature), M3 (plain max
+      drops NaN), M4 (FV Picard not folded in), M5 (NaN passes the tolerance test), M6 (every layout attainable),
+      M7 (T0308''s falsified report) and M8 (guard matches die_spacing) returns 1 with specific FAIL lines'
+    - 'Thermal report hand case: the GCI values follow from gci_capped''s branches with rho = 1/4 or 1/2
+      (1.25|d2|) and rho = 2 (+inf). The derivation is in the comment above TR_ROWS in e008_run.py, and
+      all values are dyadic, so they are exact'
+    - 'Real dev layouts (layout building only): gen2_0 is Al2O3_default_dbc with dies [[0.00018, 5e-05]];
+      2D_Case_4 is other:61c8dd23d7d1 with dies [[0.00017999999999999998, 0.0]]'
+    - In thermal_fv.solve_steady, picard_dT is the last max|T_{n+1}-T_n| (around line 505), and child_fv
+      solves with k(T) laws (constant_k False), so the recorded value is a real Picard residual
+    - 'E008.dev_rows.json diff: only the rule_strictness_refresh block changed (task T0309, runner_sha256
+      ae96dda0…, which equals shasum of the final runner; previous stamp kept; report_unchanged true for
+      both references)'
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/o003/e008_dev/refresh_rule_strictness.py
+    - research/o003/e008_dev/t0309_mutations.py
+    - research/o003/e008_dev/t0309_mutations.json
+    - research/o003/e008_dev/T0309_notes.md
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    recommended_actions:
+    - 'Reviewer: re-run `uv run python research/o003/e008_dev/t0309_mutations.py` to confirm every mutant
+      is caught on the committed runner'
+    - Decide in a later draft whether thicknesses in the stack-type signature should be quantised (e.g.
+      to 1 nm). With exact float equality, a rounding-level difference from the defaults creates a non-default
+      type and an FV spot check, which at Case 4 size is the ~416 GB phase-B job
+    - When the full() loader lands after T0263, pass only admissible references to Run.drive, or make
+      drive skip inadmissible ones. Today it would still search them, although they get no spot check
+      and no rows
+    - 'Note for registration: the spot-check reference is the first admissible reference of its type,
+      even if the twin gates F1(a) later exclude it. That is conservative but spends FV solves'
+    - 'This reading needs founder or reviewer confirmation: scope_in''s ''every stack type'' is read as
+      every type in the D0010 reference set, which holds admissible references only. The packet directs
+      it, and the spec states it'
+    alternative_explanations: []
+    discriminating_tests: []
+    affects_acceptance_criteria: false
