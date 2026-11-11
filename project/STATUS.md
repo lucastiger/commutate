@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T00:06:22+00:00 from repository state — do not edit_
+_generated 2026-11-11T00:07:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 39, done: 261, failed: 3, needs_founder: 1, todo: 2
 - T0262 `needs_founder` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
 
 ## Recent events
-- 2026-11-10T23:01:13+00:00 run_finished {"run": "T0262-scientist-20261110T145959-e041", "status": "error", "cost": 0.0, "subtype": "success", "report": "missing"}
 - 2026-11-10T23:01:13+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
 - 2026-11-10T23:06:41+00:00 run_started {"run": "T0262-scientist-20261110T150641-c0b3", "task": "T0262", "role": "scientist", "session": "a5deb032-9e9f-455b-865c-97a8f84222eb"}
 - 2026-11-10T23:20:10+00:00 loop_stopped {"reason": "STOP file"}
@@ -50,3 +49,4 @@ cancelled: 39, done: 261, failed: 3, needs_founder: 1, todo: 2
 - 2026-11-10T23:41:03+00:00 task_added {"task": "T0306", "reason": "reviews T0304/T0305 follow-up (E008 runner, before T0263)"}
 - 2026-11-10T23:41:03+00:00 task_amended {"task": "T0263", "reason": "waits for T0306 (E008 runner fixes from reviews T0304/T0305) so the gates are settled before F3"}
 - 2026-11-11T00:06:20+00:00 inbox_opened {"id": "I0164", "kind": "protected_change", "subject": "T0262: merge needs founder approval"}
+- 2026-11-11T00:06:56+00:00 sleep_detected {"gap_s": 1698, "runs_extended": 0}
