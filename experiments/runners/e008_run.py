@@ -526,9 +526,29 @@ class RefCtx:
 DEFAULT_STACK = "Al2O3_default_dbc"
 
 
-def _die_thicknesses(dies) -> list[list[float]]:
-    """The sorted set of (thickness, attach_thickness) over ``dies`` (m; duplicates and order do not matter)."""
-    return [list(t) for t in sorted({(float(d.thickness), float(d.attach_thickness)) for d in dies})]
+# stack-type signature rounding (T0310 finding 3): thicknesses to 1 nm, conductivities to 9 significant digits
+SIG_THICKNESS_QUANTUM_M = 1e-9
+SIG_K_SIGNIFICANT_DIGITS = 9
+
+
+def _die_thicknesses(dies) -> list[list[int]]:
+    """The sorted set of (thickness, attach_thickness) over ``dies``, each rounded to integer nanometres (_sig_nm, T0310
+    finding 3), so duplicates, order and float rounding do not matter."""
+    return [list(t) for t in sorted({(_sig_nm(d.thickness), _sig_nm(d.attach_thickness)) for d in dies})]
+
+
+def _sig_nm(t) -> int:
+    """A thickness in the stack-type signature (T0310 finding 3): integer nanometres, round(t / 1 nm) with Python's
+    round-half-even.  Two thicknesses that differ only by float rounding (2D_Case_4 stores 180 um as
+    0.00017999999999999998 m) give the same integer; a 1 nm or larger difference gives a different one.  A NaN or
+    infinite thickness raises (fail closed: no stack type, the reference stops)."""
+    return int(round(float(t) / SIG_THICKNESS_QUANTUM_M))
+
+
+def _sig_k(k) -> str:
+    """A conductivity in the stack-type signature (T0310 finding 3): 9 significant digits, format '.8e' (correctly rounded
+    decimal; float relative rounding is ~1e-16, far below the 5e-9 relative step of the 9th digit)."""
+    return format(float(k), f".{SIG_K_SIGNIFICANT_DIGITS - 1}e")
 
 
 def _stack_signature(stack, dies) -> str:
@@ -537,10 +557,12 @@ def _stack_signature(stack, dies) -> str:
     stack.K_LAWS), thickness and k at 300 K; then the sorted set of per-die (Die.thickness, Die.attach_thickness), which
     are the thicknesses thermal_fem and thermal_layout actually use for the die and its attach (T0308 finding 1; the
     stack's die / die_attach thickness is only their default and thermal_layout's edge-cell size).  sigma (electrical)
-    and the ``kind`` label are not thermal inputs and are left out."""
+    and the ``kind`` label are not thermal inputs and are left out.  Rounding rule (T0310 finding 3): every thickness
+    (layer and per-die) as integer nanometres (_sig_nm), every conductivity to 9 significant digits (_sig_k), so a
+    stack that differs from another only by float rounding has the same signature."""
     las = [*stack.layers, stack.die_attach, stack.die]
-    return json.dumps({"layers": [[str(la.name), str(la.material), float(la.thickness), float(la.k)] for la in las],
-                       "die_thickness_attach_m": _die_thicknesses(dies)})
+    return json.dumps({"layers": [[str(la.name), str(la.material), _sig_nm(la.thickness), _sig_k(la.k)] for la in las],
+                       "die_thickness_attach_nm": _die_thicknesses(dies)})
 
 
 def _stack_type(stack, dies) -> str:
@@ -663,6 +685,18 @@ def _worst(values) -> float:
     0.0 for no values.  Python's max() drops a NaN that is not first (T0308 finding 5)."""
     vals = [float(v) for v in values]
     return math.nan if any(math.isnan(v) for v in vals) else max(vals, default=0.0)
+
+
+def _a3_die(p: list, r: list, g: dict) -> float:
+    """F6(e) A3 on one die: max_gci_consistency of the scikit-fem levels 0-2 ``p`` against the finite-volume levels 1-3
+    ``r`` (floor a3_floor_K, cap a3_ref_gci_cap_K).  A NaN or infinite Tj on either side gives NaN, which fails the
+    per-type check and, through _worst, the aggregate (T0310 finding 2); mfos.metrics would raise on it instead and stop
+    evaluate with no F6(e) check written."""
+    vals = [float(v) for v in (*p, *r)]
+    if not all(math.isfinite(v) for v in vals):
+        return math.nan
+    return MX.max_gci_consistency(*([v] for v in p), *([v] for v in r), floor=g["a3_floor_K"],
+                                  ref_gci_cap=g["a3_ref_gci_cap_K"])
 
 
 def _within(v: float, tol: float) -> bool:
@@ -1252,9 +1286,8 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
             continue
         fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
         th = next(t["record"] for t in extra[rid]["main"].rows["thermal"] if t["role"] == "reference")
-        a3s[st] = _worst(MX.max_gci_consistency(*(  # per die: fem levels 0-2 vs FV levels 1-3
-            [th["tj"][lv][i]] for lv in range(3)), *([f["tj"][i]] for f in fv), floor=g["a3_floor_K"],
-            ref_gci_cap=g["a3_ref_gci_cap_K"]) for i in range(len(th["tj"][0])))
+        a3s[st] = _worst(_a3_die([th["tj"][lv][i] for lv in range(3)], [f["tj"][i] for f in fv], g)
+                         for i in range(len(th["tj"][0])))  # per die: fem levels 0-2 vs FV levels 1-3
         ck(f"F6e_stack_type_spot_check:{st}", _within(a3s[st], g["a3_max"]), a3s[st], g["a3_max"], f"reference {rid}")
     # a non-default type with no admissible reference: no spot check and no per-type check; reported here (rep F6e with
     # reference None) and in the aggregate's detail, not failed (Run.drive)
@@ -1326,7 +1359,8 @@ class FakeLay(Stub):
 
 
 def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None,
-               fv_eb_nan: set | None = None, fv_pc_bad: set | None = None):
+               fv_eb_nan: set | None = None, fv_pc_bad: set | None = None, fv_pc_missing: set | None = None,
+               fv_tj_nan: set | None = None):
     """Deterministic fake solvers keyed by fingerprint.  'twin_best': every candidate is above the twin (twin rule);
     otherwise candidates reach ~0.70 of the twin's L_sub ('levelled': L1 floor reached in the first n_first).  Planted
     faults, filled by the selftest before the drive: ``hot`` fingerprints get +10 K on die 0 at every scikit-fem level
@@ -1334,12 +1368,15 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
     ``fv_eb_bad`` references' FV solves report an energy balance of 1e-3 (F6(c) fails); ``fv_eb_nan`` references' FV
     level-2 solve reports a NaN energy balance (not first in the list, so a plain max() drops it; F6(c) must fail);
     ``fv_pc_bad`` references' FV level-3 solve reports a Picard residual of 5e-4 K (F6(c) Picard fails; every other FV
-    solve reports 5e-5 K, below the 1e-4 K gate).  'snap*' is the off-grid
+    solve reports 5e-5 K, below the 1e-4 K gate); ``fv_pc_missing`` references' FV level-1 record has no picard_dT_K
+    key (a stale record; it counts as NaN, F6(c) Picard must fail; T0310 finding 1); ``fv_tj_nan`` references' FV level-2
+    solve reports a NaN Tj on die 1 (not the first die, so a plain max() over dies drops it; F6(e) on its type and the
+    aggregate must fail; T0310 finding 2).  'snap*' is the off-grid
     reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01."""
     lo = 1.05 if scenario == "twin_best" else 0.70
     fixed = {"ref": 20e-9, "twin": 20.0004e-9, "D": 27.5e-9, "snap": 20.1e-9}
-    hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad = (set() if x is None else x
-                                                    for x in (hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad))
+    hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad, fv_pc_missing, fv_tj_nan = (
+        set() if x is None else x for x in (hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad, fv_pc_missing, fv_tj_nan))
 
     def lsub(fp):
         for k, v in fixed.items():
@@ -1374,12 +1411,14 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
                 tj[0] += 10.0
             if j["type"] == "fv" and fp in fv_bad:
                 tj = [t + 5.0 for t in tj]
+            if j["type"] == "fv" and fp in fv_tj_nan and lv == 2:
+                tj[1] = math.nan
             eb = 1e-3 if j["type"] == "fv" and fp in fv_eb_bad else 1e-9
             if j["type"] == "fv" and fp in fv_eb_nan and lv == 2:
                 eb = math.nan
             rec = {"tj": tj, "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
                    "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
-            if j["type"] == "fv":
+            if j["type"] == "fv" and not (fp in fv_pc_missing and lv == 1):
                 rec["picard_dT_K"] = 5e-4 if fp in fv_pc_bad and lv == 3 else 5e-5
             return rec
         if j["type"] == "screen":
@@ -1418,16 +1457,19 @@ RS_EXPECT = {"gap_dcp_phase": True, "gap_phase_dcm": False, "gap_dcp_dcm": False
 SCENARIOS = {  # name: (number of references, off-grid reference indices, planted Tj failures per reference: the n lowest L_sub)
     "headroom": (2, (), {}), "twin_best": (2, (), {}), "levelled": (2, (), {}),
     "offgrid_tj": (2, (0,), {0: 1, 1: 4}),  # ref 0: off-grid, lowest-L_sub fails; ref 1: whole first batch fails
-    # six references, stack types from the real _stack_type (selftest(), ST_REFS): F6(e) and F6(c) planted on the FV solves
-    "stack_types": (6, (), {}),
+    # seven references, stack types from the real _stack_type (selftest(), ST_REFS): F6(e) and F6(c) planted on the FV
+    # solves; stack_types_nan: the same references with one planted fault only, a NaN FV Tj (T0310 finding 2), so the
+    # aggregate F6(e) check can fail for no other reason
+    "stack_types": (7, (), {}), "stack_types_nan": (7, (), {}),
 }
 # stack_types scenario, per reference: (stack, die thickness factor, die attach thickness factor, admissible).  fake1 is the
 # first AMB reference and inadmissible, so AMB's spot check must fall on fake2 (T0307 finding 1); fake3 differs from fake2
 # only in die thickness and must get its own (T0308 finding 1); fake4 is C004's default stack with thicker die attach on
 # the dies only (the stack-level type would call it default); fake5's type (thicker stack-level die-attach layer) has no
-# admissible reference: no spot check, reported, not failed.
+# admissible reference: no spot check, reported, not failed.  fake6 is a second ADMISSIBLE AMB reference after fake2, so
+# only the first admissible one in reference order matches the expected spot reference (T0310 finding 0).
 ST_REFS = (("dbc", 1.0, 1.0, True), ("amb", 1.0, 1.0, False), ("amb", 1.0, 1.0, True), ("amb", 2.0, 1.0, True),
-           ("dbc", 1.0, 2.0, True), ("dbc_la2", 1.0, 1.0, False))
+           ("dbc", 1.0, 2.0, True), ("dbc_la2", 1.0, 1.0, False), ("amb", 1.0, 1.0, True))
 
 # Dev thermal report, literal hand case (T0307 finding 3, T0308 finding 0).  Die rows (Tj levels 0, 1, 2 in K), floor
 # 1e-3 K, limit 2 K, every value a dyadic fraction so the hand values are exact.  gci_capped (mfos.metrics; Roache 1998
@@ -1527,6 +1569,49 @@ def _hand_asc(chunks: dict, l1, lsub, n_short: int) -> list[str]:
     return [fp for i, fp in sorted(short, key=lambda t: (lsub(t[1]), t[0]))]
 
 
+def stack_rounding_failures(dbc, d_def) -> list[str]:
+    """Stack-type signature rounding (T0310 finding 3): a stack that differs from C004's default only by float rounding
+    (every layer thickness and k, and the die and attach thickness, x (1 + 1e-15), and 2D_Case_4's stored die thickness
+    0.00017999999999999998 m) is the default type; a 1 um change in any one layer's thickness, a 1 um change in one die's
+    thickness or attach, and a 1e-6 relative change in one layer's k are not."""
+    from moduleforge.geometry.layout import Die
+    out = []
+    e = 1.0 + 1e-15
+
+    def lay_all(st, f):
+        return dataclasses.replace(st, layers=tuple(f(la) for la in st.layers), die_attach=f(st.die_attach), die=f(st.die))
+
+    def dies(t=None, a=None, n=4):
+        return [dataclasses.replace(d_def, cx=float(i), thickness=d_def.thickness if t is None else t,
+                                    attach_thickness=d_def.attach_thickness if a is None else a) for i in range(n)]
+    if abs(0.00017999999999999998 - d_def.thickness) > 1e-18:
+        out.append(f"stack rounding: the default die thickness {d_def.thickness} is not 180 um; the 2D_Case_4 case is void")
+    rounded = lay_all(dbc, lambda la: dataclasses.replace(la, thickness=la.thickness * e, k=la.k * e))
+    for lab, st, ds in (("every thickness and k x (1 + 1e-15)", rounded, dies(d_def.thickness * e, d_def.attach_thickness * e)),
+                        ("die thickness 0.00017999999999999998 m", dbc, dies(0.00017999999999999998)),
+                        ("a single die x (1 + 1e-15)", dbc, [Die(0.0, 0.0, 1.0, 1.0, "HS", {}, thickness=d_def.thickness * e)])):
+        if _stack_type(st, ds) != DEFAULT_STACK:
+            out.append(f"stack rounding: {lab} is {_stack_type(st, ds)}, want {DEFAULT_STACK}")
+    names = [la.name for la in (*dbc.layers, dbc.die_attach, dbc.die)]
+    for j, nm in enumerate(names):
+        bumped = list((*dbc.layers, dbc.die_attach, dbc.die))
+        for lab, new in (("+1 um", dataclasses.replace(bumped[j], thickness=bumped[j].thickness + 1e-6)),
+                         ("k x (1 + 1e-6)", dataclasses.replace(bumped[j], k=bumped[j].k * (1 + 1e-6)))):
+            b2 = list(bumped)
+            b2[j] = new
+            st = dataclasses.replace(dbc, layers=tuple(b2[:-2]), die_attach=b2[-2], die=b2[-1])
+            if _stack_type(st, dies()) == DEFAULT_STACK:
+                out.append(f"stack rounding: layer {j} ({nm}) {lab} is still {DEFAULT_STACK}")
+    for lab, ds in (("die +1 um", dies(d_def.thickness + 1e-6)), ("attach +1 um", dies(a=d_def.attach_thickness + 1e-6)),
+                    ("one of four dies +1 um", [*dies(n=3), dataclasses.replace(d_def, cx=9.0, thickness=d_def.thickness + 1e-6)])):
+        if _stack_type(dbc, ds) == DEFAULT_STACK:
+            out.append(f"stack rounding: {lab} is still {DEFAULT_STACK}")
+    if _sig_nm(0.00017999999999999998) != 180000 or _sig_nm(1e-6) != 1000 or _sig_k(24.0 * e) != _sig_k(24.0) or \
+            _sig_k(24.0) == _sig_k(24.0 * (1 + 1e-6)):
+        out.append("stack rounding: _sig_nm / _sig_k hand values")
+    return out
+
+
 def selftest() -> int:
     import tempfile
 
@@ -1569,8 +1654,10 @@ def selftest() -> int:
                                     attach_thickness=fa * d_def.attach_thickness) for i in range(4)]
     st_of = [_stack_type(stacks[s], dies_of(ft, fa)) for s, ft, fa, _ in ST_REFS]
     st_amb, st_amb_thick, st_attach, st_la2 = st_of[2], st_of[3], st_of[4], st_of[5]
-    if st_of[0] != DEFAULT_STACK or len({st_of[0], st_amb, st_amb_thick, st_attach, st_la2}) != 5 or st_of[1] != st_amb:
-        failures.append(f"stack types: {st_of} (want default, AMB x2, then three distinct non-default types)")
+    if st_of[0] != DEFAULT_STACK or len({st_of[0], st_amb, st_amb_thick, st_attach, st_la2}) != 5 or \
+            st_of[1] != st_amb or st_of[6] != st_amb:
+        failures.append(f"stack types: {st_of} (want default, AMB x2, three distinct non-default types, AMB)")
+    failures += stack_rounding_failures(dbc, d_def)
     mixed = [*dies_of(2.0, 1.0)[:1], *dies_of(1.0, 1.0)]
     if _stack_type(dbc, mixed) != _stack_type(dbc, mixed[::-1] + mixed[:1]) or _stack_type(dbc, mixed) in (
             DEFAULT_STACK, _stack_type(dbc, dies_of(2.0, 1.0))):
@@ -1582,10 +1669,11 @@ def selftest() -> int:
             failures.append(f"thermal report literal check passes the falsified {mutant.__name__}")
     scfg = dict(n_candidates=200, n_first=50, shortlist=16, batch=4, max_checks=8, tj_margin=2.0, chunk=50)
     for scenario, (n_refs, offgrid, n_hot) in SCENARIOS.items():
-        hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad = set(), set(), set(), set(), set()
-        lsub, l1, fjob = fake_world(scenario, hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad)
-        types = st_of if scenario == "stack_types" else [DEFAULT_STACK, "other:fakeAlN"]
-        adm = [a for *_, a in ST_REFS] if scenario == "stack_types" else [True] * n_refs
+        hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad, fv_pc_missing, fv_tj_nan = (set() for _ in range(7))
+        lsub, l1, fjob = fake_world(scenario, hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad, fv_pc_missing, fv_tj_nan)
+        st_scn = scenario.startswith("stack_types")
+        types = st_of if st_scn else [DEFAULT_STACK, "other:fakeAlN"]
+        adm = [a for *_, a in ST_REFS] if st_scn else [True] * n_refs
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             sched = Scheduler(1e9, 8, 2, fake=fjob)
@@ -1600,18 +1688,28 @@ def selftest() -> int:
                 refs.append(rc)
             refs_a = [rc for rc in refs if rc.admissible]
             s_hand = {rc.rid: (S_REF_HAND if not rc.on_grid else 0.0) for rc in refs}
-            if scenario == "stack_types":
-                # the spot-check references by hand: the first admissible reference of each non-default type
+            if st_scn:
+                # the spot-check references by hand: the first admissible reference of each non-default type (fake2,
+                # not fake1 (inadmissible) nor fake6 (a later admissible AMB reference))
                 want = {st_amb: "fake2", st_amb_thick: "fake3", st_attach: "fake4"}
-                # F6(e) planted on the first checked type in sorted order (a single overwritten spot_ref, T0305 finding
-                # 0, checked only the last one); F6(c): energy balance 1e-3 on fake2, a NaN energy balance on fake3's
-                # level-2 FV solve, a Picard residual 5e-4 K on fake4's level-3 FV solve
+                # NaN FV Tj (die 1, level 2) on the LAST checked type in sorted order, so a plain max() over the types
+                # drops it whenever an earlier type's value is finite (T0310 finding 2)
+                nan_t = max(want)
+                fv_tj_nan.add(f"ref{want[nan_t][4:]}")
+                first, fail_e, planted_c = None, {nan_t}, set()
+            if scenario == "stack_types":
+                # F6(e) planted on the first checked type in sorted order too (a single overwritten spot_ref, T0305
+                # finding 0, checked only the last one); F6(c): energy balance 1e-3 on fake2, a NaN energy balance on
+                # fake3's level-2 FV solve, a Picard residual 5e-4 K on fake4's level-3 FV solve, and fake2's level-1 FV
+                # record without picard_dT_K (counts as NaN; T0310 finding 1)
                 first = min(want)
+                fail_e = {first, nan_t}
                 fv_bad.add(f"ref{want[first][4:]}")
                 fv_eb_bad.add("ref2")
                 fv_eb_nan.add("ref3")
                 fv_pc_bad.add("ref4")
-                planted_c = {"F6c_energy_balance:fake2", "F6c_energy_balance:fake3", "F6c_picard:fake4"}
+                fv_pc_missing.add("ref2")
+                planted_c = {"F6c_energy_balance:fake2", "F6c_energy_balance:fake3", "F6c_picard:fake4", "F6c_picard:fake2"}
             run.drivers = {}
             seeds = {(rc.rid, ns): 1000 + i for i, (rc, ns) in enumerate((r, n) for r in refs for n in ("main", "control"))}
 
@@ -1768,46 +1866,63 @@ def selftest() -> int:
                                                 f"{e['margin_vs_twin_K']}")
                 if n_hot_seen != sum(n_hot.values()):
                     failures.append(f"offgrid_tj: {n_hot_seen} planted hot candidates in the thermal report, want {sum(n_hot.values())}")
-            if scenario == "stack_types":
+            if st_scn:
+                sn = scenario
                 if run.spot_refs != want or run.spot_none != [st_la2]:
-                    failures.append(f"stack_types: spot refs {run.spot_refs} != {want} or no-admissible types "
+                    failures.append(f"{sn}: spot refs {run.spot_refs} != {want} or no-admissible types "
                                     f"{run.spot_none} != {[st_la2]}")
                 for st, rid in want.items():
                     fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
                     if len(fv) != 3 or any(f is None for f in fv):
-                        failures.append(f"stack_types: {rid} ({st}) has no complete FV levels 1-3")
+                        failures.append(f"{sn}: {rid} ({st}) has no complete FV levels 1-3")
                     c = cmap.get(f"F6e_stack_type_spot_check:{st}")
-                    if c is None or c["passed"] != (st != first):
-                        failures.append(f"stack_types: F6e for {st} {c} (planted failure on {first} only)")
-                for rid in ("fake1", "fake5"):  # inadmissible: no FV solve was ever scheduled
+                    if c is None or c["passed"] != (st not in fail_e):
+                        failures.append(f"{sn}: F6e for {st} {c} (planted failures on {sorted(fail_e)} only)")
+                # the NaN FV Tj: its type's check fails with the value NaN, not a finite maximum over the other dies
+                c = cmap.get(f"F6e_stack_type_spot_check:{nan_t}")
+                if c is None or c["passed"] or c["value"] is None or not math.isnan(c["value"]):
+                    failures.append(f"{sn}: F6e for {nan_t} with a planted NaN FV Tj: {c} (want failed, value NaN)")
+                # fake1, fake5 inadmissible; fake6 admissible but not its type's first: no FV solve was ever scheduled
+                for rid in ("fake1", "fake5", "fake6"):
                     if any(Path(j["out"]).exists() for j in run.spot_jobs(run.drivers[(rid, "main")])) or \
                             any(Path(p_).name.startswith("ref" + rid[4:]) and "__fv" in p_.name
                                 for p_ in [Path(x) for x in (root / rid / "solves").glob("*")]):
-                        failures.append(f"stack_types: inadmissible {rid} has finite-volume spot-check solves")
+                        failures.append(f"{sn}: {rid} (not a spot-check reference) has finite-volume spot-check solves")
                 # the type without an admissible reference: no per-type check, reported with reference None, not failed
                 if f"F6e_stack_type_spot_check:{st_la2}" in cmap or rep.get("F6e", {}).get(st_la2, {}).get(
                         "reference", "missing") is not None or st_la2 not in cmap["F6e_stack_type_spot_check"]["detail"]:
-                    failures.append(f"stack_types: type {st_la2} without an admissible reference: check "
+                    failures.append(f"{sn}: type {st_la2} without an admissible reference: check "
                                     f"{cmap.get(f'F6e_stack_type_spot_check:{st_la2}')}, report {rep.get('F6e', {}).get(st_la2)}")
+                # aggregate: fails, and its value is NaN (a NaN per-type value; _worst, not a plain max).  In
+                # stack_types_nan the NaN is the only F6(e) fault, so the aggregate can fail for no other reason
                 agg = cmap["F6e_stack_type_spot_check"]
-                per_type = [math.inf if c["value"] is None else c["value"] for n, c in cmap.items()
-                            if n.startswith("F6e_stack_type_spot_check:")]
-                if agg["passed"] or agg["value"] != max(per_type):
-                    failures.append(f"stack_types: aggregate F6e {agg} (planted per-type failure on {first})")
-                # F6(c) on the spot checks: exactly the planted three fail, each for its own reason, NaN included
+                if agg["passed"] or agg["value"] is None or not math.isnan(agg["value"]) or \
+                        not math.isnan(met.get("stack_type_a3", 0.0)):
+                    failures.append(f"{sn}: aggregate F6e {agg}, stack_type_a3 {met.get('stack_type_a3')} (planted per-type "
+                                    f"failures on {sorted(fail_e)}, NaN on {nan_t}: want failed, NaN)")
+                if rep.get("F6e", {}).get(nan_t, {}).get("status") != "checked":
+                    failures.append(f"{sn}: report F6e.{nan_t} {rep.get('F6e', {}).get(nan_t)}")
+                # F6(c) on the spot checks: exactly the planted ones fail, each for its own reason, NaN included;
+                # fake6 (no spot check) includes no FV solve
                 planted = planted_c
-                for rid in ("fake0", "fake2", "fake3", "fake4"):
+                for rid in ("fake0", "fake2", "fake3", "fake4", "fake6"):
                     for kind in ("energy_balance", "picard"):
                         name = f"F6c_{kind}:{rid}"
                         if cmap[name]["passed"] == (name in planted_c):
-                            failures.append(f"stack_types: {name} passed={cmap[name]['passed']} (planted: {sorted(planted_c)})")
-                        n_fv = 3 if rid != "fake0" else 0
+                            failures.append(f"{sn}: {name} passed={cmap[name]['passed']} (planted: {sorted(planted_c)})")
+                        n_fv = 3 if rid in want.values() else 0
                         if f"{n_fv} finite-volume spot-check solves included" not in cmap[name]["detail"]:
-                            failures.append(f"stack_types: {name} does not include {n_fv} FV solves: {cmap[name]['detail']}")
-                if not math.isnan(cmap["F6c_energy_balance:fake3"]["value"]):
-                    failures.append(f"stack_types: fake3's NaN energy balance reported as {cmap['F6c_energy_balance:fake3']['value']}")
-                if cmap["F6c_picard:fake4"]["value"] != 5e-4:
-                    failures.append(f"stack_types: fake4's FV Picard residual reported as {cmap['F6c_picard:fake4']['value']}")
+                            failures.append(f"{sn}: {name} does not include {n_fv} FV solves: {cmap[name]['detail']}")
+                if scenario == "stack_types":
+                    if not math.isnan(cmap["F6c_energy_balance:fake3"]["value"]):
+                        failures.append(f"{sn}: fake3's NaN energy balance reported as {cmap['F6c_energy_balance:fake3']['value']}")
+                    if cmap["F6c_picard:fake4"]["value"] != 5e-4:
+                        failures.append(f"{sn}: fake4's FV Picard residual reported as {cmap['F6c_picard:fake4']['value']}")
+                    # fake2's level-1 FV record has no picard_dT_K: it counts as NaN (every other Picard value of fake2
+                    # is 5e-5 K or below, so the failure comes from the missing key alone; T0310 finding 1)
+                    if not math.isnan(cmap["F6c_picard:fake2"]["value"]):
+                        failures.append(f"{sn}: fake2's FV record without picard_dT_K reported as "
+                                        f"{cmap['F6c_picard:fake2']['value']} (want NaN)")
             for c in checks:
                 if c["name"].startswith(("recompute_agrees", "F6a", "F6c", "F6d", "F1c", "at_least", "driver_s_ref")) \
                         and not c["passed"] and c["name"] not in planted:

@@ -1,0 +1,242 @@
+{
+ "runner_sha256_of_unmutated": "6d01aa5c04344512d1eea9e72b7f212b205667dac823d2fd2bf6c7901ce88342",
+ "unmutated": {
+  "rc": 0,
+  "raised": null,
+  "n_fail": 0,
+  "fail_lines": []
+ },
+ "mutants": {
+  "N1_spot_ref_last_admissible (T0310 f0)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 23,
+   "fail_lines": [
+    "FAIL stack_types: spot refs {'other:b8046147dbe9': 'fake4', 'other:c6332659c467': 'fake3', 'other:d084ad951787': 'fake6'} != {'other:d084ad951787': 'fake2', 'other:c6332659c467': 'fake3', 'other:b8046147dbe9': 'fake4'} or no-admissible types ['other:374cc40fe036'] != ['other:374cc40fe036']",
+    "FAIL stack_types: fake2 (other:d084ad951787) has no complete FV levels 1-3",
+    "FAIL stack_types: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake6'} (planted failures on ['other:b8046147dbe9', 'other:d084ad951787'] only)",
+    "FAIL stack_types: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake6'} (want failed, value NaN)",
+    "FAIL stack_types: fake6 (not a spot-check reference) has finite-volume spot-check solves",
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': 64.41806451613192, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 64.41806451613192], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake6\", 0.09806451612862412]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 64.41806451613192 (planted per-type failures on ['other:b8046147dbe9', 'other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)",
+    "FAIL stack_types: F6c_energy_balance:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: F6c_energy_balance:fake2 does not include 3 FV solves: 28 values, 0 finite-volume spot-check solves included; NaN/inf fails"
+   ],
+   "caught": true
+  },
+  "N2_missing_picard_counts_zero (T0310 f1)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL stack_types: F6c_picard:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: fake2's FV record without picard_dT_K reported as 5e-05 (want NaN)"
+   ],
+   "caught": true
+  },
+  "N3_per_type_a3_plain_max_over_dies (T0310 f2)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 6,
+   "fail_lines": [
+    "FAIL stack_types: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:b8046147dbe9', 'other:d084ad951787'] only)",
+    "FAIL stack_types: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (want failed, value NaN)",
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': 64.41806451613192, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 64.41806451613192], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", 0.09806451612862412]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 64.41806451613192 (planted per-type failures on ['other:b8046147dbe9', 'other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)",
+    "FAIL stack_types_nan: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:d084ad951787'] only)",
+    "FAIL stack_types_nan: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (want failed, value NaN)",
+    "FAIL stack_types_nan: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 0.09806451612862412], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", 0.09806451612862412]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 0.09806451612862412 (planted per-type failures on ['other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)"
+   ],
+   "caught": true
+  },
+  "N4_aggregate_value_plain_max (T0310 f2)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': 64.41806451613192, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 64.41806451613192], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", NaN]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 nan (planted per-type failures on ['other:b8046147dbe9', 'other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)",
+    "FAIL stack_types_nan: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 0.09806451612862412], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", NaN]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 nan (planted per-type failures on ['other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)"
+   ],
+   "caught": true
+  },
+  "N5_aggregate_pass_nan_unsafe (T0310 f2)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 1,
+   "fail_lines": [
+    "FAIL stack_types_nan: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 0.09806451612862412], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", NaN]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 nan (planted per-type failures on ['other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)"
+   ],
+   "caught": true
+  },
+  "N6_no_nonfinite_guard_in_a3 (T0310 f2)": {
+   "rc": 1,
+   "raised": "ValueError: non-finite value in a metric column",
+   "n_fail": 0,
+   "fail_lines": [],
+   "caught": true
+  },
+  "N7_thickness_exact_float (T0310 f3)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 4,
+   "fail_lines": [
+    "FAIL stack rounding: every thickness and k x (1 + 1e-15) is other:533513780c39, want Al2O3_default_dbc",
+    "FAIL stack rounding: die thickness 0.00017999999999999998 m is other:ea87a3cb4b58, want Al2O3_default_dbc",
+    "FAIL stack rounding: a single die x (1 + 1e-15) is other:dff413b7f4ee, want Al2O3_default_dbc",
+    "FAIL stack rounding: _sig_nm / _sig_k hand values"
+   ],
+   "caught": true
+  },
+  "N8_k_exact_float (T0310 f3)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL stack rounding: every thickness and k x (1 + 1e-15) is other:68efd2548fec, want Al2O3_default_dbc",
+    "FAIL stack rounding: _sig_nm / _sig_k hand values"
+   ],
+   "caught": true
+  },
+  "N9_thickness_quantum_10um (T0310 f3)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 11,
+   "fail_lines": [
+    "FAIL stack rounding: layer 0 (baseplate) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 1 (solder) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 2 (backside_cu) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 3 (ceramic) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 4 (top_cu) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 5 (die_attach) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 6 (die) +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: die +1 um is still Al2O3_default_dbc"
+   ],
+   "caught": true
+  },
+  "N10_k_5_digits (T0310 f3)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 8,
+   "fail_lines": [
+    "FAIL stack rounding: layer 0 (baseplate) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 1 (solder) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 2 (backside_cu) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 3 (ceramic) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 4 (top_cu) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 5 (die_attach) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: layer 6 (die) k x (1 + 1e-6) is still Al2O3_default_dbc",
+    "FAIL stack rounding: _sig_nm / _sig_k hand values"
+   ],
+   "caught": true
+  },
+  "M1_spot_ref_ignores_admissibility (T0307 f1, T0308 f2)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 21,
+   "fail_lines": [
+    "FAIL stack_types: spot refs {'other:374cc40fe036': 'fake5', 'other:b8046147dbe9': 'fake4', 'other:c6332659c467': 'fake3', 'other:d084ad951787': 'fake1'} != {'other:d084ad951787': 'fake2', 'other:c6332659c467': 'fake3', 'other:b8046147dbe9': 'fake4'} or no-admissible types [] != ['other:374cc40fe036']",
+    "FAIL stack_types: fake2 (other:d084ad951787) has no complete FV levels 1-3",
+    "FAIL stack_types: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': False, 'value': None, 'threshold': None, 'detail': 'spot-check reference fake1 has no rows'} (want failed, value NaN)",
+    "FAIL stack_types: fake1 (not a spot-check reference) has finite-volume spot-check solves",
+    "FAIL stack_types: fake5 (not a spot-check reference) has finite-volume spot-check solves",
+    "FAIL stack_types: type other:374cc40fe036 without an admissible reference: check {'name': 'F6e_stack_type_spot_check:other:374cc40fe036', 'passed': False, 'value': None, 'threshold': None, 'detail': 'spot-check reference fake5 has no rows'}, report {'reference': 'fake5', 'a3': inf, 'status': 'checked'}",
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': inf, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:374cc40fe036\": [\"fake5\", Infinity], \"other:b8046147dbe9\": [\"fake4\", 64.41806451613192], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake1\", Infinity]}, \"no_admissible_reference\": []}'}, stack_type_a3 inf (planted per-type failures on ['other:b8046147dbe9', 'other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)",
+    "FAIL stack_types: F6c_energy_balance:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])"
+   ],
+   "caught": true
+  },
+  "M3_plain_max_drops_nan (T0308 f5)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 10,
+   "fail_lines": [
+    "FAIL stack_types: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:b8046147dbe9', 'other:d084ad951787'] only)",
+    "FAIL stack_types: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (want failed, value NaN)",
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': False, 'value': 64.41806451613192, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 64.41806451613192], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", 0.09806451612862412]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 64.41806451613192 (planted per-type failures on ['other:b8046147dbe9', 'other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)",
+    "FAIL stack_types: F6c_picard:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: F6c_energy_balance:fake3 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: fake3's NaN energy balance reported as 1e-09",
+    "FAIL stack_types: fake2's FV record without picard_dT_K reported as 5e-05 (want NaN)",
+    "FAIL stack_types_nan: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:d084ad951787'] only)"
+   ],
+   "caught": true
+  },
+  "M4_fv_picard_not_folded (T0307 f0)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 4,
+   "fail_lines": [
+    "FAIL stack_types: F6c_picard:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: F6c_picard:fake4 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: fake4's FV Picard residual reported as 1e-06",
+    "FAIL stack_types: fake2's FV record without picard_dT_K reported as 1e-06 (want NaN)"
+   ],
+   "caught": true
+  },
+  "M5_within_ignores_nan (T0308 f5)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 7,
+   "fail_lines": [
+    "FAIL stack_types: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:b8046147dbe9', 'other:d084ad951787'] only)",
+    "FAIL stack_types: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': 'reference fake2'} (want failed, value NaN)",
+    "FAIL stack_types: F6c_picard:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types: F6c_energy_balance:fake3 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake2', 'F6c_picard:fake4'])",
+    "FAIL stack_types_nan: F6e for other:d084ad951787 {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['other:d084ad951787'] only)",
+    "FAIL stack_types_nan: F6e for other:d084ad951787 with a planted NaN FV Tj: {'name': 'F6e_stack_type_spot_check:other:d084ad951787', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': 'reference fake2'} (want failed, value NaN)",
+    "FAIL stack_types_nan: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': True, 'value': nan, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:b8046147dbe9\": [\"fake4\", 0.09806451612862412], \"other:c6332659c467\": [\"fake3\", 0.09806451612862412], \"other:d084ad951787\": [\"fake2\", NaN]}, \"no_admissible_reference\": [\"other:374cc40fe036\"]}'}, stack_type_a3 nan (planted per-type failures on ['other:d084ad951787'], NaN on other:d084ad951787: want failed, NaN)"
+   ],
+   "caught": true
+  },
+  "M6_thermal_report_all_attainable (T0309 item 4)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL thermal report c_div.attainable: True != hand False",
+    "FAIL thermal report summary.n_attainable: 4 != hand 3"
+   ],
+   "caught": true
+  },
+  "M7_thermal_report_t0308_falsified (T0308 f0)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 10,
+   "fail_lines": [
+    "FAIL thermal report c_div.margin_vs_twin_K: 0.0 != hand inf",
+    "FAIL thermal report c_div.passes_vs_twin: True != hand False",
+    "FAIL thermal report c_grow.margin_vs_twin_K: 0.0 != hand -0.578125",
+    "FAIL thermal report c_hot.margin_vs_twin_K: 0.0 != hand 10.3125",
+    "FAIL thermal report c_hot.passes_vs_twin: True != hand False",
+    "FAIL offgrid_tj/fake0: hot c000132 passes_vs_twin True margin 0.0",
+    "FAIL offgrid_tj/fake1: hot c000062 passes_vs_twin True margin 0.0",
+    "FAIL offgrid_tj/fake1: hot c000140 passes_vs_twin True margin 0.0"
+   ],
+   "caught": true
+  },
+  "M8_guard_matches_die_spacing (T0307 f4)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 1,
+   "fail_lines": [
+    "FAIL rule_strictness: the guard still matches die_spacing (rule_strictness is empty although measure_rules measured ['die_spacing', 'gap_dcp_dcm'])"
+   ],
+   "caught": true
+  },
+  "M2_stack_type_ignores_per_die_thickness (T0308 f1)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 35,
+   "fail_lines": [
+    "FAIL stack types: ['Al2O3_default_dbc', 'other:3d82a005e790', 'other:3d82a005e790', 'other:3d82a005e790', 'Al2O3_default_dbc', 'other:e5f298b8df0b', 'other:3d82a005e790'] (want default, AMB x2, three distinct non-default types, AMB)",
+    "FAIL stack rounding: die +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: attach +1 um is still Al2O3_default_dbc",
+    "FAIL stack rounding: one of four dies +1 um is still Al2O3_default_dbc",
+    "FAIL stack types: the per-die thickness set is not order/duplicate free or a mixed set is not its own type",
+    "FAIL stack_types: spot refs {'other:3d82a005e790': 'fake2'} != {'other:3d82a005e790': 'fake3', 'Al2O3_default_dbc': 'fake4'} or no-admissible types ['other:e5f298b8df0b'] != ['other:e5f298b8df0b']",
+    "FAIL stack_types: fake3 (other:3d82a005e790) has no complete FV levels 1-3",
+    "FAIL stack_types: F6e for other:3d82a005e790 {'name': 'F6e_stack_type_spot_check:other:3d82a005e790', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': 'reference fake2'} (planted failures on ['Al2O3_default_dbc', 'other:3d82a005e790'] only)"
+   ],
+   "caught": true
+  }
+ },
+ "all_caught_and_base_passes": true
+}

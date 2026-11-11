@@ -407,6 +407,21 @@ config:
     reference and E008 gives no verdict (F6e: INVALID). Choose: confirm ~416 GB is allowed; or a smaller AlN spot-check reference
     (FV level 3 <= ~85 M cells, i.e. 0.85 x 150 GB at 1,500 B/cell) once T0263''s reconstructions exist (the objective requires
     one reference per non-default stack type, not a particular one); or a memory-lean FV level 3 under a new spec'
+  - 'F6(e) reading (T0310 finding 4): a non-default stack type whose references are all inadmissible is REPORTED, NOT GATED
+    (evaluation report F6e.<type> with reference null and status ''no admissible reference'', listed in the detail of
+    F6e_stack_type_spot_check as no_admissible_reference; no per-type check, the aggregate is not failed by it). This reads
+    O003 scope_in''s ''at least one reference of every stack type other than C004''s default'' as every type of the D0010
+    reference set, which holds admissible references only (an inadmissible reference contributes no rows). Alternative: such
+    a type FAILS F6e_stack_type_spot_check (the reading before T0309), so an inadmissible reference on its own non-default
+    stack type would end E008 with F6e failed. The founder confirms one reading at registration; the runner implements the
+    first'
+  - 'stack-type rounding rule (T0310 finding 3, decided here, the founder may change it at registration): in the stack-type
+    signature every thickness (substrate, die-attach and die layers, and every per-die thickness and attach thickness) is
+    rounded to integer nanometres (round half to even of t / 1 nm) and every conductivity to 9 significant digits, so a
+    reference that differs from C004''s default only by float rounding (2D_Case_4 stores 180 um as 0.00017999999999999998
+    m) is the default type, while a thickness difference above 1 nm or a relative k difference above 1e-8 always gives a
+    new type (two values closer than one rounding step may still round apart; physical thicknesses are not at half-nm). Dev facts after the rule: gen2_0 is Al2O3_default_dbc with dies [[180000, 50000]] nm; 2D_Case_4 stays non-default
+    (die attach 0 nm and the PowerSynth stack), type other:a9ad6bbb1af1 (was other:61c8dd23d7d1 under exact floats)'
   - 'EM memory model (T0262 attempt 5, fact): on 5 gen2_0-housing layouts at 0.5 mm cells the measured peaks were 1.1-2.6x
     the per-unknown model that --plan uses (fil_f 2.3-2.6x, thk_f up to 1.8x); on P3''s Case 4 they were 0.86-1.04x. The runner
     schedules with per-level priors until a solve of the same reference and level is measured, then by the measured ratio
@@ -860,7 +875,11 @@ sanity_checks:
     reference per non-default stack type (AlN). Stack type = the substrate layers, the die-attach and die layers, each by
     name, material, thickness and k (T0305 finding 0), and the sorted set of per-die (Die.thickness, Die.attach_thickness)
     of the reference layout and of its derivative spec''s die, the thicknesses the thermal solvers use (T0308 finding 1);
-    default = C004''s Al2O3 DBC stack with dies of the default thicknesses. The spot-check reference of a type is its first
+    default = C004''s Al2O3 DBC stack with dies of the default thicknesses. Rounding rule (T0310 finding 3): every thickness
+    in the signature as integer nanometres (round half to even of t / 1 nm), every k to 9 significant digits, so a difference
+    by float rounding alone does not make a new type (a NaN or infinite thickness raises: no type, the reference stops).
+    A NaN or infinite Tj in any of the six levels of a spot-check die gives that die A3 = NaN, which fails the per-type check
+    and the aggregate (T0310 finding 2). The spot-check reference of a type is its first
     ADMISSIBLE reference in config.references order (T0307 finding 1, T0308 finding 2). A non-default type with no admissible
     reference gets no spot check and no per-type check: it is reported in the evaluation report under F6e.<type> with reference
     null and status ''no admissible reference'', and in this check''s detail (no_admissible_reference), not failed (reading
