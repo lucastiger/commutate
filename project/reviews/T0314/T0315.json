@@ -1,0 +1,65 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Note misstates the Case 4 walk-terminal candidate counts it labels [F]",
+      "detail": "Section 2 of the note says the terminal state has 76 single-step candidates: 36 are clean but do not raise L1, and 40 are rejected. results.json `walk_terminal_blockers` has n_candidates = 72, of which 36 are clean_not_up and 36 are rejected. The per-rule list adds up to 38 rule hits, or 41 with terminal_off_trace, because some candidates carry two rules. So '40' and '76' match neither count. The per-rule numbers themselves (min_trace_width 10, die_edge_margin 8, \u2026) are correct, and the conclusion that every power feature sits at its rule minimum does not depend on this.",
+      "evidence": "results.json layouts.2D_Case_4.variants.R0.degrade.walk_terminal_blockers: n_candidates 72; outcomes clean_not_up 36, die_edge_margin 7, die_edge_margin+wire_length 1, die_spacing 2, edge_margin 5, min_spacing 7, min_trace_width 6, min_trace_width+terminal_off_trace 3, min_trace_width+wire_landing 1, wire_landing 3, wire_length 1 (36 rejected)",
+      "suggested_check": "Replace 76/40 with 72/36 and say that the per-rule hits overlap.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Small factual or citation slips in the note",
+      "detail": "(a) The note says 2R has 22 R3 fields and Case 6 has 21; results.json has 23 and 20 R3 entries. (b) It says DesignRules.min_wire_length is marked 'placeholder' at rules.py line 31. Line 31 carries no such mark; the module docstring (line 6) calls all defaults placeholders. (c) The list of registered specs leaves out E901, an unrelated canary. None of these changes a conclusion.",
+      "evidence": "Count of R3:* keys in results.json: 2D_Case_2R 23, 2D_Case_6 20, 2D_Case_4 18. rules.py lines 6 and 31. ls experiments/specs shows E901.yaml.",
+      "suggested_check": "Fix the counts and the line citations.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "'O003 does not require the lower bound' is stated as settled, but the objective text allows another reading",
+      "detail": "The note quotes the bondability clause (objective.yaml lines 61-63), which bounds the gate wire from above only. The clause that introduces scope_in, however, reads 'design rules at least as strict as the reference's own, measured on the snapped reconstruction and frozen in E008's spec'. If that list is read as illustrative rather than exhaustive, removing a measured minimum makes the rules less strict than the reference's own. Ranked change #1 (drop min_signal_wire_length) is labelled (i), a code change under a new freeze, not (ii), a criteria change, and that label depends on this reading. CLAUDE.md asks for ambiguity to be flagged. The 2R diagnosis itself (min_signal_wire_length is the one binding rule) holds either way.",
+      "evidence": "project/objectives/O003/objective.yaml lines 53-65; note section 1 'Conclusion: O003 does not require the lower bound'; section 5 item 1 labelled (i)",
+      "suggested_check": "Present the classification of change #1 as an interpretation for the founder, not as a fact.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Two checklist facts are hard-coded or incomplete",
+      "detail": "checklist_facts sets `identical_dies` to True as a literal, not from the layout, yet results.json shows it beside the computed facts. `power_wires_per_die` counts only dies that have at least one wire starting on their source pad, so a die with no wires would be missing rather than reported as 0. The note's checklist answers to Q2 and Q4 cite other sources or agree with the data, so no conclusion is affected.",
+      "evidence": "research/scripts/o003_twin_coverage.py lines 341-346 and 354",
+      "suggested_check": "Compute identical_dies from the die outlines and pads, and seed per_die with every die index.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The Case 4 'no degradation-rule change reaches the target' result is a hill-climb limit, not a proof",
+      "detail": "P1 (1.260) and P2 (1.240) are greedy L1 climbs over a fixed candidate set. The note says so itself ('A hill-climb is not a proof that no D exists'). The negative result therefore applies only to the move sets tried.",
+      "evidence": "results.json layouts.2D_Case_4.prototypes; note section 2",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-ran `uv run python research/scripts/o003_twin_coverage.py --out $TMPDIR/t0315/rerun.json` (about 20 min, exit 0). `cmp` against the committed research/o003/twin_coverage/results.json: byte-identical.",
+    "`uv run ruff check research/scripts/o003_twin_coverage.py`: all checks passed.",
+    "`uv run python experiments/runners/e008_run.py --verify-freeze`: all OK. The derivative, twin, search, snap, rules and stack hashes match E008.yaml lines 56-62.",
+    "`shasum -a 256 src/moduleforge/solvers/thermal_fem.py` gives a prefix of a216d5fe3209bcee, as required.",
+    "`uv run mfos gate --fast`: all gates passed.",
+    "Built the 2R spec independently. Its gate pad is 0.5 x 0.5 mm and `W._foot_candidates(spec, 'gate')` returns only [(0,0)], which confirms the foot-margin argument (m = 0.15 + 0.05 = 0.2 mm). The reference's LS gate wires are 5.408 and 5.344 mm and its HS wires 10.396 mm, against the twin's 4.597 mm.",
+    "Checked that the `same_effective_rules_as` reuse cannot hide a different outcome: grep shows that DRC, twin.py and derivative.py read width and spacing only through `width_for` / `spacing_for`, which effective_signature resolves. min_spacing and min_trace_width are read directly only inside measure_rules.",
+    "Re-derived the Case 6 candidate-filter result. In orientation 0 the HS pair spans v 15.5-22.0 and the LS pair 18.0-24.5. In all 8 sequences each switch's two slots are adjacent, so overlapping intervals rule out any non-decreasing order. The script's reimplemented anchors (v0 + dv/2 for dies, the landing line for landings) match twin.py `_fit`, and `kept` comes from the frozen `_fit`. In orientation 1 the die centres are HS 14/20 and LS 41/47, so the dies are not in a row there.",
+    "Checked the note's headline numbers against results.json: 2R R1 gives 1.3947 against a target of 1.3875 with symdiff 0. Case 4 R3:min_width_power gives 1.4208 with the bands narrowed 5 to 1 mm. die_spacing 1.293, die_edge_margin 1.286, spacing_other 1.248, spacing_signal_dcp 1.247, X:max_wire_length 1.243. P1 gives 1.260 after 25 steps and P2 1.240 after 35. Every Case 6 variant raises the 'no (orientation, sequence)' TwinError.",
+    "Checked the cited lines: objective.yaml 34, 52-65, 131, 134 and 139; E008.yaml 56-62, 297-327, 375-382, 831, 848 and 855; e008_run.py 620 ('stop the reference'); rules.py 587; twin.py's 1.421 / 15.3 % text; derivative.py and twin.py at 890 and 872 lines; test counts 33 and 39.",
+    "The recorded R0 outcomes match earlier notes: e008-design.md (Case 4 DegradeError 1.232 after 75 steps) and o003-reference-reconstructions.md (2R at 4.597 mm against [5.344, 10.396])."
+  ],
+  "caveats": [
+    "I could not check the definition-of-done item `git diff --quiet $(git merge-base HEAD main) -- src tests experiments project/...`: the review worktree has no main branch and is a single snapshot commit. The freeze-hash and thermal-hash checks above cover the frozen src files, but they do not cover tests/, project/objectives, project/decisions or project/claims.",
+    "The original task packet (T0314, items 1-6) is not in this worktree. Completeness is judged against the claim's title and the note's own item structure, not against the original packet.",
+    "The 2R result (D reaches 1.395 under R1) is an L1 screen, 0.007 above the 1.3875 target. Whether L_sub(D) >= 1.25 L_sub(W) holds at L2 is not shown, as the note says.",
+    "The Case 4 conclusions use E008's dev overrides (18 mm max_wire_length, assumed gate/Kelvin pads, 25 mm signal limit). With the raw measured rules the twin itself fails (E008.yaml rule_overrides_reason).",
+    "Whether dropping min_signal_wire_length is allowed under O003 scope_in is a matter of interpretation for the founder (finding 3)."
+  ]
+}
