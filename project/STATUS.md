@@ -1,11 +1,11 @@
 # ModuleForge status
-_generated 2026-11-11T04:32:43+00:00 from repository state — do not edit_
+_generated 2026-11-11T04:33:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
-- **I0168** [protected_change] T0309: merge needs founder approval
+- **I0169** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -24,7 +24,7 @@ _generated 2026-11-11T04:32:43+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 90 | $150.27 | 2494557 | 1287442 | 135 | 0 |
+| O003 | 91 | $150.27 | 2494557 | 1287442 | 135 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,15 +32,11 @@ _generated 2026-11-11T04:32:43+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 266, failed: 3, needs_founder: 1, todo: 2
+cancelled: 39, done: 267, failed: 3, running: 1, todo: 1
 
-- T0309 `needs_founder` scientist/design_experiment: E008 runner: admissible spot-check references, per-die thickness in stack type, NaN-safe F6(c) with FV Picard record, thermal-report selftest (reviews T0307, T0308) (attempt 1)
+- T0311 `running` scientist/design_experiment: E008 runner: stack-type signature rounding, selftest gaps, F6(e) reading for the founder (review T0310) (attempt 1)
 
 ## Recent events
-- 2026-11-11T02:33:49+00:00 task_amended {"task": "T0263", "reason": "waits for T0309 (E008 runner fixes from reviews T0307/T0308) so the gates are settled before F3"}
-- 2026-11-11T02:59:26+00:00 inbox_opened {"id": "I0166", "kind": "protected_change", "subject": "T0306: merge needs founder approval"}
-- 2026-11-11T03:00:02+00:00 sleep_detected {"gap_s": 1639, "runs_extended": 0}
-- 2026-11-11T03:40:21+00:00 inbox_resolved {"id": "I0166", "status": "approved", "note": "Merge the E008 runner fixes from reviews T0304/T0305. Both critics accept with caveats; their findings go to T030
 - 2026-11-11T03:40:55+00:00 merged {"task": "T0306"}
 - 2026-11-11T03:40:55+00:00 inbox_opened {"id": "I0167", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T03:40:59+00:00 run_started {"run": "T0309-scientist-20261110T194059-505a", "task": "T0309", "role": "scientist", "session": "e5ac8c3e-b8e9-4d1a-ae59-361f8019f629"}
@@ -52,3 +48,7 @@ cancelled: 39, done: 266, failed: 3, needs_founder: 1, todo: 2
 - 2026-11-11T04:27:08+00:00 inbox_opened {"id": "I0168", "kind": "protected_change", "subject": "T0309: merge needs founder approval"}
 - 2026-11-11T04:27:42+00:00 task_added {"task": "T0311", "reason": "review T0310 follow-up (stack-type rounding, before T0263)"}
 - 2026-11-11T04:27:42+00:00 task_amended {"task": "T0263", "reason": "waits for T0311 (stack-type signature rounding from review T0310) so F6(e) is settled before F3"}
+- 2026-11-11T04:33:00+00:00 inbox_resolved {"id": "I0168", "status": "approved", "note": "Merge the E008 runner fixes from reviews T0307/T0308. Critic T0310 accepts with caveats; its findings go to T0311
+- 2026-11-11T04:33:19+00:00 merged {"task": "T0309"}
+- 2026-11-11T04:33:19+00:00 inbox_opened {"id": "I0169", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-11T04:33:23+00:00 run_started {"run": "T0311-scientist-20261110T203323-e8b3", "task": "T0311", "role": "scientist", "session": "5ec62158-c0d6-4052-aea1-b79464859e29"}
