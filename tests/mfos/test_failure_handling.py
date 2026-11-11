@@ -120,8 +120,13 @@ def test_after_two_resumes_a_limited_task_starts_afresh(sandbox):
     t = m.Task(id="T9601", objective="O000", title="x", type="implement", agent="builder", history=hist)
     assert o._resumable_session(t) is None
     assert o._resumable_session(t.model_copy(update={"history": hist[:3]})) == "S"
-    network = [{"outcome": "capacity_backoff", "session": None}]  # a network error has no session worth resuming
-    assert o._resumable_session(t.model_copy(update={"history": network})) is None
+    idle = [{"outcome": "capacity_backoff", "session": None}]  # a fresh run that never reached the API: nothing to resume
+    assert o._resumable_session(t.model_copy(update={"history": idle})) is None
+    unused = hist + [{"outcome": "capacity_resume"}, {"outcome": "capacity_backoff", "session": "S", "resume_unused": True}]
+    assert o._resumable_session(t.model_copy(update={"history": unused})) is None  # still two resumes that ran
+    given_back = hist[:3] + [{"outcome": "capacity_resume"},
+                             {"outcome": "capacity_backoff", "session": "S", "resume_unused": True}]
+    assert o._resumable_session(t.model_copy(update={"history": given_back})) == "S"
 
 
 TLS = ("API Error: Unable to connect to API: SSL certificate verification failed (UNABLE_TO_GET_ISSUER_CERT_LOCALLY). "
@@ -153,6 +158,45 @@ def test_a_network_fault_gives_the_attempt_back_and_pauses_briefly(sandbox, text
     until = float((s.mfos / "backoff_until").read_text())
     assert before + 60 * minutes - 5 <= until <= time.time() + 60 * minutes + 5
     assert len(s.tasks()) == n_tasks  # no diagnosis task
+
+
+def test_a_network_cut_off_resumes_its_session_and_outage_retries_do_not_use_up_the_resumes(sandbox, monkeypatch):
+    """Founder, 2026-11-10: network cut-offs threw away T0262's ($6.69) and T0306's ($4.58) conversations, because the
+    next run started afresh. The session now resumes, as after a usage limit; an 80 min outage retried T0262 13 times,
+    and resumes that fail before reaching the API neither replace the session nor count against the two resumes."""
+    s = Store()
+    o = Orchestrator(s)
+    s.save_task(m.Task(id="T9605", objective="O000", title="design", type="design_experiment", agent="scientist",
+                       status="running", attempts=1, max_attempts=3))
+    st = s.objective_state("O000")
+    st.status = "active"
+    s.save_objective_state("O000", st)
+    started = []
+
+    def fake_start(task, resume=None):
+        started.append(resume)
+        task.status = "running"
+        s.save_task(task)
+    monkeypatch.setattr(o, "_start_agent", fake_start)
+
+    def cut_off(cost):
+        t = Store().task("T9605")
+        o._on_run_done(t, RunRecord(run_id="T9605-r", task_id=t.id, role="scientist", session_id="S-1", cwd=".",
+                                    started="", status="error", is_error=True, subtype="success", result_text=TLS,
+                                    cost_usd=cost, resumed_from="S-1" if started else None,
+                                    extra={"api_error": "tls_untrusted_ca"}))
+        (s.mfos / "backoff_until").unlink()  # the pause has passed
+        o._dispatch()
+        return Store().task("T9605")
+
+    t = cut_off(6.69)
+    assert started == ["S-1"] and t.attempts == 1  # the same attempt continues in the same session
+    for _ in range(5):  # the outage goes on: every resume fails before reaching the API
+        t = cut_off(0.0)
+    assert started == ["S-1"] * 6 and t.attempts == 1
+    for _ in range(2):  # the network is back: the pending resume and one more run, and each is cut off again
+        t = cut_off(1.2)
+    assert started == ["S-1"] * 7 + [None]  # two resumes have run: a fresh start, as after a usage limit
 
 
 def test_the_cli_api_error_kind_is_recorded(sandbox):

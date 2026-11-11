@@ -281,7 +281,11 @@ class Orchestrator:
             if any(k in text for k in CAPACITY_SIGNS) or rec.extra.get("api_error_status") == 429:
                 # A usage limit states when it resets: wait until then (+2 min), then resume the same session, so
                 # the work done before the limit is not thrown away (61 of O001's 174 runs died on a limit).
-                # A network fault has no reset time and usually clears in minutes: a short pause, then a fresh start.
+                # A network fault has no reset time and usually clears in minutes: a short pause, then the same session
+                # resumes (founder, 2026-11-10: fresh starts threw away T0262's $6.69 and T0306's $4.58 of context).
+                # A run that never reached the API (no cost) adds nothing: a fresh one leaves no session to resume,
+                # and a resume keeps its session and gives back the resume it used, so a long outage's retries (13
+                # for T0262 on 2026-11-10) do not use up the resumes.
                 reset = diagnose.parse_limit_reset(rec.result_text)
                 limit = reset is not None or rec.extra.get("api_error_status") == 429 or "limit" in text
                 network = not limit and any(k in text for k in NETWORK_SIGNS)
@@ -291,9 +295,13 @@ class Orchestrator:
                 (self.s.mfos / "backoff_until").write_text(str(until))
                 t.attempts = max(0, t.attempts - 1)  # capacity problems are not the agent's failure
                 t.status = "todo"
-                t.history.append({"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now(),
-                                  "until": dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(),
-                                  "session": rec.session_id if limit else None})
+                idle = rec.cost_usd <= 0
+                entry = {"outcome": "capacity_backoff", "summary": rec.result_text[-300:], "at": now(),
+                         "until": dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(),
+                         "session": rec.session_id if limit or not idle or rec.resumed_from else None}
+                if idle and rec.resumed_from:
+                    entry["resume_unused"] = True
+                t.history.append(entry)
                 self.s.save_task(t)
                 self.s.event("capacity_backoff", task=t.id, minutes=round((until - time.time()) / 60),
                              parsed_reset=reset is not None)
@@ -1056,10 +1064,12 @@ class Orchestrator:
     MAX_CAPACITY_RESUMES = 2
 
     def _resumable_session(self, t: m.Task) -> Optional[str]:
-        """The session a usage limit interrupted, if it should be resumed (at most twice per task)."""
+        """The session a usage limit or network fault interrupted, if it should be resumed (at most twice per task;
+        a resume that never reached the API is given back)."""
         if not t.history or t.history[-1].get("outcome") != "capacity_backoff":
             return None
-        resumes = sum(1 for h in t.history if h.get("outcome") == "capacity_resume")
+        resumes = sum(1 for h in t.history if h.get("outcome") == "capacity_resume") \
+            - sum(1 for h in t.history if h.get("resume_unused"))
         return t.history[-1].get("session") if resumes < self.MAX_CAPACITY_RESUMES else None
 
     def _start_agent(self, t: m.Task, resume: Optional[str] = None) -> None:
