@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T04:27:10+00:00 from repository state — do not edit_
+_generated 2026-11-11T04:27:49+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -32,13 +32,11 @@ _generated 2026-11-11T04:27:10+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 266, failed: 3, needs_founder: 1, todo: 1
+cancelled: 39, done: 266, failed: 3, needs_founder: 1, todo: 2
 
 - T0309 `needs_founder` scientist/design_experiment: E008 runner: admissible spot-check references, per-die thickness in stack type, NaN-safe F6(c) with FV Picard record, thermal-report selftest (reviews T0307, T0308) (attempt 1)
 
 ## Recent events
-- 2026-11-11T02:32:44+00:00 run_finished {"run": "T0308-critic-20261110T181907-65bc", "status": "completed", "cost": 2.272415, "subtype": "success", "report": "structured_output"}
-- 2026-11-11T02:33:49+00:00 task_added {"task": "T0309", "reason": "reviews T0307/T0308 follow-up (E008 runner, before T0263)"}
 - 2026-11-11T02:33:49+00:00 task_amended {"task": "T0263", "reason": "waits for T0309 (E008 runner fixes from reviews T0307/T0308) so the gates are settled before F3"}
 - 2026-11-11T02:59:26+00:00 inbox_opened {"id": "I0166", "kind": "protected_change", "subject": "T0306: merge needs founder approval"}
 - 2026-11-11T03:00:02+00:00 sleep_detected {"gap_s": 1639, "runs_extended": 0}
@@ -52,3 +50,5 @@ cancelled: 39, done: 266, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-11T04:20:02+00:00 sleep_detected {"gap_s": 714, "runs_extended": 1}
 - 2026-11-11T04:27:04+00:00 run_finished {"run": "T0310-critic-20261110T201928-8048", "status": "completed", "cost": 2.192312, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T04:27:08+00:00 inbox_opened {"id": "I0168", "kind": "protected_change", "subject": "T0309: merge needs founder approval"}
+- 2026-11-11T04:27:42+00:00 task_added {"task": "T0311", "reason": "review T0310 follow-up (stack-type rounding, before T0263)"}
+- 2026-11-11T04:27:42+00:00 task_amended {"task": "T0263", "reason": "waits for T0311 (stack-type signature rounding from review T0310) so F6(e) is settled before F3"}

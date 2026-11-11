@@ -1,0 +1,82 @@
+id: T0311
+objective: O003
+title: 'E008 runner: stack-type signature rounding, selftest gaps, F6(e) reading for the founder (review
+  T0310)'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0309
+description: "Follow-up to T0309 from its review T0310 (accept_with_caveats; project/reviews/T0309/T0310.json,\
+  \ read it first).\nIt lands before T0263 loads the judged references (F3): which references count as\
+  \ a non-default stack type, and so need\nthe F6(e) spot check, must be settled before any judged geometry\
+  \ is seen. Develop on generator layouts and 2D_Case_4\nonly; never load 2D_Case_2R, 2D_Case_6 or customer\
+  \ data. Do not edit src/moduleforge/solvers/thermal_fem.py (sha256\na216d5fe...). Do not widen any tolerance,\
+  \ relax any gate, change a frozen value or the cost model; the founder decisions\nthe spec lists stay\
+  \ listed.\n1. Stack-type signature tolerance (T0310 finding 3). The signature compares layer and per-die\
+  \ thicknesses as exact\n   floats; 2D_Case_4's die thickness is stored as 0.00017999999999999998 m,\
+  \ so a reference that differs from the default\n   stack only by float rounding becomes a non-default\
+  \ type and needs the ~416 GB finite-volume spot check or ends F6e\n   INVALID. Round every thickness\
+  \ in the signature to 1 nm and every conductivity to 9 significant digits (or an\n   equivalent stated\
+  \ rule), and state the rule in the spec. Selftest: a stack that differs from the default only by\n \
+  \  float rounding is the default type; one that differs by 1 um in one layer is not.\n2. Selftest gaps\
+  \ (T0310 findings 0-2). Give one non-default type two admissible references, so only the first in\n\
+  \   config.references order matches the expected spot reference. Plant one finite-volume record without\
+  \ picard_dT_K and\n   require F6c_picard on that reference to fail. Plant a NaN finite-volume temperature\
+  \ in one spot-check reference and\n   require F6e_stack_type_spot_check:<type> and the aggregate check\
+  \ to fail.\n3. Spec text (T0310 finding 4). Put the F6(e) reading \"a non-default stack type whose references\
+  \ are all inadmissible\n   is reported, not gated\" in the spec's founder_decisions_before_registration\
+  \ list, with the alternative (fail F6e),\n   so the founder confirms it at registration.\nThe registered\
+  \ path (full(), judged-reference loading) stays out of scope; it is added after T0263 and re-reviewed."
+context_files:
+- project/reviews/T0309/T0310.json
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-11T04:27:42+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Review T0310: exact float equality in the stack-type signature can make a reference that matches
+  the default stack up to rounding need the ~416 GB spot check or end E008 F6e INVALID; settled before
+  T0263 loads the judged references, under the session review policy.'
+history: []
