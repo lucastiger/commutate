@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T20:39:25+00:00 from repository state — do not edit_
+_generated 2026-11-11T21:16:14+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -36,7 +36,6 @@ cancelled: 39, done: 273, failed: 3
 
 
 ## Recent events
-- 2026-11-11T07:02:33+00:00 inbox_opened {"id": "I0172", "kind": "protected_change", "subject": "T0263: merge needs founder approval"}
 - 2026-11-11T09:01:42+00:00 inbox_resolved {"id": "I0172", "status": "approved", "note": "Merge the frozen 2D_Case_2R and 2D_Case_6 reconstructions. Critic T0313 confirms both fail E008's twin check; E00
 - 2026-11-11T09:01:50+00:00 merged {"task": "T0263"}
 - 2026-11-11T15:54:52+00:00 inbox_resolved {"id": "I0140", "status": "answered", "note": "No admissible customer layout by 2026-11-12. Public reference set under review: NC State PREES (Prof. Hopkins) pu
@@ -51,3 +50,4 @@ cancelled: 39, done: 273, failed: 3
 - 2026-11-11T18:26:30+00:00 inbox_resolved {"id": "I0173", "status": "approved", "note": "Merge T0314's twin-coverage diagnosis (research only, no frozen code). Review T0315 accept_with_caveats: minor co
 - 2026-11-11T18:26:59+00:00 merged {"task": "T0314"}
 - 2026-11-11T20:39:20+00:00 sleep_detected {"gap_s": 1282, "runs_extended": 0}
+- 2026-11-11T21:16:08+00:00 sleep_detected {"gap_s": 2130, "runs_extended": 0}
