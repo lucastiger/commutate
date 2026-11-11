@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Selftest cannot distinguish the two F6(e) readings at the aggregate",
+      "detail": "The spec now says the runner implements reading 1: a non-default type with no admissible reference is reported and does not fail the aggregate F6e_stack_type_spot_check. Both stack-type scenarios (stack_types and stack_types_nan) plant faults that make the aggregate fail anyway. A runner that fails the aggregate whenever spot_none is non-empty (the alternative reading) therefore still passes the selftest. The code does implement reading 1 (evaluate builds the aggregate from a3s only), but only code inspection shows it.",
+      "evidence": "Mutant X1: replaced 'ck(\"F6e_stack_type_spot_check\", all(_within(v, g[\"a3_max\"]) for v in a3s.values()),' with '... and not run.spot_none,' and ran it through t0309_mutations.run_mutant. Result: rc 0, 0 FAIL lines (survives).",
+      "suggested_check": "Add a scenario with no F6(e) plant and one type without an admissible reference, and assert that the aggregate passes.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Non-finite guard in _a3_die is tested on the finite-volume side only",
+      "detail": "The spec says a NaN or infinite Tj in any of the six levels gives A3 = NaN. The only plant (fv_tj_nan) is on a finite-volume level. A guard that checks only the finite-volume values passes the selftest. A NaN on a scikit-fem level would then make mfos.metrics.max_gci_consistency raise and stop evaluate with no F6(e) check written, which is the defect this change claims to fix. It fails closed (a crash), not open.",
+      "evidence": "Mutant X2: 'vals = [float(v) for v in (*p, *r)]' changed to 'vals = [float(v) for v in r]'. Result: rc 0, 0 FAIL lines (survives). mfos.metrics._finite_rows raises on any non-finite column (metrics.py:93-99).",
+      "suggested_check": "Plant one NaN Tj on a scikit-fem level of a spot-check reference's reference row and require the per-type value to be NaN.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Founder-facing F6(e) choice leaves out the 'before any verdict' wording and the INVALID option",
+      "detail": "O003 scope_in (objective.yaml:110-114) requires the spot check 'before any verdict' on at least one reference of every non-default stack type. The new founder_decisions entry quotes only part of that sentence and offers two readings: reported/not gated, or FAIL F6e. A third reading, no verdict (INVALID), arguably follows most directly from 'before any verdict', and the spec already uses it elsewhere (the ~416 GB entry: 'E008 gives no verdict (F6e: INVALID)'). The founder is offered a narrower choice than the objective text allows.",
+      "evidence": "objective.yaml line 110: 'the stack-type spot check required by O007's decision_if_pass and D0013 addendum 2, before any verdict: on at least one reference of every stack type other than C004's default...'",
+      "suggested_check": "List INVALID / no verdict as a third option in the founder_decisions entry.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "E008.yaml is hand-edited while make_spec.py claims to be its writer",
+      "detail": "research/o003/e008_dev/make_spec.py says 'Writes experiments/drafts/E008.yaml ... so the draft cannot carry a hand-typed value'. It still carries the T0305-era F6e description and none of this change's founder_decisions entries. Re-running it would silently drop them. The drift predates this change.",
+      "evidence": "make_spec.py:317 F6e description lacks the T0308/T0310 text; make_spec.py:394 writes E008.yaml.",
+      "suggested_check": "Port the spec edits into make_spec.py, or mark it as superseded.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Wording errors in the rounding docstring and the NaN-handling text",
+      "detail": "_sig_nm's docstring says 'a 1 nm or larger difference gives a different one'. With round-half-even, 1.5 nm and 2.5 nm both map to 2. The spec's 'above 1 nm' wording is correct. The text 'NaN or infinite thickness raises: ... the reference stops': in the dev path the whole run stops, because dev_reference is called without a try at e008_run.py:2220. A NaN k does not raise; it becomes the string 'nan' in the signature.",
+      "evidence": "Scratch probe: _sig_nm(1.5e-9) == _sig_nm(2.5e-9) == 2. 200k random pairs: 0 merges above 1 nm, 0 k merges above 1e-8 relative, 0 splits under x(1+1e-15). format(nan, '.8e') == 'nan'.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "No test case for a NaN in the per-row energy_balance_max field (disclosed)",
+      "detail": "The notes say T0310 finding 2 also named the per-row energy_balance_max field and that no test case was added for it because the brief did not ask for one. I could not check this against the T0311 brief, which is not in the repository.",
+      "evidence": "T0311_notes.md, 'Inferences and caveats', third bullet.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD: e008_run.py --selftest (rc 0; stack_types 7 failing checks as planted, stack_types_nan 2 failing, F6e 'all' = nan in both), --verify-freeze (rc 0), the E008.yaml key-presence python check (pass), ruff on the runner (pass), mfos exp check E008 (rc 0), thermal_fem.py sha256 prefix a216d5fe3209bcee (match), mfos gate --fast (exit 0, 'all gates passed').",
+    "Runner sha256 6d01aa5c...8342 matches runner_sha256_of_unmutated in t0311_mutations.json.",
+    "Re-ran research/o003/e008_dev/t0311_mutations.py to $TMPDIR: all 18 mutants rc 1, unmutated rc 0, as recorded.",
+    "Wrote my own mutants: X1 (aggregate fails on spot_none) and X2 (guard on the finite-volume side only) both SURVIVE the selftest.",
+    "Recomputed dev stack types from the real layouts via dev_reference: gen2_0 = Al2O3_default_dbc with die_thickness_attach_nm [[180000, 50000]]; 2D_Case_4 = other:a9ad6bbb1af1 with raw die thickness 0.00017999999999999998 m and attach 0.0, as claimed.",
+    "Numeric probe of the rounding rule: 200k random thickness pairs more than 1 nm apart never merge; 200k k pairs with relative difference above 1e-8 never merge; x(1+1e-15) never splits thickness or k; NaN thickness raises ValueError; exact half-nm ties can merge at exactly 1 nm difference.",
+    "Confirmed E008.dev_rows.json carries no stack_type / other:<hash> values, so the hash change leaves no stale classification.",
+    "Read mfos.metrics: gci_capped returns NaN without raising, while max_gci_consistency raises on non-finite input, which confirms the crash the _a3_die guard prevents and that a scikit-fem-side NaN reaches F6(e).",
+    "Parsed E008.yaml: the new founder_decisions entries and the F6e description load as intended and match the code."
+  ],
+  "caveats": [
+    "Completeness against review T0310 was judged only from the finding numbers the change itself cites; the T0310 review text and the T0311 brief are not in the repository.",
+    "The selftest protects the 'not gated' F6(e) reading only partly: an aggregate that also fails on types without an admissible reference goes undetected (mutant X1). The code is correct by inspection.",
+    "The 'NaN Tj in any of the six levels gives NaN' guarantee is selftested on the finite-volume levels only; a scikit-fem-side NaN is protected only by code inspection (mutant X2).",
+    "The founder-facing F6(e) choice offers two readings; O003's 'before any verdict' wording also supports a third (INVALID / no verdict).",
+    "The permission layer blocked some scratch commands, so mutants X3-X6 never ran; only X1 and X2 were run.",
+    "The rounding rule can still split two values within float noise of a half-nm (or 9th-digit) boundary; this is disclosed and physically implausible.",
+    "Scope is the dev path only; the registered path (full(), loading judged references) is not yet written and not reviewed here."
+  ]
+}
