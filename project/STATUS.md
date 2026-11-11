@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T06:55:03+00:00 from repository state — do not edit_
+_generated 2026-11-11T06:55:42+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -39,7 +39,6 @@ cancelled: 39, done: 269, failed: 3, review: 1, running: 1
 - T0313 `running` critic/review: Review T0263 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-11T04:33:19+00:00 inbox_opened {"id": "I0169", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T04:33:23+00:00 run_started {"run": "T0311-scientist-20261110T203323-e8b3", "task": "T0311", "role": "scientist", "session": "5ec62158-c0d6-4052-aea1-b79464859e29"}
 - 2026-11-11T04:57:48+00:00 run_finished {"run": "T0311-scientist-20261110T203323-e8b3", "status": "completed", "cost": 2.019112, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T05:08:46+00:00 verified {"task": "T0311"}
@@ -54,3 +53,4 @@ cancelled: 39, done: 269, failed: 3, review: 1, running: 1
 - 2026-11-11T06:49:35+00:00 run_finished {"run": "T0263-scientist-20261110T222312-321c", "status": "completed", "cost": 3.70223, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T06:54:58+00:00 verified {"task": "T0263"}
 - 2026-11-11T06:55:03+00:00 run_started {"run": "T0313-critic-20261110T225503-2965", "task": "T0313", "role": "critic", "session": "3befbdf5-572d-45d9-89e6-6b7bf046a6b8"}
+- 2026-11-11T06:55:37+00:00 sleep_detected {"gap_s": 364, "runs_extended": 1}
