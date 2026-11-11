@@ -1,12 +1,11 @@
 # ModuleForge status
-_generated 2026-11-11T18:26:21+00:00 from repository state — do not edit_
+_generated 2026-11-11T18:27:02+00:00 from repository state — do not edit_
 
-## Founder inbox (5 open)
+## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
-- **I0173** [protected_change] T0314: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,13 +32,10 @@ _generated 2026-11-11T18:26:21+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 272, failed: 3, needs_founder: 1
+cancelled: 39, done: 273, failed: 3
 
-- T0314 `needs_founder` scientist/research: Twin and degradation coverage on the development layouts 2D_Case_2R, 2D_Case_6 and 2D_Case_4: which rule binds and the smallest change (L0/L1 only) (attempt 1)
 
 ## Recent events
-- 2026-11-11T06:55:03+00:00 run_started {"run": "T0313-critic-20261110T225503-2965", "task": "T0313", "role": "critic", "session": "3befbdf5-572d-45d9-89e6-6b7bf046a6b8"}
-- 2026-11-11T06:55:37+00:00 sleep_detected {"gap_s": 364, "runs_extended": 1}
 - 2026-11-11T07:02:29+00:00 run_finished {"run": "T0313-critic-20261110T225503-2965", "status": "completed", "cost": 2.034329, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T07:02:33+00:00 inbox_opened {"id": "I0172", "kind": "protected_change", "subject": "T0263: merge needs founder approval"}
 - 2026-11-11T09:01:42+00:00 inbox_resolved {"id": "I0172", "status": "approved", "note": "Merge the frozen 2D_Case_2R and 2D_Case_6 reconstructions. Critic T0313 confirms both fail E008's twin check; E00
@@ -53,3 +49,5 @@ cancelled: 39, done: 272, failed: 3, needs_founder: 1
 - 2026-11-11T17:54:46+00:00 sleep_detected {"gap_s": 1991, "runs_extended": 1}
 - 2026-11-11T18:24:53+00:00 run_finished {"run": "T0315-critic-20261111T095411-1156", "status": "completed", "cost": 2.191543, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T18:24:59+00:00 inbox_opened {"id": "I0173", "kind": "protected_change", "subject": "T0314: merge needs founder approval"}
+- 2026-11-11T18:26:30+00:00 inbox_resolved {"id": "I0173", "status": "approved", "note": "Merge T0314's twin-coverage diagnosis (research only, no frozen code). Review T0315 accept_with_caveats: minor co
+- 2026-11-11T18:26:59+00:00 merged {"task": "T0314"}
