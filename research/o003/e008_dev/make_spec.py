@@ -24,6 +24,34 @@ pd = json.loads(pdp.read_text())["outlines"]["2D_Case_4"]["layouts"]
 c4_ref = [pd["reconstruction"][f"fem_dofs_L{v}"] for v in (0, 1, 2)]
 c4_cand = [max(v[f"fem_dofs_L{k}"] for n, v in pd.items() if n.startswith("cand")) for k in (0, 1, 2)]
 c4_fv = [pd["reconstruction"][f"fv_cells_L{v}"] for v in (1, 2, 3)]
+# measured FV (thermal_layout) wall time on 2D_Case_4, one Mac core (T0306, research/o003/e008_dev/fv_rate.py)
+import math  # noqa: E402
+# two runs per level (the second, _rep, repeats the first on the same grid and power); the model takes the mean wall
+fv_runs = {v: [json.loads((ROOT / f"research/o003/e008_dev/fv_rate_case4_L{v}{s}.json").read_text()) for s in ("", "_rep")]
+           for v in (0, 1)}
+fv0, fv1 = fv_runs[0][0], fv_runs[1][0]
+FV_T = {v: sum(r["wall_s"] for r in fv_runs[v]) / len(fv_runs[v]) for v in (0, 1)}
+FV_MAC = FV_T[1] / fv1["n_cells_grid"]
+FV_BETA = math.log(FV_T[1] / FV_T[0]) / math.log(fv1["n_cells_grid"] / fv0["n_cells_grid"])
+FV_BETAS = [math.log(b["wall_s"] / a["wall_s"]) / math.log(fv1["n_cells_grid"] / fv0["n_cells_grid"])
+            for a in fv_runs[0] for b in fv_runs[1]]
+fv_cal = json.loads((ROOT / "research/o003/e008_dev/fv_cal_case4.json").read_text())
+# Mac -> VM factor of the FV solver, measured on identical level-1 solves (research/o003/e008_dev/fv_vm_factor.py:
+# the founder's e2-highmem-16 O007 burst vs this Mac, same code, layout, power, one thread).  Until T0306's second
+# attempt the l2_layout factor 1.8 was borrowed; the FV solver (sparse AMG-CG) measured 4.66-5.55.
+fvf = json.loads((ROOT / "research/o003/e008_dev/fv_vm_factor.json").read_text())
+FV_VM = round(fvf["summary"]["mean"], 2)
+FV_VM_HI = round(fvf["summary"]["max"], 2)
+FV_LO_BETA = round(min(fvf["summary"]["vm_beta_steps_all"]), 3)  # the VM's smallest measured level step (O007 layouts)
+FV_HI_BETA = round(1.0 + 2.0 * (FV_BETA - 1.0), 3)
+# cross-check by a second route: the VM's own level-3 time per active cell on the O007 layouts, times Case 4's Mac time
+# per active cell over theirs (geometry), scaled to Case 4's level-3 active cells by their own VM level 1 -> 3 exponent
+FV_ACT = fv1["n_cells"] / fv1["n_cells_grid"]  # active fraction (exact under bisection: level 0 357,976 x 8 = level 1)
+_c4_mac_act = FV_T[1] / fv1["n_cells"]
+_c4_l3_act = c4_fv[2] * FV_ACT
+FV_DIRECT_H = sorted(
+    v["vm_s_per_cell"][2] * (_c4_mac_act / v["mac_s_per_cell_L1"]) * _c4_l3_act
+    * (_c4_l3_act / v["vm_cells"][2]) ** (v["vm_beta_L1_L3"] - 1.0) / 3600.0 for v in fvf["layouts"].values())
 cm = {
     "source": "P3 (research/o006_p3/solves) and the founder's VM calibration (research/l2_thread_calib/summary.txt); thermal "
               "and screen rates from research/o003/e008_dev/probe_costs.json (Mac, scaled to the VM by the measured EM "
@@ -43,7 +71,35 @@ cm = {
                                 "takes the lat0.5 value (not measured). P3's Case 4 0.5 mm solves: 0.86-1.04 of the model. "
                                 "--plan uses the model (Case 4 proxies)",
     "em_mem_margin_local": {"default": 1.45, "2D_Case_4": 1.05}, "fem_bytes_per_dof": 4964.065014991321, "fem_memory_margin": 1.15,
-    "fem_mem_base_GB": 0.5, "fv_cells_per_m2": fvc, "fv_bytes_per_cell": 1500.0, "fv_s_per_cell": pc.get("fv_s_per_cell", 1e-4),
+    "fem_mem_base_GB": 0.5, "fv_cells_per_m2": fvc, "fv_bytes_per_cell": 1500.0, "fv_s_per_cell": FV_MAC * FV_VM,
+    "fv_s_per_cell_mac": FV_MAC, "fv_vm_factor": FV_VM, "fv_ref_cells": fv1["n_cells_grid"], "fv_beta": FV_BETA,
+    "fv_sensitivity": {"low": {"beta": FV_LO_BETA, "vm_factor": 1.8}, "high": {"beta": FV_HI_BETA, "vm_factor": FV_VM_HI}},
+    "fv_rate_basis": f"measured (T0306, research/o003/e008_dev/fv_rate_case4_L0.json, _L1.json and their _rep "
+                     f"repeats, fv_rate.py): thermal_layout on 2D_Case_4 at P_ref (frozen-rule calibration, "
+                     f"{fv_cal['calibration']['P_ref_W']:.2f} W per die, research/o003/e008_dev/fv_cal_case4.json), one Mac "
+                     f"core, cells = build_layout_grid box cells (the --plan size convention): level 1 "
+                     f"{fv1['n_cells_grid']:,} cells {fv_runs[1][0]['wall_s']:.2f} / {fv_runs[1][1]['wall_s']:.2f} s, mean "
+                     f"{FV_MAC:.3e} s/cell, {fv1['picard_iters']} Picard iterations, peak RSS {fv1['peak_GB']:.2f} GB = "
+                     f"{fv1['peak_GB'] * 1e9 / fv1['n_cells_grid']:.0f} B/cell; level 0 {fv0['n_cells_grid']:,} cells "
+                     f"{fv_runs[0][0]['wall_s']:.3f} / {fv_runs[0][1]['wall_s']:.3f} s; wall ~ cells^beta, beta = ln(t1/t0)/ln(n1/n0) "
+                     f"= {FV_BETA:.3f} on the means ({min(FV_BETAS):.3f}-{max(FV_BETAS):.3f} over the four run pairs; "
+                     f"gen2_0: 1.056); "
+                     f"x {FV_VM} Mac -> VM: the FV solver's measured factor, VM wall / Mac wall on identical level-1 "
+                     f"solves of the O007 dev layouts (e2-highmem-16 burst 2026-11-04 vs this Mac, same code: "
+                     f"{fvf['summary']['min']:.2f} and {fvf['summary']['max']:.2f}, mean; research/o003/e008_dev/"
+                     f"fv_vm_factor.json). The VM is E2, E008 runs on N2D: the N2D factor is not measured (inference: not "
+                     f"larger, N2D is not slower per thread than E2). The l2_layout factor 1.8 used before does not hold "
+                     f"for this sparse solver. Replaces the 1e-4 s/cell placeholder (T0304 finding 2, T0305 finding 6). "
+                     f"On the VM the same solver's level steps 1 -> 2 -> 3 scale with exponents "
+                     f"{min(fvf['summary']['vm_beta_steps_all']):.3f}-{max(fvf['summary']['vm_beta_steps_all']):.3f} "
+                     f"(below Case 4's {FV_BETA:.3f}, which the model keeps). Cross-check by a second route (the VM's "
+                     f"level-3 s per active cell on the O007 layouts x Case 4's Mac s per active cell over theirs, at "
+                     f"Case 4's {_c4_l3_act / 1e6:.1f} M level-3 active cells): {FV_DIRECT_H[0]:.2f}-{FV_DIRECT_H[1]:.2f} h "
+                     f"on E2, against the model's level-3 solve below. Range for phase B: low = the VM's smallest level "
+                     f"step (beta {FV_LO_BETA}) and the l2_layout factor 1.8 (a faster N2D, inference); high = twice "
+                     f"Case 4's measured excess over linear (beta {FV_HI_BETA}) and the largest measured factor "
+                     f"{FV_VM_HI}. Not measured: any level 2-3 solve of Case 4 (29 M and 235 M cells exceed the Mac); "
+                     f"FV on N2D",
     "calibration_solves": 4, "screen_mem_GB": 1.5, "cores_per_2thread_solve": 1.5,
     "screen_s_per_candidate": {"default": scr, "2D_Case_4": scr},
     "screen_rate_basis": "0.45 s per candidate = T0288's slow end (3 wires per die, machine under load), used for every "
@@ -176,6 +232,13 @@ cfg = {
         "or exclusion of that reference only (the objective gives exclusion only for the twin gates)",
         "the band check (e_R on >= 4 twin-vs-random pairs) and Case 4's twin gates come from the full-fidelity dev run on "
         "the VM (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either",
+        "before registration the same full-fidelity dev run (burst_dev.sh: gen2_0 with the full frozen search, 2D_Case_4 "
+        "twin gates) answers reviews T0304 (findings 0, 1) and T0305 (finding 4): Run.drive, assemble_rows and evaluate "
+        "run once end to end on real solvers, and meta.thermal_report gives, for every dev layout at the frozen rule, "
+        "F6(a)'s node growth per level step, the per-die GCI with the count of gci_capped returning +inf, and whether the "
+        "conservative +2 K test is attainable (own interval width <= 2 K). If it is not attainable on the twin or most "
+        "candidates, A1 may be unreachable by construction: the founder decides before registration. No local "
+        "full-fidelity run is needed (T0306)",
         "if any dev e_R exceeds 0.02, or either Case 4 twin gate fails: the founder decides (objective notes)",
         "the snapping check (0.125 mm, ~61 GB and ~12 h per solve at Case 4 size, two solves per off-grid reference)",
         "config.references: the D0010 set with admissibility per reference, L_term, the reconstruction loader and hashes "
@@ -234,7 +297,8 @@ spec = {
          "conservative test), against the twin, twin rule first; w from its own band if F3 solved one, else the A1 best's "
          "w (stated per reference). Expected at or below headroom_min_lo"},
         {"name": "n_counted_references", "unit": "", "description": "admissible references passing both twin gates"},
-        {"name": "stack_type_a3", "unit": "", "description": "F6(e): max_gci_consistency on the spot-check reference"}],
+        {"name": "stack_type_a3", "unit": "", "description": "F6(e): max over the non-default stack types of max_gci_consistency "
+         "on that type's spot-check reference"}],
     "sanity_checks": [
         {"name": "freeze_hashes", "description": "F3: every freeze file sha256 equals config.freeze; checked before any reference is loaded"},
         {"name": "grid_rule_frozen", "description": "F6(b): the GridRule file sha256 0226b770...0e9a and key for key equal config.fem_rule"},
@@ -247,10 +311,11 @@ spec = {
         {"name": "F1b_control", "description": "h_ctrl >= h_plant - w_ctrl per reference (new sealed seed, same budget, inductance only)"},
         {"name": "F1c_band_width", "description": "w <= 0.05 for the A1 best and w_ind for the inductance-only best, every reference"},
         {"name": "F6a_own_three_grids", "description": "per thermal solve: fingerprint of the layout, node counts x8 +/- 15 % per level, every GCI recomputed by gci_capped"},
-        {"name": "F6c_energy_balance", "description": "|Q_out/Q_in - 1| <= 1e-6 on every thermal solve, calibration included"},
+        {"name": "F6c_energy_balance", "description": "|Q_out/Q_in - 1| <= 1e-6 on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e) finite-volume spot-check solves (T0305 finding 5)"},
         {"name": "F6c_picard", "description": "last Picard max|dT| <= 1e-4 K on every thermal solve"},
         {"name": "F6d_operating_point", "description": "the reconstruction's level-0 hottest-die rise at P_ref within 60 +/- 1 K before any candidate solve"},
-        {"name": "F6e_stack_type_spot_check", "description": "max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one reference per non-default stack type (AlN)"},
+        {"name": "F6e_stack_type_spot_check", "description": "max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one reference per non-default stack type (AlN). Stack type = the substrate layers, the die attach and the die, each by name, material, thickness and k (T0305 finding 0). One check F6e_stack_type_spot_check:<type> per non-default type, every one gated; this declared check passes only if all of them pass"},
+        {"name": "driver_s_ref_matches_rows", "description": "per reference: the s_ref the frozen driver was given (its near-tie window and w) equals snapping_bias of the reference row, so the band solves the metric needs exist (T0304 finding 3)"},
         {"name": "recompute_agrees", "description": "runner metrics equal mfos.metrics and research/o003/headroom_metrics.py (rel 1e-9)"}],
     "timeout_min": 6000, "cpu_hours_est": 0.0,
     "evidence_rules": 2,
@@ -278,6 +343,13 @@ STATEMENT = (
     "to ~416 GB of N2D extended memory (N2D allows 768 GB; the free-trial quota must allow it, founder to check; it is "
     "above the '~150+ GB' named in the founder's constraint: if ~150 GB is the ceiling, F6(e) cannot run at Case 4 size "
     "and E008 gives no verdict, so the date then waits on a founder decision, see founder_decisions_before_registration). "
+    "PHASE B TIME (T0306, replaces the unmeasured 1e-4 s/cell): {pb[hours]} h incl. 0.25 h resize, ${pb[usd]} at "
+    "{pb[usd_per_h]} $/h, from the measured finite-volume rate (2D_Case_4 level 1 on one Mac core, mean of two runs, {fvr:.3e} s/cell, "
+    "wall ~ cells^{fvb:.3f} from its level 0 -> 1 step, x {fvvm} Mac -> VM measured on identical FV solves (E2); "
+    "cost_model.fv_rate_basis; a second route from the VM's own level-3 rate gives {fvd0:.2f}-{fvd1:.2f} h for the solve); "
+    "range {pl[hours]}-{ph[hours]} h, ${pl[usd]}-${ph[usd]} (low: exponent {fvlb} and x 1.8; high: exponent {fvhb} and "
+    "x {fvvmhi}), i.e. E008 "
+    "{exl[vm_hours]}-{exh[vm_hours]} VM-hours expected. Before T0306 phase B was 6.77 h, $23.83. "
     "Expected (near ties {ex[near_ties]}, {ex[thermal_batches]} thermal batch): {ex[vm_hours]} VM-hours, ${ex[usd]}, "
     "{ex[billed_vcpu_hours]} billed vCPU-hours, {ex[process_cpu_hours]} process CPU-hours, end {ex[end_date_if_start]} "
     "if started 2026-11-16. Upper (15 near ties, 2 batches, 8 null checks): {up[vm_hours]} VM-hours, ${up[usd]}, "
@@ -287,11 +359,12 @@ STATEMENT = (
     "~24 h, ~$28). DATE: 2026-11-24 is reachable (E008 ends 2026-11-17/18 if it starts 2026-11-16, six days of slack) "
     "provided the reconstructions, the snapping checks and registration are done by 2026-11-16 and phase B's ~416 GB is "
     "allowed (or the spot check moves to a smaller AlN reference); the earliest E008 end is about 2026-11-17. If neither "
-    "holds, 2026-11-24 is unreachable and no earliest date exists until the founder decides F6(e). BUDGET: USD fits (E008 ${ex[usd]}-${up[usd]}, all VM work ~$95-110, budget.usd 250; the "
+    "holds, 2026-11-24 is unreachable and no earliest date exists until the founder decides F6(e). BUDGET: USD fits (E008 ${ex[usd]}-${up[usd]}, all VM work ~${allu_lo:.0f}-{allu_hi:.0f} (the earlier ~$95-110 less the phase-B change of ${dpb:.2f}), budget.usd 250; the "
     "free-trial credit balance is not in the repository). CPU-HOURS IS THE ITEM THAT BREAKS: budget.cpu_hours 320 "
     "holds for E008 alone only as process CPU time ({ex[process_cpu_hours]}-{up[process_cpu_hours]} h, the upper end "
-    "within 2 %); counted as billed vCPU-hours (8 x VM-hours, what the cap and the bill measure) E008 needs "
-    "{ex[billed_vcpu_hours]}-{up[billed_vcpu_hours]} and, with the dev run and the snapping checks, about 650-770. "
+    "{cpu_room:.0f} % below 320); counted as billed vCPU-hours (8 x VM-hours, what the cap and the bill measure) E008 needs "
+    "{ex[billed_vcpu_hours]}-{up[billed_vcpu_hours]} and, with the dev run (8 x 10-12 VM-hours) and the snapping checks "
+    "(8 x 24 h), about {allc_lo:.0f}-{allc_hi:.0f}. "
     "Founder decision: which reading of cpu_hours applies, or raise it.")
 plan = ROOT / "research/o003/e008_dev/plan.json"
 if plan.exists():
@@ -300,6 +373,23 @@ if plan.exists():
     spec["cpu_hours_est"] = round(p["cases"]["expected"]["billed_vcpu_hours"], 1)
     up, ex = p["cases"]["upper"], p["cases"]["expected"]
     cfg["cost_estimate"]["peak_memory_per_reference_GB"] = ex["peak_GB_per_reference"]
-    cfg["cost_estimate"]["statement"] = STATEMENT.format(ex=ex, up=up)
+if plan.exists() and "phase_b_sensitivity" not in ex:  # plan.json predates T0306's FV model: run --plan, then this again
+    cfg["cost_estimate"]["statement"] = "STALE: re-run e008_run.py --plan and then make_spec.py"
+    print("plan.json has no phase-B sensitivity (pre-T0306): run e008_run.py --plan, then make_spec.py again")
+elif plan.exists():
+    pb = ex["phase_b_big_memory_jobs"][0]
+    dpb = 23.83 - pb["usd"]  # phase B before T0306: 6.77 h, $23.83 (git 62e8fbe2, cost_estimate)
+    allc_lo, allc_hi = ex["billed_vcpu_hours"] + 8 * 10 + 8 * 24, up["billed_vcpu_hours"] + 8 * 12 + 8 * 24
+    cfg["cost_estimate"]["statement"] = STATEMENT.format(
+        ex=ex, up=up, pb=pb, pl=pb["sensitivity"]["low"], ph=pb["sensitivity"]["high"], fvr=FV_MAC, fvb=FV_BETA,
+        fvhb=FV_HI_BETA, fvvm=FV_VM, fvvmhi=FV_VM_HI, fvlb=FV_LO_BETA, fvd0=FV_DIRECT_H[0], fvd1=FV_DIRECT_H[1], exl=ex["phase_b_sensitivity"]["low"], exh=ex["phase_b_sensitivity"]["high"],
+        allu_lo=95 - dpb, allu_hi=110 - dpb, dpb=dpb, allc_lo=allc_lo, allc_hi=allc_hi,
+        cpu_room=100 * (1 - up["process_cpu_hours"] / 320))
+    fd = cfg["founder_decisions_before_registration"]
+    k = next(i for i, x in enumerate(fd) if x.startswith("budget: cpu_hours 320"))
+    fd[k] = (f"budget: cpu_hours 320 holds for E008 only as process CPU time ({ex['process_cpu_hours']}-"
+             f"{up['process_cpu_hours']} h); as billed vCPU-hours E008 needs {ex['billed_vcpu_hours']}-"
+             f"{up['billed_vcpu_hours']} (phase B at the measured FV rate, T0306) and all VM work about {allc_lo:.0f}-"
+             f"{allc_hi:.0f} (cost_estimate.statement): which reading applies, or raise it")
 (ROOT / "experiments/drafts/E008.yaml").write_text(yaml.safe_dump(spec, sort_keys=False, width=120, allow_unicode=False))
 print("wrote experiments/drafts/E008.yaml")

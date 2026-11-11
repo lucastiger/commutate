@@ -193,8 +193,11 @@ def em_unknowns(area_m2: float, cell_mm: float, level: str, cm: dict) -> int:
 def em_cost(n: int, level: str, cm: dict) -> tuple[float, float]:
     """(wall s, peak GB) of one l2_layout solve with n unknowns at the scheduled thread count, from the founder's VM
     calibration (n2d-custom-8, four 0.25 mm Case 4 solves at once, two threads: 5,678-5,862 s, 15.9 GB at 4.11 M
-    unknowns; 0.5 mm pinned alone 846 s at 1.02 M) with wall ~ n^alpha (alpha from those two points) and P3's wall
-    ratios of the 0.5 mm-cell band variants; memory linear in n (P3: 3.9 / 8.1 / 15.8 GB at 1.0 / 2.0 / 4.1 M)."""
+    unknowns; 0.5 mm pinned alone 846 s at 1.02 M) with wall ~ n^alpha, alpha = em_alpha = 1.44, and P3's wall ratios
+    of the 0.5 mm-cell band variants; memory linear in n (P3: 3.9 / 8.1 / 15.8 GB at 1.0 / 2.0 / 4.1 M).  The two points
+    named here give alpha = ln(5770 / 846) / ln 4 = 1.385, not 1.44; pinned against pinned (6,364 s vs 846 s) gives
+    1.456 (T0304 finding 2).  1.44 lies between them; at 0.5 mm it predicts 5770 x 0.25^1.44 = 784 s against 765-846 s
+    observed, so the choice moves the plan by well under 1 %."""
     t = cm["em_ref_wall_s"] * (n / cm["em_ref_unknowns"]) ** cm["em_alpha"] * cm["em_level_time_factor"].get(level, 1.0)
     return t, cm["em_mem_base_GB"] + cm["em_mem_GB_per_Munknown"] * n / 1e6
 
@@ -205,9 +208,19 @@ def fem_cost(dofs: float, cm: dict) -> tuple[float, float]:
     return cm["fem_s_per_dof"] * dofs, cm["fem_mem_base_GB"] + cm["fem_bytes_per_dof"] * cm["fem_memory_margin"] * dofs / 1e9
 
 
-def fv_cost(cells: float, cm: dict) -> tuple[float, float]:
-    """(wall s, peak GB) of one finite-volume L2 solve (E009's 1,500 B/cell)."""
-    return cm["fv_s_per_cell"] * cells, cm["fem_mem_base_GB"] + cm["fv_bytes_per_cell"] * cells / 1e9
+def fv_cost(cells: float, cm: dict, beta: float | None = None, s_per_cell: float | None = None) -> tuple[float, float]:
+    """(wall s, peak GB) of one finite-volume L2 solve (thermal_layout; ``cells`` = the box-grid count of
+    build_layout_grid, void cells included).  Wall: the measured rate fv_s_per_cell at fv_ref_cells, scaled as
+    (cells / fv_ref_cells)^fv_beta (T0306: 2D_Case_4 level 1, 3,669,120 cells, 20.13 and 21.06 s in two runs on one Mac
+    core, mean taken, x fv_vm_factor, the FV solver's Mac -> VM wall ratio measured on identical O007 level-1 solves
+    (e2-highmem-16 vs Mac, 4.66-5.55, research/o003/e008_dev/fv_vm_factor.json); fv_beta from Case 4's level 0 -> 1 step
+    on the mean walls; research/o003/e008_dev/fv_rate_*.json, cost_model.fv_rate_basis).
+    ``beta`` and ``s_per_cell`` override the two for the sensitivity range.  Memory: E009's 1,500 B/cell (T0306 measured
+    1,199 B/cell peak RSS at Case 4 level 1, interpreter included, so the E009 figure is kept as the conservative one)."""
+    b = cm["fv_beta"] if beta is None else beta
+    s = cm["fv_s_per_cell"] if s_per_cell is None else s_per_cell
+    return (s * cm["fv_ref_cells"] * (cells / cm["fv_ref_cells"]) ** b,
+            cm["fem_mem_base_GB"] + cm["fv_bytes_per_cell"] * cells / 1e9)
 
 
 # ------------------------------------------------------------------------------------------------ child solves
@@ -315,6 +328,7 @@ def child_fv(job: dict) -> dict:
     v, m = r["values"], r["meta"]
     return {"level": job["level"], "tj": [float(v[f"die{i}.tj_max"]) for i in range(len(lay.dies))],
             "energy_balance": float(m["energy_balance"]), "n_cells": int(m["n_cells"]), "peak_GB": _rss_gb(),
+            "picard_iters": int(m["picard_iters"]), "solver_wall_s": float(m["wall_time_s"]),
             "fingerprint": lay.fingerprint(), "threads": _prov()}
 
 
@@ -507,12 +521,24 @@ class RefCtx:
     area_m2: float = 0.0
 
 
+DEFAULT_STACK = "Al2O3_default_dbc"
+
+
+def _stack_signature(stack) -> str:
+    """Every thermal input of a LayerStack: the substrate layers, then the die-attach and die layers (geometry/stack.py
+    keeps these two outside ``layers``; T0305 finding 0), each by name, material (its k(T) law, stack.K_LAWS), thickness
+    and k at 300 K.  sigma (electrical) and the ``kind`` label are not thermal inputs and are left out."""
+    las = [*stack.layers, stack.die_attach, stack.die]
+    return json.dumps([[str(la.name), str(la.material), float(la.thickness), float(la.k)] for la in las])
+
+
 def _stack_type(stack) -> str:
+    """F6(e) stack type: DEFAULT_STACK iff the signature equals C004's default Al2O3 DBC stack (default_dbc_stack()),
+    else 'other:' + the first 12 hex digits of the signature's sha256 (one spot check per distinct type)."""
     from moduleforge.geometry import default_dbc_stack
-    sig = lambda s: json.dumps([[getattr(la, "name", ""), float(getattr(la, "thickness", 0.0)),  # noqa: E731
-                                 float(getattr(la, "k", 0.0))] for la in getattr(s, "layers", [])], sort_keys=True)
-    return "Al2O3_default_dbc" if sig(stack) == sig(default_dbc_stack()) else "other:" + hashlib.sha256(
-        sig(stack).encode()).hexdigest()[:12]
+    sig = _stack_signature(stack)
+    return DEFAULT_STACK if sig == _stack_signature(default_dbc_stack()) else "other:" + hashlib.sha256(
+        sig.encode()).hexdigest()[:12]
 
 
 def dev_reference(name: str, cfg: dict) -> RefCtx:
@@ -606,12 +632,30 @@ def prepare(rc: RefCtx, cfg: dict, n_quick: int, quick_seed: int, with_l1: bool 
     ub = 1.0 if n_clean == 0 or n_rej == n_clean else float(beta.ppf(0.95, n_rej + 1, n_clean - n_rej))
     rc.info["quick_ok"] = {"draws": n_quick, "drc_clean": n_clean, "rejected_clean": n_rej, "flag": n_rej > 0,
                            "rejection_rate_ub95": ub}
-    mr = rc.info.get("measured_rules") or {}
-    gaps = {k: v for k, v in mr.items() if k.startswith("spacing_") and isinstance(v, (int, float))}
-    link = min([v for k, v in gaps.items() if k in ("spacing_dcp_dcm", "spacing_dcp_phase", "spacing_phase_dcm")] or [math.nan])
-    rc.info["rule_strictness"] = {k: {"value_m": v, "smallest_dc_link_gap_m": link,
-                                      "flag_2x": bool(math.isfinite(link) and v > 2 * link)} for k, v in gaps.items()}
+    rc.info["rule_strictness"] = rule_strictness(rc.info.get("measured_rules") or {})
     return rc
+
+
+DC_LINK_GAPS = ("gap_dcp_phase", "gap_phase_dcm", "gap_dcp_dcm")  # the power-net gaps of the commutation loop
+
+
+def _num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def rule_strictness(mr: dict) -> dict:
+    """T0280 report (reported, not gated) from the record of drc.rules.measure_rules, whose spacing keys are 'gap_*'
+    (gap_dcp_phase, gap_phase_dcm, gap_dcp_dcm, gap_signal_*, gap_other_min; m; T0305 finding 1): every measured class
+    beside the reference's smallest DC-link gap (min of DC_LINK_GAPS); flag_2x when the class is more than twice that gap
+    (a reference feature that, used as a rule, narrows the search).  Raises if the record holds a measured gap or
+    spacing value and the report would be empty, so a renamed key cannot silently empty it again."""
+    gaps = {k: float(v) for k, v in mr.items() if k.startswith("gap_") and _num(v)}
+    link = min([v for k, v in gaps.items() if k in DC_LINK_GAPS] or [math.nan])
+    rep = {k: {"value_m": v, "smallest_dc_link_gap_m": link, "flag_2x": bool(math.isfinite(link) and v > 2 * link)}
+           for k, v in gaps.items()}
+    if not rep and any(re.search(r"gap|spacing|clearance", k) and _num(v) for k, v in mr.items()):
+        raise RuntimeError(f"rule_strictness is empty although measure_rules measured {sorted(mr)}")
+    return rep
 
 
 def save_ctx(rc: RefCtx, wd: Path) -> str:
@@ -647,7 +691,7 @@ class Driver:
     # -- identities
     def which(self, lay) -> str:
         fp = lay.fingerprint()
-        for w in ("reference", "twin", "D"):
+        for w in ("reference", "twin", "D", "snap025"):  # snap025: layout_of must load it from ctx, not rebuild a family
             o = getattr(self.rc, w)
             if o is not None and o.fingerprint() == fp:
                 return w
@@ -843,8 +887,8 @@ class Run:
             self.fem_rule.update(sm)
         self.P: dict[str, float] = {}
         self.cal: dict[str, dict] = {}
-        self.s_ref: dict[str, float] = {}
-        self.spot_ref: str | None = None
+        self.s_ref: dict[str, float] = {}  # per reference, set by s_ref_of before the main driver's first replay
+        self.spot_refs: dict[str, str] = {}  # F6(e): non-default stack type -> the reference carrying its spot check
         self.l1_cache: dict[str, float] = {}
         self.size_cache: dict[tuple, int] = {}
 
@@ -910,23 +954,39 @@ class Run:
                      max_iters=self.op["calibration_max_iters"], power_start_W=self.op["power_start_W"], priority=4)
 
     def spot_jobs(self, d: Driver) -> list[dict]:
-        """F6(e): on one reference of each non-default stack type, FV L2 levels 1-3 at P_ref (scikit-fem levels 0-2 of
-        the reconstruction are the main thermal solves)."""
+        """F6(e): on one reference of each non-default stack type (self.spot_refs), FV L2 levels 1-3 at P_ref (scikit-fem
+        levels 0-2 of the reconstruction are the main thermal solves)."""
         rc = d.rc
-        if rc.rid != self.spot_ref or self.P.get(rc.rid) is None:
+        if rc.rid not in self.spot_refs.values() or self.P.get(rc.rid) is None:
             return []
         return [d.job(rc.reference, "fv", level=lv, power_W=self.P[rc.rid], h=self.op["h_W_m2K"], T_c=self.op["coolant_K"],
                       priority=2) for lv in self.cfg["gates"]["fv_levels"]]
 
+    def s_ref_of(self, d: Driver) -> float:
+        """s_ref of O003 A1 for the driver (mfos.metrics.snapping_bias, the function the metric applies to the reference
+        row): 0 on the 0.5 mm grid; else from L(snapped to 0.25 mm) and L(reconstruction = snapped to 0.5 mm), both at
+        0.25 mm cells (the rows' L_snap025_H and L_snap05_H), and the pre-registration snapping check in rc.info.  It is
+        fixed before the main driver's first replay, so its near-tie window and w values use the same s_ref as the
+        metric; Pending until both solves exist."""
+        rc = d.rc
+        if rc.on_grid:
+            return 0.0
+        jobs = d.em_jobs(rc.snap025, ["lat0.25"]) + d.em_jobs(rc.reference, ["lat0.25"])
+        l025, l05 = (r["L_H"] for r in d._get(jobs))
+        return MX.snapping_bias(False, l025, l05, rc.info.get("snapchk0125_H"), rc.info.get("snapchk05_H"))
+
     def drive(self, refs: list[RefCtx], seeds: dict, scfg: dict) -> None:
         self.drivers: dict[tuple, Driver] = {}
         for rc in refs:
+            if not rc.on_grid and rc.snap025 is None:
+                raise RuntimeError(f"{rc.rid}: off the 0.5 mm grid but no snap025 layout (s_ref needs it)")
             ctx = save_ctx(rc, self.root / rc.rid)
             for ns in ("main", "control"):
                 self.drivers[(rc.rid, ns)] = Driver(rc, ns, seeds[(rc.rid, ns)], self.root / rc.rid, ctx, scfg, self)
-        stack_types = {rc.stack_type for rc in refs}
-        for st in sorted(stack_types - {"Al2O3_default_dbc"}):
-            self.spot_ref = next(rc.rid for rc in refs if rc.stack_type == st)  # one reference per non-default type
+        # F6(e): one spot-check reference per non-default stack type, the first of that type in reference order (T0305
+        # finding 0: a single spot_ref was overwritten, so only the last type was checked)
+        self.spot_refs = {st: next(rc.rid for rc in refs if rc.stack_type == st)
+                          for st in sorted({rc.stack_type for rc in refs} - {DEFAULT_STACK})}
         while True:
             for (rid, _ns), d in self.drivers.items():
                 if rid not in self.P:
@@ -937,11 +997,16 @@ class Run:
             for d in self.drivers.values():
                 self.sched.submit(d.prefetch())
                 try:
+                    if d.ns == "main" and d.rc.rid not in self.s_ref:
+                        self.s_ref[d.rc.rid] = self.s_ref_of(d)
                     d.replay()
                 except Pending as p:
                     self.sched.submit(p.jobs)
                     pend += 1
-            if not pend:
+            # the spot-check solves are not asked for by any driver: the loop also waits for them (evaluate reads them)
+            spot = [j for rid in self.spot_refs.values() for j in self.spot_jobs(self.drivers[(rid, "main")])]
+            self.sched.submit(spot)
+            if not pend and all(Scheduler.done(j) for j in spot):
                 break
             if not self.sched.queue and not self.sched.running:
                 raise RuntimeError("drivers pending but no job queued")
@@ -1077,7 +1142,11 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
            f"h_plant={h_plant:.5f} h_ctrl={h_ctrl:.5f} w_ctrl={rcn.w_ctrl:.5f}")
         # reported L1-only null (F1, not gated): its first passing candidate in L1 order, judged like A1 against W
         a_ = bands[fpw][0] / (bands[fpw][0] + rc.L_term_H)
-        s_ref = run.s_ref.get(rid, 0.0)
+        # s_ref: the metric's own (snapping_bias of this reference row), never an assigned 0 (T0304 finding 3); the
+        # driver's s_ref (its near-tie window and w) must be the same number, else its band solves miss metric inputs
+        s_ref = rec["s_ref"]
+        ck(f"driver_s_ref_matches_rows:{rid}", run.s_ref.get(rid) == s_ref, run.s_ref.get(rid), s_ref,
+           f"on_grid={rc.on_grid}")
         cl = {c["fingerprint"]: c["l_sub"] for c in rm.rows["candidates"]}
         nb = rm.null_best
         if nb is None or bands[fpw][0] <= cl[nb]:
@@ -1109,10 +1178,15 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
             worst_pc = max(worst_pc, max(p["residual_K"] for p in r["picard"]))
         for h in run.cal[rid]["history"]:
             worst_eb, worst_pc = max(worst_eb, h["energy_balance"]), max(worst_pc, h["picard_residual_K"])
+        # F6(c) "on every thermal solve": the F6(e) finite-volume spot-check solves of this reference too (T0305
+        # finding 5); thermal_layout reports no Picard residual, so they enter the energy balance only
+        fv_eb = [Scheduler.done(j)["energy_balance"] for j in run.spot_jobs(run.drivers[(rid, "main")])]
+        worst_eb = max([worst_eb, *fv_eb])
         if worst_eb > g["energy_tol"] or worst_pc > g["picard_tol_K"]:
             bad_c.append(f"eb {worst_eb:.2e} picard {worst_pc:.2e}")
         ck(f"F6a_own_three_grids:{rid}", not bad_a, len(bad_a), 0, bad_a[:10])
-        ck(f"F6c_energy_balance:{rid}", worst_eb <= g["energy_tol"], worst_eb, g["energy_tol"])
+        ck(f"F6c_energy_balance:{rid}", worst_eb <= g["energy_tol"], worst_eb, g["energy_tol"],
+           f"{len(fv_eb)} finite-volume spot-check solves included")
         ck(f"F6c_picard:{rid}", worst_pc <= g["picard_tol_K"], worst_pc, g["picard_tol_K"])
         rise = run.cal[rid]["rise_K"]
         ck(f"F6d_operating_point:{rid}", abs(rise - run.op["target_rise_K"]) <= run.op["operating_point_tol_K"], rise,
@@ -1122,22 +1196,70 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
                     "e_R_D": e_D, "near_ties": len(rm.near_ties), "null_new_checks": rm.null_new_checks,
                     "l1_only_null_best": rm.null_best, "l1_only_null_h_lo": h_null,
                     "l1_only_null_w_source": w_src, "info": rc.info, "twin_mode": rc.twin_rec.get("mode")}
-    # F6(e) stack-type spot check
-    if run.spot_ref is not None:
-        rid = run.spot_ref
-        d = run.drivers[(rid, "main")]
-        fv = [Scheduler.done(j) for j in run.spot_jobs(d)]
+    # F6(e) stack-type spot check: one per non-default stack type, every one gated (T0305 finding 0)
+    a3s: dict[str, float] = {}
+    for st, rid in sorted(run.spot_refs.items()):
+        if rid not in extra:  # an inadmissible reference cannot carry its type's spot check
+            ck(f"F6e_stack_type_spot_check:{st}", False, detail=f"reference {rid} of this type is not admissible")
+            a3s[st] = math.inf
+            continue
+        fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
         th = next(t["record"] for t in extra[rid]["main"].rows["thermal"] if t["role"] == "reference")
-        a3 = max(MX.max_gci_consistency(*(  # per die: fem levels 0-2 vs FV levels 1-3
+        a3s[st] = max(MX.max_gci_consistency(*(  # per die: fem levels 0-2 vs FV levels 1-3
             [th["tj"][lv][i]] for lv in range(3)), *([f["tj"][i]] for f in fv), floor=g["a3_floor_K"],
             ref_gci_cap=g["a3_ref_gci_cap_K"]) for i in range(len(th["tj"][0])))
-        ck("F6e_stack_type_spot_check", a3 <= g["a3_max"], a3, g["a3_max"], f"reference {rid}")
-        met["stack_type_a3"] = a3
+        ck(f"F6e_stack_type_spot_check:{st}", a3s[st] <= g["a3_max"], a3s[st], g["a3_max"], f"reference {rid}")
+    if a3s:
+        ck("F6e_stack_type_spot_check", all(v <= g["a3_max"] for v in a3s.values()), max(a3s.values()), g["a3_max"],
+           json.dumps({st: [run.spot_refs[st], v] for st, v in a3s.items()}, default=str))
+        met["stack_type_a3"] = max(a3s.values())
+        rep["F6e"] = {st: {"reference": run.spot_refs[st], "a3": v} for st, v in a3s.items()}
     else:
         ck("F6e_stack_type_spot_check", True, detail="every reference on C004's default Al2O3 DBC stack: not required")
     ck("at_least_one_counted_reference", counted >= 1, counted, 1)
     met["n_counted_references"] = float(counted)
     return met, checks, rep
+
+
+def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: float) -> dict:
+    """Dev-run thermal report (reported, not gated; T0304 findings 0 and 1, T0305 finding 4) from the die rows, per
+    reference and thermally solved layout: F6(a)'s node growth for each level step against node_growth_factor +/-
+    node_growth_tol; the per-die GCI (mfos.metrics.gci_capped, floor) and the count that are +inf; and whether O003's
+    conservative +2 K test is attainable on that layout.  Attainable means the layout's own interval width
+    max_i(T_i + GCI_i) - max_j(T_j - GCI_j) (tj_bounds upper - lower) is <= tj_limit_K: that width is the conservative
+    margin of a candidate with this layout's Tj and GCIs against a twin equal to it, so above the limit even a candidate
+    thermally identical to the twin fails (one +inf GCI makes it unattainable).  Layouts other than the twin also get
+    their conservative margin against the twin."""
+    by: dict[str, dict[str, dict]] = {}
+    for r in rows:
+        if r.get("kind") == "die":
+            lay = by.setdefault(r["reference_id"], {}).setdefault(r["layout_id"], {"dies": {}, "nodes": r["nodes"],
+                                                                                    "role": r.get("role", r["layout_id"])})
+            lay["dies"][r["die_id"]] = [float(r[f"Tj_l{lv}_K"]) for lv in range(3)]
+    out = {}
+    lo_f, hi_f = g["node_growth_factor"] * (1 - g["node_growth_tol"]), g["node_growth_factor"] * (1 + g["node_growth_tol"])
+    for rid, lays in by.items():
+        dies_of = {lab: [v["dies"][k] for k in sorted(v["dies"])] for lab, v in lays.items()}
+        tw = MX.tj_bounds(dies_of["twin"], floor=floor) if "twin" in lays else None
+        per = {}
+        for lab, v in lays.items():
+            n = [int(x) for x in v["nodes"]]
+            growth = [b / a for a, b in zip(n[:-1], n[1:], strict=True)]
+            gci = [MX.gci_capped(*d, floor=floor) for d in dies_of[lab]]
+            b = MX.tj_bounds(dies_of[lab], floor=floor)
+            e = {"role": v["role"], "nodes": n, "growth": growth,
+                 "growth_ok": [bool(abs(x / g["node_growth_factor"] - 1) <= g["node_growth_tol"]) for x in growth],
+                 "gci_K": gci, "n_gci_inf": sum(math.isinf(x) for x in gci), "tj_max_l2_K": b[0], "tj_upper_K": b[2],
+                 "tj_lower_K": b[3], "self_margin_K": b[2] - b[3], "attainable": bool(b[2] - b[3] <= limit)}
+            if tw is not None and lab != "twin":
+                e.update(margin_vs_twin_K=b[2] - tw[3], passes_vs_twin=bool(b[2] - tw[3] <= limit))
+            per[lab] = e
+        out[rid] = {"layouts": per, "summary": {
+            "growth_window": [lo_f, hi_f], "n_layouts": len(per),
+            "n_layouts_growth_fail": sum(not all(e["growth_ok"]) for e in per.values()),
+            "n_gci": sum(len(e["gci_K"]) for e in per.values()), "n_gci_inf": sum(e["n_gci_inf"] for e in per.values()),
+            "n_attainable": sum(e["attainable"] for e in per.values()), "tj_limit_K": limit, "floor_K": floor}}
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ fake world (selftest)
@@ -1149,11 +1271,16 @@ class FakeLay(Stub):
     __slots__ = ()
 
 
-def fake_world(scenario: str):
-    """Deterministic fake solvers keyed by fingerprint.  'headroom': candidates reach ~0.70 of the twin's L_sub;
-    'twin_best': every candidate is above the twin (twin rule)."""
+def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None):
+    """Deterministic fake solvers keyed by fingerprint.  'twin_best': every candidate is above the twin (twin rule);
+    otherwise candidates reach ~0.70 of the twin's L_sub ('levelled': L1 floor reached in the first n_first).  Planted
+    faults, filled by the selftest before the drive: ``hot`` fingerprints get +10 K on die 0 at every scikit-fem level
+    (fails the conservative test by > 8 K); ``fv_bad`` references get +5 K on every die at every FV level (F6(e) fails);
+    ``fv_eb_bad`` references' FV solves report an energy balance of 1e-3 (F6(c) fails).  'snap*' is the off-grid
+    reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01."""
     lo = 1.05 if scenario == "twin_best" else 0.70
-    fixed = {"ref": 20e-9, "twin": 20.0004e-9, "D": 27.5e-9}
+    fixed = {"ref": 20e-9, "twin": 20.0004e-9, "D": 27.5e-9, "snap": 20.1e-9}
+    hot, fv_bad, fv_eb_bad = (set() if x is None else x for x in (hot, fv_bad, fv_eb_bad))
 
     def lsub(fp):
         for k, v in fixed.items():
@@ -1183,33 +1310,126 @@ def fake_world(scenario: str):
             key = "W" if fp.startswith(("ref", "twin")) else fp  # twin gate (a2): the twin is near-identical in Tj
             base = [338.15 + 60.0 + 1.5 * _u(key, i) for i in range(4)]
             off = {0: 0.25, 1: 0.05, 2: 0.01, 3: 0.0}[lv] if j["type"] == "thermal" else {1: 0.06, 2: 0.012, 3: 0.0024}[lv]
-            return {"tj": [b + off for b in base], "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
-                    "energy_balance": 1e-9, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
+            tj = [b + off for b in base]
+            if j["type"] == "thermal" and fp in hot:
+                tj[0] += 10.0
+            if j["type"] == "fv" and fp in fv_bad:
+                tj = [t + 5.0 for t in tj]
+            eb = 1e-3 if j["type"] == "fv" and fp in fv_eb_bad else 1e-9
+            return {"tj": tj, "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
+                    "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
         if j["type"] == "screen":
             raise RuntimeError("screens are run by the selftest itself")
         raise RuntimeError(j["type"])
     return lsub, l1, job
 
 
+def _hand_e_R(x, c) -> float:
+    """e_R written out again from O006 P3's text (research/notes/o006-p3-em-convergence.md; O003 A1), not through
+    mfos.metrics: on the ratio R = x / c per level [0.25 mm, 0.5 mm, 5/3/3, 20/12/12, wire], lateral 3 |R025 - R05|;
+    thickness: middle value R05 between R533 (coarse) and R201212 (fine), Richardson 1.25 |e21| q / (q - 1), q = e32 / e21,
+    if monotone (e21 e32 > 0, |e21| < |e32|), else 3 max(|e21|, |e32|); filaments 3 |Rwire - R05|; summed linearly."""
+    R = [a / b for a, b in zip(x, c, strict=True)]
+    e21, e32 = R[1] - R[3], R[2] - R[1]
+    thick = 1.25 * abs(e21) * (e32 / e21) / (e32 / e21 - 1) if e21 * e32 > 0 and abs(e21) < abs(e32) else 3 * max(abs(e21), abs(e32))
+    return 3 * abs(R[0] - R[1]) + thick + 3 * abs(R[4] - R[1])
+
+
+# Literal e_R pairs (T0305 finding 3, T0304 finding 3), worked by hand.  Pair 1: R = x / c = [0.5, 0.51, 0.53, 0.505,
+# 0.515]; lateral 3 x 0.01 = 0.03; thickness e21 = 0.51 - 0.505 = 0.005, e32 = 0.53 - 0.51 = 0.02, monotone, q = 4,
+# 1.25 x 0.005 x 4 / 3 = 0.025 / 3; filaments 3 x 0.005 = 0.015; e_R = 0.045 + 0.025 / 3 = 0.0533333...  Pair 2: R =
+# [0.5, 0.51, 0.505, 0.52, 0.51]; lateral 0.03; e21 = -0.01, e32 = -0.005, |e21| > |e32|: 3 x 0.01 = 0.03; filaments 0;
+# e_R = 0.06.
+E_R_LITERALS = (([10.0, 12.75, 5.3, 20.2, 10.3], [20.0, 25.0, 10.0, 40.0, 20.0], 0.053333333333333333),
+                ([10.0, 12.75, 5.05, 20.8, 10.2], [20.0, 25.0, 10.0, 40.0, 20.0], 0.06))
+# s_ref by its definition (O003 A1) on fake_world's 'snap' and 'ref' values: 2 |20.1 / 20.0 - 1| = 0.01 up to rounding.
+# Written as the expression, not the literal 0.01, so the direct driver below receives the same float the runner computes
+# (the replay comparison is exact); the literal 0.01 is checked separately with a 1e-12 tolerance.
+S_REF_HAND = 2.0 * abs(20.1e-9 / 20.0e-9 - 1.0)
+# rule strictness on gen2_0's measure_rules record (experiments/drafts/E008.dev_rows.json): smallest DC-link gap 1.5 mm;
+# DC+/PHASE 6 mm > 2 x 1.5 mm is flagged, DC+/DC- 2.5 mm and PHASE/DC- 1.5 mm are not
+RS_RECORD = {"gap_dcp_phase": 0.006, "gap_phase_dcm": 0.0015, "gap_dcp_dcm": 0.0025, "gap_signal_dcp": None,
+             "gap_other_min": None, "min_wire_pitch": 0.01, "n_dies": 4}
+RS_EXPECT = {"gap_dcp_phase": True, "gap_phase_dcm": False, "gap_dcp_dcm": False}
+SCENARIOS = {  # name: (number of references, off-grid reference indices, planted Tj failures per reference: the n lowest L_sub)
+    "headroom": (2, (), {}), "twin_best": (2, (), {}), "levelled": (2, (), {}),
+    "offgrid_tj": (2, (0,), {0: 1, 1: 4}),  # ref 0: off-grid, lowest-L_sub fails; ref 1: whole first batch fails
+    "stack_types": (3, (), {}),  # default, AMB, DBC differing only in die attach; F6(e) and F6(c) planted on the FV solves
+}
+
+
+def _hand_asc(chunks: dict, l1, lsub, n_short: int) -> list[str]:
+    """Steps 1-2 of the driver redone by hand from the recorded stream: the n_short lowest L1 (ties by generation index),
+    first occurrence of a fingerprint only, then ascending L_sub (ties by index)."""
+    seen, allc = set(), []
+    for key in chunks:
+        for fp, _fam in chunks[key]:
+            allc.append((l1(FakeLay(fp, None)), len(allc), fp))
+    short = []
+    for _v, i, fp in sorted(allc):
+        if fp not in seen:
+            seen.add(fp)
+            short.append((i, fp))
+        if len(short) == n_short:
+            break
+    return [fp for i, fp in sorted(short, key=lambda t: (lsub(t[1]), t[0]))]
+
+
 def selftest() -> int:
     import tempfile
+
+    from moduleforge.geometry import default_amb_stack, default_dbc_stack
     from moduleforge.optimize import search as S
     spec = load_spec()
     cfg = json.loads(json.dumps(spec["config"]))
     failures = []
+    # literal e_R pairs: the metric and the selftest's own e_R must both give the hand values
+    for x, c, want in E_R_LITERALS:
+        for who, v in (("mfos.metrics", MX.ratio_band_estimate(x, c)), ("_hand_e_R", _hand_e_R(x, c))):
+            if abs(v - want) > 1e-12:
+                failures.append(f"e_R literal: {who} {v!r} != hand {want!r}")
+    # rule strictness from measure_rules' gap_* keys (T0305 finding 1)
+    rs = rule_strictness(RS_RECORD)
+    if {k: v["flag_2x"] for k, v in rs.items()} != RS_EXPECT or any(v["smallest_dc_link_gap_m"] != 0.0015 for v in rs.values()):
+        failures.append(f"rule_strictness {rs} != {RS_EXPECT} with link 1.5 mm")
+    for bad in ({"spacing_dcp_dcm": 0.002}, {"clearance_dcp_dcm": 0.002}):  # T0305's 'spacing_' prefix, another name
+        try:
+            rule_strictness(bad)
+            failures.append(f"rule_strictness: a measured spacing under an unknown key did not raise: {bad}")
+        except RuntimeError:
+            pass
+    if rule_strictness({"min_wire_pitch": 0.01, "gap_dcp_dcm": None}) != {}:
+        failures.append("rule_strictness: a record without a measured gap gave a non-empty report")
+    # stack types (T0305 finding 0): the die attach and the die belong to the signature
+    dbc = default_dbc_stack()
+    st_die_attach = _stack_type(dataclasses.replace(dbc, die_attach=dataclasses.replace(
+        dbc.die_attach, thickness=2 * dbc.die_attach.thickness)))
+    st_amb = _stack_type(default_amb_stack())
+    if _stack_type(default_dbc_stack()) != DEFAULT_STACK or DEFAULT_STACK in (st_die_attach, st_amb) or st_die_attach == st_amb:
+        failures.append(f"stack types: default {_stack_type(dbc)}, die attach only {st_die_attach}, AMB {st_amb}")
     scfg = dict(n_candidates=200, n_first=50, shortlist=16, batch=4, max_checks=8, tj_margin=2.0, chunk=50)
-    for scenario in ("headroom", "twin_best", "levelled"):
-        lsub, l1, fjob = fake_world(scenario)
+    for scenario, (n_refs, offgrid, n_hot) in SCENARIOS.items():
+        hot, fv_bad, fv_eb_bad = set(), set(), set()
+        lsub, l1, fjob = fake_world(scenario, hot, fv_bad, fv_eb_bad)
+        types = [DEFAULT_STACK, st_amb, st_die_attach] if scenario == "stack_types" else [DEFAULT_STACK, "other:fakeAlN"]
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             sched = Scheduler(1e9, 8, 2, fake=fjob)
             run = Run(cfg, root, sched, smoke=False, threads=2, fake={"l1": l1})
             refs = []
-            for k in range(2):
+            for k in range(n_refs):
                 rc = RefCtx(f"fake{k}", "dev", None, FakeLay(f"ref{k}", None), twin=FakeLay(f"twin{k}", None),
                             D=FakeLay(f"D{k}", None), area_m2=0.008)
-                rc.stack_type = "Al2O3_default_dbc" if k == 0 else "other:fakeAlN"
+                if k in offgrid:
+                    rc.on_grid, rc.snap025 = False, FakeLay(f"snap{k}", None)
+                rc.stack_type = types[k]
                 refs.append(rc)
+            s_hand = {rc.rid: (S_REF_HAND if not rc.on_grid else 0.0) for rc in refs}
+            if scenario == "stack_types":  # planted on the first non-default type in sorted order: a single overwritten
+                first = min(types[1:])  # spot_ref (T0305 finding 0) checked only the last one
+                fv_bad.add(f"ref{types.index(first)}")
+                eb_rid, ok_rid = (f"fake{types.index(t)}" for t in (max(types[1:]), first))  # F6(c) on the other type
+                fv_eb_bad.add(f"ref{types.index(max(types[1:]))}")
             run.drivers = {}
             seeds = {(rc.rid, ns): 1000 + i for i, (rc, ns) in enumerate((r, n) for r in refs for n in ("main", "control"))}
 
@@ -1220,6 +1440,7 @@ def selftest() -> int:
                 return gen
             orig_save = save_ctx
             globals()["save_ctx"] = lambda rc, wd: (wd.mkdir(parents=True, exist_ok=True), str(wd / "ctx.pkl"))[1]
+            asc_hand = {}
             try:
                 for rc in refs:
                     for ns in ("main", "control"):
@@ -1247,49 +1468,50 @@ def selftest() -> int:
                         with gzip.open(wd / "stream.json.gz", "wt") as f:
                             json.dump(chunks, f)
                         (wd / "screen.json").write_text(json.dumps({"status": "ok"}))
+                        if ns == "main":
+                            asc_hand[rc.rid] = _hand_asc(chunks, l1, lsub, scfg["shortlist"])
+                            hot.update(asc_hand[rc.rid][:n_hot.get(int(rc.rid[4:]), 0)])
                 run.drive(refs, seeds, scfg)
             finally:
                 globals()["save_ctx"] = orig_save
-            for rc in refs:
-                run.s_ref[rc.rid] = 0.0
             rows, extra = assemble_rows(run, refs, smoke=False)
             met, checks, rep = evaluate(run, refs, rows, extra, cfg)
-            # independent hand values: rebuild h_lo of every reference from the rows with the rule text
-            hand_lo, hand_hi = [], []
+            cmap = {c["name"]: c for c in checks}
+            # independent hand values: rebuild h_lo of every reference from the rows with the rule text, own e_R
+            hand_lo, hand_hi, hand_best = [], [], {}
+            five = lambda r: [r[c] for c in BAND_COLS]  # noqa: E731
             for rc in refs:
                 rr = [r for r in rows if r.get("reference_id") == rc.rid and r["kind"] == "layout"]
-                five = lambda r: [r[c] for c in BAND_COLS]  # noqa: E731
                 tw = next(r for r in rr if r["role"] == "twin")
                 cands = sorted([r for r in rr if r["role"] == "candidate"], key=lambda r: (r["L_sub_H"], r["layout_id"]))
-                a = tw["L_sub_H"] / (tw["L_sub_H"] + 7e-9)
-                best = cands[0]  # fake Tj: every candidate passes (spread 1.5 K, GCIs ~0.01 K)
-                if tw["L_sub_H"] <= best["L_sub_H"]:
-                    hand_lo.append(0.0)
-                    hand_hi.append(0.0)
+                if [c["fingerprint"] for c in cands] != asc_hand[rc.rid]:
+                    failures.append(f"{scenario}/{rc.rid}: shortlist L_sub order differs from the hand screen")
+                a, s = tw["L_sub_H"] / (tw["L_sub_H"] + 7e-9), s_hand[rc.rid]
+                # F3 by hand: batches of 4 in ascending L_sub, at most 8; fake Tj passes unless planted hot
+                best = next((c for c in cands[:8] if c["fingerprint"] not in hot), None)
+                hand_best[rc.rid] = best
+                if best is None or tw["L_sub_H"] <= best["L_sub_H"]:
+                    hand_lo.append(-a * s)
                 else:
                     r_ = best["L_sub_H"] / tw["L_sub_H"]
-                    e = MX.ratio_band_estimate(five(best), five(tw))
-                    hand_lo.append(a * (1 - r_ * (1 + 2 * e)))
-                    hand_hi.append(None)
+                    hand_lo.append(a * (1 - r_ * (1 + 2 * _hand_e_R(five(best), five(tw)) + s)))
             # K1 by hand from the rows (rule text: levelling, twin rule, near ties incl. the inductance-only best)
-            for k, rc in enumerate(refs):
+            for rc in refs:
                 rr = [r for r in rows if r.get("reference_id") == rc.rid]
-                five = lambda r: [r[c] for c in BAND_COLS]  # noqa: E731
                 tw = next(r for r in rr if r["kind"] == "layout" and r["role"] == "twin")
                 ref_row = next(r for r in rr if r["kind"] == "reference")
                 cands = sorted([r for r in rr if r["kind"] == "layout" and r["role"] == "candidate"],
                                key=lambda r: (r["L_sub_H"], r["layout_id"]))
-                a = tw["L_sub_H"] / (tw["L_sub_H"] + 7e-9)
-                ind = cands[0]
-                w = 2 * MX.ratio_band_estimate(five(ind), five(tw))
+                a, s, ind = tw["L_sub_H"] / (tw["L_sub_H"] + 7e-9), s_hand[rc.rid], cands[0]
+                w = 2 * _hand_e_R(five(ind), five(tw)) + s
                 if not ref_row["L1_min_first5000_H"] <= (1 + w) * ref_row["L1_min_all_H"]:
                     hh = math.inf
                 elif tw["L_sub_H"] <= ind["L_sub_H"]:
-                    hh = 0.0
+                    hh = a * s
                 else:
-                    hh = max(a * (1 - c["L_sub_H"] / tw["L_sub_H"] * (1 - 2 * MX.ratio_band_estimate(five(c), five(tw))))
+                    hh = max(a * (1 - c["L_sub_H"] / tw["L_sub_H"] * (1 - 2 * _hand_e_R(five(c), five(tw)) - s))
                              for c in cands if c["L_sub_H"] <= (1 + w) * ind["L_sub_H"])
-                hand_hi[k] = hh
+                hand_hi.append(hh)
             k1 = met["headroom_max_hi_ind"]
             if not (k1 == max(hand_hi) or abs(k1 - max(hand_hi)) <= 1e-12):
                 failures.append(f"{scenario}: K1 {k1} vs hand {max(hand_hi)}")
@@ -1310,8 +1532,8 @@ def selftest() -> int:
                     sv = S.Solvers(l1=l1, l_sub=lambda lay: em1(lay, "lat0.25"),
                                    band=lambda lay: [em1(lay, lv) for lv in BAND], thermal=th1)
                     if ns == "main":
-                        ref_res = S.run_search(None, rc.reference, rc.twin, seeds[(rc.rid, ns)], sv, 42.0, 0.0, None,
-                                               S.SearchConfig(**scfg), gen_for(rc.rid, ns))
+                        ref_res = S.run_search(None, rc.reference, rc.twin, seeds[(rc.rid, ns)], sv, 42.0, s_hand[rc.rid],
+                                               None, S.SearchConfig(**scfg), gen_for(rc.rid, ns))
                     else:
                         ref_res = S.run_control(None, rc.D, seeds[(rc.rid, ns)], sv, 0.0, None, S.SearchConfig(**scfg),
                                                 gen_for(rc.rid, ns))
@@ -1326,18 +1548,60 @@ def selftest() -> int:
                 failures.append("twin_best: the planted F1(b) failure (search cannot reach the twin) was not caught")
             if not met["null_twin_as_best_h_lo"] <= 0.0:
                 failures.append(f"{scenario}: null h_lo {met['null_twin_as_best_h_lo']} > 0")
+            if not math.isfinite(met.get("l1_only_null_h_lo", math.nan)):
+                failures.append(f"{scenario}: l1_only_null_h_lo {met.get('l1_only_null_h_lo')} is not finite")
+            planted = set()
+            if scenario == "offgrid_tj":
+                rec0, rec1 = rep["fake0"]["record"], rep["fake1"]["record"]
+                ref0 = next(r for r in rows if r["kind"] == "reference" and r["reference_id"] == "fake0")
+                if abs(rec0["s_ref"] - S_REF_HAND) > 1e-12 or abs(run.s_ref["fake0"] - S_REF_HAND) > 1e-12:
+                    failures.append(f"offgrid_tj: s_ref metric {rec0['s_ref']} driver {run.s_ref['fake0']} != {S_REF_HAND}")
+                if ref0.get("L_snap025_H") != 20.1e-9 or ref0.get("L_snap05_H") != 20e-9 or ref0.get("on_grid") is not False:
+                    failures.append(f"offgrid_tj: snapping columns {[ref0.get(c) for c in ('on_grid', 'L_snap025_H', 'L_snap05_H')]}")
+                if run.drivers[("fake0", "main")].which(refs[0].snap025) != "snap025":
+                    failures.append("offgrid_tj: Driver.which does not recognise snap025")
+                for rid, rec, n_chk in (("fake0", rec0, 4), ("fake1", rec1, 8)):
+                    if hand_best[rid] is None or rec["best_id"] != hand_best[rid]["layout_id"]:
+                        failures.append(f"offgrid_tj/{rid}: A1 best {rec['best_id']} != hand {hand_best[rid]['layout_id']}")
+                    if rec["n_tj_rejected"] < n_hot[int(rid[4:])] or rec["n_thermal_checked"] != n_chk:
+                        failures.append(f"offgrid_tj/{rid}: {rec['n_tj_rejected']} Tj rejections, {rec['n_thermal_checked']} "
+                                        f"checked (want >= {n_hot[int(rid[4:])]}, {n_chk})")
+                if len(run.drivers[("fake1", "main")].result.rows["checks"]) < 8:
+                    failures.append("offgrid_tj: the second thermal batch did not run")
+            if scenario == "stack_types":
+                want = {st_amb: "fake1", st_die_attach: "fake2"}
+                if run.spot_refs != want:
+                    failures.append(f"stack_types: spot refs {run.spot_refs} != {want}")
+                for st, rid in want.items():
+                    fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
+                    if len(fv) != 3 or any(f is None for f in fv):
+                        failures.append(f"stack_types: {rid} ({st}) has no complete FV levels 1-3")
+                    c = cmap.get(f"F6e_stack_type_spot_check:{st}")
+                    if c is None or c["passed"] != (st != first):
+                        failures.append(f"stack_types: F6e for {st} {c} (planted failure on {first} only)")
+                if cmap["F6e_stack_type_spot_check"]["passed"]:
+                    failures.append("stack_types: the aggregate F6e check passed with a planted per-type failure")
+                planted = {f"F6c_energy_balance:{eb_rid}"}
+                if cmap[f"F6c_energy_balance:{eb_rid}"]["passed"] or not cmap[f"F6c_energy_balance:{ok_rid}"]["passed"]:
+                    failures.append(f"stack_types: the planted FV energy-balance failure ({eb_rid} only) was not caught "
+                                    f"by F6(c), or {ok_rid} failed")
             for c in checks:
-                if c["name"].startswith(("recompute_agrees", "F6a", "F6c", "F6d", "F1c", "at_least")) and not c["passed"]:
+                if c["name"].startswith(("recompute_agrees", "F6a", "F6c", "F6d", "F1c", "at_least", "driver_s_ref")) \
+                        and not c["passed"] and c["name"] not in planted:
                     failures.append(f"{scenario}: {c['name']} {c['detail'][:200]}")
             n_c = sum(r["kind"] == "layout" and r["role"] == "candidate" for r in rows)
-            if n_c != 32:
+            if n_c != 16 * n_refs:
                 failures.append(f"{scenario}: {n_c} candidate rows, want 16 per reference")
             if any(not math.isfinite(float(r["L_sub_null_H"])) for r in rows):
                 failures.append("a row without a finite L_sub_null_H")
+            tr = thermal_report_from_rows(rows, cfg["gates"], 1e-3, 2.0)
+            if sorted(tr) != sorted(rc.rid for rc in refs) or any(v["summary"]["n_layouts_growth_fail"] for v in tr.values()):
+                failures.append(f"{scenario}: thermal report {json.dumps({k: v['summary'] for k, v in tr.items()})[:300]}")
             log(f"selftest {scenario}: h_lo {met['headroom_min_lo']:.5f} (hand {min(hand_lo):.5f}), K1 "
-                f"{met['headroom_max_hi_ind']}, null {met['null_twin_as_best_h_lo']:.5f}, {len(rows)} rows, "
-                f"{len(checks)} checks ({sum(not c['passed'] for c in checks)} failing), "
-                f"F6e {[c['value'] for c in checks if c['name'].startswith('F6e')]}")
+                f"{met['headroom_max_hi_ind']}, null {met['null_twin_as_best_h_lo']:.5f}, L1-only null "
+                f"{met.get('l1_only_null_h_lo', math.nan):.5f}, {len(rows)} rows, {len(checks)} checks "
+                f"({sum(not c['passed'] for c in checks)} failing), F6e "
+                f"{[(c['name'][26:] or 'all', round(c['value'], 4)) for c in checks if c['name'].startswith('F6e') and c['value'] is not None]}")
     # memory learning (attempt 5): prior until measured, then model x 1.1 x the largest measured ratio, also from a cache
     with tempfile.TemporaryDirectory() as td:
         sc = Scheduler(10.0, 8, 2, solo_cap_GB=10.0)
@@ -1469,12 +1733,21 @@ def plan(args, cfg: dict) -> int:
         mk = simulate(small, vcpus, cap)
         a_h = mk / 3600.0 + vm["overhead_h"]
         b_rows, b_h, b_usd = [], 0.0, 0.0
+        b_rng = {t: [0.0, 0.0] for t in cm["fv_sensitivity"]}  # phase B (hours, $) at each end of the FV rate range
         for j in big:
             ram = math.ceil(j["mem_GB"] / vm["memory_fraction"] / 8.0) * 8.0
             usd_h = vm["usd_per_h"] + vm["ext_usd_per_GB_h"] * (ram - vm["ram_GB"])
             h = j["est_s"] / 3600.0 + vm["resize_overhead_h"]
+            sens = {}
+            for t, sv in cm["fv_sensitivity"].items():  # T0306: the FV time model's stated range (fv_rate_basis)
+                hs = (fv_cost(j["n"], cm, beta=sv["beta"], s_per_cell=cm["fv_s_per_cell_mac"] * sv["vm_factor"])[0]
+                      if j["kind"] == "fv" else j["est_s"]) / 3600.0 + vm["resize_overhead_h"]
+                sens[t] = {"hours": round(hs, 2), "usd": round(hs * usd_h, 2)}
+                b_rng[t][0] += hs
+                b_rng[t][1] += hs * usd_h
             b_rows.append({"job": j["name"], "peak_GB": round(j["mem_GB"], 1), "machine": f"n2d-custom-8-{int(ram * 1024)}-ext",
-                           "fits_n2d_768GB": ram <= 768, "hours": round(h, 2), "usd": round(h * usd_h, 2)})
+                           "fits_n2d_768GB": ram <= 768, "hours": round(h, 2), "usd": round(h * usd_h, 2),
+                           "usd_per_h": round(usd_h, 4), "sensitivity": sens})
             b_h, b_usd = b_h + h, b_usd + h * usd_h
         vm_h = a_h + b_h
         per_ref = {}
@@ -1500,7 +1773,12 @@ def plan(args, cfg: dict) -> int:
                                            "peak_GB": round(j["mem_GB"], 2), "threads": j["threads"]})
         out["cases"][case] = {
             "near_ties": n_near, "thermal_batches": batches, "null_extra_checks": n_null, "n_solves": len(J),
-            "phase_a_hours": round(a_h, 2), "phase_b_big_memory_jobs": b_rows, "vm_hours": round(vm_h, 2),
+            "phase_a_hours": round(a_h, 2), "phase_b_big_memory_jobs": b_rows, "phase_b_hours": round(b_h, 2),
+            "phase_b_usd": round(b_usd, 2),
+            "phase_b_sensitivity": {t: {"phase_b_hours": round(v[0], 2), "phase_b_usd": round(v[1], 2),
+                                        "vm_hours": round(a_h + v[0], 2), "usd": round(a_h * vm["usd_per_h"] + v[1], 2),
+                                        "billed_vcpu_hours": round((a_h + v[0]) * vcpus, 1)} for t, v in b_rng.items()},
+            "vm_hours": round(vm_h, 2),
             "usd": round(a_h * vm["usd_per_h"] + b_usd, 2), "billed_vcpu_hours": round(vm_h * vcpus, 1),
             "process_cpu_hours": round(cpu_h, 1), "peak_GB_per_reference": per_ref,
             "per_solve_on_vm": {"reference_sizes": r0, "note": "wall at the scheduled concurrency (four 0.25 mm solves at "
@@ -1556,6 +1834,8 @@ def twin_gates_only(run: Run, gates: list[RefCtx], n_pairs: dict, dseed: int, sm
         b = {fp: MX.tj_bounds([[t[lv]["tj"][k] for lv in range(3)] for k in range(len(t[0]["tj"]))], floor=1e-3)
              for fp, t in th.items()}
         fw, fr = rc.twin.fingerprint(), rc.reference.fingerprint()
+        if not rc.on_grid:
+            raise RuntimeError(f"{rc.rid}: the dev gates path takes s_ref = 0 and needs a geometry on the 0.5 mm grid")
         a1 = MX.twin_gate_inductance(five[fw], five[fr], 0.0)
         a2 = MX.twin_gate_thermal(b[fw], b[fr])
         e_tr = MX.ratio_band_estimate(five[fw], five[fr])
@@ -1611,8 +1891,7 @@ def dev(args) -> int:
         (fail_fast if rc.info.get("fail_fast") else {}).update({rc.rid: rc.info.get("fail_fast")})
         gates_ok = rc.rid in gate_only and rc.twin is not None  # the twin gates need W only, not D
         if not rc.info.get("fail_fast") or gates_ok:
-            refs.append(rc)
-            run.s_ref[rc.rid] = 0.0
+            refs.append(rc)  # s_ref: Run.drive (s_ref_of) for searched references; dev geometry is on the grid
     gates = [rc for rc in refs if rc.rid in gate_only]
     refs = [rc for rc in refs if rc.rid not in gate_only]
     seeds = {(rc.rid, ns): derive_seed(dseed, k, i) for i, rc in enumerate(refs) for k, ns in ((0, "main"), (1, "control"))}
@@ -1642,7 +1921,15 @@ def dev(args) -> int:
                           "R": b5[0] / tw[0]})
     for r in rows:
         r["dev_row"] = True
+    # T0304 findings 0-1, T0305 finding 4: F6(a) node growth per level step, per-die GCI and its +inf count, and whether
+    # the conservative +2 K test is attainable, for every thermally solved dev layout (gates and searched alike)
+    therm = {"rule": "E009 smoke rule (NOT the frozen rule)" if smoke else "frozen rule (config.fem_rule)",
+             "per_reference": thermal_report_from_rows(rows, cfg["gates"], cfg["metric_params"]["floor"],
+                                                       cfg["metric_params"]["tj_limit_K"])}
+    for rid, v in therm["per_reference"].items():
+        log(f"{rid} thermal report ({therm['rule']}): {json.dumps(v['summary'])}")
     doc = {"schema": "mfos.rows/1", "rows": rows, "meta": {
+        "thermal_report": therm,
         "smoke": smoke, "note": ("SMOKE ROWS (local): EM production slot solved at 0.5 mm cells (so the lateral term of "
                                  "e_R is zero), coarsened thermal rule, reduced candidate budget; not evidence"
                                  if smoke else "full-fidelity dev rows"),

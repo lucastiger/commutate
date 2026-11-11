@@ -198,7 +198,34 @@ config:
       fem_mem_base_GB: 0.5
       fv_cells_per_m2: *id001
       fv_bytes_per_cell: 1500.0
-      fv_s_per_cell: 0.0001
+      fv_s_per_cell: 2.862846561930815e-05
+      fv_s_per_cell_mac: 5.613424631236893e-06
+      fv_vm_factor: 5.1
+      fv_ref_cells: 3669120
+      fv_beta: 1.1398405719998332
+      fv_sensitivity:
+        low:
+          beta: 1.042
+          vm_factor: 1.8
+        high:
+          beta: 1.28
+          vm_factor: 5.55
+      fv_rate_basis: 'measured (T0306, research/o003/e008_dev/fv_rate_case4_L0.json, _L1.json and their _rep repeats, fv_rate.py):
+        thermal_layout on 2D_Case_4 at P_ref (frozen-rule calibration, 70.46 W per die, research/o003/e008_dev/fv_cal_case4.json),
+        one Mac core, cells = build_layout_grid box cells (the --plan size convention): level 1 3,669,120 cells 20.13 / 21.06
+        s, mean 5.613e-06 s/cell, 5 Picard iterations, peak RSS 4.40 GB = 1199 B/cell; level 0 458,640 cells 1.933 / 1.917
+        s; wall ~ cells^beta, beta = ln(t1/t0)/ln(n1/n0) = 1.140 on the means (1.127-1.153 over the four run pairs; gen2_0:
+        1.056); x 5.1 Mac -> VM: the FV solver''s measured factor, VM wall / Mac wall on identical level-1 solves of the O007
+        dev layouts (e2-highmem-16 burst 2026-11-04 vs this Mac, same code: 4.66 and 5.55, mean; research/o003/e008_dev/fv_vm_factor.json).
+        The VM is E2, E008 runs on N2D: the N2D factor is not measured (inference: not larger, N2D is not slower per thread
+        than E2). The l2_layout factor 1.8 used before does not hold for this sparse solver. Replaces the 1e-4 s/cell placeholder
+        (T0304 finding 2, T0305 finding 6). On the VM the same solver''s level steps 1 -> 2 -> 3 scale with exponents 1.042-1.081
+        (below Case 4''s 1.140, which the model keeps). Cross-check by a second route (the VM''s level-3 s per active cell
+        on the O007 layouts x Case 4''s Mac s per active cell over theirs, at Case 4''s 183.3 M level-3 active cells): 2.37-2.77
+        h on E2, against the model''s level-3 solve below. Range for phase B: low = the VM''s smallest level step (beta 1.042)
+        and the l2_layout factor 1.8 (a faster N2D, inference); high = twice Case 4''s measured excess over linear (beta 1.28)
+        and the largest measured factor 5.55. Not measured: any level 2-3 solve of Case 4 (29 M and 235 M cells exceed the
+        Mac); FV on N2D'
       calibration_solves: 4
       screen_mem_GB: 1.5
       cores_per_2thread_solve: 1.5
@@ -355,6 +382,12 @@ config:
     exclusion of that reference only (the objective gives exclusion only for the twin gates)'
   - the band check (e_R on >= 4 twin-vs-random pairs) and Case 4's twin gates come from the full-fidelity dev run on the VM
     (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either
+  - 'before registration the same full-fidelity dev run (burst_dev.sh: gen2_0 with the full frozen search, 2D_Case_4 twin
+    gates) answers reviews T0304 (findings 0, 1) and T0305 (finding 4): Run.drive, assemble_rows and evaluate run once end
+    to end on real solvers, and meta.thermal_report gives, for every dev layout at the frozen rule, F6(a)''s node growth per
+    level step, the per-die GCI with the count of gci_capped returning +inf, and whether the conservative +2 K test is attainable
+    (own interval width <= 2 K). If it is not attainable on the twin or most candidates, A1 may be unreachable by construction:
+    the founder decides before registration. No local full-fidelity run is needed (T0306)'
   - 'if any dev e_R exceeds 0.02, or either Case 4 twin gate fails: the founder decides (objective notes)'
   - the snapping check (0.125 mm, ~61 GB and ~12 h per solve at Case 4 size, two solves per off-grid reference)
   - 'config.references: the D0010 set with admissibility per reference, L_term, the reconstruction loader and hashes (T0263);
@@ -365,8 +398,9 @@ config:
     values apply to judged references (measured, with a stated tolerance, or the defaults for wire pitch) must be decided
     before registration, since a TwinError stops the reference'
   - row contract interpretations 1-9 (research/o003/e008_row_contract.md section 5)
-  - 'budget: cpu_hours 320 holds for E008 only as process CPU time (240-314 h); as billed vCPU-hours E008 needs 366-477 and
-    all VM work about 650-770 (cost_estimate.statement): which reading applies, or raise it'
+  - 'budget: cpu_hours 320 holds for E008 only as process CPU time (234.6-308.3 h); as billed vCPU-hours E008 needs 339.2-450.8
+    (phase B at the measured FV rate, T0306) and all VM work about 611-739 (cost_estimate.statement): which reading applies,
+    or raise it'
   - 'F6(e) at Case 4 size: the finite-volume level-3 grid has 235 M cells (~350 GB at E009''s 1,500 B/cell); it fits only
     on the same 8-vCPU VM resized to ~416 GB of N2D extended memory (N2D allows 768 GB). This is above the ''~150+ GB'' the
     founder''s constraint (2026-11-09) names. If the account cannot exceed ~150 GB, F6(e) cannot run on a Case-4-sized AlN
@@ -413,18 +447,41 @@ config:
         thermal_batches: 1
         null_extra_checks: 0
         n_solves: 181
-        phase_a_hours: 38.91
+        phase_a_hours: 38.81
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           peak_GB: 352.7
           machine: n2d-custom-8-425984-ext
           fits_n2d_768GB: true
-          hours: 6.77
-          usd: 23.83
-        vm_hours: 45.68
-        usd: 47.65
-        billed_vcpu_hours: 365.5
-        process_cpu_hours: 240.2
+          hours: 3.59
+          usd: 12.63
+          usd_per_h: 3.5188
+          sensitivity:
+            low:
+              hours: 1.03
+              usd: 3.64
+            high:
+              hours: 6.76
+              usd: 23.79
+        phase_b_hours: 3.59
+        phase_b_usd: 12.63
+        phase_b_sensitivity:
+          low:
+            phase_b_hours: 1.03
+            phase_b_usd: 3.64
+            vm_hours: 39.85
+            usd: 27.39
+            billed_vcpu_hours: 318.8
+          high:
+            phase_b_hours: 6.76
+            phase_b_usd: 23.79
+            vm_hours: 45.57
+            usd: 47.55
+            billed_vcpu_hours: 364.6
+        vm_hours: 42.4
+        usd: 36.39
+        billed_vcpu_hours: 339.2
+        process_cpu_hours: 234.6
         peak_GB_per_reference: &id005
           2D_Case_2R:
             em: 15.8
@@ -510,17 +567,17 @@ config:
               threads: 2
             fv:fv:L1:
               n: 3669120
-              wall_h: 0.102
+              wall_h: 0.029
               peak_GB: 6.0
               threads: 2
             fv:fv:L2:
               n: 29352960
-              wall_h: 0.815
+              wall_h: 0.312
               peak_GB: 44.53
               threads: 2
             fv:fv:L3:
               n: 234823680
-              wall_h: 6.523
+              wall_h: 3.341
               peak_GB: 352.74
               threads: 2
             thermal:candidate:T0:
@@ -544,18 +601,41 @@ config:
         thermal_batches: 2
         null_extra_checks: 8
         n_solves: 349
-        phase_a_hours: 52.91
+        phase_a_hours: 52.76
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           peak_GB: 352.7
           machine: n2d-custom-8-425984-ext
           fits_n2d_768GB: true
-          hours: 6.77
-          usd: 23.83
-        vm_hours: 59.68
-        usd: 56.21
-        billed_vcpu_hours: 477.4
-        process_cpu_hours: 313.9
+          hours: 3.59
+          usd: 12.63
+          usd_per_h: 3.5188
+          sensitivity:
+            low:
+              hours: 1.03
+              usd: 3.64
+            high:
+              hours: 6.76
+              usd: 23.79
+        phase_b_hours: 3.59
+        phase_b_usd: 12.63
+        phase_b_sensitivity:
+          low:
+            phase_b_hours: 1.03
+            phase_b_usd: 3.64
+            vm_hours: 53.8
+            usd: 35.93
+            billed_vcpu_hours: 430.4
+          high:
+            phase_b_hours: 6.76
+            phase_b_usd: 23.79
+            vm_hours: 59.53
+            usd: 56.08
+            billed_vcpu_hours: 476.2
+        vm_hours: 56.35
+        usd: 44.93
+        billed_vcpu_hours: 450.8
+        process_cpu_hours: 308.3
         peak_GB_per_reference:
           2D_Case_2R:
             em: 15.8
@@ -641,17 +721,17 @@ config:
               threads: 2
             fv:fv:L1:
               n: 3669120
-              wall_h: 0.102
+              wall_h: 0.029
               peak_GB: 6.0
               threads: 2
             fv:fv:L2:
               n: 29352960
-              wall_h: 0.815
+              wall_h: 0.312
               peak_GB: 44.53
               threads: 2
             fv:fv:L3:
               n: 234823680
-              wall_h: 6.523
+              wall_h: 3.341
               peak_GB: 352.74
               threads: 2
             thermal:candidate:T0:
@@ -677,20 +757,25 @@ config:
       235 M cells, ~350 GB at E009''s 1,500 B/cell; nothing else exceeds 31 GB) alone on the same VM resized to ~416 GB of
       N2D extended memory (N2D allows 768 GB; the free-trial quota must allow it, founder to check; it is above the ''~150+
       GB'' named in the founder''s constraint: if ~150 GB is the ceiling, F6(e) cannot run at Case 4 size and E008 gives no
-      verdict, so the date then waits on a founder decision, see founder_decisions_before_registration). Expected (near ties
-      3, 1 thermal batch): 45.68 VM-hours, $47.65, 365.5 billed vCPU-hours, 240.2 process CPU-hours, end 2026-11-17 if started
-      2026-11-16. Upper (15 near ties, 2 batches, 8 null checks): 59.68 VM-hours, $56.21, 477.4 billed vCPU-hours, 313.9 process
-      CPU-hours, end 2026-11-18. Before registration, on the same VM: the full-fidelity dev run (~10-12 VM-hours, Spot allowed,
-      ~$7) and the snapping check for each off-grid reference (two 0.125 mm solves, ~61 GB and ~12 h each; two at once on
-      ~144 GB, ~24 h, ~$28). DATE: 2026-11-24 is reachable (E008 ends 2026-11-17/18 if it starts 2026-11-16, six days of slack)
-      provided the reconstructions, the snapping checks and registration are done by 2026-11-16 and phase B''s ~416 GB is
-      allowed (or the spot check moves to a smaller AlN reference); the earliest E008 end is about 2026-11-17. If neither
-      holds, 2026-11-24 is unreachable and no earliest date exists until the founder decides F6(e). BUDGET: USD fits (E008
-      $47.65-$56.21, all VM work ~$95-110, budget.usd 250; the free-trial credit balance is not in the repository). CPU-HOURS
-      IS THE ITEM THAT BREAKS: budget.cpu_hours 320 holds for E008 alone only as process CPU time (240.2-313.9 h, the upper
-      end within 2 %); counted as billed vCPU-hours (8 x VM-hours, what the cap and the bill measure) E008 needs 365.5-477.4
-      and, with the dev run and the snapping checks, about 650-770. Founder decision: which reading of cpu_hours applies,
-      or raise it.'
+      verdict, so the date then waits on a founder decision, see founder_decisions_before_registration). PHASE B TIME (T0306,
+      replaces the unmeasured 1e-4 s/cell): 3.59 h incl. 0.25 h resize, $12.63 at 3.5188 $/h, from the measured finite-volume
+      rate (2D_Case_4 level 1 on one Mac core, mean of two runs, 5.613e-06 s/cell, wall ~ cells^1.140 from its level 0 ->
+      1 step, x 5.1 Mac -> VM measured on identical FV solves (E2); cost_model.fv_rate_basis; a second route from the VM''s
+      own level-3 rate gives 2.37-2.77 h for the solve); range 1.03-6.76 h, $3.64-$23.79 (low: exponent 1.042 and x 1.8; high:
+      exponent 1.28 and x 5.55), i.e. E008 39.85-45.57 VM-hours expected. Before T0306 phase B was 6.77 h, $23.83. Expected
+      (near ties 3, 1 thermal batch): 42.4 VM-hours, $36.39, 339.2 billed vCPU-hours, 234.6 process CPU-hours, end 2026-11-17
+      if started 2026-11-16. Upper (15 near ties, 2 batches, 8 null checks): 56.35 VM-hours, $44.93, 450.8 billed vCPU-hours,
+      308.3 process CPU-hours, end 2026-11-18. Before registration, on the same VM: the full-fidelity dev run (~10-12 VM-hours,
+      Spot allowed, ~$7) and the snapping check for each off-grid reference (two 0.125 mm solves, ~61 GB and ~12 h each; two
+      at once on ~144 GB, ~24 h, ~$28). DATE: 2026-11-24 is reachable (E008 ends 2026-11-17/18 if it starts 2026-11-16, six
+      days of slack) provided the reconstructions, the snapping checks and registration are done by 2026-11-16 and phase B''s
+      ~416 GB is allowed (or the spot check moves to a smaller AlN reference); the earliest E008 end is about 2026-11-17.
+      If neither holds, 2026-11-24 is unreachable and no earliest date exists until the founder decides F6(e). BUDGET: USD
+      fits (E008 $36.39-$44.93, all VM work ~$84-99 (the earlier ~$95-110 less the phase-B change of $11.20), budget.usd 250;
+      the free-trial credit balance is not in the repository). CPU-HOURS IS THE ITEM THAT BREAKS: budget.cpu_hours 320 holds
+      for E008 alone only as process CPU time (234.6-308.3 h, the upper end 4 % below 320); counted as billed vCPU-hours (8
+      x VM-hours, what the cap and the bill measure) E008 needs 339.2-450.8 and, with the dev run (8 x 10-12 VM-hours) and
+      the snapping checks (8 x 24 h), about 611-739. Founder decision: which reading of cpu_hours applies, or raise it.'
 sealed_seed: true
 metrics:
 - name: headroom_min_lo
@@ -733,7 +818,7 @@ metrics:
   description: admissible references passing both twin gates
 - name: stack_type_a3
   unit: ''
-  description: 'F6(e): max_gci_consistency on the spot-check reference'
+  description: 'F6(e): max over the non-default stack types of max_gci_consistency on that type''s spot-check reference'
 sanity_checks:
 - name: freeze_hashes
   description: 'F3: every freeze file sha256 equals config.freeze; checked before any reference is loaded'
@@ -760,18 +845,24 @@ sanity_checks:
 - name: F6a_own_three_grids
   description: 'per thermal solve: fingerprint of the layout, node counts x8 +/- 15 % per level, every GCI recomputed by gci_capped'
 - name: F6c_energy_balance
-  description: '|Q_out/Q_in - 1| <= 1e-6 on every thermal solve, calibration included'
+  description: '|Q_out/Q_in - 1| <= 1e-6 on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e) finite-volume
+    spot-check solves (T0305 finding 5)'
 - name: F6c_picard
   description: last Picard max|dT| <= 1e-4 K on every thermal solve
 - name: F6d_operating_point
   description: the reconstruction's level-0 hottest-die rise at P_ref within 60 +/- 1 K before any candidate solve
 - name: F6e_stack_type_spot_check
   description: max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one
-    reference per non-default stack type (AlN)
+    reference per non-default stack type (AlN). Stack type = the substrate layers, the die attach and the die, each by name,
+    material, thickness and k (T0305 finding 0). One check F6e_stack_type_spot_check:<type> per non-default type, every one
+    gated; this declared check passes only if all of them pass
+- name: driver_s_ref_matches_rows
+  description: 'per reference: the s_ref the frozen driver was given (its near-tie window and w) equals snapping_bias of the
+    reference row, so the band solves the metric needs exist (T0304 finding 3)'
 - name: recompute_agrees
   description: runner metrics equal mfos.metrics and research/o003/headroom_metrics.py (rel 1e-9)
 timeout_min: 6000
-cpu_hours_est: 365.5
+cpu_hours_est: 339.2
 evidence_rules: 2
 code_under_test:
 - src/moduleforge/solvers/l2_layout.py

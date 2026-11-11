@@ -7,6 +7,12 @@
 # Expected: about 10-12 VM-hours on n2d-custom-8-81920-ext (inference from the --plan cost model; research/notes/e008-design.md).
 # Largest jobs: gen2_0 candidates' thermal level 2 (6.2-7.0 M DOFs, ~40 GB) and Case 4 lat0.25 (15.9 GB); the scheduler keeps
 # the sum of estimates within 0.85 x RAM.
+# T0306: this run also answers reviews T0304 (findings 0, 1) and T0305 (finding 4) before registration. gen2_0 runs the
+# full frozen search, so Run.drive, assemble_rows and evaluate run once end to end on real solvers; the rows' meta.thermal_report
+# gives, for every thermally solved dev layout at the frozen rule, F6(a)'s node growth per level step (window 8 +/- 15 %),
+# the per-die GCI (gci_capped, floor 1e-3 K) with the count of +inf, and whether the conservative +2 K test is attainable
+# (the layout's own interval width <= 2 K; margin against the twin for the others). meta.metrics / meta.checks carry the
+# evaluate() checks of gen2_0. Both dev geometries are on the 0.5 mm grid (snap_layout is the identity), so s_ref = 0.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 MF_GCP_SPOT=auto MF_GCP_PROVISION=0 MF_GCP_RESUME=1 scripts/burst_gcp.sh --cmd \

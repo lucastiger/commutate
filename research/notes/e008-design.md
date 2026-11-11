@@ -88,31 +88,39 @@ Facts (attempt 4, 2026-11-10), from `research/o003/e008_dev/probe_dofs.json` (gr
 
 ## 4. Cost, schedule and dates (FOUNDER CONSTRAINT: one 8-vCPU VM at a time)
 Per-solve model. EM (facts: P3 and the founder's calibration): 0.25 mm at 4.11 M unknowns, 5,678-5,862 s with two
-threads, four at once on n2d-custom-8-81920-ext, 15.9 GB; 0.5 mm pinned 846 s at 1.02 M; wall ~ n^1.44 from those two
-points; memory 0.8 GB + 3.65 GB per M unknowns. Thermal: E009's 4,964 B/DOF x 1.15; 1.18e-4 s/DOF measured on the Mac
+threads, four at once on n2d-custom-8-81920-ext, 15.9 GB; 0.5 mm pinned 846 s at 1.02 M; wall ~ n^1.44 (those two
+points give 1.385, pinned vs pinned 6,364 s vs 846 s gives 1.456; 1.44 lies between and predicts 784 s at 0.5 mm against
+765-846 s observed, T0304 finding 2); memory 0.8 GB + 3.65 GB per M unknowns. Thermal: E009's 4,964 B/DOF x 1.15; 1.18e-4 s/DOF measured on the Mac
 for k(T) solves (MMS L2 1.58 M DOFs 186 s; gen2_0 smoke L1 0.68 M nodes 80 s) x 1.8 for a VM vCPU (inference from
-two l2_layout runs). FV: 1,500 B/cell (E009), 1e-4 s/cell (placeholder). Sizes: 2D_Case_4 proxies for both public
-references (not loaded, per the packet).
+two l2_layout runs). FV: 1,500 B/cell (E009); time measured in T0306 (section 7): 5.61e-6 s per box cell on one Mac
+core at Case 4 level 1, wall ~ cells^1.140, x 5.1 for the VM (measured on identical FV solves, E2; until T0306: 1e-4
+s/cell, a placeholder). Sizes:
+2D_Case_4 proxies for both public references (not loaded, per the packet).
 
 `--plan` (`research/o003/e008_dev/plan.json`; the spec's `cost_estimate` carries it and the statement):
 
 | case | solves | VM hours (phase A + B) | $ | billed vCPU-h | process CPU-h | end if started 11-16 |
 |---|---|---|---|---|---|---|
-| expected (3 near ties, 1 thermal batch, 0 null extras) | 181 | 38.9 + 6.8 = 45.7 | 47.7 | 366 | 240 | 2026-11-17 |
-| upper (15 near ties, 2 batches, 8 null extras) | 349 | 52.9 + 6.8 = 59.7 | 56.2 | 477 | 314 | 2026-11-18 |
+| expected (3 near ties, 1 thermal batch, 0 null extras) | 181 | 38.8 + 3.6 = 42.4 | 36.4 | 339 | 235 | 2026-11-17 |
+| upper (15 near ties, 2 batches, 8 null extras) | 349 | 52.8 + 3.6 = 56.4 | 44.9 | 451 | 308 | 2026-11-18 |
+
+(T0306, measured FV rate. Before T0306, with the 1e-4 s/cell placeholder: 38.9 + 6.8 = 45.7 h, $47.7, 366 / 240 h
+expected; 52.9 + 6.8 = 59.7 h, $56.2, 477 / 314 h upper. Phase B range at the stated FV sensitivity: 1.03-6.76 h,
+$3.64-23.79.)
 
 Peak memory per reference: l2_layout 15.8 GB (0.25 mm), scikit-fem 31.0 GB (a candidate's level 2), FV 352.7 GB
 (level 3, spot-check reference only). The expected near-tie count is replaced by the dev rows' value when a dev
 search has run.
 
-**Dates.** 2026-11-24 is reachable: E008 needs 46-60 VM-hours, so it ends on 2026-11-17/18 if it starts on
+**Dates.** 2026-11-24 is reachable: E008 needs 42-56 VM-hours (46-60 before T0306), so it ends on 2026-11-17/18 if it starts on
 2026-11-16 (about six days of slack). That requires, before 11-16: the reconstructions (T0263), the full-fidelity dev
 run (~10-12 VM-hours), the snapping checks (~24 h on ~144 GB) and registration. Earliest E008 end: about 2026-11-17.
 
-**Budget.** USD: E008 $48-56, all VM work about $95-110, against budget.usd 250 (the free-trial credit balance is not
+**Budget.** USD: E008 $36-45, all VM work about $84-99, against budget.usd 250 (the free-trial credit balance is not
 in the repository). **CPU-hours is the item that breaks.** budget.cpu_hours = 320 holds for E008 alone only as process
-CPU time (240-314 h, the upper end within 2 %); as billed vCPU-hours (8 x VM-hours) E008 needs 366-477, and with the
-dev run and the snapping checks about 650-770. Founder decision.
+CPU time (235-308 h, the upper end 4 % below 320); as billed vCPU-hours (8 x VM-hours) E008 needs 339-451, and with
+the dev run and the snapping checks about 611-739. Founder decision. (Before
+T0306: $48-56, $95-110, 240-314 h, 366-477, 650-770.)
 
 ## 5. Not done here (stated limits)
 - No judged reference was loaded (2D_Case_2R, 2D_Case_6, customer data). The registered-run path stops with
@@ -120,7 +128,7 @@ dev run and the snapping checks about 650-770. Founder decision.
   shared with `--dev` and `--selftest`.
 - The band check (e_R <= 0.02 on >= 4 pairs), Case 4's twin gates at full fidelity and the snapping check are not
   decided by local rows.
-- Not measured: FV memory and time per cell on this geometry, thermal time on the VM, the screen rate on the real
+- Not measured: FV time at levels 2-3 (T0306 measured levels 0-1 on Case 4 and gen2_0, section 7), thermal time on the VM, the screen rate on the real
   references (`--plan` uses 0.45 s per candidate, T0288's slow end).
 - What would prove this design wrong: a full-fidelity dev run whose per-solve times or memory differ from `--plan` by
   more than ~30 %, or a replay/direct-driver mismatch on real solvers (the selftest checks it only on fake ones).
@@ -157,7 +165,7 @@ Facts:
   stopped at a local maximum), so the fail-fast path stops Case 4 before any VM solve, as designed. `_quick_ok` over the
   registered 2,000 draws: 33 DRC-clean, 0 rejected, so the false-rejection rate is <= 8.7 % (exact one-sided 95 %).
   For gen2_0 (attempt 4): 10 clean of 100, 0 rejected, bound 25.9 %. No midpoint-decided split; no rule-strictness class
-  over 2x. Inference: the twin gate (a1) on Case 4 is likely to pass (copper equal on the power nets, L1 within 0.2 %),
+  over 2x (wrong: the report was always empty, T0305 finding 1; corrected in section 7). Inference: the twin gate (a1) on Case 4 is likely to pass (copper equal on the power nets, L1 within 0.2 %),
   but only the band solves decide it (burst_dev.sh). Also inference: DegradeError on Case 4, a PowerSynth layout like both
   public references, makes a DegradeError on them a live risk. Under the implied reading, that makes E008 INVALID before
   any VM spend. Founder decision, listed in the spec.
@@ -165,3 +173,74 @@ Facts:
   0; `mfos exp check E008` 0; `--plan --plan-out research/o003/e008_dev/plan.json` 0 (totals unchanged: 45.68 / 59.68
   VM-hours); `make_spec.py` 0; `case4_prep.py` 0 (the wrapping `/usr/bin/time -l` returned 1 because the sandbox denies
   `sysctl kern.clockrate`, after the script had finished).
+
+## 7. T0306 (2026-11-10): reviews T0304 / T0305 of T0262, runner gates settled before T0263
+Development geometry only (gen2_0, 2D_Case_4); no judged reference or customer data loaded; thermal_fem.py untouched
+(sha256 a216d5fe...); no tolerance, gate or frozen value changed; the founder decisions stay listed. The registered path
+(`full()`, judged-reference loading) is out of scope and is added after T0263 under a new draft.
+
+Facts (what the code now does, and what was run):
+1. **F6(e) per stack type (T0305 f0).** `Run.spot_refs` maps every non-default stack type to the first reference of that
+   type; `evaluate()` gates `F6e_stack_type_spot_check:<type>` for each, and the declared aggregate check passes only if
+   all do (`stack_type_a3` = their max). `_stack_signature` covers the substrate layers, the die attach and the die
+   (name, material, thickness, k). Selftest scenario `stack_types`: default, `default_amb_stack()`, and the default DBC
+   with only the die attach doubled in thickness; each non-default type gets FV levels 1-3 and its own check; a +5 K FV
+   fault planted on one type fails that type and the aggregate only.
+2. **F6(c) on the FV solves (T0305 f5).** The spot-check records' `energy_balance` enters `F6c_energy_balance:<rid>`
+   (thermal_layout reports no Picard residual, so they enter the energy balance only). Selftest plants 1e-3 on the other
+   non-default type's FV solves and requires exactly that reference's F6(c) to fail.
+3. **Rule strictness (T0305 f1).** `rule_strictness()` reads measure_rules' `gap_*` keys; it raises if the record holds a
+   measured gap/spacing/clearance value and the report would be empty. `research/o003/e008_dev/refresh_rule_strictness.py`
+   re-ran measure_rules on both dev layouts (L0), found the stored records identical, and wrote the report into
+   `E008.dev_rows.json` (nothing else in the rows changed, checked by comparison). gen2_0: smallest DC-link gap 1.5 mm
+   (PHASE/DC-); DC+/PHASE 6.0 mm is flagged (> 2x), DC+/DC- 2.5 mm is not. Case 4: link gap 3.0 mm; DC+/DC- 5.0 mm and
+   other 2.0 mm, none flagged. This corrects section 6's "no rule-strictness class over 2x" for gen2_0.
+4. **Selftest strength (T0305 f3, T0304 f3).** Two literal e_R pairs worked by hand (0.0533333 monotone-Richardson branch,
+   0.06 the 3 max branch) checked against both `mfos.metrics.ratio_band_estimate` and the selftest's own `_hand_e_R`
+   (written from P3's text); the hand h_lo / K1 now use `_hand_e_R`, not the implementation. Scenario `offgrid_tj`:
+   reference 0 off-grid (fake L_snap025 = 20.1 nH vs 20.0 nH, s_ref = 0.01) with its lowest-L_sub candidate planted hot
+   (+10 K), so A1 selects past a Tj rejection and the snap025 job and L_snap* columns run; reference 1 has its whole
+   first batch hot, so the second thermal batch runs (8 checks). s_ref is no longer assigned 0.0: `Run.s_ref_of` computes
+   it with `snapping_bias` from the snap025 / reconstruction lat0.25 solves before the main driver's first replay, and
+   the L1-only null uses the reference row's s_ref; a new declared check `driver_s_ref_matches_rows` requires the two
+   to be equal (`run_control` ignores s_ref by design, search.py).
+5. **Dev-run reporting (T0304 f0-f1, T0305 f4).** `--dev` writes `meta.thermal_report`: per thermally solved layout the
+   node growth per level step against 8 +/- 15 %, per-die `gci_capped` with the +inf count, the layout's own interval
+   width max(T+G) - max(T-G) and `attainable` (width <= 2 K), and the margin against the twin. Applied to the existing
+   smoke rows it reproduces the reviewers' hand numbers exactly: growth 6.706 (fails) and 7.254; GCIs 1.967, 2.062, inf,
+   1.123 K; not attainable (smoke rule, not the frozen one). burst_dev.sh (gen2_0 full frozen search, Case 4 gates)
+   answers both reviews before registration; the spec's pre-registration list says so. Both dev geometries are on the
+   0.5 mm grid (snap_layout at 0.5 mm is the identity), so s_ref = 0 there.
+6. **Cost basis (T0305 f6, T0304 f2).** `research/o003/e008_dev/fv_rate.py`, one thread, at P_ref = 70.46 W per die
+   (frozen-rule calibration, rise 59.93 K): Case 4 level 1 (3,669,120 box cells, 2,863,808 active) 20.13 s and 21.06 s,
+   level 0 (458,640) 1.933 s and 1.917 s; 5 Picard iterations each; peak RSS 4.40 GB at level 1 (1,199 B per box cell,
+   interpreter included; E009's 1,500 B/cell kept). Rate 5.613e-6 s/cell (mean), beta = 1.140 (1.127-1.153 over the four
+   run pairs; gen2_0 1.056). **Mac -> VM factor measured, not borrowed:** `fv_vm_factor.py` re-solved the two O007 dev
+   layouts' level 1 on this Mac (4.74 s, 2.92 s; T0204's preview 4.69 s, 2.95 s) against the founder's e2-highmem-16
+   burst on the same code (22.07 s, 16.21 s): factor 4.66 and 5.55, mean 5.10. The l2_layout factor 1.8 the first
+   attempt borrowed does not hold for this sparse AMG-CG solver (it would have put phase B at 1.43 h). On that VM the
+   level steps 1 -> 2 -> 3 scale with exponents 1.042-1.081, below Case 4's 1.140 (kept, conservative). Second route:
+   the VM's own level-3 time per active cell, scaled to Case 4's geometry and 183.3 M level-3 active cells, gives
+   2.37-2.77 h for the solve against the model's 3.34 h. Range: low beta 1.042 and factor 1.8 (a faster N2D,
+   inference); high beta 1.28 (twice Case 4's excess over linear) and factor 5.55. Not measured: FV on N2D; any Case 4
+   level 2-3 solve. The em_cost docstring now says the two points give alpha = 1.385 (pinned vs pinned 1.456; 1.44
+   kept).
+
+`--plan` totals (VM-hours, $, billed vCPU-h, process CPU-h):
+
+| case | before T0306 | after T0306 | phase B before -> after (range) |
+|---|---|---|---|
+| expected | 38.91 + 6.77 = 45.68 h, $47.65, 365.5, 240.2 | 38.81 + 3.59 = 42.40 h, $36.39, 339.2, 234.6 | 6.77 h $23.83 -> 3.59 h $12.63 (1.03-6.76 h, $3.64-23.79) |
+| upper | 52.91 + 6.77 = 59.68 h, $56.21, 477.4, 313.9 | 52.76 + 3.59 = 56.35 h, $44.93, 450.8, 308.3 | same job |
+
+Inference: phase B's ~416 GB memory, not its time, still decides whether F6(e) can run at Case 4 size; that founder
+decision is unchanged. cpu_hours_est (expected, billed) is now 339.2 (was 365.5), still over budget.cpu_hours 320; the
+reading of cpu_hours stays a founder decision.
+
+Mutation check of the selftest (each defect re-introduced in an in-memory copy of the runner; the file was not edited):
+spot_ref overwrite, signature without die attach/die, F6(c) without FV records, 'spacing_' prefix, driver s_ref forced
+to 0, metric s_ref 0, aggregate F6(e) on the last type only: the selftest fails on all 7.
+
+Limits: FV time at levels 2-3 is extrapolated (29 M and 235 M cells do not fit the Mac); the Mac/VM factor for FV is
+not measured; the selftest still runs fake solvers only, so the real-solver end-to-end path waits for burst_dev.sh.
+Commands and exit codes: see the T0306 report.

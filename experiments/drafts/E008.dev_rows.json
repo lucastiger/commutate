@@ -471,7 +471,23 @@
       "rejected_clean": 0,
       "flag": false
      },
-     "rule_strictness": {}
+     "rule_strictness": {
+      "gap_dcp_phase": {
+       "value_m": 0.006,
+       "smallest_dc_link_gap_m": 0.0015000000000000013,
+       "flag_2x": true
+      },
+      "gap_phase_dcm": {
+       "value_m": 0.0015000000000000013,
+       "smallest_dc_link_gap_m": 0.0015000000000000013,
+       "flag_2x": false
+      },
+      "gap_dcp_dcm": {
+       "value_m": 0.0024999999999999988,
+       "smallest_dc_link_gap_m": 0.0015000000000000013,
+       "flag_2x": false
+      }
+     }
     },
     "twin_mode": "exact"
    },
@@ -943,7 +959,28 @@
       "flag": false,
       "rejection_rate_ub95": 0.08678118929147494
      },
-     "rule_strictness": {}
+     "rule_strictness": {
+      "gap_dcp_phase": {
+       "value_m": 0.002999999999999996,
+       "smallest_dc_link_gap_m": 0.0029999999999999953,
+       "flag_2x": false
+      },
+      "gap_phase_dcm": {
+       "value_m": 0.0029999999999999953,
+       "smallest_dc_link_gap_m": 0.0029999999999999953,
+       "flag_2x": false
+      },
+      "gap_dcp_dcm": {
+       "value_m": 0.0049999999999999975,
+       "smallest_dc_link_gap_m": 0.0029999999999999953,
+       "flag_2x": false
+      },
+      "gap_other_min": {
+       "value_m": 0.0019999999999999983,
+       "smallest_dc_link_gap_m": 0.0029999999999999953,
+       "flag_2x": false
+      }
+     }
     },
     "quick_ok_draws": 2000,
     "wall_s": 76.09722241689451,
@@ -1103,6 +1140,31 @@
     "by": "research/o003/e008_dev/case4_prep.py",
     "what": "L0/L1 fail-fast record only; no rows added"
    }
-  ]
+  ],
+  "rule_strictness_refresh": {
+   "task": "T0306",
+   "script": "research/o003/e008_dev/refresh_rule_strictness.py",
+   "runner_sha256": "6b036213ab1586ce6158d2e3837f078fa5f05609759ecadf9a897ae5e3de5bf7",
+   "rules_py_sha256": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
+   "method": "measure_rules re-run on each dev layout (L0), equal to the stored record, then rule_strictness()",
+   "references": {
+    "housing70x40_gen2_0": {
+     "fingerprint": "aade6489835d7e940d122c73e43983faf4cde67af73536782d106a6024e9b666",
+     "measured_rules_equal_stored": true,
+     "n_measured_gaps": 3,
+     "n_reported": 3,
+     "flag_2x": [
+      "gap_dcp_phase"
+     ]
+    },
+    "2D_Case_4": {
+     "fingerprint": "f4862196449283618cc57d3d9e05a790f8ed2dbd248b1455b01d3d721afe74fb",
+     "measured_rules_equal_stored": true,
+     "n_measured_gaps": 4,
+     "n_reported": 4,
+     "flag_2x": []
+    }
+   }
+  }
  }
 }
