@@ -4,7 +4,7 @@ title: 'E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness
   reporting, FV cost basis (reviews T0304, T0305)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0262
 description: "Follow-up to T0262 from its reviews T0304 (physics) and T0305 (numerics), both accept_with_caveats\n\
@@ -106,3 +106,194 @@ history:
   at: '2026-11-11T01:25:33+00:00'
   until: '2026-11-11T01:30:33.550197+00:00'
   session: null
+- attempt: 1
+  outcome: agent_finished
+  summary: 'T0306 is done: all six review items are fixed in the E008 draft runner and spec, committed
+    as 240e2b6a on the task branch.
+
+
+    The most important result is item 6, the finite-volume cost basis. I measured the time per cell on
+    2D_Case_4 here. The Mac-to-VM factor the first attempt borrowed from l2_layout (1.8) is wrong for
+    this solver. On identical solves run with the same code, the founder''s E2 VM was 4.66 and 5.55 times
+    slower than this Mac (mean 5.10).
+
+
+    With the measured factor, phase B (the large finite-volume check for F6(e)) is 3.59 h and $12.63,
+    with a range of 1.03–6.76 h and $3.64–23.79. It was 6.77 h and $23.83 under the old 1e-4 s/cell placeholder.
+    Had I kept 1.8, the answer would have been 1.43 h, too low.
+
+
+    `--plan` totals, before → after:
+
+    - **Expected case:** 45.68 → 42.40 VM-hour'
+  report:
+    summary: 'T0306 is done: all six review items are fixed in the E008 draft runner and spec, committed
+      as 240e2b6a on the task branch.
+
+
+      The most important result is item 6, the finite-volume cost basis. I measured the time per cell
+      on 2D_Case_4 here. The Mac-to-VM factor the first attempt borrowed from l2_layout (1.8) is wrong
+      for this solver. On identical solves run with the same code, the founder''s E2 VM was 4.66 and 5.55
+      times slower than this Mac (mean 5.10).
+
+
+      With the measured factor, phase B (the large finite-volume check for F6(e)) is 3.59 h and $12.63,
+      with a range of 1.03–6.76 h and $3.64–23.79. It was 6.77 h and $23.83 under the old 1e-4 s/cell
+      placeholder. Had I kept 1.8, the answer would have been 1.43 h, too low.
+
+
+      `--plan` totals, before → after:
+
+      - **Expected case:** 45.68 → 42.40 VM-hours, $47.65 → $36.39, billed vCPU-hours 365.5 → 339.2, process
+      CPU-hours 240.2 → 234.6.
+
+      - **Upper case:** 59.68 → 56.35 VM-hours, $56.21 → $44.93, billed vCPU-hours 477.4 → 450.8, process
+      CPU-hours 313.9 → 308.3.
+
+
+      The other five items:
+
+      1. **F6(e):** each non-default stack type now gets its own finite-volume spot check and its own
+      gated check. The stack-type signature includes the die attach and the die.
+
+      2. **F6(c):** the energy balance of the finite-volume spot-check solves is now checked too.
+
+      3. **Rule strictness:** the report is built from the `gap_*` keys and is no longer empty. I refreshed
+      it in the dev rows (no solve). gen2_0''s DC+/PHASE gap is flagged at 6 mm, four times its 1.5 mm
+      smallest DC-link gap; nothing on Case 4 is flagged. This corrects the T0262 note''s "no class over
+      2x".
+
+      4. **Selftest:** two hand-worked e_R pairs are checked as literals. A new scenario covers an off-grid
+      reference whose lowest-L_sub candidate fails Tj, plus a second thermal batch. s_ref is now computed
+      rather than set to 0. A new declared check confirms the driver and the metric use the same s_ref.
+
+      5. **Dev reporting:** `--dev` now records, per layout, node growth per level step, per-die GCI with
+      the count of infinite ones, and whether the +2 K test is attainable. On the existing smoke rows
+      it reproduces both reviewers'' hand numbers exactly. The spec''s pre-registration list says burst_dev.sh
+      answers both reviews before registration.
+
+
+      The em_cost docstring now says the two cited points give alpha = 1.385, not 1.44.
+
+
+      To confirm the selftest would catch the reviewed bugs, I re-introduced each of 7 of them in an in-memory
+      copy of the runner; the selftest failed every time.
+
+
+      Commands run (all exit 0 on the final state):
+
+      - `--selftest`
+
+      - `--verify-freeze` (12/12 OK)
+
+      - the yaml key check
+
+      - `ruff check` on the runner and on research/o003/e008_dev
+
+      - `mfos exp check E008`
+
+      - the thermal_fem.py sha check (a216d5fe…)
+
+      - `mfos gate --fast`
+
+      - make_spec.py, then `--plan`, then make_spec.py again
+
+      - fv_rate.py repeat timings, fv_vm_factor.py, refresh_rule_strictness.py
+
+
+      The first selftest run exited 1: the spec had not yet been regenerated with the new cost-model keys.
+      The second exited 1 on three test defects, which I fixed (below).
+
+
+      What is still open:
+
+      - **CPU-hour budget:** the expected-case estimate (339.2 billed vCPU-hours) is still over the 320
+      budget. Which reading of cpu_hours applies stays your decision, as listed in the spec.
+
+      - **Phase B memory:** about 416 GB, unchanged, so F6(e) at Case 4 size still needs your decision.
+
+      - **FV on the N2D VM** is not measured; the measured factor comes from an E2 VM.
+
+      - **Case 4 at levels 2–3** cannot be solved on this Mac, so phase B is extrapolated.
+
+      - **Real-solver end-to-end path:** still untested until burst_dev.sh runs.
+
+      - **Registered path:** `full()` is out of scope, as the packet says.'
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    evidence:
+    - 'FACT: selftest 5 scenarios pass (headroom, twin_best, levelled, offgrid_tj, stack_types); h_lo
+      equals hand value in each (e.g. offgrid_tj 0.19596, stack_types 0.20927); stack_types: F6e fails
+      only on the planted type (a3 64.42 vs 0.098), aggregate fails, F6(c) fails only on the reference
+      with planted FV energy balance 1e-3'
+    - 'FACT: mutation check ($TMPDIR/mut/mutate.py; in-memory mutants, runner file untouched): spot_ref
+      overwrite, signature without die attach/die, F6(c) without FV records, ''spacing_'' prefix, driver
+      s_ref=0, metric s_ref=0, aggregate F6e on last type only -> selftest fails on all 7'
+    - 'FACT: literal e_R pairs (0.053333..., 0.06) match both mfos.metrics.ratio_band_estimate and the
+      selftest''s own _hand_e_R to 1e-12; hand recomputation: 0.03 + 1.25*0.005*4/3 + 0.015; 0.03 + 3*0.01
+      + 0'
+    - 'FACT: thermal_report_from_rows on the existing smoke dev rows reproduces T0304/T0305: growth 6.706
+      (fails 8+/-15%) and 7.254; GCIs 1.967, 2.062, inf, 1.123 K; not attainable (smoke rule)'
+    - 'FACT: refresh_rule_strictness.py re-ran measure_rules on gen2_0 and 2D_Case_4 (L0): records identical
+      to stored; dev rows otherwise unchanged (dict comparison True); gen2_0 gap_dcp_phase 6.0 mm flagged
+      vs link 1.5 mm; Case 4 none flagged (link 3.0 mm)'
+    - 'FACT: both dev geometries are on the 0.5 mm grid (snap_layout at 0.5 mm leaves the fingerprint
+      unchanged, 0 moves), so s_ref = 0 in the dev path'
+    - 'FACT: FV Case 4 (one Mac core, P_ref 70.46 W/die, 5 Picard iters): L1 3,669,120 box cells 20.13/21.06
+      s, L0 458,640 cells 1.933/1.917 s; beta 1.140 (1.127-1.153); peak 4.40 GB = 1,199 B/box cell'
+    - 'FACT: fv_vm_factor.py: same code (thermal_fv/thermal_layout unchanged since 2026-11-02), same layouts/power:
+      side_by_side_6 L1 Mac 4.737 s vs e2-highmem-16 22.07 s (4.66); u_shaped_2 2.922 s vs 16.21 s (5.55);
+      T0204 preview Mac times 4.689/2.955 s agree within 1 %; VM level-step exponents 1.042-1.081'
+    - 'FACT: --plan before (git HEAD plan.json) expected 45.68 VM-h $47.65 365.5 billed vCPU-h 240.2 process
+      CPU-h, phase B 6.77 h $23.83; upper 59.68 h $56.21 477.4 313.9. After: expected 42.40 h $36.39 339.2
+      234.6, phase B 3.59 h $12.63 (range 1.03-6.76 h, $3.64-23.79); upper 56.35 h $44.93 450.8 308.3'
+    - 'FACT: hand check of phase B: 5.613e-6 x 5.10 x 3,669,120 x 64^1.1398 = 12,026 s = 3.34 h + 0.25
+      h resize = 3.59 h; x 3.5188 $/h = $12.63'
+    - 'INFERENCE: second route (VM level-3 rate on O007 layouts scaled to Case 4 geometry and 183.3 M
+      active cells) 2.37-2.77 h < model 3.34 h, so the central estimate errs high (conservative)'
+    - 'FACT: DoD commands all exit 0: --selftest, --verify-freeze (12 OK), yaml key check, ruff runner,
+      mfos exp check E008, thermal_fem sha a216d5fe3209bcee, mfos gate --fast (''all gates passed'')'
+    recommended_actions:
+    - 'Founder: decide the cpu_hours reading; the expected E008 estimate is 339.2 billed vCPU-hours, over
+      the 320 budget (all VM work about 611-739).'
+    - 'Founder: the phase-B memory decision (~416 GB on an N2D VM, or a smaller AlN spot-check reference)
+      is unchanged and still decides whether F6(e) can run at Case 4 size.'
+    - Run research/o003/e008_dev/burst_dev.sh before registration. Its meta.thermal_report and meta.checks
+      answer T0304 findings 0-1 and T0305 finding 4 at the frozen rule, including whether the +2 K test
+      is attainable on the generator layouts.
+    - At the burst, record one finite-volume level-1 solve's wall time on the N2D VM to replace the E2-measured
+      Mac-to-VM factor (5.10). Re-run --plan on T0263's reconstructions.
+    - After T0263, add full() under a new draft. The new per-reference checks (driver_s_ref_matches_rows:<rid>,
+      F6e_stack_type_spot_check:<type>) must roll up to the declared names, as ExperimentRun requires
+      exact declared names. Then re-review the runner.
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/o003/e008_dev/make_spec.py
+    - research/o003/e008_dev/plan.json
+    - research/o003/e008_dev/burst_dev.sh
+    - research/o003/e008_dev/fv_rate.py
+    - research/o003/e008_dev/fv_rate_case4_L0.json
+    - research/o003/e008_dev/fv_rate_case4_L0_rep.json
+    - research/o003/e008_dev/fv_rate_case4_L1.json
+    - research/o003/e008_dev/fv_rate_case4_L1_rep.json
+    - research/o003/e008_dev/fv_cal_case4.json
+    - research/o003/e008_dev/fv_grid_case4_L1.json
+    - research/o003/e008_dev/fv_rate_gen2_0_L0.json
+    - research/o003/e008_dev/fv_rate_gen2_0_L1.json
+    - research/o003/e008_dev/fv_rate_gen2_0_L1_alone.json
+    - research/o003/e008_dev/fv_vm_factor.py
+    - research/o003/e008_dev/fv_vm_factor.json
+    - research/o003/e008_dev/refresh_rule_strictness.py
+    - research/notes/e008-design.md
+    discriminating_tests:
+    - 'Selftest under mutation: each of the 7 reviewed defects, re-introduced, makes --selftest exit non-zero
+      (done; all 7 caught).'
+    - 'Identical-solve Mac vs E2 timing of the finite-volume solver (done: 4.66 and 5.55). A future N2D
+      level-1 timing would show whether the factor on the E008 machine is lower.'
+    - 'burst_dev.sh at the frozen rule: if the twin or most gen2_0 candidates show a +inf GCI or a self-width
+      above 2 K, A1 is unreachable by construction and the founder must decide before registration.'
