@@ -4,7 +4,7 @@ title: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 publ
   with measured rules
 type: research
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0262
 - T0306
@@ -117,4 +117,146 @@ rationale: D0010's default reference set (no customer layout in the vault on 202
   snapping, measured rules and L_term must be frozen and hashed before any solve (F3, F4, scope_in). It
   depends on the code freeze so that no judged reference is loaded before the generator and search are
   frozen.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Both public references fail E008''s twin-space check: 2D_Case_2R and 2D_Case_6 each raise
+    TwinError in E008''s own prepare(), so under F1(a) both are excluded and E008 as drafted would be
+    INVALID. The founder has to decide before registration.
+
+
+    - **2D_Case_2R:** the twin is a fit, and it fails the DRC check under the spec''s own measured rules.
+    measure_rules sets the minimum gate-wire length to the reference''s shortest gate wire (5.344 mm).
+    The fitted twin''s two LS gate wires are 4.597 mm long.
+
+    - **2D_Case_6:** no (orientation, sequence) pair in the generator space matches the geometry. The
+    two switch blocks sit side by side, and their power wires run in opposite directions.
+
+    - **Not produced:** because both references stopped at the TwinError, there is no difference record,
+    no L1(W)/L1(ref), '
+  report:
+    summary: 'Both public references fail E008''s twin-space check: 2D_Case_2R and 2D_Case_6 each raise
+      TwinError in E008''s own prepare(), so under F1(a) both are excluded and E008 as drafted would be
+      INVALID. The founder has to decide before registration.
+
+
+      - **2D_Case_2R:** the twin is a fit, and it fails the DRC check under the spec''s own measured rules.
+      measure_rules sets the minimum gate-wire length to the reference''s shortest gate wire (5.344 mm).
+      The fitted twin''s two LS gate wires are 4.597 mm long.
+
+      - **2D_Case_6:** no (orientation, sequence) pair in the generator space matches the geometry. The
+      two switch blocks sit side by side, and their power wires run in opposite directions.
+
+      - **Not produced:** because both references stopped at the TwinError, there is no difference record,
+      no L1(W)/L1(ref), no per-net copper symmetric difference, no midpoint-split record, and degrade()
+      and its walk never ran.
+
+
+      The reconstructions themselves are finished and frozen:
+
+      - Facts were transcribed by hand from PowerSynth2-pkg at commit a1de7ced, with the sha256 of all
+      22 files read. Nothing from PowerSynth is in the repository.
+
+      - Each has AlN ceramic, a non-zero die attach (SAC305, 50 µm), terminals at the lead footprints,
+      gate wires as signal wires, gate copper as fixed keep-outs, and L_term = 7 nH. Neither has a Kelvin
+      source (both READMEs say so) or a diode die.
+
+      - Both are already on the 0.5, 0.25 and 0.125 mm grids: zero snap records at every grid, so s_ref
+      = 0.
+
+      - Each is DRC-clean under its own measured rules, exact on the l2_layout lattice at 0.5 and 0.25
+      mm, and accepted by thermal_fem.layout_grid at level 0.
+
+      - Reconstruction hashes: 2D_Case_2R 66cb1e19…696a, 2D_Case_6 71e07ae1…4cb7.
+
+      - Unknowns from l2_layout at 0.25 mm (mesh only, no solve): 2D_Case_2R 1,491,140, 2D_Case_6 1,095,080.
+
+
+      One modelling choice (M1) needs your attention. PowerSynth''s gate bond points imply that one switch''s
+      dies are turned 180° in each case. The dies must be identical, so I picked one orientation per reference
+      by a geometric rule fixed before any rule measurement or twin run: 0° for 2D_Case_2R and 180° for
+      2D_Case_6. At 0°, Case 6''s LS power wires would pass over the gate pads and the measured pitch
+      rule would fall to 0.015 mm. This choice moves only the gate pads and gate wires, not the loop inductance
+      or thermal inputs.
+
+
+      No inductance solve, thermal solve or search was run. L1 ran only inside twin() and degrade(), as
+      the twin-space check instructs.
+
+
+      Commands and exit codes:
+
+      - `uv run python experiments/runners/e008_run.py --verify-freeze` → 0
+
+      - `uv run python research/scripts/o003_powersynth_references.py --write` → 0 (65 s)
+
+      - `uv run python research/scripts/o003_powersynth_references.py --check --sources $TMPDIR/ps_t0263`
+      → 0
+
+      - `uv run python research/scripts/o003_powersynth_references.py --check` → 0
+
+      - `uv run ruff check research/scripts/o003_powersynth_references.py` → 0
+
+      - `uv run mfos gate --fast` → 0
+
+      - The work is committed as 77260d5b on the task branch.'
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: true
+    root_cause: Not a diagnosis task. The finding is that both D0010 public references fall outside the
+      frozen twin space. 2D_Case_2R fails because the twin's gate wires are shorter than the reference's
+      measured minimum gate-wire length. 2D_Case_6 fails because its interleaved switch-block geometry
+      matches no (orientation, sequence) pair in the generator.
+    evidence:
+    - 'e008_run.py --verify-freeze exit 0: all freeze hashes OK, including derivative.py a93effe5, twin.py
+      fd4ad327 and snap.py d75da78f'
+    - '2D_Case_2R prepare(): TwinError ''the fitted twin is not DRC-clean under spec.rules: signal_wire_length:
+      signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m'' (and the same for signal wire
+      3), at the LS gate pads (14.28, 21.25) and (23.28, 21.25) mm'
+    - '2D_Case_6 prepare(): TwinError ''no (orientation, sequence) of the generator space matches the
+      reference geometry'''
+    - snap_layout gives 0 records at 0.5, 0.25 and 0.125 mm for both references, and the snapped fingerprints
+      equal the built ones, so s_ref = 0
+    - measure_rules -> check() is empty for both references; the lattice area error is <= 1.1e-15 at 0.5
+      and 0.25 mm; layout_grid level 0 accepts both (estimated dofs 77,966 and 81,714)
+    - 'l2_layout unknowns at 0.25 mm (mesh only): 2R 1,491,140 (220x240 lattice, 100 filaments); Case
+      6 1,095,080 (240x160 lattice, 200 filaments)'
+    - 'M1 orientation scores (smallest gate-wire to power-wire plan distance): 2R 0.749 mm at 0° vs 0.570
+      mm at 180°; Case 6 0.015 mm at 0° vs 0.802 mm at 180°'
+    - Re-hashing all 22 downloaded PowerSynth files matched SOURCES_SHA256 (--check --sources exit 0)
+    - 'Each layout script defines only the power_lead, signal_lead and MOS parts: no diode dies'
+    alternative_explanations:
+    - explanation: The 2R TwinError could come from my modelling choice of gate-wire start (the part's
+        gate-pad centre, orientation 0°) rather than from the frozen rule/twin logic. A different pad
+        orientation changes the reference's gate-wire lengths.
+      how_to_discriminate: 'Rebuild 2R at 180° (a new reconstruction id, since this one is frozen), or
+        without signal wires (gate pads through extra_pads, as for Case 4), and rerun prepare(). Not run:
+        M1 was fixed before the twin ran, and post-hoc tuning is forbidden.'
+    - explanation: The Case 6 TwinError could come from the two-wire placement inside the 1x1 mm bond
+        points (M3) rather than from the geometry.
+      how_to_discriminate: M3 only spreads the wire feet across x, while the twin's anchors are ordered
+        along v (y). Checking twin.py's candidate filter against the anchor order HS landing 15.5 < LS
+        die row < HS die row < LS landing 24.5 would confirm it.
+    discriminating_tests:
+    - 'Under a new id, a 2R variant without signal wires (min_signal_wire_length stays None) run through
+      prepare(): does the fitted twin then pass DRC, and does degrade() succeed?'
+    - Trace twin.py's candidate filter for 2D_Case_6's four anchor v-values under both orientations to
+      confirm that all 16 pairs are rejected
+    recommended_actions:
+    - 'Founder: decide before registering E008. Every public reference raises TwinError, so E008 as drafted
+      would be INVALID under F1(a).'
+    - If the 2R gate-wire length rule is the blocker, options to weigh are modelling 2R's gate pads without
+      gate wires (as Case 4 does with extra_pads), or a re-frozen change to how measure_rules and the
+      twin treat signal-wire length. Either needs a new reconstruction or freeze id.
+    - 2D_Case_6 needs a wider generator space (frozen code) or exclusion. The reconstruction itself is
+      valid and can still serve O004.
+    - 'Re-run E008 --plan on these reconstructions. Its proxies (Case 4''s 4.1 M unknowns, on_grid false)
+      are wrong: the facts are about 1.5 M and 1.1 M unknowns at 0.25 mm, and on_grid true.'
+    - 'Give each reference its own F6(e) thermal spot check: their stack types are other:13fbac2ad296
+      and other:d34d9682c1b0.'
+    files_written:
+    - research/scripts/o003_powersynth_references.py
+    - research/o003/references/2D_Case_2R.json
+    - research/o003/references/2D_Case_6.json
+    - research/notes/o003-reference-reconstructions.md
+    experiment_drafts: []

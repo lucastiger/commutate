@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T06:23:12+00:00 from repository state — do not edit_
+_generated 2026-11-11T06:55:03+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -14,7 +14,7 @@ _generated 2026-11-11T06:23:12+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $154.86/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $158.57/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -25,7 +25,7 @@ _generated 2026-11-11T06:23:12+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 93 | $154.86 | 2537664 | 1301370 | 135 | 0 |
+| O003 | 94 | $158.57 | 2611153 | 1336767 | 135 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -33,14 +33,12 @@ _generated 2026-11-11T06:23:12+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 269, failed: 3, running: 1
+cancelled: 39, done: 269, failed: 3, review: 1, running: 1
 
-- T0263 `running` scientist/research: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 public fallback), snapped, with measured rules (attempt 1)
+- T0263 `review` scientist/research: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 public fallback), snapped, with measured rules (attempt 1)
+- T0313 `running` critic/review: Review T0263 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-11T04:27:42+00:00 task_amended {"task": "T0263", "reason": "waits for T0311 (stack-type signature rounding from review T0310) so F6(e) is settled before F3"}
-- 2026-11-11T04:33:00+00:00 inbox_resolved {"id": "I0168", "status": "approved", "note": "Merge the E008 runner fixes from reviews T0307/T0308. Critic T0310 accepts with caveats; its findings go to T0311
-- 2026-11-11T04:33:19+00:00 merged {"task": "T0309"}
 - 2026-11-11T04:33:19+00:00 inbox_opened {"id": "I0169", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T04:33:23+00:00 run_started {"run": "T0311-scientist-20261110T203323-e8b3", "task": "T0311", "role": "scientist", "session": "5ec62158-c0d6-4052-aea1-b79464859e29"}
 - 2026-11-11T04:57:48+00:00 run_finished {"run": "T0311-scientist-20261110T203323-e8b3", "status": "completed", "cost": 2.019112, "subtype": "success", "report": "structured_output"}
@@ -53,3 +51,6 @@ cancelled: 39, done: 269, failed: 3, running: 1
 - 2026-11-11T06:23:08+00:00 merged {"task": "T0311"}
 - 2026-11-11T06:23:08+00:00 inbox_opened {"id": "I0171", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T06:23:12+00:00 run_started {"run": "T0263-scientist-20261110T222312-321c", "task": "T0263", "role": "scientist", "session": "15fc6073-a969-4362-9054-0f93db2ec6ac"}
+- 2026-11-11T06:49:35+00:00 run_finished {"run": "T0263-scientist-20261110T222312-321c", "status": "completed", "cost": 3.70223, "subtype": "success", "report": "structured_output"}
+- 2026-11-11T06:54:58+00:00 verified {"task": "T0263"}
+- 2026-11-11T06:55:03+00:00 run_started {"run": "T0313-critic-20261110T225503-2965", "task": "T0313", "role": "critic", "session": "3befbdf5-572d-45d9-89e6-6b7bf046a6b8"}
