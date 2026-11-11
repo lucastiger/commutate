@@ -1,0 +1,321 @@
+{
+ "reference": "2D_Case_6",
+ "kind": "public",
+ "label": "public benchmarks, low power, indicative",
+ "source": {
+  "repo": "e3da/PowerSynth2-pkg",
+  "commit": "a1de7ced949c0fd0105d166767b1de8705eb65ab",
+  "dir": "work/Sample_Designs/2D_Case_6",
+  "license": "GPL-3.0 (facts only, D0007)",
+  "sha256": {
+   "README.txt": "01b492c503e655a69ee83c102c668948f346d881877ecab9250c5dba4e74fc81",
+   "layout_geometry_script.txt": "33abe28bd959fb960e70fd4a372e3d31e94fcdef4b3f0a65bd5c974919bfd7fb",
+   "layer_stack.csv": "e646fffc576047e525b3b2b6ceac048d07d569924c0b0dc0132831e5b883f45d",
+   "bond_wires_setup.txt": "d75f633a7cdbef609212b63e8e6d1d0c4a9a494c728d46a4a5c708056407be6e",
+   "constraint.csv": "7d9c18bb462864e1d0c42ed61bb9da446c8fa9763315a1d42f3d519653bfee86",
+   "macro_script.txt": "241831d6352a6b41dafefa3ec73c39959345de7bc7a1108463f6289c1aabcc63",
+   "Trace_Ori.txt": "f9647668330aa18bd0df2e5f6672730cd8cc13bfa7f96fe23ada7ae094960bdd",
+   "Part_Lib/MOSFET.part": "ae226bc07c737c25a13f28212b2c711633a375df408e6d6114d4fc8c26ec1533",
+   "Part_Lib/power_lead.part": "416ec39693c0535f2424da7ffc61cc8b3c40a479d0ba81d0a1a307164caf53ee",
+   "Part_Lib/signal_lead.part": "aee35aed62b5917ae066b05cf1c1142014d3451f178cd037068d63a1fef2e232",
+   "Wire_Lib/bond_wire_info.wire": "b03a77ca662fa66d28f0e8074e9ca6d2fdaf588c5ba13af369e56269100e3ed1"
+  }
+ },
+ "admissibility": {
+  "admissible": true,
+  "diode_dies": 0,
+  "dies": {
+   "D1": "HS",
+   "D2": "HS",
+   "D3": "LS",
+   "D4": "LS"
+  },
+  "reason": "public reference; only MOS dies (layout script defines power_lead, signal_lead, MOS)"
+ },
+ "L_term_H": 7e-09,
+ "orientation_deg": 180,
+ "orientation_scores_mm": {
+  "0": 0.014751050944193447,
+  "180": 0.8018143852239381
+ },
+ "fingerprint_unsnapped": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+ "reconstruction_hash": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+ "on_grid_0p5": true,
+ "s_ref_zero": true,
+ "snap": {
+  "0.5mm": {
+   "fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": [
+    {
+     "rule": "wire_pitch",
+     "message": "wires 0/1 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 2/3 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 4/5 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 6/7 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    }
+   ]
+  },
+  "0.25mm": {
+   "fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": [
+    {
+     "rule": "wire_pitch",
+     "message": "wires 0/1 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 2/3 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 4/5 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 6/7 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    }
+   ]
+  },
+  "0.125mm": {
+   "fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": [
+    {
+     "rule": "wire_pitch",
+     "message": "wires 0/1 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 2/3 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 4/5 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    },
+    {
+     "rule": "wire_pitch",
+     "message": "wires 6/7 pitch 5.000e-04 m < 6.000e-04 m",
+     "origin": "pre-existing"
+    }
+   ]
+  }
+ },
+ "measured_rules": {
+  "min_trace_width": 0.002999534,
+  "min_spacing": 0.000999999,
+  "edge_margin": 0.000999999,
+  "die_edge_margin": 0.000999999,
+  "die_spacing": 0.001999999,
+  "min_wire_length": 0.0015,
+  "max_wire_length": 0.015,
+  "min_wire_pitch": 0.0005,
+  "wire_landing_margin": 0.0003,
+  "wire_pitch_diameters": 1.666666666,
+  "min_wire_diameter": 0.0001,
+  "max_wire_diameter": 0.0005,
+  "die_terminal_clearance": 0.001,
+  "wire_start_margin": 0.00015,
+  "spacing_dcp_phase": 0.001,
+  "spacing_phase_dcm": 0.001,
+  "spacing_dcp_dcm": 0.001,
+  "spacing_other": 0.000999999,
+  "spacing_signal_dcp": 0.000999999,
+  "spacing_signal_phase": 0.000999999,
+  "spacing_signal_dcm": 0.008,
+  "spacing_signal_source": 0.009433981,
+  "spacing_signal_hs_ls": 0.014317821,
+  "min_width_power": 0.003000028,
+  "min_width_other": 0.002999534,
+  "max_gate_wire_length": 0.00833008,
+  "max_kelvin_wire_length": null,
+  "min_signal_wire_diameter": 0.0003,
+  "max_signal_wire_diameter": 0.0003,
+  "min_signal_wire_length": 0.004123236,
+  "max_signal_wire_length": 0.00833008
+ },
+ "measured_rules_record": {
+  "gap_dcp_phase": 0.0010000000000000009,
+  "gap_phase_dcm": 0.0010000000000000009,
+  "gap_dcp_dcm": 0.0010000000000000009,
+  "gap_signal_dcp": 0.0009999999999999972,
+  "gap_signal_phase": 0.0009999999999999992,
+  "gap_signal_dcm": 0.008,
+  "gap_signal_source": 0.009433981132056605,
+  "gap_signal_hs_ls": 0.014317821063276353,
+  "gap_other_min": 0.0009999999999999974,
+  "signal_wire_diameter_range": [
+   0.0003,
+   0.0003
+  ],
+  "n_nonpositive_signal_wire_diameters": 0,
+  "signal_wire_length_range": [
+   0.004123236470389644,
+   0.008330079182510318
+  ],
+  "min_width_power": 0.003000028564453126,
+  "min_width_other": 0.002999534667968749,
+  "min_wire_pitch": 0.0005000000000000004,
+  "min_wire_pitch_diameters": 1.6666666666666683,
+  "die_spacing": 0.001999999999999995,
+  "die_edge_margin": 0.0009999999999999972,
+  "edge_margin": 0.0009999999999999998,
+  "longest_gate_wire": 0.008330079182510318,
+  "longest_kelvin_wire": null,
+  "max_gate_pad_to_copper": 0.006999999999999999,
+  "max_kelvin_pad_to_copper": null,
+  "signal_unmeasured": {},
+  "n_traces": 7,
+  "n_dies": 4,
+  "n_wires": 8,
+  "n_signal_wires": 4
+ },
+ "drc_own_rules": [],
+ "keepout_nets": [
+  "SIG_T8",
+  "GATE_LS",
+  "GATE_HS",
+  "SIG_T10"
+ ],
+ "spec": {
+  "wires_per_die": 2,
+  "dies_per_switch": 2,
+  "wire_diameter_mm": 0.3,
+  "loop_height_mm": 1.0,
+  "signal_wire_diameter_mm": 0.3,
+  "die_pads_rel_centre_mm": {
+   "source": [
+    -1.835,
+    -1.85,
+    1.665,
+    2.65
+   ],
+   "gate": [
+    0.47,
+    -2.5,
+    0.97,
+    -2.0
+   ]
+  },
+  "die_thickness_mm": 0.18,
+  "attach_thickness_mm": 0.05,
+  "keepouts": [
+   "SIG_T8",
+   "GATE_LS",
+   "GATE_HS",
+   "SIG_T10"
+  ],
+  "terminals": [
+   "DC+",
+   "DC-",
+   "PHASE"
+  ]
+ },
+ "copper_mm2": {
+  "PHASE": 401.0,
+  "DC+": 256.0,
+  "DC-": 209.0,
+  "SIG_T8": 72.0,
+  "GATE_LS": 72.0,
+  "GATE_HS": 57.0,
+  "SIG_T10": 57.0
+ },
+ "wire_lengths_mm": [
+  5.4562,
+  5.4562,
+  5.4562,
+  5.4562,
+  5.4562,
+  5.4562,
+  5.4562,
+  5.4562
+ ],
+ "signal_wire_lengths_mm": [
+  8.3301,
+  8.3301,
+  4.1232,
+  4.1232
+ ],
+ "stack": [
+  {
+   "name": "baseplate",
+   "material": "Cu",
+   "thickness_mm": 1.0,
+   "k": 385.0
+  },
+  {
+   "name": "solder",
+   "material": "SAC305",
+   "thickness_mm": 0.001,
+   "k": 58.0
+  },
+  {
+   "name": "backside_cu",
+   "material": "Cu",
+   "thickness_mm": 0.2,
+   "k": 385.0
+  },
+  {
+   "name": "ceramic",
+   "material": "AlN",
+   "thickness_mm": 0.64,
+   "k": 170.0
+  },
+  {
+   "name": "top_cu",
+   "material": "Cu",
+   "thickness_mm": 0.2,
+   "k": 385.0
+  }
+ ],
+ "l2_unknowns_0p25mm": {
+  "cell_mm": 0.25,
+  "nx": 240,
+  "ny": 160,
+  "n_grid": 1094880,
+  "n_filaments": 200,
+  "n_unknowns": 1095080
+ },
+ "lattice_area_rel_err": {
+  "0.5mm": 1.0699363544264836e-15,
+  "0.25mm": 1.0699363544264836e-15
+ },
+ "thermal_level0": {
+  "accepted": true,
+  "estimate_dofs_level0": 81714
+ },
+ "twin_space_check": {
+  "stack_type": "other:d34d9682c1b0",
+  "fail_fast": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+  "twin_s": null,
+  "degrade_s": null,
+  "midpoint_decided_splits": null,
+  "twin_copper": null,
+  "walk": null,
+  "rule_strictness": null
+ }
+}

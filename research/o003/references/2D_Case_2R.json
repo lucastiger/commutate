@@ -1,0 +1,248 @@
+{
+ "reference": "2D_Case_2R",
+ "kind": "public",
+ "label": "public benchmarks, low power, indicative",
+ "source": {
+  "repo": "e3da/PowerSynth2-pkg",
+  "commit": "a1de7ced949c0fd0105d166767b1de8705eb65ab",
+  "dir": "work/Sample_Designs/2D_Case_2R",
+  "license": "GPL-3.0 (facts only, D0007)",
+  "sha256": {
+   "README.txt": "af2df9df7fc70c9989a6ffc657d68a24bf063882e65eb79a10164a693d806342",
+   "layout_geometry_script.txt": "972984bec3df2564c4d0f9c9cf27b737d3f57093df60ba89d8a87aa81e20eda1",
+   "layer_stack.csv": "668b391d5a059d0f0460de32ae29b18d4ff4a197afebbea17220231cb5da4699",
+   "bond_wires_setup.txt": "5ae694adc276f02e2c2ca68874603167fbdaf8cb723c1591e45b2cddb49b867a",
+   "constraint.csv": "35b842ae590eca0f55fab7792080500a38d7a87b18edde0369e5d26b2f55695e",
+   "macro_script.txt": "e9097e120c64425dff2d3f1f28a5e01c2f2254a09279af106514f21dae8418d5",
+   "Trace_Ori.txt": "b75cfc2681d215fdedbe8cd410a98d21cb0145c0b5a93400e05c5c9dacb971b4",
+   "Part_Lib/MOSFET.part": "ae226bc07c737c25a13f28212b2c711633a375df408e6d6114d4fc8c26ec1533",
+   "Part_Lib/power_lead.part": "416ec39693c0535f2424da7ffc61cc8b3c40a479d0ba81d0a1a307164caf53ee",
+   "Part_Lib/signal_lead.part": "aee35aed62b5917ae066b05cf1c1142014d3451f178cd037068d63a1fef2e232",
+   "Wire_Lib/bond_wire_info.wire": "b03a77ca662fa66d28f0e8074e9ca6d2fdaf588c5ba13af369e56269100e3ed1"
+  }
+ },
+ "admissibility": {
+  "admissible": true,
+  "diode_dies": 0,
+  "dies": {
+   "D1": "LS",
+   "D2": "LS",
+   "D3": "HS",
+   "D4": "HS"
+  },
+  "reason": "public reference; only MOS dies (layout script defines power_lead, signal_lead, MOS)"
+ },
+ "L_term_H": 7e-09,
+ "orientation_deg": 0,
+ "orientation_scores_mm": {
+  "0": 0.748508938521707,
+  "180": 0.5700530618773015
+ },
+ "fingerprint_unsnapped": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+ "reconstruction_hash": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+ "on_grid_0p5": true,
+ "s_ref_zero": true,
+ "snap": {
+  "0.5mm": {
+   "fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": []
+  },
+  "0.25mm": {
+   "fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": []
+  },
+  "0.125mm": {
+   "fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "n_records": 0,
+   "records": [],
+   "violations_default_rules": []
+  }
+ },
+ "measured_rules": {
+  "min_trace_width": 0.003999046,
+  "min_spacing": 0.001999999,
+  "edge_margin": 0.001999999,
+  "die_edge_margin": 0.000999999,
+  "die_spacing": 0.004,
+  "min_wire_length": 0.0015,
+  "max_wire_length": 0.015,
+  "min_wire_pitch": 0.000748508,
+  "wire_landing_margin": 0.0003,
+  "wire_pitch_diameters": 2.495029795,
+  "min_wire_diameter": 0.0001,
+  "max_wire_diameter": 0.0005,
+  "die_terminal_clearance": 0.001,
+  "wire_start_margin": 0.00015,
+  "spacing_dcp_phase": 0.002,
+  "spacing_phase_dcm": 0.001999999,
+  "spacing_dcp_dcm": 0.023999999,
+  "spacing_other": null,
+  "spacing_signal_dcp": 0.001999999,
+  "spacing_signal_phase": 0.002,
+  "spacing_signal_dcm": 0.018,
+  "spacing_signal_source": 0.003999999,
+  "spacing_signal_hs_ls": 0.001999999,
+  "min_width_power": 0.003999689,
+  "min_width_other": 0.003999046,
+  "max_gate_wire_length": 0.010395983,
+  "max_kelvin_wire_length": null,
+  "min_signal_wire_diameter": 0.0003,
+  "max_signal_wire_diameter": 0.0003,
+  "min_signal_wire_length": 0.005343747,
+  "max_signal_wire_length": 0.010395983
+ },
+ "measured_rules_record": {
+  "gap_dcp_phase": 0.0020000000000000018,
+  "gap_phase_dcm": 0.0019999999999999983,
+  "gap_dcp_dcm": 0.023999999999999994,
+  "gap_signal_dcp": 0.001999999999999995,
+  "gap_signal_phase": 0.0020000000000000018,
+  "gap_signal_dcm": 0.018,
+  "gap_signal_source": 0.003999999999999997,
+  "gap_signal_hs_ls": 0.0019999999999999983,
+  "gap_other_min": null,
+  "signal_wire_diameter_range": [
+   0.0003,
+   0.0003
+  ],
+  "n_nonpositive_signal_wire_diameters": 0,
+  "signal_wire_length_range": [
+   0.005343747255265294,
+   0.010395982008944099
+  ],
+  "min_width_power": 0.0039996899414062505,
+  "min_width_other": 0.00399904638671875,
+  "min_wire_pitch": 0.0007485089385217067,
+  "min_wire_pitch_diameters": 2.4950297950723557,
+  "die_spacing": 0.0040000000000000036,
+  "die_edge_margin": 0.0009999999999999937,
+  "edge_margin": 0.0019999999999999996,
+  "longest_gate_wire": 0.010395982008944099,
+  "longest_kelvin_wire": null,
+  "max_gate_pad_to_copper": 0.008,
+  "max_kelvin_pad_to_copper": null,
+  "signal_unmeasured": {},
+  "n_traces": 5,
+  "n_dies": 4,
+  "n_wires": 4,
+  "n_signal_wires": 4
+ },
+ "drc_own_rules": [],
+ "keepout_nets": [
+  "GATE_LS",
+  "GATE_HS"
+ ],
+ "spec": {
+  "wires_per_die": 1,
+  "dies_per_switch": 2,
+  "wire_diameter_mm": 0.3,
+  "loop_height_mm": 1.0,
+  "signal_wire_diameter_mm": 0.3,
+  "die_pads_rel_centre_mm": {
+   "source": [
+    -1.665,
+    -2.65,
+    1.835,
+    1.85
+   ],
+   "gate": [
+    -0.97,
+    2.0,
+    -0.47,
+    2.5
+   ]
+  },
+  "die_thickness_mm": 0.18,
+  "attach_thickness_mm": 0.05,
+  "keepouts": [
+   "GATE_LS",
+   "GATE_HS"
+  ],
+  "terminals": [
+   "DC+",
+   "DC-",
+   "PHASE"
+  ]
+ },
+ "copper_mm2": {
+  "DC-": 240.0,
+  "PHASE": 720.0,
+  "DC+": 208.0,
+  "GATE_LS": 104.0,
+  "GATE_HS": 104.0
+ },
+ "wire_lengths_mm": [
+  5.0,
+  5.0,
+  6.3874,
+  6.3874
+ ],
+ "signal_wire_lengths_mm": [
+  5.4082,
+  5.3437,
+  10.396,
+  10.396
+ ],
+ "stack": [
+  {
+   "name": "baseplate",
+   "material": "Cu",
+   "thickness_mm": 1.0,
+   "k": 385.0
+  },
+  {
+   "name": "solder",
+   "material": "SAC305",
+   "thickness_mm": 0.001,
+   "k": 58.0
+  },
+  {
+   "name": "backside_cu",
+   "material": "Cu",
+   "thickness_mm": 0.2,
+   "k": 385.0
+  },
+  {
+   "name": "ceramic",
+   "material": "AlN",
+   "thickness_mm": 0.835,
+   "k": 170.0
+  },
+  {
+   "name": "top_cu",
+   "material": "Cu",
+   "thickness_mm": 0.2,
+   "k": 385.0
+  }
+ ],
+ "l2_unknowns_0p25mm": {
+  "cell_mm": 0.25,
+  "nx": 220,
+  "ny": 240,
+  "n_grid": 1491040,
+  "n_filaments": 100,
+  "n_unknowns": 1491140
+ },
+ "lattice_area_rel_err": {
+  "0.5mm": 1.0425020889283686e-15,
+  "0.25mm": 1.0425020889283686e-15
+ },
+ "thermal_level0": {
+  "accepted": true,
+  "estimate_dofs_level0": 77966
+ },
+ "twin_space_check": {
+  "stack_type": "other:13fbac2ad296",
+  "fail_fast": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+  "twin_s": null,
+  "degrade_s": null,
+  "midpoint_decided_splits": null,
+  "twin_copper": null,
+  "walk": null,
+  "rule_strictness": null
+ }
+}
