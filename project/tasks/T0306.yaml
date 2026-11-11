@@ -4,7 +4,7 @@ title: 'E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness
   reporting, FV cost basis (reviews T0304, T0305)'
 type: design_experiment
 agent: scientist
-status: running
+status: todo
 depends_on:
 - T0262
 description: "Follow-up to T0262 from its reviews T0304 (physics) and T0305 (numerics), both accept_with_caveats\n\
@@ -80,7 +80,7 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0306-e008-runner-f6-e-per-stack-type-f6-c-on-
 pr: null
@@ -97,4 +97,11 @@ rationale: Reviews T0304/T0305 found a gated validity check (F6(e)) narrowed to 
   not applied to the spot-check solves, an empty promised report, selftests that share code with the implementation,
   and a placeholder that drives half the cost. Fixed before T0263 loads the judged references, under the
   session review policy.
-history: []
+history:
+- outcome: capacity_backoff
+  summary: 'ER_CERT_LOCALLY). The certificate comes from an authority Claude Code doesn''t trust, usually
+    a TLS-inspecting corporate proxy or a gateway signed by a private CA: set NODE_EXTRA_CA_CERTS to that
+    CA bundle, or add it to the system certificate store · see https://code.claude.com/docs/en/network-config'
+  at: '2026-11-11T01:25:33+00:00'
+  until: '2026-11-11T01:30:33.550197+00:00'
+  session: null
