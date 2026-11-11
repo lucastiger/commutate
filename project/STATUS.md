@@ -1,13 +1,12 @@
 # ModuleForge status
-_generated 2026-11-11T09:01:13+00:00 from repository state — do not edit_
+_generated 2026-11-11T09:01:53+00:00 from repository state — do not edit_
 
-## Founder inbox (6 open)
+## Founder inbox (5 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
-- **I0172** [protected_change] T0263: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -34,13 +33,10 @@ _generated 2026-11-11T09:01:13+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 270, failed: 3, needs_founder: 1
+cancelled: 39, done: 271, failed: 3
 
-- T0263 `needs_founder` scientist/research: Frozen reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6 (D0010 public fallback), snapped, with measured rules (attempt 1)
 
 ## Recent events
-- 2026-11-11T05:08:46+00:00 verified {"task": "T0311"}
-- 2026-11-11T05:08:52+00:00 run_started {"run": "T0312-critic-20261110T210852-0ba9", "task": "T0312", "role": "critic", "session": "ba45f8e8-f8a8-4c10-a3da-11890d3cbb46"}
 - 2026-11-11T05:09:26+00:00 sleep_detected {"gap_s": 718, "runs_extended": 1}
 - 2026-11-11T05:15:56+00:00 run_finished {"run": "T0312-critic-20261110T210852-0ba9", "status": "completed", "cost": 2.578585, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T05:16:00+00:00 inbox_opened {"id": "I0170", "kind": "protected_change", "subject": "T0311: merge needs founder approval"}
@@ -54,3 +50,5 @@ cancelled: 39, done: 270, failed: 3, needs_founder: 1
 - 2026-11-11T06:55:37+00:00 sleep_detected {"gap_s": 364, "runs_extended": 1}
 - 2026-11-11T07:02:29+00:00 run_finished {"run": "T0313-critic-20261110T225503-2965", "status": "completed", "cost": 2.034329, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T07:02:33+00:00 inbox_opened {"id": "I0172", "kind": "protected_change", "subject": "T0263: merge needs founder approval"}
+- 2026-11-11T09:01:42+00:00 inbox_resolved {"id": "I0172", "status": "approved", "note": "Merge the frozen 2D_Case_2R and 2D_Case_6 reconstructions. Critic T0313 confirms both fail E008's twin check; E00
+- 2026-11-11T09:01:50+00:00 merged {"task": "T0263"}
