@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T09:01:53+00:00 from repository state — do not edit_
+_generated 2026-11-11T15:54:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -37,7 +37,6 @@ cancelled: 39, done: 271, failed: 3
 
 
 ## Recent events
-- 2026-11-11T05:09:26+00:00 sleep_detected {"gap_s": 718, "runs_extended": 1}
 - 2026-11-11T05:15:56+00:00 run_finished {"run": "T0312-critic-20261110T210852-0ba9", "status": "completed", "cost": 2.578585, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T05:16:00+00:00 inbox_opened {"id": "I0170", "kind": "protected_change", "subject": "T0311: merge needs founder approval"}
 - 2026-11-11T06:23:00+00:00 inbox_resolved {"id": "I0170", "status": "approved", "note": "Merge the stack-type rounding fix (review T0310). Critic T0312 accepts with caveats; test-only items go to the fu
@@ -52,3 +51,4 @@ cancelled: 39, done: 271, failed: 3
 - 2026-11-11T07:02:33+00:00 inbox_opened {"id": "I0172", "kind": "protected_change", "subject": "T0263: merge needs founder approval"}
 - 2026-11-11T09:01:42+00:00 inbox_resolved {"id": "I0172", "status": "approved", "note": "Merge the frozen 2D_Case_2R and 2D_Case_6 reconstructions. Critic T0313 confirms both fail E008's twin check; E00
 - 2026-11-11T09:01:50+00:00 merged {"task": "T0263"}
+- 2026-11-11T15:54:52+00:00 inbox_resolved {"id": "I0140", "status": "answered", "note": "No admissible customer layout by 2026-11-12. Public reference set under review: NC State PREES (Prof. Hopkins) pu
