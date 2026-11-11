@@ -1,0 +1,4542 @@
+{
+ "R2": "skipped: no citable physical minimum gate-wire length for 0.30 mm Al wedge bonds was found (one web search; the Tyndall design-rule PDF returned 404); DesignRules.min_wire_length 1.5 mm is a placeholder, not a source",
+ "degrade_ratio": 1.25,
+ "effective_default": {
+  "die_edge_margin": 0.001,
+  "die_spacing": 0.001,
+  "edge_margin": 0.001,
+  "max_gate_wire_length": null,
+  "max_kelvin_wire_length": null,
+  "max_signal_wire_diameter": null,
+  "max_signal_wire_length": null,
+  "min_signal_wire_diameter": null,
+  "min_signal_wire_length": null,
+  "min_spacing": 0.001,
+  "min_trace_width": 0.001,
+  "min_width_other": 0.001,
+  "min_width_power": 0.001,
+  "min_wire_pitch": 0.0006,
+  "spacing_dcp_dcm": 0.001,
+  "spacing_dcp_phase": 0.001,
+  "spacing_other": 0.001,
+  "spacing_phase_dcm": 0.001,
+  "spacing_signal_dcm": 0.001,
+  "spacing_signal_dcp": 0.001,
+  "spacing_signal_hs_ls": 0.001,
+  "spacing_signal_phase": 0.001,
+  "spacing_signal_source": 0.001,
+  "wire_pitch_diameters": 2.0
+ },
+ "layouts": {
+  "2D_Case_2R": {
+   "checklist_facts": {
+    "die_rows_collinear_in_orientation": [
+     0
+    ],
+    "dies_per_switch": 2,
+    "holes_per_power_net": {
+     "DC+": 0,
+     "DC-": 0,
+     "PHASE": 0
+    },
+    "identical_dies": true,
+    "islands_per_power_net": {
+     "DC+": 1,
+     "DC-": 1,
+     "PHASE": 1
+    },
+    "keepout_nets": [
+     "GATE_HS",
+     "GATE_LS"
+    ],
+    "kelvin_pads": false,
+    "n_dies": 4,
+    "n_signal_wires": 4,
+    "power_wires_per_die": [
+     1
+    ],
+    "signal_wire_plan_excess_over_nearest_copper_mm": [
+     1.197691381,
+     1.12746348,
+     1.910199309,
+     1.910199309
+    ],
+    "terminals": [
+     "DC+",
+     "DC-",
+     "PHASE"
+    ]
+   },
+   "construction": "spec_from_layout(snapped reconstruction, measure_rules(...)[0], KEEPOUT_NETS)",
+   "reconstruction_fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "rules_R0": {
+    "die_edge_margin": 0.000999999,
+    "die_spacing": 0.004,
+    "die_terminal_clearance": 0.001,
+    "edge_margin": 0.001999999,
+    "max_gate_wire_length": 0.010395983,
+    "max_kelvin_wire_length": null,
+    "max_signal_wire_diameter": 0.0003,
+    "max_signal_wire_length": 0.010395983,
+    "max_wire_diameter": 0.0005,
+    "max_wire_length": 0.015,
+    "min_signal_wire_diameter": 0.0003,
+    "min_signal_wire_length": 0.005343747,
+    "min_spacing": 0.001999999,
+    "min_trace_width": 0.003999046,
+    "min_width_other": 0.003999046,
+    "min_width_power": 0.003999689,
+    "min_wire_diameter": 0.0001,
+    "min_wire_length": 0.0015,
+    "min_wire_pitch": 0.000748508,
+    "spacing_dcp_dcm": 0.023999999,
+    "spacing_dcp_phase": 0.002,
+    "spacing_other": null,
+    "spacing_phase_dcm": 0.001999999,
+    "spacing_signal_dcm": 0.018,
+    "spacing_signal_dcp": 0.001999999,
+    "spacing_signal_hs_ls": 0.001999999,
+    "spacing_signal_phase": 0.002,
+    "spacing_signal_source": 0.003999999,
+    "wire_landing_margin": 0.0003,
+    "wire_pitch_diameters": 2.495029795,
+    "wire_start_margin": 0.00015
+   },
+   "variants": {
+    "R0": {
+     "changed": {},
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R1": {
+     "changed": {
+      "min_signal_wire_length": [
+       0.005343747,
+       null
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.3947408,
+      "moves": [
+       "spread[2,up]x1mm",
+       "spread[3,up]x1mm",
+       "walk[col_PHASE_u0+0.5mm] x8",
+       "walk[col_PHASE_u1-0.5mm] x4",
+       "walk[land_HS+0.5mm] x4"
+      ],
+      "n_walk_steps": 16,
+      "reaches_target": true,
+      "skipped": [
+       {
+        "move": "narrow_landing",
+        "rules": [
+         "min_spacing",
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "centre_landing",
+        "rules": [
+         "min_spacing",
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "edge_margin",
+         "min_spacing",
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing",
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "edge_margin",
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing",
+         "min_trace_width"
+        ]
+       }
+      ],
+      "stopped": [
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_trace_width"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "edge_margin"
+        ]
+       }
+      ],
+      "target": 1.3875,
+      "walk_start_ratio": 1.043743839,
+      "walk_terminal": "target_reached",
+      "widths": {}
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 208.0,
+        "twin": 208.0
+       },
+       "DC-": {
+        "reference": 240.0,
+        "twin": 240.0
+       },
+       "PHASE": {
+        "reference": 720.0,
+        "twin": 720.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 7.94410929e-15,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": null,
+     "l1_W_over_ref": 1.0,
+     "l1_reference_nH": 11.16985032,
+     "l1_twin_nH": 11.16985032,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/DC-l-PHASEd-DC+d-PHASEl/split",
+     "twin_mode": "fit",
+     "twin_signal_wire_lengths_mm": [
+      8.828349065,
+      8.828349065,
+      4.596822856,
+      4.596822856
+     ]
+    },
+    "R2": {
+     "skipped": "skipped: no citable physical minimum gate-wire length for 0.30 mm Al wedge bonds was found (one web search; the Tyndall design-rule PDF returned 404); DesignRules.min_wire_length 1.5 mm is a placeholder, not a source"
+    },
+    "R3:die_edge_margin": {
+     "changed": {
+      "die_edge_margin": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:die_spacing": {
+     "changed": {
+      "die_spacing": [
+       0.004,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:edge_margin": {
+     "changed": {
+      "edge_margin": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:max_gate_wire_length": {
+     "changed": {
+      "max_gate_wire_length": [
+       0.010395983,
+       null
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:max_signal_wire_diameter": {
+     "changed": {
+      "max_signal_wire_diameter": [
+       0.0003,
+       null
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:max_signal_wire_length": {
+     "changed": {
+      "max_signal_wire_length": [
+       0.010395983,
+       null
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:min_signal_wire_diameter": {
+     "changed": {
+      "min_signal_wire_diameter": [
+       0.0003,
+       null
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:min_signal_wire_length": {
+     "changed": {
+      "min_signal_wire_length": [
+       0.005343747,
+       null
+      ]
+     },
+     "same_effective_rules_as": "R1"
+    },
+    "R3:min_spacing": {
+     "changed": {
+      "min_spacing": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:min_trace_width": {
+     "changed": {
+      "min_trace_width": [
+       0.003999046,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:min_width_other": {
+     "changed": {
+      "min_width_other": [
+       0.003999046,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:min_width_power": {
+     "changed": {
+      "min_width_power": [
+       0.003999689,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:min_wire_pitch": {
+     "changed": {
+      "min_wire_pitch": [
+       0.000748508,
+       0.0006
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_dcp_dcm": {
+     "changed": {
+      "spacing_dcp_dcm": [
+       0.023999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_dcp_phase": {
+     "changed": {
+      "spacing_dcp_phase": [
+       0.002,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_other": {
+     "changed": {
+      "spacing_other": [
+       null,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R3:min_spacing"
+    },
+    "R3:spacing_phase_dcm": {
+     "changed": {
+      "spacing_phase_dcm": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_dcm": {
+     "changed": {
+      "spacing_signal_dcm": [
+       0.018,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_dcp": {
+     "changed": {
+      "spacing_signal_dcp": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_hs_ls": {
+     "changed": {
+      "spacing_signal_hs_ls": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_phase": {
+     "changed": {
+      "spacing_signal_phase": [
+       0.002,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_source": {
+     "changed": {
+      "spacing_signal_source": [
+       0.003999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    },
+    "R3:wire_pitch_diameters": {
+     "changed": {
+      "wire_pitch_diameters": [
+       2.495029795,
+       2.0
+      ]
+     },
+     "error": "TwinError: the fitted twin is not DRC-clean under spec.rules: Violation(rule='signal_wire_length', message='signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.01428, 0.02125)); Violation(rule='signal_wire_length', message='signal wire 3 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m', where=(0.023280000000000002, 0.02125))",
+     "error_rules": [
+      "signal_wire_length"
+     ],
+     "twin_mode": null
+    }
+   }
+  },
+  "2D_Case_4": {
+   "checklist_facts": {
+    "die_rows_collinear_in_orientation": [
+     0
+    ],
+    "dies_per_switch": 2,
+    "holes_per_power_net": {
+     "DC+": 0,
+     "DC-": 0,
+     "PHASE": 0
+    },
+    "identical_dies": true,
+    "islands_per_power_net": {
+     "DC+": 1,
+     "DC-": 1,
+     "PHASE": 1
+    },
+    "keepout_nets": [
+     "GATE_HS",
+     "GATE_LS",
+     "KELVIN_HS",
+     "KELVIN_LS"
+    ],
+    "kelvin_pads": true,
+    "n_dies": 4,
+    "n_signal_wires": 0,
+    "power_wires_per_die": [
+     1
+    ],
+    "signal_wire_plan_excess_over_nearest_copper_mm": [],
+    "terminals": [
+     "DC+",
+     "DC-",
+     "PHASE"
+    ]
+   },
+   "construction": "e008_run.dev_reference('case4', E008.yaml config): measure_rules + dev rule_overrides, assumed gate/Kelvin pads, 25 mm signal limit",
+   "prototypes": {
+    "P1_extended_walk_from_frozen_terminal": {
+     "drc_clean_under_R0": true,
+     "n_steps": 25,
+     "ratio": 1.260181676,
+     "reaches_target": false,
+     "start_ratio": 1.231637175,
+     "steps": [
+      "row_LS_u0+3mm",
+      "col_DC-_v1-1mm",
+      "slot0_u1-1mm",
+      "col_PHASE_v0+4mm",
+      "slot3_u0+3.5mm",
+      "col_DC+_v1-5mm",
+      "slot3_u0+1.5mm",
+      "slot0_u1-4mm",
+      "col_PHASE_v0+1mm",
+      "col_DC+_v0+1.5mm",
+      "slot0_u0+1mm",
+      "col_DC-_v0+2mm",
+      "col_DC+_v0+4mm",
+      "col_DC+_v0+3mm",
+      "slot1_u1+2mm",
+      "slot3_u1-5mm x2",
+      "slot3_u1-1mm",
+      "col_PHASE_v1-2mm",
+      "col_DC-_v0+4mm x5",
+      "col_DC-_v0+3mm"
+     ],
+     "terminal": "local_maximum",
+     "terminal_params": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      10.0,
+      63.0,
+      15.0,
+      75.0,
+      10.0,
+      35.0,
+      15.0,
+      48.5,
+      57.0,
+      35.0,
+      62.0,
+      95.5,
+      26.0,
+      30.0,
+      57.0,
+      40.0,
+      10.0,
+      44.5,
+      54.0,
+      49.5,
+      25.0,
+      54.5,
+      62.0,
+      59.5,
+      15.0,
+      70.0,
+      40.5,
+      80.0,
+      24.5,
+      72.0,
+      6.0,
+      39.0,
+      32.0,
+      6.0,
+      55.625,
+      49.125,
+      -0.96,
+      1.0,
+      0.0,
+      -1.475,
+      0.0,
+      0.0,
+      -0.71,
+      1.0,
+      0.0,
+      0.525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.25,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "P2_extended_walk_from_walk_start": {
+     "drc_clean_under_R0": true,
+     "n_steps": 35,
+     "ratio": 1.240382485,
+     "reaches_target": false,
+     "start_ratio": 0.996459712,
+     "steps": [
+      "col_DC-_u1-5mm",
+      "col_PHASE_u1-5mm",
+      "col_DC+_u1-5mm",
+      "land_LS+2mm",
+      "row_LS_u0+5mm",
+      "land_HS-1.5mm",
+      "rigid_slot1+0.5mm",
+      "row_LS_u0+5mm",
+      "row_HS_u0-3.5mm",
+      "col_DC-_v1-1mm",
+      "slot0_u1-5mm",
+      "slot0_u1-1mm",
+      "row_LS_u0+1mm",
+      "slot2_u1-5mm",
+      "col_PHASE_v0+4mm",
+      "slot3_u0+3.5mm",
+      "col_DC+_v1-5mm",
+      "slot3_u0+1.5mm",
+      "col_DC+_v0+5mm",
+      "slot0_u0+1mm",
+      "col_DC-_v0+2mm",
+      "col_DC+_v0+3mm",
+      "slot3_u1-1.5mm",
+      "slot3_u1-4mm",
+      "slot3_u1-5mm",
+      "slot3_u1-1mm",
+      "col_PHASE_v1-2.5mm",
+      "col_DC-_v0+4mm x5",
+      "col_DC-_v0+3mm",
+      "col_PHASE_v1-4mm x2"
+     ],
+     "terminal": "local_maximum",
+     "terminal_params": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      10.0,
+      63.0,
+      15.0,
+      75.0,
+      10.0,
+      35.0,
+      15.0,
+      49.0,
+      55.0,
+      34.0,
+      60.0,
+      87.5,
+      26.0,
+      30.0,
+      59.0,
+      40.0,
+      10.0,
+      45.0,
+      52.0,
+      50.0,
+      25.0,
+      54.5,
+      60.0,
+      59.5,
+      15.0,
+      70.0,
+      40.5,
+      80.0,
+      24.5,
+      72.0,
+      6.0,
+      39.0,
+      32.0,
+      6.0,
+      55.625,
+      49.625,
+      -0.96,
+      1.0,
+      0.0,
+      -1.475,
+      0.0,
+      0.0,
+      -0.71,
+      1.0,
+      0.0,
+      0.525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.25,
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "base_variant": "R0"
+   },
+   "reconstruction_fingerprint": "f4862196449283618cc57d3d9e05a790f8ed2dbd248b1455b01d3d721afe74fb",
+   "rules_R0": {
+    "die_edge_margin": 0.001999999,
+    "die_spacing": 0.005999999,
+    "die_terminal_clearance": 0.001,
+    "edge_margin": 0.005,
+    "max_gate_wire_length": 0.025,
+    "max_kelvin_wire_length": 0.025,
+    "max_signal_wire_diameter": null,
+    "max_signal_wire_length": null,
+    "max_wire_diameter": 0.0005,
+    "max_wire_length": 0.018,
+    "min_signal_wire_diameter": null,
+    "min_signal_wire_length": null,
+    "min_spacing": 0.001999999,
+    "min_trace_width": 0.004999779,
+    "min_width_other": 0.004999779,
+    "min_width_power": 0.004999742,
+    "min_wire_diameter": 0.0001,
+    "min_wire_length": 0.0015,
+    "min_wire_pitch": 0.0006,
+    "spacing_dcp_dcm": 0.004999999,
+    "spacing_dcp_phase": 0.002999999,
+    "spacing_other": 0.001999999,
+    "spacing_phase_dcm": 0.002999999,
+    "spacing_signal_dcm": null,
+    "spacing_signal_dcp": null,
+    "spacing_signal_hs_ls": null,
+    "spacing_signal_phase": null,
+    "spacing_signal_source": null,
+    "wire_landing_margin": 0.0003,
+    "wire_pitch_diameters": 2.0,
+    "wire_start_margin": 0.00015
+   },
+   "variants": {
+    "R0": {
+     "changed": {},
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "walk_terminal_blockers": {
+       "candidates": [
+        [
+         "col_DC+_u0",
+         -0.5,
+         "edge_margin"
+        ],
+        [
+         "col_DC+_u0",
+         0.5,
+         "min_trace_width"
+        ],
+        [
+         "col_DC+_v0",
+         -0.5,
+         "min_spacing"
+        ],
+        [
+         "col_DC+_v0",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "col_DC+_u1",
+         -0.5,
+         "min_trace_width+terminal_off_trace"
+        ],
+        [
+         "col_DC+_u1",
+         0.5,
+         "clean_not_up 1.2263"
+        ],
+        [
+         "col_DC+_v1",
+         -0.5,
+         "clean_not_up 1.2314"
+        ],
+        [
+         "col_DC+_v1",
+         0.5,
+         "min_spacing"
+        ],
+        [
+         "col_DC-_u0",
+         -0.5,
+         "edge_margin"
+        ],
+        [
+         "col_DC-_u0",
+         0.5,
+         "min_trace_width"
+        ],
+        [
+         "col_DC-_v0",
+         -0.5,
+         "edge_margin"
+        ],
+        [
+         "col_DC-_v0",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "col_DC-_u1",
+         -0.5,
+         "min_trace_width+terminal_off_trace"
+        ],
+        [
+         "col_DC-_u1",
+         0.5,
+         "clean_not_up 1.2244"
+        ],
+        [
+         "col_DC-_v1",
+         -0.5,
+         "clean_not_up 1.2306"
+        ],
+        [
+         "col_DC-_v1",
+         0.5,
+         "min_spacing"
+        ],
+        [
+         "col_PHASE_u0",
+         -0.5,
+         "clean_not_up 1.2173"
+        ],
+        [
+         "col_PHASE_u0",
+         0.5,
+         "min_trace_width+terminal_off_trace"
+        ],
+        [
+         "col_PHASE_v0",
+         -0.5,
+         "min_spacing"
+        ],
+        [
+         "col_PHASE_v0",
+         0.5,
+         "clean_not_up 1.2314"
+        ],
+        [
+         "col_PHASE_u1",
+         -0.5,
+         "min_trace_width"
+        ],
+        [
+         "col_PHASE_u1",
+         0.5,
+         "clean_not_up 1.2210"
+        ],
+        [
+         "col_PHASE_v1",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "col_PHASE_v1",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot0_u0",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot0_u0",
+         0.5,
+         "clean_not_up 1.2314"
+        ],
+        [
+         "slot0_v0",
+         -0.5,
+         "min_spacing"
+        ],
+        [
+         "slot0_v0",
+         0.5,
+         "die_edge_margin"
+        ],
+        [
+         "slot0_u1",
+         -0.5,
+         "clean_not_up 1.2285"
+        ],
+        [
+         "slot0_u1",
+         0.5,
+         "clean_not_up 1.2308"
+        ],
+        [
+         "slot0_v1",
+         -0.5,
+         "die_edge_margin"
+        ],
+        [
+         "slot0_v1",
+         0.5,
+         "clean_not_up 1.2269"
+        ],
+        [
+         "slot1_u0",
+         -0.5,
+         "edge_margin"
+        ],
+        [
+         "slot1_u0",
+         0.5,
+         "clean_not_up 1.2304"
+        ],
+        [
+         "slot1_v0",
+         -0.5,
+         "clean_not_up 1.2142"
+        ],
+        [
+         "slot1_v0",
+         0.5,
+         "min_trace_width"
+        ],
+        [
+         "slot1_u1",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot1_u1",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot1_v1",
+         -0.5,
+         "min_trace_width+wire_landing"
+        ],
+        [
+         "slot1_v1",
+         0.5,
+         "min_spacing"
+        ],
+        [
+         "slot2_u0",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot2_u0",
+         0.5,
+         "wire_landing"
+        ],
+        [
+         "slot2_v0",
+         -0.5,
+         "clean_not_up 1.2170"
+        ],
+        [
+         "slot2_v0",
+         0.5,
+         "min_trace_width"
+        ],
+        [
+         "slot2_u1",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot2_u1",
+         0.5,
+         "clean_not_up 1.2311"
+        ],
+        [
+         "slot2_v1",
+         -0.5,
+         "min_trace_width"
+        ],
+        [
+         "slot2_v1",
+         0.5,
+         "clean_not_up 1.2187"
+        ],
+        [
+         "slot3_u0",
+         -0.5,
+         "edge_margin"
+        ],
+        [
+         "slot3_u0",
+         0.5,
+         "clean_not_up 1.2306"
+        ],
+        [
+         "slot3_v0",
+         -0.5,
+         "clean_not_up 1.2264"
+        ],
+        [
+         "slot3_v0",
+         0.5,
+         "die_edge_margin"
+        ],
+        [
+         "slot3_u1",
+         -0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot3_u1",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "slot3_v1",
+         -0.5,
+         "die_edge_margin"
+        ],
+        [
+         "slot3_v1",
+         0.5,
+         "min_spacing"
+        ],
+        [
+         "row_HS_u0",
+         -0.5,
+         "wire_landing"
+        ],
+        [
+         "row_HS_u0",
+         0.5,
+         "clean_not_up 1.2301"
+        ],
+        [
+         "row_HS_v0",
+         -0.5,
+         "die_edge_margin"
+        ],
+        [
+         "row_HS_v0",
+         0.5,
+         "die_edge_margin+wire_length"
+        ],
+        [
+         "row_HS_gap",
+         -0.5,
+         "die_spacing"
+        ],
+        [
+         "row_HS_gap",
+         0.5,
+         "clean_not_up 1.2290"
+        ],
+        [
+         "row_LS_u0",
+         -0.5,
+         "clean_not_up 1.2302"
+        ],
+        [
+         "row_LS_u0",
+         0.5,
+         "clean_not_up 1.2316"
+        ],
+        [
+         "row_LS_v0",
+         -0.5,
+         "die_edge_margin"
+        ],
+        [
+         "row_LS_v0",
+         0.5,
+         "die_edge_margin"
+        ],
+        [
+         "row_LS_gap",
+         -0.5,
+         "die_spacing"
+        ],
+        [
+         "row_LS_gap",
+         0.5,
+         "clean_not_up 1.2304"
+        ],
+        [
+         "land_HS",
+         -0.5,
+         "wire_length"
+        ],
+        [
+         "land_HS",
+         0.5,
+         "clean_not_up 1.2263"
+        ],
+        [
+         "land_LS",
+         -0.5,
+         "clean_not_up 1.2284"
+        ],
+        [
+         "land_LS",
+         0.5,
+         "wire_landing"
+        ]
+       ],
+       "n_candidates": 72,
+       "outcomes": {
+        "clean_not_up": 36,
+        "die_edge_margin": 7,
+        "die_edge_margin+wire_length": 1,
+        "die_spacing": 2,
+        "edge_margin": 5,
+        "min_spacing": 7,
+        "min_trace_width": 6,
+        "min_trace_width+terminal_off_trace": 3,
+        "min_trace_width+wire_landing": 1,
+        "wire_landing": 3,
+        "wire_length": 1
+       },
+       "per_rule": {
+        "clean_not_up": 36,
+        "die_edge_margin": 8,
+        "die_spacing": 2,
+        "edge_margin": 5,
+        "min_spacing": 7,
+        "min_trace_width": 10,
+        "terminal_off_trace": 3,
+        "wire_landing": 4,
+        "wire_length": 2
+       },
+       "ratio": 1.231637175
+      },
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R1": {
+     "changed": {
+      "min_signal_wire_length": [
+       null,
+       null
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R2": {
+     "skipped": "skipped: no citable physical minimum gate-wire length for 0.30 mm Al wedge bonds was found (one web search; the Tyndall design-rule PDF returned 404); DesignRules.min_wire_length 1.5 mm is a placeholder, not a source"
+    },
+    "R3:die_edge_margin": {
+     "changed": {
+      "die_edge_margin": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.286317293,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[row_LS_v0-0.5mm] x2",
+       "walk[row_HS_v0+0.5mm] x2",
+       "walk[land_LS+0.5mm] x3",
+       "walk[slot0_v1-0.5mm] x4",
+       "walk[land_HS-0.5mm]",
+       "walk[slot3_v0+0.5mm] x4",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x2",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[slot2_u1-0.5mm] x6",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot1_u1+0.5mm]"
+      ],
+      "n_walk_steps": 77,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.286 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_HS_v0+0.5mm]', 'walk[row_HS_v0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[slot0_v1-0.5mm]', 'walk[slot0_v1-0.5mm]', 'walk[slot0_v1-0.5mm]', 'walk[slot0_v1-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[slot3_v0+0.5mm]', 'walk[slot3_v0+0.5mm]', 'walk[slot3_v0+0.5mm]', 'walk[slot3_v0+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot1_u1+0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2863 after 77 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:die_spacing": {
+     "changed": {
+      "die_spacing": [
+       0.005999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.293454066,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[row_HS_gap-0.5mm] x10",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x2",
+       "walk[row_LS_gap-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x26",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[slot3_u1+0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1+0.5mm] x2"
+      ],
+      "n_walk_steps": 107,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.293 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[row_HS_gap-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[slot3_u1+0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1+0.5mm]', 'walk[slot3_u1+0.5mm]']; walk terminal state: local maximum: none of the 33 DRC-valid single-parameter changes raises L1 further (ratio 1.2935 after 107 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:edge_margin": {
+     "changed": {
+      "edge_margin": [
+       0.005,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231682393,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_DC-_v0-0.5mm] x4",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 79,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC-_v0-0.5mm]', 'walk[col_DC-_v0-0.5mm]', 'walk[col_DC-_v0-0.5mm]', 'walk[col_DC-_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 41 DRC-valid single-parameter changes raises L1 further (ratio 1.2317 after 79 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:max_gate_wire_length": {
+     "changed": {
+      "max_gate_wire_length": [
+       0.025,
+       null
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:max_kelvin_wire_length": {
+     "changed": {
+      "max_kelvin_wire_length": [
+       0.025,
+       null
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:min_spacing": {
+     "changed": {
+      "min_spacing": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:min_trace_width": {
+     "changed": {
+      "min_trace_width": [
+       0.004999779,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:min_width_other": {
+     "changed": {
+      "min_width_other": [
+       0.004999779,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:min_width_power": {
+     "changed": {
+      "min_width_power": [
+       0.004999742,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.420778536,
+      "moves": [
+       "narrow_landing"
+      ],
+      "n_walk_steps": 0,
+      "reaches_target": true,
+      "skipped": [],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": null,
+      "walk_terminal": null,
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 1.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 1.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": null,
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_dcp_dcm": {
+     "changed": {
+      "spacing_dcp_dcm": [
+       0.004999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231762968,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm] x6",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 80,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 39 DRC-valid single-parameter changes raises L1 further (ratio 1.2318 after 80 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_dcp_phase": {
+     "changed": {
+      "spacing_dcp_phase": [
+       0.002999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_other": {
+     "changed": {
+      "spacing_other": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.247554829,
+      "moves": [
+       "narrow_landing",
+       "spread[2,up]x1mm",
+       "spread[2,down]x1mm",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[col_DC-_v1-0.5mm] x2",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm] x3",
+       "walk[col_PHASE_v1+0.5mm] x4",
+       "walk[slot3_u1-0.5mm]"
+      ],
+      "n_walk_steps": 76,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "target": 1.3875,
+      "walk_start_ratio": 1.004543099,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.248 < 1.388 after ['narrow_landing', 'spread[2,up]x1mm', 'spread[2,down]x1mm', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[col_DC-_v1-0.5mm]', 'walk[col_DC-_v1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[slot3_u1-0.5mm]']; walk terminal state: local maximum: none of the 35 DRC-valid single-parameter changes raises L1 further (ratio 1.2476 after 76 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_phase_dcm": {
+     "changed": {
+      "spacing_phase_dcm": [
+       0.002999999,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_signal_dcm": {
+     "changed": {
+      "spacing_signal_dcm": [
+       null,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_signal_dcp": {
+     "changed": {
+      "spacing_signal_dcp": [
+       null,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.247219651,
+      "moves": [
+       "narrow_landing",
+       "spread[2,up]x1mm",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1+0.5mm] x4",
+       "walk[slot3_u1-0.5mm]"
+      ],
+      "n_walk_steps": 72,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "target": 1.3875,
+      "walk_start_ratio": 1.0058747,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.247 < 1.388 after ['narrow_landing', 'spread[2,up]x1mm', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[slot3_u1-0.5mm]']; walk terminal state: local maximum: none of the 35 DRC-valid single-parameter changes raises L1 further (ratio 1.2472 after 72 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_signal_hs_ls": {
+     "changed": {
+      "spacing_signal_hs_ls": [
+       null,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_signal_phase": {
+     "changed": {
+      "spacing_signal_phase": [
+       null,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231504935,
+      "moves": [
+       "narrow_landing",
+       "spread[2,down]x1mm",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[col_DC-_v1-0.5mm] x2",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm] x3",
+       "walk[col_PHASE_v1+0.5mm] x3",
+       "walk[slot3_u1-0.5mm]"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "target": 1.3875,
+      "walk_start_ratio": 0.9963209127,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'spread[2,down]x1mm', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[col_DC-_v1-0.5mm]', 'walk[col_DC-_v1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[col_PHASE_v1+0.5mm]', 'walk[slot3_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2315 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "R3:spacing_signal_source": {
+     "changed": {
+      "spacing_signal_source": [
+       null,
+       0.001
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.231637175,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x3",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]",
+       "walk[col_PHASE_v1-0.5mm]",
+       "walk[slot3_u1-0.5mm]",
+       "walk[slot2_u1-0.5mm] x6"
+      ],
+      "n_walk_steps": 75,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    },
+    "X:max_wire_length": {
+     "changed": {
+      "max_wire_length": [
+       0.018,
+       1.0
+      ]
+     },
+     "degrade": {
+      "l1_D_over_W": 1.243065826,
+      "moves": [
+       "narrow_landing",
+       "walk[col_PHASE_u0+0.5mm] x4",
+       "walk[land_LS+0.5mm] x3",
+       "walk[land_HS-0.5mm] x4",
+       "walk[land_LS+0.5mm]",
+       "walk[col_DC-_u1-0.5mm] x10",
+       "walk[col_PHASE_u1-0.5mm] x6",
+       "walk[col_DC+_u1-0.5mm] x10",
+       "walk[row_LS_u0+0.5mm] x4",
+       "walk[row_HS_u0-0.5mm] x7",
+       "walk[row_LS_u0+0.5mm] x12",
+       "walk[slot0_u1-0.5mm] x6",
+       "walk[row_LS_u0+0.5mm] x6",
+       "walk[col_DC+_v0-0.5mm]"
+      ],
+      "n_walk_steps": 74,
+      "reaches_target": false,
+      "skipped": [
+       {
+        "move": "centre_landing",
+        "rules": [
+         "changes nothing"
+        ]
+       },
+       {
+        "move": "spread[2,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[2,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,up]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[1,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       },
+       {
+        "move": "spread[3,down]",
+        "rules": [
+         "min_spacing"
+        ]
+       }
+      ],
+      "stopped": [],
+      "target": 1.3875,
+      "walk_start_ratio": 0.996459712,
+      "walk_terminal": "local_maximum",
+      "widths": {
+       "narrow_landing": {
+        "HS_landing_PHASE": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        },
+        "LS_landing_DC-": {
+         "after_mm": 5.0,
+         "before_mm": 5.0,
+         "landing_shift_mm": 0.0
+        }
+       }
+      }
+     },
+     "difference_record": {
+      "copper_area_mm2": {
+       "DC+": {
+        "reference": 570.0,
+        "twin": 570.0
+       },
+       "DC-": {
+        "reference": 560.0,
+        "twin": 560.0
+       },
+       "PHASE": {
+        "reference": 1130.0,
+        "twin": 1130.0
+       }
+      },
+      "die_centre_displacement_mm": {
+       "HS": [
+        0.0,
+        0.0
+       ],
+       "LS": [
+        0.0,
+        0.0
+       ]
+      },
+      "max_die_displacement_mm": 0.0,
+      "max_wire_displacement_mm": 0.25,
+      "symdiff_area_mm2": {
+       "DC+": 0.0,
+       "DC-": 0.0,
+       "PHASE": 0.0
+      },
+      "symdiff_area_total_mm2": 0.0
+     },
+     "error": "DegradeError: L1 ratio 1.243 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[col_DC+_v0-0.5mm]']; walk terminal state: local maximum: none of the 33 DRC-valid single-parameter changes raises L1 further (ratio 1.2431 after 74 walk steps)",
+     "l1_W_over_ref": 1.001725651,
+     "l1_reference_nH": 19.3252408,
+     "l1_twin_nH": 19.35858943,
+     "symdiff_per_net": {
+      "DC+": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "DC-": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      },
+      "PHASE": {
+       "fraction": 0.0,
+       "mm2": 0.0
+      }
+     },
+     "topology": "x/PHASEd-DC-l-PHASEl-DC+d/split",
+     "twin_mode": "fit+signal_feet",
+     "twin_signal_wire_lengths_mm": [
+      5.121601503,
+      16.0387192,
+      5.121601503,
+      16.0387192,
+      9.664250165,
+      19.63164585,
+      9.664250165,
+      19.63164585
+     ]
+    }
+   }
+  },
+  "2D_Case_6": {
+   "candidate_filter_trace": {
+    "orient0": {
+     "landing_line_v_mm": {
+      "HS": 15.5,
+      "LS": 24.5
+     },
+     "landing_mean_u_mm": {
+      "HS": 16.5,
+      "LS": 43.5
+     },
+     "pairs": {
+      "hs_first=0,hs_die_first=0,ls_die_first=0": {
+       "kept": false,
+       "reason": "v-order violated between slot 0 and 1",
+       "slot_anchor_v_mm": [
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ]
+       ]
+      },
+      "hs_first=0,hs_die_first=0,ls_die_first=1": {
+       "kept": false,
+       "reason": "v-order violated between slot 1 and 2",
+       "slot_anchor_v_mm": [
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ]
+       ]
+      },
+      "hs_first=0,hs_die_first=1,ls_die_first=0": {
+       "kept": false,
+       "reason": "v-order violated between slot 0 and 1",
+       "slot_anchor_v_mm": [
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ]
+       ]
+      },
+      "hs_first=0,hs_die_first=1,ls_die_first=1": {
+       "kept": false,
+       "reason": "v-order violated between slot 1 and 2",
+       "slot_anchor_v_mm": [
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ]
+       ]
+      },
+      "hs_first=1,hs_die_first=0,ls_die_first=0": {
+       "kept": false,
+       "reason": "v-order violated between slot 2 and 3",
+       "slot_anchor_v_mm": [
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ]
+       ]
+      },
+      "hs_first=1,hs_die_first=0,ls_die_first=1": {
+       "kept": false,
+       "reason": "v-order violated between slot 1 and 2",
+       "slot_anchor_v_mm": [
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ]
+       ]
+      },
+      "hs_first=1,hs_die_first=1,ls_die_first=0": {
+       "kept": false,
+       "reason": "v-order violated between slot 0 and 1",
+       "slot_anchor_v_mm": [
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ]
+       ]
+      },
+      "hs_first=1,hs_die_first=1,ls_die_first=1": {
+       "kept": false,
+       "reason": "v-order violated between slot 0 and 1",
+       "slot_anchor_v_mm": [
+        [
+         "HS_die(DC+)",
+         22.0
+        ],
+        [
+         "HS_land(PHASE)",
+         15.5
+        ],
+        [
+         "LS_die(PHASE)",
+         18.0
+        ],
+        [
+         "LS_land(DC-)",
+         24.5
+        ]
+       ]
+      }
+     },
+     "rows": {
+      "HS": [
+       12.0,
+       19.0,
+       2.0
+      ],
+      "LS": [
+       39.0,
+       15.0,
+       2.0
+      ]
+     }
+    },
+    "orient1": {
+     "die_centre_v_mm": {
+      "HS": [
+       14.0,
+       20.0
+      ],
+      "LS": [
+       41.0,
+       47.0
+      ]
+     },
+     "reason": "_rows_of: die centres of a switch differ in v by > 0.3 mm",
+     "rows": null
+    }
+   },
+   "checklist_facts": {
+    "die_rows_collinear_in_orientation": [
+     0
+    ],
+    "dies_per_switch": 2,
+    "holes_per_power_net": {
+     "DC+": 0,
+     "DC-": 0,
+     "PHASE": 0
+    },
+    "identical_dies": true,
+    "islands_per_power_net": {
+     "DC+": 1,
+     "DC-": 1,
+     "PHASE": 1
+    },
+    "keepout_nets": [
+     "GATE_HS",
+     "GATE_LS",
+     "SIG_T10",
+     "SIG_T8"
+    ],
+    "kelvin_pads": false,
+    "n_dies": 4,
+    "n_signal_wires": 4,
+    "power_wires_per_die": [
+     2
+    ],
+    "signal_wire_plan_excess_over_nearest_copper_mm": [
+     0.7849019907,
+     0.7849019907,
+     0.7585110802,
+     0.7585110802
+    ],
+    "terminals": [
+     "DC+",
+     "DC-",
+     "PHASE"
+    ]
+   },
+   "construction": "spec_from_layout(snapped reconstruction, measure_rules(...)[0], KEEPOUT_NETS)",
+   "reconstruction_fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "rules_R0": {
+    "die_edge_margin": 0.000999999,
+    "die_spacing": 0.001999999,
+    "die_terminal_clearance": 0.001,
+    "edge_margin": 0.000999999,
+    "max_gate_wire_length": 0.00833008,
+    "max_kelvin_wire_length": null,
+    "max_signal_wire_diameter": 0.0003,
+    "max_signal_wire_length": 0.00833008,
+    "max_wire_diameter": 0.0005,
+    "max_wire_length": 0.015,
+    "min_signal_wire_diameter": 0.0003,
+    "min_signal_wire_length": 0.004123236,
+    "min_spacing": 0.000999999,
+    "min_trace_width": 0.002999534,
+    "min_width_other": 0.002999534,
+    "min_width_power": 0.003000028,
+    "min_wire_diameter": 0.0001,
+    "min_wire_length": 0.0015,
+    "min_wire_pitch": 0.0005,
+    "spacing_dcp_dcm": 0.001,
+    "spacing_dcp_phase": 0.001,
+    "spacing_other": 0.000999999,
+    "spacing_phase_dcm": 0.001,
+    "spacing_signal_dcm": 0.008,
+    "spacing_signal_dcp": 0.000999999,
+    "spacing_signal_hs_ls": 0.014317821,
+    "spacing_signal_phase": 0.000999999,
+    "spacing_signal_source": 0.009433981,
+    "wire_landing_margin": 0.0003,
+    "wire_pitch_diameters": 1.666666666,
+    "wire_start_margin": 0.00015
+   },
+   "variants": {
+    "R0": {
+     "changed": {},
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R1": {
+     "changed": {
+      "min_signal_wire_length": [
+       0.004123236,
+       null
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R2": {
+     "skipped": "skipped: no citable physical minimum gate-wire length for 0.30 mm Al wedge bonds was found (one web search; the Tyndall design-rule PDF returned 404); DesignRules.min_wire_length 1.5 mm is a placeholder, not a source"
+    },
+    "R3:die_edge_margin": {
+     "changed": {
+      "die_edge_margin": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:die_spacing": {
+     "changed": {
+      "die_spacing": [
+       0.001999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:edge_margin": {
+     "changed": {
+      "edge_margin": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:max_gate_wire_length": {
+     "changed": {
+      "max_gate_wire_length": [
+       0.00833008,
+       null
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:max_signal_wire_diameter": {
+     "changed": {
+      "max_signal_wire_diameter": [
+       0.0003,
+       null
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:max_signal_wire_length": {
+     "changed": {
+      "max_signal_wire_length": [
+       0.00833008,
+       null
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:min_signal_wire_diameter": {
+     "changed": {
+      "min_signal_wire_diameter": [
+       0.0003,
+       null
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:min_signal_wire_length": {
+     "changed": {
+      "min_signal_wire_length": [
+       0.004123236,
+       null
+      ]
+     },
+     "same_effective_rules_as": "R1"
+    },
+    "R3:min_spacing": {
+     "changed": {
+      "min_spacing": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:min_trace_width": {
+     "changed": {
+      "min_trace_width": [
+       0.002999534,
+       0.001
+      ]
+     },
+     "same_effective_rules_as": "R0"
+    },
+    "R3:min_width_other": {
+     "changed": {
+      "min_width_other": [
+       0.002999534,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:min_width_power": {
+     "changed": {
+      "min_width_power": [
+       0.003000028,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:min_wire_pitch": {
+     "changed": {
+      "min_wire_pitch": [
+       0.0005,
+       0.0006
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_other": {
+     "changed": {
+      "spacing_other": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_dcm": {
+     "changed": {
+      "spacing_signal_dcm": [
+       0.008,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_dcp": {
+     "changed": {
+      "spacing_signal_dcp": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_hs_ls": {
+     "changed": {
+      "spacing_signal_hs_ls": [
+       0.014317821,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_phase": {
+     "changed": {
+      "spacing_signal_phase": [
+       0.000999999,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:spacing_signal_source": {
+     "changed": {
+      "spacing_signal_source": [
+       0.009433981,
+       0.001
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    },
+    "R3:wire_pitch_diameters": {
+     "changed": {
+      "wire_pitch_diameters": [
+       1.666666666,
+       2.0
+      ]
+     },
+     "error": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+     "error_rules": [],
+     "twin_mode": null
+    }
+   }
+  }
+ },
+ "margin": 0.11,
+ "target_l1_ratio": 1.3875,
+ "task": "T0314"
+}
