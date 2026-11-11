@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T01:09:55+00:00 from repository state — do not edit_
+_generated 2026-11-11T01:10:34+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,7 +35,6 @@ cancelled: 39, done: 262, failed: 3, running: 1, todo: 1
 - T0306 `running` scientist/design_experiment: E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness, selftest strength, dev-run reporting, FV cost basis (reviews T0304, T0305) (attempt 1)
 
 ## Recent events
-- 2026-11-10T23:25:53+00:00 run_finished {"run": "T0262-scientist-20261110T150641-c0b3", "status": "completed", "cost": 4.069834, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T23:32:12+00:00 verified {"task": "T0262"}
 - 2026-11-10T23:32:19+00:00 run_started {"run": "T0304-critic-20261110T153219-0ef7", "task": "T0304", "role": "critic", "session": "46e61b18-a61a-4cd7-858e-54bb18dbcbf5"}
 - 2026-11-10T23:32:20+00:00 run_started {"run": "T0305-critic-20261110T153220-dc97", "task": "T0305", "role": "critic", "session": "4f282073-aaa3-412f-9792-ec0864dc90c3"}
@@ -50,3 +49,4 @@ cancelled: 39, done: 262, failed: 3, running: 1, todo: 1
 - 2026-11-11T01:09:51+00:00 merged {"task": "T0262"}
 - 2026-11-11T01:09:51+00:00 inbox_opened {"id": "I0165", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T01:09:55+00:00 run_started {"run": "T0306-scientist-20261110T170955-0b12", "task": "T0306", "role": "scientist", "session": "83c289d4-7095-441c-948e-85c6c99fdd6c"}
+- 2026-11-11T01:10:29+00:00 sleep_detected {"gap_s": 1622, "runs_extended": 1}
