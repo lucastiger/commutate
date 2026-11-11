@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T02:19:07+00:00 from repository state — do not edit_
+_generated 2026-11-11T02:19:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -37,7 +37,6 @@ cancelled: 39, done: 262, failed: 3, review: 1, running: 2, todo: 1
 - T0308 `running` critic/review: Review T0306 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-11T00:06:56+00:00 sleep_detected {"gap_s": 1698, "runs_extended": 0}
 - 2026-11-11T00:43:08+00:00 inbox_resolved {"id": "I0164", "status": "approved", "note": "Merge the E008 draft design. Both critics accept with caveats; their findings go to T0306 before T0263 loads the 
 - 2026-11-11T01:09:51+00:00 merged {"task": "T0262"}
 - 2026-11-11T01:09:51+00:00 inbox_opened {"id": "I0165", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
@@ -52,3 +51,4 @@ cancelled: 39, done: 262, failed: 3, review: 1, running: 2, todo: 1
 - 2026-11-11T02:18:59+00:00 verified {"task": "T0306"}
 - 2026-11-11T02:19:06+00:00 run_started {"run": "T0307-critic-20261110T181906-2794", "task": "T0307", "role": "critic", "session": "66b158eb-59f7-46fd-8270-d330d489ac32"}
 - 2026-11-11T02:19:07+00:00 run_started {"run": "T0308-critic-20261110T181907-65bc", "task": "T0308", "role": "critic", "session": "10028901-0f5c-4944-a53a-f51d62af7450"}
+- 2026-11-11T02:19:42+00:00 sleep_detected {"gap_s": 742, "runs_extended": 2}
