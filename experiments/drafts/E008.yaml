@@ -818,7 +818,8 @@ metrics:
   description: admissible references passing both twin gates
 - name: stack_type_a3
   unit: ''
-  description: 'F6(e): max over the non-default stack types of max_gci_consistency on that type''s spot-check reference'
+  description: 'F6(e): max over the non-default stack types with a spot check (first admissible reference of the type) of
+    max_gci_consistency on that type''s spot-check reference; NaN if any is NaN'
 sanity_checks:
 - name: freeze_hashes
   description: 'F3: every freeze file sha256 equals config.freeze; checked before any reference is loaded'
@@ -846,16 +847,26 @@ sanity_checks:
   description: 'per thermal solve: fingerprint of the layout, node counts x8 +/- 15 % per level, every GCI recomputed by gci_capped'
 - name: F6c_energy_balance
   description: '|Q_out/Q_in - 1| <= 1e-6 on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e) finite-volume
-    spot-check solves (T0305 finding 5)'
+    spot-check solves (T0305 finding 5); NaN-aware maximum, a NaN or infinite value fails (T0308 finding 5)'
 - name: F6c_picard
-  description: last Picard max|dT| <= 1e-4 K on every thermal solve
+  description: 'last Picard max|dT| <= 1e-4 K on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e)
+    finite-volume spot-check solves, whose picard_dT child_fv records from the ThermalResult meta (T0307 finding 0), so the
+    gate is shown, not implied by solve_layout_level''s default tolerance. F6(c) maxima are NaN-aware: a NaN or infinite
+    energy balance or Picard residual fails F6(c) (T0308 finding 5); a spot-check record without picard_dT counts as NaN'
 - name: F6d_operating_point
   description: the reconstruction's level-0 hottest-die rise at P_ref within 60 +/- 1 K before any candidate solve
 - name: F6e_stack_type_spot_check
-  description: max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one
-    reference per non-default stack type (AlN). Stack type = the substrate layers, the die attach and the die, each by name,
-    material, thickness and k (T0305 finding 0). One check F6e_stack_type_spot_check:<type> per non-default type, every one
-    gated; this declared check passes only if all of them pass
+  description: 'max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one
+    reference per non-default stack type (AlN). Stack type = the substrate layers, the die-attach and die layers, each by
+    name, material, thickness and k (T0305 finding 0), and the sorted set of per-die (Die.thickness, Die.attach_thickness)
+    of the reference layout and of its derivative spec''s die, the thicknesses the thermal solvers use (T0308 finding 1);
+    default = C004''s Al2O3 DBC stack with dies of the default thicknesses. The spot-check reference of a type is its first
+    ADMISSIBLE reference in config.references order (T0307 finding 1, T0308 finding 2). A non-default type with no admissible
+    reference gets no spot check and no per-type check: it is reported in the evaluation report under F6e.<type> with reference
+    null and status ''no admissible reference'', and in this check''s detail (no_admissible_reference), not failed (reading
+    of scope_in''s ''every stack type'' as every type of the D0010 reference set, which holds admissible references only;
+    an inadmissible reference contributes no rows). One check F6e_stack_type_spot_check:<type> per type with a spot check,
+    every one gated (a NaN or infinite A3 fails); this declared check passes only if all of them pass'
 - name: driver_s_ref_matches_rows
   description: 'per reference: the s_ref the frozen driver was given (its near-tie window and w) equals snapping_bias of the
     reference row, so the band solves the metric needs exist (T0304 finding 3)'

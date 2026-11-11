@@ -1,0 +1,108 @@
+{
+ "runner_sha256_of_unmutated": "ae96dda09a68f1627fa528f726ad1f8e2fa146585466558208a97eafd5857cb2",
+ "unmutated": {
+  "rc": 0,
+  "raised": null,
+  "n_fail": 0,
+  "fail_lines": []
+ },
+ "mutants": {
+  "M1_spot_ref_ignores_admissibility (T0307 f1, T0308 f2)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 9,
+   "fail_lines": [
+    "FAIL stack_types: spot refs {'other:03e7568e0bfe': 'fake3', 'other:84827e70f297': 'fake1', 'other:a069a11cf497': 'fake5', 'other:f4721b0c5666': 'fake4'} != {'other:84827e70f297': 'fake2', 'other:03e7568e0bfe': 'fake3', 'other:f4721b0c5666': 'fake4'} or no-admissible types [] != ['other:a069a11cf497']",
+    "FAIL stack_types: fake2 (other:84827e70f297) has no complete FV levels 1-3",
+    "FAIL stack_types: F6e for other:84827e70f297 {'name': 'F6e_stack_type_spot_check:other:84827e70f297', 'passed': False, 'value': None, 'threshold': None, 'detail': 'spot-check reference fake1 has no rows'} (planted failure on other:03e7568e0bfe only)",
+    "FAIL stack_types: inadmissible fake1 has finite-volume spot-check solves",
+    "FAIL stack_types: inadmissible fake5 has finite-volume spot-check solves",
+    "FAIL stack_types: type other:a069a11cf497 without an admissible reference: check {'name': 'F6e_stack_type_spot_check:other:a069a11cf497', 'passed': False, 'value': None, 'threshold': None, 'detail': 'spot-check reference fake5 has no rows'}, report {'reference': 'fake5', 'a3': inf, 'status': 'checked'}",
+    "FAIL stack_types: F6c_energy_balance:fake2 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake4'])",
+    "FAIL stack_types: F6c_energy_balance:fake2 does not include 3 FV solves: 28 values, 0 finite-volume spot-check solves included; NaN/inf fails"
+   ],
+   "caught": true
+  },
+  "M2_stack_type_ignores_per_die_thickness (T0308 f1)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 15,
+   "fail_lines": [
+    "FAIL stack types: ['Al2O3_default_dbc', 'other:1da917403012', 'other:1da917403012', 'other:1da917403012', 'Al2O3_default_dbc', 'other:122269bb5357'] (want default, AMB x2, then three distinct non-default types)",
+    "FAIL stack types: the per-die thickness set is not order/duplicate free or a mixed set is not its own type",
+    "FAIL stack_types: spot refs {'other:1da917403012': 'fake2'} != {'other:1da917403012': 'fake3', 'Al2O3_default_dbc': 'fake4'} or no-admissible types ['other:122269bb5357'] != ['other:122269bb5357']",
+    "FAIL stack_types: fake3 (other:1da917403012) has no complete FV levels 1-3",
+    "FAIL stack_types: fake4 (Al2O3_default_dbc) has no complete FV levels 1-3",
+    "FAIL stack_types: F6e for Al2O3_default_dbc None (planted failure on Al2O3_default_dbc only)",
+    "FAIL stack_types: aggregate F6e {'name': 'F6e_stack_type_spot_check', 'passed': True, 'value': 0.09806451612862412, 'threshold': 1.0, 'detail': '{\"checked\": {\"other:1da917403012\": [\"fake2\", 0.09806451612862412]}, \"no_admissible_reference\": [\"other:122269bb5357\"]}'} (planted per-type failure on Al2O3_default_dbc)",
+    "FAIL stack_types: F6c_energy_balance:fake3 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake4'])"
+   ],
+   "caught": true
+  },
+  "M3_plain_max_drops_nan (T0308 f5)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL stack_types: F6c_energy_balance:fake3 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake4'])",
+    "FAIL stack_types: fake3's NaN energy balance reported as 1e-09"
+   ],
+   "caught": true
+  },
+  "M4_fv_picard_not_folded (T0307 f0)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL stack_types: F6c_picard:fake4 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake4'])",
+    "FAIL stack_types: fake4's FV Picard residual reported as 1e-06"
+   ],
+   "caught": true
+  },
+  "M5_within_ignores_nan (T0308 f5)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 1,
+   "fail_lines": [
+    "FAIL stack_types: F6c_energy_balance:fake3 passed=True (planted: ['F6c_energy_balance:fake2', 'F6c_energy_balance:fake3', 'F6c_picard:fake4'])"
+   ],
+   "caught": true
+  },
+  "M6_thermal_report_all_attainable (T0309 item 4)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 2,
+   "fail_lines": [
+    "FAIL thermal report c_div.attainable: True != hand False",
+    "FAIL thermal report summary.n_attainable: 4 != hand 3"
+   ],
+   "caught": true
+  },
+  "M7_thermal_report_t0308_falsified (T0308 f0)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 10,
+   "fail_lines": [
+    "FAIL thermal report c_div.margin_vs_twin_K: 0.0 != hand inf",
+    "FAIL thermal report c_div.passes_vs_twin: True != hand False",
+    "FAIL thermal report c_grow.margin_vs_twin_K: 0.0 != hand -0.578125",
+    "FAIL thermal report c_hot.margin_vs_twin_K: 0.0 != hand 10.3125",
+    "FAIL thermal report c_hot.passes_vs_twin: True != hand False",
+    "FAIL offgrid_tj/fake0: hot c000132 passes_vs_twin True margin 0.0",
+    "FAIL offgrid_tj/fake1: hot c000062 passes_vs_twin True margin 0.0",
+    "FAIL offgrid_tj/fake1: hot c000140 passes_vs_twin True margin 0.0"
+   ],
+   "caught": true
+  },
+  "M8_guard_matches_die_spacing (T0307 f4)": {
+   "rc": 1,
+   "raised": null,
+   "n_fail": 1,
+   "fail_lines": [
+    "FAIL rule_strictness: the guard still matches die_spacing (rule_strictness is empty although measure_rules measured ['die_spacing', 'gap_dcp_dcm'])"
+   ],
+   "caught": true
+  }
+ },
+ "all_caught_and_base_passes": true
+}

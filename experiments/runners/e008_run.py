@@ -326,10 +326,12 @@ def child_fv(job: dict) -> dict:
     lay = layout_of(job)
     r = TL.solve_layout_level(lay, level=job["level"], power_W=job["power_W"], h=job["h"], T_c=job["T_c"])
     v, m = r["values"], r["meta"]
+    # F6(c) Picard record (T0307 finding 0): solve_layout_level's meta drops it, the ThermalResult's meta keeps it
+    # (thermal_fv.solve_steady: the last max |T_{n+1} - T_n|, K; k(T) laws, constant_k False, so a real Picard residual)
     return {"level": job["level"], "tj": [float(v[f"die{i}.tj_max"]) for i in range(len(lay.dies))],
             "energy_balance": float(m["energy_balance"]), "n_cells": int(m["n_cells"]), "peak_GB": _rss_gb(),
-            "picard_iters": int(m["picard_iters"]), "solver_wall_s": float(m["wall_time_s"]),
-            "fingerprint": lay.fingerprint(), "threads": _prov()}
+            "picard_iters": int(m["picard_iters"]), "picard_dT_K": float(r["result"].meta["picard_dT"]),
+            "solver_wall_s": float(m["wall_time_s"]), "fingerprint": lay.fingerprint(), "threads": _prov()}
 
 
 class _ScreenDone(Exception):
@@ -524,21 +526,34 @@ class RefCtx:
 DEFAULT_STACK = "Al2O3_default_dbc"
 
 
-def _stack_signature(stack) -> str:
-    """Every thermal input of a LayerStack: the substrate layers, then the die-attach and die layers (geometry/stack.py
-    keeps these two outside ``layers``; T0305 finding 0), each by name, material (its k(T) law, stack.K_LAWS), thickness
-    and k at 300 K.  sigma (electrical) and the ``kind`` label are not thermal inputs and are left out."""
+def _die_thicknesses(dies) -> list[list[float]]:
+    """The sorted set of (thickness, attach_thickness) over ``dies`` (m; duplicates and order do not matter)."""
+    return [list(t) for t in sorted({(float(d.thickness), float(d.attach_thickness)) for d in dies})]
+
+
+def _stack_signature(stack, dies) -> str:
+    """Every thermal input of a LayerStack and of the dies on it: the substrate layers, then the die-attach and die
+    layers (geometry/stack.py keeps these two outside ``layers``; T0305 finding 0), each by name, material (its k(T) law,
+    stack.K_LAWS), thickness and k at 300 K; then the sorted set of per-die (Die.thickness, Die.attach_thickness), which
+    are the thicknesses thermal_fem and thermal_layout actually use for the die and its attach (T0308 finding 1; the
+    stack's die / die_attach thickness is only their default and thermal_layout's edge-cell size).  sigma (electrical)
+    and the ``kind`` label are not thermal inputs and are left out."""
     las = [*stack.layers, stack.die_attach, stack.die]
-    return json.dumps([[str(la.name), str(la.material), float(la.thickness), float(la.k)] for la in las])
+    return json.dumps({"layers": [[str(la.name), str(la.material), float(la.thickness), float(la.k)] for la in las],
+                       "die_thickness_attach_m": _die_thicknesses(dies)})
 
 
-def _stack_type(stack) -> str:
-    """F6(e) stack type: DEFAULT_STACK iff the signature equals C004's default Al2O3 DBC stack (default_dbc_stack()),
-    else 'other:' + the first 12 hex digits of the signature's sha256 (one spot check per distinct type)."""
+def _stack_type(stack, dies) -> str:
+    """F6(e) stack type: DEFAULT_STACK iff the signature equals C004's default Al2O3 DBC stack (default_dbc_stack())
+    with dies of the default thicknesses (geometry Die defaults DIE_THICKNESS, DIE_ATTACH_THICKNESS), else 'other:' +
+    the first 12 hex digits of the signature's sha256 (one spot check per distinct type).  ``dies``: every object
+    with .thickness and .attach_thickness that a solve of the reference can carry (dev_reference: the reference
+    layout's dies and its derivative spec's DieSpec, which every twin and candidate is built with)."""
     from moduleforge.geometry import default_dbc_stack
-    sig = _stack_signature(stack)
-    return DEFAULT_STACK if sig == _stack_signature(default_dbc_stack()) else "other:" + hashlib.sha256(
-        sig.encode()).hexdigest()[:12]
+    from moduleforge.geometry.layout import Die
+    sig = _stack_signature(stack, dies)
+    return DEFAULT_STACK if sig == _stack_signature(default_dbc_stack(), [Die(0.0, 0.0, 1.0, 1.0, "HS", {})]) \
+        else "other:" + hashlib.sha256(sig.encode()).hexdigest()[:12]
 
 
 def dev_reference(name: str, cfg: dict) -> RefCtx:
@@ -574,7 +589,7 @@ def dev_reference(name: str, cfg: dict) -> RefCtx:
         rc = RefCtx(f"housing70x40_{name}", "dev", spec, lay, info={"measured_rules": measure_rules(lay)[1]})
     bp = rc.reference.baseplate_outline.bounds
     rc.area_m2 = (bp[2] - bp[0]) * (bp[3] - bp[1])
-    rc.stack_type = _stack_type(rc.spec.stack)
+    rc.stack_type = _stack_type(rc.spec.stack, [*rc.reference.dies, rc.spec.die])
     return rc
 
 
@@ -643,17 +658,36 @@ def _num(v) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
 
 
+def _worst(values) -> float:
+    """NaN-aware maximum for the F6(c) and F6(e) maxima: NaN if any value is NaN, else the maximum (+inf stays +inf);
+    0.0 for no values.  Python's max() drops a NaN that is not first (T0308 finding 5)."""
+    vals = [float(v) for v in values]
+    return math.nan if any(math.isnan(v) for v in vals) else max(vals, default=0.0)
+
+
+def _within(v: float, tol: float) -> bool:
+    """v <= tol for a finite v only: a NaN or infinite value fails the check (T0307 finding 0, T0308 finding 5)."""
+    return math.isfinite(v) and v <= tol
+
+
+# measure_rules keys that match the guard's words but are not a spacing between nets: die_spacing is the die-to-die
+# placement distance (T0307 finding 4), which the report does not cover
+NOT_NET_SPACING = ("die_spacing",)
+
+
 def rule_strictness(mr: dict) -> dict:
     """T0280 report (reported, not gated) from the record of drc.rules.measure_rules, whose spacing keys are 'gap_*'
     (gap_dcp_phase, gap_phase_dcm, gap_dcp_dcm, gap_signal_*, gap_other_min; m; T0305 finding 1): every measured class
     beside the reference's smallest DC-link gap (min of DC_LINK_GAPS); flag_2x when the class is more than twice that gap
-    (a reference feature that, used as a rule, narrows the search).  Raises if the record holds a measured gap or
-    spacing value and the report would be empty, so a renamed key cannot silently empty it again."""
+    (a reference feature that, used as a rule, narrows the search).  Raises if the record holds a measured net gap,
+    spacing or clearance value (NOT_NET_SPACING excepted) and the report would be empty, so a renamed key cannot
+    silently empty it again."""
     gaps = {k: float(v) for k, v in mr.items() if k.startswith("gap_") and _num(v)}
     link = min([v for k, v in gaps.items() if k in DC_LINK_GAPS] or [math.nan])
     rep = {k: {"value_m": v, "smallest_dc_link_gap_m": link, "flag_2x": bool(math.isfinite(link) and v > 2 * link)}
            for k, v in gaps.items()}
-    if not rep and any(re.search(r"gap|spacing|clearance", k) and _num(v) for k, v in mr.items()):
+    if not rep and any(re.search(r"gap|spacing|clearance", k) and k not in NOT_NET_SPACING and _num(v)
+                       for k, v in mr.items()):
         raise RuntimeError(f"rule_strictness is empty although measure_rules measured {sorted(mr)}")
     return rep
 
@@ -889,6 +923,7 @@ class Run:
         self.cal: dict[str, dict] = {}
         self.s_ref: dict[str, float] = {}  # per reference, set by s_ref_of before the main driver's first replay
         self.spot_refs: dict[str, str] = {}  # F6(e): non-default stack type -> the reference carrying its spot check
+        self.spot_none: list[str] = []  # F6(e): non-default stack types with no admissible reference (no spot check)
         self.l1_cache: dict[str, float] = {}
         self.size_cache: dict[tuple, int] = {}
 
@@ -983,10 +1018,18 @@ class Run:
             ctx = save_ctx(rc, self.root / rc.rid)
             for ns in ("main", "control"):
                 self.drivers[(rc.rid, ns)] = Driver(rc, ns, seeds[(rc.rid, ns)], self.root / rc.rid, ctx, scfg, self)
-        # F6(e): one spot-check reference per non-default stack type, the first of that type in reference order (T0305
-        # finding 0: a single spot_ref was overwritten, so only the last type was checked)
-        self.spot_refs = {st: next(rc.rid for rc in refs if rc.stack_type == st)
-                          for st in sorted({rc.stack_type for rc in refs} - {DEFAULT_STACK})}
+        # F6(e): one spot-check reference per non-default stack type, the first ADMISSIBLE one of that type in reference
+        # order (T0305 finding 0: one per type; T0307 finding 1, T0308 finding 2: an inadmissible first reference must
+        # not take the type's spot check from a later admissible one).  A type with no admissible reference gets none:
+        # it is listed in spot_none and reported, not failed (D0010: only admissible references are in the reference
+        # set, an inadmissible one contributes no rows to the verdict)
+        self.spot_refs, self.spot_none = {}, []
+        for st in sorted({rc.stack_type for rc in refs} - {DEFAULT_STACK}):
+            rid = next((rc.rid for rc in refs if rc.stack_type == st and rc.admissible), None)
+            if rid is None:
+                self.spot_none.append(st)
+            else:
+                self.spot_refs[st] = rid
         while True:
             for (rid, _ns), d in self.drivers.items():
                 if rid not in self.P:
@@ -1065,8 +1108,8 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
                              "Tj_l2_K": rec["tj"][2][i], "GCI_K": rec["gci"][i],
                              "tj_node_l0": rec["tj_max_node"][0][i], "tj_node_l1": rec["tj_max_node"][1][i],
                              "tj_node_l2": rec["tj_max_node"][2][i], "nodes": rec["nodes"],
-                             "energy_balance_max": max(rec["energy_balance"]),
-                             "picard_residual_max_K": max(p["residual_K"] for p in rec["picard"]),
+                             "energy_balance_max": _worst(rec["energy_balance"]),
+                             "picard_residual_max_K": _worst(p["residual_K"] for p in rec["picard"]),
                              "power_W": run.P[rid], "L_sub_null_H": L_tw, "smoke": smoke})
         lev = rm.levelling
         ref = {"kind": "reference", "reference_id": rid, "admissible": True, "L_term_H": rc.L_term_H, "on_grid": rc.on_grid,
@@ -1162,7 +1205,7 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
         ck(f"F1c_band_width:{rid}", all(v is None or v <= g["w_max"] for v in ws.values()),
            max([v for v in ws.values() if v is not None]), g["w_max"], json.dumps(ws))
         # F6(a), (c): every thermal record of this reference
-        bad_a, bad_c, worst_eb, worst_pc = [], [], 0.0, 0.0
+        bad_a, eb_vals, pc_vals = [], [], []
         for t in rm.rows["thermal"]:
             r = t["record"]
             if r["fingerprint"] != t["fingerprint"]:
@@ -1174,20 +1217,24 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
             for i, gc in enumerate(r["gci"]):
                 if MX.gci_capped(r["tj"][0][i], r["tj"][1][i], r["tj"][2][i], floor=mp["floor"]) != gc:
                     bad_a.append(f"{t['fingerprint'][:8]} gci die {i}")
-            worst_eb = max(worst_eb, max(r["energy_balance"]))
-            worst_pc = max(worst_pc, max(p["residual_K"] for p in r["picard"]))
+            eb_vals += list(r["energy_balance"])
+            pc_vals += [p["residual_K"] for p in r["picard"]]
         for h in run.cal[rid]["history"]:
-            worst_eb, worst_pc = max(worst_eb, h["energy_balance"]), max(worst_pc, h["picard_residual_K"])
-        # F6(c) "on every thermal solve": the F6(e) finite-volume spot-check solves of this reference too (T0305
-        # finding 5); thermal_layout reports no Picard residual, so they enter the energy balance only
-        fv_eb = [Scheduler.done(j)["energy_balance"] for j in run.spot_jobs(run.drivers[(rid, "main")])]
-        worst_eb = max([worst_eb, *fv_eb])
-        if worst_eb > g["energy_tol"] or worst_pc > g["picard_tol_K"]:
-            bad_c.append(f"eb {worst_eb:.2e} picard {worst_pc:.2e}")
+            eb_vals.append(h["energy_balance"])
+            pc_vals.append(h["picard_residual_K"])
+        # F6(c) "on every thermal solve": the F6(e) finite-volume spot-check solves of this reference too, energy balance
+        # (T0305 finding 5) and the Picard residual child_fv records from the ThermalResult (T0307 finding 0), so the
+        # gate is shown on them, not implied by solve_layout_level's default picard_tol; a record without it is NaN
+        fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
+        eb_vals += [f["energy_balance"] for f in fv]
+        pc_vals += [f.get("picard_dT_K", math.nan) for f in fv]
+        # NaN-aware maxima (T0308 finding 5): a NaN or infinite value fails F6(c)
+        worst_eb, worst_pc = _worst(eb_vals), _worst(pc_vals)
         ck(f"F6a_own_three_grids:{rid}", not bad_a, len(bad_a), 0, bad_a[:10])
-        ck(f"F6c_energy_balance:{rid}", worst_eb <= g["energy_tol"], worst_eb, g["energy_tol"],
-           f"{len(fv_eb)} finite-volume spot-check solves included")
-        ck(f"F6c_picard:{rid}", worst_pc <= g["picard_tol_K"], worst_pc, g["picard_tol_K"])
+        ck(f"F6c_energy_balance:{rid}", _within(worst_eb, g["energy_tol"]), worst_eb, g["energy_tol"],
+           f"{len(eb_vals)} values, {len(fv)} finite-volume spot-check solves included; NaN/inf fails")
+        ck(f"F6c_picard:{rid}", _within(worst_pc, g["picard_tol_K"]), worst_pc, g["picard_tol_K"],
+           f"{len(pc_vals)} values, {len(fv)} finite-volume spot-check solves included; NaN/inf fails")
         rise = run.cal[rid]["rise_K"]
         ck(f"F6d_operating_point:{rid}", abs(rise - run.op["target_rise_K"]) <= run.op["operating_point_tol_K"], rise,
            run.op["target_rise_K"], f"P_ref={run.P[rid]:.4f} W per die")
@@ -1199,23 +1246,30 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     # F6(e) stack-type spot check: one per non-default stack type, every one gated (T0305 finding 0)
     a3s: dict[str, float] = {}
     for st, rid in sorted(run.spot_refs.items()):
-        if rid not in extra:  # an inadmissible reference cannot carry its type's spot check
-            ck(f"F6e_stack_type_spot_check:{st}", False, detail=f"reference {rid} of this type is not admissible")
+        if rid not in extra:  # cannot happen (spot references are admissible, Run.drive); fails safe if it does
+            ck(f"F6e_stack_type_spot_check:{st}", False, detail=f"spot-check reference {rid} has no rows")
             a3s[st] = math.inf
             continue
         fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
         th = next(t["record"] for t in extra[rid]["main"].rows["thermal"] if t["role"] == "reference")
-        a3s[st] = max(MX.max_gci_consistency(*(  # per die: fem levels 0-2 vs FV levels 1-3
+        a3s[st] = _worst(MX.max_gci_consistency(*(  # per die: fem levels 0-2 vs FV levels 1-3
             [th["tj"][lv][i]] for lv in range(3)), *([f["tj"][i]] for f in fv), floor=g["a3_floor_K"],
             ref_gci_cap=g["a3_ref_gci_cap_K"]) for i in range(len(th["tj"][0])))
-        ck(f"F6e_stack_type_spot_check:{st}", a3s[st] <= g["a3_max"], a3s[st], g["a3_max"], f"reference {rid}")
+        ck(f"F6e_stack_type_spot_check:{st}", _within(a3s[st], g["a3_max"]), a3s[st], g["a3_max"], f"reference {rid}")
+    # a non-default type with no admissible reference: no spot check and no per-type check; reported here (rep F6e with
+    # reference None) and in the aggregate's detail, not failed (Run.drive)
+    none = {st: {"reference": None, "a3": None, "status": "no admissible reference of this stack type: no spot check "
+                 "(not gated; its references contribute no rows)"} for st in run.spot_none}
     if a3s:
-        ck("F6e_stack_type_spot_check", all(v <= g["a3_max"] for v in a3s.values()), max(a3s.values()), g["a3_max"],
-           json.dumps({st: [run.spot_refs[st], v] for st, v in a3s.items()}, default=str))
-        met["stack_type_a3"] = max(a3s.values())
-        rep["F6e"] = {st: {"reference": run.spot_refs[st], "a3": v} for st, v in a3s.items()}
+        ck("F6e_stack_type_spot_check", all(_within(v, g["a3_max"]) for v in a3s.values()), _worst(a3s.values()),
+           g["a3_max"], json.dumps({"checked": {st: [run.spot_refs[st], v] for st, v in a3s.items()},
+                                    "no_admissible_reference": run.spot_none}, default=str))
+        met["stack_type_a3"] = _worst(a3s.values())
     else:
-        ck("F6e_stack_type_spot_check", True, detail="every reference on C004's default Al2O3 DBC stack: not required")
+        ck("F6e_stack_type_spot_check", True, detail="no admissible reference off C004's default Al2O3 DBC stack: not "
+           f"required; types without an admissible reference: {run.spot_none}")
+    if a3s or none:
+        rep["F6e"] = {st: {"reference": run.spot_refs[st], "a3": v, "status": "checked"} for st, v in a3s.items()} | none
     ck("at_least_one_counted_reference", counted >= 1, counted, 1)
     met["n_counted_references"] = float(counted)
     return met, checks, rep
@@ -1271,16 +1325,21 @@ class FakeLay(Stub):
     __slots__ = ()
 
 
-def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None):
+def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None,
+               fv_eb_nan: set | None = None, fv_pc_bad: set | None = None):
     """Deterministic fake solvers keyed by fingerprint.  'twin_best': every candidate is above the twin (twin rule);
     otherwise candidates reach ~0.70 of the twin's L_sub ('levelled': L1 floor reached in the first n_first).  Planted
     faults, filled by the selftest before the drive: ``hot`` fingerprints get +10 K on die 0 at every scikit-fem level
     (fails the conservative test by > 8 K); ``fv_bad`` references get +5 K on every die at every FV level (F6(e) fails);
-    ``fv_eb_bad`` references' FV solves report an energy balance of 1e-3 (F6(c) fails).  'snap*' is the off-grid
+    ``fv_eb_bad`` references' FV solves report an energy balance of 1e-3 (F6(c) fails); ``fv_eb_nan`` references' FV
+    level-2 solve reports a NaN energy balance (not first in the list, so a plain max() drops it; F6(c) must fail);
+    ``fv_pc_bad`` references' FV level-3 solve reports a Picard residual of 5e-4 K (F6(c) Picard fails; every other FV
+    solve reports 5e-5 K, below the 1e-4 K gate).  'snap*' is the off-grid
     reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01."""
     lo = 1.05 if scenario == "twin_best" else 0.70
     fixed = {"ref": 20e-9, "twin": 20.0004e-9, "D": 27.5e-9, "snap": 20.1e-9}
-    hot, fv_bad, fv_eb_bad = (set() if x is None else x for x in (hot, fv_bad, fv_eb_bad))
+    hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad = (set() if x is None else x
+                                                    for x in (hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad))
 
     def lsub(fp):
         for k, v in fixed.items():
@@ -1316,8 +1375,13 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
             if j["type"] == "fv" and fp in fv_bad:
                 tj = [t + 5.0 for t in tj]
             eb = 1e-3 if j["type"] == "fv" and fp in fv_eb_bad else 1e-9
-            return {"tj": tj, "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
-                    "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
+            if j["type"] == "fv" and fp in fv_eb_nan and lv == 2:
+                eb = math.nan
+            rec = {"tj": tj, "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
+                   "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
+            if j["type"] == "fv":
+                rec["picard_dT_K"] = 5e-4 if fp in fv_pc_bad and lv == 3 else 5e-5
+            return rec
         if j["type"] == "screen":
             raise RuntimeError("screens are run by the selftest itself")
         raise RuntimeError(j["type"])
@@ -1354,8 +1418,96 @@ RS_EXPECT = {"gap_dcp_phase": True, "gap_phase_dcm": False, "gap_dcp_dcm": False
 SCENARIOS = {  # name: (number of references, off-grid reference indices, planted Tj failures per reference: the n lowest L_sub)
     "headroom": (2, (), {}), "twin_best": (2, (), {}), "levelled": (2, (), {}),
     "offgrid_tj": (2, (0,), {0: 1, 1: 4}),  # ref 0: off-grid, lowest-L_sub fails; ref 1: whole first batch fails
-    "stack_types": (3, (), {}),  # default, AMB, DBC differing only in die attach; F6(e) and F6(c) planted on the FV solves
+    # six references, stack types from the real _stack_type (selftest(), ST_REFS): F6(e) and F6(c) planted on the FV solves
+    "stack_types": (6, (), {}),
 }
+# stack_types scenario, per reference: (stack, die thickness factor, die attach thickness factor, admissible).  fake1 is the
+# first AMB reference and inadmissible, so AMB's spot check must fall on fake2 (T0307 finding 1); fake3 differs from fake2
+# only in die thickness and must get its own (T0308 finding 1); fake4 is C004's default stack with thicker die attach on
+# the dies only (the stack-level type would call it default); fake5's type (thicker stack-level die-attach layer) has no
+# admissible reference: no spot check, reported, not failed.
+ST_REFS = (("dbc", 1.0, 1.0, True), ("amb", 1.0, 1.0, False), ("amb", 1.0, 1.0, True), ("amb", 2.0, 1.0, True),
+           ("dbc", 1.0, 2.0, True), ("dbc_la2", 1.0, 1.0, False))
+
+# Dev thermal report, literal hand case (T0307 finding 3, T0308 finding 0).  Die rows (Tj levels 0, 1, 2 in K), floor
+# 1e-3 K, limit 2 K, every value a dyadic fraction so the hand values are exact.  gci_capped (mfos.metrics; Roache 1998
+# ch. 5): d1 = f1 - f0, d2 = f2 - f1, rho = d2 / d1; rho = 1/4 or 1/2 -> 1.25 |d2| / (2^1 - 1) = 1.25 |d2|; |rho| >= 1
+# -> +inf; d1 = d2 = 0 -> 0.
+#   twin    d0 400, 400.5, 400.625    d1 0.5,   d2 0.125   rho 1/4  GCI 0.15625
+#           d1 398, 399, 399.5        d1 1,     d2 0.5     rho 1/2  GCI 0.625
+#           upper max(400.78125, 400.125) = 400.78125; lower max(400.46875, 398.875) = 400.46875; width 0.3125 <= 2
+#   c_div   d0 399, 399.25, 399.3125  rho 1/4 GCI 0.078125; d1 397, 397.5, 398.5 rho 2 GCI +inf (n_gci_inf 1)
+#           upper +inf, lower 399.234375: width +inf, not attainable; margin vs twin +inf, fails
+#   c_grow  nodes 1000, 9500, 76000: growth 9.5 (|9.5/8 - 1| = 0.1875 > 0.15, flagged) and 8 (ok)
+#           d0 399.5, 399.75, 399.8125 GCI 0.078125; d1 396 x3 GCI 0; upper 399.890625, lower 399.734375, width 0.15625;
+#           margin vs twin 399.890625 - 400.46875 = -0.578125, passes
+#   c_hot   the twin + 10 K on d0 at every level: GCIs 0.15625, 0.625; upper 410.78125, lower 410.46875, width 0.3125
+#           (attainable); margin vs twin 410.78125 - 400.46875 = 10.3125 > 2: passes_vs_twin False
+TR_ROWS = {"twin": ([1000, 8000, 64000], [[400.0, 400.5, 400.625], [398.0, 399.0, 399.5]]),
+           "c_div": ([1000, 8000, 64000], [[399.0, 399.25, 399.3125], [397.0, 397.5, 398.5]]),
+           "c_grow": ([1000, 9500, 76000], [[399.5, 399.75, 399.8125], [396.0, 396.0, 396.0]]),
+           "c_hot": ([1000, 8000, 64000], [[410.0, 410.5, 410.625], [398.0, 399.0, 399.5]])}
+TR_HAND = {
+    "twin": {"gci_K": [0.15625, 0.625], "n_gci_inf": 0, "tj_upper_K": 400.78125, "tj_lower_K": 400.46875,
+             "self_margin_K": 0.3125, "attainable": True, "growth": [8.0, 8.0], "growth_ok": [True, True]},
+    "c_div": {"gci_K": [0.078125, math.inf], "n_gci_inf": 1, "tj_upper_K": math.inf, "tj_lower_K": 399.234375,
+              "self_margin_K": math.inf, "attainable": False, "margin_vs_twin_K": math.inf, "passes_vs_twin": False},
+    "c_grow": {"gci_K": [0.078125, 0.0], "n_gci_inf": 0, "self_margin_K": 0.15625, "attainable": True,
+               "growth": [9.5, 8.0], "growth_ok": [False, True], "margin_vs_twin_K": -0.578125, "passes_vs_twin": True},
+    "c_hot": {"gci_K": [0.15625, 0.625], "n_gci_inf": 0, "self_margin_K": 0.3125, "attainable": True,
+              "margin_vs_twin_K": 10.3125, "passes_vs_twin": False}}
+TR_SUMMARY = {"n_layouts": 4, "n_layouts_growth_fail": 1, "n_gci": 8, "n_gci_inf": 1, "n_attainable": 3}
+
+
+def _same(a, b) -> bool:
+    if isinstance(b, list):
+        return isinstance(a, list) and len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b, strict=True))
+    if isinstance(b, bool) or isinstance(a, bool):
+        return a is b
+    return a == b or (math.isfinite(b) and abs(a - b) <= 1e-12)
+
+
+def thermal_report_literal_failures(fn, g: dict) -> list[str]:
+    """Run ``fn`` (thermal_report_from_rows or a mutant) on TR_ROWS and compare every field with TR_HAND / TR_SUMMARY."""
+    rows = [{"kind": "die", "reference_id": "hand", "layout_id": lab, "die_id": f"d{i}", "role": lab, "nodes": nodes,
+             **{f"Tj_l{lv}_K": tj[lv] for lv in range(3)}} for lab, (nodes, dies) in TR_ROWS.items()
+            for i, tj in enumerate(dies)]
+    out = []
+    try:
+        rep = fn(rows, g, 1e-3, 2.0)["hand"]
+    except Exception as e:  # noqa: BLE001 - a crashing mutant counts as caught
+        return [f"thermal report raised {type(e).__name__}: {e}"]
+    for lab, want in TR_HAND.items():
+        got = rep["layouts"].get(lab, {})
+        out += [f"thermal report {lab}.{k}: {got.get(k)!r} != hand {v!r}" for k, v in want.items()
+                if k not in got or not _same(got[k], v)]
+    if "margin_vs_twin_K" in rep["layouts"].get("twin", {}):
+        out.append("thermal report: the twin carries a margin against itself")
+    out += [f"thermal report summary.{k}: {rep['summary'].get(k)!r} != hand {v!r}" for k, v in TR_SUMMARY.items()
+            if rep["summary"].get(k) != v]
+    return out
+
+
+def _mutant_all_attainable(rows, g, floor, limit):
+    """Falsified report (T0309 item 4): every layout attainable."""
+    out = thermal_report_from_rows(rows, g, floor, limit)
+    for v in out.values():
+        for e in v["layouts"].values():
+            e["attainable"] = True
+        v["summary"]["n_attainable"] = v["summary"]["n_layouts"]
+    return out
+
+
+def _mutant_t0308(rows, g, floor, limit):
+    """T0308's falsified report: every layout attainable, zero margins, zero +inf GCIs, passes_vs_twin True."""
+    out = thermal_report_from_rows(rows, g, floor, limit)
+    for v in out.values():
+        for lab, e in v["layouts"].items():
+            e.update(attainable=True, self_margin_K=0.0, n_gci_inf=0)
+            if lab != "twin":
+                e.update(passes_vs_twin=True, margin_vs_twin_K=0.0)
+        v["summary"].update(n_attainable=v["summary"]["n_layouts"], n_gci_inf=0)
+    return out
 
 
 def _hand_asc(chunks: dict, l1, lsub, n_short: int) -> list[str]:
@@ -1400,18 +1552,40 @@ def selftest() -> int:
             pass
     if rule_strictness({"min_wire_pitch": 0.01, "gap_dcp_dcm": None}) != {}:
         failures.append("rule_strictness: a record without a measured gap gave a non-empty report")
-    # stack types (T0305 finding 0): the die attach and the die belong to the signature
+    try:  # T0307 finding 4: die_spacing is not a net spacing, so a record with only it gives an empty report, no raise
+        if rule_strictness({"die_spacing": 0.002, "gap_dcp_dcm": None}) != {}:
+            failures.append("rule_strictness: a die_spacing-only record gave a non-empty report")
+    except RuntimeError as e:
+        failures.append(f"rule_strictness: the guard still matches die_spacing ({e})")
+    # stack types (T0305 finding 0; T0308 finding 1): the die attach and die layers and the per-die thicknesses
+    from moduleforge.geometry.layout import Die
     dbc = default_dbc_stack()
-    st_die_attach = _stack_type(dataclasses.replace(dbc, die_attach=dataclasses.replace(
-        dbc.die_attach, thickness=2 * dbc.die_attach.thickness)))
-    st_amb = _stack_type(default_amb_stack())
-    if _stack_type(default_dbc_stack()) != DEFAULT_STACK or DEFAULT_STACK in (st_die_attach, st_amb) or st_die_attach == st_amb:
-        failures.append(f"stack types: default {_stack_type(dbc)}, die attach only {st_die_attach}, AMB {st_amb}")
+    d_def = Die(0.0, 0.0, 1.0, 1.0, "HS", {})
+    stacks = {"dbc": dbc, "amb": default_amb_stack(), "dbc_la2": dataclasses.replace(dbc, die_attach=dataclasses.replace(
+        dbc.die_attach, thickness=2 * dbc.die_attach.thickness))}
+
+    def dies_of(ft, fa):
+        return [dataclasses.replace(d_def, cx=float(i), thickness=ft * d_def.thickness,
+                                    attach_thickness=fa * d_def.attach_thickness) for i in range(4)]
+    st_of = [_stack_type(stacks[s], dies_of(ft, fa)) for s, ft, fa, _ in ST_REFS]
+    st_amb, st_amb_thick, st_attach, st_la2 = st_of[2], st_of[3], st_of[4], st_of[5]
+    if st_of[0] != DEFAULT_STACK or len({st_of[0], st_amb, st_amb_thick, st_attach, st_la2}) != 5 or st_of[1] != st_amb:
+        failures.append(f"stack types: {st_of} (want default, AMB x2, then three distinct non-default types)")
+    mixed = [*dies_of(2.0, 1.0)[:1], *dies_of(1.0, 1.0)]
+    if _stack_type(dbc, mixed) != _stack_type(dbc, mixed[::-1] + mixed[:1]) or _stack_type(dbc, mixed) in (
+            DEFAULT_STACK, _stack_type(dbc, dies_of(2.0, 1.0))):
+        failures.append("stack types: the per-die thickness set is not order/duplicate free or a mixed set is not its own type")
+    # dev thermal report against literal hand values; two falsified versions must fail this check (T0307 f3, T0308 f0)
+    failures += thermal_report_literal_failures(thermal_report_from_rows, cfg["gates"])
+    for mutant in (_mutant_all_attainable, _mutant_t0308):
+        if not thermal_report_literal_failures(mutant, cfg["gates"]):
+            failures.append(f"thermal report literal check passes the falsified {mutant.__name__}")
     scfg = dict(n_candidates=200, n_first=50, shortlist=16, batch=4, max_checks=8, tj_margin=2.0, chunk=50)
     for scenario, (n_refs, offgrid, n_hot) in SCENARIOS.items():
-        hot, fv_bad, fv_eb_bad = set(), set(), set()
-        lsub, l1, fjob = fake_world(scenario, hot, fv_bad, fv_eb_bad)
-        types = [DEFAULT_STACK, st_amb, st_die_attach] if scenario == "stack_types" else [DEFAULT_STACK, "other:fakeAlN"]
+        hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad = set(), set(), set(), set(), set()
+        lsub, l1, fjob = fake_world(scenario, hot, fv_bad, fv_eb_bad, fv_eb_nan, fv_pc_bad)
+        types = st_of if scenario == "stack_types" else [DEFAULT_STACK, "other:fakeAlN"]
+        adm = [a for *_, a in ST_REFS] if scenario == "stack_types" else [True] * n_refs
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             sched = Scheduler(1e9, 8, 2, fake=fjob)
@@ -1422,14 +1596,22 @@ def selftest() -> int:
                             D=FakeLay(f"D{k}", None), area_m2=0.008)
                 if k in offgrid:
                     rc.on_grid, rc.snap025 = False, FakeLay(f"snap{k}", None)
-                rc.stack_type = types[k]
+                rc.stack_type, rc.admissible = types[k], adm[k]
                 refs.append(rc)
+            refs_a = [rc for rc in refs if rc.admissible]
             s_hand = {rc.rid: (S_REF_HAND if not rc.on_grid else 0.0) for rc in refs}
-            if scenario == "stack_types":  # planted on the first non-default type in sorted order: a single overwritten
-                first = min(types[1:])  # spot_ref (T0305 finding 0) checked only the last one
-                fv_bad.add(f"ref{types.index(first)}")
-                eb_rid, ok_rid = (f"fake{types.index(t)}" for t in (max(types[1:]), first))  # F6(c) on the other type
-                fv_eb_bad.add(f"ref{types.index(max(types[1:]))}")
+            if scenario == "stack_types":
+                # the spot-check references by hand: the first admissible reference of each non-default type
+                want = {st_amb: "fake2", st_amb_thick: "fake3", st_attach: "fake4"}
+                # F6(e) planted on the first checked type in sorted order (a single overwritten spot_ref, T0305 finding
+                # 0, checked only the last one); F6(c): energy balance 1e-3 on fake2, a NaN energy balance on fake3's
+                # level-2 FV solve, a Picard residual 5e-4 K on fake4's level-3 FV solve
+                first = min(want)
+                fv_bad.add(f"ref{want[first][4:]}")
+                fv_eb_bad.add("ref2")
+                fv_eb_nan.add("ref3")
+                fv_pc_bad.add("ref4")
+                planted_c = {"F6c_energy_balance:fake2", "F6c_energy_balance:fake3", "F6c_picard:fake4"}
             run.drivers = {}
             seeds = {(rc.rid, ns): 1000 + i for i, (rc, ns) in enumerate((r, n) for r in refs for n in ("main", "control"))}
 
@@ -1480,7 +1662,7 @@ def selftest() -> int:
             # independent hand values: rebuild h_lo of every reference from the rows with the rule text, own e_R
             hand_lo, hand_hi, hand_best = [], [], {}
             five = lambda r: [r[c] for c in BAND_COLS]  # noqa: E731
-            for rc in refs:
+            for rc in refs_a:  # an inadmissible reference has only its reference row
                 rr = [r for r in rows if r.get("reference_id") == rc.rid and r["kind"] == "layout"]
                 tw = next(r for r in rr if r["role"] == "twin")
                 cands = sorted([r for r in rr if r["role"] == "candidate"], key=lambda r: (r["L_sub_H"], r["layout_id"]))
@@ -1496,7 +1678,7 @@ def selftest() -> int:
                     r_ = best["L_sub_H"] / tw["L_sub_H"]
                     hand_lo.append(a * (1 - r_ * (1 + 2 * _hand_e_R(five(best), five(tw)) + s)))
             # K1 by hand from the rows (rule text: levelling, twin rule, near ties incl. the inductance-only best)
-            for rc in refs:
+            for rc in refs_a:
                 rr = [r for r in rows if r.get("reference_id") == rc.rid]
                 tw = next(r for r in rr if r["kind"] == "layout" and r["role"] == "twin")
                 ref_row = next(r for r in rr if r["kind"] == "reference")
@@ -1568,10 +1750,28 @@ def selftest() -> int:
                                         f"checked (want >= {n_hot[int(rid[4:])]}, {n_chk})")
                 if len(run.drivers[("fake1", "main")].result.rows["checks"]) < 8:
                     failures.append("offgrid_tj: the second thermal batch did not run")
+                # dev thermal report on the planted hot candidates (T0308 finding 0): the twin's own width is the hand
+                # value 2 x 1.25 x max(|0.01 - 0.05|, |0.05 - 0.25| / 4) = 0.125 K (fake levels +0.25 / +0.05 / +0.01 K on
+                # every die: rho = 0.2 < 1/4); every hot candidate (+10 K on die 0) fails against the twin by > 2 K
+                trh = thermal_report_from_rows(rows, cfg["gates"], 1e-3, 2.0)
+                fp_of = {(r["reference_id"], r["layout_id"]): r["fingerprint"] for r in rows if r["kind"] == "die"}
+                n_hot_seen = 0
+                for rid in ("fake0", "fake1"):
+                    tw_e = trh[rid]["layouts"]["twin"]
+                    if abs(tw_e["self_margin_K"] - 0.125) > 1e-9 or not tw_e["attainable"]:
+                        failures.append(f"offgrid_tj/{rid}: twin self margin {tw_e['self_margin_K']} != hand 0.125 K")
+                    for lab, e in trh[rid]["layouts"].items():
+                        if fp_of[(rid, lab)] in hot:
+                            n_hot_seen += 1
+                            if e["passes_vs_twin"] or not e["margin_vs_twin_K"] > 2.0:
+                                failures.append(f"offgrid_tj/{rid}: hot {lab} passes_vs_twin {e['passes_vs_twin']} margin "
+                                                f"{e['margin_vs_twin_K']}")
+                if n_hot_seen != sum(n_hot.values()):
+                    failures.append(f"offgrid_tj: {n_hot_seen} planted hot candidates in the thermal report, want {sum(n_hot.values())}")
             if scenario == "stack_types":
-                want = {st_amb: "fake1", st_die_attach: "fake2"}
-                if run.spot_refs != want:
-                    failures.append(f"stack_types: spot refs {run.spot_refs} != {want}")
+                if run.spot_refs != want or run.spot_none != [st_la2]:
+                    failures.append(f"stack_types: spot refs {run.spot_refs} != {want} or no-admissible types "
+                                    f"{run.spot_none} != {[st_la2]}")
                 for st, rid in want.items():
                     fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
                     if len(fv) != 3 or any(f is None for f in fv):
@@ -1579,23 +1779,46 @@ def selftest() -> int:
                     c = cmap.get(f"F6e_stack_type_spot_check:{st}")
                     if c is None or c["passed"] != (st != first):
                         failures.append(f"stack_types: F6e for {st} {c} (planted failure on {first} only)")
-                if cmap["F6e_stack_type_spot_check"]["passed"]:
-                    failures.append("stack_types: the aggregate F6e check passed with a planted per-type failure")
-                planted = {f"F6c_energy_balance:{eb_rid}"}
-                if cmap[f"F6c_energy_balance:{eb_rid}"]["passed"] or not cmap[f"F6c_energy_balance:{ok_rid}"]["passed"]:
-                    failures.append(f"stack_types: the planted FV energy-balance failure ({eb_rid} only) was not caught "
-                                    f"by F6(c), or {ok_rid} failed")
+                for rid in ("fake1", "fake5"):  # inadmissible: no FV solve was ever scheduled
+                    if any(Path(j["out"]).exists() for j in run.spot_jobs(run.drivers[(rid, "main")])) or \
+                            any(Path(p_).name.startswith("ref" + rid[4:]) and "__fv" in p_.name
+                                for p_ in [Path(x) for x in (root / rid / "solves").glob("*")]):
+                        failures.append(f"stack_types: inadmissible {rid} has finite-volume spot-check solves")
+                # the type without an admissible reference: no per-type check, reported with reference None, not failed
+                if f"F6e_stack_type_spot_check:{st_la2}" in cmap or rep.get("F6e", {}).get(st_la2, {}).get(
+                        "reference", "missing") is not None or st_la2 not in cmap["F6e_stack_type_spot_check"]["detail"]:
+                    failures.append(f"stack_types: type {st_la2} without an admissible reference: check "
+                                    f"{cmap.get(f'F6e_stack_type_spot_check:{st_la2}')}, report {rep.get('F6e', {}).get(st_la2)}")
+                agg = cmap["F6e_stack_type_spot_check"]
+                per_type = [math.inf if c["value"] is None else c["value"] for n, c in cmap.items()
+                            if n.startswith("F6e_stack_type_spot_check:")]
+                if agg["passed"] or agg["value"] != max(per_type):
+                    failures.append(f"stack_types: aggregate F6e {agg} (planted per-type failure on {first})")
+                # F6(c) on the spot checks: exactly the planted three fail, each for its own reason, NaN included
+                planted = planted_c
+                for rid in ("fake0", "fake2", "fake3", "fake4"):
+                    for kind in ("energy_balance", "picard"):
+                        name = f"F6c_{kind}:{rid}"
+                        if cmap[name]["passed"] == (name in planted_c):
+                            failures.append(f"stack_types: {name} passed={cmap[name]['passed']} (planted: {sorted(planted_c)})")
+                        n_fv = 3 if rid != "fake0" else 0
+                        if f"{n_fv} finite-volume spot-check solves included" not in cmap[name]["detail"]:
+                            failures.append(f"stack_types: {name} does not include {n_fv} FV solves: {cmap[name]['detail']}")
+                if not math.isnan(cmap["F6c_energy_balance:fake3"]["value"]):
+                    failures.append(f"stack_types: fake3's NaN energy balance reported as {cmap['F6c_energy_balance:fake3']['value']}")
+                if cmap["F6c_picard:fake4"]["value"] != 5e-4:
+                    failures.append(f"stack_types: fake4's FV Picard residual reported as {cmap['F6c_picard:fake4']['value']}")
             for c in checks:
                 if c["name"].startswith(("recompute_agrees", "F6a", "F6c", "F6d", "F1c", "at_least", "driver_s_ref")) \
                         and not c["passed"] and c["name"] not in planted:
                     failures.append(f"{scenario}: {c['name']} {c['detail'][:200]}")
             n_c = sum(r["kind"] == "layout" and r["role"] == "candidate" for r in rows)
-            if n_c != 16 * n_refs:
+            if n_c != 16 * len(refs_a):
                 failures.append(f"{scenario}: {n_c} candidate rows, want 16 per reference")
             if any(not math.isfinite(float(r["L_sub_null_H"])) for r in rows):
                 failures.append("a row without a finite L_sub_null_H")
             tr = thermal_report_from_rows(rows, cfg["gates"], 1e-3, 2.0)
-            if sorted(tr) != sorted(rc.rid for rc in refs) or any(v["summary"]["n_layouts_growth_fail"] for v in tr.values()):
+            if sorted(tr) != sorted(rc.rid for rc in refs_a) or any(v["summary"]["n_layouts_growth_fail"] for v in tr.values()):
                 failures.append(f"{scenario}: thermal report {json.dumps({k: v['summary'] for k, v in tr.items()})[:300]}")
             log(f"selftest {scenario}: h_lo {met['headroom_min_lo']:.5f} (hand {min(hand_lo):.5f}), K1 "
                 f"{met['headroom_max_hi_ind']}, null {met['null_twin_as_best_h_lo']:.5f}, L1-only null "
