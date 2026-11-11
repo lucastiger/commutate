@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Note under-reports 2D_Case_2R constraint.csv: it also sets voltage-dependent spacing and current-dependent width",
+      "detail": "Note \u00a72 gives 2D_Case_2R's constraint.csv spacing as '0.5 everywhere'. The file at the pinned commit also has a 'Voltage Difference, Minimum Spacing' table (0 V\u21922, 5 kV\u21923, 10 kV\u21924, 15 kV\u21925 mm) and a 'Current Rating, Minimum Width' table (0\u21922 up to 15 A\u21923.5 mm). The 2R macro_script sets Reliability-awareness: 2, so these tables are active. Using the voltages the note itself cites (T10 15000, T2 7500, T1 0), the source's own rule requires about 3 mm or more for DC+/PHASE and PHASE/DC-, and about 5 mm for DC+/DC-. The reconstruction, and therefore the measured rules, have 2.0 mm for DC+/PHASE and PHASE/DC-. The gate copper is close to this limit too: T6 GATE_HS is at 7507.5 V and sits 2 mm from DC+ (15 kV). The measured rules still follow the objective's definition ('measured on the snapped reconstruction'), so the claim stands. The omission matters when the founder weighs the \u00a76 rule options. On the positive side, T6 at 7507.5 V confirms the GATE_HS net assignment (gate referenced to PHASE).",
+      "evidence": "WebFetch of work/Sample_Designs/2D_Case_2R/constraint.csv @a1de7ced: 'Voltage Difference,Minimum Spacing / 0,2 / 5000,3 / 10000,4 / 15000,5'; 'Current Rating,Minimum Width / 0,2 / 5,2.5 / 10,3 / 15,3.5'; macro_script.txt 'Reliability-awareness: 2'. measured_rules spacing_dcp_phase 0.002, spacing_phase_dcm 0.001999999.",
+      "suggested_check": "Add the voltage/current tables to the note's [F] list and state that the reference itself does not meet them.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "\u00a76 mechanism for 2D_Case_2R is wrong: the gate-foot repair runs and fails; it is not skipped",
+      "detail": "The note says 'The reference has signal wires, so the twin's gate-foot repair (step 3) does not apply, and any violation raises.' In twin.py, _repair_signal runs whenever spec.die.pads contains 'gate', which it does here (spec.die_pads_rel_centre_mm has 'gate'). I wrapped _repair_signal: it is called once on 2R and returns None. The repair moves the gate foot inside a 0.5 mm pad and shifts the power feet along u, and neither can add the 0.75 mm of gate-wire length needed. So the TwinError is real, but the stated reason is not.",
+      "evidence": "Scratch run: '2R rot=0: repair_called=1 repair_returned_None=[True] -> TwinError: the fitted twin is not DRC-clean ... signal wire 2 length 4.597e-03 m outside [5.344e-03, 1.040e-02] m'. twin.py lines 605-611 and 534-536.",
+      "suggested_check": "Rephrase: the step-3 repair was attempted and found no clean placement.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Source ambiguity about ceramic thickness, and the 2R measure type, are not disclosed",
+      "detail": "2D_Case_2R's macro_script uses Parasitic_model CU_200_380_200.rsmdl (a 0.38 mm ceramic response surface), while layer_stack.csv gives AlN 0.835 mm. 2D_Case_6 uses CU_200_630_200 against 0.64 mm. The reconstruction follows layer_stack.csv, which is defensible, but the conflict is not mentioned, and it affects absolute L_sub and thermal values. 2R's macro also has 'Measure_Type: 0', which the Case 6 file's comment defines as resistance, while Measure_Name says Inductance. Only the L5\u2192L1 port pair is used, so the net assignment is unaffected.",
+      "evidence": "WebFetch of both macro_script.txt and layer_stack.csv files @a1de7ced.",
+      "suggested_check": "Add a [F] line recording the rsmdl-versus-layer_stack thickness mismatch and the choice made.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Reference JSONs are not yet E008 admissibility records",
+      "detail": "E008.yaml admissibility_fields asks for sic_mosfet_half_bridge, separate_antiparallel_diode_dies, decided_at, the source of L_term_H, on_grid_0p5mm and the snapping-check values. The JSONs carry diode_dies: 0, on_grid_0p5, L_term_H without a source field, and no decided_at, and E008 config.references is still []. The claim lists no deliverables, so this is a follow-up, not a defect.",
+      "evidence": "experiments/drafts/E008.yaml lines 92-106 compared with research/o003/references/*.json 'admissibility'.",
+      "suggested_check": "Map the JSON fields to E008's admissibility_fields when the loader is added.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "--check verifies only the reconstruction hash against the JSON; the area check repeats hand-typed numbers from the same file",
+      "detail": "check() compares only reconstruction_hash with the committed JSON. Stale measured_rules, snap records or twin results would still pass. exp_area is typed by hand in the same REFS dict as the rectangles, so it guards against typos, not against mistranscription. I recomputed every JSON field independently (below) and found no drift today.",
+      "evidence": "o003_powersynth_references.py check() lines 527-533 and 509-511.",
+      "suggested_check": "Have --check diff the whole regenerated record (without the twin) against the JSON.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The 2R TwinError does not depend on M1 (the note left this untested)",
+      "detail": "With M1 forced to 180\u00b0, 2R still raises TwinError, for a different reason: 'die at (15.00, 19.00) mm has 0 wires, spec says 1'. At 180\u00b0 the LS power foot (y = 17.125) lies 0.025 mm outside the rotated source pad (y \u2265 17.15). So the 180\u00b0 alternative was not even a valid placement, and the M1 score, which uses wire distances only, does not test that. The chosen 0\u00b0 keeps every foot inside its source pad with at least 0.7 mm margin, so the frozen reconstruction is unaffected.",
+      "evidence": "Scratch run: '2R rot=180: fp=1ce573fa7bd0 sig_len_range_mm=[6.065, 9.761] -> TwinError: die at (15.00, 19.00) mm has 0 wires, spec says 1'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run python experiments/runners/e008_run.py --verify-freeze`: every freeze hash, the grid rule, the thermal_fem hash and the metric parameters were OK.",
+    "Ran `uv run ruff check research/scripts/o003_powersynth_references.py`: all checks passed.",
+    "Ran `uv run python research/scripts/o003_powersynth_references.py --check`: exit 0, ok=true, 0 snap records at 0.5/0.25/0.125 mm, 0 own-rule DRC violations, hashes 66cb1e19\u2026 and 71e07ae1\u2026 as committed.",
+    "Regenerated reference_record(ref, with_twin=True) for both references in a scratch script and diffed it field by field against the committed JSONs: 0 differences (measured rules, snap records, l2 unknown counts, thermal level-0 DOFs, twin fail_fast strings).",
+    "Fetched the PowerSynth sources at commit a1de7ced (raw.githubusercontent.com) and compared them line by line with REFS and the docstring: 2R and Case 6 layout_geometry_script.txt, both bond_wires_setup.txt, MOSFET.part (pads 0.335/0.35/3.5/4.5 and 1.03/5/0.5/0.5), power_lead.part (3x3), bond_wire_info.wire (radius 0.15), both layer_stack.csv files (AlN 0.835 / 0.64, substrates at (5,5)), both macro_script.txt files (L5\u2192L1, L2\u2192L3), both constraint.csv files, and the 2D_Case_6 README (no Kelvin). Every transcribed number matches.",
+    "Recomputed by hand from the rectangles the copper areas (240/720/208/104; 401/256/209/72/57) and the measured spacings: 2R dcp/phase 2, phase/dcm 2, dcp/dcm 24, signal-dcm 18, signal-source 4, hs-ls 2; Case 6 signal-source 9.434 (= hypot(8,5)), hs-ls 14.318 (= hypot(3,14)), signal-dcm 8; die_spacing 4/2; edge margins 2/1. All agree with the JSON.",
+    "Checked the net assignment against the connectivity, the macro Source/Sink and the 2R constraint.csv voltages (T10 15000, T2 7500, T1 0, T6 7507.5 \u2192 GATE_HS on PHASE): consistent.",
+    "Checked the M1 180\u00b0 pad transform ((W-x-w, H-y-h) \u2192 source (0.165, 1.15), gate (2.47, 0.5)) and that every chosen-orientation power foot lies inside its source pad.",
+    "Instrumented twin._repair_signal on 2R: it is called and returns None, which contradicts the note's 'does not apply'.",
+    "Re-ran the 2R twin with M1 forced to 180\u00b0: still TwinError (a different cause), so the headline does not depend on M1.",
+    "Compared l2_unknowns() with l2_layout.build_layout_system (same lattice, LAYERS_TOP/BACK/BASE, build_filaments z_floor) and checked the lattice sizes against the baseplate outlines (55x60 \u2192 220x240, 60x40 \u2192 240x160 at 0.25 mm).",
+    "Confirmed that Layout.fingerprint covers stack, dies, pads, wires, terminals and signal wires, so reconstruction_hash freezes every modelled input; confirmed that K_LAWS has AlN and SAC305."
+  ],
+  "caveats": [
+    "Source sha256 values were not re-hashed independently. The sandbox has no raw-byte network access, and WebFetch returns converted text. Only the content was verified, not the bytes.",
+    "The reconstructions are faithful to the source's numbers. Their electrical and thermal meaning is conditional on modelling choices M1-M10: uniform die orientation, 1.0 mm loop height, 50 \u00b5m attach, 1 \u00b5m solder placeholder, lead footprints as terminals, AlN 170 W/(m K).",
+    "The measured rules are geometric minima of the as-drawn layouts. For 2R they are looser than the source's own voltage-dependent spacing table (\u22653 mm between power nets at 7.5 kV), which the reference itself does not meet.",
+    "As frozen, neither reference passes E008's twin construction (2R: signal-wire length; Case 6: no generator orientation/sequence fits). The reconstructions are usable as frozen geometry, but not yet as E008 judged references without a founder decision."
+  ]
+}
