@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T01:30:58+00:00 from repository state — do not edit_
+_generated 2026-11-11T01:46:58+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -35,8 +35,6 @@ cancelled: 39, done: 262, failed: 3, running: 1, todo: 1
 - T0306 `running` scientist/design_experiment: E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness, selftest strength, dev-run reporting, FV cost basis (reviews T0304, T0305) (attempt 1)
 
 ## Recent events
-- 2026-11-10T23:32:55+00:00 sleep_detected {"gap_s": 423, "runs_extended": 2}
-- 2026-11-10T23:36:44+00:00 run_finished {"run": "T0305-critic-20261110T153220-dc97", "status": "completed", "cost": 1.929137, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T23:38:39+00:00 run_finished {"run": "T0304-critic-20261110T153219-0ef7", "status": "completed", "cost": 2.576348, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T23:41:03+00:00 task_added {"task": "T0306", "reason": "reviews T0304/T0305 follow-up (E008 runner, before T0263)"}
 - 2026-11-10T23:41:03+00:00 task_amended {"task": "T0263", "reason": "waits for T0306 (E008 runner fixes from reviews T0304/T0305) so the gates are settled before F3"}
@@ -50,3 +48,5 @@ cancelled: 39, done: 262, failed: 3, running: 1, todo: 1
 - 2026-11-11T01:25:33+00:00 run_finished {"run": "T0306-scientist-20261110T170955-0b12", "status": "error", "cost": 4.583078, "subtype": "success", "report": "missing"}
 - 2026-11-11T01:25:33+00:00 capacity_backoff {"task": "T0306", "minutes": 5, "parsed_reset": false}
 - 2026-11-11T01:30:58+00:00 run_started {"run": "T0306-scientist-20261110T173058-c746", "task": "T0306", "role": "scientist", "session": "a3244bc6-7e83-4f31-a637-12a619be0a76"}
+- 2026-11-11T01:46:50+00:00 loop_stopped {"reason": "STOP file"}
+- 2026-11-11T01:46:53+00:00 loop_started {"pid": 83444}
