@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The registered-run path is not implemented, and the real-solver search path has never run",
+      "detail": "full() checks the frozen hashes, then raises NotImplementedError (judged-reference loading is deferred). The local dev run used only the gate-only path (twin_gates_only): gen2_0 ran as gates, and 2D_Case_4 was L0/L1 fail-fast prep through a separate script, case4_prep.py, whose output was merged into the dev rows. So Run.drive, assemble_rows and evaluate on real l2_layout / thermal_fem outputs have only been exercised against the fake world in --selftest. The dev rows show this directly: meta.metrics = {}, meta.checks = [], and --plan reports near_ties_expected_source 'default (no dev search rows)'. The spec states it as work to do before registration, so for a draft it limits scope rather than being a defect. It does mean 'completely implements ... runner' holds only for the selftest, verify-freeze, plan and dev-gates modes.",
+      "evidence": "e008_run.py lines 1658-1673 (NotImplementedError); E008.dev_rows.json meta.metrics {} and checks []; the --plan output I reproduced shows near_ties_expected_source = default.",
+      "suggested_check": "Before registration, run --dev --smoke with one searched (non-gates) generator geometry so the search, row assembly and gate code paths run once end to end on real solvers.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The local dev rows decide nothing: the twin gates on gen2_0 are vacuous, and the smoke thermal rule fails F6(a) node growth and gives infinite or ~2 K GCIs",
+      "detail": "On gen2_0 the twin and the reconstruction have the same fingerprint (aade6489\u2026, exact mode), so a1_lhs = a2_lhs = 0 and both gates pass trivially. a2_rhs is +inf: die d2's smoke Tj sequence 397.265 \u2192 397.193 \u2192 397.044 has rho = 2.08, which gci_capped treats as divergent (inf). The other dies' GCIs are 1.97, 2.06 and 1.12 K, the same size as the 2 K Tj limit. Node counts are [7232, 48499, 351797], so level 0\u21921 growth is 6.706\u00d7, outside F6(a)'s 8 \u00b1 15 % window (minimum 6.8); the dev path never evaluates that gate. 2D_Case_4's twin gates are PENDING. The rows are labelled smoke / not evidence, and the spec routes the band check and the Case 4 gates to the VM dev run, so this matches the disclosure. Even so, nothing local tests whether the conservative Tj test (max(Tc + Gc) \u2212 max(Tw \u2212 Gw) \u2264 2 K) can be met at the frozen rule. If the frozen rule also gives non-asymptotic convergence on generator layouts (one candidate die with infinite GCI makes conservative_margin infinite), A1 could be unreachable by construction.",
+      "evidence": "My recomputation with mfos.metrics.gci_capped (floor 1e-3) on the twin die rows: d0 1.967, d1 2.062, d2 inf, d3 1.123. Node growth [6.706, 7.254], so the F6a check fails at 0\u21921. Twin fingerprint equals the reconstruction fingerprint in the dev rows.",
+      "suggested_check": "In the full-fidelity dev run (burst_dev.sh), report the per-die GCIs of the twin and of a few candidates at the frozen rule, and how often gci_capped returns inf, before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Phase-B finite-volume time rests on an unmeasured 1e-4 s/cell placeholder that the spec's cost statement does not flag",
+      "detail": "fv_s_per_cell = 1e-4 drives the F6(e) level-3 job: 235 M cells, 6.52 h on a VM resized to ~416 GB, $23.83. research/notes/e008-design.md line 94 calls it a placeholder, but cost_estimate.statement presents the figure as firm. At 1e-3 s/cell, phase B would be ~65 h \u00d7 ~$3.52/h \u2248 $230, which together with the stated ~$95-110 of other VM work exceeds budget.usd 250. Separately, the em_cost docstring says alpha comes 'from those two points' (5770 s two-thread vs 846 s pinned). Those two points give alpha = 1.385, while 1.44 matches a pinned-vs-pinned ratio (1.456). The effect on cost is negligible: the lat0.5 model gives 784 s against ~765-846 s observed.",
+      "evidence": "Recomputed: ln(5770/846)/ln 4 = 1.385; ln(6364/846)/ln 4 = 1.456; 5770 \u00d7 0.25^1.44 = 784 s. design note line 94: '1e-4 s/cell (placeholder)'.",
+      "suggested_check": "Time one thermal_layout level-1 or level-2 solve, then state the phase-B cost at the measured rate (or with a sensitivity range) in cost_estimate.statement.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The selftest does not exercise a Tj rejection, an off-grid reference (s_ref > 0) or a second thermal batch; the L1-only null's s_ref is never computed",
+      "detail": "Every fake candidate passes the Tj test, and s_ref is set to 0.0 in both the selftest and dev. The hand value for h_lo therefore reduces to the lowest-L_sub candidate, and it uses the same mfos.metrics.ratio_band_estimate as the implementation. Untested paths: A1 selection when the lowest-L_sub candidate fails the Tj test; the snap025 job and the L_snap* row columns (assemble_rows lines 1010-1012); thermal batch 2. Both public references are off-grid. run.s_ref is only ever assigned 0.0, so the reported (ungated) l1_only_null_h_lo would ignore s_ref on off-grid references. The gated headroom metrics take s_ref from the row columns through mfos.metrics.snapping_bias, so they are not affected.",
+      "evidence": "grep: run.s_ref is assigned only at lines 1254 and 1615 (= 0.0). The selftest comment at line 1265: 'fake Tj: every candidate passes'.",
+      "suggested_check": "Add one selftest scenario with an off-grid fake reference and a planted Tj failure of the lowest-L_sub candidate.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "cpu_hours_est (365.5) exceeds the 320 cpu_hours budget and is the expected value, not the upper (477.4)",
+      "detail": "Disclosed in founder_decisions_before_registration. Mentioned here only because the estimate field uses the expected case.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands: --verify-freeze (12/12 OK), ruff (clean), --selftest (passed; 3 scenarios, including a planted F1(b) failure that is caught). The yaml key-presence check passes by inspection: every listed key appears in E008.yaml.",
+    "Reproduced the cost estimate: ran --plan to $TMPDIR and compared n_solves, phase_a_hours, vm_hours, usd, billed_vcpu_hours, process_cpu_hours and end dates against config.cost_estimate for both the expected and upper cases. All 14 values match exactly.",
+    "Recomputed R and e_R for all four dev band-check pairs from the five band columns with mfos.metrics.ratio_band_estimate: differences from the stored values are exactly 0. The lateral term is 0, as the smoke note says.",
+    "Recomputed the operating point from the dev rows: hottest-die level-0 rise = 59.927 K, within the 60 \u00b1 1 K (F6d) and 0.25 K calibration tolerances. The proportional power update (30 \u2192 53.55 \u2192 52.316 W) matches child_calibrate.",
+    "Recomputed gci_capped per twin die (1.967, 2.062, inf, 1.123 K) and the node-growth ratios (6.706, 7.254) against the F6(a) 8 \u00b1 15 % window.",
+    "Recomputed the EM wall-time exponent from research/l2_thread_calib/summary.txt (1.385 from the two points named in the docstring; 1.456 pinned vs pinned; the spec uses 1.44).",
+    "Verified that the L_term = 7 nH citation exists at research/notes/o003-public-benchmarks.md line 61 (S3, Chen dissertation, Q3D of the laminated DC terminals).",
+    "Checked that the F1(b) D-definition (R(1\u22122e_R) \u2265 1.25) and the control (h_ctrl \u2265 h_plant \u2212 w_ctrl) match the O003 objective text; that 65 \u00b0C = 338.15 K; that the EM mesh override in child_em mirrors research/scripts/o006_p3_em_convergence.py and that l2_layout reads CELL/LAYERS_*/WIRE_EDGES at call time (the band levels differ in the dev rows, so the override takes effect); and that the frozen driver computes gci itself (search._thermal_record), so assemble_rows' rec['gci'] exists."
+  ],
+  "caveats": [
+    "Valid as a draft design only: the registered run path (full) stops with NotImplementedError until judged-reference loading (T0263) is added. That change will modify e008_run.py, which is in code_under_test, so the runner should be re-reviewed before registration.",
+    "The local dev rows are smoke rows and support no design decision. The gen2_0 twin gates compare a layout with itself. The 2D_Case_4 twin gates and the band check are pending the VM dev run. Under the smoke thermal rule the twin's GCIs are ~1-2 K or infinite, so these rows say nothing about whether the conservative +2 K Tj test is attainable at the frozen rule.",
+    "The cost estimate is reproducible from the spec, but its phase-B line rests on a placeholder finite-volume rate (1e-4 s/cell). Sizes for both public references are 2D_Case_4 proxies, and the EM memory concurrency assumes public references behave like Case 4 (gen2_0 layouts measured 1.1-2.6\u00d7 the model).",
+    "I did not run any l2_layout or thermal solve myself (memory and budget limits), so the absolute L_sub and Tj values in the dev rows were checked only for internal consistency, not re-solved."
+  ]
+}

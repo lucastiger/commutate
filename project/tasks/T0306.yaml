@@ -1,0 +1,99 @@
+id: T0306
+objective: O003
+title: 'E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness, selftest strength, dev-run
+  reporting, FV cost basis (reviews T0304, T0305)'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0262
+description: "Follow-up to T0262 from its reviews T0304 (physics) and T0305 (numerics), both accept_with_caveats\n\
+  (project/reviews/T0262/T0304.json and T0305.json; read both first). It lands before T0263 loads the\
+  \ judged references\n(F3), so the runner's gates are settled before any judged geometry is seen. Develop\
+  \ on generator layouts and 2D_Case_4\nonly; never load 2D_Case_2R, 2D_Case_6 or customer data. Do not\
+  \ edit src/moduleforge/solvers/thermal_fem.py (sha256\na216d5fe...). Do not widen any tolerance, relax\
+  \ any gate or change a frozen value. The founder decisions the spec lists\nstay listed; do not decide\
+  \ them.\n1. F6(e) for every non-default stack type (T0305 finding 0, major). Run.drive overwrites a\
+  \ single spot_ref, so only the\n   last non-default stack type gets its finite-volume spot check. Keep\
+  \ one spot reference per non-default stack type\n   (for example a dict keyed by stack type) and gate\
+  \ F6(e) in evaluate() on every entry. _stack_type's signature\n   includes die_attach and die, not only\
+  \ stack.layers. Selftest: a scenario with two non-default stack types, and one\n   whose stack differs\
+  \ from the default only in die attach; each type gets its own spot check.\n2. F6(c) on the spot-check\
+  \ solves (T0305 finding 5). Include the finite-volume records' energy_balance in the F6(c)\n   check,\
+  \ as the sanity check's wording says (\"every thermal solve\").\n3. Rule strictness (T0305 finding 1).\
+  \ Build the T0280 report from the gap_* keys that measure_rules returns (it matched\n   no 'spacing_'\
+  \ key, so rule_strictness was always empty). The selftest or the dev path asserts the report is non-empty\n\
+  \   whenever measured gaps exist; refresh rule_strictness in experiments/drafts/E008.dev_rows.json (L0\
+  \ only, no solve).\n4. Selftest strength (T0305 finding 3, T0304 finding 3). Add one hand-computed e_R\
+  \ pair as a literal expected value, not\n   computed through MX.ratio_band_estimate. Add a scenario\
+  \ with an off-grid fake reference (s_ref > 0) and a planted Tj\n   failure of the lowest-L_sub candidate,\
+  \ so A1 selection past a Tj rejection, the snap025 job and the L_snap* columns\n   run; and one with\
+  \ a second thermal batch. Compute s_ref for the reported L1-only null instead of assigning 0.0, or\n\
+  \   state exactly why it is not needed.\n5. Dev-run reporting (T0304 findings 0 and 1, T0305 finding\
+  \ 4). The --dev path records, for every dev layout at the\n   frozen rule, F6(a) node growth for each\
+  \ level step and the per-die GCI with a count of gci_capped returning inf, and\n   whether the conservative\
+  \ +2 K Tj test is attainable on that layout. research/o003/e008_dev/burst_dev.sh (gen2_0 with\n   the\
+  \ full frozen search, 2D_Case_4 gates) then answers both reviews before registration; say so in the\
+  \ spec's\n   pre-registration list. No local full-fidelity run is needed.\n6. Cost basis (T0305 finding\
+  \ 6, T0304 finding 2). Measure the finite-volume time per cell from a local thermal_layout\n   level-1\
+  \ or level-2 solve on 2D_Case_4 within the memory budget, replace the 1e-4 s/cell placeholder with the\
+  \ measured\n   rate (cite the measurement) and give phase B's cost with a sensitivity range in cost_estimate.statement.\
+  \ Correct the\n   em_cost docstring: the two points it cites give alpha = 1.385, not 1.44.\nReport the\
+  \ --plan totals before and after. The registered path (full(), judged-reference loading) stays out of\
+  \ scope: it\nis added after T0263 under a new draft and re-reviewed (T0304 caveat)."
+context_files:
+- project/reviews/T0262/T0304.json
+- project/reviews/T0262/T0305.json
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/notes/e008-design.md
+- research/o003/e008_dev/burst_dev.sh
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-10T23:41:03+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Reviews T0304/T0305 found a gated validity check (F6(e)) narrowed to one stack type, F6(c)
+  not applied to the spot-check solves, an empty promised report, selftests that share code with the implementation,
+  and a placeholder that drives half the cost. Fixed before T0263 loads the judged references, under the
+  session review policy.
+history: []

@@ -3,7 +3,7 @@ objective: O003
 title: 'E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows'
 type: design_experiment
 agent: scientist
-status: review
+status: merge
 depends_on:
 - T0257
 - T0260
@@ -557,3 +557,6 @@ history:
     - The orchestrator should re-run mfos gate --fast on the final tree; my gate run started before the
       last runner edits.
     affects_acceptance_criteria: false
+- outcome: full_gate_passed
+  summary: 53adbfaf6d3514a77e9551f019fbc6ce79d990f1
+  at: '2026-11-11T00:06:18+00:00'
