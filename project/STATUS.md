@@ -1,9 +1,9 @@
 # ModuleForge status
-_generated 2026-11-11T00:42:55+00:00 from repository state — do not edit_
+_generated 2026-11-11T01:09:55+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
-- **I0164** [protected_change] T0262: merge needs founder approval
+- **I0165** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -22,7 +22,7 @@ _generated 2026-11-11T00:42:55+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 84 | $129.21 | 2175096 | 1140789 | 110 | 0 |
+| O003 | 85 | $129.21 | 2175096 | 1140789 | 110 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -30,15 +30,11 @@ _generated 2026-11-11T00:42:55+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 261, failed: 3, needs_founder: 1, todo: 2
+cancelled: 39, done: 262, failed: 3, running: 1, todo: 1
 
-- T0262 `needs_founder` scientist/design_experiment: E008 design: draft spec and runner, sealed seeds, code-hash freeze, cost estimate, local dev rows (attempt 4)
+- T0306 `running` scientist/design_experiment: E008 runner: F6(e) per stack type, F6(c) on spot checks, rule strictness, selftest strength, dev-run reporting, FV cost basis (reviews T0304, T0305) (attempt 1)
 
 ## Recent events
-- 2026-11-10T23:01:13+00:00 capacity_backoff {"task": "T0262", "minutes": 5, "parsed_reset": false}
-- 2026-11-10T23:06:41+00:00 run_started {"run": "T0262-scientist-20261110T150641-c0b3", "task": "T0262", "role": "scientist", "session": "a5deb032-9e9f-455b-865c-97a8f84222eb"}
-- 2026-11-10T23:20:10+00:00 loop_stopped {"reason": "STOP file"}
-- 2026-11-10T23:20:15+00:00 loop_started {"pid": 41702}
 - 2026-11-10T23:25:53+00:00 run_finished {"run": "T0262-scientist-20261110T150641-c0b3", "status": "completed", "cost": 4.069834, "subtype": "success", "report": "structured_output"}
 - 2026-11-10T23:32:12+00:00 verified {"task": "T0262"}
 - 2026-11-10T23:32:19+00:00 run_started {"run": "T0304-critic-20261110T153219-0ef7", "task": "T0304", "role": "critic", "session": "46e61b18-a61a-4cd7-858e-54bb18dbcbf5"}
@@ -50,3 +46,7 @@ cancelled: 39, done: 261, failed: 3, needs_founder: 1, todo: 2
 - 2026-11-10T23:41:03+00:00 task_amended {"task": "T0263", "reason": "waits for T0306 (E008 runner fixes from reviews T0304/T0305) so the gates are settled before F3"}
 - 2026-11-11T00:06:20+00:00 inbox_opened {"id": "I0164", "kind": "protected_change", "subject": "T0262: merge needs founder approval"}
 - 2026-11-11T00:06:56+00:00 sleep_detected {"gap_s": 1698, "runs_extended": 0}
+- 2026-11-11T00:43:08+00:00 inbox_resolved {"id": "I0164", "status": "approved", "note": "Merge the E008 draft design. Both critics accept with caveats; their findings go to T0306 before T0263 loads the 
+- 2026-11-11T01:09:51+00:00 merged {"task": "T0262"}
+- 2026-11-11T01:09:51+00:00 inbox_opened {"id": "I0165", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-11T01:09:55+00:00 run_started {"run": "T0306-scientist-20261110T170955-0b12", "task": "T0306", "role": "scientist", "session": "83c289d4-7095-441c-948e-85c6c99fdd6c"}
