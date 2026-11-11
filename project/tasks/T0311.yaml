@@ -4,7 +4,7 @@ title: 'E008 runner: stack-type signature rounding, selftest gaps, F6(e) reading
   T0310)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0309
 description: "Follow-up to T0309 from its review T0310 (accept_with_caveats; project/reviews/T0309/T0310.json,\
@@ -80,4 +80,143 @@ trigger: null
 rationale: 'Review T0310: exact float equality in the stack-type signature can make a reference that matches
   the default stack up to rounding need the ~416 GB spot check or end E008 F6e INVALID; settled before
   T0263 loads the judged references, under the session review policy.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I made all three T0310 follow-ups in the E008 runner and draft spec, and all seven definition-of-done
+    commands exit 0. While planting the NaN case I also found and fixed a defect: a NaN finite-volume
+    temperature used to crash `evaluate` instead of failing the F6(e) checks.
+
+
+    (1) Stack-type rounding. Every thickness in the stack signature is now rounded to whole nanometres
+    and every conductivity to 9 significant digits; the spec states the rule. A new selftest requires
+    that the default stack with float-rounding differences is still the default type. This includes 2D_Case_4''s
+    stored die thickness of 0.00017999999999999998 m and the reviewer''s single-die probe. A +1 µm change
+    on any one layer, the die, the attach, or one of four dies must give a non-default type, and so must
+    a 1e-6 relative ch'
+  report:
+    summary: 'I made all three T0310 follow-ups in the E008 runner and draft spec, and all seven definition-of-done
+      commands exit 0. While planting the NaN case I also found and fixed a defect: a NaN finite-volume
+      temperature used to crash `evaluate` instead of failing the F6(e) checks.
+
+
+      (1) Stack-type rounding. Every thickness in the stack signature is now rounded to whole nanometres
+      and every conductivity to 9 significant digits; the spec states the rule. A new selftest requires
+      that the default stack with float-rounding differences is still the default type. This includes
+      2D_Case_4''s stored die thickness of 0.00017999999999999998 m and the reviewer''s single-die probe.
+      A +1 µm change on any one layer, the die, the attach, or one of four dies must give a non-default
+      type, and so must a 1e-6 relative change in any layer''s conductivity. On the real dev references,
+      gen2_0 is still the default type. 2D_Case_4 is still non-default (its die attach is 0 and it uses
+      the PowerSynth stack); only its hash changed, from other:61c8dd23d7d1 to other:a9ad6bbb1af1.
+
+
+      (2) Selftest gaps.
+
+      - I added fake6, a second admissible reference of the AMB type, after fake2. The spot check must
+      still go to fake2, and fake6 must have no finite-volume solves.
+
+      - fake2''s level-1 finite-volume record is written without `picard_dT_K`. F6c_picard:fake2 must
+      fail with the value NaN.
+
+      - A NaN temperature is planted on die 1 of the last checked type, so a plain `max()` would skip
+      it. The per-type check, the aggregate check and stack_type_a3 must all fail or read NaN. This runs
+      in the existing stack_types scenario and in a new stack_types_nan scenario where the NaN is the
+      only fault, so nothing else can make the aggregate fail.
+
+
+      The defect: `mfos.metrics.max_gci_consistency` raises on non-finite input, so `evaluate` stopped
+      and wrote no F6(e) check. A new helper, `_a3_die`, returns NaN for any die with a non-finite temperature
+      and otherwise calls the unchanged metric.
+
+
+      (3) Spec. The founder-decisions list now has the F6(e) reading: a non-default stack type whose references
+      are all inadmissible is reported, not gated. It also gives the alternative (fail F6e) and says the
+      runner implements the first. A second entry states the rounding rule, which the founder may change.
+
+
+      A new mutation script shows all 18 mutants are caught and the unmutated runner passes. That is 10
+      new mutants for the T0310 findings plus T0309''s 8 re-run on the changed runner.
+
+
+      Commands run, all exit 0:
+
+      - `uv run python experiments/runners/e008_run.py --selftest`
+
+      - `uv run python experiments/runners/e008_run.py --verify-freeze` (12 OK lines)
+
+      - the E008.yaml keyword assert
+
+      - `uv run ruff check experiments/runners/e008_run.py` (also run on the new mutation script)
+
+      - `uv run mfos exp check E008`
+
+      - the thermal_fem.py sha256 test (a216d5fe3209bcee)
+
+      - `uv run mfos gate --fast` ("all gates passed")
+
+      - the new mutation script, `uv run python research/o003/e008_dev/t0311_mutations.py --out research/o003/e008_dev/t0311_mutations.json`
+
+
+      Nothing is committed; the packet did not ask for a commit.'
+    failure_class: none
+    confidence: 0.88
+    evidence:
+    - 'Definition of done, all exit 0: `--selftest` ("selftest passed"); `--verify-freeze` (12 OK lines,
+      including thermal_fem_sha256 a216d5fe3209bcee…); the E008.yaml keyword assert; ruff ("All checks
+      passed!"); `mfos exp check E008`; the shasum test of thermal_fem.py; `mfos gate --fast` ("all gates
+      passed").'
+    - 'Selftest log, stack_types scenario: 7 of 46 checks fail, exactly the planted ones (F6e +5 K on
+      other:b8046147dbe9, F6e NaN on other:d084ad951787, the aggregate (NaN), F6c energy balance on fake2
+      and fake3, F6c Picard on fake2 (missing key) and fake4). stack_types_nan scenario: 2 of 46 fail
+      (the NaN type and the aggregate, both NaN).'
+    - 'Mutation script (research/o003/e008_dev/t0311_mutations.json), all caught with rc 1:
+
+      - N1, last admissible reference: 23 FAIL lines
+
+      - N2, missing Picard counted as 0: 2
+
+      - N3, plain max over dies: 6
+
+      - N4, plain max for the aggregate value: 2
+
+      - N5, NaN-unsafe aggregate pass: 1, from stack_types_nan only
+
+      - N6, guard removed: raises ValueError
+
+      - N7, exact-float thickness: 4
+
+      - N8, exact-float conductivity: 2
+
+      - N9, 10 µm rounding step: 11
+
+      - N10, 5-digit conductivity: 8
+
+      - T0309''s M1-M8 re-run on the changed runner: all caught.
+
+      The unmutated runner (sha256 6d01aa5c…8342) passes.'
+    - 'Fact: `mfos.metrics._finite_rows` raises ValueError(''non-finite value in a metric column''), which
+      `max_gci_consistency` calls. Before this change, a NaN finite-volume temperature therefore stopped
+      `evaluate` with no F6(e) check written (mutant N6 reproduces this).'
+    - 'Real dev references (level 0 only, peak memory 106 MB): gen2_0 is Al2O3_default_dbc with dies [[180000,
+      50000]] nm. 2D_Case_4 is other:a9ad6bbb1af1 with [[180000, 0]] nm.'
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - research/o003/e008_dev/t0311_mutations.py
+    - research/o003/e008_dev/t0311_mutations.json
+    - research/o003/e008_dev/T0311_notes.md
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    recommended_actions:
+    - 'Founder at E008 registration: confirm one F6(e) reading, either ''a stack type whose references
+      are all inadmissible is reported, not gated'' (implemented) or the alternative ''fail F6e''. Also
+      confirm or change the rounding rule (1 nm for thicknesses, 9 significant digits for conductivities).'
+    - When T0263 adds the registered path (full() and judged-reference loading), re-review it and re-run
+      research/o003/e008_dev/t0311_mutations.py against that runner.
+    - 'Optional, not asked for in this packet: add a NaN plant for the per-row energy_balance_max field
+      (the other half of T0310 finding 2). The field already uses the NaN-aware maximum, but no selftest
+      case exercises it.'
+    - E008.dev_rows.json still carries the T0309 runner stamp (ae96dda0). This task changed no code that
+      produces rows, so the rows stand, but the stamp no longer equals the current runner hash. Regenerate
+      the rows or note the mismatch at the next full-fidelity dev run.
+    affects_acceptance_criteria: false

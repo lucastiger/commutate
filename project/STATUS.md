@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T04:33:23+00:00 from repository state — do not edit_
+_generated 2026-11-11T05:08:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0140** [question] [O003] Reference set on 2026-11-12 (D0010): customer layouts or public fallback
@@ -13,7 +13,7 @@ _generated 2026-11-11T04:33:23+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $150.27/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $152.29/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -24,7 +24,7 @@ _generated 2026-11-11T04:33:23+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 91 | $150.27 | 2494557 | 1287442 | 135 | 0 |
+| O003 | 92 | $152.29 | 2534150 | 1301294 | 135 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,14 +32,12 @@ _generated 2026-11-11T04:33:23+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 267, failed: 3, running: 1, todo: 1
+cancelled: 39, done: 267, failed: 3, review: 1, running: 1, todo: 1
 
-- T0311 `running` scientist/design_experiment: E008 runner: stack-type signature rounding, selftest gaps, F6(e) reading for the founder (review T0310) (attempt 1)
+- T0311 `review` scientist/design_experiment: E008 runner: stack-type signature rounding, selftest gaps, F6(e) reading for the founder (review T0310) (attempt 1)
+- T0312 `running` critic/review: Review T0311 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-11T03:40:55+00:00 merged {"task": "T0306"}
-- 2026-11-11T03:40:55+00:00 inbox_opened {"id": "I0167", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
-- 2026-11-11T03:40:59+00:00 run_started {"run": "T0309-scientist-20261110T194059-505a", "task": "T0309", "role": "scientist", "session": "e5ac8c3e-b8e9-4d1a-ae59-361f8019f629"}
 - 2026-11-11T04:08:10+00:00 run_finished {"run": "T0309-scientist-20261110T194059-505a", "status": "completed", "cost": 3.913366, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T04:19:22+00:00 verified {"task": "T0309"}
 - 2026-11-11T04:19:28+00:00 run_started {"run": "T0310-critic-20261110T201928-8048", "task": "T0310", "role": "critic", "session": "36bf6f29-65f5-477b-8768-a971e03b5409"}
@@ -52,3 +50,6 @@ cancelled: 39, done: 267, failed: 3, running: 1, todo: 1
 - 2026-11-11T04:33:19+00:00 merged {"task": "T0309"}
 - 2026-11-11T04:33:19+00:00 inbox_opened {"id": "I0169", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-11T04:33:23+00:00 run_started {"run": "T0311-scientist-20261110T203323-e8b3", "task": "T0311", "role": "scientist", "session": "5ec62158-c0d6-4052-aea1-b79464859e29"}
+- 2026-11-11T04:57:48+00:00 run_finished {"run": "T0311-scientist-20261110T203323-e8b3", "status": "completed", "cost": 2.019112, "subtype": "success", "report": "structured_output"}
+- 2026-11-11T05:08:46+00:00 verified {"task": "T0311"}
+- 2026-11-11T05:08:52+00:00 run_started {"run": "T0312-critic-20261110T210852-0ba9", "task": "T0312", "role": "critic", "session": "ba45f8e8-f8a8-4c10-a3da-11890d3cbb46"}
