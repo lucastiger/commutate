@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The selftest cannot tell the 'first admissible' reference from any other admissible reference",
+      "detail": "Claim: the spot-check reference of a type is its first ADMISSIBLE reference in config.references order. In the stack_types scenario (ST_REFS) every non-default type has exactly one admissible reference: AMB has fake1 (inadmissible) and fake2 (admissible); thick-die AMB has only fake3; thick-attach DBC has only fake4. A run that picks the last admissible reference, or any admissible one, produces the same spot_refs and passes. The code itself, next(... for rc in refs if ... and rc.admissible), is correct.",
+      "evidence": "ST_REFS in experiments/runners/e008_run.py at about line 1429; want = {st_amb: 'fake2', st_amb_thick: 'fake3', st_attach: 'fake4'}. The sandbox refused to run my reversed(refs) mutant, so this rests on reading ST_REFS.",
+      "suggested_check": "Add a second admissible reference to one non-default type so that only the first in order matches the expected spot_refs.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Untested: a finite-volume (FV) record without picard_dT counts as NaN",
+      "detail": "The spec text and evaluate say a spot-check record without picard_dT_K counts as NaN, so the F6(c) Picard check fails. The selftest's fake FV solver always sets picard_dT_K, so changing that default from math.nan to 0.0 would still pass the selftest. In practice child_fv now always writes the key. I confirmed on a real FV solve that ThermalResult.meta carries picard_dT. So only stale FV records from older runner versions, if job outputs are reused across versions, would reach this path, and it fails safe.",
+      "evidence": "fake_world sets rec['picard_dT_K'] for every 'fv' job. evaluate does: pc_vals += [f.get('picard_dT_K', math.nan) for f in fv].",
+      "suggested_check": "Plant one FV record without picard_dT_K and require that F6c_picard on that reference fails.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "NaN handling not planted for the stack-type (F6(e)) A3 value or for the energy_balance_max row field",
+      "detail": "NaN is planted only in an FV energy balance, which exercises the F6(c) path. A NaN from max_gci_consistency in F6(e), or in the per-row energy_balance_max column, is never planted. Replacing _worst with max() in those two places would not be caught. The code as written is correct: _worst and _within are used there, and I checked their behaviour directly.",
+      "evidence": "The selftest plants only fv_eb_nan (energy balance) and fv_pc_bad (Picard). Probes: _worst([1e-9, nan, 2e-9]) = nan; _within(nan, 1) = False; _within(inf, 1) = False.",
+      "suggested_check": "Plant a NaN finite-volume temperature in one spot-check reference and require that F6e_stack_type_spot_check:<type> and the aggregate check fail.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Exact float equality in the stack-type signature can create spurious non-default types (author-disclosed)",
+      "detail": "Per-die thicknesses are compared as exact floats. 2D_Case_4's die thickness is stored as 0.00017999999999999998 m. A reference on C004's default DBC stack whose die thicknesses differ from the defaults only by rounding would be classed non-default and need an FV spot check. At Case 4 size that is the roughly 416 GB phase-B job, or E008 reports F6e INVALID. This errs toward more checks, not fewer, but it could block a verdict. The layer thicknesses already had the same exact-float issue before this change.",
+      "evidence": "_stack_type(dbc, [Die with thickness*(1+1e-15)]) returned other:408ebae3a1b4, not Al2O3_default_dbc. Real dev references: gen2_0 is Al2O3_default_dbc with [[0.00018, 5e-05]]; 2D_Case_4 is other:61c8dd23d7d1 with [[0.00017999999999999998, 0.0]].",
+      "suggested_check": "Before registration, decide whether to round thicknesses in the signature (for example to 1 nm).",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The F6(e) gate is loosened for types whose only references are inadmissible",
+      "detail": "Before this change, a type whose spot reference was inadmissible failed F6e_stack_type_spot_check. Now such a type gets no check: it is reported (reference null, status 'no admissible reference') and is not failed. This follows from reading O003's 'every stack type' as every type in the D0010 reference set, where inadmissible references contribute no rows. The draft spec text states this reading. It is defensible, but it is a semantic change to a gate, and the founder should see it before E008 is registered.",
+      "evidence": "Old code: ck(..., False, detail='reference ... is not admissible'). New: run.spot_none, rep['F6e'][st]['reference'] = None. O003 objective.yaml line 111: 'on at least one reference of every stack type other than C004's default'.",
+      "suggested_check": "Get the founder to confirm this reading at registration.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself. The selftest (--selftest) returns 0 with 'selftest passed'. --verify-freeze is all OK, including thermal_fem sha256 a216d5fe3209bcee\u2026. The E008.yaml keyword assert passes. ruff on the runner: 'All checks passed'. mfos exp check E008 returns 0. The shasum of thermal_fem.py matches a216d5fe3209bcee. mfos gate --fast: 'all gates passed', exit 0.",
+    "Re-derived every hand value in TR_HAND and TR_SUMMARY from mfos.metrics.gci_capped (Roache form with the order capped at 1 and its branches) and the tj_bounds upper/lower definition. Twin GCIs 0.15625 and 0.625, width 0.3125. c_div: +inf GCI, lower bound 399.234375. c_grow: growth 9.5 is flagged (|9.5/8 \u2212 1| = 0.1875 > 0.15), margin \u22120.578125. c_hot: margin 10.3125. Summary counts 4/1/8/1/3. All match. The offgrid twin width of 0.125 K also checks: rho = 0.2 gives 1.25 \u00d7 max(0.04, 0.05) = 0.0625 per side.",
+    "Ran a real thermal_layout.solve_layout_level FV solve at level 0 on a generated dev layout (halfbridge_housing_spec(2)). result.meta carries picard_dT (1.99e-5 K, 5 Picard iterations, energy balance 3.9e-15), while solve_layout_level's own meta has no picard_dT. So child_fv's r['result'].meta['picard_dT'] works on the real path, which the fake-solver selftest cannot show.",
+    "Called the unmodified helpers directly. _worst gives NaN when any value is NaN, +inf for [inf, 1], 0.0 for an empty list. _within rejects NaN and \u00b1inf and accepts v equal to tol. _stack_type returns DEFAULT_STACK for the default DBC stack with default dies, and non-default for no dies or for a thickness rounded by 1e-15.",
+    "Ran the real dev_reference for gen2_0 and case4. Stack types and die thickness sets match the notes. The reference dies and spec.die give the same thicknesses.",
+    "Recomputed rule_strictness from each stored measured_rules record in E008.dev_rows.json: equal to the stored report for both references, so report_unchanged=true holds. The runner_sha256 stamp equals the current runner (ae96dda0\u2026) and rules_py_sha256 equals the current drc/rules.py.",
+    "Re-ran the repository's mutation harness (research/o003/e008_dev/t0309_mutations.py) with output to $TMPDIR. The unmutated runner passes and all eight mutants are caught (all_caught_and_base_passes: true), reproducing the committed t0309_mutations.json.",
+    "Read the selftest's planted cases (ST_REFS, fake_world) for coverage gaps; these produced the three minor findings. The sandbox refused execution of my own source mutants (missing-picard default 0.0, last-admissible selection, plain max in the A3 maximum)."
+  ],
+  "caveats": [
+    "Valid for the development path only (dev_reference, the fake-solver selftest, a level-0 real FV probe). The registered full() loader is unchanged and out of scope. In real dev runs every RefCtx is admissible, so the admissible-reference logic is exercised only by the selftest.",
+    "F6(e) no longer fails a non-default stack type whose only references are inadmissible; such a type is reported, not gated. This rests on reading O003's 'every stack type' as the D0010 admissible reference set, and the founder should confirm that reading at registration.",
+    "Stack types use exact float equality on layer and die thicknesses. A reference whose thicknesses differ from the defaults only by rounding becomes a non-default type, needing an FV spot check (about 416 GB at Case-4 size) or ending with F6e INVALID.",
+    "My own source mutants could not be executed (sandbox policy). The selftest gaps reported (first-vs-any admissible, missing picard_dT counted as NaN, NaN in the A3 value) come from reading the planted cases, not from mutant runs."
+  ]
+}
