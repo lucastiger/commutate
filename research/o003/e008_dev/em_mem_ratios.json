@@ -1,0 +1,326 @@
+{
+ "what": "measured peak memory vs the --plan EM model (0.8 GB + 3.65 GB per M unknowns); T0262 attempt 5",
+ "model_source": "experiments/drafts/E008.yaml config.compute.cost_model (em_mem_base_GB, em_mem_GB_per_Munknown)",
+ "gen2_0_smoke": {
+  "source": "research/o003/e008_dev/smoke_work (not committed: generated solve results), macOS peak RSS, one thread",
+  "ratio_range_by_level": {
+   "fil_f": [
+    2.3185,
+    2.573
+   ],
+   "lat0.5": [
+    1.0981,
+    1.5131
+   ],
+   "thk_c": [
+    1.2778,
+    1.4583
+   ],
+   "thk_f": [
+    1.1866,
+    1.7727
+   ]
+  },
+  "solves": [
+   {
+    "file": "065e8a22293549e6bc3217dd__emfil_f__d9179c4ca1.json",
+    "level": "fil_f",
+    "n_unknowns": 430554,
+    "peak_GB": 5.749014528,
+    "model_GB": 2.3715,
+    "ratio": 2.4242,
+    "wall_s": 222.7
+   },
+   {
+    "file": "065e8a22293549e6bc3217dd__emlat0.5__aff8a50ee6.json",
+    "level": "lat0.5",
+    "n_unknowns": 430194,
+    "peak_GB": 3.420110848,
+    "model_GB": 2.3702,
+    "ratio": 1.443,
+    "wall_s": 140.6
+   },
+   {
+    "file": "065e8a22293549e6bc3217dd__emthk_c__e79c4851c2.json",
+    "level": "thk_c",
+    "n_unknowns": 215247,
+    "peak_GB": 2.02612736,
+    "model_GB": 1.5857,
+    "ratio": 1.2778,
+    "wall_s": 102.3
+   },
+   {
+    "file": "065e8a22293549e6bc3217dd__emthk_f__02433543c5.json",
+    "level": "thk_f",
+    "n_unknowns": 860088,
+    "peak_GB": 4.674502656,
+    "model_GB": 3.9393,
+    "ratio": 1.1866,
+    "wall_s": 335.9
+   },
+   {
+    "file": "90d81291067f493f680b1783__emfil_f__d9179c4ca1.json",
+    "level": "fil_f",
+    "n_unknowns": 436294,
+    "peak_GB": 5.547032576,
+    "model_GB": 2.3925,
+    "ratio": 2.3185,
+    "wall_s": 320.2
+   },
+   {
+    "file": "90d81291067f493f680b1783__emlat0.5__aff8a50ee6.json",
+    "level": "lat0.5",
+    "n_unknowns": 435934,
+    "peak_GB": 3.385819136,
+    "model_GB": 2.3912,
+    "ratio": 1.416,
+    "wall_s": 232.8
+   },
+   {
+    "file": "90d81291067f493f680b1783__emthk_c__e79c4851c2.json",
+    "level": "thk_c",
+    "n_unknowns": 218117,
+    "peak_GB": 2.067136512,
+    "model_GB": 1.5961,
+    "ratio": 1.2951,
+    "wall_s": 165.1
+   },
+   {
+    "file": "90d81291067f493f680b1783__emthk_f__02433543c5.json",
+    "level": "thk_f",
+    "n_unknowns": 871568,
+    "peak_GB": 6.596476928,
+    "model_GB": 3.9812,
+    "ratio": 1.6569,
+    "wall_s": 344.1
+   },
+   {
+    "file": "aade6489835d7e940d122c73__emfil_f__d9179c4ca1.json",
+    "level": "fil_f",
+    "n_unknowns": 433444,
+    "peak_GB": 5.930401792,
+    "model_GB": 2.3821,
+    "ratio": 2.4896,
+    "wall_s": 225.8
+   },
+   {
+    "file": "aade6489835d7e940d122c73__emlat0.5__aff8a50ee6.json",
+    "level": "lat0.5",
+    "n_unknowns": 433084,
+    "peak_GB": 2.614427648,
+    "model_GB": 2.3808,
+    "ratio": 1.0981,
+    "wall_s": 190.2
+   },
+   {
+    "file": "aade6489835d7e940d122c73__emthk_c__e79c4851c2.json",
+    "level": "thk_c",
+    "n_unknowns": 216692,
+    "peak_GB": 2.046967808,
+    "model_GB": 1.5909,
+    "ratio": 1.2867,
+    "wall_s": 71.0
+   },
+   {
+    "file": "aade6489835d7e940d122c73__emthk_f__02433543c5.json",
+    "level": "thk_f",
+    "n_unknowns": 865868,
+    "peak_GB": 4.903763968,
+    "model_GB": 3.9604,
+    "ratio": 1.2382,
+    "wall_s": 410.3
+   },
+   {
+    "file": "ce5a90af72210098df8dc73c__emfil_f__d9179c4ca1.json",
+    "level": "fil_f",
+    "n_unknowns": 435424,
+    "peak_GB": 6.14760448,
+    "model_GB": 2.3893,
+    "ratio": 2.573,
+    "wall_s": 354.5
+   },
+   {
+    "file": "ce5a90af72210098df8dc73c__emlat0.5__aff8a50ee6.json",
+    "level": "lat0.5",
+    "n_unknowns": 435064,
+    "peak_GB": 3.613294592,
+    "model_GB": 2.388,
+    "ratio": 1.5131,
+    "wall_s": 194.3
+   },
+   {
+    "file": "ce5a90af72210098df8dc73c__emthk_c__e79c4851c2.json",
+    "level": "thk_c",
+    "n_unknowns": 217682,
+    "peak_GB": 2.078048256,
+    "model_GB": 1.5945,
+    "ratio": 1.3032,
+    "wall_s": 189.7
+   },
+   {
+    "file": "ce5a90af72210098df8dc73c__emthk_f__02433543c5.json",
+    "level": "thk_f",
+    "n_unknowns": 869828,
+    "peak_GB": 7.0463488,
+    "model_GB": 3.9749,
+    "ratio": 1.7727,
+    "wall_s": 379.4
+   },
+   {
+    "file": "d82a630715485d72c419f113__emfil_f__d9179c4ca1.json",
+    "level": "fil_f",
+    "n_unknowns": 429854,
+    "peak_GB": 5.846974464,
+    "model_GB": 2.369,
+    "ratio": 2.4682,
+    "wall_s": 311.8
+   },
+   {
+    "file": "d82a630715485d72c419f113__emlat0.5__aff8a50ee6.json",
+    "level": "lat0.5",
+    "n_unknowns": 429494,
+    "peak_GB": 3.515318272,
+    "model_GB": 2.3677,
+    "ratio": 1.4847,
+    "wall_s": 171.6
+   },
+   {
+    "file": "d82a630715485d72c419f113__emthk_c__e79c4851c2.json",
+    "level": "thk_c",
+    "n_unknowns": 214897,
+    "peak_GB": 2.310537216,
+    "model_GB": 1.5844,
+    "ratio": 1.4583,
+    "wall_s": 171.2
+   },
+   {
+    "file": "d82a630715485d72c419f113__emthk_f__02433543c5.json",
+    "level": "thk_f",
+    "n_unknowns": 858688,
+    "peak_GB": 6.651527168,
+    "model_GB": 3.9342,
+    "ratio": 1.6907,
+    "wall_s": 402.6
+   }
+  ]
+ },
+ "p3_case4": {
+  "source": "research/o006_p3/solves (peak_mem_mb, P3 on the same Mac)",
+  "ratio_range_by_level": {
+   "fil_f": [
+    0.8849,
+    0.9376
+   ],
+   "lat0.5": [
+    0.8558,
+    0.909
+   ],
+   "thk_c": [
+    0.9583,
+    1.0353
+   ],
+   "thk_f": [
+    0.976,
+    0.9893
+   ]
+  },
+  "solves": [
+   {
+    "file": "case4_base__fil_f.json",
+    "level": "fil_f",
+    "n_unknowns": 1020380,
+    "peak_GB": 4.0037,
+    "model_GB": 4.5244,
+    "ratio": 0.8849
+   },
+   {
+    "file": "case4_base__lat0.5.json",
+    "level": "lat0.5",
+    "n_unknowns": 1020260,
+    "peak_GB": 3.892,
+    "model_GB": 4.5239,
+    "ratio": 0.8603
+   },
+   {
+    "file": "case4_base__thk_c.json",
+    "level": "thk_c",
+    "n_unknowns": 510180,
+    "peak_GB": 2.7561,
+    "model_GB": 2.6622,
+    "ratio": 1.0353
+   },
+   {
+    "file": "case4_base__thk_f.json",
+    "level": "thk_f",
+    "n_unknowns": 2040420,
+    "peak_GB": 8.0803,
+    "model_GB": 8.2475,
+    "ratio": 0.9797
+   },
+   {
+    "file": "case4_die_shift__fil_f.json",
+    "level": "fil_f",
+    "n_unknowns": 1020380,
+    "peak_GB": 4.2419,
+    "model_GB": 4.5244,
+    "ratio": 0.9376
+   },
+   {
+    "file": "case4_die_shift__lat0.5.json",
+    "level": "lat0.5",
+    "n_unknowns": 1020260,
+    "peak_GB": 4.1121,
+    "model_GB": 4.5239,
+    "ratio": 0.909
+   },
+   {
+    "file": "case4_die_shift__thk_c.json",
+    "level": "thk_c",
+    "n_unknowns": 510180,
+    "peak_GB": 2.5511,
+    "model_GB": 2.6622,
+    "ratio": 0.9583
+   },
+   {
+    "file": "case4_die_shift__thk_f.json",
+    "level": "thk_f",
+    "n_unknowns": 2040420,
+    "peak_GB": 8.1596,
+    "model_GB": 8.2475,
+    "ratio": 0.9893
+   },
+   {
+    "file": "case4_trace_width__fil_f.json",
+    "level": "fil_f",
+    "n_unknowns": 1025500,
+    "peak_GB": 4.1117,
+    "model_GB": 4.5431,
+    "ratio": 0.905
+   },
+   {
+    "file": "case4_trace_width__lat0.5.json",
+    "level": "lat0.5",
+    "n_unknowns": 1025380,
+    "peak_GB": 3.8875,
+    "model_GB": 4.5426,
+    "ratio": 0.8558
+   },
+   {
+    "file": "case4_trace_width__thk_c.json",
+    "level": "thk_c",
+    "n_unknowns": 512740,
+    "peak_GB": 2.681,
+    "model_GB": 2.6715,
+    "ratio": 1.0036
+   },
+   {
+    "file": "case4_trace_width__thk_f.json",
+    "level": "thk_f",
+    "n_unknowns": 2050660,
+    "peak_GB": 8.086,
+    "model_GB": 8.2849,
+    "ratio": 0.976
+   }
+  ]
+ }
+}

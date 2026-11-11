@@ -1,0 +1,6 @@
+2D_Case_4: twin fit+signal_feet L1 W/R 1.0017256511964738 fail_fast DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHAS walk_steps 5 quick_ok {'draws': 2000, 'drc_clean': 33, 'rejected_clean': 0, 'flag': False, 'rejection_rate_ub95': 0.08678118929147494} midpoint [] wall 76 s
+rule strictness flags (>2x the smallest DC-link gap): none
+twin copper: {"mode": "fit+signal_feet", "per_net": {"DC+": {"symdiff_mm2": 0.0, "fraction": 0.0}, "DC-": {"symdiff_mm2": 0.0, "fraction": 0.0}, "PHASE": {"symdiff_mm2": 0.0, "fraction": 0.0}}}
+       76.65 real        75.80 user         0.48 sys
+time: sysctl kern.clockrate: Operation not permitted
+exit=1

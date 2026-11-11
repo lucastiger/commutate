@@ -1,0 +1,22 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+11:52:49 2D_Case_4: twin fit+signal_feet D walk True fail_fast DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_PHASE_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[col_DC+_u1-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_HS_u0-0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[row_LS_u0+0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[slot0_u1-0.5mm]', 'walk[col_DC+_v0-0.5mm]', 'walk[col_PHASE_v1-0.5mm]', 'walk[slot3_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]', 'walk[slot2_u1-0.5mm]']; walk terminal state: local maximum: none of the 36 DRC-valid single-parameter changes raises L1 further (ratio 1.2316 after 75 walk steps) quick_ok {'draws': 100, 'drc_clean': 0, 'rejected_clean': 0, 'flag': False}
+11:52:49 start calibrate  7566b7a31d920fdc8dc0a55b__calibrate.json (0.5 GB est)
+11:52:49 start em thk_c 7566b7a31d920fdc8dc0a55b__emthk_c.json (2.7 GB est)
+Traceback (most recent call last):
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 1481, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 1476, in main
+    return dev(a)
+           ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 1383, in dev
+    gate_rows, gate_rep = twin_gates_only(run, gates, args.band_pairs, dseed, smoke) if gates else ([], {})
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 1322, in twin_gates_only
+    run.sched.step()
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 433, in step
+    self.done(j)  # raises on a failed job
+    ^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0262/experiments/runners/e008_run.py", line 393, in done
+    raise RuntimeError(f"job {job['out']} failed: {rec.get('error')}")
+RuntimeError: job experiments/drafts/E008_dev_work/2D_Case_4/solves/7566b7a31d920fdc8dc0a55b__calibrate.json failed: KeyError: 'none (M5)'

@@ -1,0 +1,338 @@
+{
+ "threads_per_solve": 2,
+ "why": "two threads: mean wall 5751 s vs pinned 6364 s",
+ "vm": {
+  "machine": "n2d-custom-8-81920-ext (regular, not Spot, for the registered run)",
+  "vcpus": 8,
+  "ram_GB": 78.0,
+  "memory_fraction": 0.85,
+  "usd_per_h": 0.612,
+  "overhead_h": 0.5,
+  "ext_usd_per_GB_h": 0.0086,
+  "resize_overhead_h": 0.25,
+  "pricing_note": "0.612 $/h at 80 GB is the founder's figure; 0.0086 $/GB-h for N2D extended memory is an assumption to check in the console. N2D extended memory reaches 768 GB per VM (cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type)",
+  "earliest_start": "2026-11-16"
+ },
+ "usable_GB": 66.3,
+ "near_ties_expected_source": "default (no dev search rows)",
+ "cases": {
+  "expected": {
+   "near_ties": 3,
+   "thermal_batches": 1,
+   "null_extra_checks": 0,
+   "n_solves": 181,
+   "phase_a_hours": 38.91,
+   "phase_b_big_memory_jobs": [
+    {
+     "job": "2D_Case_2R:fv:L3",
+     "peak_GB": 352.7,
+     "machine": "n2d-custom-8-425984-ext",
+     "fits_n2d_768GB": true,
+     "hours": 6.77,
+     "usd": 23.83
+    }
+   ],
+   "vm_hours": 45.68,
+   "usd": 47.65,
+   "billed_vcpu_hours": 365.5,
+   "process_cpu_hours": 240.2,
+   "peak_GB_per_reference": {
+    "2D_Case_2R": {
+     "em": 15.8,
+     "thermal": 31.0,
+     "fv": 352.7
+    },
+    "2D_Case_6": {
+     "em": 15.8,
+     "thermal": 31.0
+    }
+   },
+   "per_solve_on_vm": {
+    "reference_sizes": "2D_Case_2R",
+    "note": "wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells / candidates",
+    "solves": {
+     "screen:screen_main": {
+      "n": 20000,
+      "wall_h": 2.5,
+      "peak_GB": 1.5,
+      "threads": 1
+     },
+     "screen:screen_control": {
+      "n": 20000,
+      "wall_h": 2.5,
+      "peak_GB": 1.5,
+      "threads": 1
+     },
+     "em:lat0.25": {
+      "n": 4108580,
+      "wall_h": 1.603,
+      "peak_GB": 15.8,
+      "threads": 2
+     },
+     "em:lat0.5": {
+      "n": 1027145,
+      "wall_h": 0.218,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "em:thk_c": {
+      "n": 513572,
+      "wall_h": 0.109,
+      "peak_GB": 2.67,
+      "threads": 2
+     },
+     "em:thk_f": {
+      "n": 2054290,
+      "wall_h": 0.904,
+      "peak_GB": 8.3,
+      "threads": 2
+     },
+     "em:fil_f": {
+      "n": 1027145,
+      "wall_h": 0.457,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "thermal:calibration:T0": {
+      "n": 51098,
+      "wall_h": 0.012,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:reference:T0": {
+      "n": 51098,
+      "wall_h": 0.003,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:reference:T1": {
+      "n": 365435,
+      "wall_h": 0.021,
+      "peak_GB": 2.59,
+      "threads": 2
+     },
+     "thermal:reference:T2": {
+      "n": 2752565,
+      "wall_h": 0.161,
+      "peak_GB": 16.21,
+      "threads": 2
+     },
+     "thermal:twin:T0": {
+      "n": 51098,
+      "wall_h": 0.003,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:twin:T1": {
+      "n": 365435,
+      "wall_h": 0.021,
+      "peak_GB": 2.59,
+      "threads": 2
+     },
+     "thermal:twin:T2": {
+      "n": 2752565,
+      "wall_h": 0.161,
+      "peak_GB": 16.21,
+      "threads": 2
+     },
+     "fv:fv:L1": {
+      "n": 3669120,
+      "wall_h": 0.102,
+      "peak_GB": 6.0,
+      "threads": 2
+     },
+     "fv:fv:L2": {
+      "n": 29352960,
+      "wall_h": 0.815,
+      "peak_GB": 44.53,
+      "threads": 2
+     },
+     "fv:fv:L3": {
+      "n": 234823680,
+      "wall_h": 6.523,
+      "peak_GB": 352.74,
+      "threads": 2
+     },
+     "thermal:candidate:T0": {
+      "n": 98698,
+      "wall_h": 0.006,
+      "peak_GB": 1.06,
+      "threads": 2
+     },
+     "thermal:candidate:T1": {
+      "n": 708819,
+      "wall_h": 0.041,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "thermal:candidate:T2": {
+      "n": 5350885,
+      "wall_h": 0.312,
+      "peak_GB": 31.05,
+      "threads": 2
+     }
+    }
+   },
+   "end_date_if_start": "2026-11-17"
+  },
+  "upper": {
+   "near_ties": 15,
+   "thermal_batches": 2,
+   "null_extra_checks": 8,
+   "n_solves": 349,
+   "phase_a_hours": 52.91,
+   "phase_b_big_memory_jobs": [
+    {
+     "job": "2D_Case_2R:fv:L3",
+     "peak_GB": 352.7,
+     "machine": "n2d-custom-8-425984-ext",
+     "fits_n2d_768GB": true,
+     "hours": 6.77,
+     "usd": 23.83
+    }
+   ],
+   "vm_hours": 59.68,
+   "usd": 56.21,
+   "billed_vcpu_hours": 477.4,
+   "process_cpu_hours": 313.9,
+   "peak_GB_per_reference": {
+    "2D_Case_2R": {
+     "em": 15.8,
+     "thermal": 31.0,
+     "fv": 352.7
+    },
+    "2D_Case_6": {
+     "em": 15.8,
+     "thermal": 31.0
+    }
+   },
+   "per_solve_on_vm": {
+    "reference_sizes": "2D_Case_2R",
+    "note": "wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells / candidates",
+    "solves": {
+     "screen:screen_main": {
+      "n": 20000,
+      "wall_h": 2.5,
+      "peak_GB": 1.5,
+      "threads": 1
+     },
+     "screen:screen_control": {
+      "n": 20000,
+      "wall_h": 2.5,
+      "peak_GB": 1.5,
+      "threads": 1
+     },
+     "em:lat0.25": {
+      "n": 4108580,
+      "wall_h": 1.603,
+      "peak_GB": 15.8,
+      "threads": 2
+     },
+     "em:lat0.5": {
+      "n": 1027145,
+      "wall_h": 0.218,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "em:thk_c": {
+      "n": 513572,
+      "wall_h": 0.109,
+      "peak_GB": 2.67,
+      "threads": 2
+     },
+     "em:thk_f": {
+      "n": 2054290,
+      "wall_h": 0.904,
+      "peak_GB": 8.3,
+      "threads": 2
+     },
+     "em:fil_f": {
+      "n": 1027145,
+      "wall_h": 0.457,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "thermal:calibration:T0": {
+      "n": 51098,
+      "wall_h": 0.012,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:reference:T0": {
+      "n": 51098,
+      "wall_h": 0.003,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:reference:T1": {
+      "n": 365435,
+      "wall_h": 0.021,
+      "peak_GB": 2.59,
+      "threads": 2
+     },
+     "thermal:reference:T2": {
+      "n": 2752565,
+      "wall_h": 0.161,
+      "peak_GB": 16.21,
+      "threads": 2
+     },
+     "thermal:twin:T0": {
+      "n": 51098,
+      "wall_h": 0.003,
+      "peak_GB": 0.79,
+      "threads": 2
+     },
+     "thermal:twin:T1": {
+      "n": 365435,
+      "wall_h": 0.021,
+      "peak_GB": 2.59,
+      "threads": 2
+     },
+     "thermal:twin:T2": {
+      "n": 2752565,
+      "wall_h": 0.161,
+      "peak_GB": 16.21,
+      "threads": 2
+     },
+     "fv:fv:L1": {
+      "n": 3669120,
+      "wall_h": 0.102,
+      "peak_GB": 6.0,
+      "threads": 2
+     },
+     "fv:fv:L2": {
+      "n": 29352960,
+      "wall_h": 0.815,
+      "peak_GB": 44.53,
+      "threads": 2
+     },
+     "fv:fv:L3": {
+      "n": 234823680,
+      "wall_h": 6.523,
+      "peak_GB": 352.74,
+      "threads": 2
+     },
+     "thermal:candidate:T0": {
+      "n": 98698,
+      "wall_h": 0.006,
+      "peak_GB": 1.06,
+      "threads": 2
+     },
+     "thermal:candidate:T1": {
+      "n": 708819,
+      "wall_h": 0.041,
+      "peak_GB": 4.55,
+      "threads": 2
+     },
+     "thermal:candidate:T2": {
+      "n": 5350885,
+      "wall_h": 0.312,
+      "peak_GB": 31.05,
+      "threads": 2
+     }
+    }
+   },
+   "end_date_if_start": "2026-11-18"
+  }
+ }
+}
