@@ -4,7 +4,7 @@ title: 'Twin and degradation coverage on the development layouts 2D_Case_2R, 2D_
   which rule binds and the smallest change (L0/L1 only)'
 type: research
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Diagnosis for the founder (go-ahead 2026-11-11), L0/L1 only. E008 as drafted is INVALID\
   \ before any VM spend:\nboth D0010 public references raise TwinError (research/notes/o003-reference-reconstructions.md\
@@ -135,4 +135,149 @@ rationale: 'Founder go-ahead 2026-11-11 (session): both public references fail t
   / O003 amendment, possible new public modules), find which rules bind and the smallest change that makes
   real layouts representable. A research task, not investigate, so its merge does not trigger a replan
   before that decision (I0140 was answered with --no-replan).'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I reproduced all three recorded R0 outcomes using E008''s own construction:
+
+    - 2D_Case_2R: TwinError on signal_wire_length (4.597 mm is outside [5.344, 10.396] mm).
+
+    - 2D_Case_6: TwinError, no (orientation, sequence) fits.
+
+    - 2D_Case_4: twin mode fit+signal_feet, then DegradeError at 1.232 after a 75-step walk that stops
+    at a local maximum.
+
+
+    Each layout fails for a different reason.
+
+    - **2D_Case_2R** fails on one rule, min_signal_wire_length. Without it (R1) the twin is exact on the
+    power copper (symmetric difference 0 on every net), L1(W)/L1(ref) = 1.0000, and D reaches L1(D)/L1(W)
+    = 1.395, above the 1.388 target. O003 scope_in bounds gate wires only from above. The lower bound
+    comes from measure_rules, which E008 uses unmodified, so it is E008''s choice, not an O003 requirement.
+
+    - **2D_Case_6*'
+  report:
+    summary: 'I reproduced all three recorded R0 outcomes using E008''s own construction:
+
+      - 2D_Case_2R: TwinError on signal_wire_length (4.597 mm is outside [5.344, 10.396] mm).
+
+      - 2D_Case_6: TwinError, no (orientation, sequence) fits.
+
+      - 2D_Case_4: twin mode fit+signal_feet, then DegradeError at 1.232 after a 75-step walk that stops
+      at a local maximum.
+
+
+      Each layout fails for a different reason.
+
+      - **2D_Case_2R** fails on one rule, min_signal_wire_length. Without it (R1) the twin is exact on
+      the power copper (symmetric difference 0 on every net), L1(W)/L1(ref) = 1.0000, and D reaches L1(D)/L1(W)
+      = 1.395, above the 1.388 target. O003 scope_in bounds gate wires only from above. The lower bound
+      comes from measure_rules, which E008 uses unmodified, so it is E008''s choice, not an O003 requirement.
+
+      - **2D_Case_6** fails on its structure, not on a rule. All 21 single-rule relaxations still fail
+      at twin.py''s candidate filter. The two switch blocks sit side by side with wires running in opposite
+      directions, so the HS pair (v 15.5–22.0) and LS pair (18.0–24.5) overlap and no slot order fits.
+
+      - **2D_Case_4** fails on min_width_power = 5 mm, the reference''s own minimum power-net width, which
+      O003 requires. Relaxing that rule alone reaches 1.421, the value twin.py records, which was measured
+      under the default 1 mm rule. No other single relaxation gets there (best 1.293). My two prototype
+      changes to the degradation rule reached only 1.260 and 1.240.
+
+
+      R2 is skipped: I found no citable minimum length for 0.30 mm aluminium gate wires (one search; the
+      Tyndall design-rule PDF returned 404).
+
+
+      Deliverables: the script research/scripts/o003_twin_coverage.py, research/o003/twin_coverage/results.json
+      (a second run reproduced it byte for byte), and the note research/notes/o003-twin-coverage.md covering
+      items 1–6.'
+    failure_class: none
+    root_cause: 'Three different causes, one per layout.
+
+      - 2D_Case_2R: the lower gate-wire length bound that measure_rules derives from the reference''s
+      shortest gate wire (5.344 mm). O003 does not require it. The generator always runs a gate wire to
+      the nearest point of its gate copper, so a twin gate wire is the shortest wire possible from its
+      foot. The reference''s wires land 1.13–1.91 mm beyond that point. The twin''s repair step cannot
+      lengthen a wire: the 0.5 mm gate pad allows only one foot position.
+
+      - 2D_Case_6: twin.py''s candidate filter requires one total order of the four slots across the die
+      rows (twin.py lines 412-414). Case 6''s side-by-side switch blocks interleave in that direction.
+      In the other orientation the dies of each switch are not in one row (_rows_of returns None).
+
+      - 2D_Case_4: the O003-required minimum power-net width of 5 mm. The twin''s landing bands are already
+      5 mm wide, so the first degradation move cannot narrow them. The keep-out strips block every spread
+      move at the 2 mm spacing. The walk ends with every power feature at its rule minimum.'
+    confidence: 0.85
+    evidence:
+    - '[F] R0 reproduced: 2R TwinError on signal wires 2 and 3 (4.597e-03 m outside [5.344e-03, 1.040e-02]
+      m). Case 6 TwinError ''no (orientation, sequence)''. Case 4 fit+signal_feet, then DegradeError ''L1
+      ratio 1.232 < 1.388'', walk local_maximum after 75 steps from 0.996 (results.json layouts.*.variants.R0).'
+    - '[F] 2R R1: twin mode fit, topology x/DC-l-PHASEd-DC+d-PHASEl/split, symmetric difference 0 mm²
+      on every net, L1 11.170 nH for both twin and reference. degrade reaches 1.3947 via spread[2,up]
+      1 mm, spread[3,up] 1 mm and 16 walk steps (target_reached).'
+    - '[F] 2R R3: of 22 single-field relaxations, only min_signal_wire_length (identical to R1) removes
+      the TwinError.'
+    - '[F] Case 6 R3: all 21 relaxations raise at the candidate filter. candidate_filter_trace: orient
+      1 fails _rows_of (die-centre v of each switch: HS 14/20, LS 41/47). In orient 0, all 8 sequences
+      violate the v-order (anchors HS die 22.0, HS landing 15.5, LS die 18.0, LS landing 24.5).'
+    - '[F] Case 4 R3 terminal ratios: min_width_power→1 mm gives 1.421 (target reached, no walk). die_spacing
+      1.293, die_edge_margin 1.286, spacing_other 1.248, spacing_signal_dcp 1.247; all others 1.232. X:
+      max_wire_length raised to 1 m gives 1.243.'
+    - '[F] Case 4 walk terminal blockers (76 candidates): 36 DRC-clean but not raising L1; rejected by
+      min_trace_width 10, die_edge_margin 8, min_spacing 7, edge_margin 5, wire_landing 4, die_spacing
+      2, wire_length 2, terminal_off_trace 3 (one candidate can hit several rules).'
+    - '[F] Prototypes on Case 4, DRC-clean under R0: P1 (extended walk from the frozen terminal state,
+      single-parameter jumps up to ±5 mm plus rigid slot moves) 1.260, local maximum after 25 steps. P2
+      (same candidate set from the walk''s start) 1.240 after 35 steps.'
+    - '[F] O003 objective.yaml lines 61-63: bondability bounds gate wires only from above. rules.py line
+      587 sets min_signal_wire_length = the reference''s shortest signal wire.'
+    - '[F] Second full run to $TMPDIR, then cmp against results.json: exit 0 (byte-identical).'
+    - '[F] e008_run.py --verify-freeze exit 0; thermal_fem sha prefix test exit 0; mfos gate --fast exit
+      0; ruff exit 0; git status shows only the three new research/ paths.'
+    alternative_explanations:
+    - explanation: Case 4's DegradeError is a weakness of the greedy hill-climb (a local maximum), not
+        a limit set by the rules. A better degradation rule could reach 1.388 under the required rules.
+      how_to_discriminate: 'Done in part: P1 and P2 add single-parameter jumps up to ±5 mm, rigid slot
+        moves and a restart, and reach only 1.260 and 1.240. Relaxing min_width_power alone reaches 1.421.
+        A hill-climb is not a proof, so this is not fully excluded. A D in another sequence or orientation
+        was not tried: it would amount to a search.'
+    - explanation: The 2R TwinError depends on modelling choice M1 (uniform die orientation) or M2 (gate
+        wires modelled as signal wires) rather than on the lower length bound.
+      how_to_discriminate: R1 removes the error with M1 and M2 unchanged, and no other single relaxation
+        does. T0313 also showed that M1 at 180° fails for a different reason.
+    - explanation: Case 6 fails because of a rule value rather than its structure.
+      how_to_discriminate: The anchor order checked in _fit does not read any rule. All 21 R3 relaxations
+        fail at the same filter, and the trace shows the v-order violated for every sequence.
+    discriminating_tests:
+    - 'R1 vs R0 on 2R: TwinError removed, D reaches 1.395.'
+    - R3 sweeps on each layout (one rule relaxed at a time).
+    - Walk terminal-state candidate classification on Case 4.
+    - Prototypes P1 and P2 (extended walk) on Case 4.
+    - Candidate-filter trace on Case 6.
+    recommended_actions:
+    - (i) Drop min_signal_wire_length from E008's per-reference rules, e.g. dataclasses.replace(rules,
+      min_signal_wire_length=None) in the reference loader, under a new freeze. This makes 2R representable
+      and its D reaches the target. O003 does not require the bound. If the change is made in measure_rules
+      instead, the rules.py hash changes too.
+    - '(iii) Founder decision on Case 4-type DegradeErrors: exclude that reference rather than declare
+      E008 INVALID (already open in E008.yaml lines 381-382). No degradation-rule change found here reaches
+      1.388 under the O003-required 5 mm power width.'
+    - '(ii) Flag only, do not propose: a planted headroom below 1.25 or a margin below 0.11 would be a
+      criteria change.'
+    - '(i) Optional: a side-by-side generator topology for Case 6 (derivative.py and twin.py, about 9-11
+      functions, 200-350 lines, 10-15 tests). It changes the derivative and twin freeze hashes and the
+      sealed candidate stream, so E008''s dev rows must be re-run. No registered O001 or O005 evidence
+      depends on it.'
+    - 'Resolve E008''s conflicting text before registration: the sanity check says TwinError/DegradeError
+      ''stop the run'', while prepare() says they ''stop the reference''.'
+    - 'F3: every change here was found after 2R and Case 6 were seen. It is clean only if 2R, Case 6 and
+      Case 4 become development layouts and the judged references stay unseen.'
+    - 'Compute exceeded the packet''s ~30 min (about 45 min: two full runs of about 19 min each, the second
+      only to check determinism). The definition of done''s git merge-base check was blocked by the guard
+      hook and not run locally; git status shows only the three new research/ paths.'
+    files_written:
+    - research/scripts/o003_twin_coverage.py
+    - research/o003/twin_coverage/results.json
+    - research/notes/o003-twin-coverage.md
+    affects_acceptance_criteria: false
+    experiment_drafts: []
