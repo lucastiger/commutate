@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T03:19:24+00:00 from repository state — do not edit_
+_generated 2026-11-12T03:23:06+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -37,7 +37,6 @@ cancelled: 39, done: 273, failed: 3, running: 1
 - T0316 `running` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
 
 ## Recent events
-- 2026-11-11T18:24:53+00:00 run_finished {"run": "T0315-critic-20261111T095411-1156", "status": "completed", "cost": 2.191543, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T18:24:59+00:00 inbox_opened {"id": "I0173", "kind": "protected_change", "subject": "T0314: merge needs founder approval"}
 - 2026-11-11T18:26:30+00:00 inbox_resolved {"id": "I0173", "status": "approved", "note": "Merge T0314's twin-coverage diagnosis (research only, no frozen code). Review T0315 accept_with_caveats: minor co
 - 2026-11-11T18:26:59+00:00 merged {"task": "T0314"}
@@ -52,3 +51,4 @@ cancelled: 39, done: 273, failed: 3, running: 1
 - 2026-11-12T02:50:30+00:00 sleep_detected {"gap_s": 349, "runs_extended": 0}
 - 2026-11-12T03:19:00+00:00 task_added {"task": "T0316", "reason": "founder decision 2026-11-12 (D0018): degraded copy as yardstick, exclusion fallback"}
 - 2026-11-12T03:19:24+00:00 run_started {"run": "T0316-scientist-20261111T191924-cf93", "task": "T0316", "role": "scientist", "session": "0c028ff9-af16-4a5d-a62e-a75de873bc51"}
+- 2026-11-12T03:22:50+00:00 founder_decision_noted {"subject": "O003/E008 model-fix list fixed before any reference screen", "note": "Founder confirmed in session: (1) drop E008 min_signal_wire_length (scope_in 
