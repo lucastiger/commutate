@@ -1,0 +1,56 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Spec text left stale after the F6(e) founder decision",
+      "detail": "The draft still says at E008.yaml:482-483 (2D_Case_6 spot_note) that the runner 'runs no spot check of its type then (see founder_decisions_before_registration)'. That item has been removed from founder_decisions_before_registration and moved to founder_decisions_settled. The description of the declared sanity check F6e_stack_type_spot_check (lines 1424-1439) also covers only the 'no admissible reference' case and never mentions the new report-only status 'only reference excluded: <reason>'. The code and founder_decisions_settled agree with each other. The registered contract text (the declared check description) is incomplete for the case D0019's set is expected to hit (2D_Case_6).",
+      "evidence": "grep 'see founder_decisions_before_registration' -> experiments/drafts/E008.yaml:483; F6e_stack_type_spot_check description at lines 1424-1439 has no 'only reference excluded'",
+      "suggested_check": "Before registration, add the excluded-only-reference reading to the F6e_stack_type_spot_check description and fix the spot_note pointer.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Mixed-type edge case is reported as 'no admissible reference'",
+      "detail": "Suppose a non-default stack type has one admissible reference that is excluded (TwinError, DegradeError or a D-definition miss) and another reference that is inadmissible and not excluded. Run.drive (lines 1548-1563) then puts the type in spot_none, and evaluate reports it as 'no admissible reference of this stack type'. That is wrong, because an admissible reference of the type existed but was excluded. The spot_excluded branch handles only types with every reference excluded. D0019's set (2R and Case 6, each on its own type) cannot reach this case, so the stated scope is not affected.",
+      "evidence": "experiments/runners/e008_run.py:1548-1563: the spot_excluded loop iterates only over types absent from the non-excluded refs",
+      "suggested_check": "Add an exclusion selftest case with two references of one type (one admissible and excluded, one inadmissible and kept), or note the reading in the spec.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "burst_full.sh: 'rerun' cannot recover if the exit-code read fails and the VM later stops",
+      "detail": "After wait_phase, the script saves STEP_phaseA (or phaseB) and then reads the runner's exit code over ssh. If that one read fails, the script exits 7 and the documented remedy is 'Rerun'. On a rerun, step_done phaseA is true, so ensure_running is skipped and runner_exit goes straight to ssh. Phase A's backstop `shutdown -h +1800` is still pending after the job ends, so if the founder reruns after the VM has stopped (backstop or host event), every rerun exits 7 again. Recovery then needs a manual `gcloud compute instances start`.",
+      "evidence": "burst_full.sh lines 212-220 (mark phaseA before runner_exit; no ensure_running on the resume path) and 255-260 (same for phase B); line 175 schedules a shutdown that is never cancelled",
+      "suggested_check": "Call ensure_running before runner_exit when RC_A or RC_B is empty, or cancel the backstop (shutdown -c) once the rc file exists.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The deviation statement is accurate but not exhaustive",
+      "detail": "The new statement correctly drops the earlier overstatement ('no power-copper rule changed') and names D0018 decision 1 (the 1.5 mm power-width floor for D) and the T0317 removal of the gate/Kelvin wire-length bound. These match D0018 decision 1 and D0019 Context and item 2. It does not list D0018 decision 2 (a D that misses F1(b) is excluded rather than failed), nor T0317's rule that D band-solver failures make the run INVALID. D0019 counts both as part of 'exactly the T0316 and T0317 changes'. The statement covers them only generically ('E008's runner and spec changed afterwards (T0316, T0317)'). Nothing in it is false.",
+      "evidence": "project/decisions/D0019 lines 14-17 and 39-44; D0018 decisions 1-2; E008.yaml f3_declared_deviation.statement",
+      "suggested_check": "Optionally name D0018 decision 2 and the T0318 INVALID rule in rules_changed.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e008_run.py --selftest`: rc=0, 'selftest phase (T0322): 0 failures', full_orchestration 0 failures, 'selftest passed'.",
+    "Ran `--verify-freeze`: rc=0 (all OK, including thermal_fem a216d5fe, recompute params, code_must_match O007).",
+    "Ran `--plan --plan-out $TMPDIR/plan.json` and compared it with `cmp`: byte-identical to research/o003/e008_dev/plan_T0320.json, as the design note claims.",
+    "Ran `--check-references --out $TMPDIR/cr.json`: rc=0, fingerprints 66cb1e19 (2D_Case_2R) and 71e07ae1 (2D_Case_6); with wall_s and peak_rss_GB removed, the output equals the stored check_references.json.",
+    "Ran `ruff check` on the runner (pass), `mfos exp check E008` (rc=0), the thermal_fem.py sha256 prefix (a216d5fe3209bcee), the draft key-presence assertion (pass) and `mfos gate --fast` ('all gates passed').",
+    "Read Scheduler.submit/_launch/step and Run.drive. The phase-A stop is raised only when nothing is running and every queued job is above the solo cap, after all drivers were replayed and spot jobs submitted. No `except RuntimeError` or `except Exception` on the drive path swallows NeedsLargerMachine; the only handler is in full().",
+    "Traced the mfos wrapper (experiments.py run()) and ExperimentRun. os.environ is passed to the runner, so E008_SOLO_RAM_GB reaches it. A missing result.json leads to an error result.json and run.json exit_code=75, and ExperimentRun overwrites result.json in phase B without refusing. --run-id, --seed-file and --force exist, and mint prints JSON with run_id and seed_file as the script expects.",
+    "Checked the new deviation statement against D0018 decisions 1-2 and D0019 Context and item 2 (accurate; see note finding).",
+    "Checked the F6(e) report-only logic against the selftest assertions (exact F6e dict, spot_excluded, no per-type gated check, aggregate passed) and looked for an edge case outside them (mixed excluded/inadmissible type; minor finding).",
+    "Checked phase_b_machine arithmetic by hand: ceil(410.7/0.85/8)*8 = 488 GB -> 499712 MB, a multiple of 256 MB. The solo_cap_from_env guard accepts 488 against MemTotal of about 480 GiB (480.7*1.03+2 = 497.1)."
+  ],
+  "caveats": [
+    "The protected-path check (`git diff --quiet $(git merge-base HEAD main) -- src ...`) could not be run: this review checkout has only the 'review' branch and no 'main' ref. That check is left to the code-run provenance check.",
+    "`bash -n` and `burst_full.sh --dry-run` were denied by this session's permission mode, so the launch script was reviewed statically only. Its 30-line, exit-0 dry run was not reproduced here. No gcloud behaviour (set-machine-type to n2d-custom-8-499712-ext, live migration, capacity) was or could be verified.",
+    "An ad-hoc adversarial freeze test (tampering the grid rule or metric params while a recon counter must stay at zero) was denied by the permission mode. The freeze-before-load property for those other frozen values rests on reading the code: check_references lines 981-986 and registered_run lines 3528-3533 both return or raise before recon_module() or judged_reference, on any failed freeze check. The selftest covers the reconstruction-script hash case.",
+    "The phase A/B logic is tested with fake in-process jobs (phase_failures) and checked here by reading the code. The real subprocess path (os._exit(75), uv propagating the code, the mfos wrapper writing an error result.json and then run.json exit_code 75, phase B overwriting both) was traced through tools/mfos/mfos/experiments.py and evidence.py but not executed.",
+    "Phase B has about 1% memory headroom: 410.7 GB estimate against a 414.8 GB solo cap (0.85 x 488). Any upward re-estimate from phase A's measured ratios triggers the documented exit 4 and a founder decision."
+  ]
+}
