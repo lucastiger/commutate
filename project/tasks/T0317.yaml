@@ -31,7 +31,18 @@ description: "Implement item 1 of the founder's model-fix list (2026-11-12, foun
   \ record and the gen2_0 smoke prep, update experiments/drafts/E008.dev_rows.json,\n   and report the\
   \ shortest gate wire among the dev twins and DRC-clean smoke samples. Report, do not gate, any shorter\n\
   \   than DesignRules.min_wire_length (1.5 mm, a placeholder default).\nThe registered path (full(),\
-  \ judged-reference loading) and the reference set stay out of scope."
+  \ judged-reference loading) and the reference set stay out of scope.\n\nADDED from review T0318 of T0316\
+  \ (project/reviews/T0316/T0318.json; read it first), same limits as above:\n4. Solver failures are not\
+  \ exclusions (T0318 finding 0). Run.d_definition treats a NaN band of D or W as a miss, which\n   excludes\
+  \ the reference (D_misses_1p25_in_L_sub), so a numerical failure is relabelled \"no valid D exists\"\
+  . Make a\n   non-finite L or e_R in D's or W's band solves, or a band solve that did not converge (check\
+  \ the l2_layout result's\n   GMRES flags or equivalent convergence record), fail F1b_D_definition for\
+  \ that reference, which makes the run INVALID\n   as before T0316. Only a finite, converged ratio below\
+  \ 1.25 at the conservative end excludes. Selftest: a planted NaN\n   band and a planted non-converged\
+  \ band each give INVALID, not an exclusion.\n5. Selftest gaps (T0318 finding 4): a TwinError exclusion\
+  \ case; a D-definition miss on the only reference (INVALID);\n   exclusions at mixed stages (prepare\
+  \ and drive) in one run. Fix the walk_steps field in\n   research/o003/e008_dev/case4_prep.py (it prints\
+  \ the number of keys of the walk record, 5, not the 7 steps)."
 context_files:
 - research/notes/o003-twin-coverage.md
 - project/reviews/T0314/T0315.json
@@ -40,6 +51,7 @@ context_files:
 - src/moduleforge/drc/rules.py
 - research/notes/e008-design.md
 - experiments/drafts/E008.dev_rows.json
+- project/reviews/T0316/T0318.json
 deliverables: []
 touches: []
 definition_of_done:
@@ -73,8 +85,8 @@ definition_of_done:
 experiment: null
 risk: medium
 model: null
-budget_usd: 3.5
-max_turns: 60
+budget_usd: 5.0
+max_turns: 80
 wall_minutes: null
 attempts: 0
 max_attempts: 2

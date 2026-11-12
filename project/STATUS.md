@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T04:38:29+00:00 from repository state — do not edit_
+_generated 2026-11-12T04:39:07+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -38,7 +38,6 @@ cancelled: 39, done: 274, failed: 3, needs_founder: 1, todo: 1
 - T0316 `needs_founder` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
 
 ## Recent events
-- 2026-11-12T01:42:48+00:00 sleep_detected {"gap_s": 6806, "runs_extended": 0}
 - 2026-11-12T02:21:32+00:00 sleep_detected {"gap_s": 1882, "runs_extended": 0}
 - 2026-11-12T02:27:41+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
 - 2026-11-12T02:44:41+00:00 sleep_detected {"gap_s": 980, "runs_extended": 0}
@@ -53,3 +52,4 @@ cancelled: 39, done: 274, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-12T04:26:57+00:00 sleep_detected {"gap_s": 694, "runs_extended": 1}
 - 2026-11-12T04:38:22+00:00 run_finished {"run": "T0318-critic-20261111T202623-2491", "status": "completed", "cost": 2.45103, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T04:38:26+00:00 inbox_opened {"id": "I0174", "kind": "protected_change", "subject": "T0316: merge needs founder approval"}
+- 2026-11-12T04:38:45+00:00 task_amended {"task": "T0317", "reason": "adds review T0318 follow-ups (solver failure != exclusion; selftest gaps) before T0317 starts"}
