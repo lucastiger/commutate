@@ -1,13 +1,14 @@
 # ModuleForge status
-_generated 2026-11-12T20:38:32+00:00 from repository state — do not edit_
+_generated 2026-11-12T20:39:12+00:00 from repository state — do not edit_
 
-## Founder inbox (6 open)
+## Founder inbox (7 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
 - **I0175** [experiment_registration] register E008 (pre-registration)
 - **I0177** [experiment_registration] register E008 (pre-registration)
+- **I0178** [protected_change] T0320: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -15,7 +16,7 @@ _generated 2026-11-12T20:38:32+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $187.13/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $189.31/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -26,7 +27,7 @@ _generated 2026-11-12T20:38:32+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 102 | $187.13 | 3021482 | 1522109 | 158 | 0 |
+| O003 | 102 | $189.31 | 3047960 | 1534013 | 165 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -34,14 +35,11 @@ _generated 2026-11-12T20:38:32+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 277, failed: 3, review: 1, running: 1
+cancelled: 39, done: 278, failed: 3, needs_founder: 1
 
-- T0320 `review` scientist/design_experiment: E008: judged-reference loading and the registered path for D0010's public set (2D_Case_2R, 2D_Case_6), cost plan on the real reconstructions, declared F3 deviation (founder decision D0019) (attempt 1)
-- T0321 `running` critic/review: Review T0320 (general) (attempt 1)
+- T0320 `needs_founder` scientist/design_experiment: E008: judged-reference loading and the registered path for D0010's public set (2D_Case_2R, 2D_Case_6), cost plan on the real reconstructions, declared F3 deviation (founder decision D0019) (attempt 1)
 
 ## Recent events
-- 2026-11-12T15:13:18+00:00 sleep_detected {"gap_s": 1392, "runs_extended": 0}
-- 2026-11-12T15:23:27+00:00 inbox_resolved {"id": "I0176", "status": "approved", "note": "Merge T0317 (D0018 item 1: no minimum gate-wire length in E008's per-reference rules; solver failures in D's band
 - 2026-11-12T15:24:06+00:00 merged {"task": "T0317"}
 - 2026-11-12T15:24:06+00:00 inbox_opened {"id": "I0177", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-12T15:53:02+00:00 sleep_detected {"gap_s": 1394, "runs_extended": 0}
@@ -55,3 +53,5 @@ cancelled: 39, done: 277, failed: 3, review: 1, running: 1
 - 2026-11-12T20:24:57+00:00 verified {"task": "T0320"}
 - 2026-11-12T20:25:03+00:00 run_started {"run": "T0321-critic-20261112T122503-f7af", "task": "T0321", "role": "critic", "session": "f2206079-4dd3-4a18-980c-2d7dd8a52431"}
 - 2026-11-12T20:25:38+00:00 sleep_detected {"gap_s": 889, "runs_extended": 1}
+- 2026-11-12T20:39:05+00:00 run_finished {"run": "T0321-critic-20261112T122503-f7af", "status": "completed", "cost": 2.185204, "subtype": "success", "report": "structured_output"}
+- 2026-11-12T20:39:09+00:00 inbox_opened {"id": "I0178", "kind": "protected_change", "subject": "T0320: merge needs founder approval"}
