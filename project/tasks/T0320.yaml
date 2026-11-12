@@ -4,7 +4,7 @@ title: 'E008: judged-reference loading and the registered path for D0010''s publ
   cost plan on the real reconstructions, declared F3 deviation (founder decision D0019)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Implement founder decision D0019 (2026-11-12, founder session; the record is being committed\
   \ separately). It is\nrestated here in full:\n1. Reference set unchanged: O003's judged references stay\
@@ -142,4 +142,133 @@ rationale: 'Founder decision 2026-11-12 (session, D0019): no screened public mod
   modules fail or lack documents; PowerSynth 2D_Case_5 has quarter-turned dies outside the twin space),
   so E008 runs on D0010''s fallback with the F3 deviation declared. The registered path (full() raises
   NotImplementedError) and the real-size cost plan are what stand between E008 and registration.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'E008 now implements D0019. All definition-of-done commands exit 0. One finding needs the founder
+    before registration: the F6(e) check on 2D_Case_2R needs about 411 GB of memory, so it does not fit
+    in 150 GB.
+
+
+    What changed:
+
+    1. **References.** `config.references` lists 2D_Case_2R then 2D_Case_6, in D0010 order. Every admissibility
+    field is read from the frozen T0263 records by a script, not typed. That includes the full fingerprints
+    66cb1e19… and 71e07ae1…, L_term 7 nH with its source, the grid flag, keep-out nets, the source commit
+    and the GPL-3.0 note. The snapping check reads "not required: on the 0.5 mm grid, s_ref = 0". `sic_mosfet_half_bridge`
+    and `separate_antiparallel_diode_dies` each state their basis, and the unsettled parts are marked
+    (the HS/LS assignment is inferred from connect'
+  report:
+    summary: "E008 now implements D0019. All definition-of-done commands exit 0. One finding needs the\
+      \ founder before registration: the F6(e) check on 2D_Case_2R needs about 411 GB of memory, so it\
+      \ does not fit in 150 GB.\n\nWhat changed:\n1. **References.** `config.references` lists 2D_Case_2R\
+      \ then 2D_Case_6, in D0010 order. Every admissibility field is read from the frozen T0263 records\
+      \ by a script, not typed. That includes the full fingerprints 66cb1e19… and 71e07ae1…, L_term 7\
+      \ nH with its source, the grid flag, keep-out nets, the source commit and the GPL-3.0 note. The\
+      \ snapping check reads \"not required: on the 0.5 mm grid, s_ref = 0\". `sic_mosfet_half_bridge`\
+      \ and `separate_antiparallel_diode_dies` each state their basis, and the unsettled parts are marked\
+      \ (the HS/LS assignment is inferred from connectivity; the part datasheet was not read).\n2. **Loader\
+      \ and guard.** `judged_reference` rebuilds each reference through the frozen script and checks its\
+      \ fingerprint and grid flag before anything else. A mismatch refuses the reference and voids the\
+      \ run. It then builds the rules with `e008_rules` (no overrides) and the spec with the entry's keep-out\
+      \ nets. The script's sha256 is now in `config.freeze`. `prepare()` refuses any spec without `e008_rules`'\
+      \ record or with `min_signal_wire_length` set (review T0319 finding 0).\n3. **Registered path.**\
+      \ `full()` runs, in order:\n   - the freeze checks, before any loading;\n   - a refusal to mix customer\
+      \ and public references;\n   - a workdir manifest, so a rerun resumes and a different config or\
+      \ seed is refused;\n   - loading and `prepare()` per reference, with seeds `derive_seed(s, purpose,\
+      \ i)`;\n   - `Run.drive`, `assemble_rows` and `evaluate`, which follow D0018 and T0317 as in `dev()`;\n\
+      \   - every declared sanity check and metric through `ExperimentRun`.\n   \n   Every row, the evaluation\
+      \ report and the notes carry the label and the D0019 deviation.\n4. **`--check-references`.** It\
+      \ rebuilds, checks fingerprints and counts mesh sizes only. Peak memory was 2.05 GB.\n\n**Real sizes\
+      \ against the Case 4 proxies (facts):**\n\n| | 2D_Case_2R | 2D_Case_6 | Case 4 proxy |\n|---|---|---|---|\n\
+      | l2_layout unknowns at 0.25 mm | 1,491,140 | 1,095,080 | 4,108,580 |\n| scikit-fem DOFs, levels\
+      \ 0-2 | 77,966 / 560,979 / 4,239,845 | 81,714 / 590,079 / 4,469,229 | 51,098 / 365,435 / 2,752,565\
+      \ |\n| finite-volume cells, level 3 (= level 2 × 8) | 273.5 M | 247.8 M | 234.8 M |\n\nThe level\
+      \ 1→2 step was measured at exactly 8.0. The thermal grids are larger than the proxy although the\
+      \ outlines are smaller.\n\n**Cost (cost model, not measured runs):**\n\n| | VM-hours | $ | billed\
+      \ vCPU-hours | process CPU-hours |\n|---|---|---|---|---|\n| Case 6 excluded at its twin, expected\
+      \ | 12.13 | 22.32 | 97.0 | 40.0 |\n| Case 6 excluded at its twin, upper | 18.17 | 26.02 | 145.4\
+      \ | 56.9 |\n| Case 6 counted, expected | 18.71 | 38.18 | 149.7 | 70.8 |\n| Case 6 counted, upper\
+      \ | 31.87 | 46.23 | 255.0 | 102.6 |\n\n- `cpu_hours_est` is now 97.0, and E008 fits the 320 cpu_hours\
+      \ budget on either reading.\n- **F6(e) on 2R does not fit in 150 GB.** Its finite-volume level-3\
+      \ solve peaks at 410.7 GB. It needs the VM resized to 488 GB (allowed, under N2D's 768 GB limit):\
+      \ 4.22 h and $17.48, range 1.17-8.16 h. This replaces the Case 4 proxy.\n- **Case 6's stack type\
+      \ when Case 6 is excluded by TwinError.** The runner does neither a spot check nor a report of that\
+      \ type; the selftest confirms this. A report would cost $0. A spot check would cost 4.41 VM-hours\
+      \ and $14.54 (range $4.40-$27.29). This is listed as a new founder item.\n\n**Spec and note.**\n\
+      - `config.f3_declared_deviation` records the commits for T0263, T0314, T0316 and T0317, what was\
+      \ and was not known, and that nothing under src/ changed since T0300.\n- One discrepancy: git records\
+      \ T0300 at 11:31 -0800 (19:31 UTC), while the packet says 11:31 UTC. It is the same commit; the\
+      \ packet's time zone is off.\n- The two settled founder items moved to settled, citing D0019. Every\
+      \ remaining item now says what 2R's existing records settle. The budget and F6(e) memory items use\
+      \ the real numbers.\n- The runner's hash was re-stamped by re-running the dev-layout prep scripts\
+      \ (L0/L1 only). Their results equal T0317's.\n\nNothing was run on 2R or Case 6 beyond rebuild,\
+      \ fingerprint and mesh counts. No founder item was decided.\n\n**Commands and exit codes:**\n- `t0320_spec_update.py\
+      \ refs`, `sizes` and `cost`: 0 each.\n- `--check-references --out …`: 0. A first run wrapped in\
+      \ `/usr/bin/time -l` reported 1 because of the sandbox; the plain run gives 0.\n- `--plan --plan-out\
+      \ …`: 0.\n- `case4_prep.py`, `gen2_0_prep.py T0320`, `refresh_rule_strictness.py T0320`: 0 each.\n\
+      - Definition of done: `--selftest`, `--verify-freeze`, `--plan`, `--check-references`, the YAML\
+      \ key check, `ruff check` on the runner, `ruff check .`, `mfos exp check E008`, the thermal_fem\
+      \ sha test and `mfos gate --fast`: 0 each.\n- The protected-path diff check: the hook blocked `git\
+      \ merge-base`. I ran `git status --porcelain` on the same paths instead, and it was empty.\n- A\
+      \ mutation check of the new selftest (scratch script in $TMPDIR, not committed) caught every planted\
+      \ fault: 2 failures with the guard disabled, 3 with the fingerprint check disabled, 1 with the deviation\
+      \ tag emptied."
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '[F] --check-references (exit 0, peak RSS 2.05 GB): 2R fingerprint 66cb1e19…696a and Case 6 71e07ae1…4cb7
+      match their entries. l2_layout unknowns at 0.25 mm: 1,491,140 and 1,095,080. scikit-fem DOFs at
+      levels 0-2: 2R 77,966 / 560,979 / 4,239,845; Case 6 81,714 / 590,079 / 4,469,229. FV box cells at
+      levels 1 and 2 built, level-1→2 step exactly 8.0, level 3 273,473,536 (2R) and 247,812,096 (Case
+      6). File: research/o003/e008_dev/check_references.json'
+    - '[F, cost model] --plan (research/o003/e008_dev/plan_T0320.json): with Case 6 excluded, expected
+      12.13 VM-h / $22.32 / 97.0 billed vCPU-h / 40.0 process CPU-h and upper 18.17 / $26.02 / 145.4 /
+      56.9; with all counted, 18.71 / $38.18 / 149.7 / 70.8 and 31.87 / $46.23 / 255.0 / 102.6. F6(e)
+      on 2R peaks at 410.7 GB and needs n2d-custom-8-499712-ext (488 GB), 4.22 h, $17.48. A spot check
+      of Case 6''s type would cost 4.41 VM-h, $14.54'
+    - '[F] selftest exit 0. full_orchestration_failures: a wrong fingerprint is refused before twin();
+      the T0319 guard refuses a spec built by measure_rules and one with the lower bound set; registered_run
+      records every declared check and metric, A1 = 0.21290 with one reference counted and one excluded
+      (TwinError); the label and deviation are in all 49 rows, the report and the notes; the excluded
+      reference''s stack type gets neither a spot check nor a report; a rerun solves 0 new jobs; another
+      seed is refused'
+    - '[F] Mutation check of the new test: guard disabled gives 2 failures, fingerprint check disabled
+      3, deviation tag emptied 1'
+    - '[F] Re-stamped dev records equal T0317''s: Case 4 twin fit+signal_feet, walk 7 steps, 33/2000 DRC-clean
+      samples, upper bound 0.0868; gen2_0 smoke_rows_match true. The runner''s sha256 2f94239c… appears
+      in 3 places in E008.dev_rows.json'
+    - '[F] git: T0300 commit 096b127b is dated 2026-11-10 11:31:43 -0800 (19:31 UTC), the last change
+      under src/; nothing under the protected paths changed (git status on those paths is empty)'
+    - '[F] Definition of done: --selftest, --verify-freeze, --plan, --check-references, the YAML key check,
+      ruff on the runner and on the repo, mfos exp check E008, the thermal_fem sha test and mfos gate
+      --fast all exit 0'
+    recommended_actions:
+    - 'Founder: F6(e) on 2D_Case_2R needs about 488 GB (FV level 3: 273.5 M cells, 410.7 GB peak). Allow
+      the resize, or ask for a memory-lean FV level 3 under a new spec. Otherwise E008 gives no verdict
+      (F6e INVALID).'
+    - 'Founder: choose what happens to 2D_Case_6''s stack type when it is excluded by TwinError: neither
+      (as implemented, $0), report only ($0), or spot check (4.41 VM-h, $14.54).'
+    - 'Founder: the remaining founder items in the spec now state what 2R''s existing records settle.
+      The full-fidelity dev run (burst_dev.sh) is still needed for the band check and for whether the
+      conservative Tj test is attainable.'
+    - 'Before registration: freeze this runner, whose sha256 is 2f94239c…. Note that candidate DOFs are
+      a proxy (Case 4''s candidate-to-reference ratio) and the screen rate is the 0.45 s slow end, because
+      neither could be measured on 2R before the freeze (D0019 item 4).'
+    - The orchestrator should commit research/o003/e008_dev/{t0320_spec_update.py, check_references.json,
+      plan_T0320.json, *_T0320.log} along with the spec, runner, dev rows and design note.
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/t0320_spec_update.py
+    - research/o003/e008_dev/gen2_0_prep.py
+    - research/o003/e008_dev/check_references.json
+    - research/o003/e008_dev/plan_T0320.json
+    - research/o003/e008_dev/case4_prep_T0320.log
+    - research/o003/e008_dev/gen2_0_prep_T0320.log
+    - research/o003/e008_dev/refresh_rule_strictness_T0320.log
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    affects_acceptance_criteria: false
