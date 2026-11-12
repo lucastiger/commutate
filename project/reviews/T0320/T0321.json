@@ -1,0 +1,58 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The one-line F3 deviation statement says no power-copper rule changed, but D's power-copper width rule did change after both references were loaded",
+      "detail": "config.f3_declared_deviation.statement and rules_changed say: 'the removed rule is a lower bound on gate/Kelvin-wire length, no power-copper, power-wire or die rule changed', and 'rules_changed: only min_signal_wire_length'. T0316 (D0018 decision 1) came after T0263 and T0314 had loaded 2R and Case 6 at L0/L1. It set the 1.5 mm power-width floor, so degrade() builds D under min_width_power = min(reference minimum, 1.5 mm). For 2R that is 1.5 mm, where T0314 used its own 4.0 mm minimum. That is a power-copper rule (for the yardstick D) changed after the references were seen. The block does disclose T0316 under changed_after and lists 'D of 2R under the D0018 floor' as not known before the freeze. Only the short statement that every row, report and note carries overstates the case. The floor was found on 2D_Case_4 and 2R did not need it (1.395 at 4.0 mm), so I see no look-ahead bias, but the disclosure is inexact.",
+      "evidence": "E008.yaml lines 1235-1238 and 1282-1284 against lines 1251-1255 (changed_after T0316) and the plan_references and founder-items text: 'D at 2R's own 4.0 mm power minimum ... under the 1.5 mm floor D may differ'",
+      "suggested_check": "Reword to 'no design rule of the reference, twin or candidates on power copper, power wires or dies changed; D's power-width floor (D0018 decision 1, T0316) did', unless D0019 dictates the exact wording.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "D0019, the decision cited for every item, is not in the repository at this commit",
+      "detail": "The whole change cites 'D0019 items 1-5', including item 4 (only rebuild and mesh counts before the freeze) and item 5 (scope_in's rules are the complete meaning of 'at least as strict'). project/decisions holds D0018 but no D0019. D0019 is mentioned only by the work's own files: the runner, the spec, the design note, t0320_spec_update.py, plan_T0320.json and check_references.json. The task's definition of done forbids touching project/decisions, so the work could not add it. Still, the decision's text cannot be checked here: whether the statement wording, the reference order and the expected-exclusion handling match it is unverified.",
+      "evidence": "ls project/decisions shows D0018 only; grep -rl D0019 lists only the files above",
+      "suggested_check": "Before registration, confirm that D0019 is recorded in project/decisions and that items 1, 2, 4 and 5 read as config.f3_declared_deviation and config.references transcribe them.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "No test checks that a freeze mismatch refuses before any reference is loaded",
+      "detail": "registered_run calls freeze_checks first and raises before judged_reference (lines 3297-3312), which is correct by inspection. But no selftest gives it a tampered freeze hash, for example for the newly frozen research/scripts/o003_powersynth_references.py, and asserts that snapped() was never called. full_orchestration_failures tests the wrong-fingerprint refusal and the T0319 guard only. Separately, --check-references (check_references) imports the frozen script and rebuilds both references without calling freeze_checks first. That is only a mesh-count tool, and the fingerprint check bounds the risk, but recon_module's docstring says freeze_checks verifies the script before any reference is loaded, and on that path it does not.",
+      "evidence": "grep freeze_checks: called only in verify_freeze (291), line 2861 and registered_run (3297); check_references (895-932) has no freeze call",
+      "suggested_check": "Add a selftest case: config.freeze.files[RECON_SCRIPT] set to zeros, registered_run raises RuntimeError and a counting fake snapped() is never called; optionally run freeze_checks at the start of check_references.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The expected cost case rests on the inference that Case 6 raises TwinError",
+      "detail": "cpu_hours_est = 97.0 and the 'expected' case leave out 2D_Case_6 because of plan_references.expected_excluded_at_twin, which comes from T0263 and T0314. The flag is used only by plan() (lines 3046-3061), never by the registered run. The all-counted scenario is computed and kept too (149.7-255.0 billed vCPU-hours), and both stay under the 320 cap, so the budget conclusion holds either way. Separately, F6(e) on 2R (FV level 3: 273,473,536 cells, 410.7 GB) does not fit the founder's ~150 GB ceiling. That is correctly surfaced as a founder item and is not a defect of this change.",
+      "evidence": "fresh --plan output equals plan_T0320.json exactly; 273473536 x 1500 B = 410.2 GB plus the base allowance gives 410.7 GB",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran --verify-freeze: exit 0, all 14 checks OK, including the new freeze entry for research/scripts/o003_powersynth_references.py (aa96880c...).",
+    "Ran --check-references into $TMPDIR: exit 0, both fingerprints matched (66cb1e19..., 71e07ae1...). Every non-timing field equals the committed research/o003/e008_dev/check_references.json and the counts written into E008.yaml plan_references (l2 unknowns, scikit-fem DOFs, FV cells).",
+    "Ran --plan into $TMPDIR: the output equals the committed plan_T0320.json exactly, and every key of config.cost_estimate matches it except if_all_counted.expected.per_solve_on_vm, which the YAML abbreviates to a string.",
+    "Recomputed by hand: candidate DOFs (77966 x 98698/51098 = 150595, and the others), all equal to the YAML; FV level 3 memory 273,473,536 x 1500 B = 410.2 GB (410.7 GB with the base allowance); FV level 1->2 step exactly 8.0; scikit-fem growth 7.195 and 7.558 per step, inside 8 +/- 15 %.",
+    "Ran --selftest: exit 0. Read full_orchestration_failures: the wrong-fingerprint refusal is asserted before any twin() call; the T0319 guard rejects a raw measure_rules spec and a spec with the lower bound set; the planted TwinError is excluded; the label and deviation reach all 49 rows, the report and the notes; a resume runs no new solve; a foreign seed is refused.",
+    "Ran ruff (pass), mfos exp check E008 (exit 0), the required-keys assertion (pass) and mfos gate --fast (all gates passed); thermal_fem.py sha256 prefix is a216d5fe3209bcee.",
+    "Hashed research/o003/references/2D_Case_{2R,6}.json: both equal reconstruction_record_sha256 in the YAML; the record's fingerprint field equals reconstruction_sha256.",
+    "Checked that the re-stamped runner_sha256 in E008.dev_rows.json (2f94239c..., 3 places) equals the sha256 of the current e008_run.py.",
+    "Read rebuild_reconstruction, judged_reference and registered_run: refusal paths are missing field, non-public kind or vault id, fingerprint mismatch, and a grid flag the snap records contradict; freeze checks run before any load; mixed kinds are refused. Layout.fingerprint covers the whole LayerStack, dies, pads, wires and signal wires.",
+    "Checked that the keep-out nets in config.references equal the frozen script's KEEPOUT_NETS, and that judged_reference calls spec_from_layout the way T0263's spec_of and T0314 did (no extra_pads).",
+    "Checked that plan_references.expected_excluded_at_twin is read only by plan(), not by the registered run.",
+    "Compared the declared F3 deviation's wording against its own changed_after list and the D0018 floor (finding 0)."
+  ],
+  "caveats": [
+    "The definition-of-done check `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance project/objectives project/decisions research/scripts/o003_powersynth_references.py research/o003/references` could not be run: this review checkout has one snapshot commit, no main branch, and git merge-base is blocked by the guard. Indirect evidence: the freeze hashes of six src files, thermal_fem.py (a216d5fe...), the frozen T0263 script (aa96880c...) and both reference records (a2dcdddf..., 7e80306c...) all match their recorded values.",
+    "judged_reference has never run on the real 2D_Case_2R or 2D_Case_6 reconstructions, by design (D0019 item 4 allows only rebuild and mesh counts before the freeze). Its spec step, e008_rules and spec_from_layout with the entry's keep-outs, has been exercised only on dev layouts with a fake reconstruction module. T0263's spec_of built specs from raw measure_rules on both references with the same keep-out nets, so the step should also work on them, but no run in this repository shows it.",
+    "The 2R twin being exact, D reaching the target, and Case 6 raising TwinError are all inferences from L0/L1 work done before the D0018 floor (T0314). Only the registered prepare() decides them.",
+    "Candidate DOF counts in --plan are each reference's DOFs times Case 4's candidate/reference ratio, an extrapolation that affects cost only. The screen rate remains the 0.45 s slow-end assumption.",
+    "An inline harness that would have fed tampered entries to rebuild_reconstruction and registered_run was refused by the session's permission policy, so those refusal paths were checked by reading the code, not by running them."
+  ]
+}
