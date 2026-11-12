@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-11T23:49:30+00:00 from repository state — do not edit_
+_generated 2026-11-12T01:42:53+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -36,7 +36,6 @@ cancelled: 39, done: 273, failed: 3
 
 
 ## Recent events
-- 2026-11-11T15:54:52+00:00 inbox_resolved {"id": "I0140", "status": "answered", "note": "No admissible customer layout by 2026-11-12. Public reference set under review: NC State PREES (Prof. Hopkins) pu
 - 2026-11-11T16:00:34+00:00 task_added {"task": "T0314", "reason": "founder go-ahead 2026-11-11: twin/degradation coverage diagnosis on the development layouts"}
 - 2026-11-11T16:01:02+00:00 run_started {"run": "T0314-scientist-20261111T080102-d51f", "task": "T0314", "role": "scientist", "session": "5fa4f08b-650a-44d6-b895-517834a4945d"}
 - 2026-11-11T17:21:38+00:00 run_finished {"run": "T0314-scientist-20261111T080102-d51f", "status": "completed", "cost": 3.99635, "subtype": "success", "report": "structured_output"}
@@ -51,3 +50,4 @@ cancelled: 39, done: 273, failed: 3
 - 2026-11-11T21:16:08+00:00 sleep_detected {"gap_s": 2130, "runs_extended": 0}
 - 2026-11-11T22:59:27+00:00 sleep_detected {"gap_s": 5206, "runs_extended": 0}
 - 2026-11-11T23:49:23+00:00 sleep_detected {"gap_s": 335, "runs_extended": 0}
+- 2026-11-12T01:42:48+00:00 sleep_detected {"gap_s": 6806, "runs_extended": 0}
