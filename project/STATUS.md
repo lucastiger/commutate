@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T22:16:25+00:00 from repository state — do not edit_
+_generated 2026-11-12T22:17:05+00:00 from repository state — do not edit_
 
 ## Founder inbox (7 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -41,7 +41,6 @@ cancelled: 39, done: 279, failed: 3, review: 1, running: 1
 - T0323 `running` critic/review: Review T0322 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-12T20:25:03+00:00 run_started {"run": "T0321-critic-20261112T122503-f7af", "task": "T0321", "role": "critic", "session": "f2206079-4dd3-4a18-980c-2d7dd8a52431"}
 - 2026-11-12T20:25:38+00:00 sleep_detected {"gap_s": 889, "runs_extended": 1}
 - 2026-11-12T20:39:05+00:00 run_finished {"run": "T0321-critic-20261112T122503-f7af", "status": "completed", "cost": 2.185204, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T20:39:09+00:00 inbox_opened {"id": "I0178", "kind": "protected_change", "subject": "T0320: merge needs founder approval"}
@@ -56,3 +55,4 @@ cancelled: 39, done: 279, failed: 3, review: 1, running: 1
 - 2026-11-12T22:02:27+00:00 run_finished {"run": "T0322-scientist-20261112T133819-0a98", "status": "completed", "cost": 0.523157, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T22:16:19+00:00 verified {"task": "T0322"}
 - 2026-11-12T22:16:25+00:00 run_started {"run": "T0323-critic-20261112T141625-647b", "task": "T0323", "role": "critic", "session": "282e5159-8667-48dd-a794-34d547c10d76"}
+- 2026-11-12T22:16:59+00:00 sleep_detected {"gap_s": 874, "runs_extended": 1}
