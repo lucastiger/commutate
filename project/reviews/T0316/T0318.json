@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "A NaN in D's or W's band now excludes the reference instead of failing it (INVALID)",
+      "detail": "Run.d_definition treats `not R*(1-2e) >= degrade_ratio` as a miss, and the comment says 'NaN misses too'. Before this change, a NaN band made the gated F1b_D_definition check fail, which made the run INVALID. Now it excludes the reference with reason D_misses_1p25_in_L_sub. An excluded reference gets no rows, so none of its later solver-health checks run on it. In effect a numerical failure (an l2_layout solve that returns status ok with a NaN or garbage L) is relabelled as 'no valid D exists'. As the YAML summarises it, D0018 excludes when D is *below* 1.25 at the conservative end; it does not say that NaN counts as below. The NaN and the R/e values are written into the exclusion detail, so the event is visible, but the run can still produce a verdict on the remaining references. The runner checks gmres_flags nowhere, so a non-converged but finite L can also trigger an exclusion. That gap existed before this change; the exclusion route is what makes it consequential.",
+      "evidence": "experiments/runners/e008_run.py:1149 `if not R * (1 - 2 * e) >= g[\"degrade_ratio\"]:  # NaN misses too` \u2192 exclude(..., 'drive'); grep shows gmres_flags/solver_tol_rel_L_max are recorded (l.327-328) but never checked.",
+      "suggested_check": "Raise (INVALID) when R or e_R is non-finite, or when any of D's or W's band solves report a non-zero gmres flag, and exclude only on a finite miss.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The text of D0018 is not in the repository at this commit, so fidelity to the decision cannot be checked",
+      "detail": "No file project/decisions/D0018* exists at this commit, and the string D0018 appears only in files this change wrote. The DoD forbids touching project/decisions, so the record presumably lives on main, which this review snapshot does not include. The implementation is therefore checked only against the author's own summary of D0018 in E008.yaml and the design note. The YAML also dates the founder session 2026-11-12. That is after the design-note entry (2026-11-11), after the Case 4 run (2026-11-11T19:33) and after today's date, which suggests a typo or a decision record not yet written.",
+      "evidence": "`ls project/decisions` ends at D0017; `grep -rl D0018 .` lists only research/notes/e008-design.md, research/o003/e008_dev/*, experiments/drafts/E008.*, experiments/runners/e008_run.py; E008.yaml: 'D0018 (founder session 2026-11-12; ...'",
+      "suggested_check": "The orchestrator should diff the YAML's 'founder_decisions_settled' wording against the D0018 record on main (decision 1: floor value and scope; decision 2: exclusion triggers and the control-miss rule), and correct the date.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Only the dev and selftest paths implement this; the registered path full() still raises NotImplementedError",
+      "detail": "prepare, Run.drive/d_definition, assemble_rows and evaluate are shared code, so a later full() will inherit the behaviour. Today, though, only `--dev` and `--selftest` exercise it. The selftest's exclusion cases use fake layouts and fake solvers. The geometry test (d_floor_geometry_failures) uses real L0/L1 only. The real l2_layout band solves of a 1.5 mm D, and the lateral term of e_R on 3-cell strips, are not measured; the author says so.",
+      "evidence": "e008_run.py:2594-2609 full() raises NotImplementedError; research/notes/e008-design.md \u00a78 'Nothing measured the lateral term of e_R on 1-2 mm strips'.",
+      "suggested_check": "The full-fidelity dev run (burst_dev.sh) should report e_R(D, W) and e_R(control best, D) for the 1.5 mm Case 4 D before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The floor was chosen with the dev reference in view, and Case 4 clears the L1 target by only 0.0035",
+      "detail": "1.5 mm is justified partly as 'the smallest floor at which ... Case 4's D reaches the target (1.391)'. The target is 1.3875 and 1.0 mm was rejected only by inference. Case 4 is a dev reference, not an evaluation reference, so nothing leaks. But the floor is not independent of the development data, and Case 4's F1(b) definition will be decided by L2 band solves sitting very close to the L1 boundary.",
+      "evidence": "E008.yaml degrade_power_width_floor_reason; dev_rows D_l1_ratio_over_twin 1.3910401988110974 vs D_target_l1_ratio 1.3875.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Selftest gaps (my scratch tests pass these cases) and a mislabelled log field",
+      "detail": "EXCLUSION_CASES does not cover a TwinError exclusion, a D-definition miss on the only reference (everything excluded at the drive stage), or mixed exclusion stages. I added the last two in-process and they pass with zero failures; the TwinError path I checked only by reading the code. In the research script case4_prep.py, 'walk_steps' prints len(walk dict) = 5 (the number of dict keys), not the 7 walk steps actually recorded.",
+      "evidence": "scratch run: EXCLUSION_CASES + {miss_only_ref (n=1, miss {0}) \u2192 INVALID, miss_and_degrade (n=3, DegradeError on 0, miss on 2)} \u2192 0 failures; case4_prep.py:80 `len(rc.info.get('walk') or [])`.",
+      "suggested_check": "Add a TwinError case and the all-excluded-at-drive case to EXCLUSION_CASES.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every DoD command I could: `--selftest` (exit 0; exclusion 4 cases / 0 failures; floor geometry D narrowest 1.500 mm, L1 1.410), `--verify-freeze` (exit 0, degrade_power_width_floor OK), ruff (clean), `mfos exp check E008` (exit 0), `mfos gate --fast` ('all gates passed'), thermal_fem.py sha256 prefix a216d5fe3209bcee. The merge-base-vs-main diff check could not run: the review snapshot has no main ref, and the shell guard blocks merge-base.",
+    "Mutation M1 (in-process monkeypatch, no repo edit): Run.d_definition made the identity \u2192 the selftest catches it with 5 failures (no exclusion, rows kept, drivers kept, F1b_D_definition fails).",
+    "Mutation M2: d_spec hands degrade() the reference's own rule \u2192 4 exclusion failures ('degrade() was handed 0.003') and 1 geometry failure (the planted 3 mm layout raises DegradeError at L1 1.190, the Case 4 pattern).",
+    "Adversarial cases added in-process: a D miss on the only reference (everything excluded at the drive stage) \u2192 at_least_one_counted_reference fails and A1 is NaN; three references with a DegradeError on one and a D miss on another \u2192 correct reasons, one counted. Both pass.",
+    "Reproduced the Case 4 record independently (dev_reference('case4') + prepare with 0 quick_ok draws): D fingerprint 6d63ff8f\u2026366a, L1 ratio 1.3910401988110974 and D_rule identical to E008.dev_rows.json; the twin's narrowest power strip is 4.9995 mm and it is DRC-clean under the reference rules.",
+    "Provenance: the runner sha256 f250ddce\u2026 equals the runner_sha256 stored in the Case 4 record.",
+    "Checked narrowest_power_strip_m on six hand-built shapes (3 mm rectangle, 1.5 mm arm on a 5 mm block, 1 mm neck dumbbell, narrow rectangle inside wider copper of the same net, two power nets, an ignored signal net): all within 1 \u00b5m of the true width.",
+    "Read DesignRules.width_for: power nets use min_width_power when it is set, so replacing min_width_power narrows only DC+/PHASE/DC- and the signal nets keep their rule (Case 4: power 4.9997 mm \u2192 1.5 mm, signal/other stays 4.9998 mm).",
+    "Checked that d_definition and evaluate's per-reference F1b_D_definition read the same result files (Driver.job paths are keyed by rid/fp/level/physics hash, independent of main or control) and use the same BAND[0]-ratio and ratio_band_estimate formula; that run_control does not DRC-check D under the reference rules; and that d_definition runs before any prefetch, screen, calibration or spot-check selection."
+  ],
+  "caveats": [
+    "D0018's own text is not in the repository at this commit. The implementation matches the author's summary of D0018 in E008.yaml and design note \u00a78, not a decision record I could read.",
+    "Only the dev and selftest paths implement the behaviour; full() (the registered path) is still unimplemented. The exclusion logic is exercised with fake solvers and fake layouts, the floor with real L0/L1 geometry only.",
+    "Whether e_R is valid on 1.5 mm, 3-cell-wide power strips at the 0.5 mm band levels has not been measured. Case 4's D clears the L1 target by only 0.0035, so its F1(b) status rests entirely on the future L2 band solves.",
+    "A non-finite or non-converged band result now leads to exclusion rather than INVALID (finding 1). Fixing this before registration would keep solver failures from becoming exclusions."
+  ]
+}
