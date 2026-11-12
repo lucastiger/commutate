@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T02:50:35+00:00 from repository state — do not edit_
+_generated 2026-11-12T03:19:24+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -24,7 +24,7 @@ _generated 2026-11-12T02:50:35+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 96 | $166.79 | 2738782 | 1402759 | 142 | 0 |
+| O003 | 97 | $166.79 | 2738782 | 1402759 | 142 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,12 +32,11 @@ _generated 2026-11-12T02:50:35+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 273, failed: 3
+cancelled: 39, done: 273, failed: 3, running: 1
 
+- T0316 `running` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
 
 ## Recent events
-- 2026-11-11T17:54:11+00:00 run_started {"run": "T0315-critic-20261111T095411-1156", "task": "T0315", "role": "critic", "session": "a7c7e73e-b67a-4947-8ba0-1b02a6d99ef6"}
-- 2026-11-11T17:54:46+00:00 sleep_detected {"gap_s": 1991, "runs_extended": 1}
 - 2026-11-11T18:24:53+00:00 run_finished {"run": "T0315-critic-20261111T095411-1156", "status": "completed", "cost": 2.191543, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T18:24:59+00:00 inbox_opened {"id": "I0173", "kind": "protected_change", "subject": "T0314: merge needs founder approval"}
 - 2026-11-11T18:26:30+00:00 inbox_resolved {"id": "I0173", "status": "approved", "note": "Merge T0314's twin-coverage diagnosis (research only, no frozen code). Review T0315 accept_with_caveats: minor co
@@ -51,3 +50,5 @@ cancelled: 39, done: 273, failed: 3
 - 2026-11-12T02:27:41+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
 - 2026-11-12T02:44:41+00:00 sleep_detected {"gap_s": 980, "runs_extended": 0}
 - 2026-11-12T02:50:30+00:00 sleep_detected {"gap_s": 349, "runs_extended": 0}
+- 2026-11-12T03:19:00+00:00 task_added {"task": "T0316", "reason": "founder decision 2026-11-12 (D0018): degraded copy as yardstick, exclusion fallback"}
+- 2026-11-12T03:19:24+00:00 run_started {"run": "T0316-scientist-20261111T191924-cf93", "task": "T0316", "role": "scientist", "session": "0c028ff9-af16-4a5d-a62e-a75de873bc51"}
