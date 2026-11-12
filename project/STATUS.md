@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T04:26:23+00:00 from repository state — do not edit_
+_generated 2026-11-12T04:27:02+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -38,7 +38,6 @@ cancelled: 39, done: 273, failed: 3, review: 1, running: 1, todo: 1
 - T0318 `running` critic/review: Review T0316 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-11T21:16:08+00:00 sleep_detected {"gap_s": 2130, "runs_extended": 0}
 - 2026-11-11T22:59:27+00:00 sleep_detected {"gap_s": 5206, "runs_extended": 0}
 - 2026-11-11T23:49:23+00:00 sleep_detected {"gap_s": 335, "runs_extended": 0}
 - 2026-11-12T01:42:48+00:00 sleep_detected {"gap_s": 6806, "runs_extended": 0}
@@ -53,3 +52,4 @@ cancelled: 39, done: 273, failed: 3, review: 1, running: 1, todo: 1
 - 2026-11-12T04:15:24+00:00 run_finished {"run": "T0316-scientist-20261111T191924-cf93", "status": "completed", "cost": 5.447153, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T04:26:17+00:00 verified {"task": "T0316"}
 - 2026-11-12T04:26:23+00:00 run_started {"run": "T0318-critic-20261111T202623-2491", "task": "T0318", "role": "critic", "session": "ab78161a-0b10-47d6-99ee-1eee2b048dc7"}
+- 2026-11-12T04:26:57+00:00 sleep_detected {"gap_s": 694, "runs_extended": 1}
