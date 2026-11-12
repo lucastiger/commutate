@@ -10,6 +10,9 @@ sample on Case 4 (attempt 1). Seeds: the dev seed, purpose 2, geometry index 1 (
 
 T0316 (D0018): D is built under the runner's power-width floor (config.degrade_power_width_floor_m); the record carries
 D's rule, its narrowest power strip, its L1 ratio and moves, any exclusion, and the runner's sha256.
+T0317 (D0018 model-fix item 1): the record also carries info.rules_record (e008_rules: min_signal_wire_length dropped) and
+info.gate_wires (shortest gate wire of reference, W, D and the DRC-clean samples; reported).  walk_steps now counts the
+walk's steps (T0318 finding 4; it printed the number of keys of the walk record).
 
 Usage: uv run python research/o003/e008_dev/case4_prep.py [--draws N]
 """
@@ -77,8 +80,10 @@ def main() -> int:
     print(f"D0018: D rule {json.dumps(rc.info.get('D_rule'), default=str)}; D L1/W L1 {rec['D_l1_ratio_over_twin']} moves "
           f"{rec['D_moves']} excluded {rc.excluded}")
     print(f"2D_Case_4: twin {rec['twin_mode']} L1 W/R {rec['L1_ratio_twin_over_reconstruction']} fail_fast "
-          f"{str(rc.info.get('fail_fast'))[:160]} walk_steps {len(rc.info.get('walk') or [])} quick_ok {q} "
+          f"{str(rc.info.get('fail_fast'))[:160]} walk_steps {len((rc.info.get('walk') or {}).get('steps') or [])} quick_ok {q} "
           f"midpoint {rc.info.get('midpoint_decided_splits')} wall {wall:.0f} s")
+    print("E008 rules (T0317, D0018 item 1):", json.dumps(rc.info.get("rules_record"), default=str))
+    print("gate wires (T0317, reported):", json.dumps(rc.info.get("gate_wires"), default=str))
     flags = {k: v for k, v in rc.info.get("rule_strictness", {}).items() if v.get("flag_2x")}
     print("rule strictness flags (>2x the smallest DC-link gap):", flags or "none")
     print("twin copper:", json.dumps(rc.info.get("twin_copper"), default=str)[:600])

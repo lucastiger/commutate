@@ -122,6 +122,33 @@ config:
       control: 1
       quick_ok: 2
   quick_ok_draws: 2000
+  per_reference_rules:
+    rule: 'D0018 model-fix list item 1 (T0317): E008''s design rules of a reference are drc.rules.measure_rules on the snapped
+      reconstruction with min_signal_wire_length set to None (the measured minimum gate/Kelvin-wire length, which measure_rules
+      sets to the reference''s shortest signal wire, src/moduleforge/drc/rules.py line 587). Every upper bound
+      (max_gate_wire_length, max_kelvin_wire_length, max_signal_wire_length) and every other measured rule is kept. One runner
+      function builds them, e008_run.e008_rules, and writes info.rules_record (the dropped field, the value measure_rules
+      gave it, the upper bounds kept, the fields changed). Every place the runner builds a reference or dev spec uses it
+      (dev_reference: 2D_Case_4 from measure_rules plus its dev overrides; generator housing layouts from their generator
+      spec''s rules, where the field is already None); the judged-reference loader of full(), added before registration,
+      must use it too. The twin, D (through d_spec) and every main and control candidate get the reference''s spec built
+      from these rules, so the candidates lose the lower bound too.'
+    basis: 'D0018 (project/decisions/D0018-o003-e008-degraded-copy-yardstick.md, model-fix list item 1, fixed before any
+      candidate reference was screened) reads O003 scope_in''s enumerated rules as the complete meaning of "design rules at
+      least as strict as the reference''s own"; the scope_in bondability rule bounds gate and Kelvin wires from above only
+      (project/objectives/O003/objective.yaml lines 61-63; review T0315 finding 2, which flagged this as an interpretation
+      for the founder). T0314 (research/notes/o003-twin-coverage.md section 1, variant R1) found this lower bound to be the
+      only rule that stops a twin whose gate wires run to the nearest gate copper (2D_Case_2R: twin LS gate wires 4.597 mm
+      against the reference''s 5.344-10.396 mm).'
+    dropped: [min_signal_wire_length]
+    reported_not_gated: 'info.gate_wires: the shortest gate wire of the reference, W, D and the DRC-clean _quick_ok samples,
+      and how many are shorter than DesignRules.min_wire_length (1.5 mm, a placeholder default that bounds power wires only;
+      no cited minimum gate-wire length was found, T0314 R2). T0317 dev record: 2D_Case_4 W and D shortest 5.122 mm, its
+      33 DRC-clean samples of 2,000 draws 5.734 mm (132 gate wires), none below 1.5 mm; the Case 4 reconstruction and the
+      generator housing layouts (gen2_0, its W, D and smoke samples) carry no gate wires.'
+    dev_effect: 'none on the dev references: 2D_Case_4''s reconstruction has no signal wires (measure_rules gives no lower
+      bound) and generator housing specs set none, so the rules, W, D and samples are unchanged (Case 4 D fingerprint
+      6d63ff8f..., gen2_0 twin aade6489... as in the stored smoke rows)'
   degrade_power_width_floor_m: 0.0015
   degrade_power_width_floor_reason: 'D0018 decision 1 (T0316). D is a yardstick: it sets only L_sub(D), its band solves and
     w_ctrl = 2 e_R(control best, D); the control candidates come from the reference''s spec (search.run_control). So D''s power-net
@@ -408,6 +435,12 @@ config:
     at the conservative end of its band, excludes that reference and E008 is INVALID only if no reference remains; a control
     that runs and misses h_plant - w_ctrl is still INVALID; a TwinError or DegradeError stops that reference, not the run
     (decision 2). See failure_consequences and research/notes/e008-design.md section 8'
+  - 'D0018 model-fix list item 1 (T0317): E008 drops min_signal_wire_length from its per-reference rules; config.per_reference_rules
+    and research/notes/e008-design.md section 9'
+  - 'T0318 finding 0 (T0317): a non-finite L or e_R in D''s or W''s band solves, or a band solve that did not converge (a
+    non-zero GMRES flag, no convergence record, or a non-finite solver_tol_rel_L_max), is not an exclusion: F1b_D_definition
+    fails for that reference and the run is INVALID (Run.drive stops after D''s definition; no search runs). Only a finite,
+    converged ratio below 1.25 at the conservative end excludes'
   founder_decisions_before_registration:
   - the band check (e_R on >= 4 twin-vs-random pairs) and Case 4's twin gates come from the full-fidelity dev run on the VM
     (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either
@@ -881,8 +914,10 @@ sanity_checks:
     iff every reference that reaches Run.drive has W and D and every excluded reference carries reason, detail and stage'
 - name: F1b_D_definition
   description: 'per reference: L_sub(D)/L_sub(W) (1 - 2 e_R(D, W)) >= 1.25 from the band solves of D and W, which Run.drive
-    runs before any search, spot check or K1 read; a reference that misses is excluded and reported (D0018 decision 2), so the
-    per-reference checks run on the remaining references and the declared check passes iff all of them pass'
+    runs before any search, spot check or K1 read; a reference whose finite, converged ratio misses is excluded and reported
+    (D0018 decision 2), so the per-reference checks run on the remaining references and the declared check passes iff all of
+    them pass. A non-finite L or e_R or a non-converged band solve of D or W fails it (INVALID, T0318 finding 0), never an
+    exclusion'
 - name: F1a1_F1a2_twin_gates
   description: 'per reference (exclusion, not INVALID): inductance and thermal twin gates as headroom_per_reference computes
     them'

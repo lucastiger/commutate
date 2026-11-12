@@ -124,6 +124,48 @@ DEGRADE_POWER_WIDTH_FLOOR_M = 1.5e-3
 CELLS_ACROSS_AT_MM = (0.5, 0.25)  # the band solves' 0.5 mm levels and the 0.25 mm production level (BAND, EM_LEVELS)
 
 
+# ------------------------------------------------------------------------------------------------ E008's per-reference rules
+# D0018 model-fix list item 1 (T0317): E008 drops the measured minimum gate/Kelvin-wire length.  O003 scope_in's enumerated
+# rules are read as the complete meaning of "design rules at least as strict as the reference's own"; its bondability rule
+# bounds gate and Kelvin wires from above only (objective.yaml lines 61-63; T0315 finding 2).  measure_rules sets
+# min_signal_wire_length to the reference's shortest signal wire (drc/rules.py line 587), the one rule that stops a twin
+# whose gate wires run to the nearest gate copper (T0314 variant R1).  Every upper bound and every other measured rule stays.
+DROPPED_MEASURED_RULES = ("min_signal_wire_length",)
+KEPT_SIGNAL_UPPER_BOUNDS = ("max_gate_wire_length", "max_kelvin_wire_length", "max_signal_wire_length")
+
+
+def e008_rules(lay, base=None, overrides: dict | None = None):
+    """E008's design rules of one reference (D0018 model-fix list item 1) -> (rules, measure_rules record, rules record).
+
+    drc.rules.measure_rules(lay) with min_signal_wire_length set to None; then ``overrides`` (dev only: E008.yaml
+    dev.case4 rule overrides), which may not set a dropped field.  ``base``: generator-housing dev layouts only, whose
+    rules are the generator spec's own (``base``) rather than measured ones (unchanged since T0262; their measure_rules
+    record still feeds the rule-strictness report); the lower bound is dropped from ``base`` the same way.  The rules
+    record (rc.info['rules_record']) states that the field was dropped, the value measure_rules gave it, and the upper
+    bounds kept.  Every place the runner builds a reference or dev spec calls this, and the judged-reference loader of
+    full() (added before registration) must too.  The candidates, the twin and D all get these rules (D through d_spec),
+    so the candidates lose the lower bound too."""
+    from moduleforge.drc.rules import measure_rules
+    measured, mrec = measure_rules(lay)
+    src = measured if base is None else base
+    ov = dict(overrides or {})
+    if set(ov) & set(DROPPED_MEASURED_RULES):
+        raise ValueError(f"an override sets a dropped rule: {sorted(set(ov) & set(DROPPED_MEASURED_RULES))}")
+    rules = dataclasses.replace(src, **{k: None for k in DROPPED_MEASURED_RULES}, **ov)
+    changed = sorted(f.name for f in dataclasses.fields(rules) if getattr(rules, f.name) != getattr(src, f.name))
+    if not set(changed) <= set(DROPPED_MEASURED_RULES) | set(ov):
+        raise RuntimeError(f"e008_rules changed {changed}, beyond the dropped fields and the overrides")
+    rec = {"function": "e008_run.e008_rules", "decision": "D0018 model-fix list item 1 (T0314 R1, T0315 finding 2)",
+           "source": "drc.rules.measure_rules" if base is None else "generator housing spec rules (dev geometry only)",
+           "dropped": {k: None for k in DROPPED_MEASURED_RULES},
+           "dropped_source_values_m": {k: getattr(src, k) for k in DROPPED_MEASURED_RULES},
+           "measured_min_signal_wire_length_m": measured.min_signal_wire_length,
+           "overrides": {k: getattr(rules, k) for k in sorted(ov)},
+           "kept_upper_bounds_m": {k: getattr(rules, k) for k in KEPT_SIGNAL_UPPER_BOUNDS},
+           "fields_changed_from_source": changed}
+    return rules, mrec, rec
+
+
 def d_rules(rules, floor_m: float):
     """D0018 decision 1: ``rules`` with min_width_power replaced by min(the reference's power-net minimum, floor) -> (rules
     of D, the reference's power-net minimum in m).  A reference whose own minimum is below the floor keeps it (D is never
@@ -163,6 +205,44 @@ def narrowest_power_strip_m(lay) -> float:
                 mid = 0.5 * (lo + hi)
                 lo, hi = (mid, hi) if _width_problem(poly, mid)[0] is None else (lo, mid)
             out = min(out, lo)
+    return out
+
+
+def _gate_wires(lay) -> list[float]:
+    """Lengths (m) of the gate wires of ``lay`` (none for a layout without signal wires or a selftest fake)."""
+    return [float(w.length) for w in (getattr(lay, "signal_wires", None) or []) if w.pad == "gate"]
+
+
+def gate_wire_report(gw: dict) -> dict:
+    """T0317 (reported, not gated): the shortest gate wire of the reference, W, D and the DRC-clean _quick_ok samples, now
+    that E008's rules carry no lower bound (e008_rules), and how many are shorter than DesignRules.min_wire_length (1.5 mm,
+    a placeholder default of drc/rules.py that bounds power wires only, not a cited bondability limit)."""
+    from moduleforge.drc.rules import DesignRules
+    lim = DesignRules().min_wire_length
+    rep = {"placeholder_min_wire_length_m": lim, "gated": False}
+    for k, v in gw.items():
+        rep[k] = {"n_gate_wires": len(v), "shortest_m": min(v) if v else None,
+                  "n_below_placeholder": sum(x < lim for x in v)}
+    allv = [x for v in gw.values() for x in v]
+    rep["shortest_overall_m"] = min(allv) if allv else None
+    rep["any_below_placeholder"] = any(x < lim for x in allv)
+    return rep
+
+
+def band_solve_failures(recs: list[dict], who: str) -> list[str]:
+    """T0318 finding 0: the band solves (BAND order) of one layout that are not usable for F1(b)'s definition: L_H not
+    finite; no convergence record or a GMRES flag != 0 (l2_layout meta['gmres_flags'], scipy convention 0 = converged; an
+    empty list is the dense direct solve); solver_tol_rel_L_max not finite (l2_layout sets inf when Im Z_ii <= 0).  A
+    missing key fails closed."""
+    out = []
+    for lv, r in zip(BAND, recs, strict=True):
+        L, fl, tl = r.get("L_H"), r.get("gmres_flags"), r.get("solver_tol_rel_L_max")
+        if not _num(L):
+            out.append(f"{who} {lv}: L_H {L}")
+        if not isinstance(fl, list) or any(int(f) != 0 for f in fl):
+            out.append(f"{who} {lv}: not converged (gmres_flags {fl})")
+        if not _num(tl):
+            out.append(f"{who} {lv}: solver_tol_rel_L_max {tl}")
     return out
 
 
@@ -644,7 +724,6 @@ def _stack_type(stack, dies) -> str:
 
 def dev_reference(name: str, cfg: dict) -> RefCtx:
     """Development geometry only (F3): 2D_Case_4 (O006 pilot geometry) or a generator-housing layout from the dev seed."""
-    from moduleforge.drc.rules import measure_rules
     from moduleforge.generate import derivative as D
     if name == "case4":
         import importlib.util
@@ -659,20 +738,21 @@ def dev_reference(name: str, cfg: dict) -> RefCtx:
             st = lay.stack
             lay = dataclasses.replace(lay, stack=dataclasses.replace(st, layers=tuple(
                 dataclasses.replace(la, material=sub.get(la.material, la.material)) for la in st.layers)))
-        rules, rec = measure_rules(lay)
         from moduleforge.drc.rules import DesignRules
         dflt = DesignRules()
         ov = {k: (getattr(dflt, k) if v == "default" else v) for k, v in a.get("rule_overrides", {}).items()}
-        rules = dataclasses.replace(rules, max_gate_wire_length=a["max_signal_wire_m"],
-                                    max_kelvin_wire_length=a["max_signal_wire_m"], **ov)
+        rules, rec, rrec = e008_rules(lay, overrides={"max_gate_wire_length": a["max_signal_wire_m"],
+                                                      "max_kelvin_wire_length": a["max_signal_wire_m"], **ov})
         rel = lambda r: tuple(v * 1e-3 for v in (r[0] - 2, r[1] - 3, r[2] - 2, r[3] - 3))  # noqa: E731
         spec = D.spec_from_layout(lay, rules, a["keepout_nets"], extra_pads={k: rel(v) for k, v in a["extra_pads_mm"].items()})
-        rc = RefCtx("2D_Case_4", "dev", spec, lay, info={"measured_rules": rec})
+        rc = RefCtx("2D_Case_4", "dev", spec, lay, info={"measured_rules": rec, "rules_record": rrec})
     else:
         m = re.fullmatch(r"gen(\d)_(\d+)", name)
         spec = D.halfbridge_housing_spec(int(m[1]))
         lay = D.generate(spec, int(m[2]) + 1, int(cfg["dev"]["dev_seed"]))[int(m[2])]
-        rc = RefCtx(f"housing70x40_{name}", "dev", spec, lay, info={"measured_rules": measure_rules(lay)[1]})
+        rules, rec, rrec = e008_rules(lay, base=spec.rules)
+        spec = dataclasses.replace(spec, rules=rules)
+        rc = RefCtx(f"housing70x40_{name}", "dev", spec, lay, info={"measured_rules": rec, "rules_record": rrec})
     bp = rc.reference.baseplate_outline.bounds
     rc.area_m2 = (bp[2] - bp[0]) * (bp[3] - bp[1])
     rc.stack_type = _stack_type(rc.spec.stack, [*rc.reference.dies, rc.spec.die])
@@ -733,6 +813,8 @@ def prepare(rc: RefCtx, cfg: dict, n_quick: int, quick_seed: int, with_l1: bool 
     rng = np.random.default_rng(quick_seed)
     cx = D._Ctx(rc.spec) if n_quick else None
     n_clean = n_rej = 0
+    gw = {"reference": _gate_wires(rc.reference), "twin": _gate_wires(rc.twin), "D": _gate_wires(rc.D),
+          "drc_clean_samples": []}
     for _ in range(n_quick):
         pp = D._sample(rc.spec, cx, rng)
         if pp is None:
@@ -744,6 +826,8 @@ def prepare(rc: RefCtx, cfg: dict, n_quick: int, quick_seed: int, with_l1: bool 
         if not check(lay, rc.spec.rules):
             n_clean += 1
             n_rej += not D._quick_ok(rc.spec, cx, lay)
+            gw["drc_clean_samples"] += _gate_wires(lay)
+    rc.info["gate_wires"] = gate_wire_report(gw)
     # exact one-sided 95 % upper bound on the false-rejection rate (Clopper and Pearson, Biometrika 26 (1934) 404); 1.0
     # when no DRC-clean sample was drawn, i.e. the sample says nothing (T0262 attempt 5: 0 of 100 draws on 2D_Case_4)
     from scipy.stats import beta
@@ -1041,6 +1125,7 @@ class Run:
         self.spot_none: list[str] = []  # F6(e): non-default stack types with no admissible reference (no spot check)
         self.l1_cache: dict[str, float] = {}
         self.size_cache: dict[tuple, int] = {}
+        self.d_failed: dict[str, dict] = {}  # T0318 finding 0: references whose D/W band solves failed (INVALID)
 
     def em_level(self, lv: str) -> str:
         return self.cfg["dev"]["smoke"]["em_map"].get(lv, lv) if self.smoke else lv
@@ -1142,11 +1227,28 @@ class Run:
         out = []
         for rc in refs:
             if rc.rid in jobs:
-                bd, bw = ([Scheduler.done(j)["L_H"] for j in js] for js in jobs[rc.rid])
-                R, e = bd[0] / bw[0], MX.ratio_band_estimate(bd, bw)
+                rd, rw = ([Scheduler.done(j) for j in js] for js in jobs[rc.rid])
+                bd, bw = [r.get("L_H", math.nan) for r in rd], [r.get("L_H", math.nan) for r in rw]
+                with np.errstate(all="ignore"):
+                    R = bd[0] / bw[0] if bw[0] != 0 else math.nan
+                    try:
+                        e = MX.ratio_band_estimate(bd, bw)
+                    except (ValueError, ZeroDivisionError, FloatingPointError) as ex:
+                        e = math.nan
+                        rc.info["D_definition_e_R_error"] = str(ex)
+                bad = band_solve_failures(rd, "D") + band_solve_failures(rw, "W")
+                if not (math.isfinite(R) and math.isfinite(e)):
+                    bad.append(f"R {R} or e_R {e} not finite")
                 rc.info["D_definition"] = {"R_D": R, "e_R_D": e, "conservative": R * (1 - 2 * e),
-                                           "threshold": g["degrade_ratio"], "L1_ratio": (rc.d_rec or {}).get("l1_ratio")}
-                if not R * (1 - 2 * e) >= g["degrade_ratio"]:  # NaN misses too
+                                           "threshold": g["degrade_ratio"], "L1_ratio": (rc.d_rec or {}).get("l1_ratio"),
+                                           "band_failures": bad}
+                if bad:
+                    # T0318 finding 0: a solver failure is not "no valid D exists": F1b_D_definition fails for this
+                    # reference (INVALID, as before T0316); no exclusion, and nothing more is solved (Run.drive stops)
+                    self.d_failed[rc.rid] = rc.info["D_definition"]
+                    out.append(rc)
+                    continue
+                if not R * (1 - 2 * e) >= g["degrade_ratio"]:  # a finite, converged miss at the conservative end
                     exclude(rc, "D_misses_1p25_in_L_sub", f"L_sub(D)/L_sub(W) {R:.5f} (1 - 2 e_R {e:.5f}) = "
                             f"{R * (1 - 2 * e):.5f} < {g['degrade_ratio']}", "drive")
                     self.excluded[rc.rid] = rc.excluded
@@ -1172,6 +1274,9 @@ class Run:
         # band solves (the same result files the drivers read), before any search, spot check or K1: a reference whose D
         # misses is excluded (no driver, no rows) and reported, not INVALID
         refs = self.d_definition(refs)
+        if self.d_failed:  # T0318 finding 0: the run is INVALID (F1b_D_definition fails in evaluate); no search is run
+            log(f"D definition: band solver failures on {sorted(self.d_failed)}: F1b_D_definition fails, run INVALID")
+            return
         # F6(e): one spot-check reference per non-default stack type, the first ADMISSIBLE one of that type in reference
         # order (T0305 finding 0: one per type; T0307 finding 1, T0308 finding 2: an inadmissible first reference must
         # not take the type's spot check from a later admissible one).  A type with no admissible reference gets none:
@@ -1219,6 +1324,8 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
     """Rows per research/o003/e008_row_contract.md (kinds reference / layout / die), plus per-reference extras.  F5: ids,
     fingerprints (sha256), inductance, power, temperature and scalar rule values only; no geometry."""
     rows, extra = [], {}
+    if getattr(run, "d_failed", None):  # T0318 finding 0: Run.drive stopped after D's definition (INVALID); no rows
+        return rows, extra
     for rc in refs:
         rid = rc.rid
         if rc.excluded is not None:  # D0018 / F1(a): an excluded reference has no rows; evaluate reports it
@@ -1303,6 +1410,8 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     def ck(name, ok, value=None, threshold=None, detail=""):
         checks.append({"name": name, "passed": bool(ok), "value": value, "threshold": threshold, "detail": str(detail)})
     mp = cfg["metric_params"]
+    if run.d_failed:
+        return _evaluate_d_failed(run, refs, cfg, checks, ck)
     # no reference row at all (every reference excluded, D0018): nothing is counted, the metrics below are NaN and
     # at_least_one_counted_reference fails (INVALID)
     per = MX.headroom_per_reference(rows, "L_sub_H", dict(mp)) if any(r["kind"] == "reference" for r in rows) else {}
@@ -1335,8 +1444,10 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
         # F1(b) definition of D, conservative end of its band, before K1 is read
         R_D = bands[fpd][0] / bands[fpw][0]
         e_D = MX.ratio_band_estimate(bands[fpd], bands[fpw])
-        ck(f"F1b_D_definition:{rid}", R_D * (1 - 2 * e_D) >= g["degrade_ratio"], R_D * (1 - 2 * e_D), g["degrade_ratio"],
-           f"R_D={R_D:.5f} e_R(D,W)={e_D:.5f} walk={json.dumps(rc.info.get('walk'), default=str)[:300]}")
+        bad = (rc.info.get("D_definition") or {}).get("band_failures") or []
+        ck(f"F1b_D_definition:{rid}", not bad and R_D * (1 - 2 * e_D) >= g["degrade_ratio"], R_D * (1 - 2 * e_D),
+           g["degrade_ratio"], f"R_D={R_D:.5f} e_R(D,W)={e_D:.5f} band failures {bad[:5]} "
+           f"walk={json.dumps(rc.info.get('walk'), default=str)[:300]}")
         L_D, L_cb = bands[fpd][0], bands[rcn.inductance_best][0]
         h_plant, h_ctrl = 1 - bands[fpw][0] / L_D, 1 - L_cb / L_D
         ck(f"F1b_control:{rid}", h_ctrl >= h_plant - rcn.w_ctrl, h_ctrl, h_plant - rcn.w_ctrl,
@@ -1445,6 +1556,27 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     return met, checks, rep
 
 
+def _evaluate_d_failed(run: Run, refs: list[RefCtx], cfg: dict, checks: list[dict], ck) -> tuple[dict, list[dict], dict]:
+    """evaluate() after Run.drive stopped on a band solver failure in D's definition (T0318 finding 0): F1b_D_definition
+    fails for each such reference and in aggregate (INVALID, as before T0316); the failing references are not excluded;
+    no search ran, so nothing is counted and every metric is NaN."""
+    g = cfg["gates"]
+    for rid, dd in sorted(run.d_failed.items()):
+        ck(f"F1b_D_definition:{rid}", False, dd.get("conservative"), g["degrade_ratio"],
+           f"band solver failure, not an exclusion: {dd.get('band_failures', [])[:8]}")
+    exc = {rc.rid: rc.excluded for rc in refs if rc.excluded is not None}
+    live = [rc for rc in refs if rc.excluded is None]
+    ck("fail_fast_twin_and_D", all(rc.twin is not None and rc.D is not None for rc in live) and
+       all(set(e) >= {"reason", "detail", "stage"} for e in exc.values()), len(exc), None,
+       json.dumps({rid: [e["reason"], e["stage"], e["detail"][:200]] for rid, e in exc.items()}))
+    ck("F1b_D_definition", False, len(run.d_failed), 0, f"band solver failures on {sorted(run.d_failed)} (INVALID); "
+       f"excluded: {sorted(exc)}")
+    ck("at_least_one_counted_reference", False, 0, 1, "no search ran: D's definition failed on a solver failure")
+    met = {e["metric"]: math.nan for e in metric_entries(cfg)}
+    met.update(n_counted_references=0.0, n_excluded_references=float(len(exc)))
+    return met, checks, {"excluded": exc, "D_definition_solver_failures": run.d_failed}
+
+
 def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: float) -> dict:
     """Dev-run thermal report (reported, not gated; T0304 findings 0 and 1, T0305 finding 4) from the die rows, per
     reference and thermally solved layout: F6(a)'s node growth for each level step against node_growth_factor +/-
@@ -1497,7 +1629,7 @@ class FakeLay(Stub):
 
 def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None,
                fv_eb_nan: set | None = None, fv_pc_bad: set | None = None, fv_pc_missing: set | None = None,
-               fv_tj_nan: set | None = None):
+               fv_tj_nan: set | None = None, em_nan: set | None = None, em_nc: set | None = None):
     """Deterministic fake solvers keyed by fingerprint.  'twin_best': every candidate is above the twin (twin rule);
     otherwise candidates reach ~0.70 of the twin's L_sub ('levelled': L1 floor reached in the first n_first).  Planted
     faults, filled by the selftest before the drive: ``hot`` fingerprints get +10 K on die 0 at every scikit-fem level
@@ -1508,7 +1640,8 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
     solve reports 5e-5 K, below the 1e-4 K gate); ``fv_pc_missing`` references' FV level-1 record has no picard_dT_K
     key (a stale record; it counts as NaN, F6(c) Picard must fail; T0310 finding 1); ``fv_tj_nan`` references' FV level-2
     solve reports a NaN Tj on die 1 (not the first die, so a plain max() over dies drops it; F6(e) on its type and the
-    aggregate must fail; T0310 finding 2).  'snap*' is the off-grid
+    aggregate must fail; T0310 finding 2); ``em_nan`` fingerprints' thk_f band solve returns a NaN L and ``em_nc``
+    fingerprints' fil_f band solve reports GMRES flag 1 (not converged, finite L) (T0318 finding 0).  'snap*' is the off-grid
     reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01."""
     lo = 1.05 if scenario == "twin_best" else 0.70
     # 'Dmiss' (D0018 selftest): L_sub(D)/L_sub(W) = 1.2505 >= 1.25 at the point, below it at the band's conservative end
@@ -1534,8 +1667,10 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
         if j["type"] == "em":
             f = {"lat0.25": 1.0, "lat0.5": 1.004, "thk_c": 1.003, "thk_f": 0.9995, "fil_f": 1.0008}[j["level"]]
             k = BAND.index(j["level"])  # layout-dependent band levels, so e_R is O(1e-3) and the twin gate is testable
-            return {"L_H": lsub(fp) * f * (1 + (2e-3 * _u(fp, 10 + k) if k else 0.0)), "n_unknowns": 1000,
-                    "fingerprint": fp}
+            L = lsub(fp) * f * (1 + (2e-3 * _u(fp, 10 + k) if k else 0.0))
+            nc = fp in (em_nc or ()) and j["level"] == "fil_f"
+            return {"L_H": math.nan if fp in (em_nan or ()) and j["level"] == "thk_f" else L, "n_unknowns": 1000,
+                    "gmres_flags": [1 if nc else 0], "solver_tol_rel_L_max": 1e-6, "fingerprint": fp}
         if j["type"] == "calibrate":
             return {"P_ref_W": 42.0, "rise_K": 60.1, "history": [{"power_W": 42.0, "rise_K": 60.1, "energy_balance": 1e-9,
                                                                    "picard_residual_K": 1e-6}]}
@@ -1752,12 +1887,23 @@ def stack_rounding_failures(dbc, d_def) -> list[str]:
 
 # D0018 decision 2 selftest cases: name -> (fake world, references, planted DegradeError on, planted D miss on, wanted
 # exclusions {rid: reason}, at_least_one_counted_reference passes, a planted control miss on (F1b_control must fail))
+# (world, n, DegradeError on, D miss on, want excluded {rid: reason}, at_least_one_counted passes, control misses, extra)
+# extra (T0318 findings 0 and 4): twin_err = TwinError on; em_nan / em_nc = planted band faults (fingerprints); d_fail =
+# references whose F1b_D_definition must fail (INVALID, not excluded)
 EXCLUSION_CASES = {
-    "degrade_one_of_two": ("headroom", 2, {1}, set(), {"fake1": "DegradeError"}, True, set()),
-    "degrade_only_reference": ("headroom", 1, {0}, set(), {"fake0": "DegradeError"}, False, set()),
-    "D_miss_one_of_two": ("headroom", 2, set(), {1}, {"fake1": "D_misses_1p25_in_L_sub"}, True, set()),
-    "control_miss_beside_exclusion": ("twin_best", 2, {1}, set(), {"fake1": "DegradeError"}, True, {"fake0"}),
+    "degrade_one_of_two": ("headroom", 2, {1}, set(), {"fake1": "DegradeError"}, True, set(), {}),
+    "degrade_only_reference": ("headroom", 1, {0}, set(), {"fake0": "DegradeError"}, False, set(), {}),
+    "D_miss_one_of_two": ("headroom", 2, set(), {1}, {"fake1": "D_misses_1p25_in_L_sub"}, True, set(), {}),
+    "control_miss_beside_exclusion": ("twin_best", 2, {1}, set(), {"fake1": "DegradeError"}, True, {"fake0"}, {}),
+    "twin_error_one_of_two": ("headroom", 2, set(), set(), {"fake1": "TwinError"}, True, set(), {"twin_err": {1}}),
+    "D_miss_only_reference": ("headroom", 1, set(), {0}, {"fake0": "D_misses_1p25_in_L_sub"}, False, set(), {}),
+    "mixed_stages": ("headroom", 3, {0}, {2}, {"fake0": "DegradeError", "fake2": "D_misses_1p25_in_L_sub"}, True, set(),
+                     {}),
+    "nan_band_is_invalid": ("headroom", 2, set(), set(), {}, False, set(), {"em_nan": {"D1"}, "d_fail": {"fake1"}}),
+    "nonconverged_band_is_invalid": ("headroom", 2, set(), set(), {}, False, set(),
+                                     {"em_nc": {"twin0"}, "d_fail": {"fake0"}}),
 }
+EXCLUSION_STAGE = {"TwinError": "prepare", "DegradeError": "prepare", "D_misses_1p25_in_L_sub": "drive"}
 
 
 def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
@@ -1774,11 +1920,13 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
     out = []
     spec3 = D.halfbridge_housing_spec(2, rules=DesignRules(min_width_power=3e-3), wires_per_die=1)  # power rule 3 mm
     floor = float(cfg["degrade_power_width_floor_m"])
-    plant: dict = {"err": set(), "miss": set(), "seen": {}}
+    plant: dict = {"err": set(), "miss": set(), "seen": {}, "twin_err": set()}
     fake_p = SimpleNamespace(sequence=lambda: [("DC+", "die", "HS"), ("PHASE", "land", "HS"), ("PHASE", "die", "LS"),
                                                ("DC-", "land", "LS")], slots=[(0, 2 * i, 1, 2 * i + 1) for i in range(4)])
 
     def twin_(ref, spec, with_l1=True):
+        if int(ref.fingerprint()[3:]) in plant["twin_err"]:
+            raise W.TwinError("planted TwinError")
         return FakeLay(f"twin{ref.fingerprint()[3:]}", None), fake_p, {"mode": "planted"}
 
     def degrade_(tw, spec, with_l1=True):
@@ -1793,9 +1941,10 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
     W.twin, W.degrade = twin_, degrade_
     globals()["save_ctx"] = lambda rc, wd: (wd.mkdir(parents=True, exist_ok=True), str(wd / "ctx.pkl"))[1]
     try:
-        for name, (world, n, err, miss, want, want_ok, ctrl_miss) in EXCLUSION_CASES.items():
-            plant.update(err=err, miss=miss, seen={})
-            lsub, l1, fjob = fake_world(world)
+        for name, (world, n, err, miss, want, want_ok, ctrl_miss, x) in EXCLUSION_CASES.items():
+            plant.update(err=err, miss=miss, seen={}, twin_err=x.get("twin_err", set()))
+            lsub, l1, fjob = fake_world(world, em_nan=x.get("em_nan"), em_nc=x.get("em_nc"))
+            d_fail = x.get("d_fail", set())
             with tempfile.TemporaryDirectory() as td:
                 root = Path(td)
                 run = Run(cfg, root, Scheduler(1e9, 8, 2, fake=fjob), smoke=False, threads=2, fake={"l1": l1})
@@ -1841,22 +1990,30 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
                 out.append(f"exclusion/{name}: an excluded reference has rows")
             if any(k[0] in want for k in run.drivers):
                 out.append(f"exclusion/{name}: an excluded reference kept a search driver {sorted(run.drivers)}")
+            stages = {rid: e["stage"] for rid, e in rep.get("excluded", {}).items()}
+            if stages != {rid: EXCLUSION_STAGE[r] for rid, r in want.items()}:
+                out.append(f"exclusion/{name}: stages {stages}")
+            dfc = {c["name"][len("F1b_D_definition:"):] for c in checks
+                   if c["name"].startswith("F1b_D_definition:") and not c["passed"]}
+            if dfc != d_fail or cmap["F1b_D_definition"]["passed"] != (not d_fail):
+                out.append(f"exclusion/{name}: F1b_D_definition failed on {sorted(dfc)} (aggregate "
+                           f"{cmap['F1b_D_definition']['passed']}), want {sorted(d_fail)} (a solver failure is INVALID)")
             if cmap["at_least_one_counted_reference"]["passed"] != want_ok or \
-                    met.get("n_counted_references") != float(n - len(want)):
+                    met.get("n_counted_references") != float(0 if d_fail else n - len(want)):
                 out.append(f"exclusion/{name}: at_least_one_counted_reference {cmap['at_least_one_counted_reference']}, "
                            f"n_counted {met.get('n_counted_references')} (want {'pass' if want_ok else 'INVALID'})")
             if want_ok and not math.isfinite(met["headroom_min_lo"]):
                 out.append(f"exclusion/{name}: A1 not finite with a counted reference left")
             if not want_ok and math.isfinite(met["headroom_min_lo"]):
                 out.append(f"exclusion/{name}: A1 finite with no counted reference")
-            for c in ("fail_fast_twin_and_D", "F1b_D_definition"):
+            for c in ("fail_fast_twin_and_D",) + (() if d_fail else ("F1b_D_definition",)):
                 if not cmap[c]["passed"]:
                     out.append(f"exclusion/{name}: {c} failed: {cmap[c]['detail'][:200]}")
             fc = {c["name"][len("F1b_control:"):]: c["passed"] for c in checks if c["name"].startswith("F1b_control:")}
             if {r for r, ok in fc.items() if not ok} != ctrl_miss:
                 out.append(f"exclusion/{name}: F1b_control failures {fc}, planted on {sorted(ctrl_miss)} (a control miss "
                            f"must stay a failed gated check, INVALID)")
-            if plant["seen"] != {k: min(3e-3, floor) for k in range(n)}:
+            if plant["seen"] != {k: min(3e-3, floor) for k in range(n) if k not in plant["twin_err"]}:
                 out.append(f"exclusion/{name}: degrade() was handed min_width_power {plant['seen']}, want the floor "
                            f"{min(3e-3, floor)} (reference 3 mm)")
             if miss:  # the planted miss is a conservative-end miss: >= 1.25 at the point, below it at the band's end
@@ -1911,6 +2068,78 @@ def d_floor_geometry_failures(cfg: dict) -> list[str]:
         out.append("floor: the twin is not DRC-clean under the reference's rules")
     log(f"selftest floor (D0018): reference minimum {w_ref * 1e3:.3f} mm, D narrowest {w * 1e3:.3f} mm, floor "
         f"{floor * 1e3:g} mm, cells across {dr['cells_across']}, D L1 ratio {rc.d_rec.get('l1_ratio')}")
+    return out
+
+
+# planted reference for the T0317 signal-rule test: a generator layout under 2D_Case_4's dev spec (assumed gate / Kelvin
+# pads, its GATE/KELVIN keep-outs), with every gate wire's landing moved LONGER_MM deeper into its gate copper along the
+# wire (T0314's 2R mechanism: the reference lands its gate wires beyond the nearest copper; the twin lands on it)
+SIGNAL_PLANT = {"seed": 20261112, "longer_mm": 2.0, "beyond_longest_mm": 0.5}
+
+
+def _lengthen_gate_wires(lay, by_m: dict):
+    """``lay`` with gate wire k's landing moved by_m[k] metres further along the wire's plan direction (same foot, loop
+    height, diameter and end heights; derivative's arc_wire)."""
+    from moduleforge.geometry.layout import SignalWire, arc_wire
+    out = []
+    for k, w in enumerate(lay.signal_wires):
+        if k in by_m:
+            s, q = w.points[0, :2], w.points[-1, :2]
+            q2 = q + (q - s) / np.linalg.norm(q - s) * by_m[k]
+            bw = arc_wire(tuple(s), tuple(q2), float(w.points[0, 2]), float(w.points[-1, 2]), w.loop_height, w.diameter,
+                          w.net)
+            w = SignalWire(w.die, w.pad, w.net, bw.points, w.diameter, w.loop_height)
+        out.append(w)
+    return dataclasses.replace(lay, signal_wires=out)
+
+
+def signal_rule_failures(cfg: dict) -> list[str]:
+    """D0018 model-fix item 1 on real geometry (L0 only): on a planted reference whose gate wires land 2 mm beyond the
+    nearest gate copper, e008_rules drops the measured lower bound and keeps the upper ones; the twin built under them (gate
+    wires to the nearest copper, shorter than the reference's shortest gate wire) is DRC-clean, while under raw
+    measure_rules it fails signal_wire_length (the test can see the difference); a twin gate wire made longer than the
+    reference's longest gate wire still fails signal_wire_length under E008's rules."""
+    from moduleforge.drc.rules import check, measure_rules
+    from moduleforge.generate import derivative as D
+    from moduleforge.generate import twin as W
+    from moduleforge.geometry import GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS
+    out = []
+    sp = SIGNAL_PLANT
+    base = D.generate(dev_reference("case4", cfg).spec, 1, seed=sp["seed"])[0]
+    ref = _lengthen_gate_wires(base, {k: sp["longer_mm"] * 1e-3 for k, w in enumerate(base.signal_wires)
+                                      if w.pad == "gate"})
+    raw = measure_rules(ref)[0]
+    rules, _, rrec = e008_rules(ref)
+    ref_g = _gate_wires(ref)
+    if not ref_g or check(ref, raw) or check(ref, rules):
+        return [f"signal: planted reference not DRC-clean under its own rules or without gate wires ({ref_g})"]
+    if rules.min_signal_wire_length is not None or raw.min_signal_wire_length is None or \
+            rrec["dropped_source_values_m"]["min_signal_wire_length"] != raw.min_signal_wire_length or \
+            any(getattr(rules, k) != getattr(raw, k) for k in KEPT_SIGNAL_UPPER_BOUNDS) or \
+            dataclasses.replace(rules, min_signal_wire_length=raw.min_signal_wire_length) != raw:
+        out.append(f"signal: e008_rules did not drop exactly the lower bound (record {rrec})")
+    spec = D.spec_from_layout(ref, rules, [GATE_HS, GATE_LS, KELVIN_HS, KELVIN_LS])
+    try:
+        tw = W.twin(ref, spec, with_l1=False)[0]
+    except W.TwinError as e:
+        return out + [f"signal: no twin under E008's rules: {e}"]
+    tw_g = _gate_wires(tw)
+    if not min(tw_g) < min(ref_g) - 1e-4:
+        out.append(f"signal: the twin's shortest gate wire {min(tw_g)} is not shorter than the reference's {min(ref_g)}")
+    if check(tw, rules):
+        out.append(f"signal: the twin fails E008's rules: {sorted({v.rule for v in check(tw, rules)})}")
+    if "signal_wire_length" not in {v.rule for v in check(tw, raw)}:
+        out.append("signal: under raw measure_rules the twin's short gate wire passes (the test cannot see the rule)")
+    k = max((i for i, w in enumerate(tw.signal_wires) if w.pad == "gate"), key=lambda i: tw.signal_wires[i].length)
+    longer = _lengthen_gate_wires(tw, {k: max(ref_g) - tw.signal_wires[k].length + sp["beyond_longest_mm"] * 1e-3})
+    vl = {v.rule for v in check(longer, rules)}
+    if not longer.signal_wires[k].length > max(ref_g) or vl & {"signal_wire_landing", "signal_wire_cross"} or \
+            "signal_wire_length" not in vl:
+        out.append(f"signal: a gate wire of {longer.signal_wires[k].length} m (reference longest {max(ref_g)} m) gives "
+                   f"{sorted(vl)} under E008's rules, want signal_wire_length only from length")
+    log(f"selftest signal rule (D0018 item 1): reference gate wires {min(ref_g) * 1e3:.3f}-{max(ref_g) * 1e3:.3f} mm, twin "
+        f"shortest {min(tw_g) * 1e3:.3f} mm (clean under E008's rules, raw rules: signal_wire_length), longer twin wire "
+        f"{longer.signal_wires[k].length * 1e3:.3f} mm -> {sorted(vl)}; {len(out)} failures")
     return out
 
 
@@ -2258,6 +2487,7 @@ def selftest() -> int:
             failures.append(f"memory learning: {sc.queue.get(j2['out'], {}).get('mem_GB')} != 5.5 or leaked across refs")
     failures += exclusion_failures(cfg, scfg)
     failures += d_floor_geometry_failures(cfg)
+    failures += signal_rule_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
     for f in failures:

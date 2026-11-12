@@ -345,3 +345,85 @@ same overstatement held, a speculation [S]).
 **Not done / limits.** The registered path (`full()`) and the reference set are unchanged. `make_spec.py` was already
 behind the YAML (no T0308-T0310 content) and was not re-run; the YAML was edited directly. `--plan` was not re-run: the D
 and W band solves now run before the searches start (a short serial phase per reference that --plan does not model).
+
+## 9. T0317 (2026-11-11): D0018 model-fix item 1 — E008 drops the measured minimum gate-wire length; review T0318 fixes
+
+Labels: **[F]** fact (file, line or record), **[I]** inference, **[S]** speculation.
+
+**The rule.** [F] E008's design rules of a reference are `drc.rules.measure_rules` with `min_signal_wire_length` set to
+None. One runner function builds them, `e008_run.e008_rules(lay, base=None, overrides=None)`. It returns the rules, the
+measure_rules record and a rules record, which is stored as `info.rules_record`: the dropped field, the value
+measure_rules gave it, the upper bounds kept, and every field that changed from the source. It raises if an override sets
+the dropped field, or if any field other than the dropped one and the overrides changed. Every upper bound
+(`max_gate_wire_length`, `max_kelvin_wire_length`, `max_signal_wire_length`) and every other measured rule is kept. Both
+spec builders in the runner use it (`dev_reference`). 2D_Case_4 takes measure_rules plus its dev overrides. Generator
+housing layouts take their generator spec's rules (`base`; T0262's choice, unchanged). The judged-reference loader of
+`full()`, still unwritten, must use it too; E008.yaml `config.per_reference_rules` says so. The twin, D (through `d_spec`)
+and every main and control candidate are built from the spec those rules give, so **the candidates lose the lower bound
+too**.
+
+**Basis.** D0018, model-fix list item 1. It was fixed before any candidate reference was screened
+(project/decisions/D0018-o003-e008-degraded-copy-yardstick.md). D0018 reads O003 scope_in's enumerated rules as the
+complete meaning of "at least as strict as the reference's own". The bondability rule bounds gate and Kelvin wires from
+above only (objective.yaml lines 61-63). T0315 finding 2 flagged this reading as an interpretation for the founder, and
+D0018 is the founder's answer. T0314 §1 (variant R1) showed that this lower bound, set to the reference's shortest signal
+wire at rules.py line 587, is the only rule that stops a twin whose gate wires run to the nearest gate copper.
+
+**Effect on the dev references: none [F].** 2D_Case_4's reconstruction has no signal wires (`n_signal_wires` 0), so
+measure_rules already gives no lower bound. Generator housing specs set none. So the rules, W, D and samples are unchanged.
+- Case 4 rerun (`case4_prep.py`, log `research/o003/e008_dev/case4_prep_T0317.log`): D fingerprint 6d63ff8f…, L1 ratio
+  1.3910401988110974, walk 7 steps, 33 of 2,000 draws DRC-clean, as T0316 recorded.
+- gen2_0 smoke prep (new `gen2_0_prep.py`, 100 draws, the smoke run's seed; record in
+  `meta.per_reference.housing70x40_gen2_0.prep`): the reconstruction and twin fingerprints equal the stored smoke rows'
+  (aade6489…), so those rows stay valid under this runner.
+
+**Shortest gate wires (reported, not gated; `info.gate_wires`) [F].**
+- 2D_Case_4: W and D 5.122 mm (4 gate wires each). The 33 DRC-clean samples: 5.734 mm (132 gate wires).
+- gen2_0 and its W, D and samples: no gate wires. The generator housing spec has no gate copper or gate pads.
+- None is shorter than `DesignRules.min_wire_length` = 1.5 mm. That value is a placeholder that bounds power wires only
+  (rules.py lines 6-7 and 284), not a cited minimum.
+- [I] On the judged references the twin's gate wires are the shortest possible from their feet. A short gate wire below a
+  real bondability minimum is therefore possible there and would go unflagged. The report exists to make it visible.
+
+**Selftest (`signal_rule_failures`, real L0 geometry) [F].** The planted reference is a generator layout under Case 4's dev
+spec, with every gate wire's landing moved 2 mm deeper into its gate copper (T0314's 2R mechanism).
+- Its gate wires run 14.044-15.640 mm. The twin built under E008's rules lands on the nearest copper (shortest 12.052 mm)
+  and is DRC-clean.
+- The same twin under raw measure_rules fails `signal_wire_length`, so the test can see the rule.
+- A twin gate wire lengthened to 16.133 mm, longer than the reference's longest, still fails `signal_wire_length` under
+  E008's rules, with no landing or crossing violation.
+- Mutation check (in process): with the lower bound kept, the test reports a failure.
+
+**T0318 finding 0: solver failures are not exclusions [F].** `Run.d_definition` now checks D's and W's band records
+(`band_solve_failures`). A band solve fails the check if:
+- L_H is not finite;
+- the GMRES flag list is missing or any flag is non-zero (scipy: 0 = converged; an empty list is the dense direct solve);
+- solver_tol_rel_L_max is not finite.
+
+A non-finite R or e_R also fails it. Any of these keeps the reference in the run (no exclusion) and records it in
+`run.d_failed`. `Run.drive` then stops before any search, `assemble_rows` gives no rows, and `evaluate` fails
+`F1b_D_definition:<rid>` and `F1b_D_definition`, which makes the run INVALID. Only a finite, converged ratio below 1.25 at
+the conservative end excludes. Two choices here are mine: stopping early, which saves the search compute of a run that
+is already void [I], and failing closed on a missing convergence record. Neither adds a tolerance. A finite, converged
+but large solver_tol_rel_L_max is not gated, as before.
+
+**T0318 finding 4: selftest gaps closed [F].** `EXCLUSION_CASES` now has 9 cases, all passing:
+- the 4 existing cases;
+- a TwinError exclusion;
+- a D-definition miss on the only reference, which gives INVALID;
+- mixed stages: a DegradeError at prepare and a D miss at drive in one 3-reference run, with each exclusion's stage
+  checked;
+- a planted NaN thk_f band on D, which gives INVALID with no exclusion;
+- a planted non-converged fil_f band on W, which gives INVALID with no exclusion.
+
+Mutation check: with `band_solve_failures` disabled, the non-converged case fails 3 assertions. The NaN case is also caught
+by the finite-R/e_R test. `case4_prep.py` walk_steps now prints the 7 steps, not the 5 keys of the walk record.
+
+**Hashes re-stamped.** The runner's sha256 is now a40e9559…, in three places in E008.dev_rows.json: the Case 4 record,
+`rule_strictness_refresh` (re-run, task T0317) and the gen2_0 prep record. The freeze block does not contain the runner.
+
+**Not done / limits.**
+- `full()`, the judged-reference loader and the reference set are unchanged.
+- No l2_layout or thermal solve was run.
+- The 2D_Case_2R effect (T0314 R1: the twin becomes exact and D reaches 1.395) was not re-run, because the packet excludes
+  2R.
