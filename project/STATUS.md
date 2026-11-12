@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T20:46:01+00:00 from repository state — do not edit_
+_generated 2026-11-12T20:46:40+00:00 from repository state — do not edit_
 
 ## Founder inbox (7 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -8,7 +8,7 @@ _generated 2026-11-12T20:46:01+00:00 from repository state — do not edit_
 - **I0171** [experiment_registration] register E008 (pre-registration)
 - **I0175** [experiment_registration] register E008 (pre-registration)
 - **I0177** [experiment_registration] register E008 (pre-registration)
-- **I0178** [protected_change] T0320: merge needs founder approval
+- **I0179** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -35,14 +35,10 @@ _generated 2026-11-12T20:46:01+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 278, failed: 3, needs_founder: 1
+cancelled: 39, done: 279, failed: 3
 
-- T0320 `needs_founder` scientist/design_experiment: E008: judged-reference loading and the registered path for D0010's public set (2D_Case_2R, 2D_Case_6), cost plan on the real reconstructions, declared F3 deviation (founder decision D0019) (attempt 1)
 
 ## Recent events
-- 2026-11-12T15:24:06+00:00 merged {"task": "T0317"}
-- 2026-11-12T15:24:06+00:00 inbox_opened {"id": "I0177", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
-- 2026-11-12T15:53:02+00:00 sleep_detected {"gap_s": 1394, "runs_extended": 0}
 - 2026-11-12T16:28:20+00:00 sleep_detected {"gap_s": 1722, "runs_extended": 0}
 - 2026-11-12T16:46:29+00:00 sleep_detected {"gap_s": 836, "runs_extended": 0}
 - 2026-11-12T17:07:53+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
@@ -55,3 +51,6 @@ cancelled: 39, done: 278, failed: 3, needs_founder: 1
 - 2026-11-12T20:25:38+00:00 sleep_detected {"gap_s": 889, "runs_extended": 1}
 - 2026-11-12T20:39:05+00:00 run_finished {"run": "T0321-critic-20261112T122503-f7af", "status": "completed", "cost": 2.185204, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T20:39:09+00:00 inbox_opened {"id": "I0178", "kind": "protected_change", "subject": "T0320: merge needs founder approval"}
+- 2026-11-12T20:46:28+00:00 inbox_resolved {"id": "I0178", "status": "approved", "note": "Merge T0320 (D0019: judged-reference loader, registered path full(), --check-references, real-size cost plan, dec
+- 2026-11-12T20:46:37+00:00 merged {"task": "T0320"}
+- 2026-11-12T20:46:37+00:00 inbox_opened {"id": "I0179", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
