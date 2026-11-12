@@ -1,0 +1,145 @@
+id: T0320
+objective: O003
+title: 'E008: judged-reference loading and the registered path for D0010''s public set (2D_Case_2R, 2D_Case_6),
+  cost plan on the real reconstructions, declared F3 deviation (founder decision D0019)'
+type: design_experiment
+agent: scientist
+status: running
+depends_on: []
+description: "Implement founder decision D0019 (2026-11-12, founder session; the record is being committed\
+  \ separately). It is\nrestated here in full:\n1. Reference set unchanged: O003's judged references stay\
+  \ D0010's public fallback, PowerSynth 2D_Case_2R and 2D_Case_6,\n   labelled \"public benchmarks, low\
+  \ power, indicative\". 2D_Case_6 is expected to be excluded under F1(a) (TwinError;\n   D0018 fix-list\
+  \ item 3), so 2R is expected to be the only counted reference and any verdict goes to the founder review.\n\
+  2. Declared F3 deviation: both references were loaded at L0/L1 before E008's freeze (T0263 twin check,\
+  \ T0314 diagnosis),\n   and E008's runner and spec changed afterwards in T0316 (D0018 decisions 1-2,\
+  \ found on the dev layout 2D_Case_4) and\n   T0317 (D0018 fix-list item 1, prompted by 2R; solver failures\
+  \ in D's band solves -> INVALID). Nothing under src/ has\n   changed since 2026-11-10 11:31 UTC (T0300).\
+  \ Only L0/L1 facts about the references were known; no inductance, thermal or\n   search result exists\
+  \ for them. The removed rule is a lower bound on gate/Kelvin-wire length; no power-copper,\n   power-wire\
+  \ or die rule changed. E008's spec states this deviation and every statement of the verdict carries\
+  \ it.\n3. No further model change before registration (D0018's rule continues): no change to the generator,\
+  \ twin, degradation\n   rule, rules or search.\n4. Until E008's code, including the judged-reference\
+  \ loader, is frozen in the spec, 2R and 2D_Case_6 are only rebuilt\n   from the frozen T0263 reconstruction\
+  \ script to check their fingerprints and count mesh sizes. No twin, degradation,\n   l2_layout, thermal\
+  \ or search run on them.\n5. O003 scope_in's enumerated design rules are the complete meaning of \"\
+  design rules at least as strict as the\n   reference's own\" (D0018 item 1).\n\nHard limits:\n- Do not\
+  \ call twin(), degrade(), prepare(), any L1 or l2_layout solve, any thermal solve or any search on 2D_Case_2R\
+  \ or\n  2D_Case_6, in scripts, tests or the shell. Rebuilding their Layout objects, fingerprints and\
+  \ mesh/cell/DOF counts is\n  allowed. Test the loader end to end with fake layouts and fake solvers\
+  \ (selftest), and on the dev layouts.\n- Do not change src/, tests/acceptance, research/scripts/o003_powersynth_references.py\
+  \ or research/o003/references/\n  (frozen reconstructions shared with O004). Import the script as dev_reference\
+  \ imports o006_case4_layout.py.\n- Do not download any PowerSynth file or any other module's geometry,\
+  \ and do not search the web for module layouts.\n  Never read data/holdout/. Do not edit src/moduleforge/solvers/thermal_fem.py\
+  \ (sha256 a216d5fe...).\n- Do not widen any tolerance, relax any gate, or change the cost model's rates.\
+  \ Do not decide the founder items the spec\n  lists; state the facts each needs.\n\nWork:\n1. config.references:\
+  \ one entry per reference in D0010 order (2D_Case_2R, 2D_Case_6) with every admissibility_fields\n \
+  \  field, taken from research/o003/references/*.json and research/notes/o003-reference-reconstructions.md:\
+  \ kind public,\n   vault_id null, reconstruction fingerprint (2R 66cb1e19..., Case 6 71e07ae1..., full\
+  \ hashes), L_term_H 7e-9 and its\n   source, on_grid_0p5mm true, keepout nets, the source commit and\
+  \ licence (GPL-3.0, facts only, D0007), and the snapping\n   check as \"not required: on the 0.5 mm\
+  \ grid, s_ref = 0 (O003 notes: the check applies only to a reference not on the\n   0.5 mm grid)\".\
+  \ For sic_mosfet_half_bridge and separate_antiparallel_diode_dies cite what the source records show;\
+  \ if\n   a field is not settled by them, say so in the entry rather than asserting it.\n2. Loader and\
+  \ full(): a judged_reference(entry, cfg) beside dev_reference that rebuilds the reconstruction through\
+  \ the\n   frozen script, checks its fingerprint against the entry before anything else (mismatch ->\
+  \ refuse, the run is void),\n   and builds the spec with e008_rules and the entry's keepout nets. Add\
+  \ the guard from review T0319 finding 0 (project/\n   reviews/T0317/T0319.json): prepare() fails unless\
+  \ rc.info has a rules_record from e008_rules and\n   rc.spec.rules.min_signal_wire_length is None. Write\
+  \ the rest of full() as the registered path: freeze checks, loading,\n   prepare() per reference with\
+  \ seeds derived from the sealed seed by reference index (derive_seed), Run.drive,\n   assemble_rows,\
+  \ evaluate(), and rows, metrics and sanity checks through mfos.evidence.ExperimentRun with the spec's\n\
+  \   metric and sanity-check names (skill mf-evidence). TwinError/DegradeError/D's definition follow\
+  \ D0018 and T0317 as in\n   dev(). The evaluation report and the rows' meta carry the label and the\
+  \ D0019 deviation. The run must resume from its\n   workdir after an interruption, as the dev path does.\
+  \ Add the reconstruction script's sha256 to config.freeze.\n3. A --check-references CLI mode: loads\
+  \ config.references, verifies every fingerprint and prints per reference its\n   l2_layout unknowns\
+  \ at 0.5 and 0.25 mm, thermal DOFs per level under the frozen rule and the F6(e) finite-volume\n   level-3\
+  \ cell count. Nothing else.\n4. Selftest: the loader refuses a wrong fingerprint; the T0319 guard fails\
+  \ a spec built without e008_rules or with\n   min_signal_wire_length set; full()'s orchestration runs\
+  \ end to end with fake layouts, fake solvers and a fake\n   recorder, including one reference excluded\
+  \ by a planted TwinError and one counted; the label and deviation reach the\n   report.\n5. Cost plan:\
+  \ replace the Case 4 proxies in config.compute.plan_references with the real sizes of 2R and Case 6\
+  \ from\n   item 3, re-run --plan, and update cost_estimate, cpu_hours_est and peak memory. Give the\
+  \ expected and upper VM-hours,\n   $, billed vCPU-hours and process CPU-hours, both with Case 6 excluded\
+  \ at its twin (expected, from T0263/T0314) and if\n   it were not. State whether F6(e) on 2R fits in\
+  \ 150 GB, and say what the runner does for 2D_Case_6's stack type when\n   2D_Case_6 is excluded by\
+  \ TwinError (spot check, report, or neither) and what each reading costs.\n6. Spec and note: add config.f3_declared_deviation\
+  \ (D0019 item 2, the commits, what was and was not known); cite D0019\n   where the reference set is\
+  \ stated; update founder_decisions_before_registration (remove the snapping-check and\n   config.references\
+  \ items as settled, citing D0019, and for each remaining item add what 2R's existing records already\n\
+  \   settle, from files only); re-stamp every hash the runner edit changes; update research/notes/e008-design.md.\n\
+  Out of scope: the VM launch script for the registered run, the dev run itself, and any founder item."
+context_files:
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/notes/e008-design.md
+- research/notes/o003-reference-reconstructions.md
+- research/o003/references/2D_Case_2R.json
+- research/o003/references/2D_Case_6.json
+- research/scripts/o003_powersynth_references.py
+- project/reviews/T0317/T0319.json
+- project/reviews/T0316/T0318.json
+- project/decisions/D0018-o003-e008-degraded-copy-yardstick.md
+- research/notes/o003-twin-coverage.md
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e008_run.py --check-references
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term', 'D0018', 'D0019', 'f3_declared_deviation',
+    '66cb1e19', '71e07ae1'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance project/objectives project/decisions
+    research/scripts/o003_powersynth_references.py research/o003/references
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0320-e008-judged-reference-loading-and-the-re
+pr: null
+runs:
+- T0320-scientist-20261112T113019-c937
+created_by: session
+created_at: '2026-11-12T19:30:06+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder decision 2026-11-12 (session, D0019): no screened public module is usable (NC State
+  modules fail or lack documents; PowerSynth 2D_Case_5 has quarter-turned dies outside the twin space),
+  so E008 runs on D0010''s fallback with the F3 deviation declared. The registered path (full() raises
+  NotImplementedError) and the real-size cost plan are what stand between E008 and registration.'
+history: []

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T17:08:12+00:00 from repository state — do not edit_
+_generated 2026-11-12T19:30:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (6 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -26,7 +26,7 @@ _generated 2026-11-12T17:08:12+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 100 | $180.80 | 2932630 | 1488713 | 156 | 0 |
+| O003 | 101 | $180.80 | 2932630 | 1488713 | 156 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -34,13 +34,11 @@ _generated 2026-11-12T17:08:12+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 277, failed: 3
+cancelled: 39, done: 277, failed: 3, running: 1
 
+- T0320 `running` scientist/design_experiment: E008: judged-reference loading and the registered path for D0010's public set (2D_Case_2R, 2D_Case_6), cost plan on the real reconstructions, declared F3 deviation (founder decision D0019) (attempt 1)
 
 ## Recent events
-- 2026-11-12T04:39:49+00:00 run_started {"run": "T0317-scientist-20261111T203949-e320", "task": "T0317", "role": "scientist", "session": "1028ac29-25c8-472a-83cf-40fc4ad51543"}
-- 2026-11-12T05:14:16+00:00 run_finished {"run": "T0317-scientist-20261111T203949-e320", "status": "completed", "cost": 3.779634, "subtype": "success", "report": "structured_output"}
-- 2026-11-12T05:26:22+00:00 verified {"task": "T0317"}
 - 2026-11-12T05:26:28+00:00 run_started {"run": "T0319-critic-20261111T212628-8b9c", "task": "T0319", "role": "critic", "session": "e4c54619-6661-4a1f-8871-59d4ec2a33fc"}
 - 2026-11-12T05:27:03+00:00 sleep_detected {"gap_s": 768, "runs_extended": 1}
 - 2026-11-12T05:34:44+00:00 run_finished {"run": "T0319-critic-20261111T212628-8b9c", "status": "completed", "cost": 2.333704, "subtype": "success", "report": "structured_output"}
@@ -53,3 +51,6 @@ cancelled: 39, done: 277, failed: 3
 - 2026-11-12T16:28:20+00:00 sleep_detected {"gap_s": 1722, "runs_extended": 0}
 - 2026-11-12T16:46:29+00:00 sleep_detected {"gap_s": 836, "runs_extended": 0}
 - 2026-11-12T17:07:53+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
+- 2026-11-12T19:30:06+00:00 task_added {"task": "T0320", "reason": "founder decision 2026-11-12 (D0019): E008 on D0010's public fallback; judged-reference loading"}
+- 2026-11-12T19:30:13+00:00 founder_decision_noted {"decision": "D0019 (draft, to be committed): O003 judged references stay D0010 public fallback 2D_Case_2R + 2D_Case_6; F3 deviation declared (T0316, T0317 afte
+- 2026-11-12T19:30:19+00:00 run_started {"run": "T0320-scientist-20261112T113019-c937", "task": "T0320", "role": "scientist", "session": "7b289e87-f086-4eac-9071-ac94e0f2bd92"}
