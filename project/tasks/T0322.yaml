@@ -4,7 +4,7 @@ title: 'E008: T0321 fixes (exact deviation wording, freeze checked before loadin
   excluded reference''s stack type, launch procedure for the registered run'
 type: design_experiment
 agent: scientist
-status: running
+status: todo
 depends_on: []
 description: "Follow-up to T0320 before E008's freeze. Founder decisions in the founder session, 2026-11-12:\
   \ review T0321's\nfindings 0 and 2 are fixed here; an excluded reference's stack type is REPORTED ONLY\
@@ -97,7 +97,7 @@ model: null
 budget_usd: 6.0
 max_turns: 100
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 2
 branch: task/T0322-e008-t0321-fixes-exact-deviation-wording
 pr: null
@@ -113,4 +113,9 @@ trigger: null
 rationale: 'Founder 2026-11-12 (session): fix review T0321 findings 0 and 2 before the freeze, report-only
   for an excluded reference''s non-default stack type (2D_Case_6), and a launch procedure for the registered
   run that respects the free-trial 8-vCPU limit and the phase-B resize.'
-history: []
+history:
+- outcome: capacity_backoff
+  summary: 'API Error: Can''t reach the API server — check your internet or DNS (ENOTFOUND)'
+  at: '2026-11-12T21:32:58+00:00'
+  until: '2026-11-12T21:37:58.512339+00:00'
+  session: 135d4e61-3315-485d-a9f8-d2b9baf300c7
