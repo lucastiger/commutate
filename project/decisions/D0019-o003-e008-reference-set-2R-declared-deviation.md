@@ -74,3 +74,9 @@ draft
   generator change prompted by its screened facts, and not feasible before 2026-11-24.
 - **No E008 run before day 60:** the day-60 criterion counts as INCONCLUSIVE (D0011), with no measurement. Rejected: the
   registered path is needed for any later reference, and a measured, labelled number informs the thesis review.
+
+## Erratum (2026-11-12, founder session, with the founder's permission)
+Two times in Context were local Pacific time labelled UTC. T0263 reached main at 2026-11-11 09:01 UTC (not 01:01 UTC).
+The last change under src/ (T0300) is 2026-11-10 19:31 UTC (not 11:31 UTC). T0263's run started at 2026-11-11
+06:23 UTC, after T0300, so the statement that src/ has not changed since before either reference was loaded stands.
+Nothing else changes.
