@@ -1,12 +1,13 @@
 # ModuleForge status
-_generated 2026-11-12T05:34:11+00:00 from repository state — do not edit_
+_generated 2026-11-12T05:34:51+00:00 from repository state — do not edit_
 
-## Founder inbox (5 open)
+## Founder inbox (6 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
 - **I0175** [experiment_registration] register E008 (pre-registration)
+- **I0176** [protected_change] T0317: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -14,7 +15,7 @@ _generated 2026-11-12T05:34:11+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $178.47/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $180.80/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -25,7 +26,7 @@ _generated 2026-11-12T05:34:11+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 100 | $178.47 | 2928853 | 1488575 | 156 | 0 |
+| O003 | 100 | $180.80 | 2932630 | 1488713 | 156 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -33,14 +34,11 @@ _generated 2026-11-12T05:34:11+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 275, failed: 3, review: 1, running: 1
+cancelled: 39, done: 276, failed: 3, needs_founder: 1
 
-- T0317 `review` scientist/design_experiment: E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018 item 1) (attempt 1)
-- T0319 `running` critic/review: Review T0317 (general) (attempt 1)
+- T0317 `needs_founder` scientist/design_experiment: E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018 item 1) (attempt 1)
 
 ## Recent events
-- 2026-11-12T04:15:24+00:00 run_finished {"run": "T0316-scientist-20261111T191924-cf93", "status": "completed", "cost": 5.447153, "subtype": "success", "report": "structured_output"}
-- 2026-11-12T04:26:17+00:00 verified {"task": "T0316"}
 - 2026-11-12T04:26:23+00:00 run_started {"run": "T0318-critic-20261111T202623-2491", "task": "T0318", "role": "critic", "session": "ab78161a-0b10-47d6-99ee-1eee2b048dc7"}
 - 2026-11-12T04:26:57+00:00 sleep_detected {"gap_s": 694, "runs_extended": 1}
 - 2026-11-12T04:38:22+00:00 run_finished {"run": "T0318-critic-20261111T202623-2491", "status": "completed", "cost": 2.45103, "subtype": "success", "report": "structured_output"}
@@ -54,3 +52,5 @@ cancelled: 39, done: 275, failed: 3, review: 1, running: 1
 - 2026-11-12T05:26:22+00:00 verified {"task": "T0317"}
 - 2026-11-12T05:26:28+00:00 run_started {"run": "T0319-critic-20261111T212628-8b9c", "task": "T0319", "role": "critic", "session": "e4c54619-6661-4a1f-8871-59d4ec2a33fc"}
 - 2026-11-12T05:27:03+00:00 sleep_detected {"gap_s": 768, "runs_extended": 1}
+- 2026-11-12T05:34:44+00:00 run_finished {"run": "T0319-critic-20261111T212628-8b9c", "status": "completed", "cost": 2.333704, "subtype": "success", "report": "structured_output"}
+- 2026-11-12T05:34:48+00:00 inbox_opened {"id": "I0176", "kind": "protected_change", "subject": "T0317: merge needs founder approval"}
