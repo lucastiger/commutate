@@ -4,7 +4,7 @@ title: 'E008: T0321 fixes (exact deviation wording, freeze checked before loadin
   excluded reference''s stack type, launch procedure for the registered run'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Follow-up to T0320 before E008's freeze. Founder decisions in the founder session, 2026-11-12:\
   \ review T0321's\nfindings 0 and 2 are fixed here; an excluded reference's stack type is REPORTED ONLY\
@@ -123,3 +123,145 @@ history:
 - outcome: capacity_resume
   summary: 135d4e61-3315-485d-a9f8-d2b9baf300c7
   at: '2026-11-12T21:38:19+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'T0322 is done. Review T0321''s findings 0 and 2 are fixed, the founder''s F6(e) decision is
+    in the runner, and the founder has a launch script for the registered run. Every definition-of-done
+    command exits 0. One exception: the `git merge-base` form of the protected-paths check was blocked
+    by the session guard, so I ran the same check against HEAD instead (exit 0).
+
+
+    (1) **Deviation wording (finding 0).** `config.f3_declared_deviation.statement` and `rules_changed`
+    are now exact. No design rule of the reference, the twin or the candidates on power copper, power
+    wires or dies changed. The power-width floor of the yardstick D did (D0018 decision 1, T0316). The
+    change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317). Rows now carry
+    the full statement instead of ''D001'
+  report:
+    summary: 'T0322 is done. Review T0321''s findings 0 and 2 are fixed, the founder''s F6(e) decision
+      is in the runner, and the founder has a launch script for the registered run. Every definition-of-done
+      command exits 0. One exception: the `git merge-base` form of the protected-paths check was blocked
+      by the session guard, so I ran the same check against HEAD instead (exit 0).
+
+
+      (1) **Deviation wording (finding 0).** `config.f3_declared_deviation.statement` and `rules_changed`
+      are now exact. No design rule of the reference, the twin or the candidates on power copper, power
+      wires or dies changed. The power-width floor of the yardstick D did (D0018 decision 1, T0316). The
+      change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317). Rows now carry
+      the full statement instead of ''D0019 item 2''. The evaluation report, the notes and design-note
+      section 11 carry the same text verbatim. The selftest checks the spec''s own statement word for
+      word in rows, report and notes, and checks that the old wording is gone.
+
+
+      (2) **Freeze checked before loading (finding 2).** `--check-references` now runs `freeze_checks`
+      first and refuses on any mismatch. New selftest case: the reconstruction script''s sha256 in `config.freeze`
+      is set to zeros. `registered_run` then raises the freeze error and records `freeze_hashes` as failed,
+      `check_references` returns 1, and a counting fake `snapped()`/`build()`/`l2_unknowns()` is never
+      called.
+
+
+      (3) **Founder decision on F6(e).** A non-default stack type whose references were all excluded (TwinError,
+      DegradeError or D''s definition), at least one of them admissible, is reported and not gated. The
+      report lists it as `F6e.<type>` with reference null and status ''only reference excluded: <reason>''.
+      It is listed in the detail of `F6e_stack_type_spot_check`, gets no spot check, and does not fail
+      the aggregate. Selftest covers three exclusion cases plus the full registered-path case. The decision
+      is recorded in `founder_decisions_settled` and the old item is removed. The all-inadmissible reading
+      stays a founder item.
+
+
+      (4) **Launch script `research/o003/e008_dev/burst_full.sh`.** `scripts/burst_gcp.sh` deletes its
+      VM on every exit and never resumes a registered run, so it cannot stop, resize and restart one VM.
+      The script therefore uses plain gcloud and calls `burst_gcp.sh` unchanged only for the quota check.
+      It keeps its rules: the run is minted once on this machine, only the seed file and a git bundle
+      of main reach the VM, the VM is regular (not Spot), and no earlier result is ever uploaded.
+
+      - The runner now has a phase A stop. In the registered run, jobs larger than the VM''s memory are
+      held back while everything else runs. When only those remain, the runner writes `work/phase_b_needed.json`
+      and exits 75 without writing a result.
+
+      - Phase B: the script stops the same VM, resizes it to the machine `--plan` names (n2d-custom-8-499712-ext)
+      and starts it again. It sets `E008_SOLO_RAM_GB`, which the runner refuses if it exceeds the machine''s
+      real memory. The same run then resumes from its own workdir on the same disk.
+
+      - A child process killed without a result file (for example out of memory) now stops the run instead
+      of being relaunched in a loop.
+
+      - A selftest covers the phase A stop and the phase B resume.
+
+      - The script keeps state across interruptions and never mints twice. `--dry-run` prints all 30 commands
+      in order and runs none.
+
+      - Design-note section 11 has the founder''s commands, the expected output and the failure modes.
+
+
+      (5) **Re-stamped hashes.** The new runner sha256 (8b46e380…) is in `E008.dev_rows.json` in 3 places.
+      I re-ran the three dev prep scripts on dev layouts only. The results equal T0320''s: Case 4 twin
+      fit+signal_feet, walk 7 steps, 33/2000 DRC-clean; gen2_0 smoke_rows_match true. `--plan` output
+      is byte-identical to `plan_T0320.json`. `--check-references` gives fingerprints 66cb1e19… and 71e07ae1…,
+      and every non-timing field matches.
+
+
+      Nothing was run on 2D_Case_2R or 2D_Case_6 beyond rebuild, fingerprint and mesh counts. No gcloud
+      command was run and no VM was started.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '`uv run python experiments/runners/e008_run.py --selftest` -> exit 0 (''selftest passed''). Includes
+      exclusion (12 cases, 0 failures), full (D0019, 0 failures) and phase (T0322, 0 failures)'
+    - '`--verify-freeze` -> exit 0 (14 checks OK, including the freeze entry for research/scripts/o003_powersynth_references.py)'
+    - '`--check-references` -> exit 0. Fingerprints 66cb1e19… and 71e07ae1…; every non-timing field equals
+      research/o003/e008_dev/check_references.json'
+    - '`--plan` -> exit 0. The output is byte-identical (cmp) to research/o003/e008_dev/plan_T0320.json,
+      so moving the phase-B machine rule into a shared helper changed no number'
+    - '`bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run`
+      -> exit 0, 30 lines, no files created'
+    - Required-keys assertion on experiments/drafts/E008.yaml -> exit 0
+    - '`uv run ruff check experiments/runners/e008_run.py` -> exit 0'
+    - '`uv run mfos exp check E008` -> exit 0'
+    - thermal_fem.py sha256 prefix is a216d5fe3209bcee -> exit 0
+    - '`git diff --quiet HEAD -- src tests/acceptance project/objectives project/decisions research/scripts/o003_powersynth_references.py
+      research/o003/references scripts/burst_gcp.sh` -> exit 0. The merge-base form was blocked by the
+      session guard. HEAD is 71ddaebc, which the branch shares with main; nothing is committed on the
+      branch'
+    - '`uv run mfos gate --fast` -> exit 0 (''all gates passed'')'
+    - 'Re-stamp: case4_prep.py, `gen2_0_prep.py T0322` and `refresh_rule_strictness.py T0322` were re-run
+      on dev layouts only. The new runner sha256 8b46e380… appears 3 times in E008.dev_rows.json; the
+      remaining 2f94239c… is the ''previous'' provenance record. Case 4 gives twin fit+signal_feet, L1
+      W/R 1.0017, walk 7, 33/2000 DRC-clean; gen2_0 smoke_rows_match true (same as T0320)'
+    - In mfos experiments.run, a run minted elsewhere (`--run-id`) never touches the registry, the run_dir
+      under store.root persists across invocations, and an existing exp worktree is removed and re-added.
+      So a second `mfos exp run --run-id` on the same VM resumes the same run directory (code read, tools/mfos/mfos/experiments.py
+      and gitops.py)
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/burst_full.sh
+    - research/o003/e008_dev/case4_prep_T0322.log
+    - research/o003/e008_dev/gen2_0_prep_T0322.log
+    - research/o003/e008_dev/refresh_rule_strictness_T0322.log
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    recommended_actions:
+    - 'Founder: review the new statement in config.f3_declared_deviation against D0019 item 2 before registration.
+      D0019''s own sentence ''It changes no power-copper, power-wire or die rule'' refers to the change
+      prompted by 2R. The spec now also says that the floor of the yardstick D changed (T0316).'
+    - 'Founder: before the real launch, run `research/o003/e008_dev/burst_full.sh --dry-run` again after
+      registration (it then reads experiments/specs/E008.yaml). Also run `gcloud compute instances set-machine-type
+      --help` once to confirm that this gcloud version accepts --machine-type n2d-custom-8-499712-ext.
+      That flag is an inference from GCP documentation and was not exercised here.'
+    - 'Founder items still open (not decided here): the F6(e) memory ceiling (~488 GB phase B for 2R''s
+      FV level 3), the all-inadmissible F6(e) reading, budget reading, and the others in founder_decisions_before_registration.'
+    - 'Critic: check that the phase-A stop runs at step() entry, after every driver has been replayed,
+      so a stop cannot happen while a driver could still progress. Check also that os._exit(75) in full()
+      is acceptable evidence practice: no result is written in phase A, and the VM''s copy of the wrapper''s
+      error record is overwritten in phase B and never copied back between phases.'
+    alternative_explanations: []
+    discriminating_tests:
+    - At registration, a fresh `--plan` must still equal plan_T0320.json, and phase_b_machine(410.7 GB)
+      must give n2d-custom-8-499712-ext. The selftest asserts the latter.
+    - On the VM, after phase A, phase_b_needed.json should list only 2D_Case_2R's fv L3 job, with ram_GB_by_plan_rule
+      <= 488. If it lists more, or more memory, the script stops with exit 4 and the founder decides.
+    - 'On the phase B rerun, scheduler log lines should show no new solve except the FV level-3 job(s).
+      The selftest checks the equivalent: resume solves nothing new.'
+    affects_acceptance_criteria: false
