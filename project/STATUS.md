@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T20:25:03+00:00 from repository state — do not edit_
+_generated 2026-11-12T20:25:43+00:00 from repository state — do not edit_
 
 ## Founder inbox (6 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -40,7 +40,6 @@ cancelled: 39, done: 277, failed: 3, review: 1, running: 1
 - T0321 `running` critic/review: Review T0320 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-12T05:34:48+00:00 inbox_opened {"id": "I0176", "kind": "protected_change", "subject": "T0317: merge needs founder approval"}
 - 2026-11-12T15:13:18+00:00 sleep_detected {"gap_s": 1392, "runs_extended": 0}
 - 2026-11-12T15:23:27+00:00 inbox_resolved {"id": "I0176", "status": "approved", "note": "Merge T0317 (D0018 item 1: no minimum gate-wire length in E008's per-reference rules; solver failures in D's band
 - 2026-11-12T15:24:06+00:00 merged {"task": "T0317"}
@@ -55,3 +54,4 @@ cancelled: 39, done: 277, failed: 3, review: 1, running: 1
 - 2026-11-12T20:10:50+00:00 run_finished {"run": "T0320-scientist-20261112T113019-c937", "status": "completed", "cost": 6.328291, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T20:24:57+00:00 verified {"task": "T0320"}
 - 2026-11-12T20:25:03+00:00 run_started {"run": "T0321-critic-20261112T122503-f7af", "task": "T0321", "role": "critic", "session": "f2206079-4dd3-4a18-980c-2d7dd8a52431"}
+- 2026-11-12T20:25:38+00:00 sleep_detected {"gap_s": 889, "runs_extended": 1}
