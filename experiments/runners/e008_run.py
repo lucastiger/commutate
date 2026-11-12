@@ -22,7 +22,11 @@ the fingerprints and family strings of each chunk; replays then stream lightweig
 sealed sequence never depends on the schedule.
 
 Modes
-  (default)        registered run through mfos.evidence.ExperimentRun (sealed seed; config from MFOS_SPEC_JSON)
+  (default)        registered run through mfos.evidence.ExperimentRun (sealed seed; config from MFOS_SPEC_JSON): freeze
+                   checks, config.references through judged_reference (frozen T0263 script, fingerprint first; D0019),
+                   prepare (T0319 guard), Run.drive, assemble_rows, evaluate, declared sanity checks, rows and the
+                   evaluation report with the label and the D0019 deviation; resumes from --workdir / $E008_WORKDIR
+  --check-references  rebuild every config.references entry, verify its fingerprint, print mesh counts only (D0019 item 4)
   --selftest       fake solvers and fake layouts, the full replay/scheduler/row/recompute path, planted outcomes checked
                    against hand values and against research/o003/headroom_metrics.py and mfos.metrics; exit 0 iff all pass
   --verify-freeze  recompute every frozen hash (freeze block, GridRule file and keys, thermal_fem.py) and the exact metric
@@ -759,6 +763,175 @@ def dev_reference(name: str, cfg: dict) -> RefCtx:
     return rc
 
 
+# ------------------------------------------------------------------------------------------------ judged references (D0019)
+# D0019 (founder session 2026-11-12) item 1: O003's judged references are D0010's public fallback, PowerSynth 2D_Case_2R and
+# 2D_Case_6, labelled 'public benchmarks, low power, indicative'.  They are rebuilt only through the frozen T0263 script
+# (research/scripts/o003_powersynth_references.py, sha256 in config.freeze), imported by path as dev_reference imports
+# o006_case4_layout.py; the script is never edited here.
+RECON_SCRIPT = "research/scripts/o003_powersynth_references.py"
+PUBLIC_LABEL = "public benchmarks, low power, indicative"
+ENTRY_FIELDS = ("reference_id", "kind", "vault_id", "reconstruction_sha256", "sic_mosfet_half_bridge",
+                "separate_antiparallel_diode_dies", "admissible", "reason", "decided_at", "L_term_H", "L_term_source",
+                "on_grid_0p5mm", "snapping_check", "keepout_nets", "label")
+
+
+class ReferenceRefused(RuntimeError):
+    """A judged reference whose rebuilt reconstruction does not match its config.references entry (fingerprint, grid
+    flag, kind or a missing field): the run is void (F3), nothing about the reference is computed."""
+
+
+class RulesGuardError(RuntimeError):
+    """Review T0319 finding 0: a spec that was not built by e008_rules (or still carries a dropped rule) reached prepare()."""
+
+
+def rules_guard_failures(rc) -> list[str]:
+    """T0319 finding 0: prepare() refuses a reference whose rc.info has no rules_record written by e008_rules (dropping
+    exactly DROPPED_MEASURED_RULES) or whose rc.spec.rules still sets a dropped rule (min_signal_wire_length)."""
+    rr = (rc.info or {}).get("rules_record")
+    out = []
+    if not isinstance(rr, dict) or rr.get("function") != "e008_run.e008_rules":
+        out.append(f"{rc.rid}: rc.info has no rules_record from e008_rules ({type(rr).__name__})")
+    elif rr.get("dropped") != {k: None for k in DROPPED_MEASURED_RULES}:
+        out.append(f"{rc.rid}: rules_record drops {rr.get('dropped')}, want {list(DROPPED_MEASURED_RULES)}")
+    rules = getattr(rc.spec, "rules", None)
+    for k in DROPPED_MEASURED_RULES:
+        v = getattr(rules, k, "missing")
+        if v is not None:
+            out.append(f"{rc.rid}: spec.rules.{k} = {v} (must be None, D0018 item 1)")
+    return out
+
+
+def recon_module():
+    """The frozen T0263 reconstruction script, imported by path (never edited, never copied; its sha256 is in config.freeze
+    and freeze_checks verifies it before any reference is loaded)."""
+    import importlib.util
+    name = "o003_powersynth_references_e008"
+    if name in sys.modules:
+        return sys.modules[name]
+    sp = importlib.util.spec_from_file_location(name, ROOT / RECON_SCRIPT)
+    m = importlib.util.module_from_spec(sp)
+    sys.modules[sp.name] = m
+    sp.loader.exec_module(m)
+    return m
+
+
+def rebuild_reconstruction(entry: dict, recon=None):
+    """Rebuild one judged reference through the frozen script and check it against its entry BEFORE anything else ->
+    (reconstruction Layout, {grid_mm: SnapResult}).  Refuses (ReferenceRefused, the run is void) on: a missing entry field,
+    a kind other than public (the customer/vault loader does not exist; D0010: the public set is the one fixed by D0019),
+    a fingerprint different from entry['reconstruction_sha256'], or a 0.5 mm grid flag that the snap records contradict.
+    Nothing but L0 geometry is touched (D0019 item 4)."""
+    miss = [k for k in ENTRY_FIELDS if k not in entry]
+    if miss:
+        raise ReferenceRefused(f"config.references entry {entry.get('reference_id')} lacks {miss}")
+    rid = entry["reference_id"]
+    if entry["kind"] != "public" or entry["vault_id"] is not None:
+        raise ReferenceRefused(f"{rid}: kind {entry['kind']} / vault {entry['vault_id']}: only public reconstructions load "
+                               "here (D0010, D0019)")
+    recon = recon or recon_module()
+    lay, snaps = recon.snapped(rid)
+    fp = lay.fingerprint()
+    if fp != entry["reconstruction_sha256"]:
+        raise ReferenceRefused(f"{rid}: reconstruction fingerprint {fp} != config {entry['reconstruction_sha256']}: the run "
+                               "is void (F3)")
+    on_grid = not snaps[0.5].records
+    if on_grid != bool(entry["on_grid_0p5mm"]):
+        raise ReferenceRefused(f"{rid}: snap records say on_grid_0p5mm {on_grid}, config says {entry['on_grid_0p5mm']}")
+    return lay, snaps
+
+
+def judged_reference(entry: dict, cfg: dict, recon=None) -> RefCtx:
+    """D0019: one judged reference from its config.references entry.  rebuild_reconstruction first (fingerprint check;
+    a mismatch refuses), then the spec exactly as for the dev references: e008_rules on the reconstruction (no overrides:
+    the reference's own measured rules less min_signal_wire_length, D0018 item 1 / D0019 item 5) and spec_from_layout
+    with the entry's keep-out nets.  Off the 0.5 mm grid (not the case for D0019's set) the snapped-to-0.25 mm layout
+    and the entry's snapping-check values are required (s_ref, Run.s_ref_of); missing values refuse."""
+    from moduleforge.generate import derivative as D
+    lay, snaps = rebuild_reconstruction(entry, recon)
+    rid = entry["reference_id"]
+    rules, rec, rrec = e008_rules(lay)
+    spec = D.spec_from_layout(lay, rules, entry["keepout_nets"])
+    rc = RefCtx(rid, entry["kind"], spec, lay, on_grid=bool(entry["on_grid_0p5mm"]), L_term_H=float(entry["L_term_H"]),
+                admissible=bool(entry["admissible"]),
+                info={"measured_rules": rec, "rules_record": rrec, "label": entry["label"],
+                      "reference_entry": {k: entry[k] for k in ENTRY_FIELDS if k != "keepout_nets"},
+                      "f3_declared_deviation": deviation_tag(cfg)})
+    if not rc.on_grid:
+        sc = entry.get("snapping_check") or {}
+        if not isinstance(sc, dict) or not all(_num(sc.get(k)) for k in ("L_snapchk0125_H", "L_snapchk05_H")):
+            raise ReferenceRefused(f"{rid}: off the 0.5 mm grid but the entry has no snapping-check values")
+        rc.snap025 = snaps[0.25].layout
+        rc.info.update(snapchk0125_H=float(sc["L_snapchk0125_H"]), snapchk05_H=float(sc["L_snapchk05_H"]))
+    bp = lay.baseplate_outline.bounds
+    rc.area_m2 = (bp[2] - bp[0]) * (bp[3] - bp[1])
+    rc.stack_type = _stack_type(rc.spec.stack, [*rc.reference.dies, rc.spec.die])
+    return rc
+
+
+def deviation_tag(cfg: dict) -> str:
+    """The one-line statement every verdict of E008 carries (D0019 item 2, config.f3_declared_deviation.statement)."""
+    dv = cfg.get("f3_declared_deviation") or {}
+    return str(dv.get("statement") or "MISSING: config.f3_declared_deviation (D0019 item 2)")
+
+
+def _band_unknowns(recon, lay, level: str) -> int:
+    """l2_layout unknowns of one band level of ``lay``: the frozen script's mesh-only l2_unknowns (lattice, Grid, wire
+    filaments; no coupling, no solve) under exactly child_em's per-level mesh constants (EM_LEVELS), restored after."""
+    from moduleforge.solvers import l2_layout as L
+    names = ("CELL", "LAYERS_TOP", "LAYERS_BACK", "LAYERS_BASE", "WIRE_EDGES")
+    saved = {k: getattr(L, k) for k in names}
+    cell, layers, edges = EM_LEVELS[level]
+    try:
+        L.CELL = (cell * 1e-3,) + tuple(L.CELL[1:])
+        for attr, n in zip(names[1:4], layers, strict=True):
+            setattr(L, attr, (n,) + tuple(getattr(L, attr)[1:]))
+        L.WIRE_EDGES = (tuple(edges),) + tuple(L.WIRE_EDGES[1:])
+        return int(recon.l2_unknowns(lay, refinement=0)["n_unknowns"])
+    finally:
+        for k, v in saved.items():
+            setattr(L, k, v)
+
+
+def check_references(cfg: dict, out_path: str | None = None, recon=None) -> int:
+    """--check-references (D0019 item 4): for every config.references entry, rebuild through the frozen script, verify
+    the fingerprint (rebuild_reconstruction) and count mesh sizes only: l2_layout unknowns of every band level (0.25 mm
+    and the four 0.5 mm-cell levels), scikit-fem DOFs per level 0-2 under the frozen rule (thermal_fem.estimate_dofs,
+    grid counts only), and the F6(e) finite-volume box cells (thermal_layout.build_layout_grid) at level 1 and 2, built,
+    and level 3 = level 2 x 8 (the runner's convention, Run.size; the level-3 box itself is not built here, its x8 step is
+    checked on 1 -> 2).  No spec, rule measurement, twin, degradation, L1, solve or search.  Exit 0 iff every fingerprint
+    matches."""
+    from moduleforge.solvers import thermal_layout as TL
+    recon = recon or recon_module()
+    rule = rule_from(cfg["fem_rule"])
+    out, ok = {"rule": "D0019 item 4: rebuild + fingerprint + mesh counts only", "references": {}}, True
+    for entry in cfg["references"]:
+        rid = entry.get("reference_id")
+        try:
+            lay, snaps = rebuild_reconstruction(entry, recon)
+        except ReferenceRefused as e:
+            ok = False
+            out["references"][rid] = {"fingerprint_ok": False, "error": str(e)}
+            continue
+        t0 = time.perf_counter()
+        em = {lv: _band_unknowns(recon, lay, lv) for lv in BAND}
+        fem = [int(FEM().estimate_dofs(lay, rule, lv)) for lv in (0, 1, 2)]
+        fv1 = int(np.prod(TL.build_layout_grid(lay, 1).shape))
+        fv2 = int(np.prod(TL.build_layout_grid(lay, 2).shape))
+        bp = lay.baseplate_outline.bounds
+        out["references"][rid] = {
+            "fingerprint_ok": True, "fingerprint": lay.fingerprint(), "on_grid_0p5mm": not snaps[0.5].records,
+            "baseplate_area_m2": (bp[2] - bp[0]) * (bp[3] - bp[1]), "l2_layout_unknowns": em,
+            "fem_dofs_frozen_rule": fem, "fv_cells": [fv1, fv2, fv2 * 8], "fv_level_steps": [fv2 / fv1],
+            "fv_cells_note": "levels 1 and 2 built (box cells, voids included, the --plan convention); level 3 = level 2 x 8",
+            "wall_s": round(time.perf_counter() - t0, 2), "peak_rss_GB": round(_rss_gb(), 3)}
+        log(f"{rid}: fingerprint ok; l2_layout unknowns {em}; scikit-fem DOFs L0-2 {fem}; FV cells L1-3 "
+            f"{[fv1, fv2, fv2 * 8]}")
+    print(json.dumps(out, indent=1))
+    if out_path:
+        Path(out_path).write_text(json.dumps(out, indent=1) + "\n")
+    return 0 if ok and out["references"] else 1
+
+
 def prepare(rc: RefCtx, cfg: dict, n_quick: int, quick_seed: int, with_l1: bool = True) -> RefCtx:
     """Fail fast, before any l2_layout solve (L0/L1 only): twin W and degraded copy D, _quick_ok false rejections on a
     fixed sealed sample, rule strictness, the midpoint record and the twin-copper symmetric difference.  Reported, not
@@ -769,6 +942,9 @@ def prepare(rc: RefCtx, cfg: dict, n_quick: int, quick_seed: int, with_l1: bool 
     from moduleforge.drc.rules import check
     from moduleforge.generate import derivative as D
     from moduleforge.generate import twin as W
+    bad = rules_guard_failures(rc)  # review T0319 finding 0: only specs built by e008_rules reach the twin
+    if bad:
+        raise RulesGuardError("; ".join(bad))
     t0 = time.perf_counter()
     try:
         rc.twin, p, rc.twin_rec = W.twin(rc.reference, rc.spec, with_l1=with_l1)
@@ -1919,6 +2095,8 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
     from moduleforge.optimize import search as S
     out = []
     spec3 = D.halfbridge_housing_spec(2, rules=DesignRules(min_width_power=3e-3), wires_per_die=1)  # power rule 3 mm
+    r3, _, rr3 = e008_rules(D.generate(spec3, 1, seed=20261112)[0], base=spec3.rules)  # T0319 guard: e008_rules' spec
+    spec3 = dataclasses.replace(spec3, rules=r3)
     floor = float(cfg["degrade_power_width_floor_m"])
     plant: dict = {"err": set(), "miss": set(), "seen": {}, "twin_err": set()}
     fake_p = SimpleNamespace(sequence=lambda: [("DC+", "die", "HS"), ("PHASE", "land", "HS"), ("PHASE", "die", "LS"),
@@ -1949,7 +2127,7 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
                 root = Path(td)
                 run = Run(cfg, root, Scheduler(1e9, 8, 2, fake=fjob), smoke=False, threads=2, fake={"l1": l1})
                 refs = [prepare(RefCtx(f"fake{k}", "dev", spec3, FakeLay(f"ref{k}", None), area_m2=0.008,
-                                       stack_type=DEFAULT_STACK), cfg, 0, 0) for k in range(n)]
+                                       stack_type=DEFAULT_STACK, info={"rules_record": rr3}), cfg, 0, 0) for k in range(n)]
                 seeds = {(rc.rid, ns): 2000 + 2 * i + j for i, rc in enumerate(refs) for j, ns in enumerate(("main", "control"))}
                 for rc in refs:
                     if rc.excluded is not None:
@@ -2053,7 +2231,9 @@ def d_floor_geometry_failures(cfg: dict) -> list[str]:
             any(abs(v["after_mm"] - 1e3 * fp_["power_width_m"]) > 1e-9 for v in widths.values()):
         out.append(f"floor: planted layout not at the reference minimum (narrowest {w_ref}, bands {widths})")
         return out
-    rc = prepare(RefCtx("planted_floor", "dev", spec, planted), cfg, 0, 0)
+    rules, _, rrec = e008_rules(planted, base=spec.rules)  # T0319 guard: only e008_rules' specs reach prepare()
+    spec = dataclasses.replace(spec, rules=rules)
+    rc = prepare(RefCtx("planted_floor", "dev", spec, planted, info={"rules_record": rrec}), cfg, 0, 0)
     dr, floor = rc.info["D_rule"], float(cfg["degrade_power_width_floor_m"])
     w = dr.get("narrowest_power_strip_m")
     if rc.excluded is not None or w is None:
@@ -2140,6 +2320,195 @@ def signal_rule_failures(cfg: dict) -> list[str]:
     log(f"selftest signal rule (D0018 item 1): reference gate wires {min(ref_g) * 1e3:.3f}-{max(ref_g) * 1e3:.3f} mm, twin "
         f"shortest {min(tw_g) * 1e3:.3f} mm (clean under E008's rules, raw rules: signal_wire_length), longer twin wire "
         f"{longer.signal_wires[k].length * 1e3:.3f} mm -> {sorted(vl)}; {len(out)} failures")
+    return out
+
+
+class FakeER:
+    """Selftest recorder with ExperimentRun's recording interface (sanity, metric, rows, artifact, domain, notes)."""
+
+    def __init__(self, spec: dict):
+        self.spec, self.sanity_l, self.metrics, self.rows_l, self.artifacts, self.dom, self.notes = spec, [], {}, None, [], {}, ""
+
+    def sanity(self, name, passed, value=None, threshold=None, detail=""):
+        self.sanity_l.append({"name": name, "passed": bool(passed), "value": value, "detail": detail})
+
+    def metric(self, name, value, ci=None, n=None, unit="", level=0.95):
+        self.metrics[name] = {"value": float(value), "ci": ci, "n": n, "level": level}
+
+    def rows(self, records, name="rows.json"):
+        self.rows_l = json.loads(json.dumps(records, default=str))
+
+    def artifact(self, name, path):
+        self.artifacts.append((name, json.loads(Path(path).read_text())))
+
+    def domain(self, **values):
+        self.dom.update(values)
+
+
+def _fake_screens(l1):
+    """The before_drive hook of registered_run for fake layouts: the frozen driver itself streams the sealed sequence
+    with a fake generate and writes the stream file, as child_screen does (the same code as the scenario loop)."""
+    from moduleforge.optimize import search as S
+
+    def hook(refs, seeds, scfg, root):
+        for rc in refs:
+            if rc.excluded is not None:
+                continue
+            for ns in ("main", "control"):
+                wd = root / rc.rid / ns
+                wd.mkdir(parents=True, exist_ok=True)
+                chunks = {}
+
+                def gen(spec_, m, sk, rid=rc.rid, ns=ns, chunks=chunks):
+                    lays = [FakeLay(hashlib.sha256(f"{rid}{ns}{sk}{i}".encode()).hexdigest(), f"fam{i}") for i in range(m)]
+                    chunks[f"{m}:{sk}"] = [(x.fp, x.family) for x in lays]
+                    return lays
+
+                def stop(*_):
+                    raise _ScreenDone
+                sv = S.Solvers(l1=l1, l_sub=stop, band=stop, thermal=stop)
+                try:
+                    if ns == "main":
+                        S.run_search(None, rc.reference, rc.twin, seeds[(rc.rid, ns)], sv, None, 0.0, wd,
+                                     S.SearchConfig(**scfg), gen)
+                    else:
+                        S.run_control(None, rc.D, seeds[(rc.rid, ns)], sv, 0.0, wd, S.SearchConfig(**scfg), gen)
+                except _ScreenDone:
+                    pass
+                with gzip.open(wd / "stream.json.gz", "wt") as f:
+                    json.dump(chunks, f)
+                (wd / "screen.json").write_text(json.dumps({"status": "ok"}))
+    return hook
+
+
+def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
+    """D0019 / T0320, end to end on the dev layouts with fake solvers and a fake recorder: the loader refuses a wrong
+    fingerprint (before any twin); the T0319 guard refuses a spec without e008_rules' record and one with
+    min_signal_wire_length set; registered_run loads two judged entries through a fake reconstruction module (the
+    generator housing layout gen2_0, counted, and the 2D_Case_4 reconstruction with a planted TwinError, excluded), runs
+    prepare, Run.drive, assemble_rows, evaluate and the recorder; every declared sanity check and metric is written; the
+    label and the D0019 deviation reach every row, the report and the notes; the excluded reference's own stack type gets
+    neither a spot check nor an F6e report; a rerun resumes from the workdir with no new solve; another seed refuses the
+    workdir."""
+    import tempfile
+
+    from moduleforge.drc.rules import measure_rules
+    from moduleforge.generate import twin as W
+    out = []
+    cfg = json.loads(json.dumps(spec["config"]))
+    cfg["quick_ok_draws"] = 5
+    cfg["f3_declared_deviation"] = {"statement": "DECLARED F3 DEVIATION (D0019): selftest"}
+    g0, c4 = dev_reference("gen2_0", cfg), dev_reference("case4", cfg)
+    lays = {"judged_gen": g0.reference, "judged_c4": c4.reference}
+    keep = {"judged_gen": [], "judged_c4": cfg["dev"]["case4"]["keepout_nets"]}
+    rec = SimpleNamespace(snapped=lambda rid: (lays[rid], {g: SimpleNamespace(records=[], layout=lays[rid])
+                                                         for g in (0.5, 0.25, 0.125)}))
+    ents = [{"reference_id": rid, "kind": "public", "vault_id": None, "reconstruction_sha256": lays[rid].fingerprint(),
+             "sic_mosfet_half_bridge": True, "separate_antiparallel_diode_dies": False, "admissible": True,
+             "reason": "selftest", "decided_at": "selftest", "L_term_H": 7e-9, "L_term_source": "selftest",
+             "on_grid_0p5mm": True, "snapping_check": "not required", "keepout_nets": keep[rid], "label": PUBLIC_LABEL}
+            for rid in lays]
+    alias = {lays["judged_gen"].fingerprint(): "ref0", lays["judged_c4"].fingerprint(): "ref1"}
+    lsub, l1, fjob = fake_world("headroom")
+    calls = {"twin": 0, "jobs": 0}
+
+    def job(j):
+        calls["jobs"] += 1
+        r = fjob(dict(j, fp=alias.get(j["fp"], j["fp"])))
+        return dict(r, fingerprint=j["fp"]) if "fingerprint" in r else r
+
+    def l1a(lay):
+        return l1(FakeLay(alias.get(lay.fingerprint(), lay.fingerprint()), None))
+    fake_p = SimpleNamespace(sequence=lambda: [("DC+", "die", "HS"), ("PHASE", "land", "HS"), ("PHASE", "die", "LS"),
+                                               ("DC-", "land", "LS")], slots=[(0, 2 * i, 1, 2 * i + 1) for i in range(4)])
+
+    def twin_(ref, sp, with_l1=True):
+        calls["twin"] += 1
+        k = alias[ref.fingerprint()][3:]
+        if k == "1":
+            raise W.TwinError("planted TwinError (as 2D_Case_6's)")
+        return FakeLay(f"twin{k}", None), fake_p, {"mode": "planted"}
+
+    def degrade_(tw, sp, with_l1=True):
+        return FakeLay("D" + tw.fingerprint()[4:], None), {"walk": None, "l1_ratio": 1.4}
+    # (1) wrong fingerprint: refused before anything else
+    bad = dict(ents[0], reconstruction_sha256="0" * 64)
+    orig = (W.twin, W.degrade, globals()["save_ctx"])
+    W.twin, W.degrade = twin_, degrade_
+    globals()["save_ctx"] = lambda rc, wd: (wd.mkdir(parents=True, exist_ok=True), str(wd / "ctx.pkl"))[1]
+    try:
+        for who, fn in (("judged_reference", lambda: judged_reference(bad, cfg, rec)),
+                        ("registered_run", lambda: registered_run(FakeER(spec), dict(cfg, references=[bad, ents[1]]), 7,
+                                                                  Path(tempfile.mkdtemp()), rec, {"job": job, "l1": l1a},
+                                                                  _fake_screens(l1a), 2))):
+            try:
+                fn()
+                out.append(f"full: {who} accepted a wrong fingerprint")
+            except ReferenceRefused:
+                pass
+        if calls["twin"]:
+            out.append(f"full: twin() ran {calls['twin']} times before the fingerprint refusal")
+        # (2) T0319 guard: a spec from measure_rules (no rules_record) and one with min_signal_wire_length set
+        raw = measure_rules(lays["judged_gen"])[0]
+        no_rec = RefCtx("guard_raw", "public", dataclasses.replace(g0.spec, rules=raw), lays["judged_gen"])
+        with_lb = RefCtx("guard_lb", "public", dataclasses.replace(g0.spec, rules=dataclasses.replace(
+            g0.spec.rules, min_signal_wire_length=5e-3)), lays["judged_gen"], info=dict(g0.info))
+        for rc in (no_rec, with_lb):
+            try:
+                prepare(rc, cfg, 0, 0)
+                out.append(f"full: the T0319 guard let {rc.rid} through")
+            except RulesGuardError:
+                pass
+        if rules_guard_failures(judged_reference(ents[0], cfg, rec)):
+            out.append("full: judged_reference's spec fails the T0319 guard")
+        # (3) the registered path end to end, then a resume and a foreign seed
+        cfg_r = dict(cfg, references=ents)
+        with tempfile.TemporaryDirectory() as td:
+            er = FakeER(spec)
+            res = registered_run(er, cfg_r, 20261112, Path(td), rec, {"job": job, "l1": l1a}, _fake_screens(l1a), 2)
+            n_jobs = calls["jobs"]
+            er2 = FakeER(spec)
+            res2 = registered_run(er2, cfg_r, 20261112, Path(td), rec, {"job": job, "l1": l1a}, _fake_screens(l1a), 2)
+            if calls["jobs"] != n_jobs or json.dumps(er2.metrics, sort_keys=True) != json.dumps(er.metrics, sort_keys=True):
+                out.append(f"full: the rerun solved {calls['jobs'] - n_jobs} jobs or changed the metrics (no resume)")
+            try:
+                registered_run(FakeER(spec), cfg_r, 20261113, Path(td), rec, {"job": job, "l1": l1a}, _fake_screens(l1a), 2)
+                out.append("full: a workdir of another seed was resumed")
+            except RuntimeError:
+                pass
+        del res2
+        names = {c["name"]: c for c in er.sanity_l}
+        want = {s["name"] for s in spec["sanity_checks"]}
+        if want - set(names):
+            out.append(f"full: declared sanity checks not recorded: {sorted(want - set(names))}")
+        must_pass = want - {"F6e_stack_type_spot_check"}
+        failed = sorted(n for n in must_pass if not names.get(n, {}).get("passed"))
+        if failed:
+            out.append(f"full: declared checks failed on the planted world: {[(n, names[n]['detail'][:120]) for n in failed]}")
+        if {m["name"] for m in spec["metrics"]} - set(er.metrics):
+            out.append(f"full: metrics not recorded: {sorted({m['name'] for m in spec['metrics']} - set(er.metrics))}")
+        rep, met = res["report"], res["metrics"]
+        if {k: v["reason"] for k, v in rep.get("excluded", {}).items()} != {"judged_c4": "TwinError"} or \
+                met.get("n_counted_references") != 1.0 or not math.isfinite(met["headroom_min_lo"]) or \
+                er.metrics["headroom_min_lo"]["value"] != met["headroom_min_lo"]:
+            out.append(f"full: excluded {rep.get('excluded')} counted {met.get('n_counted_references')} A1 "
+                       f"{met.get('headroom_min_lo')}")
+        if not er.rows_l or any(r.get("label") != PUBLIC_LABEL or r.get("f3_declared_deviation") != "D0019 item 2"
+                                for r in er.rows_l) or any(r.get("reference_id") == "judged_c4" for r in er.rows_l):
+            out.append("full: a row lacks the label or the deviation, or the excluded reference has rows")
+        rpt = dict(er.artifacts).get("evaluation_report.json", {})
+        if rpt.get("label") != [PUBLIC_LABEL] or "D0019" not in json.dumps(rpt.get("f3_declared_deviation")) or \
+                "DECLARED F3 DEVIATION (D0019)" not in er.notes or PUBLIC_LABEL not in er.notes:
+            out.append("full: the label or the D0019 deviation did not reach the report and the notes")
+        st_c4 = c4.stack_type
+        if st_c4 == DEFAULT_STACK or st_c4 in json.dumps(rep.get("F6e", {})) or st_c4 in res["run"].spot_refs or \
+                st_c4 in res["run"].spot_none:
+            out.append(f"full: the excluded reference's stack type {st_c4} was spot-checked or reported")
+    finally:
+        W.twin, W.degrade, globals()["save_ctx"] = orig
+    log(f"selftest full (D0019): registered path on gen2_0 (counted) + 2D_Case_4 (planted TwinError), {len(er.sanity_l)} "
+        f"sanity records, {len(er.metrics)} metrics, {len(er.rows_l or [])} rows, A1 {met.get('headroom_min_lo'):.5f}; "
+        f"{len(out)} failures")
     return out
 
 
@@ -2488,6 +2857,7 @@ def selftest() -> int:
     failures += exclusion_failures(cfg, scfg)
     failures += d_floor_geometry_failures(cfg)
     failures += signal_rule_failures(cfg)
+    failures += full_orchestration_failures(spec, scfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
     for f in failures:
@@ -2534,8 +2904,8 @@ def plan_jobs(r: dict, cm: dict, threads: int, n_near: int, batches: int, n_null
                   "est_s": t, "mem_GB": m, "threads": thr, "kind": kind, "n": int(n)})
 
     def em(group, after, role, levels):
-        for lv in levels:
-            n = em_unknowns(area, EM_LEVELS[lv][0], lv, cm)
+        for lv in levels:  # the reference's own counted unknowns (--check-references, T0320) where given, else the area model
+            n = int(r["em_unknowns"][lv]) if "em_unknowns" in r else em_unknowns(area, EM_LEVELS[lv][0], lv, cm)
             add(group, after, f"{role}:{lv}", "em", *em_cost(n, lv, cm), n)
 
     def th(group, after, role, which, levels=(0, 1, 2), mult=1):
@@ -2581,6 +2951,82 @@ def _dev_near_ties() -> int | None:
     return max(n) if n else None
 
 
+def _cost_jobs(J: list[dict], cm: dict, vm: dict, vcpus: int, cap: float, overhead: bool = True) -> dict:
+    """Phase A (list scheduling of the jobs that fit in the cap) and phase B (each larger job alone on the VM resized with
+    N2D extended memory) of ``J`` -> hours, $, billed vCPU-hours, process CPU-hours and the phase-B rows with the FV range."""
+    big = [j for j in J if j["mem_GB"] > cap]
+    small = [j for j in J if j["mem_GB"] <= cap]
+    for j in small:  # a phase-A job that waits on a phase-B group is released at the start
+        j["after"] = [a for a in j["after"] if not any(b["group"] == a for b in big)]
+    a_h = (simulate(small, vcpus, cap) / 3600.0 if small else 0.0) + (vm["overhead_h"] if overhead else 0.0)
+    b_rows, b_h, b_usd = [], 0.0, 0.0
+    b_rng = {t: [0.0, 0.0] for t in cm["fv_sensitivity"]}  # phase B (hours, $) at each end of the FV rate range
+    for j in big:
+        ram = math.ceil(j["mem_GB"] / vm["memory_fraction"] / 8.0) * 8.0
+        usd_h = vm["usd_per_h"] + vm["ext_usd_per_GB_h"] * (ram - vm["ram_GB"])
+        h = j["est_s"] / 3600.0 + vm["resize_overhead_h"]
+        sens = {}
+        for t, sv in cm["fv_sensitivity"].items():  # T0306: the FV time model's stated range (fv_rate_basis)
+            hs = (fv_cost(j["n"], cm, beta=sv["beta"], s_per_cell=cm["fv_s_per_cell_mac"] * sv["vm_factor"])[0]
+                  if j["kind"] == "fv" else j["est_s"]) / 3600.0 + vm["resize_overhead_h"]
+            sens[t] = {"hours": round(hs, 2), "usd": round(hs * usd_h, 2)}
+            b_rng[t][0] += hs
+            b_rng[t][1] += hs * usd_h
+        b_rows.append({"job": j["name"], "n": j["n"], "peak_GB": round(j["mem_GB"], 1),
+                       "machine": f"n2d-custom-8-{int(ram * 1024)}-ext", "ram_GB": ram, "fits_n2d_768GB": ram <= 768,
+                       "fits_150GB": ram <= 150, "hours": round(h, 2), "usd": round(h * usd_h, 2),
+                       "usd_per_h": round(usd_h, 4), "sensitivity": sens})
+        b_h, b_usd = b_h + h, b_usd + h * usd_h
+    vm_h = a_h + b_h
+    cpu_h = sum(j["est_s"] * (cm["cores_per_2thread_solve"] if j["threads"] == 2 else 1.0) for j in J) / 3600.0
+    return {"n_solves": len(J), "phase_a_hours": round(a_h, 2), "phase_b_big_memory_jobs": b_rows,
+            "phase_b_hours": round(b_h, 2), "phase_b_usd": round(b_usd, 2),
+            "phase_b_sensitivity": {t: {"phase_b_hours": round(v[0], 2), "phase_b_usd": round(v[1], 2),
+                                        "vm_hours": round(a_h + v[0], 2), "usd": round(a_h * vm["usd_per_h"] + v[1], 2),
+                                        "billed_vcpu_hours": round((a_h + v[0]) * vcpus, 1)} for t, v in b_rng.items()},
+            "vm_hours": round(vm_h, 2), "usd": round(a_h * vm["usd_per_h"] + b_usd, 2),
+            "billed_vcpu_hours": round(vm_h * vcpus, 1), "process_cpu_hours": round(cpu_h, 1)}
+
+
+def _plan_case(refs: list[dict], case: tuple, cm: dict, vm: dict, threads: int, vcpus: int, cap: float, cfg: dict,
+               args) -> dict:
+    """One --plan case (near ties, thermal batches, null checks) over the plan references ``refs``."""
+    n_near, batches, n_null = case
+    J = []
+    for r in refs:
+        J += plan_jobs(r, cm, threads, n_near, batches, n_null, cfg["search"]["n_candidates"])
+    res = _cost_jobs(J, cm, vm, vcpus, cap)
+    per_ref = {}
+    for r in refs:
+        jr = [j for j in J if j["name"].startswith(r["name"] + ":")]
+        per_ref[r["name"]] = {k: round(max(j["mem_GB"] for j in jr if j["kind"] == k), 1)
+                              for k in ("em", "thermal", "fv") if any(j["kind"] == k for j in jr)}
+    per_solve = {}  # founder constraint: per-solve wall and memory on the 8-vCPU VM (first plan reference's sizes)
+    r0 = refs[0]["name"]
+    for j in J:
+        if j["name"].startswith(r0 + ":"):
+            role = j["name"].split(":", 1)[1]
+            if j["kind"] == "em":
+                key = f"em:{role.rsplit(':', 1)[1]}"
+            elif j["kind"] == "thermal":
+                who = role.split(":")[0]
+                who = who if who in ("calibration", "reference", "twin") else "candidate"
+                key = f"thermal:{who}:{role.rsplit(':', 1)[1]}"
+            else:
+                key = f"{j['kind']}:{role}"
+            per_solve.setdefault(key, {"n": j["n"], "wall_h": round(j["est_s"] / 3600.0, 3),
+                                       "peak_GB": round(j["mem_GB"], 2), "threads": j["threads"]})
+    if args.verbose:
+        for j in J:
+            print(f"{j['name']:<44} {j['kind']:<8} n={j['n']:>11} {j['mem_GB']:7.1f} GB {j['est_s'] / 3600:7.2f} h")
+    return {"references": [r["name"] for r in refs], "near_ties": n_near, "thermal_batches": batches,
+            "null_extra_checks": n_null, **res, "peak_GB_per_reference": per_ref,
+            "per_solve_on_vm": {"reference_sizes": r0, "note": "wall at the scheduled concurrency (four 0.25 mm solves at "
+                                "once, two threads each); n = unknowns / DOFs / cells / candidates", "solves": per_solve},
+            "end_date_if_start": (dt.datetime.fromisoformat(vm["earliest_start"])
+                                  + dt.timedelta(hours=res["vm_hours"])).date().isoformat()}
+
+
 def plan(args, cfg: dict) -> int:
     """Schedule of every solve on the one 8-vCPU VM (founder constraint, 2026-11-09).  Phase A: list scheduling on the
     configured machine (memory_fraction x RAM, vCPUs by thread count).  Phase B: any job larger than phase A's usable
@@ -2597,71 +3043,25 @@ def plan(args, cfg: dict) -> int:
         exp[0] = n_dev
     out = {"threads_per_solve": threads, "why": why, "vm": vm, "usable_GB": cap,
            "near_ties_expected_source": "dev rows" if n_dev is not None else "default (no dev search rows)", "cases": {}}
-    for case, (n_near, batches, n_null) in {"expected": tuple(exp), "upper": tuple(cm["plan_upper"])}.items():
-        J = []
-        for r in cfg["compute"]["plan_references"]:
-            J += plan_jobs(r, cm, threads, n_near, batches, n_null, cfg["search"]["n_candidates"])
-        big = [j for j in J if j["mem_GB"] > cap]
-        small = [j for j in J if j["mem_GB"] <= cap]
-        for j in small:  # a phase-A job that waits on a phase-B group is released at the start
-            j["after"] = [a for a in j["after"] if not any(b["group"] == a for b in big)]
-        mk = simulate(small, vcpus, cap)
-        a_h = mk / 3600.0 + vm["overhead_h"]
-        b_rows, b_h, b_usd = [], 0.0, 0.0
-        b_rng = {t: [0.0, 0.0] for t in cm["fv_sensitivity"]}  # phase B (hours, $) at each end of the FV rate range
-        for j in big:
-            ram = math.ceil(j["mem_GB"] / vm["memory_fraction"] / 8.0) * 8.0
-            usd_h = vm["usd_per_h"] + vm["ext_usd_per_GB_h"] * (ram - vm["ram_GB"])
-            h = j["est_s"] / 3600.0 + vm["resize_overhead_h"]
-            sens = {}
-            for t, sv in cm["fv_sensitivity"].items():  # T0306: the FV time model's stated range (fv_rate_basis)
-                hs = (fv_cost(j["n"], cm, beta=sv["beta"], s_per_cell=cm["fv_s_per_cell_mac"] * sv["vm_factor"])[0]
-                      if j["kind"] == "fv" else j["est_s"]) / 3600.0 + vm["resize_overhead_h"]
-                sens[t] = {"hours": round(hs, 2), "usd": round(hs * usd_h, 2)}
-                b_rng[t][0] += hs
-                b_rng[t][1] += hs * usd_h
-            b_rows.append({"job": j["name"], "peak_GB": round(j["mem_GB"], 1), "machine": f"n2d-custom-8-{int(ram * 1024)}-ext",
-                           "fits_n2d_768GB": ram <= 768, "hours": round(h, 2), "usd": round(h * usd_h, 2),
-                           "usd_per_h": round(usd_h, 4), "sensitivity": sens})
-            b_h, b_usd = b_h + h, b_usd + h * usd_h
-        vm_h = a_h + b_h
-        per_ref = {}
-        for r in cfg["compute"]["plan_references"]:
-            jr = [j for j in J if j["name"].startswith(r["name"] + ":")]
-            per_ref[r["name"]] = {k: round(max(j["mem_GB"] for j in jr if j["kind"] == k), 1)
-                                  for k in ("em", "thermal", "fv") if any(j["kind"] == k for j in jr)}
-        cpu_h = sum(j["est_s"] * (cm["cores_per_2thread_solve"] if j["threads"] == 2 else 1.0) for j in J) / 3600.0
-        per_solve = {}  # founder constraint: per-solve wall and memory on the 8-vCPU VM (first plan reference's sizes)
-        r0 = cfg["compute"]["plan_references"][0]["name"]
-        for j in J:
-            if j["name"].startswith(r0 + ":"):
-                role = j["name"].split(":", 1)[1]
-                if j["kind"] == "em":
-                    key = f"em:{role.rsplit(':', 1)[1]}"
-                elif j["kind"] == "thermal":
-                    who = role.split(":")[0]
-                    who = who if who in ("calibration", "reference", "twin") else "candidate"
-                    key = f"thermal:{who}:{role.rsplit(':', 1)[1]}"
-                else:
-                    key = f"{j['kind']}:{role}"
-                per_solve.setdefault(key, {"n": j["n"], "wall_h": round(j["est_s"] / 3600.0, 3),
-                                           "peak_GB": round(j["mem_GB"], 2), "threads": j["threads"]})
-        out["cases"][case] = {
-            "near_ties": n_near, "thermal_batches": batches, "null_extra_checks": n_null, "n_solves": len(J),
-            "phase_a_hours": round(a_h, 2), "phase_b_big_memory_jobs": b_rows, "phase_b_hours": round(b_h, 2),
-            "phase_b_usd": round(b_usd, 2),
-            "phase_b_sensitivity": {t: {"phase_b_hours": round(v[0], 2), "phase_b_usd": round(v[1], 2),
-                                        "vm_hours": round(a_h + v[0], 2), "usd": round(a_h * vm["usd_per_h"] + v[1], 2),
-                                        "billed_vcpu_hours": round((a_h + v[0]) * vcpus, 1)} for t, v in b_rng.items()},
-            "vm_hours": round(vm_h, 2),
-            "usd": round(a_h * vm["usd_per_h"] + b_usd, 2), "billed_vcpu_hours": round(vm_h * vcpus, 1),
-            "process_cpu_hours": round(cpu_h, 1), "peak_GB_per_reference": per_ref,
-            "per_solve_on_vm": {"reference_sizes": r0, "note": "wall at the scheduled concurrency (four 0.25 mm solves at "
-                                "once, two threads each); n = unknowns / DOFs / cells / candidates", "solves": per_solve},
-            "end_date_if_start": (dt.datetime.fromisoformat(vm["earliest_start"]) + dt.timedelta(hours=vm_h)).date().isoformat()}
-        if args.verbose:
-            for j in J:
-                print(f"{j['name']:<44} {j['kind']:<8} n={j['n']:>11} {j['mem_GB']:7.1f} GB {j['est_s'] / 3600:7.2f} h")
+    refs_all = cfg["compute"]["plan_references"]
+    refs_exp = [r for r in refs_all if not r.get("expected_excluded_at_twin")]
+    cases = {"expected": tuple(exp), "upper": tuple(cm["plan_upper"])}
+    # D0019: the expected set excludes the references expected to stop at their twin (TwinError in prepare(), before any
+    # solve: no job at all); 'if_all_counted' prices the set as if none were excluded
+    out["scenario"] = {"cases": f"references expected to be counted: {[r['name'] for r in refs_exp]} (D0019: "
+                                f"{[r['name'] for r in refs_all if r.get('expected_excluded_at_twin')]} expected excluded "
+                                "at the twin, no solve)", "if_all_counted": [r["name"] for r in refs_all]}
+    out["cases"] = {c: _plan_case(refs_exp, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
+    out["if_all_counted"] = {c: _plan_case(refs_all, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
+    # the F6(e) spot check of an excluded reference's own stack type, if it were run (the runner does not: Run.drive
+    # derives the spot-check types from the references that reach it): calibration, scikit-fem levels 0-2 of the
+    # reconstruction and finite-volume levels 1-3, alone on the VM (phase A part) plus phase B for any job above the cap
+    out["f6e_spot_check_of_excluded_type"] = {}
+    for r in refs_all:
+        if r.get("expected_excluded_at_twin"):
+            J = [j for j in plan_jobs(r, cm, threads, 0, 0, 0, 0) if j["name"].split(":", 1)[1].startswith(
+                ("calibration", "reference:T", "fv:"))]
+            out["f6e_spot_check_of_excluded_type"][r["name"]] = _cost_jobs(J, cm, vm, vcpus, cap, overhead=False)
     print(json.dumps(out, indent=1, default=str))
     if args.plan_out:
         Path(args.plan_out).write_text(json.dumps(out, indent=1, default=str))
@@ -2821,22 +3221,151 @@ def dev(args) -> int:
     return 0
 
 
-def full() -> int:
+# names of the declared sanity checks evaluate() writes per reference ('<name>:<rid>'): the declared check passes iff one
+# per-reference check exists for every reference that reached the rows and all pass (declared_sanity)
+PER_REF_DECLARED = ("F1b_control", "F1c_band_width", "F6a_own_three_grids", "F6c_energy_balance", "F6c_picard",
+                    "F6d_operating_point", "driver_s_ref_matches_rows")
+
+
+def declared_sanity(checks: list[dict], rep: dict, refs: list[RefCtx], fr: list[dict]) -> list[dict]:
+    """The spec's declared sanity checks from the freeze checks ``fr`` and evaluate()'s checks: freeze_hashes (every
+    config.freeze file, the reconstruction script included, and the D0018 floor), grid_rule_frozen (file sha256 and key
+    for key), thermal_fem_sha256 and metric_params_exact as freeze_checks gives them; the per-reference ones
+    (PER_REF_DECLARED) as all-of over the references that reached the rows (a missing one fails); F1a1_F1a2_twin_gates:
+    both twin gates computed (booleans) for every such reference (a failed gate excludes the reference, F1(a), it does not
+    fail this check; the detail lists the gates); the rest as evaluate() wrote them."""
+    out = []
+    fm = {c["name"]: c for c in fr}
+    cm = {c["name"]: c for c in checks}
+
+    def add(name, ok, value=None, threshold=None, detail=""):
+        out.append({"name": name, "passed": bool(ok), "value": value, "threshold": threshold, "detail": str(detail)[:4000]})
+    fz = [c for n, c in fm.items() if n.startswith("freeze:") or n == "degrade_power_width_floor"]
+    add("freeze_hashes", fz and all(c["passed"] for c in fz), len(fz), None,
+        json.dumps({c["name"]: c["passed"] for c in fz}))
+    gr = [fm.get("grid_rule_file_sha256"), fm.get("grid_rule_key_for_key")]
+    add("grid_rule_frozen", all(c is not None and c["passed"] for c in gr), detail=[c and c["detail"][:200] for c in gr])
+    for n in ("thermal_fem_sha256", "metric_params_exact"):
+        c = fm.get(n)
+        add(n, c is not None and c["passed"], detail=(c or {}).get("detail", "missing"))
+    live = [rc.rid for rc in refs if rc.excluded is None and rc.admissible and rc.rid in rep]
+    for n in PER_REF_DECLARED:
+        per = {rid: cm.get(f"{n}:{rid}") for rid in live}
+        add(n, all(c is not None and c["passed"] for c in per.values()), sum(c is None or not c["passed"]
+            for c in per.values()), 0, json.dumps({rid: (c or {}).get("passed", "missing") for rid, c in per.items()}))
+    gates = {rid: {k: rep[rid]["record"].get(k) for k in ("gate_a1", "gate_a2", "counted")} for rid in live}
+    add("F1a1_F1a2_twin_gates", all(isinstance(g["gate_a1"], bool) and isinstance(g["gate_a2"], bool)
+                                    for g in gates.values()), sum(not g["counted"] for g in gates.values()), None,
+        "per reference (a failed gate excludes it, F1(a), not INVALID): " + json.dumps(gates))
+    for n in ("fail_fast_twin_and_D", "F1b_D_definition", "at_least_one_counted_reference", "F6e_stack_type_spot_check",
+              "recompute_agrees"):
+        c = cm.get(n)
+        if c is None:  # _evaluate_d_failed writes no F6(e) or recompute check: no search ran, the run is INVALID anyway
+            add(n, False, detail="not reached (the run stopped before it; see F1b_D_definition)")
+        else:
+            out.append(dict(c))
+    return out
+
+
+def _manifest(workdir: Path, cfg: dict, seed: int) -> None:
+    """Resume guard: the workdir belongs to one (config, sealed seed); a rerun with either changed refuses (the result
+    files would mix runs).  Only hashes are stored (the seed itself stays sealed)."""
+    key = hashlib.sha256(json.dumps(cfg, sort_keys=True, default=str).encode()).hexdigest()
+    sk = hashlib.sha256(f"E008-seed:{int(seed)}".encode()).hexdigest()
+    p = workdir / "run_manifest.json"
+    workdir.mkdir(parents=True, exist_ok=True)
+    if p.exists():
+        m = json.loads(p.read_text())
+        if m.get("config_sha256") != key or m.get("seed_sha256") != sk:
+            raise RuntimeError(f"{workdir} holds a run under another config or seed: refusing to resume into it")
+        log(f"resuming from {workdir}")
+    else:
+        p.write_text(json.dumps({"config_sha256": key, "seed_sha256": sk, "created": dt.datetime.now().isoformat()}))
+
+
+def registered_run(er, cfg: dict, seed: int, workdir: Path, recon=None, fake: dict | None = None, before_drive=None,
+                   threads: int | None = None) -> dict:
+    """The registered path (D0019).  Order: freeze checks (F3, F6(b)) before any reference is loaded, a failure voids the
+    run; config.references in D0010 order through judged_reference (fingerprint first, e008_rules, the entry's
+    keep-outs); prepare() per reference with the _quick_ok seed derive_seed(s, 2, i) (TwinError / DegradeError exclude
+    that reference, D0018); search seeds derive_seed(s, 0, i) (main) and derive_seed(s, 1, i) (control); Run.drive (D's
+    definition first; band solver failures -> INVALID, T0318), assemble_rows, evaluate; rows, metrics and the declared
+    sanity checks through ``er`` (mfos.evidence.ExperimentRun).  Every row and the evaluation report carry the label and
+    the D0019 deviation.  Resumes from ``workdir`` (result files per solve; run_manifest.json).  ``recon``, ``fake``,
+    ``before_drive`` and ``threads``: selftest only (fake reconstruction module, fake solvers, the screens hook)."""
+    spec = getattr(er, "spec", {}) or {}
+    fr = freeze_checks(cfg)
+    if not all(c["passed"] for c in fr):
+        for c in declared_sanity([], {}, [], fr)[:4]:
+            er.sanity(c["name"], c["passed"], detail=c["detail"])
+        raise RuntimeError(f"frozen hashes or values differ: the run is void (F3, F6(b)): "
+                           f"{[c['name'] for c in fr if not c['passed']]}")
+    entries = cfg.get("references") or []
+    if not entries:
+        raise RuntimeError("config.references is empty: the reference set of D0010 / D0019 is fixed before registration")
+    if len({e.get("kind") for e in entries}) != 1:
+        raise RuntimeError("customer and public references are never mixed in one verdict (D0010)")
+    tag, label = deviation_tag(cfg), sorted({str(e.get("label")) for e in entries})
+    _manifest(workdir, cfg, seed)
+    refs = []
+    for i, entry in enumerate(entries):
+        rc = judged_reference(entry, cfg, recon)
+        refs.append(prepare(rc, cfg, int(cfg["quick_ok_draws"]), derive_seed(seed, cfg["seeds"]["purposes"]["quick_ok"], i)))
+        log(f"{rc.rid}: twin {rc.twin_rec.get('mode')} excluded {rc.excluded}")
+    seeds = {(rc.rid, ns): derive_seed(seed, cfg["seeds"]["purposes"][ns], i)
+             for i, rc in enumerate(refs) for ns in ("main", "control")}
+    scfg = search_cfg(cfg, False)
+    if threads is None:
+        threads = thread_count(cfg)[0]
+    vm = cfg["compute"]["vm"]
+    sched = Scheduler(1e9, 8, threads, fake=fake["job"]) if fake else \
+        Scheduler(vm["ram_GB"] * vm["memory_fraction"], vm["vcpus"], threads)
+    run = Run(cfg, workdir, sched, smoke=False, threads=threads, fake={"l1": fake["l1"]} if fake else None)
+    if before_drive is not None:
+        before_drive(refs, seeds, scfg, workdir)
+    run.drive(refs, seeds, scfg)
+    rows, extra = assemble_rows(run, refs, smoke=False)
+    for r in rows:
+        r.update(label=" / ".join(label), f3_declared_deviation="D0019 item 2")
+    met, checks, rep = evaluate(run, refs, rows, extra, cfg)
+    rep.update(label=label, f3_declared_deviation=cfg.get("f3_declared_deviation"), deviation_statement=tag,
+               references=[{k: e.get(k) for k in ("reference_id", "reconstruction_sha256", "admissible", "L_term_H")}
+                           for e in entries])
+    dec = declared_sanity(checks, rep, refs, fr)
+    names = {s["name"] for s in spec.get("sanity_checks", [])} or {c["name"] for c in dec}
+    for c in dec + [c for c in checks if c["name"] not in {d["name"] for d in dec}] + \
+            [c for c in fr if c["name"] not in {d["name"] for d in dec}]:
+        v, t = c.get("value"), c.get("threshold")
+        er.sanity(c["name"], c["passed"], value=float(v) if _num(v) else None,
+                  threshold=float(t) if _num(t) else None, detail=str(c.get("detail", ""))[:4000])
+    n_counted = int(met.get("n_counted_references", 0) or 0)
+    declared_metrics = [m["name"] for m in spec.get("metrics", [])] or sorted(k for k, v in met.items()
+                                                                             if isinstance(v, float))
+    for name in declared_metrics:  # interval-form metrics: the band is inside the value (spec: level 0, no CI)
+        v = met.get(name, math.nan)
+        er.metric(name, float(v) if isinstance(v, (int, float)) else math.nan, n=n_counted, level=0.0)
+    er.rows(rows)
+    rp = workdir / "evaluation_report.json"
+    rp.write_text(json.dumps({"label": label, "f3_declared_deviation": rep["f3_declared_deviation"], "metrics": met,
+                              "checks": checks, "declared": dec, "report": rep}, indent=1, default=str))
+    er.artifact("evaluation_report.json", rp)
+    er.domain(reference=[rc.rid for rc in refs], label=label, stack_type=sorted({rc.stack_type for rc in refs}),
+              freq_hz=[float(cfg["em"]["freq_hz"])])
+    er.notes = (getattr(er, "notes", "") or "") + f"\nLABEL: {' / '.join(label)}\n{tag}\n"
+    missing = names - {c["name"] for c in dec} - {c["name"] for c in checks}
+    if missing:
+        raise RuntimeError(f"declared sanity checks not written: {sorted(missing)}")
+    return {"metrics": met, "checks": checks, "declared": dec, "report": rep, "rows": rows, "refs": refs, "run": run}
+
+
+def full(workdir: str | None = None) -> int:
     from mfos.evidence import ExperimentRun
     with ExperimentRun(experiment_id=EID) as er:
-        cfg = er.config
         if er.seed is None:
             raise RuntimeError("E008 needs the sealed seed (spec sealed_seed: true)")
-        fr = freeze_checks(cfg)
-        for c in fr:
-            er.sanity(c["name"], c["passed"], detail=c["detail"][:4000])
-        if not all(c["passed"] for c in fr):
-            raise RuntimeError("frozen hashes or values differ: the run is void (F3, F6(b))")
-        if not cfg["references"]:
-            raise RuntimeError("config.references is empty: the reference set of D0010 is fixed before registration")
-        raise NotImplementedError("judged-reference loading (T0263 reconstructions, vault) is added under a new draft "
-                                  "before registration; see the spec's 'founder decisions before registration'")
-    return 1
+        wd = Path(workdir or os.environ.get("E008_WORKDIR") or (er.run_dir / "work"))
+        registered_run(er, er.config, int(er.seed), wd)
+    return 0
 
 
 def main(argv=None) -> int:
@@ -2855,6 +3384,8 @@ def main(argv=None) -> int:
     ap.add_argument("--solo-cap-gb", type=float)
     ap.add_argument("--band-pairs", type=int, default=2)
     ap.add_argument("--plan-out")
+    ap.add_argument("--check-references", action="store_true")
+    ap.add_argument("--out")
     ap.add_argument("--verbose", action="store_true")
     a = ap.parse_args(argv)
     os.chdir(ROOT)
@@ -2864,11 +3395,13 @@ def main(argv=None) -> int:
         return selftest()
     if a.verify_freeze:
         return verify_freeze()
+    if a.check_references:
+        return check_references(load_spec()["config"], a.out)
     if a.plan:
         return plan(a, load_spec()["config"])
     if a.dev:
         return dev(a)
-    return full()
+    return full(a.workdir)
 
 
 if __name__ == "__main__":

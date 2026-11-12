@@ -36,7 +36,7 @@ def main() -> int:
     fps = {"reconstruction": rc.reference.fingerprint(), "twin": rc.twin.fingerprint() if rc.twin is not None else None,
            "D": rc.D.fingerprint() if rc.D is not None else None}
     keep = ("rules_record", "gate_wires", "D_rule", "quick_ok", "fail_fast", "excluded")
-    rec = {"task": "T0317", "script": "research/o003/e008_dev/gen2_0_prep.py", "quick_ok_draws": draws,
+    rec = {"task": sys.argv[1] if len(sys.argv) > 1 else "T0317", "script": "research/o003/e008_dev/gen2_0_prep.py", "quick_ok_draws": draws,
            "fingerprints": fps, "stored_rows_fingerprints": stored,
            "smoke_rows_match": all(stored.get(k) == fps[k] for k in ("twin", "reconstruction")) and len(stored) == 2,
            "info": {k: rc.info.get(k) for k in keep}, "D_l1_ratio_over_twin": (rc.d_rec or {}).get("l1_ratio"),

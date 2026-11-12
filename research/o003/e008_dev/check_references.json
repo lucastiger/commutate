@@ -1,0 +1,63 @@
+{
+ "rule": "D0019 item 4: rebuild + fingerprint + mesh counts only",
+ "references": {
+  "2D_Case_2R": {
+   "fingerprint_ok": true,
+   "fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "on_grid_0p5mm": true,
+   "baseplate_area_m2": 0.0033,
+   "l2_layout_unknowns": {
+    "lat0.25": 1491140,
+    "lat0.5": 369140,
+    "thk_c": 184620,
+    "thk_f": 738180,
+    "fil_f": 369260
+   },
+   "fem_dofs_frozen_rule": [
+    77966,
+    560979,
+    4239845
+   ],
+   "fv_cells": [
+    4273024,
+    34184192,
+    273473536
+   ],
+   "fv_level_steps": [
+    8.0
+   ],
+   "fv_cells_note": "levels 1 and 2 built (box cells, voids included, the --plan convention); level 3 = level 2 x 8",
+   "wall_s": 97.22,
+   "peak_rss_GB": 2.047
+  },
+  "2D_Case_6": {
+   "fingerprint_ok": true,
+   "fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "on_grid_0p5mm": true,
+   "baseplate_area_m2": 0.0024,
+   "l2_layout_unknowns": {
+    "lat0.25": 1095080,
+    "lat0.5": 270520,
+    "thk_c": 135360,
+    "thk_f": 540840,
+    "fil_f": 270760
+   },
+   "fem_dofs_frozen_rule": [
+    81714,
+    590079,
+    4469229
+   ],
+   "fv_cells": [
+    3872064,
+    30976512,
+    247812096
+   ],
+   "fv_level_steps": [
+    8.0
+   ],
+   "fv_cells_note": "levels 1 and 2 built (box cells, voids included, the --plan convention); level 3 = level 2 x 8",
+   "wall_s": 81.68,
+   "peak_rss_GB": 2.047
+  }
+ }
+}

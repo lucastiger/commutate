@@ -52,7 +52,8 @@ config:
   thermal_fem_sha256: a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753
   freeze:
     rule: 'F3: code hashes recorded before any judged reference is loaded; a change voids the run. The twin construction and
-      the degradation rule are both in twin.py. --verify-freeze recomputes them.'
+      the degradation rule are both in twin.py; the judged references are rebuilt only by the frozen T0263 script (research/scripts/o003_powersynth_references.py,
+      D0019). --verify-freeze recomputes them.'
     files:
       src/moduleforge/generate/derivative.py: a93effe5f22238ffcec7db41b82b51b68799b8b26a8b0f137861c6c2033170e3
       src/moduleforge/generate/twin.py: fd4ad32786f6082ec607ed3c43fbfc0107f28eaabca449dbd6b78c594487864d
@@ -60,6 +61,7 @@ config:
       src/moduleforge/geometry/snap.py: d75da78fba20d0be52e1f736b4e0a6910673f5044c4d4b26ce75ab08bce6b1de
       src/moduleforge/drc/rules.py: 19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5
       src/moduleforge/geometry/stack.py: b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999
+      research/scripts/o003_powersynth_references.py: aa96880cf38b2597e8a5927254ddc047d8de98b5b5d7ccdc5cf0fe6b19fd206a
   metric_params:
     floor: 0.001
     tj_limit_K: 2.0
@@ -88,7 +90,10 @@ config:
   reference_set_rule: 'D0010: customer reference layouts shared under NDA by 2026-11-12 and admissible; otherwise, or if none
     is admissible, the public PowerSynth 2D_Case_2R and 2D_Case_6 with the label ''public benchmarks, low power, indicative''.
     Customer and public references are never mixed in one verdict. Excluded customer references are reported by vault id and
-    reason only (D0011).'
+    reason only (D0011). D0019 (2026-11-12): the reference set is D0010''s public fallback, 2D_Case_2R and 2D_Case_6 in that
+    order (config.references); 2D_Case_6 is expected to be excluded under F1(a) (TwinError; D0018 fix-list item 3), so 2D_Case_2R
+    is expected to be the only counted reference and any verdict goes to the founder review; O003 scope_in''s enumerated design
+    rules are the complete meaning of ''design rules at least as strict as the reference''s own'' (D0019 item 5)'
   admissibility_fields:
   - reference_id
   - kind (customer|public)
@@ -103,7 +108,118 @@ config:
   - L_term_H and its source
   - on_grid_0p5mm (bool)
   - snapping check values
-  references: []
+  references:
+  - reference_id: 2D_Case_2R
+    kind: public
+    label: public benchmarks, low power, indicative
+    vault_id: null
+    reconstruction_sha256: 66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a
+    reconstruction_sha256_meaning: 'Layout.fingerprint() of the reconstruction the frozen script''s snapped() returns (T0263);
+      the loader checks it before anything else (mismatch: refused, run void)'
+    reconstruction_script: research/scripts/o003_powersynth_references.py
+    reconstruction_record: research/o003/references/2D_Case_2R.json
+    reconstruction_record_sha256: a2dcdddfd2337d8de37f6c5c4d1df137258421439e1698aed7e96cc6c2d49331
+    source:
+      repo: e3da/PowerSynth2-pkg
+      commit: a1de7ced949c0fd0105d166767b1de8705eb65ab
+      dir: work/Sample_Designs/2D_Case_2R
+      license: GPL-3.0 (facts only, D0007)
+      files_sha256:
+        README.txt: af2df9df7fc70c9989a6ffc657d68a24bf063882e65eb79a10164a693d806342
+        layout_geometry_script.txt: 972984bec3df2564c4d0f9c9cf27b737d3f57093df60ba89d8a87aa81e20eda1
+        layer_stack.csv: 668b391d5a059d0f0460de32ae29b18d4ff4a197afebbea17220231cb5da4699
+        bond_wires_setup.txt: 5ae694adc276f02e2c2ca68874603167fbdaf8cb723c1591e45b2cddb49b867a
+        constraint.csv: 35b842ae590eca0f55fab7792080500a38d7a87b18edde0369e5d26b2f55695e
+        macro_script.txt: e9097e120c64425dff2d3f1f28a5e01c2f2254a09279af106514f21dae8418d5
+        Trace_Ori.txt: b75cfc2681d215fdedbe8cd410a98d21cb0145c0b5a93400e05c5c9dacb971b4
+        Part_Lib/MOSFET.part: ae226bc07c737c25a13f28212b2c711633a375df408e6d6114d4fc8c26ec1533
+        Part_Lib/power_lead.part: 416ec39693c0535f2424da7ffc61cc8b3c40a479d0ba81d0a1a307164caf53ee
+        Part_Lib/signal_lead.part: aee35aed62b5917ae066b05cf1c1142014d3451f178cd037068d63a1fef2e232
+        Wire_Lib/bond_wire_info.wire: b03a77ca662fa66d28f0e8074e9ca6d2fdaf588c5ba13af369e56269100e3ed1
+    sic_mosfet_half_bridge: true
+    sic_mosfet_half_bridge_basis: '[F] README of the source dir: ''SiC half-bridge, wire-bonded, single-sided cooling'' (script
+      docstring FACTS); Part_Lib/MOSFET.part CPM2-1200-0025B is the only die part; the layout script defines only power_lead,
+      signal_lead and MOS parts; dies {''D1'': ''LS'', ''D2'': ''LS'', ''D3'': ''HS'', ''D4'': ''HS''}. [I] the HS/LS assignment
+      and the nets come from the connectivity (o003-reference-reconstructions.md section 2, net assignment [I]); the part''s
+      datasheet was not read, so ''SiC'' rests on the README sentence, not on a die record'
+    separate_antiparallel_diode_dies: false
+    separate_antiparallel_diode_dies_basis: '[F] diode_dies 0 in the T0263 record: the layout script defines only power_lead,
+      signal_lead and MOS parts (no diode part). Whether the MOSFET''s body diode or an external diode carries the freewheeling
+      current is not stated by the files and does not enter the field (it concerns diode dies in the layout)'
+    nda_permits_cloud_vm: null
+    nda_permits_cloud_vm_note: customer only; not applicable to a public reference
+    admissible: true
+    reason: public reference; only MOS dies (layout script defines power_lead, signal_lead, MOS); set by D0019 item 1 (the
+      D0010 public fallback, no customer reference was admitted)
+    decided_at: 2026-11-12 (founder decision D0019, founder session)
+    L_term_H: 7.0e-09
+    L_term_source: 'config.L_term.public_H: public reference -> 7 nH (Z. Chen, PhD dissertation, Virginia Tech, 2013, Q3D
+      of the CPES laminated DC terminals; research/notes/o003-public-benchmarks.md line 61; D0011)'
+    on_grid_0p5mm: true
+    snapping_check: 'not required: on the 0.5 mm grid, s_ref = 0 (O003 notes: the check applies only to a reference not on
+      the 0.5 mm grid); T0263 snap records 0 / 0 / 0 at 0.5 / 0.25 / 0.125 mm'
+    keepout_nets:
+    - GATE_LS
+    - GATE_HS
+    expected: 'twin and D at L0/L1 under E008''s rules (T0314 variant R1, before the D0018 floor): twin exact on the power
+      copper, L1(D)/L1(W) 1.395 >= 1.388. Expected counted (inference, not a result)'
+  - reference_id: 2D_Case_6
+    kind: public
+    label: public benchmarks, low power, indicative
+    vault_id: null
+    reconstruction_sha256: 71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7
+    reconstruction_sha256_meaning: 'Layout.fingerprint() of the reconstruction the frozen script''s snapped() returns (T0263);
+      the loader checks it before anything else (mismatch: refused, run void)'
+    reconstruction_script: research/scripts/o003_powersynth_references.py
+    reconstruction_record: research/o003/references/2D_Case_6.json
+    reconstruction_record_sha256: 7e80306c1cc11261293f6bd81afde10d32278b878675800a1e6087bb5f4dd3d4
+    source:
+      repo: e3da/PowerSynth2-pkg
+      commit: a1de7ced949c0fd0105d166767b1de8705eb65ab
+      dir: work/Sample_Designs/2D_Case_6
+      license: GPL-3.0 (facts only, D0007)
+      files_sha256:
+        README.txt: 01b492c503e655a69ee83c102c668948f346d881877ecab9250c5dba4e74fc81
+        layout_geometry_script.txt: 33abe28bd959fb960e70fd4a372e3d31e94fcdef4b3f0a65bd5c974919bfd7fb
+        layer_stack.csv: e646fffc576047e525b3b2b6ceac048d07d569924c0b0dc0132831e5b883f45d
+        bond_wires_setup.txt: d75f633a7cdbef609212b63e8e6d1d0c4a9a494c728d46a4a5c708056407be6e
+        constraint.csv: 7d9c18bb462864e1d0c42ed61bb9da446c8fa9763315a1d42f3d519653bfee86
+        macro_script.txt: 241831d6352a6b41dafefa3ec73c39959345de7bc7a1108463f6289c1aabcc63
+        Trace_Ori.txt: f9647668330aa18bd0df2e5f6672730cd8cc13bfa7f96fe23ada7ae094960bdd
+        Part_Lib/MOSFET.part: ae226bc07c737c25a13f28212b2c711633a375df408e6d6114d4fc8c26ec1533
+        Part_Lib/power_lead.part: 416ec39693c0535f2424da7ffc61cc8b3c40a479d0ba81d0a1a307164caf53ee
+        Part_Lib/signal_lead.part: aee35aed62b5917ae066b05cf1c1142014d3451f178cd037068d63a1fef2e232
+        Wire_Lib/bond_wire_info.wire: b03a77ca662fa66d28f0e8074e9ca6d2fdaf588c5ba13af369e56269100e3ed1
+    sic_mosfet_half_bridge: true
+    sic_mosfet_half_bridge_basis: '[F] README of the source dir: ''SiC half-bridge, wire-bonded, single-sided cooling'' (script
+      docstring FACTS); Part_Lib/MOSFET.part CPM2-1200-0025B is the only die part; the layout script defines only power_lead,
+      signal_lead and MOS parts; dies {''D1'': ''HS'', ''D2'': ''HS'', ''D3'': ''LS'', ''D4'': ''LS''}. [I] the HS/LS assignment
+      and the nets come from the connectivity (o003-reference-reconstructions.md section 2, net assignment [I]); the part''s
+      datasheet was not read, so ''SiC'' rests on the README sentence, not on a die record'
+    separate_antiparallel_diode_dies: false
+    separate_antiparallel_diode_dies_basis: '[F] diode_dies 0 in the T0263 record: the layout script defines only power_lead,
+      signal_lead and MOS parts (no diode part). Whether the MOSFET''s body diode or an external diode carries the freewheeling
+      current is not stated by the files and does not enter the field (it concerns diode dies in the layout)'
+    nda_permits_cloud_vm: null
+    nda_permits_cloud_vm_note: customer only; not applicable to a public reference
+    admissible: true
+    reason: public reference; only MOS dies (layout script defines power_lead, signal_lead, MOS); set by D0019 item 1 (the
+      D0010 public fallback, no customer reference was admitted)
+    decided_at: 2026-11-12 (founder decision D0019, founder session)
+    L_term_H: 7.0e-09
+    L_term_source: 'config.L_term.public_H: public reference -> 7 nH (Z. Chen, PhD dissertation, Virginia Tech, 2013, Q3D
+      of the CPES laminated DC terminals; research/notes/o003-public-benchmarks.md line 61; D0011)'
+    on_grid_0p5mm: true
+    snapping_check: 'not required: on the 0.5 mm grid, s_ref = 0 (O003 notes: the check applies only to a reference not on
+      the 0.5 mm grid); T0263 snap records 0 / 0 / 0 at 0.5 / 0.25 / 0.125 mm'
+    keepout_nets:
+    - SIG_T8
+    - GATE_LS
+    - GATE_HS
+    - SIG_T10
+    expected: 'TwinError expected (T0263, T0314: ''no (orientation, sequence) of the generator space matches the reference
+      geometry'' under every rule variant; D0018 fix-list item 3) -> excluded under F1(a), reported with the reason; inference
+      until the registered run''s prepare() raises it'
   search:
     n_candidates: 20000
     n_first: 5000
@@ -125,46 +241,47 @@ config:
   per_reference_rules:
     rule: 'D0018 model-fix list item 1 (T0317): E008''s design rules of a reference are drc.rules.measure_rules on the snapped
       reconstruction with min_signal_wire_length set to None (the measured minimum gate/Kelvin-wire length, which measure_rules
-      sets to the reference''s shortest signal wire, src/moduleforge/drc/rules.py line 587). Every upper bound
-      (max_gate_wire_length, max_kelvin_wire_length, max_signal_wire_length) and every other measured rule is kept. One runner
-      function builds them, e008_run.e008_rules, and writes info.rules_record (the dropped field, the value measure_rules
-      gave it, the upper bounds kept, the fields changed). Every place the runner builds a reference or dev spec uses it
-      (dev_reference: 2D_Case_4 from measure_rules plus its dev overrides; generator housing layouts from their generator
-      spec''s rules, where the field is already None); the judged-reference loader of full(), added before registration,
-      must use it too. The twin, D (through d_spec) and every main and control candidate get the reference''s spec built
-      from these rules, so the candidates lose the lower bound too.'
-    basis: 'D0018 (project/decisions/D0018-o003-e008-degraded-copy-yardstick.md, model-fix list item 1, fixed before any
-      candidate reference was screened) reads O003 scope_in''s enumerated rules as the complete meaning of "design rules at
-      least as strict as the reference''s own"; the scope_in bondability rule bounds gate and Kelvin wires from above only
-      (project/objectives/O003/objective.yaml lines 61-63; review T0315 finding 2, which flagged this as an interpretation
-      for the founder). T0314 (research/notes/o003-twin-coverage.md section 1, variant R1) found this lower bound to be the
-      only rule that stops a twin whose gate wires run to the nearest gate copper (2D_Case_2R: twin LS gate wires 4.597 mm
-      against the reference''s 5.344-10.396 mm).'
-    dropped: [min_signal_wire_length]
+      sets to the reference''s shortest signal wire, src/moduleforge/drc/rules.py line 587). Every upper bound (max_gate_wire_length,
+      max_kelvin_wire_length, max_signal_wire_length) and every other measured rule is kept. One runner function builds them,
+      e008_run.e008_rules, and writes info.rules_record (the dropped field, the value measure_rules gave it, the upper bounds
+      kept, the fields changed). Every place the runner builds a reference or dev spec uses it (dev_reference: 2D_Case_4 from
+      measure_rules plus its dev overrides; generator housing layouts from their generator spec''s rules, where the field
+      is already None); the judged-reference loader judged_reference (T0320, D0019) uses it with no override, and prepare()
+      refuses any spec without its rules_record or with min_signal_wire_length set (review T0319 finding 0). The twin, D (through
+      d_spec) and every main and control candidate get the reference''s spec built from these rules, so the candidates lose
+      the lower bound too.'
+    basis: 'D0018 (project/decisions/D0018-o003-e008-degraded-copy-yardstick.md, model-fix list item 1, fixed before any candidate
+      reference was screened) reads O003 scope_in''s enumerated rules as the complete meaning of "design rules at least as
+      strict as the reference''s own"; the scope_in bondability rule bounds gate and Kelvin wires from above only (project/objectives/O003/objective.yaml
+      lines 61-63; review T0315 finding 2, which flagged this as an interpretation for the founder). T0314 (research/notes/o003-twin-coverage.md
+      section 1, variant R1) found this lower bound to be the only rule that stops a twin whose gate wires run to the nearest
+      gate copper (2D_Case_2R: twin LS gate wires 4.597 mm against the reference''s 5.344-10.396 mm).'
+    dropped:
+    - min_signal_wire_length
     reported_not_gated: 'info.gate_wires: the shortest gate wire of the reference, W, D and the DRC-clean _quick_ok samples,
       and how many are shorter than DesignRules.min_wire_length (1.5 mm, a placeholder default that bounds power wires only;
-      no cited minimum gate-wire length was found, T0314 R2). T0317 dev record: 2D_Case_4 W and D shortest 5.122 mm, its
-      33 DRC-clean samples of 2,000 draws 5.734 mm (132 gate wires), none below 1.5 mm; the Case 4 reconstruction and the
-      generator housing layouts (gen2_0, its W, D and smoke samples) carry no gate wires.'
+      no cited minimum gate-wire length was found, T0314 R2). T0317 dev record: 2D_Case_4 W and D shortest 5.122 mm, its 33
+      DRC-clean samples of 2,000 draws 5.734 mm (132 gate wires), none below 1.5 mm; the Case 4 reconstruction and the generator
+      housing layouts (gen2_0, its W, D and smoke samples) carry no gate wires.'
     dev_effect: 'none on the dev references: 2D_Case_4''s reconstruction has no signal wires (measure_rules gives no lower
-      bound) and generator housing specs set none, so the rules, W, D and samples are unchanged (Case 4 D fingerprint
-      6d63ff8f..., gen2_0 twin aade6489... as in the stored smoke rows)'
+      bound) and generator housing specs set none, so the rules, W, D and samples are unchanged (Case 4 D fingerprint 6d63ff8f...,
+      gen2_0 twin aade6489... as in the stored smoke rows)'
   degrade_power_width_floor_m: 0.0015
   degrade_power_width_floor_reason: 'D0018 decision 1 (T0316). D is a yardstick: it sets only L_sub(D), its band solves and
-    w_ctrl = 2 e_R(control best, D); the control candidates come from the reference''s spec (search.run_control). So D''s power-net
-    copper (DC+, PHASE, DC-) may be narrower than the reference''s own minimum power-net width, down to this floor: degrade()
-    gets the reference''s spec with min_width_power = min(reference minimum, floor) (e008_run.d_spec); every other rule applies
-    to D unchanged; W, the candidates and both searches keep the reference''s rules. Why 1.5 mm, the smallest floor the
-    evidence supports: (a) the generator''s default minimum width is 1.0 mm (DesignRules.min_trace_width); (b) at 1.0 mm D''s
-    narrowest strip has 2 cells across at the band solves'' 0.5 mm levels (4 of the 5 levels), both edge cells, where the 20
-    MHz current crowds; at 1.5 mm it has 3 (one interior cell) and 6 at 0.25 mm. The lateral term of e_R(control best, D) on
-    such strips could not be measured within T0316''s limits (no 0.25 mm solve; a 1.0 mm level cannot run on 0.5 mm-grid
-    layouts), so excluding 1.0 mm rests on this resolution argument (inference); the 0.5 mm thickness-term check is in
-    research/o003/e008_dev/d_floor/l2_strip_check_gen2x1_w2_s11.json; (c) L0/L1 (research/o003/e008_dev/d_floor/floor_study.json,
-    2D_Case_4 and 7 generator housing layouts with 2-5 mm power rules): D reaches the L1 target 1.3875 on 8/8 at 1.0 mm,
-    7/8 at 1.5 mm, 6/8 at 2.0 mm and 3/8 at the reference minimum; on 2D_Case_4 1.421 (1.0 mm), 1.391 (1.5 mm: narrow_landing
-    and 7 walk steps), 1.390 (2.0 mm), 1.232 (5 mm, DegradeError). Frozen: --verify-freeze checks this value against the
-    runner constant DEGRADE_POWER_WIDTH_FLOOR_M and that it is >= 1 mm'
+    w_ctrl = 2 e_R(control best, D); the control candidates come from the reference''s spec (search.run_control). So D''s
+    power-net copper (DC+, PHASE, DC-) may be narrower than the reference''s own minimum power-net width, down to this floor:
+    degrade() gets the reference''s spec with min_width_power = min(reference minimum, floor) (e008_run.d_spec); every other
+    rule applies to D unchanged; W, the candidates and both searches keep the reference''s rules. Why 1.5 mm, the smallest
+    floor the evidence supports: (a) the generator''s default minimum width is 1.0 mm (DesignRules.min_trace_width); (b) at
+    1.0 mm D''s narrowest strip has 2 cells across at the band solves'' 0.5 mm levels (4 of the 5 levels), both edge cells,
+    where the 20 MHz current crowds; at 1.5 mm it has 3 (one interior cell) and 6 at 0.25 mm. The lateral term of e_R(control
+    best, D) on such strips could not be measured within T0316''s limits (no 0.25 mm solve; a 1.0 mm level cannot run on 0.5
+    mm-grid layouts), so excluding 1.0 mm rests on this resolution argument (inference); the 0.5 mm thickness-term check is
+    in research/o003/e008_dev/d_floor/l2_strip_check_gen2x1_w2_s11.json; (c) L0/L1 (research/o003/e008_dev/d_floor/floor_study.json,
+    2D_Case_4 and 7 generator housing layouts with 2-5 mm power rules): D reaches the L1 target 1.3875 on 8/8 at 1.0 mm, 7/8
+    at 1.5 mm, 6/8 at 2.0 mm and 3/8 at the reference minimum; on 2D_Case_4 1.421 (1.0 mm), 1.391 (1.5 mm: narrow_landing
+    and 7 walk steps), 1.390 (2.0 mm), 1.232 (5 mm, DegradeError). Frozen: --verify-freeze checks this value against the runner
+    constant DEGRADE_POWER_WIDTH_FLOOR_M and that it is >= 1 mm'
   em:
     freq_hz: 20000000.0
     production: lat0.25
@@ -232,7 +349,7 @@ config:
         1.1 x the largest measured ratio, Scheduler.learn). Max measured/model peak over 5 gen2_0-housing layouts at 0.5 mm
         cells (Mac smoke rows; table research/o003/e008_dev/em_mem_ratios.json): lat0.5 1.10-1.51, thk_c 1.28-1.46, thk_f
         1.19-1.77, fil_f 2.32-2.57, rounded up; lat0.25 takes the lat0.5 value (not measured). P3''s Case 4 0.5 mm solves:
-        0.86-1.04 of the model. --plan uses the model (Case 4 proxies)'
+        0.86-1.04 of the model. --plan uses the model on the references'' real unknown counts (T0320)'
       em_mem_margin_local:
         default: 1.45
         2D_Case_4: 1.05
@@ -302,35 +419,68 @@ config:
       earliest_start: '2026-11-16'
     plan_references:
     - name: 2D_Case_2R
-      area_m2: 0.0088
-      on_grid: false
+      area_m2: 0.0033
+      on_grid: true
       spot: true
+      expected_excluded_at_twin: false
+      em_unknowns:
+        lat0.25: 1491140
+        lat0.5: 369140
+        thk_c: 184620
+        thk_f: 738180
+        fil_f: 369260
       fem_dofs:
-        reference: &id002
-        - 51098
-        - 365435
-        - 2752565
-        candidate: &id003
-        - 98698
-        - 708819
-        - 5350885
-      fv_cells: &id004
-      - 3669120
-      - 29352960
-      - 234823680
+        reference:
+        - 77966
+        - 560979
+        - 4239845
+        candidate:
+        - 150595
+        - 1088108
+        - 8242103
+      fv_cells:
+      - 4273024
+      - 34184192
+      - 273473536
       screen_s_per_candidate: 0.45
-      size: 'PROXY: 2D_Case_4''s 80 x 110 mm lattice until T0263''s reconstruction exists (not loaded here); --plan is re-run
-        on the reconstruction before registration'
+      size: 'REAL (T0320, --check-references on the frozen reconstruction, fingerprint 66cb1e19...): l2_layout unknowns per
+        band level, scikit-fem DOFs per level (frozen rule), FV box cells levels 1-2 built, level 3 = level 2 x 8; candidate
+        DOFs = the reference''s own frozen-rule DOFs x the per-level candidate/reference ratio measured on 2D_Case_4 (research/o003/e008_dev/probe_dofs.json
+        via the earlier proxy: 98698/51098, 708819/365435, 5350885/2752565); no candidate of 2R or Case 6 may be generated
+        before the freeze (D0019 item 4); screen rate still the 0.45 s slow end (no candidate generated, D0019 item 4)'
+      spot_note: own non-default stack type (AlN 0.835 mm), the F6(e) spot-check reference of its type
     - name: 2D_Case_6
-      area_m2: 0.0088
-      on_grid: false
-      spot: false
+      area_m2: 0.0024
+      on_grid: true
+      spot: true
+      expected_excluded_at_twin: true
+      em_unknowns:
+        lat0.25: 1095080
+        lat0.5: 270520
+        thk_c: 135360
+        thk_f: 540840
+        fil_f: 270760
       fem_dofs:
-        reference: *id002
-        candidate: *id003
-      fv_cells: *id004
+        reference:
+        - 81714
+        - 590079
+        - 4469229
+        candidate:
+        - 157834
+        - 1144552
+        - 8688017
+      fv_cells:
+      - 3872064
+      - 30976512
+      - 247812096
       screen_s_per_candidate: 0.45
-      size: PROXY as above
+      size: 'REAL (T0320, --check-references on the frozen reconstruction, fingerprint 71e07ae1...): l2_layout unknowns per
+        band level, scikit-fem DOFs per level (frozen rule), FV box cells levels 1-2 built, level 3 = level 2 x 8; candidate
+        DOFs = the reference''s own frozen-rule DOFs x the per-level candidate/reference ratio measured on 2D_Case_4 (research/o003/e008_dev/probe_dofs.json
+        via the earlier proxy: 98698/51098, 708819/365435, 5350885/2752565); no candidate of 2R or Case 6 may be generated
+        before the freeze (D0019 item 4); screen rate still the 0.45 s slow end (no candidate generated, D0019 item 4)'
+      spot_note: own non-default stack type (AlN 0.64 mm); excluded at its twin in the expected scenario, so the runner runs
+        no spot check of its type then (see founder_decisions_before_registration)
   dev:
     rule: 'F3: development geometry only (generator housings and 2D_Case_4), never a judged reference'
     dev_seed: 20261110
@@ -403,9 +553,10 @@ config:
     twin_copper: 'T0299: symmetric difference twin W vs snapped reconstruction per net, mm2 and fraction of the net''s area,
       with the twin mode. Scalar areas only (F5). Reported, not gated.'
     degradation: 'T0296: per reference whether the walk ran (rec[''walk'']) and its steps; D''s L_sub ratio decides F1(b)''s
-      definition (a miss excludes the reference, D0018). T0316: info.D_rule gives the floor, the reference''s minimum, D''s rule,
-      D''s narrowest power strip, the cells across it at 0.5 and 0.25 mm, DRC-clean under D''s rules and the rules D violates
-      under the reference''s (min_trace_width only); info.D_definition gives R_D, e_R(D, W) and the conservative end'
+      definition (a miss excludes the reference, D0018). T0316: info.D_rule gives the floor, the reference''s minimum, D''s
+      rule, D''s narrowest power strip, the cells across it at 0.5 and 0.25 mm, DRC-clean under D''s rules and the rules D
+      violates under the reference''s (min_trace_width only); info.D_definition gives R_D, e_R(D, W) and the conservative
+      end'
     excluded: 'D0018: evaluation report ''excluded'' {reference: reason (TwinError | DegradeError | D_misses_1p25_in_L_sub),
       detail, stage (prepare | drive)}; metric n_excluded_references'
     near_ties: 'T0292: the near-tie union count is reported; --plan gives the cost at its expected and upper end.'
@@ -422,9 +573,9 @@ config:
       1.25 at the conservative end of its band, R_D (1 - 2 e_R(D, W)), from the band solves of D and W that Run.drive runs
       before any search): that reference is excluded and reported with the reason, like a twin-gate failure (no driver, no
       rows, evaluation report ''excluded''); E008 is INVALID only if no reference remains (at_least_one_counted_reference)'
-    DegradeError: 'D0018 decision 2: degrade() raises DegradeError (fail fast, L0/L1, before any l2_layout solve): that
-      reference is excluded and reported with the reason, not the run; E008 is INVALID only if no reference remains. A TwinError
-      likewise stops that reference (F1(a)), not the run'
+    DegradeError: 'D0018 decision 2: degrade() raises DegradeError (fail fast, L0/L1, before any l2_layout solve): that reference
+      is excluded and reported with the reason, not the run; E008 is INVALID only if no reference remains. A TwinError likewise
+      stops that reference (F1(a)), not the run'
     F1b_control_misses: 'D0018 / O003 F1: a control that runs and misses h_plant - w_ctrl is still INVALID (not an exclusion)'
     F1c_band_too_wide: 'objective: INVALID'
     F6a_to_d: 'objective: INVALID'
@@ -441,69 +592,96 @@ config:
     non-zero GMRES flag, no convergence record, or a non-finite solver_tol_rel_L_max), is not an exclusion: F1b_D_definition
     fails for that reference and the run is INVALID (Run.drive stops after D''s definition; no search runs). Only a finite,
     converged ratio below 1.25 at the conservative end excludes'
+  - 'D0019 (founder session 2026-11-12): config.references is the D0010 public fallback 2D_Case_2R, 2D_Case_6 with admissibility,
+    L_term 7 nH, fingerprints and the judged-reference loader (judged_reference, frozen T0263 script in config.freeze), --plan
+    re-run on the real reconstructions (T0320); the snapping check is not required (both references on the 0.5 mm grid, s_ref
+    = 0); declared F3 deviation in config.f3_declared_deviation (D0019 item 2)'
   founder_decisions_before_registration:
-  - the band check (e_R on >= 4 twin-vs-random pairs) and Case 4's twin gates come from the full-fidelity dev run on the VM
-    (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either
+  - 'the band check (e_R on >= 4 twin-vs-random pairs) and Case 4''s twin gates come from the full-fidelity dev run on the
+    VM (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either (T0320) 2R''s records
+    settle nothing here: no l2_layout result of 2R exists (D0019 item 2); its band levels have {''lat0.25'': 1491140, ''lat0.5'':
+    369140, ''thk_c'': 184620, ''thk_f'': 738180, ''fil_f'': 369260} unknowns (--check-references)'
   - 'before registration the same full-fidelity dev run (burst_dev.sh: gen2_0 with the full frozen search, 2D_Case_4 twin
     gates) answers reviews T0304 (findings 0, 1) and T0305 (finding 4): Run.drive, assemble_rows and evaluate run once end
     to end on real solvers, and meta.thermal_report gives, for every dev layout at the frozen rule, F6(a)''s node growth per
     level step, the per-die GCI with the count of gci_capped returning +inf, and whether the conservative +2 K test is attainable
     (own interval width <= 2 K). If it is not attainable on the twin or most candidates, A1 may be unreachable by construction:
-    the founder decides before registration. No local full-fidelity run is needed (T0306)'
-  - 'if any dev e_R exceeds 0.02, or either Case 4 twin gate fails: the founder decides (objective notes)'
-  - the snapping check (0.125 mm, ~61 GB and ~12 h per solve at Case 4 size, two solves per off-grid reference)
-  - 'config.references: the D0010 set with admissibility per reference, L_term, the reconstruction loader and hashes (T0263);
-    --plan re-run on the real reconstructions (sizes here are Case 4 proxies)'
-  - 'twin-copper areas of a customer reference in the rows (F5: scalar areas, no geometry) or vault-only'
+    the founder decides before registration. No local full-fidelity run is needed (T0306) (T0320) 2R''s records: no thermal
+    solve exists, so attainability is open; mesh only: frozen-rule DOFs [77966, 560979, 4239845] (growth [7.195, 7.558] per
+    step, inside 8 +/- 15 %), 2D_Case_6 [81714, 590079, 4469229] (growth [7.221, 7.574])'
+  - 'if any dev e_R exceeds 0.02, or either Case 4 twin gate fails: the founder decides (objective notes) (T0320) 2R''s records
+    settle nothing here (dev geometry only)'
+  - 'twin-copper areas of a customer reference in the rows (F5: scalar areas, no geometry) or vault-only (T0320) moot for
+    D0019''s set (public references only; F5 concerns customer geometry); kept for a future customer set'
   - 'T0262 finding: on 2D_Case_4 the frozen twin fails the DRC under the reference''s own measured rules (power-wire length
     a few um over the measured longest wire; measure_rules'' min_wire_pitch is the pitch between different dies). Which rule
     values apply to judged references (measured, with a stated tolerance, or the defaults for wire pitch) must be decided
-    before registration, since a TwinError stops the reference'
-  - row contract interpretations 1-9 (research/o003/e008_row_contract.md section 5)
-  - 'budget: cpu_hours 320 holds for E008 only as process CPU time (234.6-308.3 h); as billed vCPU-hours E008 needs 339.2-450.8
-    (phase B at the measured FV rate, T0306) and all VM work about 611-739 (cost_estimate.statement): which reading applies,
-    or raise it'
-  - 'F6(e) at Case 4 size: the finite-volume level-3 grid has 235 M cells (~350 GB at E009''s 1,500 B/cell); it fits only
-    on the same 8-vCPU VM resized to ~416 GB of N2D extended memory (N2D allows 768 GB). This is above the ''~150+ GB'' the
-    founder''s constraint (2026-11-09) names. If the account cannot exceed ~150 GB, F6(e) cannot run on a Case-4-sized AlN
-    reference and E008 gives no verdict (F6e: INVALID). Choose: confirm ~416 GB is allowed; or a smaller AlN spot-check reference
-    (FV level 3 <= ~85 M cells, i.e. 0.85 x 150 GB at 1,500 B/cell) once T0263''s reconstructions exist (the objective requires
-    one reference per non-default stack type, not a particular one); or a memory-lean FV level 3 under a new spec'
+    before registration, since a TwinError stops the reference (T0320) 2R''s records (L0, 2D_Case_2R.json): judged references
+    take measure_rules less min_signal_wire_length with NO override (D0019 item 5, judged_reference); 2R''s max_wire_length
+    is the unmeasured 15 mm default (power wires 5.0-6.39 mm), so Case 4''s ''twin power wire a few um over the measured longest''
+    cannot arise on 2R; min_wire_pitch 0.749 mm (2.50 diameters) is measured on a gate/power wire pair; under these rules
+    T0314 (R1, L0/L1, before the D0018 floor) built the 2R twin exact on the power copper. Only the registered prepare() decides
+    (D0019 item 4)'
+  - row contract interpretations 1-9 (research/o003/e008_row_contract.md section 5) (T0320) 2R's records settle nothing here
+  - 'budget: with the real sizes (T0320) cpu_hours 320 holds for E008 on either reading: billed vCPU-hours 97.0-145.4 (2D_Case_6
+    excluded, expected) or 149.7-255.0 (if counted), process CPU-hours 40.0-102.6 (cost_estimate.statement); which reading
+    the cap uses stays the founder''s (with the dev run, all VM work is about 177-351 billed vCPU-hours)'
+  - 'F6(e) memory on the real 2D_Case_2R (T0320, supersedes the Case 4 proxy): the finite-volume level-3 grid has 273,473,536
+    box cells (34,184,192 built at level 2, x 8), peak 410.7 GB at E009''s 1,500 B/cell: it does NOT fit in 150 GB; it fits
+    on the same 8-vCPU VM resized to n2d-custom-8-499712-ext (488 GB; N2D allows 768 GB), 4.22 h, $17.48. 2R is the only reference
+    of its type expected to be counted, so no smaller AlN spot-check reference exists in D0019''s set. Choose: allow ~488
+    GB; or a memory-lean FV level 3 under a new spec; if ~150 GB is the ceiling, F6(e) cannot run and E008 gives no verdict
+    (F6e: INVALID)'
   - 'F6(e) reading (T0310 finding 4): a non-default stack type whose references are all inadmissible is REPORTED, NOT GATED
-    (evaluation report F6e.<type> with reference null and status ''no admissible reference'', listed in the detail of
-    F6e_stack_type_spot_check as no_admissible_reference; no per-type check, the aggregate is not failed by it). This reads
-    O003 scope_in''s ''at least one reference of every stack type other than C004''s default'' as every type of the D0010
-    reference set, which holds admissible references only (an inadmissible reference contributes no rows). Alternative: such
-    a type FAILS F6e_stack_type_spot_check (the reading before T0309), so an inadmissible reference on its own non-default
-    stack type would end E008 with F6e failed. The founder confirms one reading at registration; the runner implements the
-    first'
+    (evaluation report F6e.<type> with reference null and status ''no admissible reference'', listed in the detail of F6e_stack_type_spot_check
+    as no_admissible_reference; no per-type check, the aggregate is not failed by it). This reads O003 scope_in''s ''at least
+    one reference of every stack type other than C004''s default'' as every type of the D0010 reference set, which holds admissible
+    references only (an inadmissible reference contributes no rows). Alternative: such a type FAILS F6e_stack_type_spot_check
+    (the reading before T0309), so an inadmissible reference on its own non-default stack type would end E008 with F6e failed.
+    The founder confirms one reading at registration; the runner implements the first (T0320) D0019''s set has no inadmissible
+    reference (both admissible: no diode dies, public), so this reading does not arise for it; an admissible reference EXCLUDED
+    at its twin is the separate item below'
   - 'stack-type rounding rule (T0310 finding 3, decided here, the founder may change it at registration): in the stack-type
     signature every thickness (substrate, die-attach and die layers, and every per-die thickness and attach thickness) is
-    rounded to integer nanometres (round half to even of t / 1 nm) and every conductivity to 9 significant digits, so a
-    reference that differs from C004''s default only by float rounding (2D_Case_4 stores 180 um as 0.00017999999999999998
-    m) is the default type, while a thickness difference above 1 nm or a relative k difference above 1e-8 always gives a
-    new type (two values closer than one rounding step may still round apart; physical thicknesses are not at half-nm). Dev facts after the rule: gen2_0 is Al2O3_default_dbc with dies [[180000, 50000]] nm; 2D_Case_4 stays non-default
-    (die attach 0 nm and the PowerSynth stack), type other:a9ad6bbb1af1 (was other:61c8dd23d7d1 under exact floats)'
+    rounded to integer nanometres (round half to even of t / 1 nm) and every conductivity to 9 significant digits, so a reference
+    that differs from C004''s default only by float rounding (2D_Case_4 stores 180 um as 0.00017999999999999998 m) is the
+    default type, while a thickness difference above 1 nm or a relative k difference above 1e-8 always gives a new type (two
+    values closer than one rounding step may still round apart; physical thicknesses are not at half-nm). Dev facts after
+    the rule: gen2_0 is Al2O3_default_dbc with dies [[180000, 50000]] nm; 2D_Case_4 stays non-default (die attach 0 nm and
+    the PowerSynth stack), type other:a9ad6bbb1af1 (was other:61c8dd23d7d1 under exact floats) (T0320) 2R AlN 0.835 mm (T0263
+    type other:13fbac2ad296), 2D_Case_6 AlN 0.64 mm (other:d34d9682c1b0): two non-default types under the rule (they differ
+    by 195 um)'
   - 'EM memory model (T0262 attempt 5, fact): on 5 gen2_0-housing layouts at 0.5 mm cells the measured peaks were 1.1-2.6x
     the per-unknown model that --plan uses (fil_f 2.3-2.6x, thk_f up to 1.8x); on P3''s Case 4 they were 0.86-1.04x. The runner
     schedules with per-level priors until a solve of the same reference and level is measured, then by the measured ratio
     (Scheduler.learn), so packing is safe; but --plan''s concurrency (four 0.25 mm solves at once) holds only if the public
-    references behave like Case 4. Re-run --plan on T0263''s reconstructions with their measured 0.5 mm peaks before registration'
+    references behave like Case 4. T0320: --plan now uses the references'' counted unknowns (2D_Case_2R 1,491,140 at 0.25
+    mm, 2D_Case_6 1,095,080; the 0.25 mm solve peaks at 6.24 GB by the model); no 0.5 mm peak of either reference may be measured
+    before the freeze (D0019 item 4), so the priors x the model schedule them until Scheduler.learn measures one'
   - '_quick_ok report (T0295) power: on 2D_Case_4 the smoke sample (100 draws) gave 0 DRC-clean samples; the registered 2,000
     draws gave 33, none rejected, so the false-rejection rate is <= 8.7 % (exact one-sided 95 % bound, now reported by the
     runner; research/o003/e008_dev/case4_prep.log). Whether quick_ok_draws should instead fix the number of DRC-clean samples
-    (e.g. 100 clean -> bound 3 %) is a design choice for registration (reported, not gated, either way)'
-  - '2D_Case_4 fail-fast facts (dev, L0/L1 only; the consequence of a DegradeError is settled by D0018, see
-    founder_decisions_settled): twin mode fit+signal_feet with zero copper symmetric difference on DC+, DC- and PHASE,
-    L1(W)/L1(reconstruction) = 1.0017. Under the reference''s 5 mm power width (before D0018) degrade() raised DegradeError
-    (L1 ratio 1.232 < 1.388, local maximum after 75 walk steps). Under the 1.5 mm floor (T0316, case4_prep.py) D reaches
-    L1 1.391 >= 1.388 after narrow_landing (landing bands 5 -> 1.5 mm) and 7 walk steps; D''s narrowest power strip is
-    1.5 mm (3 cells at 0.5 mm, 6 at 0.25 mm). Only E008''s band solves decide F1(b) (T0291: at 1.0 mm bands the L2 ratio
-    at 0.5 mm was 1.325 against L1 1.421). Left for the founder: none on this item beyond the full-fidelity dev run above'
+    (e.g. 100 clean -> bound 3 %) is a design choice for registration (reported, not gated, either way) (T0320) 2R: no sample
+    drawn before the freeze (D0019 item 4)'
+  - '2D_Case_4 fail-fast facts (dev, L0/L1 only; the consequence of a DegradeError is settled by D0018, see founder_decisions_settled):
+    twin mode fit+signal_feet with zero copper symmetric difference on DC+, DC- and PHASE, L1(W)/L1(reconstruction) = 1.0017.
+    Under the reference''s 5 mm power width (before D0018) degrade() raised DegradeError (L1 ratio 1.232 < 1.388, local maximum
+    after 75 walk steps). Under the 1.5 mm floor (T0316, case4_prep.py) D reaches L1 1.391 >= 1.388 after narrow_landing (landing
+    bands 5 -> 1.5 mm) and 7 walk steps; D''s narrowest power strip is 1.5 mm (3 cells at 0.5 mm, 6 at 0.25 mm). Only E008''s
+    band solves decide F1(b) (T0291: at 1.0 mm bands the L2 ratio at 0.5 mm was 1.325 against L1 1.421). Left for the founder:
+    none on this item beyond the full-fidelity dev run above (T0320) 2R (T0314 R1, L0/L1, before the D0018 floor, D at 2R''s
+    own 4.0 mm power minimum): D reached L1(D)/L1(W) 1.395 >= 1.388 after 16 walk steps; under the 1.5 mm floor D may differ;
+    not re-run (D0019 item 4)'
   - E009-registered smoke thermal rule for local smoke rows; the earlier smoke rule did not fit the Mac (research/notes/e008-design.md
-    section 3)
+    section 3) (T0320) 2R's records settle nothing here (dev rows only)
+  - 'F6(e) for an admissible reference EXCLUDED at its twin (2D_Case_6, expected; T0320 fact): the runner runs NEITHER a spot
+    check NOR a report of its stack type (Run.drive collects the types from the references that reach it; evaluate reports
+    the exclusion under ''excluded'' only); verified by the selftest (full_orchestration). Readings: (a) neither (as implemented):
+    $0; (b) report the type as ''reference excluded, no spot check'' (not gated): $0; (c) spot check the excluded reference''s
+    reconstruction (calibration, scikit-fem L0-2, FV L1-3): 4.41 VM-hours, $14.54 (range $4.4-$27.29), FV level 3 247,812,096
+    cells, 372.2 GB on n2d-custom-8-450560-ext. The founder chooses one at registration'
   cost_estimate:
-    filled_by: e008_run.py --plan
+    filled_by: e008_run.py --plan (T0320, real reference sizes; research/o003/e008_dev/plan_T0320.json)
     threads_per_solve: 2
     why: 'two threads: mean wall 5751 s vs pinned 6364 s'
     vm:
@@ -522,53 +700,55 @@ config:
     near_ties_expected_source: default (no dev search rows)
     cases:
       expected:
+        references:
+        - 2D_Case_2R
         near_ties: 3
         thermal_batches: 1
         null_extra_checks: 0
-        n_solves: 181
-        phase_a_hours: 38.81
+        n_solves: 91
+        phase_a_hours: 7.9
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
-          peak_GB: 352.7
-          machine: n2d-custom-8-425984-ext
+          n: 273473536
+          peak_GB: 410.7
+          machine: n2d-custom-8-499712-ext
+          ram_GB: 488.0
           fits_n2d_768GB: true
-          hours: 3.59
-          usd: 12.63
-          usd_per_h: 3.5188
+          fits_150GB: false
+          hours: 4.22
+          usd: 17.48
+          usd_per_h: 4.138
           sensitivity:
             low:
-              hours: 1.03
-              usd: 3.64
+              hours: 1.17
+              usd: 4.84
             high:
-              hours: 6.76
-              usd: 23.79
-        phase_b_hours: 3.59
-        phase_b_usd: 12.63
+              hours: 8.16
+              usd: 33.78
+        phase_b_hours: 4.22
+        phase_b_usd: 17.48
         phase_b_sensitivity:
           low:
-            phase_b_hours: 1.03
-            phase_b_usd: 3.64
-            vm_hours: 39.85
-            usd: 27.39
-            billed_vcpu_hours: 318.8
+            phase_b_hours: 1.17
+            phase_b_usd: 4.84
+            vm_hours: 9.07
+            usd: 9.68
+            billed_vcpu_hours: 72.6
           high:
-            phase_b_hours: 6.76
-            phase_b_usd: 23.79
-            vm_hours: 45.57
-            usd: 47.55
-            billed_vcpu_hours: 364.6
-        vm_hours: 42.4
-        usd: 36.39
-        billed_vcpu_hours: 339.2
-        process_cpu_hours: 234.6
-        peak_GB_per_reference: &id005
+            phase_b_hours: 8.16
+            phase_b_usd: 33.78
+            vm_hours: 16.07
+            usd: 38.62
+            billed_vcpu_hours: 128.5
+        vm_hours: 12.13
+        usd: 22.32
+        billed_vcpu_hours: 97.0
+        process_cpu_hours: 40.0
+        peak_GB_per_reference:
           2D_Case_2R:
-            em: 15.8
-            thermal: 31.0
-            fv: 352.7
-          2D_Case_6:
-            em: 15.8
-            thermal: 31.0
+            em: 6.2
+            thermal: 47.6
+            fv: 410.7
         per_solve_on_vm:
           reference_sizes: 2D_Case_2R
           note: wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells
@@ -585,144 +765,146 @@ config:
               peak_GB: 1.5
               threads: 1
             em:lat0.25:
-              n: 4108580
-              wall_h: 1.603
-              peak_GB: 15.8
+              n: 1491140
+              wall_h: 0.372
+              peak_GB: 6.24
               threads: 2
             em:lat0.5:
-              n: 1027145
-              wall_h: 0.218
-              peak_GB: 4.55
+              n: 369140
+              wall_h: 0.05
+              peak_GB: 2.15
               threads: 2
             em:thk_c:
-              n: 513572
-              wall_h: 0.109
-              peak_GB: 2.67
+              n: 184620
+              wall_h: 0.025
+              peak_GB: 1.47
               threads: 2
             em:thk_f:
-              n: 2054290
-              wall_h: 0.904
-              peak_GB: 8.3
+              n: 738180
+              wall_h: 0.207
+              peak_GB: 3.49
               threads: 2
             em:fil_f:
-              n: 1027145
-              wall_h: 0.457
-              peak_GB: 4.55
+              n: 369260
+              wall_h: 0.105
+              peak_GB: 2.15
               threads: 2
             thermal:calibration:T0:
-              n: 51098
-              wall_h: 0.012
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.018
+              peak_GB: 0.95
               threads: 2
             thermal:reference:T0:
-              n: 51098
-              wall_h: 0.003
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
               threads: 2
             thermal:reference:T1:
-              n: 365435
-              wall_h: 0.021
-              peak_GB: 2.59
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
               threads: 2
             thermal:reference:T2:
-              n: 2752565
-              wall_h: 0.161
-              peak_GB: 16.21
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
               threads: 2
             thermal:twin:T0:
-              n: 51098
-              wall_h: 0.003
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
               threads: 2
             thermal:twin:T1:
-              n: 365435
-              wall_h: 0.021
-              peak_GB: 2.59
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
               threads: 2
             thermal:twin:T2:
-              n: 2752565
-              wall_h: 0.161
-              peak_GB: 16.21
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
               threads: 2
             fv:fv:L1:
-              n: 3669120
-              wall_h: 0.029
-              peak_GB: 6.0
+              n: 4273024
+              wall_h: 0.035
+              peak_GB: 6.91
               threads: 2
             fv:fv:L2:
-              n: 29352960
-              wall_h: 0.312
-              peak_GB: 44.53
+              n: 34184192
+              wall_h: 0.371
+              peak_GB: 51.78
               threads: 2
             fv:fv:L3:
-              n: 234823680
-              wall_h: 3.341
-              peak_GB: 352.74
+              n: 273473536
+              wall_h: 3.974
+              peak_GB: 410.71
               threads: 2
             thermal:candidate:T0:
-              n: 98698
-              wall_h: 0.006
-              peak_GB: 1.06
+              n: 150595
+              wall_h: 0.009
+              peak_GB: 1.36
               threads: 2
             thermal:candidate:T1:
-              n: 708819
-              wall_h: 0.041
-              peak_GB: 4.55
+              n: 1088108
+              wall_h: 0.063
+              peak_GB: 6.71
               threads: 2
             thermal:candidate:T2:
-              n: 5350885
-              wall_h: 0.312
-              peak_GB: 31.05
+              n: 8242103
+              wall_h: 0.481
+              peak_GB: 47.55
               threads: 2
-        end_date_if_start: '2026-11-17'
+        end_date_if_start: '2026-11-16'
       upper:
+        references:
+        - 2D_Case_2R
         near_ties: 15
         thermal_batches: 2
         null_extra_checks: 8
-        n_solves: 349
-        phase_a_hours: 52.76
+        n_solves: 175
+        phase_a_hours: 13.95
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
-          peak_GB: 352.7
-          machine: n2d-custom-8-425984-ext
+          n: 273473536
+          peak_GB: 410.7
+          machine: n2d-custom-8-499712-ext
+          ram_GB: 488.0
           fits_n2d_768GB: true
-          hours: 3.59
-          usd: 12.63
-          usd_per_h: 3.5188
+          fits_150GB: false
+          hours: 4.22
+          usd: 17.48
+          usd_per_h: 4.138
           sensitivity:
             low:
-              hours: 1.03
-              usd: 3.64
+              hours: 1.17
+              usd: 4.84
             high:
-              hours: 6.76
-              usd: 23.79
-        phase_b_hours: 3.59
-        phase_b_usd: 12.63
+              hours: 8.16
+              usd: 33.78
+        phase_b_hours: 4.22
+        phase_b_usd: 17.48
         phase_b_sensitivity:
           low:
-            phase_b_hours: 1.03
-            phase_b_usd: 3.64
-            vm_hours: 53.8
-            usd: 35.93
-            billed_vcpu_hours: 430.4
+            phase_b_hours: 1.17
+            phase_b_usd: 4.84
+            vm_hours: 15.12
+            usd: 13.38
+            billed_vcpu_hours: 121.0
           high:
-            phase_b_hours: 6.76
-            phase_b_usd: 23.79
-            vm_hours: 59.53
-            usd: 56.08
-            billed_vcpu_hours: 476.2
-        vm_hours: 56.35
-        usd: 44.93
-        billed_vcpu_hours: 450.8
-        process_cpu_hours: 308.3
+            phase_b_hours: 8.16
+            phase_b_usd: 33.78
+            vm_hours: 22.11
+            usd: 42.32
+            billed_vcpu_hours: 176.9
+        vm_hours: 18.17
+        usd: 26.02
+        billed_vcpu_hours: 145.4
+        process_cpu_hours: 56.9
         peak_GB_per_reference:
           2D_Case_2R:
-            em: 15.8
-            thermal: 31.0
-            fv: 352.7
-          2D_Case_6:
-            em: 15.8
-            thermal: 31.0
+            em: 6.2
+            thermal: 47.6
+            fv: 410.7
         per_solve_on_vm:
           reference_sizes: 2D_Case_2R
           note: wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells
@@ -739,133 +921,391 @@ config:
               peak_GB: 1.5
               threads: 1
             em:lat0.25:
-              n: 4108580
-              wall_h: 1.603
-              peak_GB: 15.8
+              n: 1491140
+              wall_h: 0.372
+              peak_GB: 6.24
               threads: 2
             em:lat0.5:
-              n: 1027145
-              wall_h: 0.218
-              peak_GB: 4.55
+              n: 369140
+              wall_h: 0.05
+              peak_GB: 2.15
               threads: 2
             em:thk_c:
-              n: 513572
-              wall_h: 0.109
-              peak_GB: 2.67
+              n: 184620
+              wall_h: 0.025
+              peak_GB: 1.47
               threads: 2
             em:thk_f:
-              n: 2054290
-              wall_h: 0.904
-              peak_GB: 8.3
+              n: 738180
+              wall_h: 0.207
+              peak_GB: 3.49
               threads: 2
             em:fil_f:
-              n: 1027145
-              wall_h: 0.457
-              peak_GB: 4.55
+              n: 369260
+              wall_h: 0.105
+              peak_GB: 2.15
               threads: 2
             thermal:calibration:T0:
-              n: 51098
-              wall_h: 0.012
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.018
+              peak_GB: 0.95
               threads: 2
             thermal:reference:T0:
-              n: 51098
-              wall_h: 0.003
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
               threads: 2
             thermal:reference:T1:
-              n: 365435
-              wall_h: 0.021
-              peak_GB: 2.59
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
               threads: 2
             thermal:reference:T2:
-              n: 2752565
-              wall_h: 0.161
-              peak_GB: 16.21
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
               threads: 2
             thermal:twin:T0:
-              n: 51098
-              wall_h: 0.003
-              peak_GB: 0.79
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
               threads: 2
             thermal:twin:T1:
-              n: 365435
-              wall_h: 0.021
-              peak_GB: 2.59
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
               threads: 2
             thermal:twin:T2:
-              n: 2752565
-              wall_h: 0.161
-              peak_GB: 16.21
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
               threads: 2
             fv:fv:L1:
-              n: 3669120
-              wall_h: 0.029
-              peak_GB: 6.0
+              n: 4273024
+              wall_h: 0.035
+              peak_GB: 6.91
               threads: 2
             fv:fv:L2:
-              n: 29352960
-              wall_h: 0.312
-              peak_GB: 44.53
+              n: 34184192
+              wall_h: 0.371
+              peak_GB: 51.78
               threads: 2
             fv:fv:L3:
-              n: 234823680
-              wall_h: 3.341
-              peak_GB: 352.74
+              n: 273473536
+              wall_h: 3.974
+              peak_GB: 410.71
               threads: 2
             thermal:candidate:T0:
-              n: 98698
-              wall_h: 0.006
-              peak_GB: 1.06
+              n: 150595
+              wall_h: 0.009
+              peak_GB: 1.36
               threads: 2
             thermal:candidate:T1:
-              n: 708819
-              wall_h: 0.041
-              peak_GB: 4.55
+              n: 1088108
+              wall_h: 0.063
+              peak_GB: 6.71
               threads: 2
             thermal:candidate:T2:
-              n: 5350885
-              wall_h: 0.312
-              peak_GB: 31.05
+              n: 8242103
+              wall_h: 0.481
+              peak_GB: 47.55
               threads: 2
-        end_date_if_start: '2026-11-18'
-    peak_memory_per_reference_GB: *id005
-    statement: 'Sizes are 2D_Case_4 proxies for both public references (2D_Case_2R and 2D_Case_6 were not loaded; re-run --plan
-      on T0263''s reconstructions). One 8-vCPU VM at a time (founder, 2026-11-09), two threads per solve, four 0.25 mm solves
-      at once. Phase A on n2d-custom-8-81920-ext (66 GB usable); phase B = the F6(e) finite-volume level-3 solve (Case 4 size:
-      235 M cells, ~350 GB at E009''s 1,500 B/cell; nothing else exceeds 31 GB) alone on the same VM resized to ~416 GB of
-      N2D extended memory (N2D allows 768 GB; the free-trial quota must allow it, founder to check; it is above the ''~150+
-      GB'' named in the founder''s constraint: if ~150 GB is the ceiling, F6(e) cannot run at Case 4 size and E008 gives no
-      verdict, so the date then waits on a founder decision, see founder_decisions_before_registration). PHASE B TIME (T0306,
-      replaces the unmeasured 1e-4 s/cell): 3.59 h incl. 0.25 h resize, $12.63 at 3.5188 $/h, from the measured finite-volume
-      rate (2D_Case_4 level 1 on one Mac core, mean of two runs, 5.613e-06 s/cell, wall ~ cells^1.140 from its level 0 ->
-      1 step, x 5.1 Mac -> VM measured on identical FV solves (E2); cost_model.fv_rate_basis; a second route from the VM''s
-      own level-3 rate gives 2.37-2.77 h for the solve); range 1.03-6.76 h, $3.64-$23.79 (low: exponent 1.042 and x 1.8; high:
-      exponent 1.28 and x 5.55), i.e. E008 39.85-45.57 VM-hours expected. Before T0306 phase B was 6.77 h, $23.83. Expected
-      (near ties 3, 1 thermal batch): 42.4 VM-hours, $36.39, 339.2 billed vCPU-hours, 234.6 process CPU-hours, end 2026-11-17
-      if started 2026-11-16. Upper (15 near ties, 2 batches, 8 null checks): 56.35 VM-hours, $44.93, 450.8 billed vCPU-hours,
-      308.3 process CPU-hours, end 2026-11-18. Before registration, on the same VM: the full-fidelity dev run (~10-12 VM-hours,
-      Spot allowed, ~$7) and the snapping check for each off-grid reference (two 0.125 mm solves, ~61 GB and ~12 h each; two
-      at once on ~144 GB, ~24 h, ~$28). DATE: 2026-11-24 is reachable (E008 ends 2026-11-17/18 if it starts 2026-11-16, six
-      days of slack) provided the reconstructions, the snapping checks and registration are done by 2026-11-16 and phase B''s
-      ~416 GB is allowed (or the spot check moves to a smaller AlN reference); the earliest E008 end is about 2026-11-17.
-      If neither holds, 2026-11-24 is unreachable and no earliest date exists until the founder decides F6(e). BUDGET: USD
-      fits (E008 $36.39-$44.93, all VM work ~$84-99 (the earlier ~$95-110 less the phase-B change of $11.20), budget.usd 250;
-      the free-trial credit balance is not in the repository). CPU-HOURS IS THE ITEM THAT BREAKS: budget.cpu_hours 320 holds
-      for E008 alone only as process CPU time (234.6-308.3 h, the upper end 4 % below 320); counted as billed vCPU-hours (8
-      x VM-hours, what the cap and the bill measure) E008 needs 339.2-450.8 and, with the dev run (8 x 10-12 VM-hours) and
-      the snapping checks (8 x 24 h), about 611-739. Founder decision: which reading of cpu_hours applies, or raise it.'
+        end_date_if_start: '2026-11-16'
+    scenario:
+      cases: 'references expected to be counted: [''2D_Case_2R''] (D0019: [''2D_Case_6''] expected excluded at the twin, no
+        solve)'
+      if_all_counted:
+      - 2D_Case_2R
+      - 2D_Case_6
+    if_all_counted:
+      expected:
+        references:
+        - 2D_Case_2R
+        - 2D_Case_6
+        near_ties: 3
+        thermal_batches: 1
+        null_extra_checks: 0
+        n_solves: 182
+        phase_a_hours: 10.69
+        phase_b_big_memory_jobs:
+        - job: 2D_Case_2R:fv:L3
+          n: 273473536
+          peak_GB: 410.7
+          machine: n2d-custom-8-499712-ext
+          ram_GB: 488.0
+          fits_n2d_768GB: true
+          fits_150GB: false
+          hours: 4.22
+          usd: 17.48
+          usd_per_h: 4.138
+          sensitivity:
+            low:
+              hours: 1.17
+              usd: 4.84
+            high:
+              hours: 8.16
+              usd: 33.78
+        - job: 2D_Case_6:fv:L3
+          n: 247812096
+          peak_GB: 372.2
+          machine: n2d-custom-8-450560-ext
+          ram_GB: 440.0
+          fits_n2d_768GB: true
+          fits_150GB: false
+          hours: 3.8
+          usd: 14.16
+          usd_per_h: 3.7252
+          sensitivity:
+            low:
+              hours: 1.08
+              usd: 4.02
+            high:
+              hours: 7.23
+              usd: 26.92
+        phase_b_hours: 8.03
+        phase_b_usd: 31.64
+        phase_b_sensitivity:
+          low:
+            phase_b_hours: 2.25
+            phase_b_usd: 8.86
+            vm_hours: 12.94
+            usd: 15.41
+            billed_vcpu_hours: 103.5
+          high:
+            phase_b_hours: 15.39
+            phase_b_usd: 60.7
+            vm_hours: 26.08
+            usd: 67.24
+            billed_vcpu_hours: 208.6
+        vm_hours: 18.71
+        usd: 38.18
+        billed_vcpu_hours: 149.7
+        process_cpu_hours: 70.8
+        peak_GB_per_reference: &id002
+          2D_Case_2R:
+            em: 6.2
+            thermal: 47.6
+            fv: 410.7
+          2D_Case_6:
+            em: 4.8
+            thermal: 50.1
+            fv: 372.2
+        per_solve_on_vm: as in cases (2D_Case_2R sizes)
+        end_date_if_start: '2026-11-16'
+      upper:
+        references:
+        - 2D_Case_2R
+        - 2D_Case_6
+        near_ties: 15
+        thermal_batches: 2
+        null_extra_checks: 8
+        n_solves: 350
+        phase_a_hours: 23.84
+        phase_b_big_memory_jobs:
+        - job: 2D_Case_2R:fv:L3
+          n: 273473536
+          peak_GB: 410.7
+          machine: n2d-custom-8-499712-ext
+          ram_GB: 488.0
+          fits_n2d_768GB: true
+          fits_150GB: false
+          hours: 4.22
+          usd: 17.48
+          usd_per_h: 4.138
+          sensitivity:
+            low:
+              hours: 1.17
+              usd: 4.84
+            high:
+              hours: 8.16
+              usd: 33.78
+        - job: 2D_Case_6:fv:L3
+          n: 247812096
+          peak_GB: 372.2
+          machine: n2d-custom-8-450560-ext
+          ram_GB: 440.0
+          fits_n2d_768GB: true
+          fits_150GB: false
+          hours: 3.8
+          usd: 14.16
+          usd_per_h: 3.7252
+          sensitivity:
+            low:
+              hours: 1.08
+              usd: 4.02
+            high:
+              hours: 7.23
+              usd: 26.92
+        phase_b_hours: 8.03
+        phase_b_usd: 31.64
+        phase_b_sensitivity:
+          low:
+            phase_b_hours: 2.25
+            phase_b_usd: 8.86
+            vm_hours: 26.09
+            usd: 23.46
+            billed_vcpu_hours: 208.7
+          high:
+            phase_b_hours: 15.39
+            phase_b_usd: 60.7
+            vm_hours: 39.23
+            usd: 75.29
+            billed_vcpu_hours: 313.9
+        vm_hours: 31.87
+        usd: 46.23
+        billed_vcpu_hours: 255.0
+        process_cpu_hours: 102.6
+        peak_GB_per_reference:
+          2D_Case_2R:
+            em: 6.2
+            thermal: 47.6
+            fv: 410.7
+          2D_Case_6:
+            em: 4.8
+            thermal: 50.1
+            fv: 372.2
+        per_solve_on_vm: as in cases (2D_Case_2R sizes)
+        end_date_if_start: '2026-11-17'
+    f6e_spot_check_of_excluded_type:
+      2D_Case_6:
+        n_solves: 7
+        phase_a_hours: 0.61
+        phase_b_big_memory_jobs:
+        - job: 2D_Case_6:fv:L3
+          n: 247812096
+          peak_GB: 372.2
+          machine: n2d-custom-8-450560-ext
+          ram_GB: 440.0
+          fits_n2d_768GB: true
+          fits_150GB: false
+          hours: 3.8
+          usd: 14.16
+          usd_per_h: 3.7252
+          sensitivity:
+            low:
+              hours: 1.08
+              usd: 4.02
+            high:
+              hours: 7.23
+              usd: 26.92
+        phase_b_hours: 3.8
+        phase_b_usd: 14.16
+        phase_b_sensitivity:
+          low:
+            phase_b_hours: 1.08
+            phase_b_usd: 4.02
+            vm_hours: 1.69
+            usd: 4.4
+            billed_vcpu_hours: 13.5
+          high:
+            phase_b_hours: 7.23
+            phase_b_usd: 26.92
+            vm_hours: 7.84
+            usd: 27.29
+            billed_vcpu_hours: 62.7
+        vm_hours: 4.41
+        usd: 14.54
+        billed_vcpu_hours: 35.3
+        process_cpu_hours: 6.4
+    peak_memory_per_reference_GB: *id002
+    statement: 'REAL SIZES (T0320, --check-references on the frozen reconstructions, D0019 item 4: rebuild, fingerprint and
+      mesh counts only). 2D_Case_2R: l2_layout 1,491,140 unknowns at 0.25 mm (Case 4 proxy 4,108,580), scikit-fem DOFs [77966,
+      560979, 4239845] at levels 0-2 (proxy [51098, 365435, 2752565]: the real thermal grids are 1.5x larger), FV box cells
+      [4273024, 34184192, 273473536] (level 3 = level 2 x 8; proxy 234.8 M). 2D_Case_6: 1,095,080, [81714, 590079, 4469229],
+      [3872064, 30976512, 247812096]. Candidate DOFs: the reference''s x the Case 4 candidate/reference ratio (no candidate
+      generated, D0019 item 4); screens at the 0.45 s slow end. EXPECTED SET (D0019: 2D_Case_6 excluded at its twin, TwinError
+      in prepare() before any solve, so no job of it): expected (near ties 3, 1 batch) 12.13 VM-hours, $22.32, 97.0 billed
+      vCPU-hours, 40.0 process CPU-hours; upper (15 near ties, 2 batches, 8 null checks) 18.17 VM-hours, $26.02, 145.4 billed
+      vCPU-hours, 56.9 process CPU-hours. IF 2D_Case_6 WERE NOT EXCLUDED: expected 18.71 VM-hours, $38.18, 149.7 billed vCPU-hours,
+      70.8 process CPU-hours; upper 31.87 VM-hours, $46.23, 255.0 billed vCPU-hours, 102.6 process CPU-hours. Phase B is inside
+      these: the F6(e) finite-volume level-3 solve of 2D_Case_2R (273,473,536 cells, peak 410.7 GB at E009''s 1,500 B/cell)
+      runs alone on the VM resized to n2d-custom-8-499712-ext (488 GB, $4.138/h): 4.22 h, $17.48 (range 1.17-8.16 h, $4.84-$33.78).
+      F6(e) ON 2R DOES NOT FIT IN 150 GB (needs ~488 GB; N2D allows 768 GB); every other solve peaks at or below 47.6 GB (phase
+      A, 66.3 GB usable). F6(e) OF 2D_Case_6''s OWN STACK TYPE when 2D_Case_6 is excluded: the runner runs NEITHER a spot
+      check NOR a report of that type (Run.drive takes the types from the references that reach it; the exclusion itself is
+      reported); a spot check would cost 4.41 VM-hours, $14.54 (calibration, scikit-fem levels 0-2 and FV levels 1-3 of the
+      reconstruction; FV level 3 247,812,096 cells, 372.2 GB on n2d-custom-8-450560-ext), a report costs nothing. BUDGET:
+      USD fits (E008 $22.32-$46.23 over both scenarios, budget.usd 250); cpu_hours 320 holds on every reading for E008 alone:
+      billed vCPU-hours 97.0-145.4 (expected set) or 149.7-255.0 (if 2D_Case_6 were counted); process CPU-hours 40.0-102.6.
+      Not included: the full-fidelity dev run (~10-12 VM-hours, ~80-96 billed vCPU-hours) and no snapping check (both references
+      on the 0.5 mm grid, D0019). DATE: E008 ends 2026-11-16-2026-11-17 if started 2026-11-16, provided the ~488 GB resize
+      is allowed (founder item F6(e) memory).'
+  f3_declared_deviation:
+    decision: D0019 item 2 (founder session 2026-11-12)
+    statement: 'DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before
+      E008''s freeze (T0263 twin check, T0314 diagnosis), and E008''s runner and spec changed afterwards (T0316, T0317); no
+      inductance (l2_layout), thermal or search result of either reference existed; the removed rule is a lower bound on gate/Kelvin-wire
+      length, no power-copper, power-wire or die rule changed; src/ unchanged since T0300'
+    loaded_before_freeze:
+    - task: T0263
+      commit: 6e96ca9b
+      date: 2026-11-11 01:01:50 -0800
+      what: 'reconstructions, snapping, measure_rules, twin-space check (L0, L1 inside twin only): 2R TwinError signal_wire_length,
+        Case 6 TwinError no (orientation, sequence)'
+    - task: T0314
+      commit: e9c7fa90
+      date: 2026-11-11 10:26:59 -0800
+      what: 'twin and degradation coverage at L0/L1 on 2R, Case 6 and Case 4 (which rule binds; 2R under R1: twin exact, L1(W)/L1(ref)
+        1.0000, L1(D)/L1(W) 1.395)'
+    changed_after:
+    - task: T0316
+      commit: '79363620'
+      date: 2026-11-11 20:39:45 -0800
+      what: D0018 decisions 1-2 (D as a yardstick under the 1.5 mm power-width floor; exclusion when no valid D exists), found
+        on the dev layout 2D_Case_4
+    - task: T0317
+      commit: 8cebdb56
+      date: 2026-11-12 07:24:06 -0800
+      what: D0018 fix-list item 1 (min_signal_wire_length dropped from E008's rules), prompted by 2R; solver failures in D's
+        band solves -> INVALID (T0318 finding 0)
+    - task: T0320
+      commit: this task
+      date: '2026-11-12'
+      what: judged-reference loader, T0319 guard, registered path of full(), --check-references, real sizes in --plan; no
+        rule, gate, tolerance, generator, twin, degradation or search change
+    src_unchanged_since:
+      task: T0300
+      commit: 096b127b
+      git_date: 2026-11-10 11:31:43 -0800 (19:31 UTC; D0019 as restated in the T0320 packet says 11:31 UTC, git records 11:31
+        local time, -0800)
+    known_before_freeze:
+    - 'L0: reconstruction geometry, fingerprints, snap records, measured rules, DRC under own rules, mesh-only unknown / DOF
+      counts, stack types'
+    - 'L1 (physics.peec inside twin()/degrade()): 2R L1(W)/L1(ref) and L1(D)/L1(W) under R1 (T0314)'
+    - 'twin outcomes: 2R TwinError under raw measure_rules, twin under R1; Case 6 TwinError under every variant'
+    not_known_before_freeze:
+    - any l2_layout L_sub or band solve
+    - any thermal solve (scikit-fem or finite volume), P_ref
+    - any search, screen or candidate
+    - D of 2R under the D0018 floor
+    - twin gates
+    rules_changed: only min_signal_wire_length (a lower bound on gate/Kelvin-wire length, D0018 item 1); no power-copper,
+      power-wire or die rule changed (D0019 item 2); O003 scope_in's enumerated rules are the complete meaning of 'at least
+      as strict as the reference's own' (D0019 item 5)
+    carried_by: deviation_tag(cfg) -> every row (column f3_declared_deviation), the evaluation report, the result notes
+  judged_reference_loader:
+    function: e008_run.judged_reference (rebuild_reconstruction, e008_rules, spec_from_layout with the entry's keepout_nets)
+    order: 'fingerprint and grid flag checked first (ReferenceRefused: the run is void); then e008_rules (no overrides) and
+      the spec; prepare() refuses any spec without e008_rules'' rules_record or with min_signal_wire_length set (review T0319
+      finding 0, RulesGuardError)'
+    seeds: 'config.seeds: reference index i in config.references order (derive_seed(sealed, purpose, i))'
+    resume: every solve writes one result file under the workdir (--workdir, else $E008_WORKDIR, else <run_dir>/work); a rerun
+      re-solves nothing that exists; run_manifest.json refuses a workdir written under another config or seed
+    d0019_item_4: 'until this loader is frozen in a registered spec, 2D_Case_2R and 2D_Case_6 are only rebuilt (--check-references:
+      fingerprints and mesh counts); tested end to end on fake layouts (selftest) and on the dev layouts'
 sealed_seed: true
 metrics:
 - name: headroom_min_lo
   unit: ''
   description: 'A1. min over counted references of h_lo = a (1 - r (1 + w)), twin rule first, conservative interval Tj test
     against the twin (mfos.metrics.headroom_min_lo). The band is inside the value (interval form; objective uncertainty: point),
-    level 0.0, no CI.'
+    level 0.0, no CI. Every statement of it carries the label ''public benchmarks, low power, indicative'' and the declared
+    F3 deviation (config.f3_declared_deviation, D0019 item 2)'
 - name: headroom_max_hi_ind
   unit: ''
   description: K1. max over counted references of h_hi from the inductance-only best, levelling first, twin rule, near ties
-    (mfos.metrics.headroom_max_hi_ind). May be +inf.
+    (mfos.metrics.headroom_max_hi_ind). May be +inf. Every statement of it carries the label 'public benchmarks, low power,
+    indicative' and the declared F3 deviation (config.f3_declared_deviation, D0019 item 2)
 - name: headroom_min_lo_Lterm0
   unit: ''
   description: 'secondary: headroom_min_lo with L_term = 0'
@@ -899,46 +1339,66 @@ metrics:
   unit: ''
   description: 'F6(e): max over the non-default stack types with a spot check (first admissible reference of the type) of
     max_gci_consistency on that type''s spot-check reference; NaN if any is NaN'
+- name: n_excluded_references
+  unit: ''
+  description: references excluded and reported (TwinError, DegradeError, D_misses_1p25_in_L_sub; D0018); D0019 expects 1
+    (2D_Case_6, TwinError)
 sanity_checks:
 - name: freeze_hashes
-  description: 'F3: every freeze file sha256 equals config.freeze; checked before any reference is loaded'
+  description: 'F3: every config.freeze file sha256 (the T0263 reconstruction script included, D0019) equals config.freeze,
+    and the D0018 power-width floor equals the runner constant; checked before any reference is loaded (registered_run: a
+    failure voids the run)'
 - name: grid_rule_frozen
-  description: 'F6(b): the GridRule file sha256 0226b770...0e9a and key for key equal config.fem_rule'
+  description: 'F6(b): the GridRule file sha256 0226b770...0e9a and key for key equal config.fem_rule (both grid_rule_file_sha256
+    and grid_rule_key_for_key)'
 - name: thermal_fem_sha256
   description: 'F6(b): thermal_fem.py has the bytes EV-O007-01 evaluated (a216d5fe...)'
 - name: metric_params_exact
   description: floor = 1e-3 K and tj_limit_K = 2.0 K exactly (T0283/T0284)
 - name: fail_fast_twin_and_D
-  description: 'W and D of every reference built (L1 only, D under the D0018 power-width floor) before the first l2_layout
+  description: W and D of every reference built (L1 only, D under the D0018 power-width floor) before the first l2_layout
     solve; a TwinError or DegradeError stops the reference (excluded and reported with the reason, D0018), not the run; passes
-    iff every reference that reaches Run.drive has W and D and every excluded reference carries reason, detail and stage'
+    iff every reference that reaches Run.drive has W and D and every excluded reference carries reason, detail and stage
 - name: F1b_D_definition
   description: 'per reference: L_sub(D)/L_sub(W) (1 - 2 e_R(D, W)) >= 1.25 from the band solves of D and W, which Run.drive
     runs before any search, spot check or K1 read; a reference whose finite, converged ratio misses is excluded and reported
-    (D0018 decision 2), so the per-reference checks run on the remaining references and the declared check passes iff all of
-    them pass. A non-finite L or e_R or a non-converged band solve of D or W fails it (INVALID, T0318 finding 0), never an
-    exclusion'
+    (D0018 decision 2), so the per-reference checks run on the remaining references and the declared check passes iff all
+    of them pass. A non-finite L or e_R or a non-converged band solve of D or W fails it (INVALID, T0318 finding 0), never
+    an exclusion'
 - name: F1a1_F1a2_twin_gates
   description: 'per reference (exclusion, not INVALID): inductance and thermal twin gates as headroom_per_reference computes
-    them'
+    them; the declared check passes iff both gates were computed (booleans) for every reference that reached the rows, a failed
+    gate excludes that reference (F1(a)) and is listed in the detail (declared_sanity, T0320)'
 - name: at_least_one_counted_reference
   description: 'F1(a): E008 INVALID if no reference remains'
 - name: F1b_control
-  description: h_ctrl >= h_plant - w_ctrl per reference (new sealed seed, same budget, inductance only)
+  description: 'h_ctrl >= h_plant - w_ctrl per reference (new sealed seed, same budget, inductance only) (declared check:
+    all of the per-reference checks ''F1b_control:<reference>'', one for every reference that reached the rows, a missing
+    one fails; declared_sanity, T0320)'
 - name: F1c_band_width
-  description: w <= 0.05 for the A1 best and w_ind for the inductance-only best, every reference
+  description: 'w <= 0.05 for the A1 best and w_ind for the inductance-only best, every reference (declared check: all of
+    the per-reference checks ''F1c_band_width:<reference>'', one for every reference that reached the rows, a missing one
+    fails; declared_sanity, T0320)'
 - name: F6a_own_three_grids
-  description: 'per thermal solve: fingerprint of the layout, node counts x8 +/- 15 % per level, every GCI recomputed by gci_capped'
+  description: 'per thermal solve: fingerprint of the layout, node counts x8 +/- 15 % per level, every GCI recomputed by gci_capped
+    (declared check: all of the per-reference checks ''F6a_own_three_grids:<reference>'', one for every reference that reached
+    the rows, a missing one fails; declared_sanity, T0320)'
 - name: F6c_energy_balance
   description: '|Q_out/Q_in - 1| <= 1e-6 on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e) finite-volume
-    spot-check solves (T0305 finding 5); NaN-aware maximum, a NaN or infinite value fails (T0308 finding 5)'
+    spot-check solves (T0305 finding 5); NaN-aware maximum, a NaN or infinite value fails (T0308 finding 5) (declared check:
+    all of the per-reference checks ''F6c_energy_balance:<reference>'', one for every reference that reached the rows, a missing
+    one fails; declared_sanity, T0320)'
 - name: F6c_picard
   description: 'last Picard max|dT| <= 1e-4 K on every thermal solve: scikit-fem levels 0-2, the calibration and the F6(e)
     finite-volume spot-check solves, whose picard_dT child_fv records from the ThermalResult meta (T0307 finding 0), so the
-    gate is shown, not implied by solve_layout_level''s default tolerance. F6(c) maxima are NaN-aware: a NaN or infinite
-    energy balance or Picard residual fails F6(c) (T0308 finding 5); a spot-check record without picard_dT counts as NaN'
+    gate is shown, not implied by solve_layout_level''s default tolerance. F6(c) maxima are NaN-aware: a NaN or infinite energy
+    balance or Picard residual fails F6(c) (T0308 finding 5); a spot-check record without picard_dT counts as NaN (declared
+    check: all of the per-reference checks ''F6c_picard:<reference>'', one for every reference that reached the rows, a missing
+    one fails; declared_sanity, T0320)'
 - name: F6d_operating_point
-  description: the reconstruction's level-0 hottest-die rise at P_ref within 60 +/- 1 K before any candidate solve
+  description: 'the reconstruction''s level-0 hottest-die rise at P_ref within 60 +/- 1 K before any candidate solve (declared
+    check: all of the per-reference checks ''F6d_operating_point:<reference>'', one for every reference that reached the rows,
+    a missing one fails; declared_sanity, T0320)'
 - name: F6e_stack_type_spot_check
   description: 'max_gci_consistency (scikit-fem L0-2 vs thermal_fv L1-3, cap 0.25 K, floor 1e-3 K) <= 1 on every die of one
     reference per non-default stack type (AlN). Stack type = the substrate layers, the die-attach and die layers, each by
@@ -946,22 +1406,24 @@ sanity_checks:
     of the reference layout and of its derivative spec''s die, the thicknesses the thermal solvers use (T0308 finding 1);
     default = C004''s Al2O3 DBC stack with dies of the default thicknesses. Rounding rule (T0310 finding 3): every thickness
     in the signature as integer nanometres (round half to even of t / 1 nm), every k to 9 significant digits, so a difference
-    by float rounding alone does not make a new type (a NaN or infinite thickness raises: no type, the reference stops).
-    A NaN or infinite Tj in any of the six levels of a spot-check die gives that die A3 = NaN, which fails the per-type check
-    and the aggregate (T0310 finding 2). The spot-check reference of a type is its first
-    ADMISSIBLE reference in config.references order (T0307 finding 1, T0308 finding 2). A non-default type with no admissible
-    reference gets no spot check and no per-type check: it is reported in the evaluation report under F6e.<type> with reference
-    null and status ''no admissible reference'', and in this check''s detail (no_admissible_reference), not failed (reading
-    of scope_in''s ''every stack type'' as every type of the D0010 reference set, which holds admissible references only;
-    an inadmissible reference contributes no rows). One check F6e_stack_type_spot_check:<type> per type with a spot check,
-    every one gated (a NaN or infinite A3 fails); this declared check passes only if all of them pass'
+    by float rounding alone does not make a new type (a NaN or infinite thickness raises: no type, the reference stops). A
+    NaN or infinite Tj in any of the six levels of a spot-check die gives that die A3 = NaN, which fails the per-type check
+    and the aggregate (T0310 finding 2). The spot-check reference of a type is its first ADMISSIBLE reference in config.references
+    order (T0307 finding 1, T0308 finding 2). A non-default type with no admissible reference gets no spot check and no per-type
+    check: it is reported in the evaluation report under F6e.<type> with reference null and status ''no admissible reference'',
+    and in this check''s detail (no_admissible_reference), not failed (reading of scope_in''s ''every stack type'' as every
+    type of the D0010 reference set, which holds admissible references only; an inadmissible reference contributes no rows).
+    One check F6e_stack_type_spot_check:<type> per type with a spot check, every one gated (a NaN or infinite A3 fails); this
+    declared check passes only if all of them pass'
 - name: driver_s_ref_matches_rows
   description: 'per reference: the s_ref the frozen driver was given (its near-tie window and w) equals snapping_bias of the
-    reference row, so the band solves the metric needs exist (T0304 finding 3)'
+    reference row, so the band solves the metric needs exist (T0304 finding 3) (declared check: all of the per-reference checks
+    ''driver_s_ref_matches_rows:<reference>'', one for every reference that reached the rows, a missing one fails; declared_sanity,
+    T0320)'
 - name: recompute_agrees
   description: runner metrics equal mfos.metrics and research/o003/headroom_metrics.py (rel 1e-9)
 timeout_min: 6000
-cpu_hours_est: 339.2
+cpu_hours_est: 97.0
 evidence_rules: 2
 code_under_test:
 - src/moduleforge/solvers/l2_layout.py

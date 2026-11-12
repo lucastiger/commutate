@@ -427,3 +427,132 @@ by the finite-R/e_R test. `case4_prep.py` walk_steps now prints the 7 steps, not
 - No l2_layout or thermal solve was run.
 - The 2D_Case_2R effect (T0314 R1: the twin becomes exact and D reaches 1.395) was not re-run, because the packet excludes
   2R.
+
+## 10. T0320 (2026-11-12): D0019 — judged references, the registered path, real sizes, declared F3 deviation
+Labels: **[F]** fact from files or from a command run here; **[I]** inference; **[S]** speculation.
+
+**Reference set (D0019 item 1) [F].** `config.references` holds 2D_Case_2R, then 2D_Case_6 (D0010 order). Every
+`admissibility_fields` field is filled by `research/o003/e008_dev/t0320_spec_update.py refs`. The script reads each value
+from `research/o003/references/<ref>.json`; none is typed:
+- kind public, vault_id null, label "public benchmarks, low power, indicative";
+- reconstruction fingerprints 66cb1e19…696a and 71e07ae1…4cb7;
+- source commit a1de7ced…, GPL-3.0 (facts only, D0007);
+- L_term 7 nH, from `config.L_term.public_H` (Chen 2013);
+- on_grid_0p5mm true;
+- snapping check "not required: on the 0.5 mm grid, s_ref = 0";
+- keep-out nets as T0263 recorded them.
+
+Two admissibility fields come with their basis:
+- `sic_mosfet_half_bridge: true`. Facts: the README sentence "SiC half-bridge", and MOS parts only. The net/HS-LS
+  assignment is [I], from connectivity. The part datasheet was not read.
+- `separate_antiparallel_diode_dies: false`. Fact: the layout script defines no diode part.
+
+**Loader [F].** `judged_reference` calls `rebuild_reconstruction` first. That function imports the frozen T0263 script
+by path and calls its `snapped()`. It then compares the fingerprint and the 0.5 mm grid flag with the entry. Any mismatch,
+missing field, or non-public kind raises `ReferenceRefused` (the run is void). Only after that does the loader run
+`e008_rules` (no overrides) and `spec_from_layout` with the entry's keep-outs.
+
+The reconstruction script's sha256 (aa96880c…) is now in `config.freeze`, and `--verify-freeze` checks it.
+
+`prepare()` now raises `RulesGuardError` (review T0319 finding 0) unless both hold:
+- `rc.info.rules_record` was written by `e008_rules` and drops exactly `min_signal_wire_length`;
+- `spec.rules.min_signal_wire_length is None`.
+
+The two selftest fixtures that built specs without `e008_rules` (exclusion, floor) now build them through it.
+
+**Registered path [F].** `full()` → `registered_run`, in this order:
+1. freeze checks, before any loading;
+2. no mixing of customer and public references;
+3. the workdir manifest (hashes of the config and the seed; a foreign workdir is refused; a rerun resumes from the result
+   files);
+4. `judged_reference` and `prepare` per reference, with the _quick_ok seed `derive_seed(s, 2, i)`;
+5. search seeds `derive_seed(s, 0|1, i)`;
+6. `Run.drive`, `assemble_rows`, `evaluate`;
+7. `declared_sanity`.
+
+`declared_sanity` writes every declared check name:
+- `freeze_hashes` and `grid_rule_frozen` are aggregated from the freeze checks;
+- the seven per-reference checks are all-of over the references that reached the rows, and a missing one fails;
+- `F1a1_F1a2_twin_gates` passes iff both gates were computed. A failed gate excludes the reference and is listed; it does
+  not make the run INVALID.
+
+Rows, metrics (level 0, interval form, as declared), the evaluation report artifact, domain and notes all go through
+ExperimentRun. Every row carries `label` and `f3_declared_deviation`. The report and the notes carry the label and the
+D0019 statement. `n_excluded_references` was referenced by `reporting.excluded` but not declared; it is now a declared
+metric.
+
+**Selftest `full_orchestration_failures` [F]** (exit 0). It uses the dev layouts gen2_0 (counted) and 2D_Case_4 (with a
+planted TwinError), a fake reconstruction module, fake solvers and a fake recorder. It checks:
+- a wrong fingerprint is refused, both by `judged_reference` and by `registered_run`, before any twin() call;
+- the guard refuses a `measure_rules` spec and a spec with the lower bound set;
+- every declared check and metric is recorded; A1 = 0.21290 with one counted and one excluded (TwinError);
+- the label and deviation appear in all 49 rows, in the report and in the notes;
+- the excluded reference's stack type gets no spot check and no F6e report;
+- a rerun solves 0 new jobs with equal metrics;
+- another seed is refused.
+
+Mutation check (`$TMPDIR/mut.py`, not committed): the guard disabled gives 2 failures, the fingerprint check disabled
+gives 3, and the deviation tag emptied gives 1.
+
+**Real sizes (`--check-references`, D0019 item 4) [F].** Only rebuild, fingerprint and mesh counts were run. Peak RSS was
+2.05 GB, and each reference took 82-97 s. Output: `research/o003/e008_dev/check_references.json`.
+
+| | 2D_Case_2R | 2D_Case_6 | Case 4 proxy used before |
+|---|---|---|---|
+| l2_layout unknowns, lat0.25 / lat0.5 / thk_c / thk_f / fil_f | 1,491,140 / 369,140 / 184,620 / 738,180 / 369,260 | 1,095,080 / 270,520 / 135,360 / 540,840 / 270,760 | 4,108,580 at 0.25 mm |
+| scikit-fem DOFs L0-2 (frozen rule) | 77,966 / 560,979 / 4,239,845 | 81,714 / 590,079 / 4,469,229 | 51,098 / 365,435 / 2,752,565 |
+| FV box cells L1 / L2 (built) / L3 (= L2 x 8) | 4,273,024 / 34,184,192 / 273,473,536 | 3,872,064 / 30,976,512 / 247,812,096 | 3.67 M / 29.4 M / 234.8 M |
+
+Notes on the table:
+- [F] The FV level 1 → 2 step is exactly 8.0 on both references.
+- [F] Scikit-fem growth is 7.20 and 7.56 per step (2R) and 7.22 and 7.57 (Case 6). These are inside F6(a)'s 8 ± 15 %
+  (mesh only).
+- [I] The references' thermal grids are larger than Case 4's although their outlines are smaller. The likely cause is the
+  many geometry lines and the edge grading.
+- Candidate DOFs are the reference's DOFs times Case 4's measured candidate/reference ratio. No candidate may be generated
+  (D0019 item 4). The screen rate stays at the 0.45 s/candidate slow end.
+
+**Cost (`--plan`, `plan_T0320.json`) [F, from the cost model]:**
+
+| scenario | case | VM-hours | $ | billed vCPU-h | process CPU-h |
+|---|---|---|---|---|---|
+| 2D_Case_6 excluded at its twin (D0019 expected) | expected | 12.13 | 22.32 | 97.0 | 40.0 |
+| | upper | 18.17 | 26.02 | 145.4 | 56.9 |
+| 2D_Case_6 counted | expected | 18.71 | 38.18 | 149.7 | 70.8 |
+| | upper | 31.87 | 46.23 | 255.0 | 102.6 |
+
+- `cpu_hours_est` is 97.0 (expected, billed).
+- **F6(e) on 2R does not fit in 150 GB.** FV level 3 has 273.5 M cells, peaking at 410.7 GB at 1,500 B/cell. It needs
+  n2d-custom-8-499712-ext (488 GB): 4.22 h, $17.48, range 1.17-8.16 h. It fits within N2D's 768 GB.
+- Every other solve peaks at or below 47.6 GB (candidate scikit-fem level 2).
+- When 2D_Case_6 is excluded by TwinError, the runner does **neither** a spot check nor a report of its stack type (fact,
+  asserted by the selftest). A report would cost $0. A spot check would cost 4.41 VM-hours and $14.54 (range
+  $4.40-$27.29); its FV level 3 is 247.8 M cells, 372 GB.
+- This is a new founder item. The founder items were updated:
+  - the snapping-check and `config.references` items moved to `founder_decisions_settled` (D0019);
+  - every remaining item now ends with "(T0320)" and what 2R's records settle, from files only;
+  - the budget and F6(e)-memory items were rewritten with the real numbers.
+
+**F3 deviation (D0019 item 2) [F].** `config.f3_declared_deviation` records:
+- the commits: T0263 6e96ca9b and T0314 e9c7fa90 (loaded before the freeze); T0316 79363620, T0317 8cebdb56 and this task
+  (changed afterwards);
+- what was known (L0/L1 only) and what was not (no l2_layout, thermal, search or twin-gate result);
+- that src/ is unchanged since T0300 096b127b.
+
+Git records T0300 at 2026-11-10 11:31:43 **-0800** (19:31 UTC). The packet's restatement says "11:31 UTC". This is a
+time-zone slip in the restatement, not a change; the commit is the same.
+
+**Hashes re-stamped [F].**
+- The runner sha256 is 2f94239c…30d8. It appears in E008.dev_rows.json in three places: the Case 4 record, the gen2_0 prep
+  record, and `rule_strictness_refresh` (task T0320). It was produced by re-running `case4_prep.py`, `gen2_0_prep.py T0320`
+  and `refresh_rule_strictness.py T0320`.
+- Those runs are on dev layouts, L0/L1 only. The results equal T0317's: Case 4 twin fit+signal_feet, walk 7 steps, 33/2000
+  DRC-clean samples, and gen2_0 `smoke_rows_match` true.
+- The freeze block hashes are unchanged, plus the reconstruction script.
+
+**Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search call on 2D_Case_2R or 2D_Case_6. No VM script.
+No dev run. No founder item decided.
+**What would prove this wrong:**
+- a registered rebuild whose fingerprint differs (it would refuse);
+- a measured FV level-3 count that is not L2 × 8;
+- a 2R twin that is not built under E008's rules at registration. This is T0314 R1, which predates the D0018 floor.
