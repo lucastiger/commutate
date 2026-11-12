@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Nothing yet makes the judged-reference loader use e008_rules",
+      "detail": "Today the change only affects the two dev spec builders in dev_reference, and on both of them it has no effect (verified). The references the rule actually matters for are the judged ones, and their loader in full() is not written yet (full() raises NotImplementedError). The YAML and the docstring say that loader 'must use' e008_rules, but nothing in prepare(), Run or freeze_checks checks this. For example, nothing requires rc.info['rules_record'] or rc.spec.rules.min_signal_wire_length is None. A future loader that calls measure_rules directly would quietly bring the lower bound back.",
+      "evidence": "grep of e008_run.py: 'rules_record' appears only in the dev_reference branches (lines 748 and 755) and in the docstring; full() at line 2824 raises NotImplementedError; there is no assertion on min_signal_wire_length outside signal_rule_failures.",
+      "suggested_check": "Add a guard in prepare() that fails if rc.spec.rules.min_signal_wire_length is not None or rc.info lacks a rules_record from e008_rules.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The dropped field also removes the lower bound on Kelvin wires",
+      "detail": "measure_rules sets min_signal_wire_length to the minimum over gate and Kelvin wires together (rules.py lines 514-515 and 564), so dropping it also removes the lower bound on Kelvin-wire length. D0018 item 1 names this field explicitly, and the YAML says 'gate/Kelvin-wire', so this is consistent. The claim's short title, 'minimum gate-wire length', understates what is dropped.",
+      "evidence": "rules.py line 514 builds sig_len over SIGNAL_PADS; line 564 sets sl_lo = min(sig_len_all).",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Stricter measured signal-wire rules are kept although D0018's reading would allow dropping them",
+      "detail": "D0018 treats O003 scope_in's enumerated rules as the complete meaning of 'at least as strict'. That list does not include the measured signal-wire diameter range or the combined max_signal_wire_length, yet e008_rules keeps both. Keeping them is conservative and matches the decision's wording, which drops only min_signal_wire_length, so this is not a defect. The founder may want to know about the asymmetry.",
+      "evidence": "objective.yaml lines 61-63 list bondability only as gate/Kelvin pad-to-copper upper bounds and no crossing; e008_rules keeps min/max_signal_wire_diameter and max_signal_wire_length.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The diff also contains T0318 finding-0 and finding-4 work outside the claim's title",
+      "detail": "Most of the diff handles solver failures in D's definition (band_solve_failures, Run.d_failed, _evaluate_d_failed, the early return in drive) and adds selftest cases. That is outside 'drop the measured minimum gate-wire length'. I checked it anyway. With band_solve_failures disabled, the non-converged case fails 3 selftest assertions, as the design note says. The real l2_layout em job record carries gmres_flags and solver_tol_rel_L_max (runner line 407), so failing closed on a missing key does not reject real records.",
+      "evidence": "My mutation run: 'selftest exclusion (D0018): 9 cases, 3 failures', all in nonconverged_band_is_invalid.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Gate wires shorter than a real bondable minimum would go unflagged on judged references",
+      "detail": "With the lower bound gone, a judged twin or candidate can land gate wires at the nearest copper with no minimum length. info.gate_wires reports the shortest gate wire against the 1.5 mm placeholder but does not gate it. The founder accepted this risk in D0018, and the design note states it as an inference [I].",
+      "evidence": "gate_wire_report sets 'gated': False; DesignRules.min_wire_length is checked on power wires only (rules.py line 284).",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e008_run.py --selftest`: exit 0, 'selftest passed'. The signal-rule case reproduces the stated numbers: reference gate wires 14.044-15.640 mm, twin shortest 12.052 mm, longer twin wire 16.133 mm gives ['signal_wire_length'].",
+    "Mutation test of signal_rule_failures with DROPPED_MEASURED_RULES = () (lower bound kept): the selftest reports 2 failures, including the twin raising a signal_wire_length TwinError. The test can see the rule.",
+    "Mutation test that also drops max_signal_wire_length: caught ('did not drop exactly the lower bound'). Mutation that also drops max_gate_wire_length: dev_reference raises ValueError, so the selftest would crash.",
+    "Mutation test with band_solve_failures disabled (T0318 part): exclusion_failures reports 3 failures in nonconverged_band_is_invalid, matching the author's claim.",
+    "Compared rules for 2D_Case_4 independently: dev_reference spec rules against raw measure_rules on the reconstruction. They differ only in the 5 dev overrides (max_wire_length, min_wire_pitch, wire_pitch_diameters, max_gate/kelvin_wire_length). The reconstruction has 0 signal wires, so min_signal_wire_length is None both ways.",
+    "Checked halfbridge_housing_spec(2, 3, 4).rules.min_signal_wire_length: None in all three. The gen2_0 E008 spec rules equal the generator spec's rules (fields_changed []). This confirms the 'no dev effect' claim.",
+    "Checked that the Case 4 D fingerprint 6d63ff8f in E008.dev_rows.json sits in unchanged context of the diff, and that the gen2_0 reconstruction and twin fingerprints (aade6489) match the stored smoke rows.",
+    "Traced how rules flow: W.twin, d_spec, the _quick_ok samples, run_search and run_control all take rc.spec or its rules. grep finds no other measure_rules call in src/ or in the runner's spec builders, and every dev script goes through dev_reference.",
+    "Checked the cited lines: objective.yaml lines 61-63 (bondability upper bounds) and rules.py line 587 (min_signal_wire_length = sl_lo).",
+    "Ran these done-commands: --verify-freeze (exit 0, 13 OK lines), ruff on the runner (pass), mfos exp check E008 (exit 0), the thermal_fem sha256 prefix (a216d5fe3209bcee), the YAML key-presence check (ok), and `uv run mfos gate --fast` (exit 0, 'all gates passed')."
+  ],
+  "caveats": [
+    "The DoD's `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance project/objectives project/decisions` could not be run. The review worktree has one 'review snapshot' commit and no main ref, and the guard hook blocks merge-base. The orchestrator must check this.",
+    "The change has no effect on any reference the runner can build today: neither dev reference had a lower bound to drop. Whether it applies to the judged references depends on the not-yet-written full() loader calling e008_rules. A planted-geometry selftest covers this, but no run does.",
+    "Whether dropping the bound is the right reading of O003 'at least as strict' is the founder's call (D0018); I did not review it."
+  ]
+}
