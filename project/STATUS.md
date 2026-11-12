@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T05:26:28+00:00 from repository state — do not edit_
+_generated 2026-11-12T05:27:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -39,7 +39,6 @@ cancelled: 39, done: 275, failed: 3, review: 1, running: 1
 - T0319 `running` critic/review: Review T0317 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-12T03:23:18+00:00 task_added {"task": "T0317", "reason": "founder fix list 2026-11-12 (D0018 item 1): drop the measured gate-wire minimum"}
 - 2026-11-12T04:15:24+00:00 run_finished {"run": "T0316-scientist-20261111T191924-cf93", "status": "completed", "cost": 5.447153, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T04:26:17+00:00 verified {"task": "T0316"}
 - 2026-11-12T04:26:23+00:00 run_started {"run": "T0318-critic-20261111T202623-2491", "task": "T0318", "role": "critic", "session": "ab78161a-0b10-47d6-99ee-1eee2b048dc7"}
@@ -54,3 +53,4 @@ cancelled: 39, done: 275, failed: 3, review: 1, running: 1
 - 2026-11-12T05:14:16+00:00 run_finished {"run": "T0317-scientist-20261111T203949-e320", "status": "completed", "cost": 3.779634, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T05:26:22+00:00 verified {"task": "T0317"}
 - 2026-11-12T05:26:28+00:00 run_started {"run": "T0319-critic-20261111T212628-8b9c", "task": "T0319", "role": "critic", "session": "e4c54619-6661-4a1f-8871-59d4ec2a33fc"}
+- 2026-11-12T05:27:03+00:00 sleep_detected {"gap_s": 768, "runs_extended": 1}
