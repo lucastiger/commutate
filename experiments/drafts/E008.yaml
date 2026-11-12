@@ -596,6 +596,18 @@ config:
     L_term 7 nH, fingerprints and the judged-reference loader (judged_reference, frozen T0263 script in config.freeze), --plan
     re-run on the real reconstructions (T0320); the snapping check is not required (both references on the 0.5 mm grid, s_ref
     = 0); declared F3 deviation in config.f3_declared_deviation (D0019 item 2)'
+  - 'F6(e) for an admissible reference EXCLUDED by TwinError, DegradeError or D''s definition (founder session 2026-11-12,
+    T0322; was the founder item "F6(e) for an admissible reference EXCLUDED at its twin", reading (b)): it contributes no rows;
+    if it is the only reference of a non-default stack type, that type is REPORTED, NOT GATED: no spot check, the evaluation
+    report lists F6e.<type> with reference null and status ''only reference excluded: <reason>'' (and excluded_references),
+    the detail of F6e_stack_type_spot_check lists it under only_reference_excluded, and the aggregate is not failed by it
+    (Run.drive spot_excluded, evaluate; selftest exclusion cases *_only_of_type and full_orchestration). For D0019''s set
+    this is 2D_Case_6 (AlN 0.64 mm, other:d34d9682c1b0) if it raises TwinError as expected: $0. A type whose references are
+    all inadmissible is the separate founder item below (unchanged)'
+  - 'T0321 findings 0 and 2 (T0322): config.f3_declared_deviation.statement and rules_changed are exact (the yardstick D''s
+    power-width floor changed, no design rule of the reference, twin or candidates on power copper, power wires or dies did);
+    registered_run and --check-references run freeze_checks before any reference is loaded and refuse on any mismatch (selftest:
+    a wrong sha256 for the reconstruction script, a counting fake snapped()/build() never called)'
   founder_decisions_before_registration:
   - 'the band check (e_R on >= 4 twin-vs-random pairs) and Case 4''s twin gates come from the full-fidelity dev run on the
     VM (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either (T0320) 2R''s records
@@ -674,12 +686,6 @@ config:
     not re-run (D0019 item 4)'
   - E009-registered smoke thermal rule for local smoke rows; the earlier smoke rule did not fit the Mac (research/notes/e008-design.md
     section 3) (T0320) 2R's records settle nothing here (dev rows only)
-  - 'F6(e) for an admissible reference EXCLUDED at its twin (2D_Case_6, expected; T0320 fact): the runner runs NEITHER a spot
-    check NOR a report of its stack type (Run.drive collects the types from the references that reach it; evaluate reports
-    the exclusion under ''excluded'' only); verified by the selftest (full_orchestration). Readings: (a) neither (as implemented):
-    $0; (b) report the type as ''reference excluded, no spot check'' (not gated): $0; (c) spot check the excluded reference''s
-    reconstruction (calibration, scikit-fem L0-2, FV L1-3): 4.41 VM-hours, $14.54 (range $4.4-$27.29), FV level 3 247,812,096
-    cells, 372.2 GB on n2d-custom-8-450560-ext. The founder chooses one at registration'
   cost_estimate:
     filled_by: e008_run.py --plan (T0320, real reference sizes; research/o003/e008_dev/plan_T0320.json)
     threads_per_solve: 2
@@ -1221,9 +1227,9 @@ config:
       these: the F6(e) finite-volume level-3 solve of 2D_Case_2R (273,473,536 cells, peak 410.7 GB at E009''s 1,500 B/cell)
       runs alone on the VM resized to n2d-custom-8-499712-ext (488 GB, $4.138/h): 4.22 h, $17.48 (range 1.17-8.16 h, $4.84-$33.78).
       F6(e) ON 2R DOES NOT FIT IN 150 GB (needs ~488 GB; N2D allows 768 GB); every other solve peaks at or below 47.6 GB (phase
-      A, 66.3 GB usable). F6(e) OF 2D_Case_6''s OWN STACK TYPE when 2D_Case_6 is excluded: the runner runs NEITHER a spot
-      check NOR a report of that type (Run.drive takes the types from the references that reach it; the exclusion itself is
-      reported); a spot check would cost 4.41 VM-hours, $14.54 (calibration, scikit-fem levels 0-2 and FV levels 1-3 of the
+      A, 66.3 GB usable). F6(e) OF 2D_Case_6''s OWN STACK TYPE when 2D_Case_6 is excluded: REPORTED, NOT GATED (founder decision 2026-11-12,
+      T0322; founder_decisions_settled): no spot check, F6e.<type> with reference null and status ''only reference excluded:
+      <reason>''; $0. For the record only, a spot check would cost 4.41 VM-hours, $14.54 (calibration, scikit-fem levels 0-2 and FV levels 1-3 of the
       reconstruction; FV level 3 247,812,096 cells, 372.2 GB on n2d-custom-8-450560-ext), a report costs nothing. BUDGET:
       USD fits (E008 $22.32-$46.23 over both scenarios, budget.usd 250); cpu_hours 320 holds on every reading for E008 alone:
       billed vCPU-hours 97.0-145.4 (expected set) or 149.7-255.0 (if 2D_Case_6 were counted); process CPU-hours 40.0-102.6.
@@ -1234,8 +1240,13 @@ config:
     decision: D0019 item 2 (founder session 2026-11-12)
     statement: 'DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before
       E008''s freeze (T0263 twin check, T0314 diagnosis), and E008''s runner and spec changed afterwards (T0316, T0317); no
-      inductance (l2_layout), thermal or search result of either reference existed; the removed rule is a lower bound on gate/Kelvin-wire
-      length, no power-copper, power-wire or die rule changed; src/ unchanged since T0300'
+      inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the
+      twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018
+      decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged
+      since T0300'
+    wording: 'T0322 (review T0321 finding 0): the statement and rules_changed were made exact; before, they said no power-copper
+      rule changed, while the power-width floor of the yardstick D (D0018 decision 1, T0316) did. The same statement is carried
+      verbatim by every row, the evaluation report, the notes and research/notes/e008-design.md (selftest: full_orchestration)'
     loaded_before_freeze:
     - task: T0263
       commit: 6e96ca9b
@@ -1263,6 +1274,12 @@ config:
       date: '2026-11-12'
       what: judged-reference loader, T0319 guard, registered path of full(), --check-references, real sizes in --plan; no
         rule, gate, tolerance, generator, twin, degradation or search change
+    - task: T0322
+      commit: this task
+      date: '2026-11-12'
+      what: 'review T0321 findings 0 and 2 (exact deviation wording; freeze checks before any reference is loaded, also in
+        --check-references), F6(e) report-only for a type whose only reference is excluded (founder decision), phase A stop
+        and phase B resume for burst_full.sh; no rule, gate, tolerance, generator, twin, degradation or search change'
     src_unchanged_since:
       task: T0300
       commit: 096b127b
@@ -1279,10 +1296,15 @@ config:
     - any search, screen or candidate
     - D of 2R under the D0018 floor
     - twin gates
-    rules_changed: only min_signal_wire_length (a lower bound on gate/Kelvin-wire length, D0018 item 1); no power-copper,
-      power-wire or die rule changed (D0019 item 2); O003 scope_in's enumerated rules are the complete meaning of 'at least
-      as strict as the reference's own' (D0019 item 5)
-    carried_by: deviation_tag(cfg) -> every row (column f3_declared_deviation), the evaluation report, the result notes
+    rules_changed: 'no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed
+      (D0019 item 2); the power-width floor of the yardstick D did (D0018 decision 1, T0316: D is built under min(reference
+      minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R''s own 4.0 mm); the change
+      prompted by 2R removed the lower bound on gate and Kelvin wire length (min_signal_wire_length, D0018 item 1, T0317);
+      O003 scope_in''s enumerated rules are the complete meaning of ''at least as strict as the reference''s own'' (D0019 item
+      5)'
+    carried_by: deviation_tag(cfg) -> every row (column f3_declared_deviation, the full statement since T0322), the evaluation
+      report (f3_declared_deviation and deviation_statement), the result notes; quoted verbatim in research/notes/e008-design.md
+      section 11
   judged_reference_loader:
     function: e008_run.judged_reference (rebuild_reconstruction, e008_rules, spec_from_layout with the entry's keepout_nets)
     order: 'fingerprint and grid flag checked first (ReferenceRefused: the run is void); then e008_rules (no overrides) and

@@ -542,6 +542,69 @@ class Pending(Exception):
         self.jobs = jobs
 
 
+PHASE_B_EXIT = 75  # EX_TEMPFAIL: phase A finished, only jobs above this machine's memory remain (T0322, burst_full.sh)
+PHASE_B_FILE = "phase_b_needed.json"
+
+
+class NeedsLargerMachine(RuntimeError):
+    """Phase A is complete: nothing runs and every queued job is above the solo cap of this machine (Scheduler with
+    defer_big).  The registered run stops without a result (full(): exit PHASE_B_EXIT) and resumes from its own workdir
+    on the same VM resized to the machine --plan names (research/o003/e008_dev/burst_full.sh)."""
+
+    def __init__(self, jobs: list[dict], solo_GB: float):
+        super().__init__(f"{len(jobs)} job(s) above {solo_GB:.1f} GB remain: resize the VM (phase B)")
+        self.jobs, self.solo_GB = jobs, solo_GB
+
+
+def phase_b_machine(mem_GB: float, vm: dict) -> tuple[float, str]:
+    """--plan's phase-B machine for a job of ``mem_GB`` (shared by _cost_jobs and phase_stop): RAM rounded up to 8 GB at
+    vm['memory_fraction'] -> (ram_GB, N2D custom extended-memory type with 8 vCPUs)."""
+    ram = math.ceil(mem_GB / vm["memory_fraction"] / 8.0) * 8.0
+    return ram, f"n2d-custom-8-{int(ram * 1024)}-ext"
+
+
+def _mem_total_GB() -> float | None:
+    """Physical memory of this machine in GiB (Linux /proc/meminfo MemTotal; macOS hw.memsize), None if unknown."""
+    try:
+        if sys.platform == "darwin":
+            return int(subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True).stdout) / 2**30
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemTotal:"):
+                return int(line.split()[1]) / 2**20
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def solo_cap_from_env(vm: dict) -> float | None:
+    """Phase B (burst_full.sh): E008_SOLO_RAM_GB is the nominal RAM of the machine --plan names; a job above the packing
+    cap may then run alone up to memory_fraction x that RAM (--plan's own sizing rule).  Refused if the machine has
+    clearly less physical memory than claimed (MemTotal x 1.03 + 2 GiB; the kernel keeps ~2 % of a VM's RAM).  Scheduling
+    only: no result depends on it."""
+    v = os.environ.get("E008_SOLO_RAM_GB")
+    if not v:
+        return None
+    ram, have = float(v), _mem_total_GB()
+    if have is None:
+        raise RuntimeError("E008_SOLO_RAM_GB is set but this machine's memory cannot be read: refusing a phase-B job")
+    if ram > have * 1.03 + 2.0:
+        raise RuntimeError(f"E008_SOLO_RAM_GB {ram} GB but this machine has {have:.1f} GiB: wrong machine type")
+    return vm["memory_fraction"] * ram
+
+
+def phase_stop(e: NeedsLargerMachine, workdir: Path, vm: dict) -> dict:
+    """Write <workdir>/phase_b_needed.json (the jobs left, their GB and --plan's machine for the largest) -> its content."""
+    need = max(j["mem_GB"] for j in e.jobs)
+    ram, machine = phase_b_machine(need, vm)
+    rec = {"phase": "A complete; phase B needed", "run_id": os.environ.get("MFOS_RUN_ID"), "solo_cap_GB_here": e.solo_GB,
+           "need_GB": round(need, 1), "ram_GB_by_plan_rule": ram, "machine_by_plan_rule": machine,
+           "exit_code": PHASE_B_EXIT, "jobs": [{"out": Path(j["out"]).name, "type": j["type"], "ref": j.get("ref"),
+                                                 "level": j.get("level"), "mem_GB": round(j["mem_GB"], 1)} for j in e.jobs]}
+    workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / PHASE_B_FILE).write_text(json.dumps(rec, indent=1))
+    return rec
+
+
 def _free_pct() -> float:
     """macOS memory_pressure 'free percentage' (100 elsewhere: the VM's limit is the 0.85 x RAM cap)."""
     if sys.platform != "darwin":
@@ -557,9 +620,13 @@ class Scheduler:
     """Runs jobs concurrently in subprocesses, as many as fit in ``mem_cap_GB`` by their estimates and in ``vcpus`` by
     their thread counts.  A job whose result file exists is done.  ``fake`` (selftest) computes results in process."""
 
-    def __init__(self, mem_cap_GB: float, vcpus: int, threads: int, fake=None, solo_cap_GB: float | None = None):
+    def __init__(self, mem_cap_GB: float, vcpus: int, threads: int, fake=None, solo_cap_GB: float | None = None,
+                 defer_big: bool = False):
         self.cap, self.vcpus, self.threads, self.fake = mem_cap_GB, vcpus, threads, fake
         self.solo = max(solo_cap_GB or mem_cap_GB, mem_cap_GB)  # a job above cap runs only alone, up to solo
+        # registered run (T0322): a job above solo is queued but never launched; when nothing runs and only such jobs
+        # are queued, step() raises NeedsLargerMachine (phase A done).  Otherwise (dev, plan) it raises at submit.
+        self.defer_big = defer_big
         self.queue: dict[str, dict] = {}
         self.running: dict[str, tuple] = {}
         self.log: list[dict] = []
@@ -603,12 +670,14 @@ class Scheduler:
                 self.learn(j, rec)  # a cached result (resume) teaches the same as a finished one
             else:
                 j["mem_GB"] = self.mem_of(j)
-                if j["mem_GB"] > self.solo:
+                if j["mem_GB"] > self.solo and not self.defer_big:
                     raise RuntimeError(f"job {j['out']} needs {j['mem_GB']:.1f} GB > cap {self.solo:.1f} GB")
                 self.queue[j["out"]] = j
 
     def _launch(self) -> None:
         for key, j in sorted(self.queue.items(), key=lambda kv: (-kv[1].get("priority", 0), -kv[1]["mem_GB"])):
+            if self.defer_big and self.mem_of(j) > self.solo:  # phase B job: never on this machine
+                continue
             if self.fake is not None:
                 Path(j["out"]).write_text(json.dumps(self.fake(j) | {"status": "ok"}))
                 del self.queue[key]
@@ -635,6 +704,11 @@ class Scheduler:
     def step(self) -> None:
         """Launch what fits, then block until at least one running job ends (or return if nothing runs)."""
         self.waited = False
+        # checked BEFORE launching: the caller has just replayed every driver, so with nothing running and only jobs
+        # above this machine queued, no further progress is possible here (fake jobs run inside _launch, hence before)
+        if self.defer_big and not self.running and self.queue and \
+                all(self.mem_of(j) > self.solo for j in self.queue.values()):
+            raise NeedsLargerMachine([dict(j, mem_GB=self.mem_of(j)) for j in self.queue.values()], self.solo)
         self._launch()
         if self.waited and not self.running:
             time.sleep(60.0)
@@ -645,6 +719,9 @@ class Scheduler:
                     del self.running[key]
                     self.log.append({"out": Path(j["out"]).name, "type": j["type"], "wall_s": time.time() - t0,
                                      "rc": pr.returncode})
+                    if pr.returncode != 0 and not Path(j["out"]).exists():  # T0322: killed (OOM?) without a result:
+                        raise RuntimeError(f"job {Path(j['out']).name} exited {pr.returncode} without a result file "
+                                           "(killed, e.g. out of memory): not relaunched")
                     self.learn(j, self.done(j))  # done() raises on a failed job
                     return
             time.sleep(2.0)
@@ -901,6 +978,11 @@ def check_references(cfg: dict, out_path: str | None = None, recon=None) -> int:
     checked on 1 -> 2).  No spec, rule measurement, twin, degradation, L1, solve or search.  Exit 0 iff every fingerprint
     matches."""
     from moduleforge.solvers import thermal_layout as TL
+    fr = freeze_checks(cfg)  # T0321 finding 2: the frozen script (and every frozen hash) is verified before any import
+    bad = [c["name"] for c in fr if not c["passed"]]
+    if bad:
+        print(json.dumps({"refused": "frozen hashes or values differ: no reference rebuilt (F3)", "failed": bad}, indent=1))
+        return 1
     recon = recon or recon_module()
     rule = rule_from(cfg["fem_rule"])
     out, ok = {"rule": "D0019 item 4: rebuild + fingerprint + mesh counts only", "references": {}}, True
@@ -1299,6 +1381,9 @@ class Run:
         self.s_ref: dict[str, float] = {}  # per reference, set by s_ref_of before the main driver's first replay
         self.spot_refs: dict[str, str] = {}  # F6(e): non-default stack type -> the reference carrying its spot check
         self.spot_none: list[str] = []  # F6(e): non-default stack types with no admissible reference (no spot check)
+        # F6(e), founder decision 2026-11-12 (T0322): non-default types whose every reference was excluded (TwinError,
+        # DegradeError, D's definition), one of them admissible -> {type: {rid: reason}}; REPORTED, NOT GATED
+        self.spot_excluded: dict[str, dict] = {}
         self.l1_cache: dict[str, float] = {}
         self.size_cache: dict[tuple, int] = {}
         self.d_failed: dict[str, dict] = {}  # T0318 finding 0: references whose D/W band solves failed (INVALID)
@@ -1435,6 +1520,7 @@ class Run:
         return out
 
     def drive(self, refs: list[RefCtx], seeds: dict, scfg: dict) -> None:
+        all_refs = list(refs)
         self.drivers: dict[tuple, Driver] = {}
         self.excluded = {rc.rid: rc.excluded for rc in refs if rc.excluded is not None}  # prepare(): TwinError, DegradeError
         refs = [rc for rc in refs if rc.excluded is None]
@@ -1465,6 +1551,16 @@ class Run:
                 self.spot_none.append(st)
             else:
                 self.spot_refs[st] = rid
+        # founder decision 2026-11-12 (T0322): a non-default type whose references were ALL excluded (prepare or D's
+        # definition), at least one of them admissible, gets no spot check; it is reported (evaluate: F6e.<type> with
+        # reference None, status 'only reference excluded: <reason>'), never gated.  All-inadmissible types stay in
+        # spot_none (that reading is a separate founder item)
+        for st in sorted({rc.stack_type for rc in all_refs} - {rc.stack_type for rc in refs} - {DEFAULT_STACK}):
+            ex = [rc for rc in all_refs if rc.stack_type == st]
+            if any(rc.admissible for rc in ex):
+                self.spot_excluded[st] = {rc.rid: rc.excluded["reason"] for rc in ex}
+            else:
+                self.spot_none.append(st)
         while True:
             for (rid, _ns), d in self.drivers.items():
                 if rid not in self.P:
@@ -1704,14 +1800,22 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     # reference None) and in the aggregate's detail, not failed (Run.drive)
     none = {st: {"reference": None, "a3": None, "status": "no admissible reference of this stack type: no spot check "
                  "(not gated; its references contribute no rows)"} for st in run.spot_none}
+    # founder decision 2026-11-12 (T0322): a type whose only reference was excluded -> reported, not gated
+    gone = {st: {"reference": None, "a3": None, "excluded_references": ex,
+                 "status": ("only reference excluded: " + next(iter(ex.values()))) if len(ex) == 1 else
+                 ("all references excluded: " + "; ".join(f"{r}: {x}" for r, x in ex.items()))}
+            for st, ex in getattr(run, "spot_excluded", {}).items()}
     if a3s:
         ck("F6e_stack_type_spot_check", all(_within(v, g["a3_max"]) for v in a3s.values()), _worst(a3s.values()),
            g["a3_max"], json.dumps({"checked": {st: [run.spot_refs[st], v] for st, v in a3s.items()},
-                                    "no_admissible_reference": run.spot_none}, default=str))
+                                    "no_admissible_reference": run.spot_none,
+                                    "only_reference_excluded": {st: e["status"] for st, e in gone.items()}}, default=str))
         met["stack_type_a3"] = _worst(a3s.values())
     else:
         ck("F6e_stack_type_spot_check", True, detail="no admissible reference off C004's default Al2O3 DBC stack: not "
-           f"required; types without an admissible reference: {run.spot_none}")
+           f"required; types without an admissible reference: {run.spot_none}; only reference excluded (reported, not "
+           f"gated): {json.dumps({st: e['status'] for st, e in gone.items()})}")
+    none = none | gone
     if a3s or none:
         rep["F6e"] = {st: {"reference": run.spot_refs[st], "a3": v, "status": "checked"} for st, v in a3s.items()} | none
     # D0018: excluded references (TwinError / DegradeError in prepare, D's definition missed in Run.drive), with reasons;
@@ -2078,6 +2182,14 @@ EXCLUSION_CASES = {
     "nan_band_is_invalid": ("headroom", 2, set(), set(), {}, False, set(), {"em_nan": {"D1"}, "d_fail": {"fake1"}}),
     "nonconverged_band_is_invalid": ("headroom", 2, set(), set(), {}, False, set(),
                                      {"em_nc": {"twin0"}, "d_fail": {"fake0"}}),
+    # founder decision 2026-11-12 (T0322): the excluded reference is the only one of its non-default stack type ->
+    # F6e.<type> reported (reference None, 'only reference excluded: <reason>'), no spot check, aggregate not failed
+    "twin_error_only_of_type": ("headroom", 2, set(), set(), {"fake1": "TwinError"}, True, set(),
+                                {"twin_err": {1}, "types": {1: "other:selftestAlN"}}),
+    "degrade_only_of_type": ("headroom", 2, {1}, set(), {"fake1": "DegradeError"}, True, set(),
+                             {"types": {1: "other:selftestAlN"}}),
+    "D_miss_only_of_type": ("headroom", 2, set(), {1}, {"fake1": "D_misses_1p25_in_L_sub"}, True, set(),
+                            {"types": {1: "other:selftestAlN"}}),
 }
 EXCLUSION_STAGE = {"TwinError": "prepare", "DegradeError": "prepare", "D_misses_1p25_in_L_sub": "drive"}
 
@@ -2127,7 +2239,8 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
                 root = Path(td)
                 run = Run(cfg, root, Scheduler(1e9, 8, 2, fake=fjob), smoke=False, threads=2, fake={"l1": l1})
                 refs = [prepare(RefCtx(f"fake{k}", "dev", spec3, FakeLay(f"ref{k}", None), area_m2=0.008,
-                                       stack_type=DEFAULT_STACK, info={"rules_record": rr3}), cfg, 0, 0) for k in range(n)]
+                                       stack_type=x.get("types", {}).get(k, DEFAULT_STACK), info={"rules_record": rr3}),
+                                cfg, 0, 0) for k in range(n)]
                 seeds = {(rc.rid, ns): 2000 + 2 * i + j for i, rc in enumerate(refs) for j, ns in enumerate(("main", "control"))}
                 for rc in refs:
                     if rc.excluded is not None:
@@ -2161,6 +2274,16 @@ def exclusion_failures(cfg: dict, scfg: dict) -> list[str]:
                 rows, extra = assemble_rows(run, refs, smoke=False)
                 met, checks, rep = evaluate(run, refs, rows, extra, cfg)
             cmap = {c["name"]: c for c in checks}
+            for k, st in x.get("types", {}).items():  # T0322: reported, not gated, no spot check
+                rid, why = f"fake{k}", want.get(f"fake{k}")
+                f6 = rep.get("F6e", {}).get(st)
+                if f6 != {"reference": None, "a3": None, "excluded_references": {rid: why},
+                          "status": f"only reference excluded: {why}"} or run.spot_excluded != {st: {rid: why}}:
+                    out.append(f"exclusion/{name}: F6e.{st} {f6}, spot_excluded {run.spot_excluded}")
+                agg = cmap.get("F6e_stack_type_spot_check") or {}
+                if f"F6e_stack_type_spot_check:{st}" in cmap or not agg.get("passed") or st not in agg.get("detail", "") \
+                        or st in run.spot_refs or st in run.spot_none:
+                    out.append(f"exclusion/{name}: type {st} was gated or not listed: {agg}")
             got = {rid: e["reason"] for rid, e in rep.get("excluded", {}).items()}
             if got != want:
                 out.append(f"exclusion/{name}: excluded {got}, want {want}")
@@ -2381,6 +2504,70 @@ def _fake_screens(l1):
     return hook
 
 
+def phase_failures(cfg: dict) -> list[str]:
+    """T0322 (burst_full.sh): with defer_big a job above the solo cap is queued, never launched; the others run; then
+    step() raises NeedsLargerMachine and phase_stop names --plan's machine (2R's FV level 3, 410.7 GB ->
+    n2d-custom-8-499712-ext); E008_SOLO_RAM_GB above this machine's memory refuses; on the resized machine (solo cap
+    0.85 x 488 GB) the same workdir resumes: the finished job is not re-run, the big one runs.  Without defer_big (dev,
+    plan) the big job still raises at submit."""
+    import tempfile
+    out, vm = [], cfg["compute"]["vm"]
+    calls: list[str] = []
+
+    def fake(j):
+        calls.append(Path(j["out"]).name)
+        return {"tj": [1.0]}
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+
+        def mk(n, gb):
+            return {"out": str(root / f"{n}.json"), "type": "fv", "ref": "r", "level": n, "mem_GB": gb, "threads": 2}
+        cap = vm["ram_GB"] * vm["memory_fraction"]
+        s = Scheduler(cap, vm["vcpus"], 2, fake=fake, defer_big=True)
+        s.submit([mk("small", 10.0), mk("big", 410.7)])
+        s.step()
+        if calls != ["small.json"]:
+            out.append(f"phase: phase A ran {calls}, want small.json only")
+        try:
+            s.step()
+            out.append("phase: no NeedsLargerMachine with only a phase-B job left")
+        except NeedsLargerMachine as e:
+            r = phase_stop(e, root / "work", vm)
+            if r["machine_by_plan_rule"] != "n2d-custom-8-499712-ext" or r["ram_GB_by_plan_rule"] != 488.0 or \
+                    [j["out"] for j in r["jobs"]] != ["big.json"] or r["exit_code"] != PHASE_B_EXIT or \
+                    json.loads((root / "work" / PHASE_B_FILE).read_text()) != r:
+                out.append(f"phase: stop record {r}")
+        old, orig_mem = os.environ.get("E008_SOLO_RAM_GB"), globals()["_mem_total_GB"]
+        try:  # the machine guard with planted MemTotal values (GiB): a 488 GB VM shows ~480.7 GiB to the kernel
+            os.environ["E008_SOLO_RAM_GB"] = "488"
+            for have, ok in ((480.7, True), (78.6, False), (None, False)):
+                globals()["_mem_total_GB"] = lambda h=have: h
+                try:
+                    got = solo_cap_from_env(vm)
+                    if not ok or abs(got - vm["memory_fraction"] * 488.0) > 1e-9:
+                        out.append(f"phase: E008_SOLO_RAM_GB 488 on MemTotal {have} GiB gave solo cap {got}")
+                except RuntimeError:
+                    if ok:
+                        out.append(f"phase: E008_SOLO_RAM_GB 488 refused on MemTotal {have} GiB")
+        finally:
+            globals()["_mem_total_GB"] = orig_mem
+            os.environ.pop("E008_SOLO_RAM_GB", None)
+            if old is not None:
+                os.environ["E008_SOLO_RAM_GB"] = old
+        s2 = Scheduler(cap, vm["vcpus"], 2, fake=fake, solo_cap_GB=vm["memory_fraction"] * 488.0, defer_big=True)
+        s2.submit([mk("small", 10.0), mk("big", 410.7)])
+        s2.step()
+        if calls != ["small.json", "big.json"]:
+            out.append(f"phase: phase B ran {calls[1:]}, want big.json only (resume)")
+        try:
+            Scheduler(cap, vm["vcpus"], 2, fake=fake).submit([mk("big2", 410.7)])
+            out.append("phase: without defer_big a job above the cap was accepted")
+        except RuntimeError:
+            pass
+    log(f"selftest phase (T0322): {len(out)} failures")
+    return out
+
+
 def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
     """D0019 / T0320, end to end on the dev layouts with fake solvers and a fake recorder: the loader refuses a wrong
     fingerprint (before any twin); the T0319 guard refuses a spec without e008_rules' record and one with
@@ -2397,7 +2584,14 @@ def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
     out = []
     cfg = json.loads(json.dumps(spec["config"]))
     cfg["quick_ok_draws"] = 5
-    cfg["f3_declared_deviation"] = {"statement": "DECLARED F3 DEVIATION (D0019): selftest"}
+    tag = deviation_tag(cfg)  # T0321 finding 0: the spec's own statement, checked verbatim in rows, report and notes
+    for need in ("no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed",
+                 "the power-width floor of the yardstick D", "D0018 decision 1, T0316",
+                 "removed the lower bound on gate and Kelvin wire length (T0317)"):
+        if need not in tag:
+            out.append(f"full: config.f3_declared_deviation.statement lacks '{need}'")
+    if "no power-copper, power-wire or die rule changed" in tag:
+        out.append("full: config.f3_declared_deviation.statement still overstates (T0321 finding 0)")
     g0, c4 = dev_reference("gen2_0", cfg), dev_reference("case4", cfg)
     lays = {"judged_gen": g0.reference, "judged_c4": c4.reference}
     keep = {"judged_gen": [], "judged_c4": cfg["dev"]["case4"]["keepout_nets"]}
@@ -2431,6 +2625,35 @@ def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
 
     def degrade_(tw, sp, with_l1=True):
         return FakeLay("D" + tw.fingerprint()[4:], None), {"walk": None, "l1_ratio": 1.4}
+    # (0) T0321 finding 2: a wrong sha256 for the reconstruction script in config.freeze -> registered_run raises before
+    # any reference is loaded and --check-references refuses; a counting fake snapped()/build() is never called
+    cnt = {"snapped": 0, "build": 0, "l2_unknowns": 0}
+
+    def _counting(name):
+        def f(*a, **k):
+            cnt[name] += 1
+            return rec.snapped(*a) if name == "snapped" else None
+        return f
+    crec = SimpleNamespace(**{k: _counting(k) for k in cnt})
+    cfg_t = json.loads(json.dumps(dict(cfg, references=ents)))
+    if RECON_SCRIPT not in cfg_t["freeze"]["files"]:
+        out.append(f"full: {RECON_SCRIPT} is not in config.freeze")
+    cfg_t["freeze"]["files"][RECON_SCRIPT] = "0" * 64
+    er_t = FakeER(spec)
+    try:
+        registered_run(er_t, cfg_t, 20261112, Path(tempfile.mkdtemp()), crec, {"job": job, "l1": l1a}, _fake_screens(l1a), 2)
+        out.append("full: registered_run accepted a wrong freeze hash for the reconstruction script")
+    except ReferenceRefused:
+        out.append("full: a wrong freeze hash reached the reference loader (freeze_checks must come first)")
+    except RuntimeError as e:
+        if "frozen hashes" not in str(e):
+            out.append(f"full: wrong freeze hash raised {e!r}, not the freeze refusal")
+    if {c["name"]: c["passed"] for c in er_t.sanity_l}.get("freeze_hashes") is not False:
+        out.append("full: the freeze refusal did not record freeze_hashes as failed")
+    if check_references(cfg_t, None, crec) != 1:
+        out.append("full: --check-references did not refuse a wrong freeze hash")
+    if any(cnt.values()):
+        out.append(f"full: the reconstruction module was called after a freeze mismatch: {cnt}")
     # (1) wrong fingerprint: refused before anything else
     bad = dict(ents[0], reconstruction_sha256="0" * 64)
     orig = (W.twin, W.degrade, globals()["save_ctx"])
@@ -2493,17 +2716,24 @@ def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
                 er.metrics["headroom_min_lo"]["value"] != met["headroom_min_lo"]:
             out.append(f"full: excluded {rep.get('excluded')} counted {met.get('n_counted_references')} A1 "
                        f"{met.get('headroom_min_lo')}")
-        if not er.rows_l or any(r.get("label") != PUBLIC_LABEL or r.get("f3_declared_deviation") != "D0019 item 2"
+        if not er.rows_l or any(r.get("label") != PUBLIC_LABEL or r.get("f3_declared_deviation") != tag
                                 for r in er.rows_l) or any(r.get("reference_id") == "judged_c4" for r in er.rows_l):
             out.append("full: a row lacks the label or the deviation, or the excluded reference has rows")
         rpt = dict(er.artifacts).get("evaluation_report.json", {})
-        if rpt.get("label") != [PUBLIC_LABEL] or "D0019" not in json.dumps(rpt.get("f3_declared_deviation")) or \
-                "DECLARED F3 DEVIATION (D0019)" not in er.notes or PUBLIC_LABEL not in er.notes:
+        if rpt.get("label") != [PUBLIC_LABEL] or (rpt.get("f3_declared_deviation") or {}).get("statement") != tag or \
+                rpt.get("report", {}).get("deviation_statement") != tag or tag not in er.notes or PUBLIC_LABEL not in er.notes:
             out.append("full: the label or the D0019 deviation did not reach the report and the notes")
+        # founder decision 2026-11-12 (T0322): the excluded reference is the only one of its non-default type ->
+        # reported (F6e.<type>, reference None, 'only reference excluded: TwinError'), not spot-checked, not gated
         st_c4 = c4.stack_type
-        if st_c4 == DEFAULT_STACK or st_c4 in json.dumps(rep.get("F6e", {})) or st_c4 in res["run"].spot_refs or \
-                st_c4 in res["run"].spot_none:
-            out.append(f"full: the excluded reference's stack type {st_c4} was spot-checked or reported")
+        agg = {c["name"]: c for c in res["checks"]}.get("F6e_stack_type_spot_check") or {}
+        if st_c4 == DEFAULT_STACK or rep.get("F6e", {}).get(st_c4) != {
+                "reference": None, "a3": None, "excluded_references": {"judged_c4": "TwinError"},
+                "status": "only reference excluded: TwinError"} or st_c4 in res["run"].spot_refs or \
+                st_c4 in res["run"].spot_none or f"F6e_stack_type_spot_check:{st_c4}" in {c["name"] for c in res["checks"]} \
+                or not agg.get("passed") or st_c4 not in agg.get("detail", ""):
+            out.append(f"full: the excluded reference's stack type {st_c4}: report {rep.get('F6e', {}).get(st_c4)}, "
+                       f"aggregate {agg}")
     finally:
         W.twin, W.degrade, globals()["save_ctx"] = orig
     log(f"selftest full (D0019): registered path on gen2_0 (counted) + 2D_Case_4 (planted TwinError), {len(er.sanity_l)} "
@@ -2858,6 +3088,7 @@ def selftest() -> int:
     failures += d_floor_geometry_failures(cfg)
     failures += signal_rule_failures(cfg)
     failures += full_orchestration_failures(spec, scfg)
+    failures += phase_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
     for f in failures:
@@ -2962,7 +3193,7 @@ def _cost_jobs(J: list[dict], cm: dict, vm: dict, vcpus: int, cap: float, overhe
     b_rows, b_h, b_usd = [], 0.0, 0.0
     b_rng = {t: [0.0, 0.0] for t in cm["fv_sensitivity"]}  # phase B (hours, $) at each end of the FV rate range
     for j in big:
-        ram = math.ceil(j["mem_GB"] / vm["memory_fraction"] / 8.0) * 8.0
+        ram, machine = phase_b_machine(j["mem_GB"], vm)
         usd_h = vm["usd_per_h"] + vm["ext_usd_per_GB_h"] * (ram - vm["ram_GB"])
         h = j["est_s"] / 3600.0 + vm["resize_overhead_h"]
         sens = {}
@@ -2973,7 +3204,7 @@ def _cost_jobs(J: list[dict], cm: dict, vm: dict, vcpus: int, cap: float, overhe
             b_rng[t][0] += hs
             b_rng[t][1] += hs * usd_h
         b_rows.append({"job": j["name"], "n": j["n"], "peak_GB": round(j["mem_GB"], 1),
-                       "machine": f"n2d-custom-8-{int(ram * 1024)}-ext", "ram_GB": ram, "fits_n2d_768GB": ram <= 768,
+                       "machine": machine, "ram_GB": ram, "fits_n2d_768GB": ram <= 768,
                        "fits_150GB": ram <= 150, "hours": round(h, 2), "usd": round(h * usd_h, 2),
                        "usd_per_h": round(usd_h, 4), "sensitivity": sens})
         b_h, b_usd = b_h + h, b_usd + h * usd_h
@@ -3053,8 +3284,8 @@ def plan(args, cfg: dict) -> int:
                                 "at the twin, no solve)", "if_all_counted": [r["name"] for r in refs_all]}
     out["cases"] = {c: _plan_case(refs_exp, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
     out["if_all_counted"] = {c: _plan_case(refs_all, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
-    # the F6(e) spot check of an excluded reference's own stack type, if it were run (the runner does not: Run.drive
-    # derives the spot-check types from the references that reach it): calibration, scikit-fem levels 0-2 of the
+    # the F6(e) spot check of an excluded reference's own stack type, priced for the record only (founder decision 2026-11-12,
+    # T0322: such a type is reported, not gated, and the runner never runs it): calibration, scikit-fem levels 0-2 of the
     # reconstruction and finite-volume levels 1-3, alone on the VM (phase A part) plus phase B for any job above the cap
     out["f6e_spot_check_of_excluded_type"] = {}
     for r in refs_all:
@@ -3319,14 +3550,17 @@ def registered_run(er, cfg: dict, seed: int, workdir: Path, recon=None, fake: di
         threads = thread_count(cfg)[0]
     vm = cfg["compute"]["vm"]
     sched = Scheduler(1e9, 8, threads, fake=fake["job"]) if fake else \
-        Scheduler(vm["ram_GB"] * vm["memory_fraction"], vm["vcpus"], threads)
+        Scheduler(vm["ram_GB"] * vm["memory_fraction"], vm["vcpus"], threads, solo_cap_GB=solo_cap_from_env(vm),
+                  defer_big=True)  # T0322: phase A stops (NeedsLargerMachine) when only phase-B jobs remain
+    log(f"scheduler: packing cap {sched.cap:.1f} GB, solo cap {sched.solo:.1f} GB (E008_SOLO_RAM_GB "
+        f"{os.environ.get('E008_SOLO_RAM_GB')}), {sched.vcpus} vCPUs")
     run = Run(cfg, workdir, sched, smoke=False, threads=threads, fake={"l1": fake["l1"]} if fake else None)
     if before_drive is not None:
         before_drive(refs, seeds, scfg, workdir)
     run.drive(refs, seeds, scfg)
     rows, extra = assemble_rows(run, refs, smoke=False)
     for r in rows:
-        r.update(label=" / ".join(label), f3_declared_deviation="D0019 item 2")
+        r.update(label=" / ".join(label), f3_declared_deviation=tag)  # T0321 finding 0: the exact statement
     met, checks, rep = evaluate(run, refs, rows, extra, cfg)
     rep.update(label=label, f3_declared_deviation=cfg.get("f3_declared_deviation"), deviation_statement=tag,
                references=[{k: e.get(k) for k in ("reference_id", "reconstruction_sha256", "admissible", "L_term_H")}
@@ -3364,7 +3598,16 @@ def full(workdir: str | None = None) -> int:
         if er.seed is None:
             raise RuntimeError("E008 needs the sealed seed (spec sealed_seed: true)")
         wd = Path(workdir or os.environ.get("E008_WORKDIR") or (er.run_dir / "work"))
-        registered_run(er, er.config, int(er.seed), wd)
+        try:
+            registered_run(er, er.config, int(er.seed), wd)
+        except NeedsLargerMachine as e:
+            # T0322: phase A done.  Not a result: exit before ExperimentRun writes one (os._exit skips __exit__); the
+            # same minted run resumes from wd on the same VM resized to --plan's machine (burst_full.sh, phase B)
+            rec = phase_stop(e, wd, er.config["compute"]["vm"])
+            log(f"PHASE A COMPLETE: {json.dumps(rec)}")
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(PHASE_B_EXIT)
     return 0
 
 

@@ -556,3 +556,153 @@ No dev run. No founder item decided.
 - a registered rebuild whose fingerprint differs (it would refuse);
 - a measured FV level-3 count that is not L2 × 8;
 - a 2R twin that is not built under E008's rules at registration. This is T0314 R1, which predates the D0018 floor.
+
+## 11. T0322 (2026-11-12): review T0321 fixes, F6(e) for an excluded reference's type, launch procedure for the registered run
+
+[F] = fact checked here. [I] = inference. The T0322 report lists the commands run, with their exit codes.
+
+**Exact F3 deviation (T0321 finding 0) [F].** `config.f3_declared_deviation.statement` now reads as below. The same text
+is carried word for word by:
+- every row, in column `f3_declared_deviation` (the full statement; it was "D0019 item 2");
+- the evaluation report, in `f3_declared_deviation` and `deviation_statement`;
+- the result notes.
+
+> DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before E008's
+> freeze (T0263 twin check, T0314 diagnosis), and E008's runner and spec changed afterwards (T0316, T0317); no inductance
+> (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin or the
+> candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018 decision 1,
+> T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged since T0300
+
+`rules_changed` says the same, and adds one fact: D is built under min(reference minimum, 1.5 mm). For 2R that is 1.5 mm,
+where T0314 used 2R's own 4.0 mm. This matches D0019 Context and item 2. The full_orchestration selftest now uses the
+spec's own statement. It checks that statement word for word in the rows, the report and the notes, and checks that the old
+overstatement is gone.
+
+**Freeze before loading (T0321 finding 2) [F].**
+- `--check-references` now runs `freeze_checks` first. On any mismatch it prints what failed and exits 1, without
+  importing the reconstruction script.
+- New selftest case: config.freeze holds 64 zeros for `research/scripts/o003_powersynth_references.py`.
+  - registered_run raises the freeze RuntimeError, not ReferenceRefused.
+  - It records `freeze_hashes` as failed.
+  - check_references returns 1.
+  - A counting fake `snapped()`, `build()` and `l2_unknowns()` is never called.
+
+**F6(e) when a type's only reference is excluded (founder decision 2026-11-12) [F].** This decision is now in
+`founder_decisions_settled`, and the old founder item (readings a/b/c) is removed.
+- Run.drive records `spot_excluded`: non-default stack types whose references were all excluded, at least one of them
+  admissible. Exclusion here means TwinError or DegradeError in prepare, or a miss of D's definition.
+- evaluate reports `F6e.<type>` with reference null, a3 null, `excluded_references`, and status
+  'only reference excluded: <reason>'.
+- The aggregate's detail lists such a type under `only_reference_excluded`. It gets no per-type check and no spot check,
+  and it does not fail the aggregate.
+- A type whose references are all inadmissible stays in `spot_none`. That reading is still a founder item.
+- Selftest:
+  - the exclusion cases `twin_error_only_of_type`, `degrade_only_of_type` and `D_miss_only_of_type`;
+  - full_orchestration, where 2D_Case_4's type, with its planted TwinError, is now reported this way.
+- [I] If 2D_Case_6 raises TwinError as expected, its type other:d34d9682c1b0 is reported this way. It costs $0.
+
+**Phase A / phase B in the runner [F].**
+- In the registered run the scheduler has `defer_big`:
+  - a job above the solo cap is queued but never launched, and every other job runs;
+  - when nothing is running and only such jobs are queued, `step()` raises `NeedsLargerMachine`.
+- `full()` then does two things:
+  - writes `<run_dir>/work/phase_b_needed.json`, with the jobs, their GB and --plan's machine (from the shared
+    `phase_b_machine` rule);
+  - calls `os._exit(75)` before ExperimentRun writes a result.
+- The wrapper then records "runner exit code 75; no result.json written" in the run directory on the VM. Phase B
+  overwrites that record, and nothing is copied back between the phases.
+- In phase B, `E008_SOLO_RAM_GB` gives the nominal RAM of --plan's machine. A big job may then run alone up to 0.85 × that
+  RAM, the rule --plan sizes the machine by.
+  - It is refused if the machine has less memory than claimed (more than MemTotal × 1.03 + 2 GiB) or if the memory cannot
+    be read.
+  - It affects scheduling only. The workdir manifest (config and seed) is unchanged.
+- A child that exits non-zero without a result file (OOM-killed, for example) now stops the run. Before, it was
+  relaunched in a loop.
+- Selftest `phase_failures` checks:
+  - phase A runs the small job only, then stops;
+  - the stop record names n2d-custom-8-499712-ext for 410.7 GB;
+  - the memory guard accepts 488 GB on a planted MemTotal of 480.7 GiB, and refuses it on 78.6 GiB or when MemTotal is
+    unknown;
+  - phase B in the same directory re-runs nothing and runs the big job;
+  - without `defer_big` (dev, plan), a big job still raises.
+- The `--plan` output is byte-identical to plan_T0320.json.
+
+**Launch procedure: `research/o003/e008_dev/burst_full.sh` [F for the script; nothing was run against GCP].**
+- burst_gcp.sh cannot do this unchanged: it deletes its VM on every exit path and never resumes an `E0xx` run. So the VM
+  lifecycle is plain gcloud. burst_gcp.sh is used, unchanged, only for `--check` (the N2D quota).
+- Its rules are kept:
+  - the run is minted once, on the Mac;
+  - only the run id and the sealed seed file reach the VM, and the code arrives as a git bundle of `main`;
+  - the VM is regular, never Spot;
+  - no cache and no earlier result is ever uploaded.
+- State lives in `~/.cache/mf-burst/e008_full/state.env`. A rerun resumes and never mints a second run.
+
+Founder's commands, in order:
+1. Register E008 and commit it on main.
+2. `research/o003/e008_dev/burst_full.sh --dry-run`. It prints every command with a placeholder run id and runs none.
+   Today it exits 0 after 30 lines.
+3. `research/o003/e008_dev/burst_full.sh`. Expected output, in order:
+   - `# phase A machine: n2d-custom-8-81920-ext; phase B machine: n2d-custom-8-499712-ext (488 GB)`;
+   - burst_gcp.sh's quota lines, ending in `enough quota for one VM`;
+   - `minted E008-…`, then the create;
+   - `host: …, 8 vCPU, 78 GB`;
+   - `started phase A`, then the last runner.log lines every 30 min. --plan expects about 7.9 h (upper 13.95 h);
+   - `# phase A runner exit: 75`, then phase_b_needed.json: 2D_Case_2R fv L3, 410.7 GB, n2d-custom-8-499712-ext;
+   - stop, set-machine-type, start, then `started phase B`. --plan expects about 4.22 h (range 1.17-8.16 h);
+   - `# phase B runner exit: 0`;
+   - the copy-back to `experiments/results/E008/<run id>/` (with `work/` and `runner.phaseA.log`), then the delete.
+
+   If phase A exits 0, no phase B is needed and none runs. That happens when no job is above 66.3 GB, for example if 2R is
+   excluded.
+4. If the Mac sleeps or the script is interrupted, run the same command again. A running phase is never started twice:
+   the rc file and a boot marker prevent it.
+
+Failure modes:
+- **Zone out of capacity when creating the VM.**
+  - The script tries MF_GCP_ZONES, or else the region's zones, in order.
+  - If none has capacity it exits 1. The run stays minted, so rerun later.
+  - Phase B has to stay in the same zone, because the disk is zonal.
+- **Resize refused, or no capacity at start.**
+  - set-machine-type needs a stopped VM, and the script stops it first.
+  - If the type is refused, the script stops with the VM stopped.
+  - If start fails on ZONE_RESOURCE_POOL_EXHAUSTED or STOCKOUT, it retries every 10 min, 12 times. Then it exits 5 with the
+    VM stopped (only the disk is billed). Rerun later.
+  - Moving the disk to another zone is a founder decision and is not scripted. It would be the same disk, not a copy of
+    results into another run.
+- **Phase B needs more than --plan's machine.** This happens if phase A's measured memory ratios raise the estimate above
+  0.85 × 488 GB. The script stops the VM and exits 4, and the founder decides. It never escalates on its own.
+- **Preemption.** A regular VM is not preempted the way a Spot VM is.
+  - If a host event stops the VM, or the backstop `shutdown -h` fires (30 h for phase A, 20 h for phase B), the script
+    exits 3.
+  - A rerun starts the VM and drops unreadable checkpoints (drop_bad.py). The same run then resumes from its workdir on
+    the same disk.
+  - [I] Live migration of N2D VMs on host maintenance was not verified here.
+- **OOM in phase B.** The runner stops with an error result. The script copies it back and stops the VM without deleting
+  it.
+- **Any other runner failure.** Same: the result is copied back and the VM is stopped for inspection.
+- **Exit code unreadable.** Each phase's runner exit code is read once from run.json over ssh while the VM runs, then kept
+  in the state file, so a rerun after a stop never needs ssh for it. If that one read fails, the script exits 7. Rerun.
+- **Copy-back incomplete.** If result.json or run.json is missing locally, the script exits 6 and keeps the VM. Rerun.
+
+**Re-stamped [F].**
+- The runner's sha256 is now 8b46e380…fc29d. It appears three times in E008.dev_rows.json; the fourth, 2f94239c…, is the
+  `previous` record.
+- Produced by re-running `case4_prep.py`, `gen2_0_prep.py T0322` and `refresh_rule_strictness.py T0322` on dev layouts
+  only (logs `*_T0322.log`).
+- The results equal T0320's: Case 4 twin fit+signal_feet, L1 W/R 1.0017, walk 7 steps, 33/2000 DRC-clean; gen2_0
+  `smoke_rows_match` true.
+- `--check-references` gives the fingerprints 66cb1e19… and 71e07ae1…. Every non-timing field equals
+  check_references.json.
+
+**Not done.**
+- No twin, degrade, prepare, L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6.
+- No gcloud call and no VM.
+- No other founder item decided: the all-inadmissible F6(e) reading, the ~488 GB F6(e) memory, the budget and the rest
+  remain open.
+
+**What would prove this wrong:**
+- a phase-A stop while a driver could still make progress (the check runs on entry to step(), after every driver has been
+  replayed);
+- a phase-B rerun that re-solves a finished job;
+- `set-machine-type` refusing `n2d-custom-8-499712-ext` [I: N2D extended memory goes up to 768 GB; memory must be a
+  multiple of 256 MB].
