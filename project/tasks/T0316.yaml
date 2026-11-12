@@ -4,7 +4,7 @@ title: 'E008: degraded copy as a yardstick under a frozen power-width floor; exc
   exists (founder decision D0018)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Implement founder decision D0018 (2026-11-12, founder session; the record is being committed\
   \ separately). Its\ntwo decisions are restated here in full:\n1. D is a yardstick. When E008's degradation\
@@ -116,4 +116,130 @@ trigger: null
 rationale: 'Founder decision 2026-11-12 (session, D0018): T0314 found that O003''s power-width rule blocks
   the degradation on 2D_Case_4, so a well-designed judged module would make E008 INVALID although the
   control never builds from D. D becomes a yardstick under a frozen floor, with exclusion as fallback.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'D0018 is now in E008. The runner (experiments/runners/e008_run.py) builds D under a power-width
+    floor of 1.5 mm, frozen in the spec and checked by --verify-freeze. Only degrade() gets the floor:
+    it receives the reference''s spec with min_width_power = min(reference minimum, floor). W, the candidates
+    and both searches keep the reference''s rules. prepare() records D''s rule, its narrowest power strip,
+    and the lattice cells across that strip at 0.5 and 0.25 mm. When no valid D exists, the reference
+    is excluded, not the run: a TwinError or DegradeError in prepare(), or D''s L_sub ratio below 1.25
+    at the conservative end of its band (checked in Run.drive from the D and W band solves, before any
+    search). An excluded reference gets no driver, no rows and no spot check. evaluate() reports it with
+    its'
+  report:
+    summary: 'D0018 is now in E008. The runner (experiments/runners/e008_run.py) builds D under a power-width
+      floor of 1.5 mm, frozen in the spec and checked by --verify-freeze. Only degrade() gets the floor:
+      it receives the reference''s spec with min_width_power = min(reference minimum, floor). W, the candidates
+      and both searches keep the reference''s rules. prepare() records D''s rule, its narrowest power
+      strip, and the lattice cells across that strip at 0.5 and 0.25 mm. When no valid D exists, the reference
+      is excluded, not the run: a TwinError or DegradeError in prepare(), or D''s L_sub ratio below 1.25
+      at the conservative end of its band (checked in Run.drive from the D and W band solves, before any
+      search). An excluded reference gets no driver, no rows and no spot check. evaluate() reports it
+      with its reason, and at_least_one_counted_reference decides INVALID. A control miss still fails
+      F1b_control and makes the run INVALID. The selftest covers all five planted cases from the packet,
+      and two deliberate mutations of the runner each made it fail (5 failures each).
+
+
+      Floor evidence (L0/L1, 2D_Case_4 plus 7 generator housing layouts with 2-5 mm power rules): D reaches
+      the L1 target of 1.3875 on 8/8 layouts at a 1.0 mm floor, 7/8 at 1.5 mm, 6/8 at 2.0 mm and 3/8 at
+      the reference minimum. Case 4: 1.421 / 1.391 / 1.390 / 1.232. I chose 1.5 mm because it is the smallest
+      floor that leaves an interior lattice cell across D''s narrowest strip at the band solves'' 0.5
+      mm levels (3 cells, versus 2 edge cells at 1.0 mm), and Case 4 still reaches the target there. The
+      step from that to excluding 1.0 mm is an inference: within the packet''s limits I could not measure
+      the lateral part of e_R on narrow strips.
+
+
+      A 0.5 mm l2_layout check on one generator layout found that narrowing does not inflate the thickness
+      part of e_R (1.45e-3 at the 1.5 mm floor, 1.47e-3 at 1.0 mm, 5.4e-3 for D at the 2 mm rule).
+
+
+      Case 4 fail-fast record re-run: D now reaches 1.391 ≥ 1.388. Its moves are narrow_landing (landing
+      bands 5 → 1.5 mm) followed by 7 walk steps (col_PHASE_u0+0.5mm ×4, col_DC-_u1-0.5mm ×3). D is DRC-clean
+      under the floor rule and violates only min_trace_width under the reference''s rules.
+
+
+      All definition-of-done commands exited 0, except that the merge-base diff was blocked by the worktree
+      guard; I ran a diff against HEAD instead (exit 0). Changes are committed in this worktree as dbfe94ae.'
+    failure_class: none
+    confidence: 0.75
+    evidence:
+    - '[F] --selftest exit 0: 4 exclusion cases (DegradeError on 1 of 2 references → excluded and the
+      other counted; on the only reference → INVALID; D miss at the band''s conservative end (point ratio
+      1.2505) → excluded, no driver, no rows; control miss beside an exclusion → F1b_control fails, nothing
+      excluded). Geometry case: a planted 3 mm-rule layout gives D a narrowest strip of 1.500 mm (below
+      3 mm, not below the floor), L1 ratio 1.410.'
+    - '[F] Mutation checks: using the point ratio instead of the band''s conservative end gives 5 selftest
+      failures; handing degrade() the reference rule gives 5 failures (the planted layout then raises
+      DegradeError at 1.190 after 59 walk steps).'
+    - '[F] floor_study.json, L1(D)/L1(W) reaching 1.3875: 8/8 layouts at a 1.0 mm floor, 7/8 at 1.5 mm,
+      6/8 at 2.0 mm, 3/8 at the reference minimum. Case 4: 1.421 (narrow_landing), 1.391 (narrow_landing
+      + 7 walk steps, target reached), 1.390 (+21 walk steps), 1.232 (DegradeError, local maximum after
+      75 walk steps).'
+    - '[F] Wherever D exists below the reference minimum, its narrowest power strip equals the floor (2/4,
+      3/6 and 4/8 cells across at 0.5/0.25 mm for 1.0/1.5/2.0 mm), D is DRC-clean under the floor rule,
+      and it violates only min_trace_width under the reference''s rules.'
+    - '[F] l2_strip_check_gen2x1_w2_s11.json (0.5 mm, 12 solves, peak ≤ 4.0 GB): L2/L1 ratio 1.3613/1.388
+      for D at the 2 mm rule, 1.5565/1.639 at 1.0 mm, 1.4225/1.480 at 1.5 mm. Thickness term of e_R: 5.4e-3
+      (rule), 1.47e-3 (1.0 mm), 1.45e-3 (1.5 mm). A 1.0 mm cell level cannot run on 0.5 mm-grid layouts
+      (l2_layout lattice error).'
+    - '[F] Case 4 prep (runner sha256 f250ddce…): D L1/W 1.3910, not excluded; quick_ok 33 DRC-clean of
+      2000 draws, none rejected.'
+    - '[F] Earlier evidence used: P3 measured lateral convergence only on rule-width copper (−0.79 % for
+      0.5→0.25 mm); T0291 measured Case 4 D with 1 mm bands at L2 0.5 mm: ratio 1.325 vs L1 1.421, L1
+      bias 9.2 % (D) vs 15.3 % (twin).'
+    - '[I] Lateral e_R on 1-1.5 mm strips is expected to be larger than on rule-width strips: 20 MHz edge
+      current crowding (skin depth about 15 µm) is poorly resolved by 2-3 cells, and the error does not
+      cancel against the rule-width control best. Not measured.'
+    - 'Commands and exit codes: --selftest 0; --verify-freeze 0 (13 OK); ruff check runner + research/o003/e008_dev
+      0; the D0018 key-presence check on the spec 0; mfos exp check E008 0; thermal_fem sha prefix a216d5fe3209bcee
+      0; mfos gate --fast 0 (''all gates passed''); git diff --quiet HEAD -- src tests/acceptance project/objectives
+      project/decisions 0. The merge-base form was blocked by the mfos guard hook (''history rewriting/merging
+      is the orchestrator''s job''), so it was not run.'
+    alternative_explanations:
+    - explanation: A 1.0 mm floor might resolve well enough (the lateral e_R term may be small even with
+        2 cells across), in which case the smallest supported floor is 1.0 mm. At 1.5 mm the floor loses
+        gen3x2_w2_s12 (1.363), which 1.0 mm keeps.
+      how_to_discriminate: Measure e_R(D, rule-width layout) between 0.25 and 0.5 mm cells for D at 1.0
+        and 1.5 mm on a gen2_0-size layout. This needs 0.25 mm solves, which are outside this packet's
+        limits, or comes out of E008's own band solves of D and the control best.
+    - explanation: 'The selection to 1.3875 by L1 may not carry over to L2 for Case 4: D at 1.5 mm is
+        only 0.004 above the target, so its L2 ratio at 0.25 mm could fall below 1.25 at the conservative
+        end. Case 4 would then be excluded under D0018.'
+      how_to_discriminate: Case 4's D and W band solves in the full-fidelity dev run (burst_dev.sh), compared
+        with R_D(1-2e_R) >= 1.25.
+    discriminating_tests:
+    - '0.25 mm vs 0.5 mm l2_layout solves of W, D at 1.0 mm and D at 1.5 mm on gen2x1_w2_s11 (VM or a
+      later packet): lateral term 3|R(0.25)-R(0.5)| for each D. If the 1.0 mm term is ≤ the rule-width
+      pair''s, the floor could be 1.0 mm under a new draft.'
+    - 'Case 4 full-fidelity dev run: R_D(1-2 e_R(D,W)) at 0.25 mm for the 1.5 mm D, and e_R(control best,
+      D) against the 0.02 threshold in the objective notes.'
+    recommended_actions:
+    - Review and register the floor (1.5 mm) with D0018. Note that excluding 1.0 mm rests on the cells-across
+      resolution argument, not on a measured lateral term.
+    - In the full-fidelity dev run, record e_R(control best, D) and Case 4's R_D at 0.25 mm. Flag the
+      result if e_R(control best, D) exceeds 0.02.
+    - 'Re-run --plan before registration: Run.drive now runs a short serial D/W band-solve phase per reference
+      before the searches, which --plan does not model.'
+    - make_spec.py is behind the YAML (it was already before this task) and should not be re-run without
+      bringing it up to date first.
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/case4_prep.py
+    - research/o003/e008_dev/case4_prep.log
+    - research/o003/e008_dev/d_floor/floor_study.py
+    - research/o003/e008_dev/d_floor/floor_study.json
+    - research/o003/e008_dev/d_floor/floor_study.log
+    - research/o003/e008_dev/d_floor/l2_strip_check.py
+    - research/o003/e008_dev/d_floor/l2_strip_check_gen2x1_w2_s11.json
+    - research/o003/e008_dev/d_floor/l2_strip_check.log
+    - research/o003/e008_dev/d_floor/l2_strip_check_attempt1_lat1.log
+    - research/o003/e008_dev/d_floor/l2_solves/*.json
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    affects_acceptance_criteria: false
+    root_cause: ''

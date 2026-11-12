@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T03:23:44+00:00 from repository state — do not edit_
+_generated 2026-11-12T04:26:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -13,7 +13,7 @@ _generated 2026-11-12T03:23:44+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $166.79/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $172.24/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -24,7 +24,7 @@ _generated 2026-11-12T03:23:44+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 97 | $166.79 | 2738782 | 1402759 | 142 | 0 |
+| O003 | 98 | $172.24 | 2833070 | 1445923 | 144 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -32,14 +32,12 @@ _generated 2026-11-12T03:23:44+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 273, failed: 3, running: 1, todo: 1
+cancelled: 39, done: 273, failed: 3, review: 1, running: 1, todo: 1
 
-- T0316 `running` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
+- T0316 `review` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
+- T0318 `running` critic/review: Review T0316 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-11T18:26:30+00:00 inbox_resolved {"id": "I0173", "status": "approved", "note": "Merge T0314's twin-coverage diagnosis (research only, no frozen code). Review T0315 accept_with_caveats: minor co
-- 2026-11-11T18:26:59+00:00 merged {"task": "T0314"}
-- 2026-11-11T20:39:20+00:00 sleep_detected {"gap_s": 1282, "runs_extended": 0}
 - 2026-11-11T21:16:08+00:00 sleep_detected {"gap_s": 2130, "runs_extended": 0}
 - 2026-11-11T22:59:27+00:00 sleep_detected {"gap_s": 5206, "runs_extended": 0}
 - 2026-11-11T23:49:23+00:00 sleep_detected {"gap_s": 335, "runs_extended": 0}
@@ -52,3 +50,6 @@ cancelled: 39, done: 273, failed: 3, running: 1, todo: 1
 - 2026-11-12T03:19:24+00:00 run_started {"run": "T0316-scientist-20261111T191924-cf93", "task": "T0316", "role": "scientist", "session": "0c028ff9-af16-4a5d-a62e-a75de873bc51"}
 - 2026-11-12T03:22:50+00:00 founder_decision_noted {"subject": "O003/E008 model-fix list fixed before any reference screen", "note": "Founder confirmed in session: (1) drop E008 min_signal_wire_length (scope_in 
 - 2026-11-12T03:23:18+00:00 task_added {"task": "T0317", "reason": "founder fix list 2026-11-12 (D0018 item 1): drop the measured gate-wire minimum"}
+- 2026-11-12T04:15:24+00:00 run_finished {"run": "T0316-scientist-20261111T191924-cf93", "status": "completed", "cost": 5.447153, "subtype": "success", "report": "structured_output"}
+- 2026-11-12T04:26:17+00:00 verified {"task": "T0316"}
+- 2026-11-12T04:26:23+00:00 run_started {"run": "T0318-critic-20261111T202623-2491", "task": "T0318", "role": "critic", "session": "ab78161a-0b10-47d6-99ee-1eee2b048dc7"}
