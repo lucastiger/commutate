@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T15:24:10+00:00 from repository state — do not edit_
+_generated 2026-11-12T15:53:07+00:00 from repository state — do not edit_
 
 ## Founder inbox (6 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -38,7 +38,6 @@ cancelled: 39, done: 277, failed: 3
 
 
 ## Recent events
-- 2026-11-12T04:38:45+00:00 task_amended {"task": "T0317", "reason": "adds review T0318 follow-ups (solver failure != exclusion; selftest gaps) before T0317 starts"}
 - 2026-11-12T04:39:26+00:00 inbox_resolved {"id": "I0174", "status": "approved", "note": "Merge T0316 (D0018 in E008: degraded copy as yardstick with a 1.5 mm floor, exclusion fallback). Review T0318 acc
 - 2026-11-12T04:39:45+00:00 merged {"task": "T0316"}
 - 2026-11-12T04:39:45+00:00 inbox_opened {"id": "I0175", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
@@ -53,3 +52,4 @@ cancelled: 39, done: 277, failed: 3
 - 2026-11-12T15:23:27+00:00 inbox_resolved {"id": "I0176", "status": "approved", "note": "Merge T0317 (D0018 item 1: no minimum gate-wire length in E008's per-reference rules; solver failures in D's band
 - 2026-11-12T15:24:06+00:00 merged {"task": "T0317"}
 - 2026-11-12T15:24:06+00:00 inbox_opened {"id": "I0177", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-12T15:53:02+00:00 sleep_detected {"gap_s": 1394, "runs_extended": 0}
