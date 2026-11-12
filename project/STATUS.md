@@ -1,13 +1,12 @@
 # ModuleForge status
-_generated 2026-11-12T15:13:23+00:00 from repository state — do not edit_
+_generated 2026-11-12T15:23:28+00:00 from repository state — do not edit_
 
-## Founder inbox (6 open)
+## Founder inbox (5 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
 - **I0175** [experiment_registration] register E008 (pre-registration)
-- **I0176** [protected_change] T0317: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -34,12 +33,11 @@ _generated 2026-11-12T15:13:23+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 276, failed: 3, needs_founder: 1
+cancelled: 39, done: 276, failed: 3, merge: 1
 
-- T0317 `needs_founder` scientist/design_experiment: E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018 item 1) (attempt 1)
+- T0317 `merge` scientist/design_experiment: E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018 item 1) (attempt 1)
 
 ## Recent events
-- 2026-11-12T04:26:57+00:00 sleep_detected {"gap_s": 694, "runs_extended": 1}
 - 2026-11-12T04:38:22+00:00 run_finished {"run": "T0318-critic-20261111T202623-2491", "status": "completed", "cost": 2.45103, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T04:38:26+00:00 inbox_opened {"id": "I0174", "kind": "protected_change", "subject": "T0316: merge needs founder approval"}
 - 2026-11-12T04:38:45+00:00 task_amended {"task": "T0317", "reason": "adds review T0318 follow-ups (solver failure != exclusion; selftest gaps) before T0317 starts"}
@@ -54,3 +52,4 @@ cancelled: 39, done: 276, failed: 3, needs_founder: 1
 - 2026-11-12T05:34:44+00:00 run_finished {"run": "T0319-critic-20261111T212628-8b9c", "status": "completed", "cost": 2.333704, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T05:34:48+00:00 inbox_opened {"id": "I0176", "kind": "protected_change", "subject": "T0317: merge needs founder approval"}
 - 2026-11-12T15:13:18+00:00 sleep_detected {"gap_s": 1392, "runs_extended": 0}
+- 2026-11-12T15:23:27+00:00 inbox_resolved {"id": "I0176", "status": "approved", "note": "Merge T0317 (D0018 item 1: no minimum gate-wire length in E008's per-reference rules; solver failures in D's band
