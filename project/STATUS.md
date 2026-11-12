@@ -1,12 +1,12 @@
 # ModuleForge status
-_generated 2026-11-12T04:39:07+00:00 from repository state — do not edit_
+_generated 2026-11-12T04:39:49+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
 - **I0171** [experiment_registration] register E008 (pre-registration)
-- **I0174** [protected_change] T0316: merge needs founder approval
+- **I0175** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -25,7 +25,7 @@ _generated 2026-11-12T04:39:07+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 98 | $174.69 | 2867459 | 1461684 | 155 | 0 |
+| O003 | 99 | $174.69 | 2867459 | 1461684 | 155 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -33,15 +33,11 @@ _generated 2026-11-12T04:39:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 274, failed: 3, needs_founder: 1, todo: 1
+cancelled: 39, done: 275, failed: 3, running: 1
 
-- T0316 `needs_founder` scientist/design_experiment: E008: degraded copy as a yardstick under a frozen power-width floor; exclusion when no valid D exists (founder decision D0018) (attempt 1)
+- T0317 `running` scientist/design_experiment: E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018 item 1) (attempt 1)
 
 ## Recent events
-- 2026-11-12T02:21:32+00:00 sleep_detected {"gap_s": 1882, "runs_extended": 0}
-- 2026-11-12T02:27:41+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
-- 2026-11-12T02:44:41+00:00 sleep_detected {"gap_s": 980, "runs_extended": 0}
-- 2026-11-12T02:50:30+00:00 sleep_detected {"gap_s": 349, "runs_extended": 0}
 - 2026-11-12T03:19:00+00:00 task_added {"task": "T0316", "reason": "founder decision 2026-11-12 (D0018): degraded copy as yardstick, exclusion fallback"}
 - 2026-11-12T03:19:24+00:00 run_started {"run": "T0316-scientist-20261111T191924-cf93", "task": "T0316", "role": "scientist", "session": "0c028ff9-af16-4a5d-a62e-a75de873bc51"}
 - 2026-11-12T03:22:50+00:00 founder_decision_noted {"subject": "O003/E008 model-fix list fixed before any reference screen", "note": "Founder confirmed in session: (1) drop E008 min_signal_wire_length (scope_in 
@@ -53,3 +49,7 @@ cancelled: 39, done: 274, failed: 3, needs_founder: 1, todo: 1
 - 2026-11-12T04:38:22+00:00 run_finished {"run": "T0318-critic-20261111T202623-2491", "status": "completed", "cost": 2.45103, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T04:38:26+00:00 inbox_opened {"id": "I0174", "kind": "protected_change", "subject": "T0316: merge needs founder approval"}
 - 2026-11-12T04:38:45+00:00 task_amended {"task": "T0317", "reason": "adds review T0318 follow-ups (solver failure != exclusion; selftest gaps) before T0317 starts"}
+- 2026-11-12T04:39:26+00:00 inbox_resolved {"id": "I0174", "status": "approved", "note": "Merge T0316 (D0018 in E008: degraded copy as yardstick with a 1.5 mm floor, exclusion fallback). Review T0318 acc
+- 2026-11-12T04:39:45+00:00 merged {"task": "T0316"}
+- 2026-11-12T04:39:45+00:00 inbox_opened {"id": "I0175", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-12T04:39:49+00:00 run_started {"run": "T0317-scientist-20261111T203949-e320", "task": "T0317", "role": "scientist", "session": "1028ac29-25c8-472a-83cf-40fc4ad51543"}
