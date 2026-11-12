@@ -4,7 +4,7 @@ title: 'E008: drop the measured minimum gate-wire length from per-reference rule
   item 1)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0316
 description: "Implement item 1 of the founder's model-fix list (2026-11-12, founder session; D0018, whose\
@@ -104,4 +104,198 @@ trigger: null
 rationale: 'Founder model-fix list 2026-11-12 (session, D0018 item 1), confirmed before any candidate-module
   screen: the measured gate-wire minimum is E008''s choice, not an O003 rule, and alone stops 2D_Case_2R''s
   twin (T0314). Runs after T0316, which edits the same runner and spec.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'E008 no longer has a lower bound on gate-wire length (D0018 item 1), and the two T0318 review
+    findings are fixed. Every definition-of-done command exits 0, except that the one using `git merge-base`
+    is blocked by the guard hook; I ran an equivalent check against HEAD instead.
+
+
+    **Commands run (exit codes):**
+
+    - `--selftest`: 0
+
+    - `--verify-freeze`: 0
+
+    - The spec keyword check: 0
+
+    - `ruff check experiments/runners/e008_run.py`: 0
+
+    - `mfos exp check E008`: 0
+
+    - The thermal_fem.py sha256 test (a216d5fe3209bcee): 0
+
+    - `git diff --quiet HEAD -- src tests/acceptance project/objectives project/decisions`: 0, and nothing
+    in those paths is modified or untracked.
+
+    - `mfos gate --fast`: 0 ("all gates passed"), both before and after the design note was written.
+
+    - The DoD''s `git merge-base` form was blocked by '
+  report:
+    summary: 'E008 no longer has a lower bound on gate-wire length (D0018 item 1), and the two T0318 review
+      findings are fixed. Every definition-of-done command exits 0, except that the one using `git merge-base`
+      is blocked by the guard hook; I ran an equivalent check against HEAD instead.
+
+
+      **Commands run (exit codes):**
+
+      - `--selftest`: 0
+
+      - `--verify-freeze`: 0
+
+      - The spec keyword check: 0
+
+      - `ruff check experiments/runners/e008_run.py`: 0
+
+      - `mfos exp check E008`: 0
+
+      - The thermal_fem.py sha256 test (a216d5fe3209bcee): 0
+
+      - `git diff --quiet HEAD -- src tests/acceptance project/objectives project/decisions`: 0, and nothing
+      in those paths is modified or untracked.
+
+      - `mfos gate --fast`: 0 ("all gates passed"), both before and after the design note was written.
+
+      - The DoD''s `git merge-base` form was blocked by the hook ("history rewriting/merging is the orchestrator''s
+      job"), so the orchestrator needs to run that one itself.
+
+
+      **Item 1 — one rules function.** `e008_run.e008_rules` takes `measure_rules`, sets `min_signal_wire_length`
+      to None, applies the dev overrides, and writes `info.rules_record`. It raises if an override sets
+      the dropped field or if anything else changes. Both places in the runner that build a dev spec now
+      call it:
+
+      - 2D_Case_4 uses measured rules plus its dev overrides.
+
+      - Generator housing layouts keep their generator spec''s own rules, which already have no lower
+      bound.
+
+
+      The spec says the future judged-reference loader in `full()` must use it too. Every upper bound
+      and every other measured rule is unchanged.
+
+
+      **Facts about the dev references:** the change has no effect on them. Case 4''s reconstruction has
+      no signal wires, so `measure_rules` never set a lower bound there. Case 4''s D fingerprint is still
+      6d63ff8f…, with L1 ratio 1.3910401988, 7 walk steps and 33 of 2,000 draws DRC-clean. gen2_0''s twin
+      fingerprint still matches the stored smoke rows (aade6489…), so those rows remain valid.
+
+
+      **Shortest gate wires (reported, not gated):**
+
+      - Case 4: twin and D 5.122 mm; the 33 DRC-clean samples 5.734 mm (132 wires).
+
+      - gen2_0: no gate wires anywhere, because the generator housing spec has no gate copper.
+
+      - None is below the 1.5 mm placeholder.
+
+
+      **Item 2 — planted-reference selftest.** The planted reference is a generator layout under Case
+      4''s dev spec, with its gate wires landing 2 mm beyond the nearest gate copper (gate wires 14.044–15.640
+      mm).
+
+      - Its twin, with gate wires down to 12.052 mm, passes the design-rule check under E008''s rules
+      and fails `signal_wire_length` under the raw measured rules, so the test can tell the two apart.
+
+      - A twin wire lengthened to 16.133 mm, longer than the reference''s longest, still fails `signal_wire_length`.
+
+
+      **Item 4 — solver failures are no longer exclusions.** A band solve of D or W now fails the check
+      if its inductance is not finite, its GMRES flags are missing or non-zero, or its solver error bound
+      is not finite. A non-finite ratio or e_R fails it too. Any of these:
+
+      - fails `F1b_D_definition` for that reference and in aggregate, so the run is INVALID;
+
+      - does not exclude the reference;
+
+      - stops the run before any search (my own choice, to avoid spending compute on a run that is already
+      void).
+
+
+      Only a finite, converged ratio below 1.25 at the conservative end excludes a reference.
+
+
+      **Item 5 — selftest gaps.** The exclusion selftest now has 9 cases, all passing: the 4 existing
+      ones plus a TwinError exclusion, a D miss on the only reference (INVALID), exclusions at two stages
+      in one run, a NaN band (INVALID) and a non-converged band (INVALID). In `case4_prep.py`, `walk_steps`
+      now reports the 7 walk steps instead of 5.
+
+
+      **Mutation checks:** keeping the lower bound makes the signal-rule test fail; disabling the band-health
+      check makes the non-converged case fail. The NaN case is also caught by the finite-ratio check.
+
+
+      **Hashes:** the runner sha256 is now a40e9559…, re-stamped in the three places that record it in
+      `E008.dev_rows.json`. The runner is not in the spec''s freeze block, so nothing there changed.
+
+
+      **Not done:**
+
+      - `full()` and the reference set are unchanged.
+
+      - No l2_layout or thermal solve was run.
+
+      - 2D_Case_2R, where this rule actually matters, was not re-run because the packet excludes it.
+
+
+      Nothing is committed: the packet did not ask for a commit.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '[F] uv run python experiments/runners/e008_run.py --selftest: exit 0; log lines: ''selftest exclusion
+      (D0018): 9 cases, 0 failures''; ''selftest signal rule (D0018 item 1): reference gate wires 14.044-15.640
+      mm, twin shortest 12.052 mm (clean under E008''s rules, raw rules: signal_wire_length), longer twin
+      wire 16.133 mm -> [''signal_wire_length'']; 0 failures''; ''selftest passed'''
+    - '[F] --verify-freeze exit 0; DoD spec-keyword check exit 0; ruff check exit 0; mfos exp check E008
+      exit 0; thermal_fem.py sha256 prefix a216d5fe3209bcee (exit 0); git diff --quiet HEAD on src, tests/acceptance,
+      project/objectives and project/decisions exit 0, and git status shows 0 entries there; mfos gate
+      --fast exit 0 (''all gates passed'') twice'
+    - '[F] The DoD''s git merge-base command was blocked by the mfos guard hook (''history rewriting/merging
+      is the orchestrator''s job''); the equivalent HEAD-based check was run instead'
+    - '[F] Mutation M1 (in process): e008_rules keeping the lower bound -> signal_rule_failures reports
+      ''e008_rules did not drop exactly the lower bound'' (and no twin). Mutation M2: band_solve_failures
+      disabled -> nonconverged_band_is_invalid fails 3 assertions'
+    - '[F] Case 4 rerun (research/o003/e008_dev/case4_prep_T0317.log): D fingerprint 6d63ff8f...366a,
+      L1 ratio 1.3910401988110974, walk_steps 7, quick_ok 33/2000 clean, rules_record shows measured min_signal_wire_length
+      None (no signal wires in the reconstruction) and fields_changed = the 5 dev overrides only'
+    - '[F] gen2_0 smoke prep (gen2_0_prep_T0317.log): smoke_rows_match true (twin and reconstruction aade6489...
+      equal the stored rows); rules_record fields_changed []; no gate wires in the reference, W, D or
+      the smoke samples'
+    - '[F] gate_wires: Case 4 W/D shortest 5.1216 mm, DRC-clean samples shortest 5.7335 mm over 132 gate
+      wires; none below DesignRules.min_wire_length 1.5 mm'
+    - '[F] runner sha256 a40e95596265af27a6ce3e858e2094a52e8f157208eb0db6a6409ae86a291ec5 equals the runner_sha256
+      in the Case 4 record, in rule_strictness_refresh (task T0317) and in the gen2_0 prep record'
+    - '[F] D0018 text read at project/decisions/D0018-o003-e008-degraded-copy-yardstick.md (model-fix
+      list item 1); this resolves T0318 finding 1''s concern about the missing record'
+    recommended_actions:
+    - 'Orchestrator: run the merge-base form of the protected-path diff yourself; agents'' shells block
+      git merge-base.'
+    - Before registration, the judged-reference loader in full() must build each reference's rules with
+      e008_run.e008_rules (E008.yaml config.per_reference_rules says so). A reviewer should confirm it
+      does not call measure_rules directly.
+    - Re-run T0314's 2D_Case_2R R1 check through e008_rules in a task that is allowed to load 2R. This
+      change only matters on references that have gate wires, and neither dev reference has a measured
+      lower bound.
+    - If a real minimum gate-wire bondability length is ever cited (vendor rules), decide whether info.gate_wires
+      should become gated. Today it is reported only, against the 1.5 mm placeholder.
+    - Consider gating a finite but large solver_tol_rel_L_max on D's and W's band solves. It is not gated
+      now (no tolerance was added); only non-finite values and non-zero GMRES flags fail.
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/case4_prep.py
+    - research/o003/e008_dev/gen2_0_prep.py
+    - research/o003/e008_dev/case4_prep_T0317.log
+    - research/o003/e008_dev/gen2_0_prep_T0317.log
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    discriminating_tests:
+    - 'Planted reference with gate wires landing 2 mm beyond the nearest copper: its twin is clean under
+      e008_rules and fails signal_wire_length under raw measure_rules; this separates the rule having
+      been dropped from the test being blind to it.'
+    - 'Planted NaN band on D and planted GMRES flag 1 on W''s fil_f band: F1b_D_definition fails and nothing
+      is excluded. Compare a finite conservative-end miss, which is excluded at the drive stage.'
+    affects_acceptance_criteria: false
