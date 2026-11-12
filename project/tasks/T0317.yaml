@@ -1,0 +1,94 @@
+id: T0317
+objective: O003
+title: 'E008: drop the measured minimum gate-wire length from per-reference rules (founder fix list, D0018
+  item 1)'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0316
+description: "Implement item 1 of the founder's model-fix list (2026-11-12, founder session; D0018, whose\
+  \ record is being\ncommitted separately): E008 drops the measured minimum gate-wire length from its\
+  \ per-reference rules. This reads O003\nscope_in's enumerated rules as the complete meaning of \"design\
+  \ rules at least as strict as the reference's own\": its\nbondability rule bounds gate and Kelvin wires\
+  \ only from above (objective.yaml lines 61-63; review T0315 finding 2).\nBackground: T0314 (research/notes/o003-twin-coverage.md,\
+  \ section 1, variant R1) showed this lower bound,\nwhich drc.rules.measure_rules sets to the reference's\
+  \ shortest signal wire (rules.py line 587), is the only rule that\nstops a twin whose gate wires run\
+  \ to the nearest gate copper.\n\nLimits: generator layouts and 2D_Case_4 only. Do not load 2D_Case_2R,\
+  \ 2D_Case_6, customer data or any other module's\ngeometry; do not search the web for module layouts.\
+  \ Do not change src/ or tests/acceptance: the change lives in\nexperiments/runners/e008_run.py. Do not\
+  \ edit src/moduleforge/solvers/thermal_fem.py (sha256 a216d5fe...). Keep every\nupper bound (max_gate_wire_length,\
+  \ max_kelvin_wire_length, max_signal_wire_length) and every other measured rule. Do not\nwiden any tolerance,\
+  \ relax any other gate or change the cost model. L0/L1 only. Keep T0316's work (the D0018 yardstick\n\
+  and exclusion) intact.\n1. One runner function builds a reference's E008 rules from measure_rules with\
+  \ min_signal_wire_length set to None, and\n   records that it did so in the rules record. Every place\
+  \ the runner builds a reference or dev spec uses it, and the\n   judged-reference loader added later\
+  \ must use it too (say so in the spec).\n2. Selftest: on a planted reference, a twin gate wire shorter\
+  \ than the reference's shortest gate wire passes the DRC\n   under E008's rules, and one longer than\
+  \ the reference's longest still fails.\n3. Spec (experiments/drafts/E008.yaml) and research/notes/e008-design.md:\
+  \ state the rule, its basis (D0018 item 1, O003\n   scope_in, T0314, T0315) and that candidates lose\
+  \ the lower bound too. Re-stamp every hash the runner edit changes.\n   Re-run the 2D_Case_4 L0/L1 fail-fast\
+  \ record and the gen2_0 smoke prep, update experiments/drafts/E008.dev_rows.json,\n   and report the\
+  \ shortest gate wire among the dev twins and DRC-clean smoke samples. Report, do not gate, any shorter\n\
+  \   than DesignRules.min_wire_length (1.5 mm, a placeholder default).\nThe registered path (full(),\
+  \ judged-reference loading) and the reference set stay out of scope."
+context_files:
+- research/notes/o003-twin-coverage.md
+- project/reviews/T0314/T0315.json
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- src/moduleforge/drc/rules.py
+- research/notes/e008-design.md
+- experiments/drafts/E008.dev_rows.json
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term', 'D0018', 'min_signal_wire_length'] if
+    k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance project/objectives project/decisions
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.5
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 2
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-12T03:23:18+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder model-fix list 2026-11-12 (session, D0018 item 1), confirmed before any candidate-module
+  screen: the measured gate-wire minimum is E008''s choice, not an O003 rule, and alone stops 2D_Case_2R''s
+  twin (T0314). Runs after T0316, which edits the same runner and spec.'
+history: []
