@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T02:27:47+00:00 from repository state — do not edit_
+_generated 2026-11-12T02:49:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -36,7 +36,6 @@ cancelled: 39, done: 273, failed: 3
 
 
 ## Recent events
-- 2026-11-11T17:21:38+00:00 run_finished {"run": "T0314-scientist-20261111T080102-d51f", "status": "completed", "cost": 3.99635, "subtype": "success", "report": "structured_output"}
 - 2026-11-11T17:54:05+00:00 verified {"task": "T0314"}
 - 2026-11-11T17:54:11+00:00 run_started {"run": "T0315-critic-20261111T095411-1156", "task": "T0315", "role": "critic", "session": "a7c7e73e-b67a-4947-8ba0-1b02a6d99ef6"}
 - 2026-11-11T17:54:46+00:00 sleep_detected {"gap_s": 1991, "runs_extended": 1}
@@ -51,3 +50,4 @@ cancelled: 39, done: 273, failed: 3
 - 2026-11-12T01:42:48+00:00 sleep_detected {"gap_s": 6806, "runs_extended": 0}
 - 2026-11-12T02:21:32+00:00 sleep_detected {"gap_s": 1882, "runs_extended": 0}
 - 2026-11-12T02:27:41+00:00 sleep_detected {"gap_s": 369, "runs_extended": 0}
+- 2026-11-12T02:44:41+00:00 sleep_detected {"gap_s": 980, "runs_extended": 0}
