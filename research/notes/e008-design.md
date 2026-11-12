@@ -244,3 +244,104 @@ to 0, metric s_ref 0, aggregate F6(e) on the last type only: the selftest fails 
 Limits: FV time at levels 2-3 is extrapolated (29 M and 235 M cells do not fit the Mac); the Mac/VM factor for FV is
 not measured; the selftest still runs fake solvers only, so the real-solver end-to-end path waits for burst_dev.sh.
 Commands and exit codes: see the T0306 report.
+
+## 8. T0316 (2026-11-11): D0018 — D as a yardstick under a frozen power-width floor; exclusion when no valid D exists
+Labels: **[F]** fact (file or command named), **[I]** inference, **[S]** speculation. Supersedes the DegradeError
+consequence in sections 3 and 6 (Case 4 numbers there are the pre-D0018 record).
+
+**Runner (experiments/runners/e008_run.py, sha256 f250ddce… at the time of the Case 4 record; the final hash is in the
+task report).** [F]
+- `d_rules` / `d_spec`: degrade() gets the reference's spec with `min_width_power = min(reference minimum, floor)`; every
+  other field unchanged. W (`W.twin(reference, spec)`), the candidates and both searches (`run_search` / `run_control`
+  get `rc.spec`) keep the reference's rules. Floor: `config.degrade_power_width_floor_m` = 1.5 mm, equal to the runner
+  constant `DEGRADE_POWER_WIDTH_FLOOR_M` and ≥ the generator default 1 mm, checked by `--verify-freeze`
+  (`degrade_power_width_floor`).
+- `prepare()` records `info.D_rule`: floor, reference minimum, D's rule, D's narrowest power strip
+  (`narrowest_power_strip_m`: per net, merged copper, the DRC's own `_width_problem` predicate, bisection to 1 µm), cells
+  across it at 0.5 and 0.25 mm, DRC-clean under D's rules, and the rules D violates under the reference's
+  (`min_trace_width` only, by construction).
+- Exclusion (`exclude`, field `RefCtx.excluded = {reason, detail, stage}`): a TwinError or DegradeError in `prepare()`;
+  in `Run.drive`, `d_definition` runs the band solves of D and W (the same result files the drivers read) before any
+  search, spot check or K1, and excludes a reference with R_D (1 − 2 e_R(D, W)) < 1.25 (NaN misses too). An excluded
+  reference gets no driver, no rows (`assemble_rows`), no spot check, and is reported in the evaluation report
+  `excluded` and the checks `fail_fast_twin_and_D`, `F1b_D_definition`, `at_least_one_counted_reference`
+  (metric `n_excluded_references`). A control miss stays a failed `F1b_control` check (INVALID).
+- `evaluate()` no longer calls `headroom_per_reference` when there are no reference rows (it raises); every metric is then
+  NaN and `at_least_one_counted_reference` fails.
+- Selftest (`--selftest`, exit 0) adds `exclusion_failures` (4 cases through the real `prepare` with planted
+  `W.twin` / `W.degrade`, `Run.drive`, `assemble_rows`, `evaluate`): DegradeError on one of two references → excluded,
+  the other counted; on the only reference → INVALID; a conservative-end D miss (R_D = 1.2505 ≥ 1.25 at the point, below
+  at the band's end; the selftest asserts the planted values have that property) → excluded, no driver, no rows; a
+  control miss beside an exclusion → `F1b_control` fails, not excluded; and that degrade() was handed the floor rule.
+  `d_floor_geometry_failures`: a generator layout (2 dies/switch, 1 wire/die, 3 mm power rule) with its landing bands
+  narrowed to 3 mm, through `prepare()`: D's narrowest strip 1.500 mm (< 3 mm, ≥ floor), DRC-clean under D's rules,
+  only `min_trace_width` under the reference's, L1 ratio 1.410. Mutation checks [F]: making the D check use the point
+  ratio (no band) gives 5 selftest failures; handing degrade() the reference rule gives 5 (the planted 3 mm layout then
+  raises DegradeError at 1.190 after 59 walk steps, the Case 4 pattern).
+
+**The floor, with evidence.** Script `research/o003/e008_dev/d_floor/floor_study.py` → `floor_study.json` (L0/L1;
+2D_Case_4 = E008's `dev_reference('case4')` twin; 7 generator housing layouts `halfbridge_housing_spec(n, min_width_power
+= w, wires_per_die = k)`, first layout of seed s, landing bands narrowed to the reference rule where that is buildable and
+DRC-clean ("planted": bands at the reference minimum, the Case 4 situation)). Diversity: n = 2-3 dies per switch, k = 1-2
+wires per die, power rules 2, 3, 4, 5 mm; 5 of 7 planted at the minimum (gen2x1_w2, gen2x1_w5 not: narrowest 3.5 / 6.0 mm).
+L1(D)/L1(W) against the target 1.25 × 1.11 = 1.3875 [F]:
+
+| layout (rule) | floor 1.0 mm | 1.5 mm | 2.0 mm | reference minimum (pre-D0018) |
+|---|---|---|---|---|
+| 2D_Case_4 (5 mm) | 1.421 (narrow_landing) | **1.391** (narrow_landing + 7 walk, target) | 1.390 (+21 walk, target) | 1.232 DegradeError (75 walk, local max) |
+| gen2x1_w2_s11 (2) | 1.639 (move 1) | 1.480 (move 1) | 1.388 (spread[2,down]×5 mm + 12 walk) | = 2.0 mm |
+| gen3x2_w2_s12 (2) | 1.428 (move 1) | 1.363 DegradeError (spreads + 54 walk, local max) | 1.182 DE (56 walk) | 1.182 DE |
+| gen2x2_w3_s13 (3) | 1.704 | 1.401 | 1.343 DE (56 walk) | 1.090 DE (58 walk) |
+| gen3x1_w3_s14 (3) | 1.736 | 1.429 | 1.388 (spreads + 23 walk) | 1.192 DE (60 walk) |
+| gen2x1_w4_s15 (4) | 2.007 | 1.653 | 1.407 | 1.183 DE (54 walk) |
+| gen3x1_w4_s16 (4) | 2.103 | 1.708 | 1.444 | 1.202 DE (30 walk) |
+| gen2x1_w5_s17 (5) | 2.681 | 2.224 | 1.927 | 1.398 (spreads + 21 walk) |
+| reaches 1.3875 | 8/8 | 7/8 | 6/8 | 3/8 |
+
+- [F] Wherever D exists below the reference minimum, its narrowest power strip equals the floor (0.999 / 1.500 / 2.000 mm
+  by the bisection), DRC-clean under D's rules, violating only `min_trace_width` under the reference's. Cells across the
+  narrowest strip: 1.0 mm → 2 at 0.5 mm, 4 at 0.25 mm; 1.5 mm → 3 / 6; 2.0 mm → 4 / 8 (rule-width strips of 2-5 mm: 4-10
+  at 0.5 mm).
+- [F] Existing evidence: P3 (o006-p3-em-convergence.md) measured the lateral convergence only on Case 4's rule-width
+  copper (0.5 → 0.25 mm: −0.79 % in L; pair-ratio estimates ~1e-3 for a 5 → 7 mm width change). T0291 (review
+  project/reviews/T0287/T0291.json): D with 1 mm bands on Case 4, l2_layout at 0.5 mm: L2 ratio 1.325 vs L1 1.421, L1
+  bias twin 15.3 %, D 9.2 %. Nothing measured the lateral term of e_R on 1-2 mm strips.
+- **Is e_R larger on such strips than on rule-width strips?** [I] Yes, expected. At 20 MHz the skin depth in copper is
+  about 15 µm (δ = sqrt(2ρ/(ωμ0)), ρ = 1.72e-8 Ω m), far below the 0.3 mm copper, so the strip current crowds at its
+  edges; the lateral error of a strip's inductance falls with the number of cells across it. e_R(control best, D)'s
+  lateral term is 3 |R(0.25) − R(0.5)| with R = L(control best)/L(D): the control best keeps rule-width copper (4-10
+  cells), D's narrowest strip has 2 (1.0 mm) or 3 (1.5 mm) at 0.5 mm, so the two layouts' lateral errors differ in size
+  and do not cancel in the ratio as they do for two rule-width layouts. The T0291 bias difference (9.2 % vs 15.3 %) is
+  consistent with this but is L1-vs-L2, not L2 convergence, so it does not measure it.
+- L2 check allowed by the packet (≤ 2 generator layouts ≤ gen2_0, 0.5 mm): `d_floor/l2_strip_check.py` on gen2x1_w2_s11
+  (W, D at the 2 mm rule, D at 1.0 and 1.5 mm; levels lat0.5, thk_c, thk_f). The lateral term cannot be formed there: no
+  0.25 mm solve is allowed, and a 1.0 mm level cannot run on generator layouts (l2_layout requires every feature on a
+  cell boundary; first attempt, `l2_strip_check_attempt1_lat1.log`). Results [F] (`l2_strip_check_gen2x1_w2_s11.json`,
+  12 solves, peak ≤ 4.0 GB each, one at a time): L(W) 17.75 nH at lat0.5. R = L(D)/L(W) at lat0.5 / thk_c / thk_f:
+  D at the 2 mm rule 1.3613 / 1.3631 / 1.3615 (L1 1.388); D at 1.0 mm 1.5565 / 1.5565 / 1.5570 (L1 1.639); D at 1.5 mm
+  1.4225 / 1.4230 / 1.4229 (L1 1.480). Thickness term of e_R (ratio_middle_term): rule 5.4e-3, 1.0 mm 1.47e-3, 1.5 mm
+  1.45e-3. [I] Narrowing to 1.0 or 1.5 mm does not inflate the thickness part of e_R on this layout (the rule-width D,
+  which the walk and a spread moved, has the largest); the lateral part, the one the resolution argument concerns, is
+  not measured. L1 overstated the L2 (0.5 mm) ratio by 2.0 % (rule), 5.3 % (1.0 mm), 4.1 % (1.5 mm), all inside the
+  0.11 margin. One layout: not a population statement.
+- **Choice: 1.5 mm.** [I] The smallest floor at which D's narrowest strip has an interior cell at the band solves' 0.5 mm
+  levels (4 of the 5 levels), and at which Case 4's D reaches the target (1.391). 1.0 mm reaches more layouts (8/8) but
+  leaves two edge cells across the strip at 0.5 mm; excluding it rests on the resolution argument above, not on a
+  measured lateral term. 2.0 mm loses one more generator layout (6/8) for no resolution gain that the evidence shows.
+  What would prove the choice wrong: E008's own band solves (lat0.25 vs lat0.5) giving e_R(control best, D) on a 1.5 mm
+  D well above the e_R of rule-width pairs (> 0.02, the objective notes' threshold), or Case 4's L2 ratio at 0.25 mm
+  below 1.25 at the conservative end (then Case 4 is excluded under D0018).
+
+**2D_Case_4 fail-fast record re-run** (`research/o003/e008_dev/case4_prep.py`, 2,000 quick_ok draws; merged into
+experiments/drafts/E008.dev_rows.json `meta.per_reference.2D_Case_4`; the earlier `meta.fail_fast.2D_Case_4`
+DegradeError entry is removed) [F]: twin fit+signal_feet, zero copper symmetric difference, L1(W)/L1(reconstruction)
+1.0017. **D now reaches 1.391 ≥ 1.388** (no exclusion): moves `narrow_landing` (landing bands 5 → 1.5 mm), then 7 walk
+steps `col_PHASE_u0+0.5mm` ×4, `col_DC-_u1-0.5mm` ×3. D's narrowest power strip 1.500 mm, 3.0 cells at 0.5 mm, 6.0 at
+0.25 mm; DRC-clean under D's rules; under the reference's only `min_trace_width`. quick_ok unchanged (33 DRC-clean of
+2,000, none rejected, bound 8.7 %). [I] The L1 ratio is 0.004 above the target, so Case 4's F1(b) definition is decided
+by its band solves, not by L1 (T0291 at 1 mm: L1 overstated the L2 ratio by 7.2 %; 1.391 / 1.072 ≈ 1.30 ≥ 1.25 if the
+same overstatement held, a speculation [S]).
+
+**Not done / limits.** The registered path (`full()`) and the reference set are unchanged. `make_spec.py` was already
+behind the YAML (no T0308-T0310 content) and was not re-run; the YAML was edited directly. `--plan` was not re-run: the D
+and W band solves now run before the searches start (a short serial phase per reference that --plan does not model).

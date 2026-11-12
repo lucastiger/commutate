@@ -1,0 +1,974 @@
+{
+ "2D_Case_4": {
+  "meta": {
+   "twin_mode": "fit+signal_feet",
+   "source": "e008_run.dev_reference"
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 1.4207785362139191,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.1,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "LS_landing_DC-": 1.0,
+     "HS_landing_PHASE": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.3910401988110974,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 7,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.3071128940192462,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[2,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[2,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.07775))",
+     "spread[1,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[3,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[1,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.07775))",
+     "spread[3,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.0775))"
+    ],
+    "stopped": [],
+    "wall_s": 5.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "LS_landing_DC-": 1.5,
+     "HS_landing_PHASE": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.390450201461677,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 21,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.2139888583358243,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[2,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[2,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.078))",
+     "spread[1,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[3,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[1,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.078))",
+     "spread[3,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.07775))"
+    ],
+    "stopped": [],
+    "wall_s": 16.2,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "LS_landing_DC-": 2.0,
+     "HS_landing_PHASE": 2.0
+    }
+   },
+   "reference": {
+    "D_min_width_power_mm": 4.9997419999999995,
+    "DegradeError": "L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'w",
+    "l1_ratio": 1.2316371754793511,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 75,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 0.9964597120118455,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[2,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[2,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.07875))",
+     "spread[1,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[3,up]: not DRC-clean: Violation(rule='min_spacing', message='traces 0/5 (DC+/GATE_HS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.015, 0.06275))",
+     "spread[1,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.07875))",
+     "spread[3,down]: not DRC-clean: Violation(rule='min_spacing', message='traces 2/4 (PHASE/GATE_LS) spacing 1.500e-03 m < 2.000e-03 m', where=(0.06, 0.0785))"
+    ],
+    "stopped": [],
+    "wall_s": 55.2
+   }
+  },
+  "reference_min_width_power_mm": 4.9997419999999995,
+  "reference_narrowest_power_strip_mm": 4.999542236328128
+ },
+ "gen2x1_w2_s11": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 2.0,
+    "LS_landing_DC-": 2.0
+   },
+   "planted_is_narrowed": false
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 1.6386114650185433,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.4802052621245403,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.3883753517558264,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,down]x5mm"
+    ],
+    "walk_steps": 12,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.04550232472474,
+    "skipped": [
+     "narrow_landing: not DRC-clean: Violation(rule='min_spacing', message='traces 1/2 (DC-/PHASE) spacing 5.000e-04 m < 1.000e-03 m', where=(0.06625, 0.02525))",
+     "centre_landing: not DRC-clean: Violation(rule='min_spacing', message='traces 1/2 (DC-/PHASE) spacing 5.000e-04 m < 1.000e-03 m', where=(0.06625, 0.02525))",
+     "spread[2,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.025500000000000002))",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.02325))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.023))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225))"
+    ],
+    "stopped": [
+     "spread[2,down]: stopped at step 10 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225)))"
+    ],
+    "wall_s": 5.1,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [],
+    "landing_widths_mm": {}
+   },
+   "reference": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.3883753517558264,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,down]x5mm"
+    ],
+    "walk_steps": 12,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.04550232472474,
+    "skipped": [
+     "narrow_landing: not DRC-clean: Violation(rule='min_spacing', message='traces 1/2 (DC-/PHASE) spacing 5.000e-04 m < 1.000e-03 m', where=(0.06625, 0.02525))",
+     "centre_landing: not DRC-clean: Violation(rule='min_spacing', message='traces 1/2 (DC-/PHASE) spacing 5.000e-04 m < 1.000e-03 m', where=(0.06625, 0.02525))",
+     "spread[2,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.025500000000000002))",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.02325))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00475, 0.023))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225))"
+    ],
+    "stopped": [
+     "spread[2,down]: stopped at step 10 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.065, 0.01225)))"
+    ],
+    "wall_s": 5.1,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [],
+    "landing_widths_mm": {}
+   }
+  },
+  "reference_min_width_power_mm": 2.0,
+  "reference_narrowest_power_strip_mm": 3.4996032714843754
+ },
+ "gen3x2_w2_s12": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 2.0,
+    "LS_landing_DC-": 2.0
+   },
+   "planted_is_narrowed": true
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 1.4277920841785179,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": "L1 ratio 1.363 < 1.388 after ['narrow_landing', 'spread[2,up]x7.5mm', 'spread[2,down]x0.5mm', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_HS_u0+0.5mm]', 'walk[row_HS_u0+0.5mm]', 'walk[row_HS_u0+0.5mm]', 'walk[row_HS_u0+0.5mm]', 'walk[row_HS_u0+0.5mm]', 'walk",
+    "l1_ratio": 1.3626097273380573,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing",
+     "spread[2,up]x7.5mm",
+     "spread[2,down]x0.5mm"
+    ],
+    "walk_steps": 54,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.2227857455928097,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.02975))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.02975))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 15 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.02975)))",
+     "spread[2,down]: stopped at step 1 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125)))"
+    ],
+    "wall_s": 29.7
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": "L1 ratio 1.182 < 1.388 after ['spread[2,up]x7mm', 'spread[2,down]x0.5mm', 'walk[land_LS+0.5mm]', 'walk[land_HS+0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_HS_u0+0.5mm]', 'wal",
+    "l1_ratio": 1.1821653353102313,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x7mm",
+     "spread[2,down]x0.5mm"
+    ],
+    "walk_steps": 56,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.049476123197217,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 14 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295)))",
+     "spread[2,down]: stopped at step 1 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125)))"
+    ],
+    "wall_s": 33.7
+   },
+   "reference": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": "L1 ratio 1.182 < 1.388 after ['spread[2,up]x7mm', 'spread[2,down]x0.5mm', 'walk[land_LS+0.5mm]', 'walk[land_HS+0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_HS_u0+0.5mm]', 'wal",
+    "l1_ratio": 1.1821653353102313,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x7mm",
+     "spread[2,down]x0.5mm"
+    ],
+    "walk_steps": 56,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.049476123197217,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 14 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.063, 0.0295)))",
+     "spread[2,down]: stopped at step 1 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125)))"
+    ],
+    "wall_s": 34.2
+   }
+  },
+  "reference_min_width_power_mm": 2.0,
+  "reference_narrowest_power_strip_mm": 1.9996643066406252
+ },
+ "gen2x2_w3_s13": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 3.0,
+    "LS_landing_DC-": 3.0
+   },
+   "planted_is_narrowed": true
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 1.7043791426959134,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.4012233109789927,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": "L1 ratio 1.343 < 1.388 after ['narrow_landing', 'spread[2,up]x0.5mm', 'spread[2,down]x1mm', 'walk[land_LS+0.5mm]', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row",
+    "l1_ratio": 1.342753515970332,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing",
+     "spread[2,up]x0.5mm",
+     "spread[2,down]x1mm"
+    ],
+    "walk_steps": 56,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.22490446679796,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.03025))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.03025))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 1 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.03025)))",
+     "spread[2,down]: stopped at step 2 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125)))"
+    ],
+    "wall_s": 27.1
+   },
+   "reference": {
+    "D_min_width_power_mm": 3.0,
+    "DegradeError": "L1 ratio 1.090 < 1.388 after ['spread[2,down]x1mm', 'walk[row_LS_v0-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS+0.5mm]', 'walk[slot0_v1-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'walk[row_LS_u0-0.5mm]', 'wal",
+    "l1_ratio": 1.090358340604096,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,down]x1mm"
+    ],
+    "walk_steps": 58,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.0080552760066213,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[2,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.02975))",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.02975))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.065, 0.02975))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,down]: stopped at step 2 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06525, 0.0125)))"
+    ],
+    "wall_s": 31.1
+   }
+  },
+  "reference_min_width_power_mm": 3.0,
+  "reference_narrowest_power_strip_mm": 2.9998779296875004
+ },
+ "gen3x1_w3_s14": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 3.0,
+    "LS_landing_DC-": 3.0
+   },
+   "planted_is_narrowed": true
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 1.735621193804944,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.4286896878536701,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.38842804991262,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing",
+     "spread[2,up]x4.5mm",
+     "spread[2,down]x1mm"
+    ],
+    "walk_steps": 23,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.2611157913675244,
+    "skipped": [
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.024))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.02375))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 9 (not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.02425)))",
+     "spread[2,down]: stopped at step 2 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999)))"
+    ],
+    "wall_s": 11.3,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 2.0,
+     "LS_landing_DC-": 2.0
+    }
+   },
+   "reference": {
+    "D_min_width_power_mm": 3.0,
+    "DegradeError": "L1 ratio 1.192 < 1.388 after ['spread[2,up]x4.5mm', 'spread[2,down]x1mm', 'walk[land_LS-0.5mm]', 'walk[land_LS-0.5mm]', 'walk[row_LS_v0+0.5mm]', 'walk[row_LS_v0+0.5mm]', 'walk[row_HS_v0-0.5mm]', 'walk[row_HS_v0-0.5mm]', 'walk[row_HS_v0-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'wa",
+    "l1_ratio": 1.1919616524244192,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x4.5mm",
+     "spread[2,down]x1mm"
+    ],
+    "walk_steps": 60,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.0365995811983781,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.02425))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.024))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 9 (not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.0245)))",
+     "spread[2,down]: stopped at step 2 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06575, 0.013999999999999999)))"
+    ],
+    "wall_s": 28.4
+   }
+  },
+  "reference_min_width_power_mm": 3.0,
+  "reference_narrowest_power_strip_mm": 2.9998779296875004
+ },
+ "gen2x1_w4_s15": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 4.0,
+    "LS_landing_DC-": 4.0
+   },
+   "planted_is_narrowed": true
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 2.006675955306316,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.653020237364947,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.4072201066389374,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 2.0,
+     "LS_landing_DC-": 2.0
+    }
+   },
+   "reference": {
+    "D_min_width_power_mm": 4.0,
+    "DegradeError": "L1 ratio 1.183 < 1.388 after ['spread[2,up]x7mm', 'spread[2,down]x6mm', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[row_",
+    "l1_ratio": 1.1829892184256168,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x7mm",
+     "spread[2,down]x6mm"
+    ],
+    "walk_steps": 54,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.0900607287293311,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.0655, 0.02925))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.0655, 0.02925))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00675, 0.01575))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00675, 0.0155))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 14 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.0655, 0.02925)))",
+     "spread[2,down]: stopped at step 12 (not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.00675, 0.01575)))"
+    ],
+    "wall_s": 19.4
+   }
+  },
+  "reference_min_width_power_mm": 4.0,
+  "reference_narrowest_power_strip_mm": 3.9993286132812504
+ },
+ "gen3x1_w4_s16": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 4.0,
+    "LS_landing_DC-": 4.0
+   },
+   "planted_is_narrowed": true
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 2.102847921527304,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 1.7075177810325817,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.4434670672796088,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.1,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 2.0,
+     "LS_landing_DC-": 2.0
+    }
+   },
+   "reference": {
+    "D_min_width_power_mm": 4.0,
+    "DegradeError": "L1 ratio 1.202 < 1.388 after ['spread[2,up]x7.5mm', 'spread[2,down]x5mm', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_LS+0.5mm]', 'walk[land_HS-0.5mm]', 'walk[land_HS-0.5mm]', 'walk[row_LS_gap-0.5mm]', 'walk[",
+    "l1_ratio": 1.2022031885086126,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x7.5mm",
+     "spread[2,down]x5mm"
+    ],
+    "walk_steps": 30,
+    "walk_terminal": "local_maximum",
+    "walk_start_ratio": 1.1085332282606681,
+    "skipped": [
+     "narrow_landing: changes nothing",
+     "centre_landing: changes nothing",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.06375, 0.029))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.06375, 0.029))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.0155))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.015250000000000001))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 15 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.06375, 0.029)))",
+     "spread[2,down]: stopped at step 10 (not DRC-clean: Violation(rule='edge_margin', message='trace 2 (PHASE) closer to substrate edge than margin', where=(0.004, 0.0155)))"
+    ],
+    "wall_s": 17.1
+   }
+  },
+  "reference_min_width_power_mm": 4.0,
+  "reference_narrowest_power_strip_mm": 3.9993286132812504
+ },
+ "gen2x1_w5_s17": {
+  "meta": {
+   "planted_landing_widths_mm": {
+    "HS_landing_PHASE": 5.0,
+    "LS_landing_DC-": 5.0
+   },
+   "planted_is_narrowed": false
+  },
+  "floors": {
+   "1.0": {
+    "D_min_width_power_mm": 1.0,
+    "DegradeError": null,
+    "l1_ratio": 2.681306987129833,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 0.99945068359375,
+    "cells_across_0p5mm": 1.9989013671875,
+    "cells_across_0p25mm": 3.997802734375,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.0,
+     "LS_landing_DC-": 1.0
+    }
+   },
+   "1.5": {
+    "D_min_width_power_mm": 1.5,
+    "DegradeError": null,
+    "l1_ratio": 2.2240212593896116,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.0,
+    "narrowest_power_strip_mm": 1.4999389648437502,
+    "cells_across_0p5mm": 2.9998779296875004,
+    "cells_across_0p25mm": 5.999755859375001,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 1.5,
+     "LS_landing_DC-": 1.5
+    }
+   },
+   "2.0": {
+    "D_min_width_power_mm": 2.0,
+    "DegradeError": null,
+    "l1_ratio": 1.9269524757556258,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "narrow_landing"
+    ],
+    "walk_steps": 0,
+    "walk_terminal": null,
+    "walk_start_ratio": null,
+    "skipped": [],
+    "stopped": [],
+    "wall_s": 0.1,
+    "narrowest_power_strip_mm": 1.9996643066406252,
+    "cells_across_0p5mm": 3.9993286132812504,
+    "cells_across_0p25mm": 7.998657226562501,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [
+     "min_trace_width"
+    ],
+    "landing_widths_mm": {
+     "HS_landing_PHASE": 2.0,
+     "LS_landing_DC-": 2.0
+    }
+   },
+   "reference": {
+    "D_min_width_power_mm": 5.0,
+    "DegradeError": null,
+    "l1_ratio": 1.3979088170907221,
+    "target": 1.3875000000000002,
+    "moves_non_walk": [
+     "spread[2,up]x3mm",
+     "spread[2,down]x1mm"
+    ],
+    "walk_steps": 21,
+    "walk_terminal": "target_reached",
+    "walk_start_ratio": 1.1548613837191315,
+    "skipped": [
+     "narrow_landing: not DRC-clean: Violation(rule='min_trace_width', message='trace 1 (DC-) narrower than min width', where=(0.02162500000043802, 0.034499890099425556)); Violation(rule='min_trace_width', message='trace 2 (PHASE) narrower than min width', where=(0.0455, 0.014500109999580001))",
+     "centre_landing: not DRC-clean: Violation(rule='min_trace_width', message='trace 1 (DC-) narrower than min width', where=(0.02162500000043802, 0.034499890099425556)); Violation(rule='min_trace_width', message='trace 2 (PHASE) narrower than min width', where=(0.0455, 0.014500109999580001))",
+     "spread[1,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.064, 0.028))",
+     "spread[3,up]: not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.064, 0.028))",
+     "spread[1,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))",
+     "spread[3,down]: not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125))"
+    ],
+    "stopped": [
+     "spread[2,up]: stopped at step 6 (not DRC-clean: Violation(rule='edge_margin', message='trace 1 (DC-) closer to substrate edge than margin', where=(0.064, 0.028)))",
+     "spread[2,down]: stopped at step 2 (not DRC-clean: Violation(rule='edge_margin', message='trace 0 (DC+) closer to substrate edge than margin', where=(0.06375, 0.0125)))"
+    ],
+    "wall_s": 12.7,
+    "narrowest_power_strip_mm": 5.499267578125,
+    "cells_across_0p5mm": 10.998535156249998,
+    "cells_across_0p25mm": 21.997070312499996,
+    "drc_clean_under_D_rules": true,
+    "rules_violated_under_reference_rules": [],
+    "landing_widths_mm": {}
+   }
+  },
+  "reference_min_width_power_mm": 5.0,
+  "reference_narrowest_power_strip_mm": 5.999755859375001
+ }
+}

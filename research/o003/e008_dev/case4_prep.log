@@ -1,6 +1,5 @@
-2D_Case_4: twin fit+signal_feet L1 W/R 1.0017256511964738 fail_fast DegradeError: L1 ratio 1.232 < 1.388 after ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHAS walk_steps 5 quick_ok {'draws': 2000, 'drc_clean': 33, 'rejected_clean': 0, 'flag': False, 'rejection_rate_ub95': 0.08678118929147494} midpoint [] wall 76 s
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+D0018: D rule {"decision": "D0018", "floor_m": 0.0015, "reference_min_width_power_m": 0.004999742, "D_min_width_power_m": 0.0015, "narrowed_below_reference": true, "narrowest_power_strip_m": 0.0014999389648437502, "cells_across": {"0.5mm": 2.9998779296875004, "0.25mm": 5.999755859375001}, "drc_clean_under_D_rules": true, "rules_violated_under_reference_rules": ["min_trace_width"]}; D L1/W L1 1.3910401988110974 moves ['narrow_landing', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_PHASE_u0+0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]', 'walk[col_DC-_u1-0.5mm]'] excluded None
+2D_Case_4: twin fit+signal_feet L1 W/R 1.0017256511964738 fail_fast None walk_steps 5 quick_ok {'draws': 2000, 'drc_clean': 33, 'rejected_clean': 0, 'flag': False, 'rejection_rate_ub95': 0.08678118929147494} midpoint [] wall 8 s
 rule strictness flags (>2x the smallest DC-link gap): none
 twin copper: {"mode": "fit+signal_feet", "per_net": {"DC+": {"symdiff_mm2": 0.0, "fraction": 0.0}, "DC-": {"symdiff_mm2": 0.0, "fraction": 0.0}, "PHASE": {"symdiff_mm2": 0.0, "fraction": 0.0}}}
-       76.65 real        75.80 user         0.48 sys
-time: sysctl kern.clockrate: Operation not permitted
-exit=1

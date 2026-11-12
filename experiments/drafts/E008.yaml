@@ -122,6 +122,22 @@ config:
       control: 1
       quick_ok: 2
   quick_ok_draws: 2000
+  degrade_power_width_floor_m: 0.0015
+  degrade_power_width_floor_reason: 'D0018 decision 1 (T0316). D is a yardstick: it sets only L_sub(D), its band solves and
+    w_ctrl = 2 e_R(control best, D); the control candidates come from the reference''s spec (search.run_control). So D''s power-net
+    copper (DC+, PHASE, DC-) may be narrower than the reference''s own minimum power-net width, down to this floor: degrade()
+    gets the reference''s spec with min_width_power = min(reference minimum, floor) (e008_run.d_spec); every other rule applies
+    to D unchanged; W, the candidates and both searches keep the reference''s rules. Why 1.5 mm, the smallest floor the
+    evidence supports: (a) the generator''s default minimum width is 1.0 mm (DesignRules.min_trace_width); (b) at 1.0 mm D''s
+    narrowest strip has 2 cells across at the band solves'' 0.5 mm levels (4 of the 5 levels), both edge cells, where the 20
+    MHz current crowds; at 1.5 mm it has 3 (one interior cell) and 6 at 0.25 mm. The lateral term of e_R(control best, D) on
+    such strips could not be measured within T0316''s limits (no 0.25 mm solve; a 1.0 mm level cannot run on 0.5 mm-grid
+    layouts), so excluding 1.0 mm rests on this resolution argument (inference); the 0.5 mm thickness-term check is in
+    research/o003/e008_dev/d_floor/l2_strip_check_gen2x1_w2_s11.json; (c) L0/L1 (research/o003/e008_dev/d_floor/floor_study.json,
+    2D_Case_4 and 7 generator housing layouts with 2-5 mm power rules): D reaches the L1 target 1.3875 on 8/8 at 1.0 mm,
+    7/8 at 1.5 mm, 6/8 at 2.0 mm and 3/8 at the reference minimum; on 2D_Case_4 1.421 (1.0 mm), 1.391 (1.5 mm: narrow_landing
+    and 7 walk steps), 1.390 (2.0 mm), 1.232 (5 mm, DegradeError). Frozen: --verify-freeze checks this value against the
+    runner constant DEGRADE_POWER_WIDTH_FLOOR_M and that it is >= 1 mm'
   em:
     freq_hz: 20000000.0
     production: lat0.25
@@ -359,7 +375,12 @@ config:
     midpoint: 'T0297 note 2: whether the twin''s midpoint-of-needs rule decided a merged-band split, and which.'
     twin_copper: 'T0299: symmetric difference twin W vs snapped reconstruction per net, mm2 and fraction of the net''s area,
       with the twin mode. Scalar areas only (F5). Reported, not gated.'
-    degradation: 'T0296: per reference whether the walk ran (rec[''walk'']) and its steps; D''s L_sub ratio gated.'
+    degradation: 'T0296: per reference whether the walk ran (rec[''walk'']) and its steps; D''s L_sub ratio decides F1(b)''s
+      definition (a miss excludes the reference, D0018). T0316: info.D_rule gives the floor, the reference''s minimum, D''s rule,
+      D''s narrowest power strip, the cells across it at 0.5 and 0.25 mm, DRC-clean under D''s rules and the rules D violates
+      under the reference''s (min_trace_width only); info.D_definition gives R_D, e_R(D, W) and the conservative end'
+    excluded: 'D0018: evaluation report ''excluded'' {reference: reason (TwinError | DegradeError | D_misses_1p25_in_L_sub),
+      detail, stage (prepare | drive)}; metric n_excluded_references'
     near_ties: 'T0292: the near-tie union count is reported; --plan gives the cost at its expected and upper end.'
   twin_limitations:
   - rectangular merged bands are split by the midpoint-of-needs convention; the copper does not fix the boundary (T0297)
@@ -370,16 +391,24 @@ config:
   failure_consequences:
     F1a_twin_gate_fails: 'objective: the reference is excluded and reported; INVALID only if no reference remains'
     F1b_control_fails: 'objective: experimental failure, E008 INVALID'
-    D_misses_1p25_in_L_sub: 'implied by the objective: D does not meet F1(b)''s definition, so (b) cannot be completed for
-      that reference and F1''s response applies: INVALID. Open: exclusion of only that reference (see founder decisions)'
-    DegradeError: 'implied: no D exists, (b) cannot run, INVALID by the same reading; detected before any VM solve (fail fast).
-      Open: see founder decisions'
+    D_misses_1p25_in_L_sub: 'D0018 decision 2: no D meets F1(b)''s definition for that reference (L_sub(D)/L_sub(twin) below
+      1.25 at the conservative end of its band, R_D (1 - 2 e_R(D, W)), from the band solves of D and W that Run.drive runs
+      before any search): that reference is excluded and reported with the reason, like a twin-gate failure (no driver, no
+      rows, evaluation report ''excluded''); E008 is INVALID only if no reference remains (at_least_one_counted_reference)'
+    DegradeError: 'D0018 decision 2: degrade() raises DegradeError (fail fast, L0/L1, before any l2_layout solve): that
+      reference is excluded and reported with the reason, not the run; E008 is INVALID only if no reference remains. A TwinError
+      likewise stops that reference (F1(a)), not the run'
+    F1b_control_misses: 'D0018 / O003 F1: a control that runs and misses h_plant - w_ctrl is still INVALID (not an exclusion)'
     F1c_band_too_wide: 'objective: INVALID'
     F6a_to_d: 'objective: INVALID'
     F6e_spot_check_fails: 'objective: no verdict (INVALID), diagnosis and a founder decision'
+  founder_decisions_settled:
+  - 'D0018 (founder session 2026-11-12; was the first item of founder_decisions_before_registration): D is a yardstick, built
+    under the power-width floor config.degrade_power_width_floor_m (decision 1); a DegradeError, or D below 1.25 L_sub(twin)
+    at the conservative end of its band, excludes that reference and E008 is INVALID only if no reference remains; a control
+    that runs and misses h_plant - w_ctrl is still INVALID; a TwinError or DegradeError stops that reference, not the run
+    (decision 2). See failure_consequences and research/notes/e008-design.md section 8'
   founder_decisions_before_registration:
-  - 'D below 1.25 L_sub(twin) at the conservative end of its band, or DegradeError: INVALID for E008 (implied reading) or
-    exclusion of that reference only (the objective gives exclusion only for the twin gates)'
   - the band check (e_R on >= 4 twin-vs-random pairs) and Case 4's twin gates come from the full-fidelity dev run on the VM
     (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either
   - 'before registration the same full-fidelity dev run (burst_dev.sh: gen2_0 with the full frozen search, 2D_Case_4 twin
@@ -431,11 +460,13 @@ config:
     draws gave 33, none rejected, so the false-rejection rate is <= 8.7 % (exact one-sided 95 % bound, now reported by the
     runner; research/o003/e008_dev/case4_prep.log). Whether quick_ok_draws should instead fix the number of DRC-clean samples
     (e.g. 100 clean -> bound 3 %) is a design choice for registration (reported, not gated, either way)'
-  - '2D_Case_4 fail-fast facts (dev, L0/L1 only, attempt 5): twin mode fit+signal_feet with zero copper symmetric difference
-    on DC+, DC- and PHASE, L1(W)/L1(reconstruction) = 1.0017; degrade() raises DegradeError (L1 ratio 1.232 < 1.388 after
-    the walk reached a local maximum). Case 4 is a PowerSynth layout like both public references, so a DegradeError on them
-    is a live risk: under the implied reading E008 would be INVALID before any VM spend. The DegradeError consequence above
-    should be decided with this in view'
+  - '2D_Case_4 fail-fast facts (dev, L0/L1 only; the consequence of a DegradeError is settled by D0018, see
+    founder_decisions_settled): twin mode fit+signal_feet with zero copper symmetric difference on DC+, DC- and PHASE,
+    L1(W)/L1(reconstruction) = 1.0017. Under the reference''s 5 mm power width (before D0018) degrade() raised DegradeError
+    (L1 ratio 1.232 < 1.388, local maximum after 75 walk steps). Under the 1.5 mm floor (T0316, case4_prep.py) D reaches
+    L1 1.391 >= 1.388 after narrow_landing (landing bands 5 -> 1.5 mm) and 7 walk steps; D''s narrowest power strip is
+    1.5 mm (3 cells at 0.5 mm, 6 at 0.25 mm). Only E008''s band solves decide F1(b) (T0291: at 1.0 mm bands the L2 ratio
+    at 0.5 mm was 1.325 against L1 1.421). Left for the founder: none on this item beyond the full-fidelity dev run above'
   - E009-registered smoke thermal rule for local smoke rows; the earlier smoke rule did not fit the Mac (research/notes/e008-design.md
     section 3)
   cost_estimate:
@@ -845,10 +876,13 @@ sanity_checks:
 - name: metric_params_exact
   description: floor = 1e-3 K and tj_limit_K = 2.0 K exactly (T0283/T0284)
 - name: fail_fast_twin_and_D
-  description: W and D of every reference built (L1 only) before the first l2_layout solve; TwinError / DegradeError stop
-    the run with the reason
+  description: 'W and D of every reference built (L1 only, D under the D0018 power-width floor) before the first l2_layout
+    solve; a TwinError or DegradeError stops the reference (excluded and reported with the reason, D0018), not the run; passes
+    iff every reference that reaches Run.drive has W and D and every excluded reference carries reason, detail and stage'
 - name: F1b_D_definition
-  description: 'per reference: L_sub(D)/L_sub(W) (1 - 2 e_R(D, W)) >= 1.25 from the stored band solves, before K1 is read'
+  description: 'per reference: L_sub(D)/L_sub(W) (1 - 2 e_R(D, W)) >= 1.25 from the band solves of D and W, which Run.drive
+    runs before any search, spot check or K1 read; a reference that misses is excluded and reported (D0018 decision 2), so the
+    per-reference checks run on the remaining references and the declared check passes iff all of them pass'
 - name: F1a1_F1a2_twin_gates
   description: 'per reference (exclusion, not INVALID): inductance and thermal twin gates as headroom_per_reference computes
     them'

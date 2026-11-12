@@ -1,0 +1,34 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+{"layout": "gen2x1_w2_s11", "reference_min_width_power_mm": 2.0, "W_narrowest_mm": 3.4996032714843754, "D_rule": {"l1_ratio": 1.3883753517558264, "narrowest_mm": 1.9996643066406252, "moves_non_walk": ["spread[2,down]x5mm"], "walk_steps": 12, "drc_clean_under_D_rules": true}, "D_1.0": {"l1_ratio": 1.6386114650185433, "narrowest_mm": 0.99945068359375, "moves_non_walk": ["narrow_landing"], "walk_steps": 0, "drc_clean_under_D_rules": true}, "D_1.5": {"l1_ratio": 1.4802052621245403, "narrowest_mm": 1.4999389648437502, "moves_non_walk": ["narrow_landing"], "walk_steps": 0, "drc_clean_under_D_rules": true}}
+19:30:54 solve W lat1.0
+Traceback (most recent call last):
+  File "/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py", line 118, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py", line 66, in main
+    return solve(*a.solve)
+           ^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py", line 52, in solve
+    r = L.loop_inductance(lay, [20e6], refinement=0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/src/moduleforge/solvers/l2_layout.py", line 1898, in loop_inductance
+    sys_, port, info = build_layout_system(layout, fmesh, refinement)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/src/moduleforge/solvers/l2_layout.py", line 1785, in build_layout_system
+    fill = cell_fill(cm, xmin, ymin, ax, ay, nx, ny)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/src/moduleforge/solvers/l2_layout.py", line 791, in cell_fill
+    P = np.array([_snap_aligned(F, f"the {net} trace", xe, ye) for F, net in zip(P, nets, strict=True)]) if per else P
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/src/moduleforge/solvers/l2_layout.py", line 748, in _snap_aligned
+    raise ValueError(f"{what} is not on the lattice: cell ({i}, {j}) at x {xe[i] * 1e3:.4f}..{xe[i + 1] * 1e3:.4f} mm, "
+ValueError: the DC+ trace is not on the lattice: cell (69, 21) at x 61.0000..62.0000 mm, y 13.0000..14.0000 mm is 0.500000 covered; every feature must lie on cell boundaries (cell 1 x 1 mm)
+Traceback (most recent call last):
+  File "/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py", line 118, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py", line 100, in main
+    subprocess.run([sys.executable, __file__, "--solve", str(pk), lv, str(out)], check=True, cwd=ROOT)
+  File "/Users/lukeskywalker/.local/share/uv/python/cpython-3.12.16-macos-aarch64-none/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/Users/lukeskywalker/mf/wt/T0316/.venv/bin/python', '/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_strip_check.py', '--solve', '/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_solves/gen2x1_w2_s11_W.pkl', 'lat1.0', '/Users/lukeskywalker/mf/wt/T0316/research/o003/e008_dev/d_floor/l2_solves/gen2x1_w2_s11_W_lat1.0_71e2a3ac8a3c.json']' returned non-zero exit status 1.

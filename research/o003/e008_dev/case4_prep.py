@@ -8,11 +8,15 @@ full-fidelity dev run (research/o003/e008_dev/burst_dev.sh). What runs here is t
 development geometry only, with the registered quick_ok_draws (2,000) rather than the smoke 100, which drew no DRC-clean
 sample on Case 4 (attempt 1). Seeds: the dev seed, purpose 2, geometry index 1 (config.dev.geometries order).
 
+T0316 (D0018): D is built under the runner's power-width floor (config.degrade_power_width_floor_m); the record carries
+D's rule, its narrowest power strip, its L1 ratio and moves, any exclusion, and the runner's sha256.
+
 Usage: uv run python research/o003/e008_dev/case4_prep.py [--draws N]
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -53,18 +57,25 @@ def main() -> int:
            "L1_H": l1,
            "L1_ratio_twin_over_reconstruction": (l1["twin"] / l1["reconstruction"]) if l1["twin"] else None,
            "info": rc.info, "quick_ok_draws": draws, "wall_s": wall,
+           "D_l1_ratio_over_twin": (rc.d_rec or {}).get("l1_ratio"), "D_target_l1_ratio": (rc.d_rec or {}).get("target_l1_ratio"),
+           "D_moves": (rc.d_rec or {}).get("moves"), "D_landing_widths": (rc.d_rec or {}).get("widths"),
+           "excluded": rc.excluded, "D_rule": rc.info.get("D_rule"),
+           "runner_sha256": hashlib.sha256((ROOT / "experiments/runners/e008_run.py").read_bytes()).hexdigest(),
            "script": "research/o003/e008_dev/case4_prep.py", "run_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
     p = Path(a.rows)
     doc = json.loads(p.read_text())
     m = doc["meta"]
     m.setdefault("per_reference", {})["2D_Case_4"] = rec
+    m.setdefault("fail_fast", {}).pop("2D_Case_4", None)  # T0316: the earlier DegradeError entry is replaced, not kept
     if rc.info.get("fail_fast"):
-        m.setdefault("fail_fast", {})["2D_Case_4"] = rc.info["fail_fast"]
+        m["fail_fast"]["2D_Case_4"] = rc.info["fail_fast"]
     m["merged"] = [x for x in m.get("merged", []) if x.get("reference_id") != "2D_Case_4"] + [
         {"reference_id": "2D_Case_4", "by": rec["script"], "what": "L0/L1 fail-fast record only; no rows added"}]
     p.write_text(json.dumps(doc, indent=1, default=lambda o: o if not hasattr(o, "__dict__") else str(o),
                             allow_nan=True))
     q = rc.info.get("quick_ok", {})
+    print(f"D0018: D rule {json.dumps(rc.info.get('D_rule'), default=str)}; D L1/W L1 {rec['D_l1_ratio_over_twin']} moves "
+          f"{rec['D_moves']} excluded {rc.excluded}")
     print(f"2D_Case_4: twin {rec['twin_mode']} L1 W/R {rec['L1_ratio_twin_over_reconstruction']} fail_fast "
           f"{str(rc.info.get('fail_fast'))[:160]} walk_steps {len(rc.info.get('walk') or [])} quick_ok {q} "
           f"midpoint {rc.info.get('midpoint_decided_splits')} wall {wall:.0f} s")
