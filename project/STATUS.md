@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T22:49:40+00:00 from repository state — do not edit_
+_generated 2026-11-12T22:50:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (8 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -9,7 +9,7 @@ _generated 2026-11-12T22:49:40+00:00 from repository state — do not edit_
 - **I0175** [experiment_registration] register E008 (pre-registration)
 - **I0177** [experiment_registration] register E008 (pre-registration)
 - **I0179** [experiment_registration] register E008 (pre-registration)
-- **I0180** [protected_change] T0322: merge needs founder approval
+- **I0181** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -36,14 +36,10 @@ _generated 2026-11-12T22:49:40+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 280, failed: 3, needs_founder: 1
+cancelled: 39, done: 281, failed: 3
 
-- T0322 `needs_founder` scientist/design_experiment: E008: T0321 fixes (exact deviation wording, freeze checked before loading), report-only for an excluded reference's stack type, launch procedure for the registered run (attempt 1)
 
 ## Recent events
-- 2026-11-12T20:39:09+00:00 inbox_opened {"id": "I0178", "kind": "protected_change", "subject": "T0320: merge needs founder approval"}
-- 2026-11-12T20:46:28+00:00 inbox_resolved {"id": "I0178", "status": "approved", "note": "Merge T0320 (D0019: judged-reference loader, registered path full(), --check-references, real-size cost plan, dec
-- 2026-11-12T20:46:37+00:00 merged {"task": "T0320"}
 - 2026-11-12T20:46:37+00:00 inbox_opened {"id": "I0179", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-12T21:06:03+00:00 task_added {"task": "T0322", "reason": "founder 2026-11-12: T0321 fixes, report-only for an excluded reference's stack type, launch procedure"}
 - 2026-11-12T21:06:25+00:00 run_started {"run": "T0322-scientist-20261112T130625-cd1f", "task": "T0322", "role": "scientist", "session": "135d4e61-3315-485d-a9f8-d2b9baf300c7"}
@@ -56,3 +52,6 @@ cancelled: 39, done: 280, failed: 3, needs_founder: 1
 - 2026-11-12T22:16:59+00:00 sleep_detected {"gap_s": 874, "runs_extended": 1}
 - 2026-11-12T22:30:30+00:00 run_finished {"run": "T0323-critic-20261112T141625-647b", "status": "completed", "cost": 2.324343, "subtype": "success", "report": "structured_output"}
 - 2026-11-12T22:30:35+00:00 inbox_opened {"id": "I0180", "kind": "protected_change", "subject": "T0322: merge needs founder approval"}
+- 2026-11-12T22:49:44+00:00 inbox_resolved {"id": "I0180", "status": "approved", "note": "Merge T0322 (T0321 fixes, report-only for an excluded reference's stack type, burst_full.sh launch procedure with
+- 2026-11-12T22:50:16+00:00 merged {"task": "T0322"}
+- 2026-11-12T22:50:16+00:00 inbox_opened {"id": "I0181", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
