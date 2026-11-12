@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T20:46:40+00:00 from repository state — do not edit_
+_generated 2026-11-12T21:06:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (7 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -27,7 +27,7 @@ _generated 2026-11-12T20:46:40+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 102 | $189.31 | 3047960 | 1534013 | 165 | 0 |
+| O003 | 103 | $189.31 | 3047960 | 1534013 | 165 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -35,12 +35,11 @@ _generated 2026-11-12T20:46:40+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 279, failed: 3
+cancelled: 39, done: 279, failed: 3, running: 1
 
+- T0322 `running` scientist/design_experiment: E008: T0321 fixes (exact deviation wording, freeze checked before loading), report-only for an excluded reference's stack type, launch procedure for the registered run (attempt 1)
 
 ## Recent events
-- 2026-11-12T16:28:20+00:00 sleep_detected {"gap_s": 1722, "runs_extended": 0}
-- 2026-11-12T16:46:29+00:00 sleep_detected {"gap_s": 836, "runs_extended": 0}
 - 2026-11-12T17:07:53+00:00 sleep_detected {"gap_s": 1176, "runs_extended": 0}
 - 2026-11-12T19:30:06+00:00 task_added {"task": "T0320", "reason": "founder decision 2026-11-12 (D0019): E008 on D0010's public fallback; judged-reference loading"}
 - 2026-11-12T19:30:13+00:00 founder_decision_noted {"decision": "D0019 (draft, to be committed): O003 judged references stay D0010 public fallback 2D_Case_2R + 2D_Case_6; F3 deviation declared (T0316, T0317 afte
@@ -54,3 +53,5 @@ cancelled: 39, done: 279, failed: 3
 - 2026-11-12T20:46:28+00:00 inbox_resolved {"id": "I0178", "status": "approved", "note": "Merge T0320 (D0019: judged-reference loader, registered path full(), --check-references, real-size cost plan, dec
 - 2026-11-12T20:46:37+00:00 merged {"task": "T0320"}
 - 2026-11-12T20:46:37+00:00 inbox_opened {"id": "I0179", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-12T21:06:03+00:00 task_added {"task": "T0322", "reason": "founder 2026-11-12: T0321 fixes, report-only for an excluded reference's stack type, launch procedure"}
+- 2026-11-12T21:06:25+00:00 run_started {"run": "T0322-scientist-20261112T130625-cd1f", "task": "T0322", "role": "scientist", "session": "135d4e61-3315-485d-a9f8-d2b9baf300c7"}
