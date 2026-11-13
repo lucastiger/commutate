@@ -680,8 +680,10 @@ Failure modes:
 - **OOM in phase B.** The runner stops with an error result. The script copies it back and stops the VM without deleting
   it.
 - **Any other runner failure.** Same: the result is copied back and the VM is stopped for inspection.
-- **Exit code unreadable.** Each phase's runner exit code is read once from run.json over ssh while the VM runs, then kept
-  in the state file, so a rerun after a stop never needs ssh for it. If that one read fails, the script exits 7. Rerun.
+- **Exit code unreadable.** Each phase's runner exit code is read once from run.json over ssh, then kept in the state
+  file. Once the phase's rc file exists the phase's backstop shutdown is cancelled (T0324). If the read fails the script
+  exits 7; a rerun first starts the VM if it stopped (ensure_running) and cancels the backstop, then reads again, without
+  restarting the job (phase marked done, rc file present) (T0324, review T0323 finding 2).
 - **Copy-back incomplete.** If result.json or run.json is missing locally, the script exits 6 and keeps the VM. Rerun.
 
 **Re-stamped [F].**
@@ -706,3 +708,96 @@ Failure modes:
 - a phase-B rerun that re-solves a finished job;
 - `set-machine-type` refusing `n2d-custom-8-499712-ext` [I: N2D extended memory goes up to 768 GB; memory must be a
   multiple of 256 MB].
+
+## 12. T0324 (2026-11-13): the dev run's row-assembly crash, rows rebuilt from the saved VM work, dev facts, T0323 fixes
+
+[F] = fact checked here. [I] = inference. The T0324 report lists the commands run, with their exit codes.
+
+**The crash [F].** The full-fidelity dev run (founder's VM, 2026-11-13 05:47-15:44 UTC, one Spot preemption resumed)
+finished its 107 solves and then raised `ValueError: reference housing70x40_gen2_0: layout reconstruction appears twice`
+in mfos.metrics._hr_tables. On gen2_0 the twin W *is* the reconstruction (fingerprint aade6489…). assemble_rows labelled
+rows through `lid = {fpw: "twin", fpr: "reconstruction", fpd: "D"}`, so the second key overwrote the first and both layout
+rows were labelled 'reconstruction'. Because the search keeps one thermal record per fingerprint (search._Run.thermal),
+the twin also had no die rows of its own.
+
+**Audit of maps keyed by fingerprint (twin = reconstruction, D = twin, candidate = twin).**
+- assemble_rows: layout and die rows are now labelled by role. thermal_subjects() lists twin, reconstruction and every
+  checked candidate (rows['checks'], first check first) and reads each one's record by fingerprint. Without collisions
+  the rows equal the old ones (same order and roles) [I: by construction; the selftest scenarios' hand values still pass].
+- evaluate, F6(e): the spot check took the record with role 'reference'. When W = R the search keeps that record under
+  'twin', so this would have raised StopIteration on a non-default type. It now uses the reconstruction's fingerprint [F].
+- Unchanged, with reasons: Driver.which (the first matching role only selects which layout a child loads; equal
+  fingerprints mean the same geometry); Driver.job (the result key is fingerprint + type + level + physics hash; `which`
+  is not in it, so no key changed: the replay found every search solve); Run.l1_cache and size_cache (a value per
+  geometry); d_definition (D = W gives R = 1, which is excluded as it should be); null-best = W (twin rule, since
+  L_sub equals the twin's); twin_gates_only (labels already explicit); thermal_report_from_rows (keyed by layout_id,
+  which is now distinct).
+- Selftest (full_orchestration case 4): the registered path with both twins equal to their reconstructions reaches
+  evaluate(). Each reference gets distinct 'twin' and 'reconstruction' layout and die rows of one fingerprint, both are
+  counted, and Case 4's non-default type is spot-checked from the reconstruction's record. Then one checked candidate is
+  planted equal to W: it gets its own label and die rows, and the metric's tables accept the rows. The old code fails
+  this case.
+
+**Replay [F].** Added `--replay-only`: the Scheduler raises ReplayMissing in step(), before any launch, if a job has no
+saved result. It does not raise in submit(), where prefetch hints may queue jobs no driver needs. The packet's command
+(`--geoms gen2_0,case4:gates:4 --band-pairs 4`, temp copy of full_work) replayed the whole gen2_0 search,
+assemble_rows, evaluate and Case 4's gates without asking for a solve. It then stopped on 20 jobs: gen2_0's 4
+band-check pairs x 5 levels. dev() solves those after evaluate(), so the VM never reached them. This is not a key change.
+The rows were then written by `--geoms gen2_0::0,case4:gates:4 --band-pairs 4 --replay-only` (same geometry index and
+seeds; gen2_0 has no pairs). meta.replay_only records solves_started 0. Case 4 reproduces the job log exactly: gates a1
+False, a2 True; pairs e_R [0.00956, 0.01254, 0.00635, 0.01785]. Every evaluate() check passed (13).
+
+**Dev facts [F]** (dev geometry, not evidence):
+- Band check: 4 pairs (Case 4 only), max e_R 0.01785 <= 0.02.
+- Case 4 F1(a1) fails: |1 - L_W/L_R| = 0.001545 > 2 e_R = 0.000130. F1(a2) passes only because both G are +inf
+  (lhs 0, rhs +inf). Founder decision 2026-11-13: F1(a1) is kept as frozen.
+- Thermal report: Case 4 reconstruction and twin, all 4 dies non-monotone over levels 0-2, GCI +inf, not attainable.
+  gen2_0: twin = reconstruction, GCI [0.089, 0.453, 0.063, 0.175] K, self width 0.350 K, attainable; candidates c007559,
+  c015905, c018860 attainable; c002784 not (die 0 GCI +inf, monotone but divergent).
+- quick_ok: gen2_0 98/2000 clean (bound 3.0 %); Case 4 33/2000 (8.7 %).
+- gen2_0 search: counted, h_lo 0.3254. Not levelled (7.283 nH > 1.0375 x 6.661 nH), so h_hi = +inf and K1 cannot fire
+  from it [I: this is a property of the 20,000-candidate stream on this housing]. 1 near tie. Control passes (0.684 >=
+  0.411 - 0.058). D: R_D 1.698, e_R 0.123, conservative 1.279 >= 1.25.
+- The Tj-attainability item stays with the founder: a separate investigate task diagnoses Case 4's oscillation first.
+
+**Measured vs --plan [F]** (research/o003/e008_dev/dev_run_measured_T0324.json, from the saved job files; medians):
+
+| reference:solve | wall s (model) | peak GB (model) |
+|---|---|---|
+| Case 4 em lat0.25 (n 6) | 2,864 (5,770) | 15.2, max 15.6 (15.8) |
+| Case 4 em thk_f | 1,206 (3,254) | 8.5 (8.3) |
+| Case 4 thermal level 2 (n 2) | 1,049 (578) | 9.2 (16.2) |
+| gen2_0 em lat0.25 (n 34) | 1,990 (2,422) | 8.8 (9.0) |
+| gen2_0 em fil_f | 722 (691) | 5.5 (2.85) |
+| gen2_0 thermal level 2 (n 5) | 1,755 (1,384) | 20.4 (38.1) |
+
+[I] EM wall time is at or below the model. Thermal level-2 wall time is 1.3-1.8x above it, and its memory is about 0.55x
+the model. The rates were kept, as the packet requires. `--plan` with the dev near ties (1): expected 83 solves, 12.13
+VM-hours, $22.32, 97.0 billed vCPU-hours, 38.8 process CPU-hours (research/o003/e008_dev/plan_T0324.json).
+
+**T0323 findings.**
+- 0: the 2D_Case_6 spot_note and the F6e_stack_type_spot_check description now carry 'only reference excluded: <reason>'.
+- 1: spot_assignment() reports a type with an admissible excluded reference and an inadmissible kept one as 'only
+  reference excluded: <reason>'. Selftest t0324_failures covers both reference orders and the other readings.
+- 2: see the failure modes above. `--dry-run` still runs nothing (it now shows 32 lines, including the two cancels).
+- 3: `rules_changed` now reads, verbatim:
+
+> no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed (D0019 item 2); the power-width floor of the yardstick D did (D0018 decision 1, T0316: D is built under min(reference minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R's own 4.0 mm); a reference whose D misses F1(b) (DegradeError, or L_sub(D)/L_sub(W) below 1.25 at the conservative end of its band) is excluded instead of failing the run (D0018 decision 2, T0316); a non-finite or non-converged band solve of D or W makes the run INVALID (T0317, review T0318 finding 0); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (min_signal_wire_length, D0018 item 1, T0317); O003 scope_in's enumerated rules are the complete meaning of 'at least as strict as the reference's own' (D0019 item 5)
+
+  The statement itself is unchanged. research/o003/e008_dev/t0320_spec_update.py still holds the pre-T0322 wording; it
+  is superseded by t0324_spec_update.py and must not be re-run.
+
+**F6(e) memory (founder decision 2026-11-12) [F].** n2d-custom-8-499712-ext (488 GiB), created and tested on this account;
+no memory-lean FV. Moved to founder_decisions_settled.
+
+**Re-stamped [F].** The runner's sha256 is 36ea5f43…; it appears 3 times in E008.dev_rows.json. It was produced by
+re-running gen2_0_prep.py T0324 (smoke_rows_match true), case4_prep.py (now kept under per_reference['2D_Case_4'].prep,
+so the dev gate record is not overwritten) and refresh_rule_strictness.py T0324 (which now skips the report keys
+'excluded' and 'F6e'). Dev layouts only (logs `*_T0324.log`).
+
+**Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6; no gcloud
+call, no VM; no other founder item decided (Tj attainability, all-inadmissible F6(e) reading, budget reading, quick_ok
+design, rule values, row contract).
+
+**What would prove this wrong:** a registered run in which twin = reconstruction yields rows the metric rejects; a
+replay of the same work that asks for a search solve (a key change); Case 4's gates or pairs differing from the job log.

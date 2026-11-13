@@ -546,6 +546,15 @@ PHASE_B_EXIT = 75  # EX_TEMPFAIL: phase A finished, only jobs above this machine
 PHASE_B_FILE = "phase_b_needed.json"
 
 
+class ReplayMissing(RuntimeError):
+    """T0324 --replay-only: the run needs a solve that has no saved result file; raised before any solve is launched."""
+
+    def __init__(self, jobs: list[dict]):
+        self.jobs = jobs
+        names = [f"{j.get('ref')}:{j['type']}:{j.get('level', '')}:{j.get('which')}:{Path(j['out']).name}" for j in jobs]
+        super().__init__(f"--replay-only: {len(jobs)} job(s) have no saved result (no solve started): {names[:40]}")
+
+
 class NeedsLargerMachine(RuntimeError):
     """Phase A is complete: nothing runs and every queued job is above the solo cap of this machine (Scheduler with
     defer_big).  The registered run stops without a result (full(): exit PHASE_B_EXIT) and resumes from its own workdir
@@ -631,6 +640,9 @@ class Scheduler:
         self.running: dict[str, tuple] = {}
         self.log: list[dict] = []
         self.mem_ratio: dict[tuple, float] = {}  # (reference, type, level) -> max measured peak / model peak
+        # T0324 (--replay-only): a run over saved result files only; step() raises ReplayMissing before it would launch
+        # any solve, so no solve ever starts (submit() only queues; prefetch hints may queue jobs no driver needs)
+        self.replay_only = False
 
     @staticmethod
     def _mkey(j: dict) -> tuple:
@@ -670,7 +682,7 @@ class Scheduler:
                 self.learn(j, rec)  # a cached result (resume) teaches the same as a finished one
             else:
                 j["mem_GB"] = self.mem_of(j)
-                if j["mem_GB"] > self.solo and not self.defer_big:
+                if j["mem_GB"] > self.solo and not self.defer_big and not self.replay_only:
                     raise RuntimeError(f"job {j['out']} needs {j['mem_GB']:.1f} GB > cap {self.solo:.1f} GB")
                 self.queue[j["out"]] = j
 
@@ -704,6 +716,8 @@ class Scheduler:
     def step(self) -> None:
         """Launch what fits, then block until at least one running job ends (or return if nothing runs)."""
         self.waited = False
+        if self.replay_only and self.queue:
+            raise ReplayMissing(list(self.queue.values()))
         # checked BEFORE launching: the caller has just replayed every driver, so with nothing running and only jobs
         # above this machine queued, no further progress is possible here (fake jobs run inside _launch, hence before)
         if self.defer_big and not self.running and self.queue and \
@@ -1544,23 +1558,7 @@ class Run:
         # not take the type's spot check from a later admissible one).  A type with no admissible reference gets none:
         # it is listed in spot_none and reported, not failed (D0010: only admissible references are in the reference
         # set, an inadmissible one contributes no rows to the verdict)
-        self.spot_refs, self.spot_none = {}, []
-        for st in sorted({rc.stack_type for rc in refs} - {DEFAULT_STACK}):
-            rid = next((rc.rid for rc in refs if rc.stack_type == st and rc.admissible), None)
-            if rid is None:
-                self.spot_none.append(st)
-            else:
-                self.spot_refs[st] = rid
-        # founder decision 2026-11-12 (T0322): a non-default type whose references were ALL excluded (prepare or D's
-        # definition), at least one of them admissible, gets no spot check; it is reported (evaluate: F6e.<type> with
-        # reference None, status 'only reference excluded: <reason>'), never gated.  All-inadmissible types stay in
-        # spot_none (that reading is a separate founder item)
-        for st in sorted({rc.stack_type for rc in all_refs} - {rc.stack_type for rc in refs} - {DEFAULT_STACK}):
-            ex = [rc for rc in all_refs if rc.stack_type == st]
-            if any(rc.admissible for rc in ex):
-                self.spot_excluded[st] = {rc.rid: rc.excluded["reason"] for rc in ex}
-            else:
-                self.spot_none.append(st)
+        self.spot_refs, self.spot_none, self.spot_excluded = spot_assignment(all_refs, refs)
         while True:
             for (rid, _ns), d in self.drivers.items():
                 if rid not in self.P:
@@ -1587,9 +1585,61 @@ class Run:
             self.sched.step()
 
 
+def spot_assignment(all_refs: list, refs: list) -> tuple[dict, list, dict]:
+    """F6(e) per non-default stack type of ``all_refs`` (every reference of the run), given ``refs`` (those that reached
+    the search: not excluded in prepare() or at D's definition) -> (spot_refs, spot_none, spot_excluded).
+    - spot_refs[type] = the first ADMISSIBLE reference of the type in ``refs`` (reference order; T0305 finding 0,
+      T0307 finding 1, T0308 finding 2): the type's spot check, gated;
+    - else, if an admissible reference of the type was EXCLUDED (founder decision 2026-11-12, T0322): spot_excluded[type]
+      = {rid: reason} of the type's excluded references; reported 'only reference excluded: <reason>' (or 'all references
+      excluded: ...'), never gated.  T0324 (review T0323 finding 1): this holds also when the type has other references
+      that are inadmissible and not excluded (they contribute no rows, D0010), so such a type is not 'no admissible
+      reference';
+    - else spot_none: no admissible reference of the type at all (reported, not gated; the separate founder reading)."""
+    spot_refs: dict[str, str] = {}
+    spot_none: list[str] = []
+    spot_excluded: dict[str, dict] = {}
+    for st in sorted({rc.stack_type for rc in all_refs} - {DEFAULT_STACK}):
+        rid = next((rc.rid for rc in refs if rc.stack_type == st and rc.admissible), None)
+        ex = [rc for rc in all_refs if rc.stack_type == st and rc.excluded is not None]
+        if rid is not None:
+            spot_refs[st] = rid
+        elif any(rc.admissible for rc in ex):
+            spot_excluded[st] = {rc.rid: rc.excluded["reason"] for rc in ex}
+        else:
+            spot_none.append(st)
+    return spot_refs, spot_none, spot_excluded
+
+
+def f6e_excluded_status(ex: dict) -> str:
+    """Status of a non-default type in spot_excluded (evaluate's F6e.<type>; T0322, T0324)."""
+    return ("only reference excluded: " + next(iter(ex.values()))) if len(ex) == 1 else \
+        ("all references excluded: " + "; ".join(f"{r}: {x}" for r, x in ex.items()))
+
+
 # ------------------------------------------------------------------------------------------------ rows
 def _null(rid_twin: dict, rid: str) -> float:
     return rid_twin.get(rid, 1e-8)
+
+
+def thermal_subjects(rm, fpw: str, fpr: str, cand: dict) -> list[tuple[str, str, str, dict]]:
+    """(layout_id, fingerprint, role, thermal record) for every thermally solved ROLE of the main search (T0324): the twin
+    ('twin', role twin), the reconstruction ('reconstruction', role reference), then every candidate the search checked
+    (rows['checks'], first check first; role a1 / null).  The search keeps ONE thermal record per fingerprint
+    (search._Run.thermal), so a twin equal to the reconstruction, or a checked candidate equal to either, shares that
+    record; it is looked up by fingerprint.  Without collisions the order and roles equal rows['thermal']'s."""
+    th = {}
+    for t in rm.rows["thermal"]:
+        th.setdefault(t["fingerprint"], t["record"])
+    out = [("twin", fpw, "twin", th[fpw]), ("reconstruction", fpr, "reference", th[fpr])]
+    seen = set()
+    for c in rm.rows["checks"]:
+        fp = c["fingerprint"]
+        if fp in seen:
+            continue
+        seen.add(fp)
+        out.append((f"c{cand[fp]['index']:06d}", fp, c["role"], th[fp]))
+    return out
 
 
 def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict], dict]:
@@ -1612,34 +1662,35 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
         for r in rm.rows["band"] + rcn.rows["band"]:
             bands[r["fingerprint"]] = r["band"]
         L_tw = bands[fpw][0]
-        lid = {fpw: "twin", fpr: "reconstruction", fpd: "D"}
+        # T0324: rows are labelled by ROLE, never through a map keyed by fingerprint: the twin W may BE the
+        # reconstruction (gen2_0: same fingerprint; 2R's recorded twin may be too), D or a candidate may equal W, and
+        # each role still gets its own layout row and its own die rows (the metric needs both twin and reconstruction).
+        # Every number is still read by fingerprint (bands, thermal records): equal fingerprints are the same layout
         cand = {}
         for c in rm.rows["candidates"]:
-            lid[c["fingerprint"]] = f"c{c['index']:06d}"
             cand[c["fingerprint"]] = c
         ctrl_best = rcn.inductance_best
         ctrl_c = {c["fingerprint"]: c for c in rcn.rows["candidates"]}
 
-        def lrow(fp, role, lsub, lab=None, rid=rid, lid=lid, bands=bands, L_tw=L_tw):
-            r = {"kind": "layout", "reference_id": rid, "layout_id": lab or lid[fp], "role": role, "fingerprint": fp,
+        def lrow(fp, role, lsub, lab, rid=rid, bands=bands, L_tw=L_tw):
+            r = {"kind": "layout", "reference_id": rid, "layout_id": lab, "role": role, "fingerprint": fp,
                  "L_sub_H": float(lsub), "smoke": smoke}
             if fp in bands:
                 r.update({c: float(v) for c, v in zip(BAND_COLS[1:], bands[fp][1:], strict=True)})
             r["L_sub_null_H"] = L_tw if role == "candidate" else float(lsub)
             return r
-        rows.append(lrow(fpw, "twin", L_tw))
-        rows.append(lrow(fpr, "reconstruction", bands[fpr][0]))
+        rows.append(lrow(fpw, "twin", L_tw, "twin"))
+        rows.append(lrow(fpr, "reconstruction", bands[fpr][0], "reconstruction"))
         for fp, c in cand.items():
-            r = lrow(fp, "candidate", c["l_sub"])
+            r = lrow(fp, "candidate", c["l_sub"], f"c{c['index']:06d}")
             r.update(l1_H=c["l1"], l1_rank=c["l1_rank"], gen_index=c["index"])
             rows.append(r)
-        rows.append(lrow(fpd, "degraded", bands[fpd][0]))
+        rows.append(lrow(fpd, "degraded", bands[fpd][0], "D"))
         rows.append(lrow(ctrl_best, "control_best", ctrl_c[ctrl_best]["l_sub"], f"ctrl_c{ctrl_c[ctrl_best]['index']:06d}"))
-        for t in rm.rows["thermal"]:
-            fp, rec = t["fingerprint"], t["record"]
+        for lab, fp, role, rec in thermal_subjects(rm, fpw, fpr, cand):
             for i in range(len(rec["tj"][0])):
-                rows.append({"kind": "die", "reference_id": rid, "layout_id": lid[fp], "die_id": f"d{i}", "fingerprint": fp,
-                             "role": t["role"], "Tj_l0_K": rec["tj"][0][i], "Tj_l1_K": rec["tj"][1][i],
+                rows.append({"kind": "die", "reference_id": rid, "layout_id": lab, "die_id": f"d{i}", "fingerprint": fp,
+                             "role": role, "Tj_l0_K": rec["tj"][0][i], "Tj_l1_K": rec["tj"][1][i],
                              "Tj_l2_K": rec["tj"][2][i], "GCI_K": rec["gci"][i],
                              "tj_node_l0": rec["tj_max_node"][0][i], "tj_node_l1": rec["tj_max_node"][1][i],
                              "tj_node_l2": rec["tj_max_node"][2][i], "nodes": rec["nodes"],
@@ -1792,7 +1843,10 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
             a3s[st] = math.inf
             continue
         fv = [Scheduler.done(j) for j in run.spot_jobs(run.drivers[(rid, "main")])]
-        th = next(t["record"] for t in extra[rid]["main"].rows["thermal"] if t["role"] == "reference")
+        # T0324: by the reconstruction's fingerprint, not by role: when W is the reconstruction the search keeps the
+        # one record under role 'twin' (search._Run.thermal de-duplicates by fingerprint)
+        fpr_st = next(rc for rc in refs if rc.rid == rid).reference.fingerprint()
+        th = next(t["record"] for t in extra[rid]["main"].rows["thermal"] if t["fingerprint"] == fpr_st)
         a3s[st] = _worst(_a3_die([th["tj"][lv][i] for lv in range(3)], [f["tj"][i] for f in fv], g)
                          for i in range(len(th["tj"][0])))  # per die: fem levels 0-2 vs FV levels 1-3
         ck(f"F6e_stack_type_spot_check:{st}", _within(a3s[st], g["a3_max"]), a3s[st], g["a3_max"], f"reference {rid}")
@@ -1801,9 +1855,7 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     none = {st: {"reference": None, "a3": None, "status": "no admissible reference of this stack type: no spot check "
                  "(not gated; its references contribute no rows)"} for st in run.spot_none}
     # founder decision 2026-11-12 (T0322): a type whose only reference was excluded -> reported, not gated
-    gone = {st: {"reference": None, "a3": None, "excluded_references": ex,
-                 "status": ("only reference excluded: " + next(iter(ex.values()))) if len(ex) == 1 else
-                 ("all references excluded: " + "; ".join(f"{r}: {x}" for r, x in ex.items()))}
+    gone = {st: {"reference": None, "a3": None, "excluded_references": ex, "status": f6e_excluded_status(ex)}
             for st, ex in getattr(run, "spot_excluded", {}).items()}
     if a3s:
         ck("F6e_stack_type_spot_check", all(_within(v, g["a3_max"]) for v in a3s.values()), _worst(a3s.values()),
@@ -1857,6 +1909,16 @@ def _evaluate_d_failed(run: Run, refs: list[RefCtx], cfg: dict, checks: list[dic
     return met, checks, {"excluded": exc, "D_definition_solver_failures": run.d_failed}
 
 
+def die_monotone(t0: float, t1: float, t2: float, floor: float) -> bool:
+    """T0324 (reported only): a die's Tj is monotone over scikit-fem levels 0-2 when d1 = T1 - T0 and d2 = T2 - T1 (each
+    set to 0 below ``floor``, as mfos.metrics.gci_capped does) are not of opposite sign; opposite signs are gci_capped's
+    oscillatory branch (rho < 0; +inf when |rho| >= 1)."""
+    d1, d2 = float(t1) - float(t0), float(t2) - float(t1)
+    d1 = 0.0 if abs(d1) < floor else d1
+    d2 = 0.0 if abs(d2) < floor else d2
+    return d1 * d2 >= 0.0
+
+
 def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: float) -> dict:
     """Dev-run thermal report (reported, not gated; T0304 findings 0 and 1, T0305 finding 4) from the die rows, per
     reference and thermally solved layout: F6(a)'s node growth for each level step against node_growth_factor +/-
@@ -1883,7 +1945,9 @@ def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: flo
             growth = [b / a for a, b in zip(n[:-1], n[1:], strict=True)]
             gci = [MX.gci_capped(*d, floor=floor) for d in dies_of[lab]]
             b = MX.tj_bounds(dies_of[lab], floor=floor)
-            e = {"role": v["role"], "nodes": n, "growth": growth,
+            mono = [die_monotone(*d, floor=floor) for d in dies_of[lab]]
+            e = {"role": v["role"], "nodes": n, "growth": growth, "die_ids": sorted(v["dies"]), "monotone": mono,
+                 "n_non_monotone": sum(not x for x in mono),
                  "growth_ok": [bool(abs(x / g["node_growth_factor"] - 1) <= g["node_growth_tol"]) for x in growth],
                  "gci_K": gci, "n_gci_inf": sum(math.isinf(x) for x in gci), "tj_max_l2_K": b[0], "tj_upper_K": b[2],
                  "tj_lower_K": b[3], "self_margin_K": b[2] - b[3], "attainable": bool(b[2] - b[3] <= limit)}
@@ -1894,6 +1958,7 @@ def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: flo
             "growth_window": [lo_f, hi_f], "n_layouts": len(per),
             "n_layouts_growth_fail": sum(not all(e["growth_ok"]) for e in per.values()),
             "n_gci": sum(len(e["gci_K"]) for e in per.values()), "n_gci_inf": sum(e["n_gci_inf"] for e in per.values()),
+            "n_dies_non_monotone": sum(e["n_non_monotone"] for e in per.values()),
             "n_attainable": sum(e["attainable"] for e in per.values()), "tj_limit_K": limit, "floor_K": floor}}
     return out
 
@@ -2568,6 +2633,57 @@ def phase_failures(cfg: dict) -> list[str]:
     return out
 
 
+def twin_is_recon_failures(r4: dict, st_c4: str, cfg: dict) -> list[str]:
+    """T0324 checks on a registered run whose twins ARE their reconstructions (full_orchestration case 4), then a candidate
+    planted EQUAL to the twin (its first thermally checked candidate re-keyed to W's fingerprint, sharing W's one thermal
+    record as the search does) through assemble_rows and the metric's tables."""
+    out = []
+    rows, run4, refs4 = r4["rows"], r4["run"], r4["refs"]
+    for rc in refs4:
+        rid, fpr = rc.rid, rc.reference.fingerprint()
+        lay = {r["layout_id"]: r for r in rows if r["kind"] == "layout" and r["reference_id"] == rid}
+        n_lay = sum(1 for r in rows if r["kind"] == "layout" and r["reference_id"] == rid)
+        dies = {lab: sum(1 for r in rows if r["kind"] == "die" and r["reference_id"] == rid and r["layout_id"] == lab)
+                for lab in ("twin", "reconstruction")}
+        if rc.twin.fingerprint() != fpr or n_lay != len(lay) or {lay.get(k, {}).get("fingerprint") for k in
+                                                                  ("twin", "reconstruction")} != {fpr} or \
+                lay["twin"]["role"] != "twin" or lay["reconstruction"]["role"] != "reconstruction" or min(dies.values()) < 1:
+            out.append(f"full (T0324) {rid}: layouts {sorted(lay)[:6]} ({n_lay} rows), die rows {dies}")
+        if not (r4["report"].get(rid, {}).get("record") or {}).get("counted"):
+            out.append(f"full (T0324) {rid}: not counted with W = reconstruction")
+    ck = {c["name"]: c for c in r4["checks"]}
+    if not ck.get(f"F6e_stack_type_spot_check:{st_c4}", {}).get("passed") or not math.isfinite(r4["metrics"]["headroom_min_lo"]):
+        out.append(f"full (T0324): spot check {ck.get(f'F6e_stack_type_spot_check:{st_c4}')} A1 {r4['metrics']['headroom_min_lo']}")
+    rc = next(r for r in refs4 if r.rid == "judged_gen")
+    d = run4.drivers[(rc.rid, "main")]
+    rm0, fpw = d.result, rc.twin.fingerprint()
+    x = rm0.rows["checks"][0]["fingerprint"]
+    m = json.loads(json.dumps(rm0.rows))
+    for k in ("candidates", "checks"):
+        for c in m[k]:
+            c["fingerprint"] = fpw if c["fingerprint"] == x else c["fingerprint"]
+    m["thermal"] = [t for t in m["thermal"] if t["fingerprint"] != x]
+    m["band"] = [b for b in m["band"] if b["fingerprint"] != x]
+    lab_x = next(f"c{c['index']:06d}" for c in rm0.rows["candidates"] if c["fingerprint"] == x)
+    d.result = dataclasses.replace(rm0, rows=m)
+    try:
+        rows_m, _ = assemble_rows(run4, refs4, False)
+        MX.headroom_per_reference(rows_m, "L_sub_H", dict(cfg["metric_params"]))
+        g = [r for r in rows_m if r["reference_id"] == rc.rid]
+        labs = [r["layout_id"] for r in g if r["kind"] == "layout"]
+        cx = [r for r in g if r["kind"] == "layout" and r["layout_id"] == lab_x]
+        n_die = {lab: sum(1 for r in g if r["kind"] == "die" and r["layout_id"] == lab) for lab in ("twin", lab_x)}
+        if len(labs) != len(set(labs)) or len(cx) != 1 or cx[0]["fingerprint"] != fpw or cx[0]["role"] != "candidate" or \
+                min(n_die.values()) < 1 or n_die["twin"] != n_die[lab_x]:
+            out.append(f"full (T0324) candidate == twin: labels unique {len(labs) == len(set(labs))}, {cx[:1]}, dies {n_die}")
+    except Exception as e:  # noqa: BLE001
+        out.append(f"full (T0324) candidate == twin raised {e!r}")
+    finally:
+        d.result = rm0
+    log(f"selftest T0324 (W = reconstruction on both references, candidate = W): {len(out)} failures")
+    return out
+
+
 def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
     """D0019 / T0320, end to end on the dev layouts with fake solvers and a fake recorder: the loader refuses a wrong
     fingerprint (before any twin); the T0319 guard refuses a spec without e008_rules' record and one with
@@ -2734,11 +2850,63 @@ def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
                 or not agg.get("passed") or st_c4 not in agg.get("detail", ""):
             out.append(f"full: the excluded reference's stack type {st_c4}: report {rep.get('F6e', {}).get(st_c4)}, "
                        f"aggregate {agg}")
+        # (4) T0324: W IS the reconstruction (same fingerprint; gen2_0's dev fact, and 2R's recorded twin may be) on both
+        # references: the registered path reaches evaluate() and writes distinct 'twin' and 'reconstruction' layout and die
+        # rows of one fingerprint; Case 4's non-default type takes its spot check from the reconstruction's record
+        W.twin = lambda ref, sp, with_l1=True: (ref, fake_p, {"mode": "exact"})
+        with tempfile.TemporaryDirectory() as td:
+            try:
+                r4 = registered_run(FakeER(spec), cfg_r, 20261112, Path(td), rec, {"job": job, "l1": l1a},
+                                    _fake_screens(l1a), 2)
+                out += twin_is_recon_failures(r4, st_c4, cfg)
+            except Exception as e:  # noqa: BLE001 -- any exception is the failure under test (the dev run's crash)
+                out.append(f"full (T0324): twin == reconstruction raised {e!r}")
+        W.twin = twin_
     finally:
         W.twin, W.degrade, globals()["save_ctx"] = orig
     log(f"selftest full (D0019): registered path on gen2_0 (counted) + 2D_Case_4 (planted TwinError), {len(er.sanity_l)} "
         f"sanity records, {len(er.metrics)} metrics, {len(er.rows_l or [])} rows, A1 {met.get('headroom_min_lo'):.5f}; "
         f"{len(out)} failures")
+    return out
+
+
+def t0324_failures() -> list[str]:
+    """T0324: (a) review T0323 finding 1: a non-default type with one admissible reference that is EXCLUDED and another
+    that is inadmissible and kept is reported 'only reference excluded: <reason>' (spot_excluded), in either reference
+    order, never 'no admissible reference'; the other readings are unchanged; (b) die_monotone on hand values."""
+    out = []
+    X = "other:selftest_x"
+
+    def R(rid, st, adm, reason=None):
+        return SimpleNamespace(rid=rid, stack_type=st, admissible=adm,
+                               excluded=None if reason is None else {"reason": reason, "detail": "selftest", "stage": "prepare"})
+    a_ex, b_inad, c_def = R("A", X, True, "TwinError"), R("B", X, False), R("C", DEFAULT_STACK, True)
+    for order in ((a_ex, b_inad, c_def), (b_inad, a_ex, c_def)):
+        got = spot_assignment(list(order), [r for r in order if r.excluded is None])
+        if got != ({}, [], {X: {"A": "TwinError"}}):
+            out.append(f"T0324 mixed type ({[r.rid for r in order]}): {got}")
+        elif f6e_excluded_status(got[2][X]) != "only reference excluded: TwinError":
+            out.append(f"T0324 mixed type status: {f6e_excluded_status(got[2][X])}")
+    cases = {  # (all_refs, refs reaching the search) -> expected (spot_refs, spot_none, spot_excluded)
+        "admissible live": ([R("A", X, True), R("B", X, False)], ["A", "B"], ({X: "A"}, [], {})),
+        "admissible live after excluded": ([R("A", X, True, "DegradeError"), R("B", X, True)], ["B"], ({X: "B"}, [], {})),
+        "all inadmissible": ([R("A", X, False), R("B", X, False)], ["A", "B"], ({}, [X], {})),
+        "inadmissible excluded only": ([R("A", X, False, "TwinError")], [], ({}, [X], {})),
+        "two excluded": ([R("A", X, True, "TwinError"), R("B", X, True, "D_misses_1p25_in_L_sub")], [],
+                         ({}, [], {X: {"A": "TwinError", "B": "D_misses_1p25_in_L_sub"}})),
+        "default type only": ([R("A", DEFAULT_STACK, True, "TwinError")], [], ({}, [], {}))}
+    for name, (allr, live, want) in cases.items():
+        got = spot_assignment(allr, [r for r in allr if r.rid in live])
+        if got != want:
+            out.append(f"T0324 spot_assignment {name}: {got} != {want}")
+    if f6e_excluded_status({"A": "TwinError", "B": "x"}) != "all references excluded: A: TwinError; B: x":
+        out.append("T0324 f6e_excluded_status with two references")
+    # die_monotone: d1 = T1 - T0, d2 = T2 - T1, each 0 below the floor 1e-3 K; opposite signs are non-monotone
+    for t, want in (((400.0, 401.0, 400.5), False), ((400.0, 399.0, 399.5), False), ((400.0, 400.5, 400.6), True),
+                    ((400.0, 399.0, 398.0), True), ((400.0, 400.0005, 399.9), True), ((400.0, 400.0, 400.0), True)):
+        if die_monotone(*t, floor=1e-3) is not want:
+            out.append(f"T0324 die_monotone{t} is not {want}")
+    log(f"selftest T0324 (spot assignment, die_monotone): {len(out)} failures")
     return out
 
 
@@ -3088,6 +3256,7 @@ def selftest() -> int:
     failures += d_floor_geometry_failures(cfg)
     failures += signal_rule_failures(cfg)
     failures += full_orchestration_failures(spec, scfg)
+    failures += t0324_failures()
     failures += phase_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
@@ -3378,6 +3547,7 @@ def dev(args) -> int:
         return 3
     cap = args.mem_cap_gb or cfg["compute"]["vm"]["ram_GB"] * cfg["compute"]["vm"]["memory_fraction"]
     sched = Scheduler(cap, args.vcpus or cfg["compute"]["vm"]["vcpus"], threads, solo_cap_GB=args.solo_cap_gb)
+    sched.replay_only = bool(getattr(args, "replay_only", False))  # T0324: saved result files only, no solve starts
     run = Run(cfg, root, sched, smoke, threads)
     dseed = int(cfg["dev"]["dev_seed"])
     names = args.geoms.split(",") if args.geoms else cfg["dev"]["geometries"]
@@ -3444,6 +3614,8 @@ def dev(args) -> int:
                                  "e_R is zero), coarsened thermal rule, reduced candidate budget; not evidence"
                                  if smoke else "full-fidelity dev rows"),
         "search": scfg, "threads": [threads, why], "metrics": met, "checks": checks,
+        "replay_only": {"replay_only": sched.replay_only, "solves_started": len(sched.log), "geoms": names,
+                        "band_pairs": n_pairs},
         "band_check_pairs": pairs, "band_check_max_e_R": max([p["e_R"] for p in pairs] or [math.nan]),
         "fail_fast": fail_fast, "per_reference": rep, "solve_log": sched.log[-400:]}}
     out = Path(args.rows_out or DEV_ROWS)
@@ -3626,6 +3798,8 @@ def main(argv=None) -> int:
     ap.add_argument("--vcpus", type=int)
     ap.add_argument("--solo-cap-gb", type=float)
     ap.add_argument("--band-pairs", type=int, default=2)
+    ap.add_argument("--replay-only", action="store_true",
+                    help="dev: use only saved result files in --workdir; raise before any solve would start (T0324)")
     ap.add_argument("--plan-out")
     ap.add_argument("--check-references", action="store_true")
     ap.add_argument("--out")

@@ -41,6 +41,8 @@ def main() -> int:
             "method": "measure_rules re-run on each dev layout (L0), equal to the stored record, then rule_strictness()",
             "references": {}}
     for rid, v in per.items():
+        if rid in ("excluded", "F6e"):  # T0324: evaluate()'s report keys in the full-fidelity dev rows, not references
+            continue
         if rid not in NAMES:
             raise RuntimeError(f"{rid}: not a known development geometry (F3: dev geometry only)")
         rc = R.dev_reference(NAMES[rid], cfg)

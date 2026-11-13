@@ -180,7 +180,7 @@ wait_phase() {  # $1: A|B; returns when ~/phase<p>.rc exists; exits 3 if the VM 
   local p="$1" rc="" st n=0
   show "${SSH[@]}" "cat ~/phase$p.rc"
   say "# (every $POLL_S s until it exists; also: gcloud compute instances describe $NAME --zone $ZONE --format='value(status)')"
-  [ "$DRY" = 1 ] && return 0
+  if [ "$DRY" = 1 ]; then cancel_backstop "$p"; return 0; fi
   while [ -z "$rc" ]; do
     sleep "$POLL_S"; n=$((n + 1))
     rc="$("${SSH[@]}" "cat ~/phase$p.rc 2> /dev/null" 2> /dev/null | tr -d '[:space:]' || true)"
@@ -196,6 +196,11 @@ wait_phase() {  # $1: A|B; returns when ~/phase<p>.rc exists; exits 3 if the VM 
     fi
   done
   say "phase $p finished (mfos exit $rc)"
+  cancel_backstop "$p"
+}
+cancel_backstop() {  # $1: A|B. T0324 (review T0323 finding 2): once the phase's rc file exists its job has ended, so the
+  # phase's backstop 'shutdown -h' (start_phase) is cancelled: the VM cannot stop between the job's end and the exit-code read
+  run "${SSH[@]}" "[ -e ~/phase$1.rc ] && { sudo shutdown -c > /dev/null 2>&1 || true; }; true"
 }
 runner_exit() {  # the runner's own exit code, recorded by the mfos wrapper in run.json
   "${SSH[@]}" "python3 -c 'import json; print(json.load(open(\"$RUNDIR/run.json\"))[\"exit_code\"])'" 2> /dev/null | tr -d '[:space:]'
@@ -216,7 +221,9 @@ if ! step_done phaseA; then
   mark phaseA
 fi
 # read once while the VM still runs and kept in the state file: a rerun after a stop never needs ssh for it
-if [ "$DRY" = 1 ]; then RC_A=75; elif [ -z "${RC_A:-}" ]; then save RC_A "$(runner_exit)"; fi
+# T0324 (review T0323 finding 2): a rerun after the VM stopped (backstop, host event) starts it first and cancels the
+# backstop, so the read can succeed; the job is not restarted (phase A is marked done and ~/phaseA.rc exists)
+if [ "$DRY" = 1 ]; then RC_A=75; elif [ -z "${RC_A:-}" ]; then ensure_running; cancel_backstop A; save RC_A "$(runner_exit)"; fi
 [ -n "$RC_A" ] || { say "could not read the runner's exit code of phase A (VM unreachable?): rerun this script" >&2; exit 7; }
 say "# phase A runner exit: $RC_A (0: finished, no phase B needed; 75: phase B needed; else: failed)"
 
@@ -256,7 +263,7 @@ if [ "$RC_A" = 75 ]; then
     wait_phase B
     mark phaseB
   fi
-  if [ "$DRY" = 1 ]; then RC_B=0; elif [ -z "${RC_B:-}" ]; then save RC_B "$(runner_exit)"; fi
+  if [ "$DRY" = 1 ]; then RC_B=0; elif [ -z "${RC_B:-}" ]; then ensure_running; cancel_backstop B; save RC_B "$(runner_exit)"; fi
   [ -n "$RC_B" ] || { say "could not read the runner's exit code of phase B (VM unreachable?): rerun this script" >&2; exit 7; }
   say "# phase B runner exit: $RC_B (0: the run is complete)"
   RC_FINAL="$RC_B"

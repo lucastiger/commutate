@@ -68,7 +68,13 @@ def main() -> int:
     p = Path(a.rows)
     doc = json.loads(p.read_text())
     m = doc["meta"]
-    m.setdefault("per_reference", {})["2D_Case_4"] = rec
+    cur = m.setdefault("per_reference", {}).get("2D_Case_4") or {}
+    if "gate_a1" in cur:  # T0324: the full-fidelity dev rows hold Case 4's twin gates: keep them, add this record as .prep
+        rec["twin_gates"] = {k: cur.get(k) for k in ("gate_a1", "gate_a2", "a1_lhs", "a1_rhs", "a2_lhs", "a2_rhs")} | {
+            "source": "full-fidelity dev run (2026-11-13), replayed by T0324 (meta.per_reference['2D_Case_4'])"}
+        cur["prep"] = rec
+    else:
+        m["per_reference"]["2D_Case_4"] = rec
     m.setdefault("fail_fast", {}).pop("2D_Case_4", None)  # T0316: the earlier DegradeError entry is replaced, not kept
     if rc.info.get("fail_fast"):
         m["fail_fast"]["2D_Case_4"] = rc.info["fail_fast"]

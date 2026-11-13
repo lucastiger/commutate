@@ -479,8 +479,9 @@ config:
         DOFs = the reference''s own frozen-rule DOFs x the per-level candidate/reference ratio measured on 2D_Case_4 (research/o003/e008_dev/probe_dofs.json
         via the earlier proxy: 98698/51098, 708819/365435, 5350885/2752565); no candidate of 2R or Case 6 may be generated
         before the freeze (D0019 item 4); screen rate still the 0.45 s slow end (no candidate generated, D0019 item 4)'
-      spot_note: own non-default stack type (AlN 0.64 mm); excluded at its twin in the expected scenario, so the runner runs
-        no spot check of its type then (see founder_decisions_before_registration)
+      spot_note: 'own non-default stack type (AlN 0.64 mm); excluded at its twin in the expected scenario, so the runner runs
+        no spot check of its type then: the evaluation report lists F6e.<type> with reference null and status ''only reference
+        excluded: <reason>'', reported, not gated (founder decision 2026-11-12, T0322; see founder_decisions_settled)'
   dev:
     rule: 'F3: development geometry only (generator housings and 2D_Case_4), never a judged reference'
     dev_seed: 20261110
@@ -597,8 +598,8 @@ config:
     re-run on the real reconstructions (T0320); the snapping check is not required (both references on the 0.5 mm grid, s_ref
     = 0); declared F3 deviation in config.f3_declared_deviation (D0019 item 2)'
   - 'F6(e) for an admissible reference EXCLUDED by TwinError, DegradeError or D''s definition (founder session 2026-11-12,
-    T0322; was the founder item "F6(e) for an admissible reference EXCLUDED at its twin", reading (b)): it contributes no rows;
-    if it is the only reference of a non-default stack type, that type is REPORTED, NOT GATED: no spot check, the evaluation
+    T0322; was the founder item "F6(e) for an admissible reference EXCLUDED at its twin", reading (b)): it contributes no
+    rows; if it is the only reference of a non-default stack type, that type is REPORTED, NOT GATED: no spot check, the evaluation
     report lists F6e.<type> with reference null and status ''only reference excluded: <reason>'' (and excluded_references),
     the detail of F6e_stack_type_spot_check lists it under only_reference_excluded, and the aggregate is not failed by it
     (Run.drive spot_excluded, evaluate; selftest exclusion cases *_only_of_type and full_orchestration). For D0019''s set
@@ -608,11 +609,30 @@ config:
     power-width floor changed, no design rule of the reference, twin or candidates on power copper, power wires or dies did);
     registered_run and --check-references run freeze_checks before any reference is loaded and refuse on any mismatch (selftest:
     a wrong sha256 for the reconstruction script, a counting fake snapped()/build() never called)'
+  - 'Full-fidelity dev run (T0324) (founder''s VM, research/o003/e008_dev/burst_dev.sh, 2026-11-13 05:47-15:44 UTC, one Spot
+    preemption resumed; 107 solves; rows rebuilt from the saved result files by e008_run.py --dev --replay-only with no solve
+    started; experiments/drafts/E008.dev_rows.json). BAND CHECK: 4 twin-vs-random pairs on 2D_Case_4, e_R [0.00956, 0.01254,
+    0.00635, 0.01785], max 0.01785 <= 0.02 (gen2_0''s 4 pairs were never solved: the run crashed in evaluate() before them).
+    CASE 4 TWIN GATES (W fit+signal_feet): F1(a1) FAILS, |1 - L_sub(W)/L_sub(R)| = 0.001545 > 2 e_R(W, R) = 0.000130; F1(a2)
+    passes only because both G are +inf (lhs 0, rhs +inf). FOUNDER DECISION 2026-11-13: F1(a1) is kept as frozen (Case 4''s
+    twin is fit+signal_feet, L1(W)/L1(R) 1.0017; 2R''s recorded twin is exact at L1, research/o003/twin_coverage/results.json
+    R1), so the band-check and Case 4 twin-gate items are settled; F1(a2) on Case 4 passing only on +inf G is a recorded fact.
+    QUICK_OK: gen2_0 98 of 2000 DRC-clean, none rejected, bound 3.0 %; Case 4 33, bound 8.7 %. GEN2_0 SEARCH (dev geometry,
+    not evidence; W = the reconstruction, same fingerprint): counted (a1 True, a2 True), h_lo 0.3254 (best c007559, r 0.5020,
+    e_R 0.0187; 4 checked, 1 rejected); near ties 1; NOT LEVELLED: lowest L1 of the first 5000 7.283 nH > (1 + w 0.0375) x
+    lowest of all 20000 6.661 nH, so h_hi = +inf there (K1 cannot fire from it); control: h_ctrl 0.6835 >= h_plant 0.4112
+    - w_ctrl 0.0581; D: R_D 1.6983, e_R 0.1235, conservative 1.2789 >= 1.25; every evaluate() check passed (13)'
+  - 'F6(e) memory (T0324): founder decision 2026-11-12: F6(e) on 2D_Case_2R runs on the same 8-vCPU VM resized to n2d-custom-8-499712-ext
+    (488 GiB, N2D extended memory); the founder created that machine type on this free-trial account (test VM, 2026-11-12,
+    successful); no memory-lean finite-volume level 3 for E008 (was the founder item ''F6(e) memory on the real 2D_Case_2R'';
+    burst_full.sh phase B)'
+  - 'Review T0323 (T0324): finding 0, the 2D_Case_6 spot_note and the F6e_stack_type_spot_check description carry ''only reference
+    excluded: <reason>''; finding 1, a type with an admissible EXCLUDED reference and another inadmissible kept reference
+    is reported ''only reference excluded: <reason>'' (e008_run.spot_assignment; selftest t0324_failures); finding 2, burst_full.sh
+    starts the VM and cancels the phase''s backstop shutdown before the exit-code read on the resume path, and cancels it
+    once the rc file exists; finding 3, f3_declared_deviation.rules_changed names D0018 decision 2 and the INVALID rule (quoted
+    verbatim in research/notes/e008-design.md section 12)'
   founder_decisions_before_registration:
-  - 'the band check (e_R on >= 4 twin-vs-random pairs) and Case 4''s twin gates come from the full-fidelity dev run on the
-    VM (research/o003/e008_dev/burst_dev.sh); the local rows are smoke rows and do not decide either (T0320) 2R''s records
-    settle nothing here: no l2_layout result of 2R exists (D0019 item 2); its band levels have {''lat0.25'': 1491140, ''lat0.5'':
-    369140, ''thk_c'': 184620, ''thk_f'': 738180, ''fil_f'': 369260} unknowns (--check-references)'
   - 'before registration the same full-fidelity dev run (burst_dev.sh: gen2_0 with the full frozen search, 2D_Case_4 twin
     gates) answers reviews T0304 (findings 0, 1) and T0305 (finding 4): Run.drive, assemble_rows and evaluate run once end
     to end on real solvers, and meta.thermal_report gives, for every dev layout at the frozen rule, F6(a)''s node growth per
@@ -620,9 +640,17 @@ config:
     (own interval width <= 2 K). If it is not attainable on the twin or most candidates, A1 may be unreachable by construction:
     the founder decides before registration. No local full-fidelity run is needed (T0306) (T0320) 2R''s records: no thermal
     solve exists, so attainability is open; mesh only: frozen-rule DOFs [77966, 560979, 4239845] (growth [7.195, 7.558] per
-    step, inside 8 +/- 15 %), 2D_Case_6 [81714, 590079, 4469229] (growth [7.221, 7.574])'
-  - 'if any dev e_R exceeds 0.02, or either Case 4 twin gate fails: the founder decides (objective notes) (T0320) 2R''s records
-    settle nothing here (dev geometry only)'
+    step, inside 8 +/- 15 %), 2D_Case_6 [81714, 590079, 4469229] (growth [7.221, 7.574]) (T0324) DEV FACTS (meta.thermal_report,
+    frozen rule): housing70x40_gen2_0/twin: non-monotone 0/4 dies, GCI [''0.0885'', ''0.453'', ''0.0633'', ''0.175''] K, attainable
+    True; housing70x40_gen2_0/reconstruction: non-monotone 0/4 dies, GCI [''0.0885'', ''0.453'', ''0.0633'', ''0.175''] K,
+    attainable True; housing70x40_gen2_0/c007559: non-monotone 0/4 dies, GCI [''0.0784'', ''0.0692'', ''2.76'', ''0.0802'']
+    K, attainable True; housing70x40_gen2_0/c015905: non-monotone 0/4 dies, GCI [''0.0774'', ''0.111'', ''0.112'', ''0.0991'']
+    K, attainable True; housing70x40_gen2_0/c018860: non-monotone 0/4 dies, GCI [''0.0963'', ''0.118'', ''0.0822'', ''0.053'']
+    K, attainable True; housing70x40_gen2_0/c002784: non-monotone 0/4 dies, GCI [''+inf'', ''0.104'', ''0.108'', ''1.63'']
+    K, attainable False; 2D_Case_4/twin: non-monotone 4/4 dies, GCI [''+inf'', ''+inf'', ''+inf'', ''+inf''] K, attainable
+    False; 2D_Case_4/reconstruction: non-monotone 4/4 dies, GCI [''+inf'', ''+inf'', ''+inf'', ''+inf''] K, attainable False.
+    Case 4''s reconstruction and twin: every die non-monotone over levels 0-2 (oscillatory with |rho| >= 1), GCI +inf, not
+    attainable. STAYS A FOUNDER ITEM: a separate investigate task diagnoses Case 4''s oscillation before the founder decides'
   - 'twin-copper areas of a customer reference in the rows (F5: scalar areas, no geometry) or vault-only (T0320) moot for
     D0019''s set (public references only; F5 concerns customer geometry); kept for a future customer set'
   - 'T0262 finding: on 2D_Case_4 the frozen twin fails the DRC under the reference''s own measured rules (power-wire length
@@ -637,13 +665,9 @@ config:
   - row contract interpretations 1-9 (research/o003/e008_row_contract.md section 5) (T0320) 2R's records settle nothing here
   - 'budget: with the real sizes (T0320) cpu_hours 320 holds for E008 on either reading: billed vCPU-hours 97.0-145.4 (2D_Case_6
     excluded, expected) or 149.7-255.0 (if counted), process CPU-hours 40.0-102.6 (cost_estimate.statement); which reading
-    the cap uses stays the founder''s (with the dev run, all VM work is about 177-351 billed vCPU-hours)'
-  - 'F6(e) memory on the real 2D_Case_2R (T0320, supersedes the Case 4 proxy): the finite-volume level-3 grid has 273,473,536
-    box cells (34,184,192 built at level 2, x 8), peak 410.7 GB at E009''s 1,500 B/cell: it does NOT fit in 150 GB; it fits
-    on the same 8-vCPU VM resized to n2d-custom-8-499712-ext (488 GB; N2D allows 768 GB), 4.22 h, $17.48. 2R is the only reference
-    of its type expected to be counted, so no smaller AlN spot-check reference exists in D0019''s set. Choose: allow ~488
-    GB; or a memory-lean FV level 3 under a new spec; if ~150 GB is the ceiling, F6(e) cannot run and E008 gives no verdict
-    (F6e: INVALID)'
+    the cap uses stays the founder''s (with the dev run, all VM work is about 177-351 billed vCPU-hours) (T0324) --plan with
+    the dev near ties (1): expected 83 solves, 97.0 billed vCPU-hours, 38.8 process CPU-hours (upper end of all readings 255.0);
+    rates unchanged'
   - 'F6(e) reading (T0310 finding 4): a non-default stack type whose references are all inadmissible is REPORTED, NOT GATED
     (evaluation report F6e.<type> with reference null and status ''no admissible reference'', listed in the detail of F6e_stack_type_spot_check
     as no_admissible_reference; no per-type check, the aggregate is not failed by it). This reads O003 scope_in''s ''at least
@@ -674,7 +698,7 @@ config:
     draws gave 33, none rejected, so the false-rejection rate is <= 8.7 % (exact one-sided 95 % bound, now reported by the
     runner; research/o003/e008_dev/case4_prep.log). Whether quick_ok_draws should instead fix the number of DRC-clean samples
     (e.g. 100 clean -> bound 3 %) is a design choice for registration (reported, not gated, either way) (T0320) 2R: no sample
-    drawn before the freeze (D0019 item 4)'
+    drawn before the freeze (D0019 item 4) (T0324) dev run: gen2_0 98/2000 clean (bound 3.0 %), Case 4 33/2000 (8.7 %)'
   - '2D_Case_4 fail-fast facts (dev, L0/L1 only; the consequence of a DegradeError is settled by D0018, see founder_decisions_settled):
     twin mode fit+signal_feet with zero copper symmetric difference on DC+, DC- and PHASE, L1(W)/L1(reconstruction) = 1.0017.
     Under the reference''s 5 mm power width (before D0018) degrade() raised DegradeError (L1 ratio 1.232 < 1.388, local maximum
@@ -687,7 +711,7 @@ config:
   - E009-registered smoke thermal rule for local smoke rows; the earlier smoke rule did not fit the Mac (research/notes/e008-design.md
     section 3) (T0320) 2R's records settle nothing here (dev rows only)
   cost_estimate:
-    filled_by: e008_run.py --plan (T0320, real reference sizes; research/o003/e008_dev/plan_T0320.json)
+    filled_by: e008_run.py --plan (T0324, dev near ties; research/o003/e008_dev/plan_T0324.json)
     threads_per_solve: 2
     why: 'two threads: mean wall 5751 s vs pinned 6364 s'
     vm:
@@ -703,15 +727,15 @@ config:
         check in the console. N2D extended memory reaches 768 GB per VM (cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type)
       earliest_start: '2026-11-16'
     usable_GB: 66.3
-    near_ties_expected_source: default (no dev search rows)
+    near_ties_expected_source: dev rows
     cases:
       expected:
         references:
         - 2D_Case_2R
-        near_ties: 3
+        near_ties: 1
         thermal_batches: 1
         null_extra_checks: 0
-        n_solves: 91
+        n_solves: 83
         phase_a_hours: 7.9
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
@@ -749,7 +773,7 @@ config:
         vm_hours: 12.13
         usd: 22.32
         billed_vcpu_hours: 97.0
-        process_cpu_hours: 40.0
+        process_cpu_hours: 38.8
         peak_GB_per_reference:
           2D_Case_2R:
             em: 6.2
@@ -1028,10 +1052,10 @@ config:
         references:
         - 2D_Case_2R
         - 2D_Case_6
-        near_ties: 3
+        near_ties: 1
         thermal_batches: 1
         null_extra_checks: 0
-        n_solves: 182
+        n_solves: 166
         phase_a_hours: 10.69
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
@@ -1086,7 +1110,7 @@ config:
         vm_hours: 18.71
         usd: 38.18
         billed_vcpu_hours: 149.7
-        process_cpu_hours: 70.8
+        process_cpu_hours: 68.9
         peak_GB_per_reference: &id002
           2D_Case_2R:
             em: 6.2
@@ -1096,7 +1120,111 @@ config:
             em: 4.8
             thermal: 50.1
             fv: 372.2
-        per_solve_on_vm: as in cases (2D_Case_2R sizes)
+        per_solve_on_vm:
+          reference_sizes: 2D_Case_2R
+          note: wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells
+            / candidates
+          solves:
+            screen:screen_main:
+              n: 20000
+              wall_h: 2.5
+              peak_GB: 1.5
+              threads: 1
+            screen:screen_control:
+              n: 20000
+              wall_h: 2.5
+              peak_GB: 1.5
+              threads: 1
+            em:lat0.25:
+              n: 1491140
+              wall_h: 0.372
+              peak_GB: 6.24
+              threads: 2
+            em:lat0.5:
+              n: 369140
+              wall_h: 0.05
+              peak_GB: 2.15
+              threads: 2
+            em:thk_c:
+              n: 184620
+              wall_h: 0.025
+              peak_GB: 1.47
+              threads: 2
+            em:thk_f:
+              n: 738180
+              wall_h: 0.207
+              peak_GB: 3.49
+              threads: 2
+            em:fil_f:
+              n: 369260
+              wall_h: 0.105
+              peak_GB: 2.15
+              threads: 2
+            thermal:calibration:T0:
+              n: 77966
+              wall_h: 0.018
+              peak_GB: 0.95
+              threads: 2
+            thermal:reference:T0:
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
+              threads: 2
+            thermal:reference:T1:
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
+              threads: 2
+            thermal:reference:T2:
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
+              threads: 2
+            thermal:twin:T0:
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
+              threads: 2
+            thermal:twin:T1:
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
+              threads: 2
+            thermal:twin:T2:
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
+              threads: 2
+            fv:fv:L1:
+              n: 4273024
+              wall_h: 0.035
+              peak_GB: 6.91
+              threads: 2
+            fv:fv:L2:
+              n: 34184192
+              wall_h: 0.371
+              peak_GB: 51.78
+              threads: 2
+            fv:fv:L3:
+              n: 273473536
+              wall_h: 3.974
+              peak_GB: 410.71
+              threads: 2
+            thermal:candidate:T0:
+              n: 150595
+              wall_h: 0.009
+              peak_GB: 1.36
+              threads: 2
+            thermal:candidate:T1:
+              n: 1088108
+              wall_h: 0.063
+              peak_GB: 6.71
+              threads: 2
+            thermal:candidate:T2:
+              n: 8242103
+              wall_h: 0.481
+              peak_GB: 47.55
+              threads: 2
         end_date_if_start: '2026-11-16'
       upper:
         references:
@@ -1170,7 +1298,111 @@ config:
             em: 4.8
             thermal: 50.1
             fv: 372.2
-        per_solve_on_vm: as in cases (2D_Case_2R sizes)
+        per_solve_on_vm:
+          reference_sizes: 2D_Case_2R
+          note: wall at the scheduled concurrency (four 0.25 mm solves at once, two threads each); n = unknowns / DOFs / cells
+            / candidates
+          solves:
+            screen:screen_main:
+              n: 20000
+              wall_h: 2.5
+              peak_GB: 1.5
+              threads: 1
+            screen:screen_control:
+              n: 20000
+              wall_h: 2.5
+              peak_GB: 1.5
+              threads: 1
+            em:lat0.25:
+              n: 1491140
+              wall_h: 0.372
+              peak_GB: 6.24
+              threads: 2
+            em:lat0.5:
+              n: 369140
+              wall_h: 0.05
+              peak_GB: 2.15
+              threads: 2
+            em:thk_c:
+              n: 184620
+              wall_h: 0.025
+              peak_GB: 1.47
+              threads: 2
+            em:thk_f:
+              n: 738180
+              wall_h: 0.207
+              peak_GB: 3.49
+              threads: 2
+            em:fil_f:
+              n: 369260
+              wall_h: 0.105
+              peak_GB: 2.15
+              threads: 2
+            thermal:calibration:T0:
+              n: 77966
+              wall_h: 0.018
+              peak_GB: 0.95
+              threads: 2
+            thermal:reference:T0:
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
+              threads: 2
+            thermal:reference:T1:
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
+              threads: 2
+            thermal:reference:T2:
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
+              threads: 2
+            thermal:twin:T0:
+              n: 77966
+              wall_h: 0.005
+              peak_GB: 0.95
+              threads: 2
+            thermal:twin:T1:
+              n: 560979
+              wall_h: 0.033
+              peak_GB: 3.7
+              threads: 2
+            thermal:twin:T2:
+              n: 4239845
+              wall_h: 0.247
+              peak_GB: 24.7
+              threads: 2
+            fv:fv:L1:
+              n: 4273024
+              wall_h: 0.035
+              peak_GB: 6.91
+              threads: 2
+            fv:fv:L2:
+              n: 34184192
+              wall_h: 0.371
+              peak_GB: 51.78
+              threads: 2
+            fv:fv:L3:
+              n: 273473536
+              wall_h: 3.974
+              peak_GB: 410.71
+              threads: 2
+            thermal:candidate:T0:
+              n: 150595
+              wall_h: 0.009
+              peak_GB: 1.36
+              threads: 2
+            thermal:candidate:T1:
+              n: 1088108
+              wall_h: 0.063
+              peak_GB: 6.71
+              threads: 2
+            thermal:candidate:T2:
+              n: 8242103
+              wall_h: 0.481
+              peak_GB: 47.55
+              threads: 2
         end_date_if_start: '2026-11-17'
     f6e_spot_check_of_excluded_type:
       2D_Case_6:
@@ -1214,34 +1446,144 @@ config:
         billed_vcpu_hours: 35.3
         process_cpu_hours: 6.4
     peak_memory_per_reference_GB: *id002
-    statement: 'REAL SIZES (T0320, --check-references on the frozen reconstructions, D0019 item 4: rebuild, fingerprint and
-      mesh counts only). 2D_Case_2R: l2_layout 1,491,140 unknowns at 0.25 mm (Case 4 proxy 4,108,580), scikit-fem DOFs [77966,
-      560979, 4239845] at levels 0-2 (proxy [51098, 365435, 2752565]: the real thermal grids are 1.5x larger), FV box cells
-      [4273024, 34184192, 273473536] (level 3 = level 2 x 8; proxy 234.8 M). 2D_Case_6: 1,095,080, [81714, 590079, 4469229],
-      [3872064, 30976512, 247812096]. Candidate DOFs: the reference''s x the Case 4 candidate/reference ratio (no candidate
-      generated, D0019 item 4); screens at the 0.45 s slow end. EXPECTED SET (D0019: 2D_Case_6 excluded at its twin, TwinError
-      in prepare() before any solve, so no job of it): expected (near ties 3, 1 batch) 12.13 VM-hours, $22.32, 97.0 billed
-      vCPU-hours, 40.0 process CPU-hours; upper (15 near ties, 2 batches, 8 null checks) 18.17 VM-hours, $26.02, 145.4 billed
-      vCPU-hours, 56.9 process CPU-hours. IF 2D_Case_6 WERE NOT EXCLUDED: expected 18.71 VM-hours, $38.18, 149.7 billed vCPU-hours,
-      70.8 process CPU-hours; upper 31.87 VM-hours, $46.23, 255.0 billed vCPU-hours, 102.6 process CPU-hours. Phase B is inside
-      these: the F6(e) finite-volume level-3 solve of 2D_Case_2R (273,473,536 cells, peak 410.7 GB at E009''s 1,500 B/cell)
-      runs alone on the VM resized to n2d-custom-8-499712-ext (488 GB, $4.138/h): 4.22 h, $17.48 (range 1.17-8.16 h, $4.84-$33.78).
-      F6(e) ON 2R DOES NOT FIT IN 150 GB (needs ~488 GB; N2D allows 768 GB); every other solve peaks at or below 47.6 GB (phase
-      A, 66.3 GB usable). F6(e) OF 2D_Case_6''s OWN STACK TYPE when 2D_Case_6 is excluded: REPORTED, NOT GATED (founder decision 2026-11-12,
-      T0322; founder_decisions_settled): no spot check, F6e.<type> with reference null and status ''only reference excluded:
-      <reason>''; $0. For the record only, a spot check would cost 4.41 VM-hours, $14.54 (calibration, scikit-fem levels 0-2 and FV levels 1-3 of the
-      reconstruction; FV level 3 247,812,096 cells, 372.2 GB on n2d-custom-8-450560-ext), a report costs nothing. BUDGET:
-      USD fits (E008 $22.32-$46.23 over both scenarios, budget.usd 250); cpu_hours 320 holds on every reading for E008 alone:
-      billed vCPU-hours 97.0-145.4 (expected set) or 149.7-255.0 (if 2D_Case_6 were counted); process CPU-hours 40.0-102.6.
-      Not included: the full-fidelity dev run (~10-12 VM-hours, ~80-96 billed vCPU-hours) and no snapping check (both references
-      on the 0.5 mm grid, D0019). DATE: E008 ends 2026-11-16-2026-11-17 if started 2026-11-16, provided the ~488 GB resize
-      is allowed (founder item F6(e) memory).'
+    measured_dev_run:
+      source: research/o003/e008_dev/dev_run_measured_T0324.json
+      groups:
+        2D_Case_4:em:lat0.25:
+          n: 6
+          size_median: 3808810.0
+          wall_s:
+          - 2736.1236422299994
+          - 2864.283942253
+          - 3007.6797016
+          peak_GB:
+          - 14.927888384
+          - 15.240839168
+          - 15.623081984
+          model_est_s_median: 5770.0
+          model_mem_GB_median: 15.796317
+          wall_over_model:
+          - 0.49640969536447144
+          - 0.5212616467244368
+          peak_over_model:
+          - 0.9648349781787742
+          - 0.9890332021065417
+        2D_Case_4:em:thk_f:
+          n: 6
+          size_median: 1892110.0
+          wall_s:
+          - 1082.968206566
+          - 1206.1642338430001
+          - 1278.531401581
+          peak_GB:
+          - 8.16443392
+          - 8.507557888000001
+          - 8.873070592
+          model_est_s_median: 3253.7490192918926
+          model_mem_GB_median: 8.2981585
+          wall_over_model:
+          - 0.37069983784597355
+          - 0.39294100251753417
+          peak_over_model:
+          - 1.025234440629207
+          - 1.069281888505745
+        2D_Case_4:thermal:2:
+          n: 2
+          size_median: 2752565.0
+          wall_s:
+          - 1045.7962740829998
+          - 1048.5118697144999
+          - 1051.227465346
+          peak_GB:
+          - 9.138577408
+          - 9.205803008
+          - 9.273028608
+          model_est_s_median: 578.0386500000001
+          model_mem_GB_median: 16.21349836068802
+          wall_over_model:
+          - 1.8139130829997263
+          - 1.818611031193156
+          peak_over_model:
+          - 0.5677863471045093
+          - 0.5719326206911522
+        housing70x40_gen2_0:em:lat0.25:
+          n: 34
+          size_median: 1831848.0
+          wall_s:
+          - 1663.8778850269991
+          - 1989.8419773770001
+          - 2525.8855214820014
+          peak_GB:
+          - 8.31301632
+          - 8.80393216
+          - 9.408270336
+          model_est_s_median: 2422.0833068174284
+          model_mem_GB_median: 9.00707245
+          wall_over_model:
+          - 0.8215415100612764
+          - 1.0428565831622725
+          peak_over_model:
+          - 0.9774465797707668
+          - 1.0445425401235668
+        housing70x40_gen2_0:em:fil_f:
+          n: 5
+          size_median: 457254
+          wall_s:
+          - 681.6857479990031
+          - 722.4354291379996
+          - 769.4270569459986
+          peak_GB:
+          - 4.8699392
+          - 5.510742016
+          - 5.728206848
+          model_est_s_median: 690.9421794878106
+          model_mem_GB_median: 2.8517672000000003
+          wall_over_model:
+          - 1.0455801521243568
+          - 1.113591093130786
+          peak_over_model:
+          - 1.9323954690270648
+          - 2.008651634677613
+        housing70x40_gen2_0:thermal:2:
+          n: 5
+          size_median: 6591989
+          wall_s:
+          - 1431.0343188729994
+          - 1754.766747343001
+          - 1780.5602125549995
+          peak_GB:
+          - 18.86846976
+          - 20.412444672
+          - 20.819288064
+          model_est_s_median: 1384.31769
+          model_mem_GB_median: 38.131521270223764
+          wall_over_model:
+          - 1.253550522064156
+          - 1.2676040767368948
+          peak_over_model:
+          - 0.5341147603249006
+          - 0.5373383217973707
+    statement: 'T0324: --plan re-run with the near ties of the full-fidelity dev rows (1, gen2_0); rates and cost model unchanged.
+      EXPECTED SET (2D_Case_6 excluded at its twin): expected 83 solves, 12.13 VM-hours, $22.32, 97.0 billed vCPU-hours, 38.8
+      process CPU-hours; upper (15 near ties) 175 solves, 18.17 VM-hours, $26.02, 145.4 billed vCPU-hours. IF 2D_Case_6 WERE
+      COUNTED: 149.7-255.0 billed vCPU-hours, $38.18-$46.23. Phase B: 2D_Case_2R:fv:L3 (273,473,536 cells, 410.7 GB) alone
+      on n2d-custom-8-499712-ext (488 GB), 4.22 h, $17.48 (founder decision 2026-11-12, settled). MEASURED ON THE DEV RUN
+      (research/o003/e008_dev/dev_run_measured_T0324.json, 107 solves, 34.7 solve-hours): 2D_Case_4:em:lat0.25 n 6: wall 2864
+      s (max 3008) vs model 5770 s, peak 15.2 GB (max 15.6) vs model 15.8 GB; 2D_Case_4:em:thk_f n 6: wall 1206 s (max 1279)
+      vs model 3254 s, peak 8.5 GB (max 8.9) vs model 8.3 GB; 2D_Case_4:thermal:2 n 2: wall 1049 s (max 1051) vs model 578
+      s, peak 9.2 GB (max 9.3) vs model 16.2 GB; housing70x40_gen2_0:em:lat0.25 n 34: wall 1990 s (max 2526) vs model 2422
+      s, peak 8.8 GB (max 9.4) vs model 9.0 GB; housing70x40_gen2_0:em:fil_f n 5: wall 722 s (max 769) vs model 691 s, peak
+      5.5 GB (max 5.7) vs model 2.9 GB; housing70x40_gen2_0:thermal:2 n 5: wall 1755 s (max 1781) vs model 1384 s, peak 20.4
+      GB (max 20.8) vs model 38.1 GB. Reading: EM wall is at or below the model (Case 4 about 0.4-0.7x), EM peak within about
+      1.1x except gen2_0 fil_f/thk_f (2.0x/1.4x, handled by Scheduler.learn); scikit-fem level-2 wall is ABOVE the model (Case
+      4 1.8x, gen2_0 1.3x) and its peak about 0.55x; the phase-A wall of the registered run may therefore exceed --plan''s
+      by the thermal share; rates are kept (no change made here). Not included: the dev run itself and its rerun.'
   f3_declared_deviation:
     decision: D0019 item 2 (founder session 2026-11-12)
     statement: 'DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before
       E008''s freeze (T0263 twin check, T0314 diagnosis), and E008''s runner and spec changed afterwards (T0316, T0317); no
-      inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the
-      twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018
+      inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin
+      or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018
       decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged
       since T0300'
     wording: 'T0322 (review T0321 finding 0): the statement and rules_changed were made exact; before, they said no power-copper
@@ -1277,9 +1619,15 @@ config:
     - task: T0322
       commit: this task
       date: '2026-11-12'
-      what: 'review T0321 findings 0 and 2 (exact deviation wording; freeze checks before any reference is loaded, also in
+      what: review T0321 findings 0 and 2 (exact deviation wording; freeze checks before any reference is loaded, also in
         --check-references), F6(e) report-only for a type whose only reference is excluded (founder decision), phase A stop
-        and phase B resume for burst_full.sh; no rule, gate, tolerance, generator, twin, degradation or search change'
+        and phase B resume for burst_full.sh; no rule, gate, tolerance, generator, twin, degradation or search change
+    - task: T0324
+      commit: this task
+      date: '2026-11-13'
+      what: row labels by role (twin = reconstruction), --replay-only, F6(e) mixed-type report (review T0323 finding 1), burst_full.sh
+        resume read, rules_changed names D0018 decision 2 and the INVALID rule; no rule, gate, tolerance, generator, twin,
+        degradation or search change
     src_unchanged_since:
       task: T0300
       commit: 096b127b
@@ -1298,10 +1646,12 @@ config:
     - twin gates
     rules_changed: 'no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed
       (D0019 item 2); the power-width floor of the yardstick D did (D0018 decision 1, T0316: D is built under min(reference
-      minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R''s own 4.0 mm); the change
-      prompted by 2R removed the lower bound on gate and Kelvin wire length (min_signal_wire_length, D0018 item 1, T0317);
-      O003 scope_in''s enumerated rules are the complete meaning of ''at least as strict as the reference''s own'' (D0019 item
-      5)'
+      minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R''s own 4.0 mm); a reference
+      whose D misses F1(b) (DegradeError, or L_sub(D)/L_sub(W) below 1.25 at the conservative end of its band) is excluded
+      instead of failing the run (D0018 decision 2, T0316); a non-finite or non-converged band solve of D or W makes the run
+      INVALID (T0317, review T0318 finding 0); the change prompted by 2R removed the lower bound on gate and Kelvin wire length
+      (min_signal_wire_length, D0018 item 1, T0317); O003 scope_in''s enumerated rules are the complete meaning of ''at least
+      as strict as the reference''s own'' (D0019 item 5)'
     carried_by: deviation_tag(cfg) -> every row (column f3_declared_deviation, the full statement since T0322), the evaluation
       report (f3_declared_deviation and deviation_statement), the result notes; quoted verbatim in research/notes/e008-design.md
       section 11
@@ -1436,7 +1786,12 @@ sanity_checks:
     and in this check''s detail (no_admissible_reference), not failed (reading of scope_in''s ''every stack type'' as every
     type of the D0010 reference set, which holds admissible references only; an inadmissible reference contributes no rows).
     One check F6e_stack_type_spot_check:<type> per type with a spot check, every one gated (a NaN or infinite A3 fails); this
-    declared check passes only if all of them pass'
+    declared check passes only if all of them pass T0324 (review T0323 finding 0): a non-default type with no admissible reference
+    that reached the search but an admissible reference EXCLUDED (TwinError, DegradeError or D''s definition; other references
+    of the type may be inadmissible) gets no spot check and no per-type check: the evaluation report lists F6e.<type> with
+    reference null, excluded_references and status ''only reference excluded: <reason>'' (one excluded reference) or ''all
+    references excluded: ...''; the detail lists it under only_reference_excluded; REPORTED, NOT GATED (founder decision 2026-11-12).
+    For D0019''s set this is 2D_Case_6''s type if it raises TwinError as expected.'
 - name: driver_s_ref_matches_rows
   description: 'per reference: the s_ref the frozen driver was given (its near-tie window and w) equals snapping_bias of the
     reference row, so the band solves the metric needs exist (T0304 finding 3) (declared check: all of the per-reference checks
