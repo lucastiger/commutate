@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-12T22:55:53+00:00 from repository state — do not edit_
+_generated 2026-11-13T02:54:48+00:00 from repository state — do not edit_
 
 ## Founder inbox (8 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -40,7 +40,6 @@ cancelled: 39, done: 281, failed: 3
 
 
 ## Recent events
-- 2026-11-12T21:06:03+00:00 task_added {"task": "T0322", "reason": "founder 2026-11-12: T0321 fixes, report-only for an excluded reference's stack type, launch procedure"}
 - 2026-11-12T21:06:25+00:00 run_started {"run": "T0322-scientist-20261112T130625-cd1f", "task": "T0322", "role": "scientist", "session": "135d4e61-3315-485d-a9f8-d2b9baf300c7"}
 - 2026-11-12T21:32:58+00:00 run_finished {"run": "T0322-scientist-20261112T130625-cd1f", "status": "error", "cost": 5.174583, "subtype": "success", "report": "missing"}
 - 2026-11-12T21:32:58+00:00 capacity_backoff {"task": "T0322", "minutes": 5, "parsed_reset": false}
@@ -55,3 +54,4 @@ cancelled: 39, done: 281, failed: 3
 - 2026-11-12T22:50:16+00:00 merged {"task": "T0322"}
 - 2026-11-12T22:50:16+00:00 inbox_opened {"id": "I0181", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-12T22:55:20+00:00 founder_decision_noted {"decision": "E008 F6(e) memory: the founder created n2d-custom-8-499712-ext (8 vCPU, 488 GiB extended memory) on the free-trial account (test VM, 2026-11-12, s
+- 2026-11-13T02:54:42+00:00 sleep_detected {"gap_s": 9266, "runs_extended": 0}
