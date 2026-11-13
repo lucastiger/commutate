@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T17:59:10+00:00 from repository state — do not edit_
+_generated 2026-11-13T17:59:49+00:00 from repository state — do not edit_
 
 ## Founder inbox (9 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -44,7 +44,6 @@ cancelled: 39, done: 282, failed: 3, needs_founder: 1, review: 1, running: 1
 - T0327 `running` critic/review: Review T0324 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-13T16:46:23+00:00 founder_decision_noted {"decision": "E008 twin gate F1(a1) unchanged (founder, 2026-11-13). The full-fidelity dev run (VM, 2026-11-13) failed a1 on 2D_Case_4: |1 - L_sub(W)/L_sub(ref)
 - 2026-11-13T16:46:23+00:00 founder_decision_noted {"decision": "E008 Tj attainability (founder, 2026-11-13): diagnose before deciding. On 2D_Case_4 (dev run) every die of the reference and the twin is non-monot
 - 2026-11-13T16:48:04+00:00 task_added {"task": "T0324", "reason": "founder 2026-11-13: dev-run crash fix, dev rows from the saved VM work, T0323 cleanup"}
 - 2026-11-13T16:48:04+00:00 task_added {"task": "T0325", "reason": "founder 2026-11-13: diagnose Case 4's non-monotone Tj before deciding A1's reach"}
@@ -59,3 +58,4 @@ cancelled: 39, done: 282, failed: 3, needs_founder: 1, review: 1, running: 1
 - 2026-11-13T17:59:01+00:00 run_finished {"run": "T0326-critic-20261113T094053-9343", "status": "completed", "cost": 2.447835, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T17:59:06+00:00 inbox_opened {"id": "I0182", "kind": "protected_change", "subject": "T0325: merge needs founder approval"}
 - 2026-11-13T17:59:10+00:00 run_started {"run": "T0327-critic-20261113T095910-e39b", "task": "T0327", "role": "critic", "session": "dd35d8f4-ae19-4ff5-af93-bf82adb28f94"}
+- 2026-11-13T17:59:44+00:00 sleep_detected {"gap_s": 1096, "runs_extended": 1}
