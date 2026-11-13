@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T20:52:53+00:00 from repository state — do not edit_
+_generated 2026-11-13T20:53:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -12,7 +12,7 @@ _generated 2026-11-13T20:52:53+00:00 from repository state — do not edit_
 - **I0181** [experiment_registration] register E008 (pre-registration)
 - **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
 - **I0187** [experiment_registration] register E008 (pre-registration)
-- **I0188** [protected_change] T0330: merge needs founder approval
+- **I0189** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -39,15 +39,11 @@ _generated 2026-11-13T20:52:53+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 287, failed: 3, needs_founder: 1, proposed: 1
+cancelled: 39, done: 288, failed: 3, proposed: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
-- T0330 `needs_founder` scientist/design_experiment: E008: declare the expected outcome under the frozen Tj rule, reported die-average Tj, record D0020's registration readings (attempt 1)
 
 ## Recent events
-- 2026-11-13T18:36:34+00:00 inbox_resolved {"id": "I0186", "status": "approved", "note": "Merge T0324 (dev-run crash fix, dev rows replayed, T0323 fixes).", "by": "human"}
-- 2026-11-13T18:37:07+00:00 merged {"task": "T0324"}
-- 2026-11-13T18:37:07+00:00 inbox_opened {"id": "I0187", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-13T19:08:07+00:00 founder_decision_noted {"decision": "E008 Tj attainability (founder, 2026-11-13, D0020): register E008 with the frozen Tj definition. T0325's level-2 VM run found H3 (hot spot moves o
 - 2026-11-13T19:08:07+00:00 founder_decision_noted {"decision": "E008 registration readings (founder, 2026-11-13, D0020): band check = Case 4's 4 pairs + gen2_0's search estimate (I0184 option 1); row-contract i
 - 2026-11-13T19:08:07+00:00 inbox_resolved {"id": "I0183", "status": "approved", "note": "Done 2026-11-13: burst_tj_osc.sh ran (15/15 solves ok, V0 reproduces the dev run). Result H3: the hot spot moves 
@@ -60,3 +56,6 @@ cancelled: 39, done: 287, failed: 3, needs_founder: 1, proposed: 1
 - 2026-11-13T20:05:45+00:00 sleep_detected {"gap_s": 1049, "runs_extended": 1}
 - 2026-11-13T20:27:22+00:00 run_finished {"run": "T0331-critic-20261113T120510-5f57", "status": "completed", "cost": 2.016545, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T20:27:27+00:00 inbox_opened {"id": "I0188", "kind": "protected_change", "subject": "T0330: merge needs founder approval"}
+- 2026-11-13T20:53:08+00:00 inbox_resolved {"id": "I0188", "status": "approved", "note": "Merge T0330 (D0020 follow-up: expected outcome declared, reported die-average Tj, registration readings settled).
+- 2026-11-13T20:53:30+00:00 merged {"task": "T0330"}
+- 2026-11-13T20:53:30+00:00 inbox_opened {"id": "I0189", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
