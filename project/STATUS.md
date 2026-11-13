@@ -1,7 +1,7 @@
 # ModuleForge status
-_generated 2026-11-13T20:26:49+00:00 from repository state — do not edit_
+_generated 2026-11-13T20:27:30+00:00 from repository state — do not edit_
 
-## Founder inbox (10 open)
+## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
@@ -12,6 +12,7 @@ _generated 2026-11-13T20:26:49+00:00 from repository state — do not edit_
 - **I0181** [experiment_registration] register E008 (pre-registration)
 - **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
 - **I0187** [experiment_registration] register E008 (pre-registration)
+- **I0188** [protected_change] T0330: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -19,7 +20,7 @@ _generated 2026-11-13T20:26:49+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $216.97/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $218.99/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -30,7 +31,7 @@ _generated 2026-11-13T20:26:49+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 112 | $216.97 | 3484412 | 1734500 | 203 | 0 |
+| O003 | 112 | $218.99 | 3510317 | 1745371 | 209 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -38,15 +39,12 @@ _generated 2026-11-13T20:26:49+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 286, failed: 3, proposed: 1, review: 1, running: 1
+cancelled: 39, done: 287, failed: 3, needs_founder: 1, proposed: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
-- T0330 `review` scientist/design_experiment: E008: declare the expected outcome under the frozen Tj rule, reported die-average Tj, record D0020's registration readings (attempt 1)
-- T0331 `running` critic/review: Review T0330 (general) (attempt 1)
+- T0330 `needs_founder` scientist/design_experiment: E008: declare the expected outcome under the frozen Tj rule, reported die-average Tj, record D0020's registration readings (attempt 1)
 
 ## Recent events
-- 2026-11-13T18:20:08+00:00 inbox_opened {"id": "I0186", "kind": "protected_change", "subject": "T0324: merge needs founder approval"}
-- 2026-11-13T18:20:45+00:00 sleep_detected {"gap_s": 400, "runs_extended": 0}
 - 2026-11-13T18:36:34+00:00 inbox_resolved {"id": "I0186", "status": "approved", "note": "Merge T0324 (dev-run crash fix, dev rows replayed, T0323 fixes).", "by": "human"}
 - 2026-11-13T18:37:07+00:00 merged {"task": "T0324"}
 - 2026-11-13T18:37:07+00:00 inbox_opened {"id": "I0187", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
@@ -60,3 +58,5 @@ cancelled: 39, done: 286, failed: 3, proposed: 1, review: 1, running: 1
 - 2026-11-13T20:05:01+00:00 verified {"task": "T0330"}
 - 2026-11-13T20:05:10+00:00 run_started {"run": "T0331-critic-20261113T120510-5f57", "task": "T0331", "role": "critic", "session": "4bfb8b2e-ec62-45cc-b249-9796366a339d"}
 - 2026-11-13T20:05:45+00:00 sleep_detected {"gap_s": 1049, "runs_extended": 1}
+- 2026-11-13T20:27:22+00:00 run_finished {"run": "T0331-critic-20261113T120510-5f57", "status": "completed", "cost": 2.016545, "subtype": "success", "report": "structured_output"}
+- 2026-11-13T20:27:27+00:00 inbox_opened {"id": "I0188", "kind": "protected_change", "subject": "T0330: merge needs founder approval"}
