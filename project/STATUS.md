@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T18:20:11+00:00 from repository state — do not edit_
+_generated 2026-11-13T18:20:50+00:00 from repository state — do not edit_
 
 ## Founder inbox (12 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -46,7 +46,6 @@ cancelled: 39, done: 285, failed: 3, needs_founder: 1, proposed: 1
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-13T17:59:01+00:00 verified {"task": "T0324"}
 - 2026-11-13T17:59:01+00:00 run_finished {"run": "T0326-critic-20261113T094053-9343", "status": "completed", "cost": 2.447835, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T17:59:06+00:00 inbox_opened {"id": "I0182", "kind": "protected_change", "subject": "T0325: merge needs founder approval"}
 - 2026-11-13T17:59:10+00:00 run_started {"run": "T0327-critic-20261113T095910-e39b", "task": "T0327", "role": "critic", "session": "dd35d8f4-ae19-4ff5-af93-bf82adb28f94"}
@@ -61,3 +60,4 @@ cancelled: 39, done: 285, failed: 3, needs_founder: 1, proposed: 1
 - 2026-11-13T18:06:52+00:00 plan_applied {"objective": "O003", "created": ["T0329"], "dropped": 0}
 - 2026-11-13T18:14:06+00:00 run_finished {"run": "T0327-critic-20261113T095910-e39b", "status": "completed", "cost": 2.387313, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T18:20:08+00:00 inbox_opened {"id": "I0186", "kind": "protected_change", "subject": "T0324: merge needs founder approval"}
+- 2026-11-13T18:20:45+00:00 sleep_detected {"gap_s": 400, "runs_extended": 0}
