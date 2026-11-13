@@ -4,7 +4,7 @@ title: 'E008: fix the dev run''s row-assembly crash (twin = reconstruction), reb
   saved VM work, record the dev facts, T0323 cleanup'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "The full-fidelity dev run (founder's VM, burst_dev.sh, 2026-11-13 05:47-15:44 UTC, one Spot\
   \ preemption resumed\nfrom the cache) finished all 107 solves (status ok) and then crashed in evaluate():\n\
@@ -143,4 +143,108 @@ rationale: 'Founder 2026-11-13 (session): the dev run crashed in evaluate() beca
   share a fingerprint on gen2_0, which can also happen on 2R; fix it, rebuild the dev rows without a VM,
   record the dev facts and the a1 decision, close review T0323''s findings and record the 488 GB F6(e)
   decision.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The dev run''s crash came from labelling rows through a fingerprint-keyed map. gen2_0''s twin
+    W is its reconstruction R (same fingerprint), so both layout rows were labelled ''reconstruction''.
+    Because the search keeps one thermal record per fingerprint, W also had no die rows. Fixed: assemble_rows
+    labels by role via thermal_subjects(). The audit found a second collision bug: the F6(e) spot check
+    selected the thermal record by role ''reference'', which would raise when W = R. It now selects by
+    the reconstruction''s fingerprint. Selftest full_orchestration case 4 runs the registered path with
+    W = R on both references and plants a candidate equal to W; it passes, and the old code fails it.
+    Added --replay-only, which raises in Scheduler.step() before any launch. The packet''s exact replay
+    command rep'
+  report:
+    summary: 'The dev run''s crash came from labelling rows through a fingerprint-keyed map. gen2_0''s
+      twin W is its reconstruction R (same fingerprint), so both layout rows were labelled ''reconstruction''.
+      Because the search keeps one thermal record per fingerprint, W also had no die rows. Fixed: assemble_rows
+      labels by role via thermal_subjects(). The audit found a second collision bug: the F6(e) spot check
+      selected the thermal record by role ''reference'', which would raise when W = R. It now selects
+      by the reconstruction''s fingerprint. Selftest full_orchestration case 4 runs the registered path
+      with W = R on both references and plants a candidate equal to W; it passes, and the old code fails
+      it. Added --replay-only, which raises in Scheduler.step() before any launch. The packet''s exact
+      replay command replayed the whole gen2_0 search, assemble_rows, evaluate() and the Case 4 gates
+      without asking for a solve, so no key changed. It then stopped on 20 jobs: gen2_0''s 4 band-check
+      pairs x 5 levels, which dev() solves after evaluate() and the VM never reached. The rows were written
+      with gen2_0::0 (same seeds, 0 solves started). Case 4 matches the job log exactly (a1 False, a2
+      True, pairs e_R [0.00956, 0.01254, 0.00635, 0.01785]). Dev facts, the founder decisions of 2026-11-12
+      (F6(e) on n2d-custom-8-499712-ext) and 2026-11-13 (F1(a1) kept as frozen), the --plan result with
+      1 dev near tie (83 solves, 97.0 billed vCPU-h, rates unchanged), measured per-solve costs and review
+      T0323 findings 0-3 are in the spec and in design note section 12. The runner hash is re-stamped
+      (36ea5f43...). Every DoD command exits 0. Committed as f39e81a4.'
+    failure_class: none
+    confidence: 0.85
+    root_cause: 'assemble_rows built lid = {fpw: ''twin'', fpr: ''reconstruction'', fpd: ''D''}. When
+      fpw == fpr (gen2_0: W is the reconstruction), the second key overwrote the first, so both layout
+      rows were labelled ''reconstruction'' and mfos.metrics._hr_tables raised. search._Run.thermal also
+      de-duplicates thermal rows by fingerprint, so the twin had no die rows of its own. Same class of
+      bug: evaluate''s F6(e) spot check looked up the reconstruction''s record by role ''reference'';
+      it is absent when W = R, so StopIteration on a non-default stack type.'
+    evidence:
+    - 'job.log traceback: evaluate -> MX.headroom_per_reference -> _hr_tables: ''reference housing70x40_gen2_0:
+      layout reconstruction appears twice'''
+    - 'gen2_0_prep_T0322.log fingerprints: twin == reconstruction == aade6489...'
+    - 'Replay, packet command (--geoms gen2_0,case4:gates:4 --band-pairs 4 --replay-only): exit 1, ReplayMissing
+      on 20 jobs, all housing70x40_gen2_0 em candidate band-check pairs (e.g. 065e8a22...__emlat0.25__2b337a3dc6.json),
+      raised in dev()''s pair loop after evaluate()'
+    - 'Replay with gen2_0::0: exit 0, meta.replay_only.solves_started 0, 13 evaluate checks, none failing;
+      log line ''2D_Case_4: gates a1 False a2 True; pairs e_R [0.00956, 0.01254, 0.00635, 0.01785]'' identical
+      to job.log'
+    - 'Dev rows: Case 4 a1_lhs 0.0015455 > a1_rhs 0.00013008; a2_lhs 0, a2_rhs inf; thermal report Case
+      4 n_dies_non_monotone 8, n_gci_inf 8, n_attainable 0'
+    - 'gen2_0: counted, h_lo 0.3254; levelled False (l1_min_first 7.283 nH, l1_min_all 6.661 nH, w 0.0375);
+      near_ties 1; h_ctrl 0.684 >= h_plant 0.411 - w_ctrl 0.058; R_D 1.698, e_R_D 0.123'
+    - 'dev_run_measured_T0324.json: 107 solves; Case 4 lat0.25 median 2,864 s / 15.2 GB (max 15.6) vs
+      model 5,770 s / 15.8 GB; Case 4 thermal level 2 1,049 s / 9.2 GB vs 578 s / 16.2 GB; gen2_0 thermal
+      level 2 1,755 s / 20.4 GB vs 1,384 s / 38.1 GB'
+    - 'plan_T0324.json: near_ties_expected_source ''dev rows'', expected 83 solves, 12.13 VM-h, $22.32,
+      97.0 billed vCPU-h, 38.8 process CPU-h'
+    - 'selftest: ''selftest T0324 (W = reconstruction on both references, candidate = W): 0 failures'',
+      ''selftest T0324 (spot assignment, die_monotone): 0 failures'', ''selftest passed'''
+    alternative_explanations:
+    - explanation: The replay's request for 20 solves could mean the fix changed solve keys.
+      how_to_discriminate: Every requested job was a band-check pair of gen2_0 (role candidate, from dev_pairs),
+        solved only after evaluate(). The full search replay, which needs every search solve under its
+        key, completed without a request. Confirmed by the ReplayMissing job list.
+    - explanation: Labelling by role could change rows when nothing collides.
+      how_to_discriminate: thermal_subjects gives the same order and roles as rows['thermal'] without
+        collisions. All selftest scenarios with hand-computed metrics still match (h_lo hand values equal),
+        and the rows equality checks pass.
+    discriminating_tests:
+    - 'Packet replay command with --replay-only: the missing jobs are only gen2_0 band-check pairs (not
+      search keys)'
+    - 'Selftest full_orchestration case 4 (W = R on both refs, then candidate = W): passes with the fix;
+      the pre-fix assemble_rows would raise in _hr_tables'
+    - 'Compare the replayed Case 4 gate/pair line with job.log: identical'
+    recommended_actions:
+    - 'Founder/orchestrator: confirm that writing the dev rows with gen2_0::0 (the gen2_0 band-check pairs
+      were never solved on the VM) is acceptable. The packet''s exact command stops with ReplayMissing
+      on those 20 jobs. The alternative is solving them on a VM (5 band levels x 4 pairs).'
+    - 'Founder: gen2_0''s search did not level (lowest L1 of the first 5,000 is 9.3 % above the lowest
+      of all 20,000 vs a 3.75 % window), so h_hi = +inf and K1 cannot fire from that reference. Consider
+      whether this can happen on 2R before registration.'
+    - 'Founder: scikit-fem level-2 wall is 1.3-1.8x above the --plan model (rates kept as instructed);
+      phase A of the registered run may take longer than --plan says.'
+    - 'The Tj-attainability item stays a founder item: the separate investigate task should diagnose Case
+      4''s non-monotone level 0-2 Tj (all dies, GCI +inf).'
+    - 'Do not re-run research/o003/e008_dev/t0320_spec_update.py: it holds the pre-T0322 rules_changed
+      wording; t0324_spec_update.py supersedes it.'
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/burst_full.sh
+    - research/o003/e008_dev/case4_prep.py
+    - research/o003/e008_dev/refresh_rule_strictness.py
+    - research/o003/e008_dev/t0324_measured.py
+    - research/o003/e008_dev/t0324_spec_update.py
+    - research/o003/e008_dev/dev_run_measured_T0324.json
+    - research/o003/e008_dev/plan_T0324.json
+    - research/o003/e008_dev/case4_prep_T0324.log
+    - research/o003/e008_dev/gen2_0_prep_T0324.log
+    - research/o003/e008_dev/refresh_rule_strictness_T0324.log
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    affects_acceptance_criteria: false

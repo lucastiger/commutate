@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "\"It is in-plane\" is stated as the cause, but no test separated in-plane from through-thickness refinement",
+      "detail": "\u00a75 says the negative first step \"is in-plane and sits at the die centre, the corner node of the die's four largest cells\". Under the frozen rule, every level refines x, y and z together (zrefine with dz_max), and V1-V4 only change two thin layers: the 50 um attach and the 1 um solder. Refining the remaining thick layers in z is untested as a contributor to d1 < 0: the die (180 um, one cell at L0), top Cu, AlN and the baseplate. So the stack variants rule out H1 and H2 for the first step, but they cannot place the cause in-plane rather than in z. The planned VM run (stack variants only) cannot separate the two either. The claim is labelled [I] at confidence 0.6, and the 'experimental' classification does not depend on where the cause sits, so this narrows the scope of the conclusion rather than invalidating the diagnosis. A cheap discriminating test exists locally.",
+      "evidence": "Built with layout_grid using the frozen rule otherwise unchanged (no solve): L0 (84,106,6) 51,098 nodes; L1 (168,212,12) 365,435; lateral-only L1 (zrefine=False, dz_max=None) (168,212,6) 200,716 nodes; z-only L1 (default_nz=2, dz_max=None, level 0) (84,106,12) 93,101 nodes. Both are well under 1-2 GB by the doc's own 3.2 kB/node memory fit.",
+      "suggested_check": "Solve V0 at lateral-only L1 and at z-only L1. Compare die-centre Tj with L0 (398.0764 K, die 2) and full L1 (397.9838 K) to see which refinement produces d1 < 0, then add the lateral-only L2 (~1 M nodes) to the VM job.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The VM launcher re-solves V4, which is bitwise identical to V1",
+      "detail": "The diagnosis itself states that V4 = V1 (same layout key 26eb26c29fa2, bitwise-equal results). But make_jobs names result files by variant ('V4__twin__L2__26eb26c29fa2__...'), so done() never finds V1's result, and the VM solves V4 again at L0, L1 and L2. That includes one of the five ~9-12 GB, ~17-20 min L2 solves, and it is the fifth L2 job that forces a second round under --max-procs 4. This spends about a fifth of the L2 compute with no information gain, while the discriminating lateral-only run above is missing.",
+      "evidence": "tj_osc.py make_jobs: out = f\"{vid}__{which}__L{lv}__{key[:12]}__{ph}.json\"; local_work/solves has both V1__twin__L*__26eb26c29fa2 and V4__twin__L*__26eb26c29fa2. Their summary.json entries are identical in every number.",
+      "suggested_check": "Drop V4 from --variants in burst_tj_osc.sh, or deduplicate jobs by layout key.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The memory policy is misquoted as the reason level 2 needs the VM",
+      "detail": "\u00a75 says level 2 \"only the VM can solve (Case 4 L2 ~9.2 GB > the 5 GB local limit)\". The policy actually lets one process use up to 10 GB when memory_pressure shows at least 50 % free and swap use is under 4 GB, and the founder prefers longer local runs to VMs. Using the doc's own memory fit (0.3 GB + 3.2 kB/node), V2 and V3 at L2 (2.23 M / 2.29 M nodes) come to about 7.4-7.6 GB, and V0 was measured at 9.27 GB. These could plausibly run locally one at a time. The task title itself asks for a VM launcher, so the deliverable is in scope; only the stated justification is inaccurate.",
+      "evidence": "grid_counts.json nodes at L2: V2 2,227,409, V3 2,293,985, V0 2,752,565. tj_osc.py comment: dev-run peak RSS 9.27 GB at 2.75 M nodes.",
+      "suggested_check": "Restate the constraint as the 10 GB single-process allowance, with the margin for each variant.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The H3 outcome row (\"only the max jumps at L2\") is quantitatively unlikely to fire",
+      "detail": "At L2 the hottest node moves only 0.344 mm off the die centre. With a die-top profile of a few K over a 2 mm half-width (max minus area mean \u2248 6 K at L1), a node that close to the L1 peak can exceed the centre value by only a few hundredths of a K. The +0.15 K second step therefore almost certainly appears at the die-centre node too, which by the doc's own table would favour H4. This is a back-of-envelope prediction, not a defect; it suggests the VM run as designed mainly confirms H4 rather than discriminating mechanisms.",
+      "evidence": "saved_dev_run_table.json: twin die 2 node L1 (30.0, 35.0) -> L2 (30.34375, 35.0), step +0.1508 K. local_work summary: area-mean vs max gap ~6.3 K (391.65 vs 397.98 K).",
+      "suggested_check": "When the VM results return, compare tj_centre_steps[1] with steps[1].",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The VM job's exit status hides failed solves",
+      "detail": "INNER pipes 'tj_osc.py run' into 'tee -a run.log' and then always runs summary. A run that returns 1 because of failed or killed solves still exits 0 at the job level. summary.json does list _not_ok, so the information is kept, but burst_gcp.sh will not flag the failure.",
+      "evidence": "burst_tj_osc.sh lines 250-251.",
+      "suggested_check": "Add 'set -o pipefail' in INNER, or check _not_ok after the copy-back.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD pieces: `uv run ruff check research/o003/e008_dev/tj_osc` -> All checks passed; `bash -n` + `--dry-run` of burst_tj_osc.sh -> exit 0, prints the commands only; thermal_fem.py sha256 prefix = a216d5fe3209bcee (matches); `uv run mfos gate --fast` -> all gates passed; keyword check run on the diagnosis text taken from the packet diff (the file itself is blinded out of this checkout by policy [blinding]) -> no keyword missing.",
+    "Recomputed phys_hash for levels 0/1/2 with the driver against the frozen config: ba3045ba8e / 940de6f270 / 93700938d8, equal to DEV_RUN_PHYS.",
+    "Re-tabulated local_work/summary.json for V0-V4. Every d1 value (e.g. V0 twin -0.0848/-0.0885/-0.0926/-0.1056; V1 -0.0588..-0.0796), the die-centre = max identity, area-mean d1 +0.497..+0.536, EB <= 1e-13, Picard 5 iterations with dT <= 2e-5 K, CG <= 183 never at the cap, and peak RSS 0.36-2.03 GB all match the doc's \u00a74; V4 equals V1 exactly.",
+    "Re-tabulated saved_dev_run_table.json. Case 4 twin/reference values, the die reordering (twin k = reference (k+2) mod 4), rho -1.58..-1.95, tj_bounds n_inf 4, and L2 hot-node migration to 30.34375 / 39.65625 match \u00a71. gen2_0 claims also match: all steps positive; GCI max 0.453 / 0.118 / 0.112 / 2.76 K; dd815fcb die 0 rho 1.66 -> inf; die 3 GCI 1.63 K.",
+    "Checked grid_counts.json: node counts for V0-V4 at L0-L2, solder cells = 0 for V2/V3, nesting true on x/y/z at every level, V1 and V4 grids identical. Hand-checked the half-width grading test that drops the 1.5625 mm offset in x (2 - 0.5*0.9375 = 1.53 < 1.5625) but keeps it in y.",
+    "Read thermal_fem._solve_grid: tj_mean is src_vec/area \u00b7 T, i.e. exactly the consistent load functional l(u_h)/P per die. So the doc's Galerkin compliance sanity check is the right quantity for constant k; with Picard k(T) it is approximate, as the doc caveats.",
+    "Hand-checked the 1-D estimates: (70.46 W / 24 mm2) x 50 um / 54.6 W/(m K) = 2.69 K, against an observed V1-V0 of 2.534 K at die 2 L1; 1 um SAC305 at 282 W/7000 mm2 gives 6.9e-4 K and at 70 W/54 mm2 gives 0.022 K, bracketing the observed -0.0115 K.",
+    "Verified burst_gcp.sh accepts `--cmd <cmd> <path> [machine] [zone]` and MF_GCP_SPOT=auto / MF_GCP_PROVISION=0 / MF_GCP_RESUME=1; that the machine type and 0.612 $/h come from plan.json; and that dev_reference('case4') builds from committed code (o006_case4_layout.py; the PowerSynth sources are only optional for hash checks), so the VM path needs no uncommitted inputs.",
+    "Built (without solving) lateral-only L1 and z-only L1 grids under the frozen rule to size a discriminating test: 200,716 and 93,101 nodes."
+  ],
+  "caveats": [
+    "Every attempt to run a thermal solve (solve_layout) in this session was denied by the permission mode, so the lateral-only vs z-only split could not be run. Finding 1 rests on the experimental design (which inputs the variants change), not on a counter-result.",
+    "The DoD command `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance ...` could not be run: this review snapshot is a single commit with no `main` ref. Provenance of 'no change outside research/' was not independently verified beyond the thermal_fem.py hash and the commit's file list for tj_osc.",
+    "research/diagnoses/T0325.md is removed from the critic checkout by .mfos/policy.toml [blinding], so its content was reviewed from the packet diff only.",
+    "The diagnosis is provisional by its own account: the second step, any finite-GCI rescue by the 50 um attach (H1 for the second step), and the H3/H4 split all depend on the not-yet-run L2 VM job. The conclusions hold only for the first refinement step (L0 -> L1) on Case 4's twin.",
+    "The cause-localisation statement in \u00a75 (in-plane, at the die-centre corner node of the four largest cells) should be read as a hypothesis. Through-thickness refinement of the die, Cu, AlN and baseplate has not been excluded."
+  ]
+}
