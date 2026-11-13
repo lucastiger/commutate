@@ -1,0 +1,56 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "D0020 itself is not in the repository at this commit, so the recorded readings cannot be checked against it",
+      "detail": "The claim includes 'record D0020's registration readings'. E008.yaml moves 11 founder items into founder_decisions_settled, each citing a D0020 item (1-5), and sets founder_decisions_before_registration to 'NONE'. project/decisions ends at D0019. The design note says 'the record is committed separately'. That is consistent with the DoD forbidding changes to project/decisions, but nothing at this commit shows that the spec's wording matches what the founder decided. Examples are the cpu_hours cap read as billed vCPU-hours, the F6(e) reading, and keeping quick_ok_draws at 2,000.",
+      "evidence": "The decision listing stops at D0018 and D0019. A search for 'D0020' finds it only in experiments/drafts/E008.yaml, E008.dev_rows.json and research/notes/e008-design.md.",
+      "suggested_check": "Before registration, diff each 'settled by D0020 item N' entry against the committed D0020 record.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The die-average has never been produced end to end from real-solver result files",
+      "detail": "All 32 dev die rows carry null in Tvj_l0..2_K and GCI_vj_K, and every layout in meta.virtual_junction has complete=false. The path from a real thermal solve through _fem_rec and the result file, then Driver.vj/out_path, assemble_rows and virtual_junction_report, has only been tested with fake-world records and with direct _fem_rec calls on real solves. The first real end-to-end exercise will be the registered run. The risk is low because the column is reported only and Driver.vj reuses job()'s own out_path and th_kw. Still, 'reported die-average Tj' has no real-data instance at this commit.",
+      "evidence": "Dev rows: 32 die rows, 0 with non-null Tvj_l0_K. meta.virtual_junction: h_lo_vj null, with reason 'solved before T0330'.",
+      "suggested_check": "Run one real level-0..2 solve through Driver (for example the smoke rule on gen2_0) and assert the die row's Tvj columns are non-null.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The expected INCONCLUSIVE verdict silently assumes 2R is counted and passes every other F-check",
+      "detail": "expected_outcome.would_contradict names a finite twin-die GCI, a passing candidate, a levelled search, and 2R being excluded. It does not name F1(a1), F1(b) or F1(c) failing on 2R, or another sanity check failing. Each of those would end the run with a verdict other than INCONCLUSIVE. Item 3 does flag F1(c) as close to its limit (89 % and 94 % of 0.02). This affects how complete the stated prediction is, not any gated criterion.",
+      "evidence": "_hr_reference: counted = gate_a1 and gate_a2. at_least_one_counted_reference is a check in evaluate().",
+      "suggested_check": "Add 'an F1 gate or sanity check failing on 2R' to would_contradict.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The settled list keeps the text 'STAYS A FOUNDER ITEM' while before_registration now says NONE",
+      "detail": "The first MOVED entry keeps the old sentence 'STAYS A FOUNDER ITEM: a separate investigate task diagnoses Case 4's oscillation before the founder decides'. Its prefix says D0020 item 1 settled it. A reader skimming the list could take this as an open item.",
+      "evidence": "E008.yaml founder_decisions_settled, the entry 'MOVED (T0330, D0020) ... settled by D0020 item 1'.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran these DoD commands; each exited 0: --selftest ('selftest passed', including the T0330 die-average block), --verify-freeze (thermal_fem sha a216d5fe\u2026, code_must_match O007), --check-references, --plan, bash -n plus burst_full.sh --dry-run, the dev-rows JSON assertion, ruff, mfos exp check E008, mfos gate --fast ('all gates passed'), and the thermal_fem.py shasum prefix a216d5fe3209bcee.",
+    "Could not run the protected-path git diff DoD command: the sandbox guard blocks git merge-base, and this worktree has no main ref.",
+    "Ran shasum -c on research/o003/e008_dev/tj_osc/vm_level2/MANIFEST.sha256: all 34 entries OK. summary.txt is non-empty.",
+    "Recomputed T0325's Case 4 facts from vm_level2/solves with mfos.metrics: GCI_vj 0.1743-0.1932 K, own tj_bounds width on T_vj 0.3636-0.3865 K, Tj max minus T_vj at least 5.853 K over all 60 die-levels, and rho of the Tj-max steps -2.728 to -1.577. All match the spec text.",
+    "Confirmed that thermal_fem.solve computes tj_mean as dot(src_vecs, Tn) and that T0325's tj_osc.py reads r.tj_mean. The runner's _die_top_mean reads the same field, so 'the method of T0325's tj_osc.py' holds.",
+    "Checked the expected-outcome arithmetic against mfos.metrics: headroom_lo(a, 1, s_ref) = -a*s_ref (0 when s_ref = 0); twin_gate_thermal passes when both G are +inf; tj_conservative_ok fails when the twin's lower bound is -inf (every twin die +inf), so A1 cannot be reached in that case.",
+    "Checked the K1 and band-check numbers against the dev rows: L1_min_first5000 7.2828 nH vs L1_min_all 6.6611 nH (+9.3 %), w_levelling 0.03748, levelled false, headroom_max_hi_ind Infinity. The band_check_pairs e_R values are 0.009563, 0.012544, 0.006353 and 0.017846, as stated.",
+    "Checked that the runner_sha256 stamped in the dev rows (a06dba4f\u2026, 3 occurrences) equals the sha256 of the current e008_run.py.",
+    "Checked the not-gated claim: there is no reference to Tvj, GCI_vj or tj_mean in tools/mfos/mfos, and search.py whitelists THERMAL_REQUIRED fields, which exclude tj_mean. Read the selftest's mutation test and its positive control (+100 K on a gated Tj_l2_K must change the gated view).",
+    "Tested the tests with two mutants of the runner in $TMPDIR. (A) Driver.vj returns the levels reversed: the selftest fails, because the analogue h_lo no longer equals the gated h_lo. (B) Driver.vj returns the dies reversed: the selftest fails, because the die-average exceeds Tj max. So the die-average selftest catches these faults.",
+    "Checked that every thermal job path (th_jobs at the reference, twin, batch and search sites, and the dev gates path) builds its kwargs through th_kw, so Driver.vj's out_path names the same file the job writes."
+  ],
+  "caveats": [
+    "Whether the readings faithfully record D0020 depends on the separately committed D0020 record, which is not in the repository at this commit.",
+    "The reported die-average has been checked on fake-world records and on direct real FEM calls, but no real-solver result file in the dev rows carries it. Its first real end-to-end instance will be the registered run.",
+    "The expected outcome (INCONCLUSIVE on 2R) is an inference from 2D_Case_4's stack variants and is labelled as one. It also assumes 2R is counted and passes the F1 gates and sanity checks.",
+    "The protected-path git diff DoD command was not run here because the sandbox guard blocks git merge-base. Provenance is left to the code checks."
+  ]
+}
