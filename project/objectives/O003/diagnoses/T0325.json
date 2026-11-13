@@ -1,0 +1,63 @@
+{
+  "summary": "I diagnosed 2D_Case_4's non-monotone Tj on development geometry only. The 1 um layer is ruled out as the cause. The 0 um die attach is ruled out as the cause of the negative first step but only changes its size; whether it changes the second step needs level 2. Level 2 needs the founder's VM run.\n\nSaved run (read only): on all 4 dies of the reference (f4862196) and twin (d0dd6090), Tj falls from level 0 to 1 by 0.085-0.106 K and rises from level 1 to 2 by 0.151-0.167 K. rho is -1.6 to -1.95, so GCI is +inf on every die. The twin's values are the reference's with the dies reordered. The hottest node is the die centre at levels 0 and 1. At level 2 it moves 0.344 mm (one level-2 cell) towards the paired die. Energy balance is at most 5.3e-13, the Picard residual is 1.6-1.9e-5 K and CG never reaches its iteration cap, so iteration and solver error are ruled out.\n\ngen2_0: Tj rises at every level on every die of all five layouts. Candidate dd815fcb die 0 rises at every level, but its second step is larger than its first (rho 1.66), which gives +inf. It does not change sign.\n\nGrid (from thermal_fem.py, no solve): the levels nest exactly in x, y and z. The 1 um layer and the die each get 1/2/4 cells through their thickness at levels 0/1/2. The edge grading stops 0.625 mm inside each edge of the 4 x 6 mm die, so the 2.75 x 2.875 mm interior gets 2 x 2 cells at level 0. The die centre, where the peak sits, is the corner node of the die's four largest cells.\n\nLocal levels 0-1 (V0-V4, Case 4 twin): V0 matches the saved values to 6e-12 K. V4 (2R's recorded stack) is exactly V1, with bitwise-equal results. Every variant keeps a negative first step on every die:\n- Removing the 1 um layer (V2) changes it by at most 3e-4 K, so H2 is ruled out.\n- The 50 um die attach (V1) shrinks it by 25-31 % but does not flip it, so H1 is ruled out for the first step.\n- The die-area mean rises about 0.5 K at the same step, as the Galerkin method guarantees.\n\nThis points to an in-plane effect at the die centre (H3 or H4). Telling H3 from H4, and the second step for V1/V4, needs level 2. The launcher burst_tj_osc.sh runs it: about 1 VM-hour, about $0.6. It needs T0325 merged to main first.",
+  "failure_class": "experimental",
+  "root_cause": "Provisional. The frozen rule's three-level sequence for Case 4's Tj max is not yet converging smoothly at the die-centre peak. The peak sits on the corner node of the die's four largest cells: the edge grading stops 0.625 mm inside the edges of the 4 x 6 mm die, leaving a 2.75 x 2.875 mm interior with 2 x 2 cells at level 0. The coarse centre over-predicts the peak, so Tj falls from level 0 to 1, while the area mean rises. At level 2 the maximum moves to a node that did not exist before, and Tj rises. Neither the 0 um die attach (H1) nor the 1 um layer (H2) creates the negative first step on any of V0-V4. H3 (hot-spot migration and grading) versus H4 (pre-asymptotic levels) is not yet decided and needs level 2. Inference: 2R has V4's stack and the same 4 x 6 mm die footprint, so it may be at the same risk. 2R was not solved.",
+  "confidence": 0.6,
+  "affects_acceptance_criteria": false,
+  "evidence": [
+    "[F] Saved run, reference f4862196 die 0: 398.0757, 397.9840, 398.1346 K. Steps -0.0926 then +0.1508; rho -1.63. All 4 dies have rho -1.58 to -1.95, gci_capped +inf, and tj_bounds lower -inf with n_inf 4. The twin d0dd6090 has the same values with die k = reference die (k+2) mod 4.",
+    "[F] Hottest node of every Case 4 die: the die centre (30.000, 35.000) mm at levels 0 and 1. At level 2 it is (30.34375, 35.000), one level-2 cell towards the paired die.",
+    "[F] Saved Case 4 solves: energy balance at most 5.3e-13; Picard 5 iterations, last change 1.6-1.9e-5 K; CG at most 237 iterations against a cap of 400. Iteration and linear-solver error are ruled out.",
+    "[F] gen2_0: every die of all 5 layouts has both steps positive. dd815fcb die 0 (+0.090, +0.150; rho 1.66) gives +inf because its second step is larger, not because it changes sign. aade6489 has GCI max 0.453 K.",
+    "[F] Grid counts, V0 (grid_counts.json): 51,098 / 365,435 / 2,752,565 nodes, matching the saved run exactly. The 1 um layer has 1/2/4 cells through its thickness (lateral-to-thickness ratio 5000). The die has 1/2/4 cells through its thickness and 14x18 / 28x36 / 56x72 laterally; its largest cell is 1.375 / 0.6875 / 0.344 mm in x. The levels nest in x, y and z, and the die centre is a node at every level.",
+    "[F] V4 (2R's recorded stack and spec) has the same layout key as V1 (26eb26c29fa2) and gave bitwise-equal results. 2R's die pad matches Case 4's 4 x 6 mm CPM2 die pad.",
+    "[F] Local V0 matches the saved twin levels 0 and 1 to 2.1e-12 and 6.1e-12 K, with the same node counts and hottest nodes.",
+    "[F] Level 0 to 1 step of Tj max per die (twin order): V0 -0.085/-0.089/-0.093/-0.106; V1 = V4 -0.059/-0.063/-0.067/-0.080; V2 -0.085/-0.088/-0.092/-0.105; V3 -0.059/-0.062/-0.066/-0.079. The die-centre node equals the maximum in every variant.",
+    "[F] The area-mean die-top Tj rises +0.50 to +0.54 K from level 0 to 1 in every variant, as the Galerkin method requires (Brenner & Scott 2008, ch. 2).",
+    "[F] V1 - V0 = +2.53 K, against a 1-D estimate of q t / k = 2.69 K for the 50 um attach. V2 - V0 = -0.012 K, between the 7e-4 K and 0.02 K bounds for the 1 um layer. Local solves peaked at 0.36-2.03 GB."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "H1: the 0 um die attach causes the non-monotone sequence.",
+      "how_to_discriminate": "V1/V3/V4 versus V0/V2. Locally the first step stays negative with the attach (only 25-31 % smaller), so H1 is ruled out for the first step. Level 2 on the VM shows whether the attach makes the second step smaller than the first (|rho| < 1)."
+    },
+    {
+      "explanation": "H2: the 1 um layer, with 1 cell through it and a lateral-to-thickness ratio of 5000, degrades the solution.",
+      "how_to_discriminate": "V2/V3 versus V0/V1. Locally the first step changes by at most 3e-4 K and Tj by 0.012 K, so H2 is ruled out. It would come back only if V2/V3's second step at level 2 differs from V0/V1's by more than about 0.01 K."
+    },
+    {
+      "explanation": "H3: the in-plane grid. The peak sits on the die-centre corner of the die's four largest cells, and at level 2 the maximum moves to a newly created node.",
+      "how_to_discriminate": "VM level 2: if the die-centre node sequence converges smoothly (|rho| < 1) while the maximum jumps, H3 is supported."
+    },
+    {
+      "explanation": "H4: levels 0-2 are not yet converging smoothly at Case 4's size, whatever the stack. Two error terms of opposite sign cross between levels 1 and 2.",
+      "how_to_discriminate": "VM level 2: if the die-centre node sequence also turns between levels 1 and 2 while the area mean keeps rising, H4 is supported."
+    },
+    {
+      "explanation": "Implementation: a Picard, CG or bookkeeping error.",
+      "how_to_discriminate": "Ruled out. V0 reproduces to 1e-11 K, residuals and energy balance are clean, and the area mean rises with refinement. It would be revived only if the area mean falls at some level."
+    }
+  ],
+  "discriminating_tests": [
+    "Done locally: levels 0-1 of V0-V4 on Case 4's twin. Tj max, die-centre node and area mean recorded per die (research/o003/e008_dev/tj_osc/local_work/summary.json).",
+    "Done: grid counts at levels 0-2 for V0-V4 with no solve. Cells through the 1 um layer, die and attach; lateral cells across each die; nesting check (research/o003/e008_dev/tj_osc/grid_counts.json).",
+    "Pending, founder's VM: levels 0-2 of V0-V4 with bash research/o003/e008_dev/tj_osc/burst_tj_osc.sh. First check that V0 level 2 equals the saved 398.1346 K. Then compare each variant's die-centre and area-mean sequences and its gci_capped and tj_bounds against the outcome table in research/diagnoses/T0325.md section 6."
+  ],
+  "recommended_actions": [
+    "Founder: merge T0325 to main, because burst_gcp.sh bundles committed main. Then run: bash research/o003/e008_dev/tj_osc/burst_tj_osc.sh. Use --dry-run first to see every command. Expected about 1 VM-hour on n2d-custom-8-81920-ext with Spot auto and resume, about $0.6 at the founder's 0.612 $/h figure. Results come back to research/o003/e008_dev/tj_osc/vm_work/.",
+    "Read V0's level 2 first: it must match the saved d0dd6090 level 2. Then read the outcome table in research/diagnoses/T0325.md section 6 to classify H1-H4 and the implication for 2R (labelled inference).",
+    "No remedy is proposed (out of scope). Note for the founder's decision: the steps are 0.06-0.17 K against the 2 K limit; what makes A1 unreachable is the +inf branch of gci_capped, not a large error."
+  ],
+  "files_written": [
+    "research/diagnoses/T0325.md",
+    "research/o003/e008_dev/tj_osc/burst_tj_osc.sh",
+    "research/o003/e008_dev/tj_osc/tj_osc.py",
+    "research/o003/e008_dev/tj_osc/grid_counts.json",
+    "research/o003/e008_dev/tj_osc/saved_dev_run_table.json",
+    "research/o003/e008_dev/tj_osc/local_work/jobs.json",
+    "research/o003/e008_dev/tj_osc/local_work/run.log",
+    "research/o003/e008_dev/tj_osc/local_work/summary.json",
+    "research/o003/e008_dev/tj_osc/local_work/solves/*.json (10 results + 10 job files)"
+  ],
+  "experiment_drafts": []
+}

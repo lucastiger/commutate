@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T18:03:00+00:00 from repository state — do not edit_
+_generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
 
 ## Founder inbox (8 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -28,7 +28,7 @@ _generated 2026-11-13T18:03:00+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 109 | $209.19 | 3368153 | 1683932 | 192 | 0 |
+| O003 | 110 | $209.19 | 3368153 | 1683932 | 192 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -36,15 +36,13 @@ _generated 2026-11-13T18:03:00+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 282, failed: 3, merge: 1, review: 1, running: 1
+cancelled: 39, done: 283, failed: 3, review: 1, running: 2
 
 - T0324 `review` scientist/design_experiment: E008: fix the dev run's row-assembly crash (twin = reconstruction), rebuild dev rows from the saved VM work, record the dev facts, T0323 cleanup (attempt 1)
-- T0325 `merge` scientist/investigate: Diagnose 2D_Case_4's non-monotone Tj over the frozen thermal levels (dev geometry only): stack variants locally at levels 0-1, VM launcher for level 2 (attempt 1)
 - T0327 `running` critic/review: Review T0324 (general) (attempt 1)
+- T0328 `running` planner/plan: Plan O003 (founder answered I0140: No admissible customer layout by 2026-11-12. Public reference set under review: NC State PREES (Prof. Hopkins) published modules may replace PowerSynth; decision pending. (no replan)) (attempt 1)
 
 ## Recent events
-- 2026-11-13T16:48:04+00:00 task_added {"task": "T0324", "reason": "founder 2026-11-13: dev-run crash fix, dev rows from the saved VM work, T0323 cleanup"}
-- 2026-11-13T16:48:04+00:00 task_added {"task": "T0325", "reason": "founder 2026-11-13: diagnose Case 4's non-monotone Tj before deciding A1's reach"}
 - 2026-11-13T16:48:38+00:00 run_started {"run": "T0324-scientist-20261113T084838-dd6b", "task": "T0324", "role": "scientist", "session": "ee5a6c63-701a-4681-a38d-bda8ce4a7e46"}
 - 2026-11-13T16:48:39+00:00 run_started {"run": "T0325-scientist-20261113T084839-89c8", "task": "T0325", "role": "scientist", "session": "b226c8ff-9ffd-45bb-b50b-a2ee3b852d58"}
 - 2026-11-13T17:29:04+00:00 run_finished {"run": "T0325-scientist-20261113T084839-89c8", "status": "completed", "cost": 3.999999, "subtype": "success", "report": "structured_output"}
@@ -58,3 +56,5 @@ cancelled: 39, done: 282, failed: 3, merge: 1, review: 1, running: 1
 - 2026-11-13T17:59:10+00:00 run_started {"run": "T0327-critic-20261113T095910-e39b", "task": "T0327", "role": "critic", "session": "dd35d8f4-ae19-4ff5-af93-bf82adb28f94"}
 - 2026-11-13T17:59:44+00:00 sleep_detected {"gap_s": 1096, "runs_extended": 1}
 - 2026-11-13T18:02:56+00:00 inbox_resolved {"id": "I0182", "status": "approved", "note": "Merge T0325 (Case 4 Tj oscillation diagnosis and VM launcher). Review T0326 accept_with_caveats.", "by": "human"}
+- 2026-11-13T18:03:37+00:00 merged {"task": "T0325"}
+- 2026-11-13T18:03:41+00:00 run_started {"run": "T0328-planner-20261113T100341-e9c1", "task": "T0328", "role": "planner", "session": "e4e23c4f-0950-4846-bbae-974093b04d9a"}
