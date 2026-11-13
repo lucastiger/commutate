@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T19:08:12+00:00 from repository state — do not edit_
+_generated 2026-11-13T19:09:29+00:00 from repository state — do not edit_
 
 ## Founder inbox (10 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -30,7 +30,7 @@ _generated 2026-11-13T19:08:12+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 110 | $212.66 | 3413882 | 1707357 | 202 | 0 |
+| O003 | 111 | $212.66 | 3413882 | 1707357 | 202 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -38,13 +38,12 @@ _generated 2026-11-13T19:08:12+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 286, failed: 3, proposed: 1
+cancelled: 39, done: 286, failed: 3, proposed: 1, running: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
+- T0330 `running` scientist/design_experiment: E008: declare the expected outcome under the frozen Tj rule, reported die-average Tj, record D0020's registration readings (attempt 1)
 
 ## Recent events
-- 2026-11-13T18:06:51+00:00 run_finished {"run": "T0328-planner-20261113T100341-e9c1", "status": "completed", "cost": 1.08921, "subtype": "success", "report": "structured_output"}
-- 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0183", "kind": "external_action", "subject": "[O003] [O003] Run T0325's level-2 launcher (burst_tj_osc.sh) and decide Tj attainability before registeri
 - 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0184", "kind": "decision", "subject": "[O003] [O003] E008 pre-registration: band check with gen2_0's pairs unsolved, the non-levelled dev search, and w
 - 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0185", "kind": "plan_approval", "subject": "[O003] approve initial plan (1 tasks)"}
 - 2026-11-13T18:06:52+00:00 plan_applied {"objective": "O003", "created": ["T0329"], "dropped": 0}
@@ -58,3 +57,5 @@ cancelled: 39, done: 286, failed: 3, proposed: 1
 - 2026-11-13T19:08:07+00:00 founder_decision_noted {"decision": "E008 registration readings (founder, 2026-11-13, D0020): band check = Case 4's 4 pairs + gen2_0's search estimate (I0184 option 1); row-contract i
 - 2026-11-13T19:08:07+00:00 inbox_resolved {"id": "I0183", "status": "approved", "note": "Done 2026-11-13: burst_tj_osc.sh ran (15/15 solves ok, V0 reproduces the dev run). Result H3: the hot spot moves 
 - 2026-11-13T19:08:08+00:00 inbox_resolved {"id": "I0184", "status": "approved", "note": "Option 1 (founder, D0020): Case 4's 4 pairs (max e_R 0.01785) plus gen2_0's search estimate (~0.019) are the band
+- 2026-11-13T19:09:02+00:00 task_added {"task": "T0330", "reason": "founder 2026-11-13 (D0020): declared expected outcome, reported die-average Tj, registration readings"}
+- 2026-11-13T19:09:29+00:00 run_started {"run": "T0330-scientist-20261113T110929-62a1", "task": "T0330", "role": "scientist", "session": "dfb7ee55-98a1-483a-9f49-c369deb78256"}

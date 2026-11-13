@@ -1,0 +1,135 @@
+id: T0330
+objective: O003
+title: 'E008: declare the expected outcome under the frozen Tj rule, reported die-average Tj, record D0020''s
+  registration readings'
+type: design_experiment
+agent: scientist
+status: running
+depends_on: []
+description: "Founder decision D0020 (founder session, 2026-11-13; the record is committed separately),\
+  \ restated in full:\n1. Register E008 with O003's frozen Tj definition (maximum nodal value on the die\
+  \ top face, three-level gci_capped, D0013)\n   and every gated criterion unchanged. T0325's level-2\
+  \ run on the founder's VM (research/diagnoses/T0325.md; results in\n   the main checkout at /Users/lukeskywalker/mf/main/research/o003/e008_dev/tj_osc/vm_work,\
+  \ untracked, read only) found T0325's H3 on 2D_Case_4: the hottest node moves one level-2\n   cell at\
+  \ level 2, rho about -1.6 to -2.9, gci_capped +inf on every die of V0-V4; V4 is 2D_Case_2R's recorded\
+  \ stack\n   recipe; the die-centre node and the die-top mean converge. State in the spec, before registration,\
+  \ the expected\n   outcome: on 2D_Case_2R (same 4 x 6 mm die, same stack recipe) every twin and candidate\
+  \ die is expected to get +inf, so\n   A1 is expected to be unreachable (best = twin, h_lo = -a s_ref);\
+  \ with gen2_0's dev search not levelled (first-5,000 L1\n   minimum 9.3 % above the 20,000 minimum,\
+  \ window 3.75 %), K1 may be unavailable; the expected verdict is INCONCLUSIVE,\n   with 2R's inductance-only\
+  \ headroom (h_hi_ind and its reconstruction and L_term = 0 columns) measured and reported.\n   This\
+  \ is labelled an inference: 2R is not solved before the freeze.\n2. Reported, NOT gated: die-average\
+  \ Tj (\"virtual junction temperature\"). Per die and level, the area-weighted mean\n   temperature of\
+  \ the die top face of the FE solution (state the exact definition and how it is computed from the\n\
+  \   solution; T0325's tj_osc.py computes an area mean, reuse its method), its gci_capped estimate, and\
+  \ per reference the\n   conservative-test analogue on that quantity (candidate mean upper minus twin\
+  \ mean lower, against 2 K) for the\n   thermally checked candidates, plus the h_lo that A1's formula\
+  \ would give with that test. It decides nothing: no\n   gated metric, sanity check, stop rule or F3\
+  \ order may read it, and the evaluation report labels it as not the\n   registered criterion. The solve's\
+  \ physics inputs and result-file key must not change; development results solved\n   before this change\
+  \ carry null for it (say so). Selftest: a uniform die gives its own temperature, mean <= max on every\n\
+  \   die, and the column never changes a gated value (mutation-style check).\n3. Band check (I0184 option\
+  \ 1, resolved): 2D_Case_4's 4 pairs (e_R 0.00956, 0.01254, 0.00635, 0.01785; max 0.01785 < 0.02)\n \
+  \  with gen2_0's search estimate (e_R about 0.0187 for its A1 best, w 0.0375) are the pre-registration\
+  \ band check;\n   gen2_0's 4 random pairs were not solved (the VM run crashed first, T0324); record\
+  \ the closeness to 0.02 as a risk to\n   F1(c).\n4. Readings confirmed as implemented: row-contract\
+  \ interpretations 1-9 (research/o003/e008_row_contract.md section 5;\n   under item 1, 2R's F1(a2) is\
+  \ expected to pass only because both G are +inf); judged references use measure_rules less\n   min_signal_wire_length\
+  \ with no override (D0019 item 5); the 320 cpu_hours cap is read as billed vCPU-hours (expected\n  \
+  \ 97.0, upper 145.4); an all-inadmissible non-default stack type is reported, not gated (F6(e)); the\
+  \ stack-type\n   rounding rule as implemented; quick_ok_draws stays a fixed 2,000 draws (gen2_0 bound\
+  \ 3.0 %, Case 4 8.7 %).\n5. Move every item settled above from founder_decisions_before_registration\
+  \ to founder_decisions_settled, citing D0020.\n   Leave in before_registration only what still needs\
+  \ the founder; if nothing does, say so explicitly.\n6. Copy the T0325 VM results (summary.json, summary.txt,\
+  \ run.log, jobs.json and solves/*.json) from /Users/lukeskywalker/mf/main/research/o003/e008_dev/tj_osc/vm_work\
+  \ into\n   research/o003/e008_dev/tj_osc/vm_level2/ (a NEW path; never write vm_work, which stays untracked\
+  \ in the main\n   checkout), and cite them from the spec and from research/notes/e008-design.md.\n7.\
+  \ Re-stamp every hash the runner edit changes (as T0324 did) and update the design note. If the rows'\
+  \ schema changes,\n   rebuild the dev rows with --replay-only from a temp copy of /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work\n\
+  \   (read only), as T0324 did; no solve may start.\n\nHard limits (as T0324): no twin(), degrade(),\
+  \ prepare(), L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6;\nno change to src/, tests/acceptance,\
+  \ tools/, the frozen reconstruction script, research/o003/references/ or\nscripts/burst_gcp.sh; never\
+  \ run gcloud or start a VM; never read data/holdout/; do not widen any tolerance, relax any gate\nor\
+  \ change the cost model's rates; do not commit generated data over 1 MB."
+context_files:
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/notes/e008-design.md
+- research/diagnoses/T0325.md
+- research/o003/e008_dev/tj_osc/tj_osc.py
+- research/o003/e008_row_contract.md
+- project/reviews/T0325/T0326.json
+- project/reviews/T0324/T0327.json
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e008_run.py --check-references
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E008.dev_rows.json')); assert
+    d['meta']['smoke'] is False, 'smoke rows'; rows = d['rows']; lab = [(r['reference_id'], r['layout_id'])
+    for r in rows if r['kind'] == 'layout']; assert len(lab) == len(set(lab)), 'duplicate layout ids';
+    assert len(d['meta']['band_check_pairs']) == 4"
+  exists: null
+  timeout_s: 120
+- cmd: test -s research/o003/e008_dev/tj_osc/vm_level2/summary.txt
+  exists: null
+  timeout_s: 30
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term', 'D0018', 'D0019', 'D0020', 'f3_declared_deviation',
+    '66cb1e19', '71e07ae1', 'T0325', 'vm_level2', 'virtual junction', 'INCONCLUSIVE', '499712'] if k not
+    in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance tools project/objectives
+    project/decisions research/scripts/o003_powersynth_references.py research/o003/references scripts/burst_gcp.sh
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 110
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0330-e008-declare-the-expected-outcome-under-
+pr: null
+runs:
+- T0330-scientist-20261113T110929-62a1
+created_by: session
+created_at: '2026-11-13T19:09:02+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-13 (session, D0020): register E008 as frozen with the Tj finding declared
+  as the expected outcome on 2R, add a reported die-average Tj column, and settle the remaining registration
+  readings.'
+history: []
