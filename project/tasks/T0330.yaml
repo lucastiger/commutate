@@ -4,7 +4,7 @@ title: 'E008: declare the expected outcome under the frozen Tj rule, reported di
   registration readings'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Founder decision D0020 (founder session, 2026-11-13; the record is committed separately),\
   \ restated in full:\n1. Register E008 with O003's frozen Tj definition (maximum nodal value on the die\
@@ -132,4 +132,164 @@ trigger: null
 rationale: 'Founder 2026-11-13 (session, D0020): register E008 as frozen with the Tj finding declared
   as the expected outcome on 2R, add a reported die-average Tj column, and settle the remaining registration
   readings.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I carried out all seven D0020 items for E008, and every definition-of-done command I could
+    run exits 0. The Tj rule and every gated criterion are unchanged.
+
+
+    (1) The spec now states, as an inference written before registration, what we expect: on 2D_Case_2R
+    every twin and candidate die gets gci_capped +inf, so A1 cannot be reached (best = twin, h_lo = -a
+    s_ref = 0). K1 may be unavailable because gen2_0''s dev search was not levelled (9.3 % above, window
+    3.75 %). The expected verdict is INCONCLUSIVE, with 2R''s inductance-only headroom columns measured
+    and reported. This rests on T0325''s level-2 results. Those are copied to the new path research/o003/e008_dev/tj_osc/vm_level2
+    with a sha256 manifest; vm_work in the main checkout was not written. In them, V0 matches the saved
+    dev run exactly, a'
+  report:
+    summary: 'I carried out all seven D0020 items for E008, and every definition-of-done command I could
+      run exits 0. The Tj rule and every gated criterion are unchanged.
+
+
+      (1) The spec now states, as an inference written before registration, what we expect: on 2D_Case_2R
+      every twin and candidate die gets gci_capped +inf, so A1 cannot be reached (best = twin, h_lo =
+      -a s_ref = 0). K1 may be unavailable because gen2_0''s dev search was not levelled (9.3 % above,
+      window 3.75 %). The expected verdict is INCONCLUSIVE, with 2R''s inductance-only headroom columns
+      measured and reported. This rests on T0325''s level-2 results. Those are copied to the new path
+      research/o003/e008_dev/tj_osc/vm_level2 with a sha256 manifest; vm_work in the main checkout was
+      not written. In them, V0 matches the saved dev run exactly, and all 20 dies of V0-V4 have rho between
+      -2.73 and -1.58 and GCI +inf. The die-centre node and the die-top mean both converge.
+
+
+      (2) The runner now reports die-average Tj ("virtual junction temperature"), not gated. It is the
+      area mean of the FE solution over the die top face, which thermal_fem already computes as tj_mean
+      (the same method as tj_osc.py). It appears as new die-row columns, and the evaluation report has
+      a section labelled as not the registered criterion. That section gives the conservative-test analogue
+      for each candidate and the h_lo that A1''s formula would give with it. Result-file keys did not
+      change: the replay found every saved result and started no solve. Dev results solved before this
+      change carry null. On the Case 4 VM data the die average has a finite GCI (0.17-0.19 K) and an interval
+      width of 0.36-0.39 K, so it can be assessed. It is at least 5.85 K below the maximum at all 60 die-levels.
+      New selftests cover:
+
+      - a uniform die returns its own temperature (zero-power solves at two coolant temperatures);
+
+      - mean <= max on real solves and on the T0325 data;
+
+      - null columns;
+
+      - the analogue h_lo equals the gated h_lo under a uniform offset;
+
+      - 5 mutations of the new columns leave every gated value unchanged, with a positive control showing
+      the comparison detects a change.
+
+
+      (3)-(5) The band check and its risk to F1(c), and the D0020 readings, are recorded under founder_decisions_settled.
+      All 11 former before-registration items were moved there, and the before-registration list now says
+      NONE explicitly. Three of the moved items needed no decision, so they cite D0020 item 5 rather than
+      a ruling (judgment call explained below).
+
+
+      (7) Dev rows were rebuilt with --replay-only from a temp copy of full_work. Outside the four new
+      columns they are identical: rows, metrics, checks, thermal report and band pairs. The runner sha256
+      (a06dba4f…) was re-stamped in 3 places, and the design note has a new section 13.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - '[F] Replay: meta.replay_only.solves_started = 0; all 59 rows equal the previous E008.dev_rows.json
+      once the new columns (Tvj_l0..2_K, GCI_vj_K) are removed; meta metrics, checks, thermal_report and
+      band_check_pairs are byte-identical, so no result-file key changed'
+    - '[F] After re-running gen2_0_prep.py T0330, case4_prep.py and refresh_rule_strictness.py T0330,
+      the meta equals the previous meta except runner_sha256, timings and the new virtual_junction key;
+      the runner sha256 a06dba4f… appears 3 times in the rows'
+    - '[F] vm_level2: 15 results and 15 job files, MANIFEST.sha256 verifies (0 mismatches); V0 equals
+      the saved Case 4 twin at levels 0-2 to 0 K; gci_capped of Tj max is +inf on 20 of 20 dies; die-top
+      mean GCI 0.174-0.193 K, die-centre GCI 0.018-0.28 K'
+    - '[F] Die-average <= max by at least 5.85 K at all 60 die-levels of the T0325 data'
+    - '[F] Selftest: the zero-power solve gives T_vj = Tj max = T_c to 1e-9 K; under 5 mutations evaluate()
+      returns identical gated metrics, checks and report; the positive control (+100 K on a gated column)
+      is detected'
+    - '[F] gen2_0 levelling from the rows: l1_min_first 7.283 nH / l1_min_all 6.661 nH = +9.3 %, w_ind
+      3.75 %; band pairs max 0.01785 (89 % of 0.02); gen2_0 A1 best e_R 0.0187 (94 % of 0.02)'
+    - '[F] The frozen search''s _thermal_record keeps only THERMAL_REQUIRED fields, and mfos.metrics._hr_tables
+      reads only Tj_l0..2_K from die rows, so the new field cannot reach a gated path'
+    - '[F] Commands and exit codes:
+
+      - e008_run.py --selftest 0
+
+      - --verify-freeze 0
+
+      - --check-references 0
+
+      - --plan 0
+
+      - bash -n burst_full.sh && burst_full.sh --dry-run 0
+
+      - dev_rows assertion 0
+
+      - test -s vm_level2/summary.txt 0
+
+      - spec keys assertion 0
+
+      - ruff check e008_run.py 0
+
+      - mfos exp check E008 0
+
+      - thermal_fem sha256 prefix test 0
+
+      - git diff --quiet HEAD on the protected paths 0 (the packet''s merge-base form is blocked by the
+      mfos guard hook)
+
+      - mfos gate --fast 0
+
+      - replay 0
+
+      - three prep/re-stamp scripts 0 each
+
+      - t0330_spec_update.py 0, run twice; the second run changes nothing (idempotent)'
+    recommended_actions:
+    - 'The orchestrator should run the merge-base form of the protected-path diff itself: the guard hook
+      blocked `git merge-base` in this session. I checked the same paths against HEAD instead (exit 0).'
+    - 'Founder: confirm the judgment in item 5. Three former before-registration items needed no decision
+      for D0019''s public set: twin-copper areas (F5, moot for public geometry), the EM memory-model fact
+      (handled by Scheduler.learn) and the dev-only E009 smoke rule. I moved them to settled citing D0020
+      item 5 rather than claiming a ruling. Move any back if you want it held open.'
+    - Before registration, a reviewer can check that nothing gated reads the die average by running `e008_run.py
+      --selftest` (5 mutations of the new columns plus a positive control) and comparing the rebuilt rows
+      with the T0324 rows outside the four new columns.
+    - Do not edit e008_run.py again without re-running the three re-stamp scripts (research/o003/e008_dev/gen2_0_prep.py
+      T0330, case4_prep.py, refresh_rule_strictness.py T0330).
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/t0330_spec_update.py
+    - research/o003/e008_dev/replay_T0330.log
+    - research/o003/e008_dev/gen2_0_prep_T0330.log
+    - research/o003/e008_dev/case4_prep_T0330.log
+    - research/o003/e008_dev/refresh_rule_strictness_T0330.log
+    - research/o003/e008_dev/tj_osc/vm_level2/summary.json
+    - research/o003/e008_dev/tj_osc/vm_level2/summary.txt
+    - research/o003/e008_dev/tj_osc/vm_level2/run.log
+    - research/o003/e008_dev/tj_osc/vm_level2/jobs.json
+    - research/o003/e008_dev/tj_osc/vm_level2/solves/*.json (30 files)
+    - research/o003/e008_dev/tj_osc/vm_level2/MANIFEST.sha256
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
+    alternative_explanations:
+    - explanation: 'The expected 2R outcome could be wrong: 2R''s die placement differs from Case 4''s,
+        so its hottest node may sit at a die edge or in a graded region rather than at the coarse die
+        centre. Then gci_capped could be finite on some dies and A1 could be reachable.'
+      how_to_discriminate: Only the registered run decides this (no 2R solve is allowed before the freeze).
+        The evaluation report's thermal records give per-die rho and GCI for the twin and the candidates;
+        the die-average section shows whether the analogue differs.
+    - explanation: K1 could be available on 2R if 2R's registered search is levelled, unlike gen2_0's
+        dev search. The verdict would then be PASS or FAIL rather than INCONCLUSIVE.
+      how_to_discriminate: Read the 2R reference row's L1_min_first5000_H and L1_min_all_H against w_levelling
+        in headroom_per_reference.
+    discriminating_tests:
+    - 'Registered run: n_gci_inf on 2R''s twin and candidate dies, from the evaluation report''s thermal
+      records'
+    - 'Registered run: 2R''s levelled flag and h_hi from headroom_per_reference'
+    - 'Registered run: virtual_junction.per_reference[''2D_Case_2R''].h_lo_vj compared with the gated
+      h_lo'
