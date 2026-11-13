@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T18:36:30+00:00 from repository state — do not edit_
+_generated 2026-11-13T18:37:10+00:00 from repository state — do not edit_
 
 ## Founder inbox (12 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -13,7 +13,7 @@ _generated 2026-11-13T18:36:30+00:00 from repository state — do not edit_
 - **I0183** [external_action] [O003] [O003] Run T0325's level-2 launcher (burst_tj_osc.sh) and decide Tj attainability before registering E008
 - **I0184** [decision] [O003] [O003] E008 pre-registration: band check with gen2_0's pairs unsolved, the non-levelled dev search, and which registration item to approve
 - **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
-- **I0186** [protected_change] T0324: merge needs founder approval
+- **I0187** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -40,15 +40,11 @@ _generated 2026-11-13T18:36:30+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 285, failed: 3, needs_founder: 1, proposed: 1
+cancelled: 39, done: 286, failed: 3, proposed: 1
 
-- T0324 `needs_founder` scientist/design_experiment: E008: fix the dev run's row-assembly crash (twin = reconstruction), rebuild dev rows from the saved VM work, record the dev facts, T0323 cleanup (attempt 1)
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-13T17:59:01+00:00 run_finished {"run": "T0326-critic-20261113T094053-9343", "status": "completed", "cost": 2.447835, "subtype": "success", "report": "structured_output"}
-- 2026-11-13T17:59:06+00:00 inbox_opened {"id": "I0182", "kind": "protected_change", "subject": "T0325: merge needs founder approval"}
-- 2026-11-13T17:59:10+00:00 run_started {"run": "T0327-critic-20261113T095910-e39b", "task": "T0327", "role": "critic", "session": "dd35d8f4-ae19-4ff5-af93-bf82adb28f94"}
 - 2026-11-13T17:59:44+00:00 sleep_detected {"gap_s": 1096, "runs_extended": 1}
 - 2026-11-13T18:02:56+00:00 inbox_resolved {"id": "I0182", "status": "approved", "note": "Merge T0325 (Case 4 Tj oscillation diagnosis and VM launcher). Review T0326 accept_with_caveats.", "by": "human"}
 - 2026-11-13T18:03:37+00:00 merged {"task": "T0325"}
@@ -61,3 +57,6 @@ cancelled: 39, done: 285, failed: 3, needs_founder: 1, proposed: 1
 - 2026-11-13T18:14:06+00:00 run_finished {"run": "T0327-critic-20261113T095910-e39b", "status": "completed", "cost": 2.387313, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T18:20:08+00:00 inbox_opened {"id": "I0186", "kind": "protected_change", "subject": "T0324: merge needs founder approval"}
 - 2026-11-13T18:20:45+00:00 sleep_detected {"gap_s": 400, "runs_extended": 0}
+- 2026-11-13T18:36:34+00:00 inbox_resolved {"id": "I0186", "status": "approved", "note": "Merge T0324 (dev-run crash fix, dev rows replayed, T0323 fixes).", "by": "human"}
+- 2026-11-13T18:37:07+00:00 merged {"task": "T0324"}
+- 2026-11-13T18:37:07+00:00 inbox_opened {"id": "I0187", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
