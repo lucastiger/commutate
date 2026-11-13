@@ -1,0 +1,56 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The whole dev-rows file cannot be evaluated by mfos.metrics: 2D_Case_4 has layout and die rows but no reference row",
+      "detail": "The rebuilt rows include 6 layout rows and 8 die rows for 2D_Case_4 from the gates and band-check path, but no kind=reference row for it. `mfos.metrics.compute('headroom_min_lo', rows, ...)` on the file's full `rows` raises `ValueError: reference 2D_Case_4: layout or die rows but no reference row`. meta.metrics (h_lo 0.3254, h_hi +inf) reproduce exactly only after filtering to housing70x40_gen2_0. The old smoke file had rows for gen2_0 only, so a consumer that runs the metric on the whole file would now fail. The DoD and `--plan` read only meta, so nothing in the claim breaks.",
+      "evidence": "Inline recompute: the full rows raise the ValueError above. With only gen2_0 rows: headroom_min_lo 0.3254151371496821 == meta; headroom_max_hi_ind inf == meta; null_twin_as_best_h_lo 0.0 == meta; recon comparator 0.3254 == meta.",
+      "suggested_check": "Either emit a reference row (admissible, not counted) for gates-only dev references or mark those rows so the metric skips them; add a DoD line that runs MX.headroom_per_reference on the whole file.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The rebuild from the saved VM work cannot be reproduced from this commit",
+      "detail": "The spec says the rows were rebuilt by `--dev --replay-only` from the saved result files of the 2026-11-13 VM run. Those files (research/o003/e008_dev/full_work, 333 files) are not tracked; they exist only untracked in the main checkout. The tracked experiments/drafts/E008_dev_work is the old smoke work directory: its fingerprints 065e8a\u2026, d82a63\u2026 and aade64\u2026 are the smoke dev_pair and twin fingerprints. So no reviewer can regenerate E008.dev_rows.json from the repository. The file records no hash of the work directory, so the rows cannot be tied to those files either. I could not replay them: copying the files from the main checkout was denied in this session. The dev rows are labelled 'not evidence', so this limits auditability, not any registered result.",
+      "evidence": "`git ls-files experiments/drafts/E008_dev_work`: 56 smoke files. `ls research/o003/e008_dev/full_work` in this worktree: no such directory. The main checkout has it untracked (9.0 MB). The rows' meta.replay_only shows solves_started 0 and band_pairs {gen2_0: 0, 2D_Case_4: 4}.",
+      "suggested_check": "Record a sha256 manifest of the saved work directory in the rows' meta or in research/o003/e008_dev, so the replay can be tied to the files.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Inconsistent role labels and schema in die rows",
+      "detail": "For gen2_0, the reconstruction's layout row has role 'reconstruction' while its die rows have role 'reference'. The 2D_Case_4 die rows have no role, GCI_K, tj_node_* or energy_balance fields. The metric does not read these fields today (my recompute matches), but downstream readers that key on role will see two names for one subject.",
+      "evidence": "Rows 'reconstruction'/d0..d3 for gen2_0 have role 'reference'. The 2D_Case_4 die rows have only Tj_l0..l2, nodes and power_W.",
+      "suggested_check": "Use one role vocabulary for layout and die rows, or document the mapping in e008_row_contract.md.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Selftest coverage of the twin = reconstruction crash checked by reading the code, not by mutation",
+      "detail": "twin_is_recon_failures plants W = reference on both references through the registered path. It requires distinct 'twin' and 'reconstruction' layout labels with the same fingerprint, at least one die row for each, a counted reference, and a candidate re-keyed to W's fingerprint that gets its own label and die rows. A fingerprint-keyed label map (the likely old bug) would leave the twin with 0 die rows or no label, and the `min(dies.values()) < 1` and label-set conditions would fire. I tried to confirm this by monkeypatching thermal_subjects in a scratch run; the sandbox denied that run, so this is static reasoning only.",
+      "evidence": "experiments/runners/e008_run.py lines 2636-2684 and 2853-2863; the selftest passed with 0 failures ('selftest T0324 (W = reconstruction on both references, candidate = W): 0 failures').",
+      "suggested_check": "Add a selftest mutant that swaps thermal_subjects for a fingerprint-keyed version and requires a failure.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e008_run.py --selftest`: rc 0, 'selftest passed'; the T0324 twin = reconstruction section reports 0 failures.",
+    "Ran `--verify-freeze` (rc 0; code_must_match_O007 OK), `--check-references` (rc 0) and `--plan` (rc 0); `git status` stayed clean afterwards.",
+    "Ran the DoD rows assertion and the spec-text assertion verbatim: both pass.",
+    "`ruff check experiments/runners/e008_run.py`: all checks passed. `mfos exp check E008`: no error. thermal_fem.py sha256 prefix is a216d5fe3209bcee. `mfos gate --fast`: all gates passed.",
+    "Recomputed headroom_min_lo, headroom_max_hi_ind, the null-twin h_lo and the reconstruction-comparator h_lo from the committed gen2_0 rows with mfos.metrics; each matches meta.metrics exactly (0.3254151371496821, inf, 0.0, 0.3254).",
+    "Recomputed h_lo by hand: r = 7.436006e-9 / 1.4812983e-8 = 0.50199, a = 14.813 / 21.813 = 0.67909, w = 0.03748, giving h_lo = 0.32541 (and 0.47919 with L_term = 0). R_D = 2.5157e-8 / 1.4813e-8 = 1.6983, matching the F1b check.",
+    "Recomputed gci_capped for all 24 gen2_0 die rows: 0 mismatches. On the 2D_Case_4 rows it gives +inf for all 8 dies, matching thermal_report and the spec's dev facts (non-monotone 4/4, not attainable).",
+    "Checked the thermal_report margins by hand: margin_vs_twin = candidate tj_upper \u2212 twin tj_lower (e.g. 396.832 \u2212 398.140 = \u22121.308 for c015905); c002784 has +inf and fails. These agree with the spec text (4 checked, 1 rejected).",
+    "Checked the 2D_Case_4 twin and reconstruction die rows: they are the same values in a different die order, matching the reconstruction's calibration record order and tj_node positions, consistent with the 'zero copper symmetric difference' twin.",
+    "Ran mfos.metrics on the whole rows file: it raises ValueError because 2D_Case_4 has no reference row (finding 1)."
+  ],
+  "caveats": [
+    "The rebuild from the saved VM work was not replayed independently: the work directory is not in this commit, and copying it out of the main checkout was denied in this session. The rows' numbers are internally consistent and their metrics recompute, but I did not show they equal a replay of the VM files.",
+    "The `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance \u2026` DoD line could not be run: this review checkout has a single snapshot commit and no main branch. I am relying on the provenance code check for it.",
+    "I ran `burst_full.sh --dry-run` only as part of a combined command that the sandbox denied, so I did not observe its output; I did not re-run it on its own.",
+    "The dev rows are development geometry and not evidence. h_lo 0.3254 and h_hi +inf on gen2_0 must not be cited as E008 results. The metrics computed over the whole rows file need gen2_0 filtered out first (finding 1).",
+    "Selftest coverage of the crash scenario was confirmed by reading the code; a mutation run was denied in this sandbox."
+  ]
+}
