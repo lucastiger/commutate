@@ -1,0 +1,32 @@
+id: I0183
+kind: external_action
+subject: '[O003] [O003] Run T0325''s level-2 launcher (burst_tj_osc.sh) and decide Tj attainability before
+  registering E008'
+summary: T0325 (merged, I0182) found that on 2D_Case_4's reference and twin, Tj max falls from level 0
+  to 1 and then rises from level 1 to 2 on all 8 dies under the frozen thermal rule, so mfos.metrics.gci_capped
+  is +inf on every die. If 2R's twin behaves the same, tj_bounds' lower bound is -inf. Then no candidate
+  can meet the conservative +2 K test, best = twin, h_lo = 0, and A1 is unreachable by construction. E008
+  could then return only INCONCLUSIVE, INVALID or a K1 kill. Levels 0-1 ruled out the 0 um die attach
+  (H1, for the first step) and the 1 um layer (H2). Whether the cause is the hot spot moving between levels
+  (H3) or levels that are not yet converging (H4) needs level 2. That peaks at about 9.2 GB, above this
+  Mac's 5 GB limit, and agents may not start VMs. research/o003/e008_dev/tj_osc/burst_tj_osc.sh solves
+  levels 0-2 of variants V0-V4 on Case 4's geometry only. V4 is 2R's recorded stack recipe, so D0019 item
+  4 is not touched. It takes about 1 VM-hour and costs about $0.6. Its outcome table in research/diagnoses/T0325.md
+  maps each result to H1-H4 and, as inference, to 2R. The thermal rule is frozen by C004 and O003 scope_in,
+  so any remedy is your decision (an objective amendment or a new experiment id), not a planner action.
+refs:
+- O003
+- T0328
+options:
+- Run burst_tj_osc.sh now (in parallel with T0327's review of T0324), then decide attainability from T0325's
+  table before approving registration
+- Register E008 without the level-2 run, accepting that A1 may be unreachable on 2R by construction
+- 'Do not run E008 before day 60 (D0011: the day-60 criterion counts as INCONCLUSIVE, with no measurement)'
+recommendation: Run the launcher now. It is the cheapest available evidence on whether A1 can be reached
+  at all on 2R. It needs no repository change, and its result fits inside the window before the run must
+  start (about 2026-11-22).
+status: open
+response: ''
+created_at: '2026-11-13T18:06:52+00:00'
+resolved_at: null
+resolved_by: null

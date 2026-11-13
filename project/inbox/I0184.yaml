@@ -1,0 +1,35 @@
+id: I0184
+kind: decision
+subject: '[O003] [O003] E008 pre-registration: band check with gen2_0''s pairs unsolved, the non-levelled
+  dev search, and which registration item to approve'
+summary: 'T0324 (in review under T0327) rebuilt the dev rows from the saved VM work with no new solve.
+  The VM never reached gen2_0''s 4 band-check pairs (20 solves), so the rows carry only 2D_Case_4''s 4
+  pairs: e_R 0.00956, 0.01254, 0.00635 and 0.01785, max 0.01785, under the 0.02 line. O003''s notes describe
+  the pairs as being ''on 2D_Case_4 and on generator outlines''. gen2_0 has one twin-vs-re-layout figure
+  from its search: w_ind = 0.0375 with s_ref = 0, which implies e_R of about 0.019 for its inductance-only
+  best (my inference from the rows, not a band-check pair). That is also under 0.02 but close. On 2R,
+  an e_R above about 0.025 would push w past F1(c)''s 0.05 and make E008 INVALID. Separately, gen2_0''s
+  search did not level off: the lowest L1 of the first 5,000 candidates (7.283 nH) is 9.3 % above the
+  lowest of all 20,000 (6.661 nH), against a 3.75 % window. If 2R''s search behaves the same, K1 is unavailable
+  for it (h_hi = +inf). With one counted reference, E008 would then be INCONCLUSIVE unless A1 passes.
+  This does not change any rule; it is what the frozen criterion gives. Housekeeping: inbox items I0165,
+  I0167, I0169, I0171, I0175, I0177, I0179 and I0181 all ask to ''register E008'' for earlier drafts.
+  Only a registration of the draft as merged after T0324 matches the current runner hash (36ea5f43...).'
+refs:
+- O003
+- T0328
+options:
+- Accept Case 4's 4 pairs, plus gen2_0's search-pair estimate as a reported fact, as the band check; record
+  this in E008's founder_decisions_settled; register after T0324 merges and the Tj-attainability item
+  is settled
+- 'Require gen2_0''s 20 band-check solves first: a scientist task writes a resumable launcher that carries
+  the saved cache, you run it on a VM, and the dev rows are rebuilt (about 1-2 days, which squeezes the
+  2026-11-22 start)'
+recommendation: Option 1. It meets 'at least 4 pairs' with measured values, it keeps the 2026-11-22 start,
+  and the near-0.02 values are already recorded as a risk to F1(c). Approve only the registration item
+  filed after T0324 merges, and close the older ones as superseded.
+status: open
+response: ''
+created_at: '2026-11-13T18:06:52+00:00'
+resolved_at: null
+resolved_by: null

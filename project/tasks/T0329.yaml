@@ -1,0 +1,46 @@
+id: T0329
+objective: O003
+title: 'Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019''s public reference set
+  (2D_Case_2R, 2D_Case_6)'
+type: experiment
+agent: none
+status: proposed
+depends_on:
+- T0324
+description: 'The orchestrator runs the registered E008 spec on merged main. It runs only after T0324
+  has merged and the founder has registered E008 (the open ''register E008'' inbox item, or its successor).
+  The founder must first settle the items left in E008''s founder_decisions_before_registration: Tj attainability
+  after T0325''s level-2 launcher, and the band check. Burst compute: .mfos/policy.toml burst_experiments
+  already lists E008. F6(e) on 2D_Case_2R runs on the same 8-vCPU VM resized to n2d-custom-8-499712-ext
+  (founder decision of 2026-11-12, recorded by T0324). Judged set per D0019: 2D_Case_2R and 2D_Case_6
+  (2D_Case_6 expected to be excluded under F1(a) and reported with its reason). Label: ''public benchmarks,
+  low power, indicative''. The F3 deviation declared in D0019 is stated with the verdict. It feeds A1
+  (E008.headroom_min_lo) and K1 (E008.headroom_max_hi_ind) and uses O003''s single evaluation (max_evaluations
+  1). Timeline (D0019, O003 notes): it must start by about 2026-11-22 to finish by 2026-11-24. If there
+  is no verdict by 2026-11-27, the day-60 criterion counts as INCONCLUSIVE (D0011).'
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: E008
+risk: high
+model: null
+budget_usd: 0.5
+max_turns: 1
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0328
+created_at: '2026-11-13T18:06:52+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: This is the required experiment task for E008, the only experiment in O003's acceptance.required_experiments,
+  and the only evidence for A1 and K1. It depends on T0324, the last design task changing the runner it
+  executes.
+history: []

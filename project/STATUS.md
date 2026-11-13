@@ -1,7 +1,7 @@
 # ModuleForge status
-_generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
+_generated 2026-11-13T18:06:56+00:00 from repository state — do not edit_
 
-## Founder inbox (8 open)
+## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
 - **I0167** [experiment_registration] register E008 (pre-registration)
 - **I0169** [experiment_registration] register E008 (pre-registration)
@@ -10,6 +10,9 @@ _generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
 - **I0177** [experiment_registration] register E008 (pre-registration)
 - **I0179** [experiment_registration] register E008 (pre-registration)
 - **I0181** [experiment_registration] register E008 (pre-registration)
+- **I0183** [external_action] [O003] [O003] Run T0325's level-2 launcher (burst_tj_osc.sh) and decide Tj attainability before registering E008
+- **I0184** [decision] [O003] [O003] E008 pre-registration: band check with gen2_0's pairs unsolved, the non-levelled dev search, and which registration item to approve
+- **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -17,7 +20,7 @@ _generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $209.19/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $210.28/$250 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -28,7 +31,7 @@ _generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 110 | $209.19 | 3368153 | 1683932 | 192 | 0 |
+| O003 | 110 | $210.28 | 3385028 | 1694999 | 192 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -36,18 +39,13 @@ _generated 2026-11-13T18:03:41+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 283, failed: 3, review: 1, running: 2
+cancelled: 39, done: 284, failed: 3, proposed: 1, review: 1, running: 1
 
 - T0324 `review` scientist/design_experiment: E008: fix the dev run's row-assembly crash (twin = reconstruction), rebuild dev rows from the saved VM work, record the dev facts, T0323 cleanup (attempt 1)
 - T0327 `running` critic/review: Review T0324 (general) (attempt 1)
-- T0328 `running` planner/plan: Plan O003 (founder answered I0140: No admissible customer layout by 2026-11-12. Public reference set under review: NC State PREES (Prof. Hopkins) published modules may replace PowerSynth; decision pending. (no replan)) (attempt 1)
+- T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-13T16:48:38+00:00 run_started {"run": "T0324-scientist-20261113T084838-dd6b", "task": "T0324", "role": "scientist", "session": "ee5a6c63-701a-4681-a38d-bda8ce4a7e46"}
-- 2026-11-13T16:48:39+00:00 run_started {"run": "T0325-scientist-20261113T084839-89c8", "task": "T0325", "role": "scientist", "session": "b226c8ff-9ffd-45bb-b50b-a2ee3b852d58"}
-- 2026-11-13T17:29:04+00:00 run_finished {"run": "T0325-scientist-20261113T084839-89c8", "status": "completed", "cost": 3.999999, "subtype": "success", "report": "structured_output"}
-- 2026-11-13T17:40:47+00:00 verified {"task": "T0325"}
-- 2026-11-13T17:40:53+00:00 run_started {"run": "T0326-critic-20261113T094053-9343", "task": "T0326", "role": "critic", "session": "8d9628a8-9a66-4e1c-ba0f-879eea451dad"}
 - 2026-11-13T17:41:27+00:00 sleep_detected {"gap_s": 745, "runs_extended": 2}
 - 2026-11-13T17:41:29+00:00 run_finished {"run": "T0324-scientist-20261113T084838-dd6b", "status": "completed", "cost": 5.403791, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T17:59:01+00:00 verified {"task": "T0324"}
@@ -58,3 +56,8 @@ cancelled: 39, done: 283, failed: 3, review: 1, running: 2
 - 2026-11-13T18:02:56+00:00 inbox_resolved {"id": "I0182", "status": "approved", "note": "Merge T0325 (Case 4 Tj oscillation diagnosis and VM launcher). Review T0326 accept_with_caveats.", "by": "human"}
 - 2026-11-13T18:03:37+00:00 merged {"task": "T0325"}
 - 2026-11-13T18:03:41+00:00 run_started {"run": "T0328-planner-20261113T100341-e9c1", "task": "T0328", "role": "planner", "session": "e4e23c4f-0950-4846-bbae-974093b04d9a"}
+- 2026-11-13T18:06:51+00:00 run_finished {"run": "T0328-planner-20261113T100341-e9c1", "status": "completed", "cost": 1.08921, "subtype": "success", "report": "structured_output"}
+- 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0183", "kind": "external_action", "subject": "[O003] [O003] Run T0325's level-2 launcher (burst_tj_osc.sh) and decide Tj attainability before registeri
+- 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0184", "kind": "decision", "subject": "[O003] [O003] E008 pre-registration: band check with gen2_0's pairs unsolved, the non-levelled dev search, and w
+- 2026-11-13T18:06:52+00:00 inbox_opened {"id": "I0185", "kind": "plan_approval", "subject": "[O003] approve initial plan (1 tasks)"}
+- 2026-11-13T18:06:52+00:00 plan_applied {"objective": "O003", "created": ["T0329"], "dropped": 0}

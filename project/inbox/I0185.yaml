@@ -1,0 +1,33 @@
+id: I0185
+kind: plan_approval
+subject: '[O003] approve initial plan (1 tasks)'
+summary: 'The trigger is out of date. I0140 was answered on 2026-11-11, and D0019 (2026-11-12) has since
+  settled the reference set: it stays D0010''s public fallback, 2D_Case_2R and 2D_Case_6. No NC State
+  PREES module passes the entry rules or has documents, so nothing in the plan changes for that reason.
+  2D_Case_6 is expected to be excluded under F1(a). That leaves 2R as the only counted reference, so any
+  verdict goes to the founder review. The build chain is done: generator, twin and degradation, search
+  driver, DRC rules, the headroom metrics in mfos.metrics, and the E008 draft and runner. T0324 (the dev-row
+  rebuild after the VM crash) is in review under T0327. The graph still has no `experiment` task for E008,
+  so this plan adds it, depending on T0324. The most serious threat to the hypothesis is not inductance;
+  it is that A1 may be unreachable by construction. On 2D_Case_4, Tj over the frozen thermal levels 0-2
+  goes the wrong way on all 8 dies of the reference and twin, so GCI is +inf on each. If 2R''s twin behaves
+  the same, no candidate can pass the conservative +2 K test and h_lo = 0. Separately, gen2_0''s dev search
+  did not level off: 9.3 % against a 3.75 % window. So if 2R behaves the same, K1 cannot fire either,
+  and INCONCLUSIVE is close to certain. The cheapest decisive step is not an agent task. It is T0325''s
+  merged level-2 launcher (about 1 VM-hour, about $0.6, development geometry only), which tells a moving
+  hot spot (H3) apart from levels that are not yet converging (H4) and so informs the founder''s Tj-attainability
+  decision before registration. Running VMs and changing the frozen thermal rule are outside my authority,
+  so both go to the founder along with the incomplete band check. Burst VM time is tracked through cpu_hours,
+  not the $40.81 agent ledger, so no budget increase is requested.'
+refs:
+- O003
+- T0329
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-13T18:06:52+00:00'
+resolved_at: null
+resolved_by: null

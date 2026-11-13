@@ -5,7 +5,7 @@ title: 'Plan O003 (founder answered I0140: No admissible customer layout by 2026
   pending. (no replan))'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -34,4 +34,17 @@ trigger: 'founder answered I0140: No admissible customer layout by 2026-11-12. P
   review: NC State PREES (Prof. Hopkins) published modules may replace PowerSynth; decision pending. (no
   replan)'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'The trigger is out of date. I0140 was answered on 2026-11-11, and D0019 (2026-11-12) has since
+    settled the reference set: it stays D0010''s public fallback, 2D_Case_2R and 2D_Case_6. No NC State
+    PREES module passes the entry rules or has documents, so nothing in the plan changes for that reason.
+    2D_Case_6 is expected to be excluded under F1(a). That leaves 2R as the only counted reference, so
+    any verdict goes to the founder review. The build chain is done: generator, twin and degradation,
+    search driver, DRC rules, the headroom metrics in mfos.metrics, and the E008 draft and runner. T0324
+    (the dev-row rebuild after the VM crash) is in review under T0327. The graph still has no `experiment`
+    task for E008, so this plan adds it, depending on T0324. The most serious threat to the hypothesis
+    is n'
+  created:
+  - T0329
+  dropped_for_limits: 0
