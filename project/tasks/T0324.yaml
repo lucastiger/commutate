@@ -1,0 +1,146 @@
+id: T0324
+objective: O003
+title: 'E008: fix the dev run''s row-assembly crash (twin = reconstruction), rebuild dev rows from the
+  saved VM work, record the dev facts, T0323 cleanup'
+type: design_experiment
+agent: scientist
+status: running
+depends_on: []
+description: "The full-fidelity dev run (founder's VM, burst_dev.sh, 2026-11-13 05:47-15:44 UTC, one Spot\
+  \ preemption resumed\nfrom the cache) finished all 107 solves (status ok) and then crashed in evaluate():\n\
+  \  ValueError: reference housing70x40_gen2_0: layout reconstruction appears twice (mfos/metrics.py _hr_tables)\n\
+  so no dev rows were written. The saved work directory and the job log are at /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work\
+  \ and /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/job.log\n(read only: never write there).\
+  \ D0019 governs.\n\nHard limits (as T0322): no twin(), degrade(), prepare(), L1, l2_layout, thermal\
+  \ or search run on 2D_Case_2R or\n2D_Case_6 (rebuild, fingerprint and mesh counts only); no change to\
+  \ src/, tests/acceptance, tools/mfos, the frozen\nreconstruction script, research/o003/references/ or\
+  \ scripts/burst_gcp.sh; never run gcloud or start any VM; never read\ndata/holdout/; do not widen any\
+  \ tolerance, relax any gate or change the cost model's rates; do not decide the remaining\nfounder items.\
+  \ Do not commit the saved work directory (generated data, files over 1 MB).\n\n1. The crash. On gen2_0\
+  \ the twin W is the reconstruction itself (same fingerprint). assemble_rows (lines ~1615-1645)\n   labels\
+  \ layout and die rows through lid, a dict keyed by fingerprint, so the twin's row is labelled 'reconstruction'\n\
+  \   too. Label the twin, reconstruction and D rows (layout and die rows) by role, so both 'twin' and\
+  \ 'reconstruction'\n   rows exist when the fingerprints coincide (F1(a2) and the headroom metrics need\
+  \ both). Then audit every other map\n   keyed by fingerprint in Run.drive, Driver, assemble_rows, evaluate,\
+  \ thermal_report_from_rows and the registered\n   path for the same collision (twin == reconstruction,\
+  \ D == twin, a candidate equal to the twin) and fix what breaks.\n   This matters for the registered\
+  \ run: 2R's recorded twin (research/o003/twin_coverage/results.json, R1) has an L1\n   equal to the\
+  \ reconstruction's to 8 digits and zero copper difference, so its fingerprint may equal the\n   reconstruction's.\
+  \ Selftest case: the full orchestration with a twin whose fingerprint equals the reconstruction's\n\
+  \   (fake solvers) reaches evaluate() and writes distinct twin and reconstruction rows.\n2. Replay.\
+  \ Add a dev option (e.g. --replay-only) that runs the dev path but raises before any solve if a job\
+  \ has no\n   saved result (no solve ever starts). Copy /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work\
+  \ into the system temp directory and run there:\n     uv run python experiments/runners/e008_run.py\
+  \ --dev --geoms gen2_0,case4:gates:4 --band-pairs 4 --workdir <temp copy> \\\n       --rows-out experiments/drafts/E008.dev_rows.json\
+  \ --replay-only\n   Result files are keyed by fingerprint and physics inputs (Driver.job), so the fix\
+  \ must not change any solve's key;\n   if the replay asks for a solve, stop and report which job and\
+  \ why. The new rows replace the local smoke rows. Check\n   that the replay's Case 4 gates and pairs\
+  \ equal the job log's line '2D_Case_4: gates a1 False a2 True; pairs e_R\n   [0.00956, 0.01254, 0.00635,\
+  \ 0.01785]'. Then re-run --plan (near ties now from the dev rows) and update\n   cost_estimate. Keep\
+  \ the rates; report in the design note the measured per-solve wall and peak memory of the dev run\n\
+  \   against --plan's model (from the saved job files: e.g. lat0.25 on Case 4 2,860 s / 15.6 GB, thermal\
+  \ level 2\n   1,050 s / 9.2 GB).\n3. Dev facts and founder decisions into the spec (founder_decisions_before_registration\
+  \ / _settled), from the rows:\n   band check (4 pairs, max e_R vs 0.02); Case 4's twin gates with lhs\
+  \ and rhs; the founder decision of 2026-11-13:\n   F1(a1) is kept as frozen (Case 4's twin is fit+signal_feet,\
+  \ L1 ratio 1.0017; 2R's recorded twin is exact at L1),\n   so that item is settled; F1(a2) on Case 4\
+  \ passes only because both G are +inf; meta.thermal_report: per layout the\n   per-die monotonicity,\
+  \ GCI and attainability (Case 4's reference and twin: every die non-monotone over levels 0-2,\n   GCI\
+  \ +inf; gen2_0: twin attainable, candidates as the rows show). The Tj-attainability item STAYS a founder\
+  \ item: a\n   separate investigate task diagnoses Case 4's oscillation first. Also quick_ok (gen2_0\
+  \ 98 of 2,000 clean, bound 3.0 %;\n   Case 4 33, 8.7 %), and the gen2_0 search facts the rows give (near\
+  \ ties, levelling, control).\n4. Review T0323 (project/reviews/T0322/T0323.json): finding 0, the stale\
+  \ spot_note pointer for 2D_Case_6 and the\n   report-only reading 'only reference excluded: <reason>'\
+  \ in the declared F6e_stack_type_spot_check description;\n   finding 1, a type with one admissible reference\
+  \ that is excluded and another that is inadmissible is reported\n   'only reference excluded: <reason>'\
+  \ (selftest case with two references of one type); finding 2, in research/o003/e008_dev/burst_full.sh\
+  \ a rerun\n   recovers when the VM stopped after a phase (ensure the VM runs before reading the runner's\
+  \ exit code on the resume\n   path; cancel the phase's backstop shutdown once the rc file exists; --dry-run\
+  \ still runs nothing; update the failure\n   modes in research/notes/e008-design.md); finding 3, config.f3_declared_deviation.rules_changed\
+  \ also names D0018\n   decision 2 and T0317's rule that D band-solver failures make the run INVALID,\
+  \ identical everywhere it is copied.\n5. Founder decision (2026-11-12): F6(e) on 2D_Case_2R runs on\
+  \ the same 8-vCPU VM resized to n2d-custom-8-499712-ext\n   (488 GiB extended memory); the founder created\
+  \ that machine type on this free-trial account (test VM, 2026-11-12,\n   successful); no memory-lean\
+  \ FV for E008. Move the F6(e) memory item to founder_decisions_settled with this record.\n6. Re-stamp\
+  \ every hash the runner edit changes (dev prep scripts, L0/L1 on dev layouts only, as T0322 did) and\
+  \ update\n   the design note."
+context_files:
+- project/reviews/T0322/T0323.json
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/o003/e008_dev/burst_full.sh
+- research/notes/e008-design.md
+- research/o003/twin_coverage/results.json
+- project/decisions/D0019-o003-e008-reference-set-2R-declared-deviation.md
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e008_run.py --check-references
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E008.dev_rows.json')); assert
+    d['meta']['smoke'] is False, 'smoke rows'; rows = d['rows']; lab = [(r['reference_id'], r['layout_id'])
+    for r in rows if r['kind'] == 'layout']; assert len(lab) == len(set(lab)), 'duplicate layout ids';
+    g = {r['layout_id'] for r in rows if r['kind'] == 'layout' and r['reference_id'] == 'housing70x40_gen2_0'};
+    assert {'twin', 'reconstruction'} <= g, g; assert any(r['kind'] == 'reference' and r['reference_id']
+    == 'housing70x40_gen2_0' for r in rows); assert len(d['meta']['band_check_pairs']) == 4"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', '0226b770', 'requires_passed', 'O007', 'sealed',
+    'cpu_hours_est', 'freeze', 'max_gci_consistency', 'L_term', 'D0018', 'D0019', 'f3_declared_deviation',
+    '66cb1e19', '71e07ae1', 'T0321', 'T0323', 'only reference excluded', '499712'] if k not in s]; assert
+    not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance project/objectives project/decisions
+    research/scripts/o003_powersynth_references.py research/o003/references scripts/burst_gcp.sh
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 120
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0324-e008-fix-the-dev-run-s-row-assembly-cras
+pr: null
+runs:
+- T0324-scientist-20261113T084838-dd6b
+created_by: session
+created_at: '2026-11-13T16:48:04+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-13 (session): the dev run crashed in evaluate() because twin and reconstruction
+  share a fingerprint on gen2_0, which can also happen on 2R; fix it, rebuild the dev rows without a VM,
+  record the dev facts and the a1 decision, close review T0323''s findings and record the 488 GB F6(e)
+  decision.'
+history: []

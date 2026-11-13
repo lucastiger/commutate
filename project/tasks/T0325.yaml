@@ -1,0 +1,114 @@
+id: T0325
+objective: O003
+title: 'Diagnose 2D_Case_4''s non-monotone Tj over the frozen thermal levels (dev geometry only): stack
+  variants locally at levels 0-1, VM launcher for level 2'
+type: investigate
+agent: scientist
+status: running
+depends_on: []
+description: "Founder decision 2026-11-13 (session): diagnose, on development geometry only, why the frozen\
+  \ thermal rule\ngives 2D_Case_4 a non-monotone Tj over levels 0-2, before the founder decides whether\
+  \ E008's A1 can be reached on 2R.\n\nFacts (full-fidelity dev run on the founder's VM, 2026-11-13; saved\
+  \ work /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work, log /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/job.log,\
+  \ read\nonly, never write there):\n- 2D_Case_4 reference (fingerprint f4862196...) and twin (d0dd6090...):\
+  \ on all 4 dies Tj max goes down then up over\n  levels 0, 1, 2 (die 0 of the reference: 398.076, 397.984,\
+  \ 398.135 K; nodes 51,098 / 365,435 / 2,752,565), so\n  mfos.metrics.gci_capped is +inf on every die.\
+  \ If every die of a twin is +inf, tj_bounds' lower bound is -inf, no\n  candidate can meet the conservative\
+  \ +2 K test, best = twin and h_lo = 0: A1 is unreachable for that reference.\n- housing70x40_gen2_0\
+  \ (default Al2O3 DBC stack, 50 um die attach): monotone on the twin (GCI max 0.45 K) and on 3 of 4\n\
+  \  checked candidates; candidate dd815fcb... has one non-monotone die.\n- Case 4's thermal stack (dev,\
+  \ research/scripts/o006_case4_layout.py and config.dev.case4.thermal_material_substitutions)\n  has\
+  \ a 0 um die attach and a 1 um solder layer (PowerSynth 'none (M5)', substituted by SAC305). 2D_Case_2R's\
+  \ recorded\n  stack (research/o003/references/2D_Case_2R.json 'stack' and 'spec', facts only) has the\
+  \ 1 um SAC305 layer between\n  baseplate and backside copper and a 50 um die attach.\n\nHard limits:\
+  \ development geometry only (2D_Case_4, generator layouts). No solve of any kind, twin(), degrade()\
+  \ or\nprepare() on 2D_Case_2R or 2D_Case_6 (D0019 item 4); 2R's recorded stack numbers may be used as\
+  \ an input recipe on Case\n4's geometry. Do not change src/ (thermal_fem.py sha256 a216d5fe...), tools/,\
+  \ experiments/ (runner, spec, drafts),\nresearch/scripts/, research/o003/references/ or scripts/. Do\
+  \ not change the frozen thermal rule; stack variants are\ndev-only inputs. Never run gcloud or start\
+  \ a VM. Never read data/holdout/. Every local process stays at or below 5 GB:\nlevels 0 and 1 only locally\
+  \ (Case 4 level 2 peaks at ~9.2 GB on the VM). Do not propose or decide a remedy; give the\nfacts the\
+  \ founder needs.\n\nWork (skill mf-diagnosis), written to research/diagnoses/T0325.md:\n1. From the\
+  \ saved results only: per die and level Tj, the hottest node per level, node counts, energy balance\
+  \ and\n   Picard residuals for Case 4's reference and twin and for gen2_0's thermally solved layouts.\
+  \ Read how the frozen\n   rule grades the mesh through thin layers and at copper edges (read thermal_fem.py,\
+  \ do not edit it), and count the\n   cells across the 1 um layer and the die per level (no solve needed).\n\
+  2. Competing hypotheses, at least: H1 the 0 um die attach; H2 the 1 um solder layer; H3 Case 4's in-plane\
+  \ geometry or\n   edge grading (the levels do not nest, or the hot spot moves between levels); H4 the\
+  \ level sequence is not yet in the\n   asymptotic range at Case 4's size, whatever the stack. For each,\
+  \ its prediction for every variant below.\n3. Locally, levels 0 and 1 of each variant on Case 4's twin\
+  \ (rebuilt from committed code with the runner's dev path;\n   check its fingerprint starts d0dd6090\
+  \ and the reference's f4862196). Variants: V0 as in the dev run (must reproduce\n   the saved levels\
+  \ 0-1); V1 die attach 50 um SAC305; V2 the 1 um layer removed; V3 V1 + V2; V4 2R's recorded stack\n\
+  \   recipe (layers, die 0.18 mm, attach 0.05 mm) on Case 4's geometry. Same power and operating point\
+  \ as the dev run.\n4. research/o003/e008_dev/tj_osc/burst_tj_osc.sh: a launcher for the founder in the\
+  \ pattern of research/o003/e008_dev/burst_dev.sh, through\n   scripts/burst_gcp.sh --cmd (unchanged;\
+  \ it bundles committed main, so rebuild every layout from committed code, never\n   from the saved ctx.pkl),\
+  \ on n2d-custom-8-81920-ext, Spot auto, resumable from per-solve result files, that solves\n   levels\
+  \ 0-2 of V0-V4 within 0.85 x RAM and copies back per-die Tj per level, GCI and tj_bounds per variant.\
+  \ --dry-run\n   prints every command and runs none. In the note: the founder's exact command, expected\
+  \ VM time and $, expected\n   output, and a table of what each outcome means for H1-H4 and for 2R (labelled\
+  \ inference: 2R is not solved).\nOut of scope: changes to E008, the thermal rule or any metric; the\
+  \ remedy."
+context_files:
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- src/moduleforge/solvers/thermal_fem.py
+- research/o003/references/2D_Case_2R.json
+- research/scripts/o006_case4_layout.py
+- research/o003/e008_dev/burst_dev.sh
+- scripts/burst_gcp.sh
+- research/notes/e008-design.md
+deliverables:
+- research/diagnoses/T0325.md
+- research/o003/e008_dev/tj_osc/burst_tj_osc.sh
+touches: []
+definition_of_done:
+- cmd: test -s research/diagnoses/T0325.md
+  exists: null
+  timeout_s: 30
+- cmd: uv run python -c "s = open('research/diagnoses/T0325.md').read(); missing = [k for k in ['H1',
+    'H2', 'H3', 'd0dd6090', 'f4862196', 'die attach', '1 um', 'prediction', 'inference'] if k not in s];
+    assert not missing, missing"
+  exists: null
+  timeout_s: 120
+- cmd: bash -n research/o003/e008_dev/tj_osc/burst_tj_osc.sh && bash research/o003/e008_dev/tj_osc/burst_tj_osc.sh
+    --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o003/e008_dev/tj_osc
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance tools project/objectives
+    project/decisions experiments research/scripts research/o003/references scripts
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0325-diagnose-2d-case-4-s-non-monotone-tj-ove
+pr: null
+runs:
+- T0325-scientist-20261113T084839-89c8
+created_by: session
+created_at: '2026-11-13T16:48:04+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-13 (session): Case 4''s Tj oscillates over the frozen levels (GCI +inf on
+  every die); 2R shares one of Case 4''s two unusual stack features, so A1 may be unreachable on 2R. Find
+  the cause on development geometry before the founder decides.'
+history: []

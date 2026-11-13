@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T16:46:45+00:00 from repository state — do not edit_
+_generated 2026-11-13T16:48:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (8 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -28,7 +28,7 @@ _generated 2026-11-13T16:46:45+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 105 | $197.34 | 3178005 | 1596340 | 181 | 0 |
+| O003 | 107 | $197.34 | 3178005 | 1596340 | 181 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -36,14 +36,12 @@ _generated 2026-11-13T16:46:45+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 281, failed: 3
+cancelled: 39, done: 281, failed: 3, running: 2
 
+- T0324 `running` scientist/design_experiment: E008: fix the dev run's row-assembly crash (twin = reconstruction), rebuild dev rows from the saved VM work, record the dev facts, T0323 cleanup (attempt 1)
+- T0325 `running` scientist/investigate: Diagnose 2D_Case_4's non-monotone Tj over the frozen thermal levels (dev geometry only): stack variants locally at levels 0-1, VM launcher for level 2 (attempt 1)
 
 ## Recent events
-- 2026-11-12T21:32:58+00:00 capacity_backoff {"task": "T0322", "minutes": 5, "parsed_reset": false}
-- 2026-11-12T21:38:19+00:00 run_started {"run": "T0322-scientist-20261112T133819-0a98", "task": "T0322", "role": "scientist", "session": "135d4e61-3315-485d-a9f8-d2b9baf300c7"}
-- 2026-11-12T22:02:27+00:00 run_finished {"run": "T0322-scientist-20261112T133819-0a98", "status": "completed", "cost": 0.523157, "subtype": "success", "report": "structured_output"}
-- 2026-11-12T22:16:19+00:00 verified {"task": "T0322"}
 - 2026-11-12T22:16:25+00:00 run_started {"run": "T0323-critic-20261112T141625-647b", "task": "T0323", "role": "critic", "session": "282e5159-8667-48dd-a794-34d547c10d76"}
 - 2026-11-12T22:16:59+00:00 sleep_detected {"gap_s": 874, "runs_extended": 1}
 - 2026-11-12T22:30:30+00:00 run_finished {"run": "T0323-critic-20261112T141625-647b", "status": "completed", "cost": 2.324343, "subtype": "success", "report": "structured_output"}
@@ -55,3 +53,7 @@ cancelled: 39, done: 281, failed: 3
 - 2026-11-13T02:54:42+00:00 sleep_detected {"gap_s": 9266, "runs_extended": 0}
 - 2026-11-13T16:46:23+00:00 founder_decision_noted {"decision": "E008 twin gate F1(a1) unchanged (founder, 2026-11-13). The full-fidelity dev run (VM, 2026-11-13) failed a1 on 2D_Case_4: |1 - L_sub(W)/L_sub(ref)
 - 2026-11-13T16:46:23+00:00 founder_decision_noted {"decision": "E008 Tj attainability (founder, 2026-11-13): diagnose before deciding. On 2D_Case_4 (dev run) every die of the reference and the twin is non-monot
+- 2026-11-13T16:48:04+00:00 task_added {"task": "T0324", "reason": "founder 2026-11-13: dev-run crash fix, dev rows from the saved VM work, T0323 cleanup"}
+- 2026-11-13T16:48:04+00:00 task_added {"task": "T0325", "reason": "founder 2026-11-13: diagnose Case 4's non-monotone Tj before deciding A1's reach"}
+- 2026-11-13T16:48:38+00:00 run_started {"run": "T0324-scientist-20261113T084838-dd6b", "task": "T0324", "role": "scientist", "session": "ee5a6c63-701a-4681-a38d-bda8ce4a7e46"}
+- 2026-11-13T16:48:39+00:00 run_started {"run": "T0325-scientist-20261113T084839-89c8", "task": "T0325", "role": "scientist", "session": "b226c8ff-9ffd-45bb-b50b-a2ee3b852d58"}
