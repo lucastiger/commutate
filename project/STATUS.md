@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-13T20:05:10+00:00 from repository state — do not edit_
+_generated 2026-11-13T20:05:54+00:00 from repository state — do not edit_
 
 ## Founder inbox (10 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -45,7 +45,6 @@ cancelled: 39, done: 286, failed: 3, proposed: 1, review: 1, running: 1
 - T0331 `running` critic/review: Review T0330 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-13T18:14:06+00:00 run_finished {"run": "T0327-critic-20261113T095910-e39b", "status": "completed", "cost": 2.387313, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T18:20:08+00:00 inbox_opened {"id": "I0186", "kind": "protected_change", "subject": "T0324: merge needs founder approval"}
 - 2026-11-13T18:20:45+00:00 sleep_detected {"gap_s": 400, "runs_extended": 0}
 - 2026-11-13T18:36:34+00:00 inbox_resolved {"id": "I0186", "status": "approved", "note": "Merge T0324 (dev-run crash fix, dev rows replayed, T0323 fixes).", "by": "human"}
@@ -60,3 +59,4 @@ cancelled: 39, done: 286, failed: 3, proposed: 1, review: 1, running: 1
 - 2026-11-13T19:48:17+00:00 run_finished {"run": "T0330-scientist-20261113T110929-62a1", "status": "completed", "cost": 4.308172, "subtype": "success", "report": "structured_output"}
 - 2026-11-13T20:05:01+00:00 verified {"task": "T0330"}
 - 2026-11-13T20:05:10+00:00 run_started {"run": "T0331-critic-20261113T120510-5f57", "task": "T0331", "role": "critic", "session": "4bfb8b2e-ec62-45cc-b249-9796366a339d"}
+- 2026-11-13T20:05:45+00:00 sleep_detected {"gap_s": 1049, "runs_extended": 1}
