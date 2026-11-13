@@ -801,3 +801,73 @@ design, rule values, row contract).
 
 **What would prove this wrong:** a registered run in which twin = reconstruction yields rows the metric rejects; a
 replay of the same work that asks for a search solve (a key change); Case 4's gates or pairs differing from the job log.
+
+## 13. T0330 (2026-11-13): D0020 — expected outcome under the frozen Tj rule, reported die-average Tj, registration readings
+
+[F] = fact checked here. [I] = inference. The T0330 report lists the commands run and their exit codes. Founder decision D0020
+(founder session 2026-11-13; the record is committed separately). Spec text: research/o003/e008_dev/t0330_spec_update.py
+(idempotent; every number read from the rows, the VM files or the spec).
+
+**T0325's level-2 results [F].** Copied from the untracked main-checkout `research/o003/e008_dev/tj_osc/vm_work` (read only,
+not written) to **research/o003/e008_dev/tj_osc/vm_level2/**: summary.json, summary.txt, run.log, jobs.json, solves/*.json
+(15 job files + 15 results), with a sha256 list in MANIFEST.sha256. Sanity: V0 equals the saved dev run's 2D_Case_4 twin at
+levels 0-2 to 0 K (same physics hashes). On every die of V0-V4 the Tj-max step changes sign (rho -2.73 to -1.58), so
+gci_capped is +inf on 20 of 20 dies. The die-centre node (GCI 0.018-0.28 K) and the die-top mean (GCI 0.174-0.193 K)
+converge. V4 (= V1 bitwise) is 2R's recorded stack recipe. [I] T0325's H3 (hot-spot migration) is supported.
+
+**Expected outcome (D0020 item 1) [I, stated before registration; 2R is not solved before the freeze].** In
+config.expected_outcome: on 2D_Case_2R (same 4 x 6 mm die, same stack recipe as V4) every twin and candidate die is expected to
+get gci_capped +inf. A1 is then unreachable: no candidate passes the conservative test, best = twin, h_lo = -a s_ref (= 0 with
+s_ref = 0). gen2_0's dev search was not levelled (first-5,000 L1 minimum 9.3 % above the 20,000 minimum, window 3.75 %), so
+K1 may be unavailable. Expected verdict **INCONCLUSIVE**. 2R's inductance-only headroom (headroom_max_hi_ind, _recon,
+_Lterm0, _Lterm17p5) is measured and reported. What would contradict this: a finite GCI on any 2R twin die, a 2R candidate
+passing the conservative test, a levelled 2R search, or 2R excluded.
+
+**Die-average Tj, "virtual junction temperature" (D0020 item 2) — REPORTED, NOT GATED [F].**
+- Definition: per die and level, T_vj = (1/A) * integral of T_h dA over the die top face (the heat-source face, A = the
+  footprint). This is thermal_fem's ThermalResult.tj_mean: the top-face facet load vector (FacetBasis, intorder 4)
+  restricted to the face DOFs, divided by its sum A (checked against the footprint to 1e-6), dotted with the nodal
+  temperatures. It is the method of T0325's tj_osc.py.
+- Runner (e008_run.py):
+  - `_fem_rec` writes `tj_mean` into the thermal result file. Only the content changes; the file name, which is the key,
+    does not.
+  - `Driver.out_path` is factored out of `job()` unchanged. `Driver.vj(fp)` reads the three result files.
+  - Die rows get Tvj_l0_K, Tvj_l1_K, Tvj_l2_K and GCI_vj_K, in assemble_rows and in the dev gates path.
+  - `virtual_junction_report` writes the evaluation report's `virtual_junction` section, labelled as not the registered
+    criterion. It holds tj_bounds on T_vj, the per-candidate analogue upper_vj(C) - lower_vj(W) against 2 K, and the h_lo
+    that mfos.metrics.headroom_per_reference gives on a copy of the rows with T_vj in place of Tj max (F1(a2) is then read
+    on T_vj as well).
+- Why nothing gated can read it: mfos.metrics reads only Tj_l0..2_K. The frozen search keeps only THERMAL_REQUIRED fields of
+  a thermal record. The report is computed last, on a JSON copy of the rows, and never raises.
+- Dev rows: results solved before T0330 carry **null** (all 32 die rows). meta.virtual_junction gives the reason.
+- On Case 4 (T0325 data) the analogue is assessable: GCI_vj 0.174-0.193 K, own width 0.364-0.386 K, and mean <= max by
+  >= 5.85 K at all 60 die-levels.
+- Selftest:
+  - Zero-power solves at T_c 338.15 K and 400 K give T_vj = Tj max = T_c on every die to 1e-9 K.
+  - With 30 W, T_c < T_vj <= Tj max.
+  - T_vj <= Tj max on all 60 die-levels of vm_level2.
+  - Null columns give null, not an error.
+  - In every fake-world scenario, the analogue h_lo equals the gated h_lo under a uniform 0.4 K offset.
+  - Mutation: NaN, +100 K, -100 K, null or dropped columns leave the gated metrics, checks and report unchanged. A positive
+    control (+100 K on a gated Tj_l2_K) must change them, and does.
+
+**Band check (D0020 item 3) [F].** 2D_Case_4's 4 pairs (e_R 0.00956, 0.01254, 0.00635, 0.01785; max 0.01785 < 0.02) and
+gen2_0's search estimate (e_R 0.0187 for its A1 best, w 0.0375) are the pre-registration band check. gen2_0's 4 random pairs
+were never solved. Risk to F1(c): 89 % and 94 % of the 0.02 limit.
+
+**Readings (D0020 item 4) and the founder list (item 5) [F].** Row contract 1-9, judged-reference rules (D0019 item 5), cap
+read as billed vCPU-hours (97.0, upper 145.4), all-inadmissible type reported, stack-type rounding as implemented, and
+quick_ok_draws = 2,000 are in founder_decisions_settled, citing D0020. All 11 former before_registration items moved there.
+Three of them needed no decision, so they cite D0020 item 5: twin-copper areas (moot for the public set), the EM memory
+fact, and the dev-only smoke rule. **founder_decisions_before_registration now says explicitly: NONE.**
+
+**Dev rows rebuilt and hashes re-stamped [F].**
+- Rows: `e008_run.py --dev --geoms gen2_0::0,case4:gates:4 --band-pairs 4 --replay-only` on a temp copy of
+  /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work (log replay_T0330.log). solves_started 0.
+- Every row equals the previous file outside the four new columns. Metrics, checks, thermal_report and band pairs are
+  identical. So no result-file key changed.
+- Hashes: gen2_0_prep.py T0330, case4_prep.py and refresh_rule_strictness.py T0330 re-stamped runner_sha256 (now
+  a06dba4f…, 3 places). After that the meta equals the previous one except hashes, timings and the new virtual_junction.
+
+**Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6. No gcloud call and
+no VM. No change to src/, tools/, the frozen script, references or tolerances.

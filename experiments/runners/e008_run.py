@@ -432,11 +432,36 @@ def _die_top_max(res, lay) -> tuple[list[float], list[list[float]]]:
     return vals, nodes
 
 
+# T0330 (D0020 item 2): die-average Tj ('virtual junction temperature'), REPORTED, NOT GATED.  Die-row columns per level and
+# its gci_capped; no gated metric, sanity check, stop rule or F3 order reads them (mfos.metrics reads only Tj_l0..2_K; the
+# frozen search keeps only THERMAL_REQUIRED fields of a thermal record and never sees 'tj_mean').
+VJ_COLS = ("Tvj_l0_K", "Tvj_l1_K", "Tvj_l2_K")
+VJ_LABEL = ("REPORTED, NOT GATED (D0020 item 2): die-average Tj ('virtual junction temperature'), NOT the registered criterion "
+            "(O003's Tj is the maximum nodal value on the die top face, three-level gci_capped, D0013); it decides nothing")
+VJ_DEFINITION = ("per die and thermal level: T_vj = (1/A) * integral over the die top face of T_h dA, the area-weighted mean of "
+                 "the scikit-fem solution T_h over the die's top face (the heat-source face, area A = the die footprint), as "
+                 "thermal_fem.solve computes ThermalResult.tj_mean: the facet load vector of the top face (FacetBasis, "
+                 "intorder 4) restricted to the face DOFs, divided by its sum A (checked against the footprint area to "
+                 "1e-6), dotted with the nodal temperatures; the method of T0325's tj_osc.py.  Per die: GCI_vj = "
+                 "mfos.metrics.gci_capped(T_vj levels 0, 1, 2, floor 1e-3 K); per layout: mfos.metrics.tj_bounds on T_vj")
+
+
+def _die_top_mean(res, lay) -> list[float] | None:
+    """T0330 (D0020 item 2; REPORTED, NOT GATED): per die, thermal_fem's area mean over the die top face (VJ_DEFINITION).
+    Never raises: a missing or malformed value gives None, so the reported column cannot fail a solve."""
+    try:
+        v = [float(x) for x in np.asarray(res.tj_mean, float).ravel()]
+        return v if len(v) == len(lay.dies) and all(math.isfinite(x) for x in v) else None
+    except Exception:  # noqa: BLE001 - reported only; must never stop a solve
+        return None
+
+
 def _fem_rec(r, lay, level: int, sweeps: int) -> dict:
     if r.meta.get("amg_gs_sweeps") != sweeps:
         raise RuntimeError(f"amg_gs_sweeps {r.meta.get('amg_gs_sweeps')} is not the frozen {sweeps}")
     tj, nodes = _die_top_max(r, lay)
-    return {"level": level, "tj": tj, "tj_node": nodes, "nodes": int(r.dofs), "energy_balance": float(r.energy_balance),
+    return {"level": level, "tj": tj, "tj_node": nodes, "tj_mean": _die_top_mean(r, lay), "nodes": int(r.dofs),
+            "energy_balance": float(r.energy_balance),
             "picard_iters": int(r.picard_iters), "picard_residual_K": float(r.picard_residual),
             "cg_max_iterations": r.meta.get("cg_max_iterations"), "cg_hit_maxiter": r.meta.get("cg_hit_maxiter"),
             "wall_s": float(r.wall_s), "fingerprint": lay.fingerprint()}
@@ -1202,14 +1227,19 @@ class Driver:
                 return w
         return "candidate"
 
+    def out_path(self, fp: str, typ: str, kw: dict) -> Path:
+        """The result file of a solve (T0330: factored out of job() unchanged, so job() and the reported die-average
+        reader name the same file).  Every physics input of the solve is in the file name, so a changed rule, power or
+        level never reuses a result."""
+        tag = kw.get("level", "")
+        phys = hashlib.sha256(json.dumps({k: v for k, v in kw.items() if k != "priority"}, sort_keys=True,
+                                         default=str).encode()).hexdigest()[:10]
+        return self.run.root / self.rc.rid / "solves" / f"{fp[:24]}__{typ}{tag}__{phys}.json"
+
     def job(self, lay, typ: str, **kw) -> dict:
         fp = lay.fingerprint()
         w = self.which(lay)
-        tag = kw.get("level", "")
-        # every physics input of the solve is in the file name, so a changed rule, power or level never reuses a result
-        phys = hashlib.sha256(json.dumps({k: v for k, v in kw.items() if k != "priority"}, sort_keys=True,
-                                         default=str).encode()).hexdigest()[:10]
-        out = self.run.root / self.rc.rid / "solves" / f"{fp[:24]}__{typ}{tag}__{phys}.json"
+        out = self.out_path(fp, typ, kw)
         out.parent.mkdir(parents=True, exist_ok=True)
         j = {"type": typ, "ctx": self.ctx, "which": w, "fp": fp, "family": getattr(lay, "family", None),
              "out": str(out), "threads": self.run.threads, "ref": self.rc.rid} | kw
@@ -1223,8 +1253,22 @@ class Driver:
     def th_jobs(self, lay) -> list[dict]:
         if self.run.P.get(self.rc.rid) is None:
             return [self.run.calib_job(self.rc)]
-        return [self.job(lay, "thermal", level=lv, power_W=self.run.P[self.rc.rid], fem_rule=self.run.fem_rule,
-                         h=self.run.op["h_W_m2K"], T_c=self.run.op["coolant_K"], priority=2) for lv in (0, 1, 2)]
+        return [self.job(lay, "thermal", **self.th_kw(lv)) for lv in (0, 1, 2)]
+
+    def th_kw(self, lv: int) -> dict:
+        return dict(level=lv, power_W=self.run.P[self.rc.rid], fem_rule=self.run.fem_rule, h=self.run.op["h_W_m2K"],
+                    T_c=self.run.op["coolant_K"], priority=2)
+
+    def vj(self, fp: str) -> list[list[float]] | None:
+        """T0330 (REPORTED, NOT GATED): the die-average Tj [level][die] read from the thermal result files of ``fp``;
+        None when any level lacks it (results solved before T0330 carry no 'tj_mean') or cannot be read.  Never raises."""
+        try:
+            recs = [Scheduler.done({"out": str(self.out_path(fp, "thermal", self.th_kw(lv)))}) for lv in (0, 1, 2)]
+            if any(r is None or r.get("tj_mean") is None for r in recs):
+                return None
+            return [[float(x) for x in r["tj_mean"]] for r in recs]
+        except Exception:  # noqa: BLE001 - reported only
+            return None
 
     # -- injected solvers (read result files; missing -> Pending)
     def _get(self, jobs: list[dict]) -> list[dict]:
@@ -1688,6 +1732,7 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
         rows.append(lrow(fpd, "degraded", bands[fpd][0], "D"))
         rows.append(lrow(ctrl_best, "control_best", ctrl_c[ctrl_best]["l_sub"], f"ctrl_c{ctrl_c[ctrl_best]['index']:06d}"))
         for lab, fp, role, rec in thermal_subjects(rm, fpw, fpr, cand):
+            vj = dm.vj(fp)  # T0330: reported, not gated (None before T0330's result files)
             for i in range(len(rec["tj"][0])):
                 rows.append({"kind": "die", "reference_id": rid, "layout_id": lab, "die_id": f"d{i}", "fingerprint": fp,
                              "role": role, "Tj_l0_K": rec["tj"][0][i], "Tj_l1_K": rec["tj"][1][i],
@@ -1696,7 +1741,7 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
                              "tj_node_l2": rec["tj_max_node"][2][i], "nodes": rec["nodes"],
                              "energy_balance_max": _worst(rec["energy_balance"]),
                              "picard_residual_max_K": _worst(p["residual_K"] for p in rec["picard"]),
-                             "power_W": run.P[rid], "L_sub_null_H": L_tw, "smoke": smoke})
+                             "power_W": run.P[rid], "L_sub_null_H": L_tw, "smoke": smoke, **vj_cols(vj, i)})
         lev = rm.levelling
         ref = {"kind": "reference", "reference_id": rid, "admissible": True, "L_term_H": rc.L_term_H, "on_grid": rc.on_grid,
                "L1_min_first5000_H": lev["l1_min_first"], "L1_min_all_H": lev["l1_min_all"], "L_sub_null_H": L_tw,
@@ -1707,6 +1752,84 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
         rows.append(ref)
         extra[rid] = {"main": rm, "control": rcn, "bands": bands, "L_twin": L_tw}
     return rows, extra
+
+
+def vj_cols(vj: list[list[float]] | None, i: int) -> dict:
+    """T0330: the die row's reported die-average columns (null when the result files carry no die-average)."""
+    t = [None] * 3 if vj is None or len(vj) != 3 or any(len(v) <= i for v in vj) else [vj[lv][i] for lv in range(3)]
+    try:
+        g = MX.gci_capped(*t, floor=1e-3) if None not in t else None
+    except Exception:  # noqa: BLE001 - reported only
+        g = None
+    return dict(zip(VJ_COLS, t, strict=True)) | {"GCI_vj_K": g}
+
+
+def virtual_junction_report(rows: list[dict], params: dict) -> dict:
+    """T0330 (D0020 item 2): REPORTED, NOT GATED.  From the die rows' Tvj columns, per reference and thermally solved
+    layout: T_vj per die at level 2, GCI_vj per die and its +inf count, tj_bounds on T_vj (upper, lower), whether
+    T_vj <= Tj max at every die and level, and for every layout other than the twin and the reconstruction (the thermally
+    checked candidates) the conservative-test analogue on T_vj: upper(candidate) - lower(twin) against tj_limit_K.  Per
+    reference with a reference row: the h_lo that A1's formula (mfos.metrics.headroom_per_reference, unchanged) gives when
+    every die row of that reference carries T_vj in place of Tj max (so the twin thermal gate F1(a2) is then also read on
+    T_vj); null with a reason when any die of the reference has no T_vj.  Reads copies of the rows; nothing gated reads
+    the result.  Never raises (an error is recorded in the report)."""
+    floor, limit = float(params.get("floor", 1e-3)), float(params.get("tj_limit_K", 2.0))
+    out: dict = {"label": VJ_LABEL, "definition": VJ_DEFINITION, "tj_limit_K": limit, "floor_K": floor,
+                 "per_reference": {}}
+    try:
+        by: dict[str, dict[str, dict]] = {}
+        for r in rows:
+            if r.get("kind") == "die":
+                lay = by.setdefault(r["reference_id"], {}).setdefault(r["layout_id"], {"role": r.get("role", r["layout_id"]),
+                                                                                        "dies": {}})
+                lay["dies"][r["die_id"]] = r
+        refrows = {r["reference_id"]: r for r in rows if r.get("kind") == "reference"}
+        h_all = []
+        for rid, lays in sorted(by.items()):
+            per, b_of = {}, {}
+            for lab, v in lays.items():
+                ds = [v["dies"][k] for k in sorted(v["dies"])]
+                have = all(all(_num(d.get(c)) for c in VJ_COLS) for d in ds)
+                e = {"role": v["role"], "die_ids": sorted(v["dies"]), "complete": have}
+                if have:
+                    seq = [[float(d[c]) for c in VJ_COLS] for d in ds]
+                    b = MX.tj_bounds(seq, floor=floor)
+                    b_of[lab] = b
+                    gci = [MX.gci_capped(*s, floor=floor) for s in seq]
+                    e.update(tvj_l2_K=[s[2] for s in seq], gci_vj_K=gci, n_gci_vj_inf=sum(math.isinf(x) for x in gci),
+                             tvj_upper_K=b[2], tvj_lower_K=b[3], self_margin_vj_K=b[2] - b[3],
+                             mean_le_max=all(float(d[c]) <= float(d[f"Tj_l{lv}_K"]) + 1e-9
+                                             for d in ds for lv, c in enumerate(VJ_COLS)))
+                per[lab] = e
+            tw = b_of.get("twin")
+            for lab, e in per.items():
+                if lab in ("twin", "reconstruction") or not e["complete"] or tw is None:
+                    continue
+                m = b_of[lab][2] - tw[3]
+                e.update(margin_vs_twin_vj_K=m, passes_vj_2K=bool(m <= limit))
+            r_out = {"layouts": per}
+            if rid in refrows and refrows[rid].get("admissible", True):
+                sub = [dict(r) for r in rows if r.get("reference_id") == rid]
+                if all(e["complete"] for e in per.values()):
+                    for d in sub:
+                        if d.get("kind") == "die":
+                            d.update({f"Tj_l{lv}_K": d[c] for lv, c in enumerate(VJ_COLS)})
+                    try:
+                        q = MX.headroom_per_reference(sub, "L_sub_H", dict(params))[rid]
+                        r_out.update(h_lo_vj=q.get("h_lo"), best_id_vj=q.get("best_id"), counted_vj=q.get("counted"),
+                                     gate_a2_vj=q.get("gate_a2"), n_tj_rejected_vj=q.get("n_tj_rejected"))
+                        if q.get("counted") and _num(q.get("h_lo")):
+                            h_all.append(float(q["h_lo"]))
+                    except Exception as ex:  # noqa: BLE001 - reported only
+                        r_out.update(h_lo_vj=None, h_lo_vj_error=f"{type(ex).__name__}: {ex}"[:500])
+                else:
+                    r_out.update(h_lo_vj=None, h_lo_vj_reason="a die of this reference has no die-average (its thermal "
+                                 "result files were solved before T0330 and carry none)")
+            out["per_reference"][rid] = r_out
+        out["min_h_lo_vj_counted"] = min(h_all) if h_all else None
+    except Exception as ex:  # noqa: BLE001 - reported only; never reaches a gated value
+        out["error"] = f"{type(ex).__name__}: {ex}"[:1000]
+    return out
 
 
 HR = ("headroom_min_lo", "headroom_max_hi_ind")
@@ -1885,6 +2008,8 @@ def evaluate(run: Run, refs: list[RefCtx], rows: list[dict], extra: dict, cfg: d
     ck("at_least_one_counted_reference", counted >= 1, counted, 1, f"excluded: {sorted(exc)}")
     met["n_counted_references"] = float(counted)
     met["n_excluded_references"] = float(len(exc))
+    # T0330 (D0020 item 2): reported, not gated, computed last from copies of the rows; it changes no value above
+    rep["virtual_junction"] = virtual_junction_report(json.loads(json.dumps(rows, default=str)), dict(mp))
     return met, checks, rep
 
 
@@ -2036,6 +2161,8 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
                 eb = math.nan
             rec = {"tj": tj, "tj_node": [[0.0, 0.0, 0.0]] * 4, "nodes": 1000 * 8 ** lv,
                    "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
+            if j["type"] == "thermal":  # T0330: die-average 0.4 K below the max on every die and level (reported only)
+                rec["tj_mean"] = [t - VJ_FAKE_OFFSET_K for t in tj]
             if j["type"] == "fv" and not (fp in fv_pc_missing and lv == 1):
                 rec["picard_dT_K"] = 5e-4 if fp in fv_pc_bad and lv == 3 else 5e-5
             return rec
@@ -2870,6 +2997,119 @@ def full_orchestration_failures(spec: dict, scfg: dict) -> list[str]:
     return out
 
 
+VJ_FAKE_OFFSET_K = 0.4
+VJ_MUTATIONS = ("nan", "plus100K", "null", "drop", "minus100K")
+
+
+def _vj_mutate(rows: list[dict], how: str) -> list[dict]:
+    out = json.loads(json.dumps(rows, default=str))
+    for r in out:
+        if r.get("kind") != "die":
+            continue
+        for c in VJ_COLS + ("GCI_vj_K",):
+            if how == "drop":
+                r.pop(c, None)
+            elif how == "null":
+                r[c] = None
+            elif how == "nan":
+                r[c] = math.nan
+            elif _num(r.get(c)):
+                r[c] = r[c] + (100.0 if how == "plus100K" else -100.0)
+    return out
+
+
+def _gated_view(met: dict, checks: list[dict], rep: dict) -> str:
+    """Every gated value evaluate() returns (metrics, checks, the report less its reported-only die-average section)."""
+    return json.dumps({"met": met, "checks": checks, "rep": {k: v for k, v in rep.items() if k != "virtual_junction"}},
+                      sort_keys=True, default=str)
+
+
+def vj_scenario_failures(run, refs, rows, extra, cfg, met, checks, rep) -> list[str]:
+    """T0330 (D0020 item 2) on a fake-world scenario: (1) every die row carries T_vj (the fakes write it) and T_vj <= Tj
+    max on every die and level; (2) the analogue's h_lo equals the gated h_lo per counted reference (the fakes' T_vj is Tj
+    max - 0.4 K on every die and level, so tj_bounds shift by one constant and every conservative test is unchanged);
+    (3) mutation: rows whose T_vj / GCI_vj columns are NaN, +/-100 K, null or absent give the same gated metrics, checks
+    and report (evaluate() run again on the mutated rows), so the column never changes a gated value."""
+    out = []
+    dies = [r for r in rows if r.get("kind") == "die"]
+    if not dies or any(not all(_num(r.get(c)) for c in VJ_COLS) for r in dies):
+        out.append("vj: a die row has no die-average although every fake thermal result carries one")
+    if any(float(r[c]) > float(r[f"Tj_l{lv}_K"]) + 1e-9 for r in dies for lv, c in enumerate(VJ_COLS) if _num(r.get(c))):
+        out.append("vj: die-average above Tj max on some die")
+    vr = rep.get("virtual_junction") or {}
+    if vr.get("label") != VJ_LABEL or "error" in vr:
+        out.append(f"vj: report label/error {vr.get('label')!r} {vr.get('error')!r}")
+    per = MX.headroom_per_reference(rows, "L_sub_H", dict(cfg["metric_params"])) if any(
+        r["kind"] == "reference" for r in rows) else {}
+    for rid, q in per.items():
+        if not q.get("counted"):
+            continue
+        v = (vr.get("per_reference", {}).get(rid) or {}).get("h_lo_vj")
+        if not (_num(v) and abs(v - q["h_lo"]) <= 1e-12):
+            out.append(f"vj: {rid} analogue h_lo {v!r} != gated h_lo {q['h_lo']!r} under a uniform offset")
+        lays = (vr.get("per_reference", {}).get(rid) or {}).get("layouts", {})
+        if not all(e.get("mean_le_max") for e in lays.values()):
+            out.append(f"vj: {rid} report says mean > max")
+    base = _gated_view(met, checks, rep)
+    ctl = json.loads(json.dumps(rows, default=str))  # positive control: a gated column's change must show in the view
+    next(r for r in ctl if r.get("kind") == "die")["Tj_l2_K"] += 100.0
+    if _gated_view(*evaluate(run, refs, ctl, extra, cfg)) == base:
+        out.append("vj mutation control: +100 K on a gated Tj_l2_K left the gated view unchanged (comparison blind)")
+    for how in VJ_MUTATIONS:
+        m2, c2, r2 = evaluate(run, refs, _vj_mutate(rows, how), extra, cfg)
+        if _gated_view(m2, c2, r2) != base:
+            out.append(f"vj mutation {how}: a gated metric, check or report value changed")
+    return out
+
+
+def vj_failures(cfg: dict) -> list[str]:
+    """T0330 (D0020 item 2) on real scikit-fem solves and saved data: (a) a uniform die gives its own temperature: zero
+    power on the gen2_0 dev reference at level 0 of E009's smoke rule (about 7 k DOFs, < 1 s) gives T_vj = Tj max =
+    T_c on every die to 1e-9 K, for two coolant temperatures; (b) with power, T_c < T_vj <= Tj max on every die;
+    (c) T_vj <= Tj max on every die and level of the committed T0325 level-2 results (frozen rule, 2D_Case_4's twin, five
+    stack variants; research/o003/e008_dev/tj_osc/vm_level2); (d) vj_cols / virtual_junction_report give null, never
+    raise, on results without a die-average (results solved before T0330)."""
+    out = []
+    try:
+        rc = dev_reference("gen2_0", cfg)
+        fr = dict(cfg["fem_rule"]) | dict(cfg["dev"]["smoke"]["fem_overrides"])
+        rule = rule_from(fr)
+        for tc in (338.15, 400.0):
+            r = FEM().solve_layout(rc.reference, 0.0, cfg["operating_point"]["h_W_m2K"], tc, rule=rule, level=0)
+            rec = _fem_rec(r, rc.reference, 0, rule.amg_gs_sweeps)
+            if rec["tj_mean"] is None or max(abs(x - tc) for x in rec["tj_mean"] + rec["tj"]) > 1e-9:
+                out.append(f"vj uniform: T_c {tc} gave die-average {rec['tj_mean']} / max {rec['tj']}")
+        r = FEM().solve_layout(rc.reference, 30.0, cfg["operating_point"]["h_W_m2K"], 338.15, rule=rule, level=0)
+        rec = _fem_rec(r, rc.reference, 0, rule.amg_gs_sweeps)
+        if rec["tj_mean"] is None or not all(338.15 < m <= t + 1e-9 for m, t in zip(rec["tj_mean"], rec["tj"], strict=True)):
+            out.append(f"vj with power: die-average {rec['tj_mean']} not in (T_c, max {rec['tj']}]")
+    except Exception as ex:  # noqa: BLE001
+        out.append(f"vj real solve: {type(ex).__name__}: {ex}")
+    vm = sorted(p for p in (ROOT / "research/o003/e008_dev/tj_osc/vm_level2/solves").glob("*.json")
+                if not p.name.endswith(".job.json"))
+    n = 0
+    for p in vm:
+        r = json.loads(p.read_text())
+        for m, t in zip(r["tj_mean"], r["tj"], strict=True):
+            n += 1
+            if m > t + 1e-9:
+                out.append(f"vj T0325 data: {p.name} die-average {m} > max {t}")
+    if n != 60:
+        out.append(f"vj T0325 data: {n} die-levels, expected 60 (5 variants x 3 levels x 4 dies)")
+    old = [{"tj": [1.0], "tj_node": [[0, 0, 0]]}]  # a result solved before T0330: no 'tj_mean'
+    if vj_cols(None, 0) != {"Tvj_l0_K": None, "Tvj_l1_K": None, "Tvj_l2_K": None, "GCI_vj_K": None} or \
+            vj_cols([[1.0]] * 2, 0)["GCI_vj_K"] is not None or old[0].get("tj_mean") is not None:
+        out.append("vj_cols: a missing die-average did not give null columns")
+    rows = [{"kind": "reference", "reference_id": "x", "admissible": True},
+            {"kind": "die", "reference_id": "x", "layout_id": "twin", "die_id": "d0", "Tj_l0_K": 1.0, "Tj_l1_K": 1.0,
+             "Tj_l2_K": 1.0, **vj_cols(None, 0)}]
+    rp = virtual_junction_report(rows, dict(cfg["metric_params"]))
+    q = rp["per_reference"].get("x", {})
+    if "error" in rp or q.get("h_lo_vj") is not None or "h_lo_vj_reason" not in q or q["layouts"]["twin"]["complete"]:
+        out.append(f"virtual_junction_report on null columns: {rp}")
+    return out
+
+
 def t0324_failures() -> list[str]:
     """T0324: (a) review T0323 finding 1: a non-default type with one admissible reference that is EXCLUDED and another
     that is inadmissible and kept is reported 'only reference excluded: <reason>' (spot_excluded), in either reference
@@ -3054,6 +3294,7 @@ def selftest() -> int:
                 globals()["save_ctx"] = orig_save
             rows, extra = assemble_rows(run, refs, smoke=False)
             met, checks, rep = evaluate(run, refs, rows, extra, cfg)
+            failures += [f"{scenario}: {msg}" for msg in vj_scenario_failures(run, refs, rows, extra, cfg, met, checks, rep)]
             cmap = {c["name"]: c for c in checks}
             # independent hand values: rebuild h_lo of every reference from the rows with the rule text, own e_R
             hand_lo, hand_hi, hand_best = [], [], {}
@@ -3257,6 +3498,10 @@ def selftest() -> int:
     failures += signal_rule_failures(cfg)
     failures += full_orchestration_failures(spec, scfg)
     failures += t0324_failures()
+    vf = vj_failures(cfg)
+    log(f"selftest die-average (T0330, reported only): uniform die, mean <= max (real solves, T0325 level-2 data), null "
+        f"columns; per scenario: analogue h_lo, 5 mutations + 1 positive control; {len(vf)} failures")
+    failures += vf
     failures += phase_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
@@ -3523,7 +3768,9 @@ def twin_gates_only(run: Run, gates: list[RefCtx], n_pairs: dict, dseed: int, sm
                 rows.append({"kind": "die", "reference_id": rc.rid, "layout_id": lab, "die_id": f"d{k}", "fingerprint": fp,
                              **{f"Tj_l{lv}_K": th[fp][lv]["tj"][k] for lv in range(3)},
                              "nodes": [t["nodes"] for t in th[fp]], "power_W": run.P[rc.rid],
-                             "L_sub_null_H": five[fw][0], "smoke": smoke})
+                             "L_sub_null_H": five[fw][0], "smoke": smoke,
+                             **vj_cols(None if any(t.get("tj_mean") is None for t in th[fp])
+                                       else [t["tj_mean"] for t in th[fp]], k)})
         for p in pairs:
             rows.append({"kind": "layout", "reference_id": rc.rid, "layout_id": f"pair_{p.fp[:12]}", "role": "dev_pair",
                          "fingerprint": p.fp, **dict(zip(BAND_COLS, five[p.fp], strict=True)),
@@ -3583,6 +3830,7 @@ def dev(args) -> int:
         rows, met, checks, rep = [], {}, [], {}
     rows += gate_rows
     rep.update(gate_rep)
+    rep.pop("virtual_junction", None)  # T0330: per_reference holds references only; the dev report covers every row below
     # pre-registration band check: e_R of the twin against random DRC-valid candidates of the same outline
     pairs = [{"reference_id": rid, **pe} for rid, v in gate_rep.items() for pe in v["band_pairs"]]
     for rc in refs:
@@ -3610,6 +3858,7 @@ def dev(args) -> int:
         log(f"{rid} thermal report ({therm['rule']}): {json.dumps(v['summary'])}")
     doc = {"schema": "mfos.rows/1", "rows": rows, "meta": {
         "thermal_report": therm,
+        "virtual_junction": virtual_junction_report(json.loads(json.dumps(rows, default=str)), dict(cfg["metric_params"])),
         "smoke": smoke, "note": ("SMOKE ROWS (local): EM production slot solved at 0.5 mm cells (so the lateral term of "
                                  "e_R is zero), coarsened thermal rule, reduced candidate budget; not evidence"
                                  if smoke else "full-fidelity dev rows"),
