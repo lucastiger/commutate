@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T05:18:16+00:00 from repository state — do not edit_
+_generated 2026-11-14T05:32:07+00:00 from repository state — do not edit_
 
 ## Founder inbox (12 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -32,7 +32,7 @@ _generated 2026-11-14T05:18:16+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 114 | $225.55 | 3605854 | 1792823 | 216 | 0 |
+| O003 | 115 | $225.55 | 3605854 | 1792823 | 216 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -40,13 +40,12 @@ _generated 2026-11-14T05:18:16+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 290, failed: 3, proposed: 1
+cancelled: 39, done: 290, failed: 3, proposed: 1, running: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
+- T0334 `running` scientist/design_experiment: E008: fix the two registration blockers (null check on gate-only dev rows; stale L1 code_under_test path) (attempt 1)
 
 ## Recent events
-- 2026-11-13T20:53:30+00:00 merged {"task": "T0330"}
-- 2026-11-13T20:53:30+00:00 inbox_opened {"id": "I0189", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-14T01:16:47+00:00 sleep_detected {"gap_s": 7240, "runs_extended": 0}
 - 2026-11-14T02:12:19+00:00 sleep_detected {"gap_s": 3333, "runs_extended": 0}
 - 2026-11-14T03:26:47+00:00 task_added {"task": "T0332", "reason": "founder 2026-11-13: band for the die-average best before registration (smoke finding)"}
@@ -60,3 +59,5 @@ cancelled: 39, done: 290, failed: 3, proposed: 1
 - 2026-11-14T05:17:38+00:00 inbox_resolved {"id": "I0190", "status": "approved", "note": "Merge T0332 (band solves for the die-average best so h_lo_vj is computable; reported only). Review T0333 accept_w
 - 2026-11-14T05:18:12+00:00 merged {"task": "T0332"}
 - 2026-11-14T05:18:12+00:00 inbox_opened {"id": "I0191", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+- 2026-11-14T05:31:57+00:00 task_added {"task": "T0334", "reason": "founder 2026-11-13: registration dry run failed (dev rows null check; stale L1 path)"}
+- 2026-11-14T05:32:07+00:00 run_started {"run": "T0334-scientist-20261113T213207-4d37", "task": "T0334", "role": "scientist", "session": "2049fa46-4600-4023-a4a4-e5d9d35944a0"}

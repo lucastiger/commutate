@@ -1,0 +1,123 @@
+id: T0334
+objective: O003
+title: 'E008: fix the two registration blockers (null check on gate-only dev rows; stale L1 code_under_test
+  path)'
+type: design_experiment
+agent: scientist
+status: running
+depends_on: []
+description: "Founder session, 2026-11-13: the founder decided to register E008 (D0020) and asked to proceed.\
+  \ Before giving the\nfounder the command, the session dry-ran `mfos approve I0191`, i.e. the steps of\
+  \ mfos.experiments.register that can\nraise (null_check on spec.dev_rows, runner_files, code_hashes\
+  \ on code_under_test), writing nothing. Two failures\nwould each stop the registration:\n\n1. The registration\
+  \ null check crashes on the dev rows. mfos.evaluate.null_check runs every recompute entry over ALL\n\
+  \   rows of experiments/drafts/E008.dev_rows.json (no `where`), and mfos.metrics._hr_tables raises \"\
+  ValueError:\n   reference 2D_Case_4: layout or die rows but no reference row\". 2D_Case_4 is a twin-gate-only\
+  \ dev reference\n   (twin_gates_only, T0324): its 6 layout rows and 8 die rows have kinds 'layout' and\
+  \ 'die' but no 'reference' row. On\n   gen2_0's rows alone the check runs and flags nothing: \"A1 E008.headroom_min_lo\
+  \ >= 0.2: dev value 0.3254 ->\n   satisfied; null twin_as_best: 0.0 -> not_satisfied\". Adding a reference\
+  \ row with admissible false does NOT work\n   (KeyError 'L_sub_null_H'). Fix in the runner's dev path\
+  \ only: write the gate-only references' rows so that no metric\n   reads them. _hr_tables skips every\
+  \ kind other than reference, layout and die, so distinct kinds (for example\n   'gate_layout' and 'gate_die')\
+  \ are one way; choose and justify. Keep them in the file and keep every dev report that\n   covers them:\
+  \ the thermal report (F6(a) growth, GCI, attainability for \"gates and searched alike\"), band_check_pairs,\n\
+  \   the twin-gate report and the die-average report. The registered path has no gate-only reference,\
+  \ so its rows must\n   not change (say how you checked). Then rebuild experiments/drafts/E008.dev_rows.json\
+  \ with --replay-only from a temp\n   copy of /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work\
+  \ (read only), as T0324 did. No solve may start (meta.replay_only.solves_started == 0).\n2. code_under_test\
+  \ names src/moduleforge/physics/peec.py, which does not exist. L1 has been the package\n   src/moduleforge/physics/peec/\
+  \ (__init__.py, kernels.py, model.py) since T0023/T0047. code_hashes raises \"pattern\n   matches no\
+  \ file\". Replace the entry with the package's files (a glob such as src/moduleforge/physics/peec/*.py,\
+  \ or\n   the three paths). Check every other path- or glob-valued field of the spec (config.freeze files,\
+  \ context, runner,\n   data paths) for the same kind of stale path, and fix any you find the same way.\n\
+  \nRe-stamp every hash the runner edit changes, as T0324 and T0332 did. Update research/notes/e008-design.md\
+  \ (one short\nparagraph: the two registration blockers and their fixes). Change nothing gated: no criterion,\
+  \ metric, parameter,\ntolerance, gate, stop rule, F3 order or cost model rate. Report the registration\
+  \ dry run's full output.\n\nHard limits (as T0332): no twin(), degrade(), prepare(), L1, l2_layout,\
+  \ thermal or search run on 2D_Case_2R or 2D_Case_6.\nNo change to src/, tests/acceptance, tools/, the\
+  \ frozen reconstruction script, research/o003/references/ or\nscripts/burst_gcp.sh. Never run gcloud\
+  \ or start a VM. Never read data/holdout/. Never write /Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work,\
+  \ the main checkout's\nuntracked research/o003/e008_dev/full_work and tj_osc/vm_work, or anything under\
+  \ /private/tmp. Do not run `mfos approve`,\n`mfos exp register` or anything else that registers. Do\
+  \ not commit generated data over 1 MB."
+context_files:
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/notes/e008-design.md
+- tools/mfos/mfos/experiments.py
+- tools/mfos/mfos/evaluate.py
+- tools/mfos/mfos/metrics.py
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python -c "from mfos.store import Store; from mfos import models as m; from mfos.evaluate
+    import load_rows, null_check; from mfos.experiments import runner_files, code_hashes; s = Store();
+    spec = s.read_yaml(s.spec_path('E008', draft=True), m.ExperimentSpec); lines, bad = null_check(s,
+    spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad, bad; assert
+    any('A1' in x and 'satisfied' in x for x in lines), lines; assert runner_files(s.root, spec.runner);
+    n = len(code_hashes(s.root, spec.code_under_test)); assert n >= 15, n; print('registration dry run
+    OK,', n, 'code files')"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E008.dev_rows.json')); assert
+    d['meta']['smoke'] is False, 'smoke rows'; rows = d['rows']; assert {r['reference_id'] for r in rows
+    if r['kind'] in ('reference', 'layout', 'die')} == {r['reference_id'] for r in rows if r['kind'] ==
+    'reference'}, 'metric rows without a reference row'; assert any(r['reference_id'] == '2D_Case_4' for
+    r in rows), 'gate rows dropped'; lab = [(r['reference_id'], r['layout_id']) for r in rows if r['kind']
+    == 'layout']; assert len(lab) == len(set(lab)), 'duplicate layout ids'; assert len(d['meta']['band_check_pairs'])
+    == 4"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e008_run.py --check-references
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance tools project/objectives
+    project/decisions research/scripts/o003_powersynth_references.py research/o003/references scripts/burst_gcp.sh
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 70
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0334-e008-fix-the-two-registration-blockers-n
+pr: null
+runs:
+- T0334-scientist-20261113T213207-4d37
+created_by: session
+created_at: '2026-11-14T05:31:57+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-13 (session): register E008 per D0020; a dry run of the registration step
+  fails on the gate-only dev rows and a stale code_under_test path. Mechanical fixes, nothing gated changes.'
+history: []
