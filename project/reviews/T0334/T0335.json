@@ -1,0 +1,46 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "code_under_test still leaves out modules the E008 code path imports",
+      "detail": "The glob fix for the stale L1 path is correct: the physics/peec package has exactly __init__.py, kernels.py and model.py, with no subpackages, and twin._l1 imports physics.peec.loop_inductance lazily. But code_under_test is still not the full set of src files the experiment runs. l2_core.py imports solvers/l2_dd.py (the double-double kernel arithmetic). peec/model.py and l2_layout.py import geometry/layout.py, geometry/conductors.py and geometry/units.py through moduleforge.geometry. None of these four files is hashed into provenance.code, so a change to them between registration and the run would go unrecorded. This gap existed before this change and is outside the two named blockers. The design note's audit ('all 43 path-valued fields ... resolve') checked that paths resolve, not that coverage is complete.",
+      "evidence": "I imported drc.rules, generate.derivative/twin, optimize.search, geometry(.layout), solvers.l2_layout/thermal_fem/thermal_layout and compared the loaded moduleforge files with the expanded code_under_test globs. Not covered: geometry/conductors.py, geometry/layout.py, geometry/units.py, solvers/l2_dd.py. grep shows l2_core.py:50 `from moduleforge.solvers import l2_dd as dd`.",
+      "suggested_check": "Before registration, add src/moduleforge/solvers/l2_dd.py and src/moduleforge/geometry/*.py (or derive the list from sys.modules after a --plan run) to code_under_test.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The new selftest exercises the constants, not twin_gates_only itself",
+      "detail": "gate_kind_failures builds its own hand rows from GATE_LAYOUT/GATE_DIE. It catches the mutants the note names: constants reverted to layout/die, and DIE_KINDS=('die',). It also catches a null column that drops gate rows. But if twin_gates_only went back to hardcoded 'layout'/'die' literals, the selftest would not notice. Only the DoD data assertion and the null check on a rebuilt dev rows file would. That is enough for registration, which reads the committed file, so this is a maintainability point.",
+      "evidence": "I monkeypatched three mutants into gate_kind_failures. Baseline: []. M1 (kinds back to layout/die): the _hr_tables 'no reference row' failure. M2 (DIE_KINDS=('die',)): the thermal and die-average report failures. M3 (null column filters gate rows): 'null column []'.",
+      "suggested_check": "Have the selftest run twin_gates_only on a fake world and assert the kinds of its output rows.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The protected-path git-diff step of the DoD could not be run in this snapshot",
+      "detail": "The review checkout has one snapshot commit and no main branch, so `git diff $(git merge-base HEAD main) -- src tests/acceptance tools ...` cannot be run here. I checked by hand instead: every file the packet diff touches is in experiments/drafts, experiments/runners, research/notes or research/o003/e008_dev. Those are scientist write scope, and none is a protected or frozen path. The thermal_fem.py hash prefix matches a216d5fe3209bcee, and --verify-freeze passes. The orchestrator's provenance check should confirm this against the real merge base.",
+      "evidence": "`git log main` gives 'unknown revision'. The packet diff file list was compared against .mfos/policy.toml protected_paths and the DoD path list.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD 1 (null_check + runner_files + code_hashes) from an inline script. A1 dev value 0.3254 is satisfied, null twin_as_best 0.0 is not satisfied, and code_hashes gives 15 files, including all 3 physics/peec files.",
+    "Ran DoD 2 (dev-rows structure) and counted rows by kind. gen2_0 has 1 reference, 20 layout and 24 die rows. 2D_Case_4 has 6 gate_layout and 8 gate_die rows. Every gate row has a finite L_sub_null_H.",
+    "Ran --selftest (passes, gate-only kinds 0 failures), --verify-freeze, --check-references, --plan, bash -n and the burst_full.sh --dry-run, ruff, mfos exp check E008 and mfos gate --fast. All exit 0. The thermal_fem.py sha256 prefix is a216d5fe3209bcee.",
+    "Recomputed all 8 recompute entries (headroom_min_lo and its Lterm/recon variants, headroom_max_hi_ind variants) on the dev rows with and without the gate rows. The values are identical and nothing raises, so the gate rows have no effect on any gated metric.",
+    "Mutation-tested gate_kind_failures. It catches kinds reverted to layout/die, DIE_KINDS=('die',), and a null column that drops gate rows.",
+    "Read mfos.metrics._hr_tables (skips any kind other than reference, layout and die), null_column (float(row[col]) on every row), null_values and register, and confirmed register runs exactly the dry-run steps that can raise. Read row contract sections 1 and 3: extra runner kinds are allowed, and every row needs a finite L_sub_null_H.",
+    "Confirmed twin_gates_only is called only from dev(), line 4193, after evaluate(). The registered path and dev metrics never saw these rows. The only other script that reads dev rows by kind is gen2_0_prep.py, which reads only gen2_0's 'layout' rows.",
+    "Confirmed src/moduleforge/physics/peec.py does not exist, the peec package has no subdirectories, and no stale 'physics/peec.py' reference remains in the spec, runner, make_spec.py, row contract or objective.",
+    "Checked the dev rows meta: replay_only is true with solves_started 0. In the diff, the row-level changes are kind labels only; the meta changes are hashes, timings, a moved 'merged' key and T0332's report keys.",
+    "Mapped the runner's transitive src imports against the code_under_test globs and found four uncovered files (finding 1)."
+  ],
+  "caveats": [
+    "Case 4 (the gate-only dev reference) is now invisible to A1 and K1 on the dev rows. That is correct: it has no search, so it could never count. But it means the registration null check rests on one counted dev reference, the synthetic housing70x40_gen2_0. Its A1 value is 0.325 and twin_as_best gives 0.0. Weak dev-row discrimination is a limit of the design, not of this change.",
+    "The meta metric l1_only_null_h_lo (0.3254) equals headroom_min_lo on the dev rows. It is not a declared null baseline, so null_check does not test it. That design choice predates this change.",
+    "The registration dry run covers every raising step of mfos.experiments.register: null_check, runner_files and code_hashes. It does not cover the write of the registered spec."
+  ]
+}
