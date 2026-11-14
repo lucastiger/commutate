@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T01:20:40+00:00 from repository state — do not edit_
+_generated 2026-11-14T02:12:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -44,7 +44,6 @@ cancelled: 39, done: 288, failed: 3, proposed: 1
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-13T19:08:07+00:00 founder_decision_noted {"decision": "E008 registration readings (founder, 2026-11-13, D0020): band check = Case 4's 4 pairs + gen2_0's search estimate (I0184 option 1); row-contract i
 - 2026-11-13T19:08:07+00:00 inbox_resolved {"id": "I0183", "status": "approved", "note": "Done 2026-11-13: burst_tj_osc.sh ran (15/15 solves ok, V0 reproduces the dev run). Result H3: the hot spot moves 
 - 2026-11-13T19:08:08+00:00 inbox_resolved {"id": "I0184", "status": "approved", "note": "Option 1 (founder, D0020): Case 4's 4 pairs (max e_R 0.01785) plus gen2_0's search estimate (~0.019) are the band
 - 2026-11-13T19:09:02+00:00 task_added {"task": "T0330", "reason": "founder 2026-11-13 (D0020): declared expected outcome, reported die-average Tj, registration readings"}
@@ -59,3 +58,4 @@ cancelled: 39, done: 288, failed: 3, proposed: 1
 - 2026-11-13T20:53:30+00:00 merged {"task": "T0330"}
 - 2026-11-13T20:53:30+00:00 inbox_opened {"id": "I0189", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-14T01:16:47+00:00 sleep_detected {"gap_s": 7240, "runs_extended": 0}
+- 2026-11-14T02:12:19+00:00 sleep_detected {"gap_s": 3333, "runs_extended": 0}
