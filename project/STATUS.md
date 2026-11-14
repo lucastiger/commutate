@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-14T17:56:16+00:00 from repository state — do not edit_
+_generated 2026-11-14T17:56:55+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
-- **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
+- **I0196** [decision] E008 needs burst compute (~98.7 CPU-h)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,12 +29,11 @@ _generated 2026-11-14T17:56:16+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 294, failed: 3, todo: 1
+cancelled: 39, done: 294, failed: 3, needs_founder: 1
 
+- T0329 `needs_founder` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-14T17:55:12+00:00 experiment_registered {"id": "E008", "hash": "sha256:206af2d225679693ac78e904a898f0a9107db03912e431cdefb525a0268e3f6b", "by": "founder"}
-- 2026-11-14T17:55:12+00:00 inbox_resolved {"id": "I0195", "status": "approved", "note": "Register E008 per D0020 (spec after T0332/T0334/T0336; local smoke on merged main: die-average columns and h_lo_v
 - 2026-11-14T17:55:27+00:00 inbox_resolved {"id": "I0167", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:30+00:00 inbox_resolved {"id": "I0169", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:32+00:00 inbox_resolved {"id": "I0171", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
@@ -48,3 +47,5 @@ cancelled: 39, done: 294, failed: 3, todo: 1
 - 2026-11-14T17:55:49+00:00 inbox_resolved {"id": "I0193", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:53+00:00 inbox_resolved {"id": "I0165", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:56:17+00:00 inbox_resolved {"id": "I0185", "status": "approved", "note": "Approve T0329 (run E008); founder runs it on the VM with research/o003/e008_dev/burst_full.sh", "by": "human"}
+- 2026-11-14T17:56:55+00:00 inbox_opened {"id": "I0196", "kind": "decision", "subject": "E008 needs burst compute (~98.7 CPU-h)"}
+- 2026-11-14T17:56:55+00:00 burst_requested {"task": "T0329", "experiment": "E008", "cpu_hours": 98.7}

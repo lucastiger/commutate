@@ -4,7 +4,7 @@ title: 'Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019''
   (2D_Case_2R, 2D_Case_6)'
 type: experiment
 agent: none
-status: todo
+status: needs_founder
 depends_on:
 - T0324
 description: 'The orchestrator runs the registered E008 spec on merged main. It runs only after T0324
@@ -43,4 +43,8 @@ trigger: null
 rationale: This is the required experiment task for E008, the only experiment in O003's acceptance.required_experiments,
   and the only evidence for A1 and K1. It depends on T0324, the last design task changing the runner it
   executes.
-history: []
+history:
+- outcome: awaiting_burst
+  summary: ~98.7 CPU-h exceeds local limit
+  at: '2026-11-14T17:56:55+00:00'
+  since: 1794679015.380318
