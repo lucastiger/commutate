@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T17:59:25+00:00 from repository state — do not edit_
+_generated 2026-11-14T18:21:50+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0196** [decision] E008 needs burst compute (~98.7 CPU-h)
