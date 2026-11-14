@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T02:12:25+00:00 from repository state — do not edit_
+_generated 2026-11-14T03:27:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -31,7 +31,7 @@ _generated 2026-11-14T02:12:25+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 112 | $218.99 | 3510317 | 1745371 | 209 | 0 |
+| O003 | 113 | $218.99 | 3510317 | 1745371 | 209 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -39,13 +39,12 @@ _generated 2026-11-14T02:12:25+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 288, failed: 3, proposed: 1
+cancelled: 39, done: 288, failed: 3, proposed: 1, running: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
+- T0332 `running` scientist/design_experiment: E008: solve the band for the die-average best so the reported h_lo_vj is not null (smoke finding) (attempt 1)
 
 ## Recent events
-- 2026-11-13T19:08:07+00:00 inbox_resolved {"id": "I0183", "status": "approved", "note": "Done 2026-11-13: burst_tj_osc.sh ran (15/15 solves ok, V0 reproduces the dev run). Result H3: the hot spot moves 
-- 2026-11-13T19:08:08+00:00 inbox_resolved {"id": "I0184", "status": "approved", "note": "Option 1 (founder, D0020): Case 4's 4 pairs (max e_R 0.01785) plus gen2_0's search estimate (~0.019) are the band
 - 2026-11-13T19:09:02+00:00 task_added {"task": "T0330", "reason": "founder 2026-11-13 (D0020): declared expected outcome, reported die-average Tj, registration readings"}
 - 2026-11-13T19:09:29+00:00 run_started {"run": "T0330-scientist-20261113T110929-62a1", "task": "T0330", "role": "scientist", "session": "dfb7ee55-98a1-483a-9f49-c369deb78256"}
 - 2026-11-13T19:48:17+00:00 run_finished {"run": "T0330-scientist-20261113T110929-62a1", "status": "completed", "cost": 4.308172, "subtype": "success", "report": "structured_output"}
@@ -59,3 +58,5 @@ cancelled: 39, done: 288, failed: 3, proposed: 1
 - 2026-11-13T20:53:30+00:00 inbox_opened {"id": "I0189", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-14T01:16:47+00:00 sleep_detected {"gap_s": 7240, "runs_extended": 0}
 - 2026-11-14T02:12:19+00:00 sleep_detected {"gap_s": 3333, "runs_extended": 0}
+- 2026-11-14T03:26:47+00:00 task_added {"task": "T0332", "reason": "founder 2026-11-13: band for the die-average best before registration (smoke finding)"}
+- 2026-11-14T03:27:00+00:00 run_started {"run": "T0332-scientist-20261113T192700-2ed9", "task": "T0332", "role": "scientist", "session": "0115ca97-5c9f-4d02-a33c-6d6354f25a84"}

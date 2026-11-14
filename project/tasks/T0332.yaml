@@ -1,0 +1,134 @@
+id: T0332
+objective: O003
+title: 'E008: solve the band for the die-average best so the reported h_lo_vj is not null (smoke finding)'
+type: design_experiment
+agent: scientist
+status: running
+depends_on: []
+description: "Founder decision (founder session, 2026-11-13, after the local end-to-end smoke of the runner\
+  \ as merged by T0330;\nwithin D0020 item 2, reported only): before E008 is registered, make the die-average\
+  \ headroom h_lo_vj computable on a real\nrun. Nothing gated changes.\n\nFinding. Local smoke at a7dd36a2\
+  \ (`e008_run.py --dev --smoke --geoms gen2_0::0`, exit 0; rows /private/tmp/claude-501/-Users-lukeskywalker-mf-main/dc0a8ca5-26cf-42df-a543-7e0deca76fb6/scratchpad/smoke_e2e/rows.json\
+  \ and solves\n/private/tmp/claude-501/-Users-lukeskywalker-mf-main/dc0a8ca5-26cf-42df-a543-7e0deca76fb6/scratchpad/smoke_e2e/work,\
+  \ both READ ONLY). The die-average columns came through on all 24 die rows (T0331 finding 1 is answered),\
+  \ but\nmeta.virtual_junction.per_reference.housing70x40_gen2_0 has h_lo_vj = null with h_lo_vj_error\
+  \ \"ValueError:\nhousing70x40_gen2_0/c000050 L_sub_c05_H: missing\". Under Tj max the A1 best is c000032\
+  \ (h_lo 0.222). The inductance-only\nbest c000021 (L1 rank 0) fails the +2 K test on both quantities.\
+  \ On T_vj, c000050 (rank 1, margin 1.95 K) is the lowest-L_sub\ncandidate that passes, so A1's formula\
+  \ picks it. Its four band solves (L_sub_c05_H, L_sub_thk_c_H, L_sub_thk_f_H,\nL_sub_wire_f_H) were never\
+  \ requested, because the frozen driver requests bands only for the reference, twin, D, its own A1\n\
+  best, the inductance-only best, near ties and the control best. On 2D_Case_2R the frozen rule is expected\
+  \ to pass no\ncandidate (D0020 item 1). So unless the die-average best happens to be the inductance-only\
+  \ best, h_lo_vj will be null on 2R.\nh_lo_vj is the figure that says whether 2R's headroom survives\
+  \ a die-average +2 K test.\n\nRequired:\n1. In both the registered path (registered_run -> evaluate\
+  \ -> rep[\"virtual_junction\"]) and the dev path\n   (meta.virtual_junction), first let the frozen driver\
+  \ finish and the gated rows be assembled. Then, per reference,\n   determine the layout that A1's formula\
+  \ (mfos.metrics.headroom_per_reference, unchanged) picks when T_vj replaces Tj max\n   on copies of\
+  \ the rows, which is exactly what virtual_junction_report reads. Determine it without parsing exception\n\
+  \   text. If that layout lacks the band columns, submit its BAND em_jobs through the same Driver and\
+  \ Scheduler, with the same\n   job keys and solver settings as every other band solve, so that a resumed\
+  \ run finds them. Wait for those jobs, then give\n   their values to the die-average report only. Then\
+  \ recompute h_lo_vj and say which layout it used (\"die-average best\")\n   and that its band was solved\
+  \ for the report.\n2. The values go into the report's inputs (the row copies it already works on) or\
+  \ a separate reported section. They never\n   go into the gated rows, the rows written by er.rows, the\
+  \ metrics, the checks, the stop rules or the F3 order. Every\n   gated value and the verdict must be\
+  \ identical with and without this step.\n3. These solves are scheduled only after every gated solve\
+  \ is done, so they never delay or block gated work. They follow\n   the phase A/B split (defer_big,\
+  \ NeedsLargerMachine) like any other job. Any failure in them (solver error, memory,\n   phase stop)\
+  \ leaves h_lo_vj null with a recorded reason. It never raises, and it changes no gated value. --replay-only\n\
+  \   still starts no solve: a missing band there gives null with a reason, as now.\n4. Cost: update --plan\
+  \ for up to one extra band set per counted reference. State the added billed vCPU-hours (expected and\n\
+  \   upper) and confirm that the 320 vCPU-hour cap still holds. Update cpu_hours_est only if the plan's\
+  \ number changes, and\n   say why.\n5. Spec and note: update config.reporting.virtual_junction in experiments/drafts/E008.yaml\
+  \ (use the words \"h_lo_vj\" and\n   \"die-average best\") and research/notes/e008-design.md. Re-stamp\
+  \ every hash the runner edit changes, as T0324 did. Solve\n   keys must not change: the dev work dir\
+  \ and /private/tmp/claude-501/-Users-lukeskywalker-mf-main/dc0a8ca5-26cf-42df-a543-7e0deca76fb6/scratchpad/smoke_e2e/work\
+  \ must resume with no existing job re-solved. Do not rebuild\n   experiments/drafts/E008.dev_rows.json\
+  \ unless the rows' schema changes; if it does, replay as T0324 did, starting no\n   solve.\n6. Selftest\
+  \ (in --selftest): build a synthetic case where the T_vj best differs from both the Tj-max best and\
+  \ the\n   inductance-only best. h_lo_vj must be non-null there and equal headroom_per_reference on the\
+  \ T_vj copy that carries the\n   band. Every gated row, metric and check must be byte-identical with\
+  \ the step disabled (a mutation-style check).\n   Replay-only must give null with a reason and start\
+  \ no solve. A failing extra job must give null with a reason, and the\n   gated output must be unchanged.\n\
+  After the merge, the founder session re-runs the local smoke from /private/tmp/claude-501/-Users-lukeskywalker-mf-main/dc0a8ca5-26cf-42df-a543-7e0deca76fb6/scratchpad/smoke_e2e/work.\
+  \ Expect about 3 new solves (c000050's\nband) and h_lo_vj non-null.\n\nHard limits (as T0330): no twin(),\
+  \ degrade(), prepare(), L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6.\nNo change\
+  \ to src/, tests/acceptance, tools/, the frozen reconstruction script, research/o003/references/ or\n\
+  scripts/burst_gcp.sh. Never run gcloud or start a VM. Never read data/holdout/. Do not widen any tolerance,\
+  \ relax any gate\nor change the cost model's rates. Never write /private/tmp/claude-501/-Users-lukeskywalker-mf-main/dc0a8ca5-26cf-42df-a543-7e0deca76fb6/scratchpad/smoke_e2e\
+  \ or the main checkout's untracked research/o003/e008_dev/full_work and\ntj_osc/vm_work. Do not commit\
+  \ generated data over 1 MB."
+context_files:
+- experiments/drafts/E008.yaml
+- experiments/runners/e008_run.py
+- research/notes/e008-design.md
+- tools/mfos/mfos/metrics.py
+- project/reviews/T0330/T0331.json
+- project/decisions/D0020-o003-e008-register-as-frozen-tj-declared.md
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: uv run python experiments/runners/e008_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e008_run.py --check-references
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e008_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E008.dev_rows.json')); assert
+    d['meta']['smoke'] is False, 'smoke rows'; rows = d['rows']; lab = [(r['reference_id'], r['layout_id'])
+    for r in rows if r['kind'] == 'layout']; assert len(lab) == len(set(lab)), 'duplicate layout ids';
+    assert len(d['meta']['band_check_pairs']) == 4"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "s = open('experiments/drafts/E008.yaml').read(); missing = [k for k in ['headroom_min_lo',
+    'headroom_max_hi_ind', 'code_must_match', 'a216d5fe', 'D0020', 'virtual junction', 'INCONCLUSIVE',
+    'h_lo_vj', 'die-average best'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e008_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E008
+  exists: null
+  timeout_s: 600
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src tests/acceptance tools project/objectives
+    project/decisions research/scripts/o003_powersynth_references.py research/o003/references scripts/burst_gcp.sh
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0332-e008-solve-the-band-for-the-die-average-
+pr: null
+runs:
+- T0332-scientist-20261113T192700-2ed9
+created_by: session
+created_at: '2026-11-14T03:26:47+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-13 (session): the local smoke showed h_lo_vj null because the die-average
+  best has no band solves; fix before registering E008 (reported only, D0020 item 2).'
+history: []
