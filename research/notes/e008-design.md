@@ -958,3 +958,30 @@ of an existing file, a key-check reason, or best_id_vj other than c000050.
 
 **Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search on 2D_Case_2R or 2D_Case_6. No gcloud call and no VM.
 No change to src/, tools/, tests/acceptance, the frozen script, references or tolerances. The smoke work dir was not written.
+
+## 15. T0334 (2026-11-13): the two registration blockers and their fixes
+
+[F] A dry run of the steps of mfos.experiments.register that can raise found two blockers. (1) null_check runs every
+recompute entry over all dev rows. mfos.metrics._hr_tables then raised "reference 2D_Case_4: layout or die rows but no
+reference row", because the gate-only dev reference (twin_gates_only) writes no reference row. Fix, in the dev path only:
+twin_gates_only now writes kinds `gate_layout` and `gate_die` (constants GATE_LAYOUT, GATE_DIE). The metric and
+research/o003/headroom_metrics.py skip any kind other than reference, layout and die, and the row contract (sec. 1) allows
+the runner to add kinds. I chose distinct kinds over a reference row because such a row would have to carry admissible,
+L_term and the null column, and so would enter A1's tables. Every gate row keeps its finite L_sub_null_H. The two
+reported-only reports, thermal_report_from_rows and virtual_junction_report, read DIE_KINDS = ('die', 'gate_die').
+Selftest gate_kind_failures tests this. It catches both mutants: kinds set back to layout/die, and DIE_KINDS set to ('die',).
+Rows were rebuilt by `--dev --geoms gen2_0::0,case4:gates:4 --band-pairs 4 --replay-only` on a worktree copy of full_work
+(333 files, sha256 manifest equal to the source; log replay_T0334.log), with solves_started 0. A second replay gave
+identical rows. Then gen2_0_prep.py, case4_prep.py and refresh_rule_strictness.py re-stamped runner_sha256 (df45060c…,
+3 places).
+How I checked that the registered-path rows did not change: twin_gates_only is called only from dev(). gen2_0's 45 rows,
+built by assemble_rows (the registered path's function), are identical to the committed file. Case 4's 14 rows are
+identical except for the kind. thermal_report, band_check_pairs, metrics, checks and Case 4's twin-gate and die-average
+entries are identical. The meta differs only in hashes and timings, and in T0332's report keys (band_step,
+die_average_best), which first appear now because T0332 did not rebuild the rows.
+(2) code_under_test named src/moduleforge/physics/peec.py, which no longer exists. It now names
+src/moduleforge/physics/peec/*.py (3 files; 15 code files in all). I chose the glob so that a new L1 module would also be
+hashed. make_spec.py got the same fix. All 43 path-valued fields and 35 path citations in the spec's text resolve, except
+config.references[*].source.*, which are paths in the external PowerSynth2-pkg repository. The spec has no context field.
+No criterion, metric, parameter, tolerance, gate, stop rule, F3 order or cost rate changed. The declared F3 deviation's
+changed_after list gained T0334 and the missing T0332 entry.

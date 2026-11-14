@@ -1757,6 +1757,18 @@ config:
       what: 'D0020: reported-only die-average Tj (result files carry tj_mean; die-row columns Tvj_l0..2_K, GCI_vj_K; evaluation
         report ''virtual_junction''); Driver.out_path factored out of job() unchanged (the replay found every saved result);
         expected outcome stated; no rule, gate, tolerance, generator, twin, degradation or search change'
+    - task: T0332
+      commit: 1bbf2a8e
+      date: '2026-11-13'
+      what: 'reported-only band solve for the die-average best (vj_best_layouts, vj_band_step; h_lo_vj in the report only);
+        no job key changed; no rule, gate, tolerance, generator, twin, degradation or search change (entry added by T0334)'
+    - task: T0334
+      commit: this task
+      date: '2026-11-13'
+      what: 'registration blockers: the gate-only dev references'' rows (twin_gates_only, dev path only) are kinds gate_layout
+        and gate_die, which the metric skips; the reported-only thermal and die-average reports read gate_die too; code_under_test
+        names the L1 package (src/moduleforge/physics/peec/*.py) instead of the stale peec.py; no rule, gate, tolerance,
+        generator, twin, degradation or search change'
     src_unchanged_since:
       task: T0300
       commit: 096b127b
@@ -1972,7 +1984,7 @@ code_under_test:
 - src/moduleforge/solvers/thermal_fem.py
 - src/moduleforge/solvers/thermal_layout.py
 - src/moduleforge/solvers/thermal_fv.py
-- src/moduleforge/physics/peec.py
+- src/moduleforge/physics/peec/*.py
 - src/moduleforge/generate/derivative.py
 - src/moduleforge/generate/twin.py
 - src/moduleforge/optimize/search.py

@@ -321,7 +321,7 @@ spec = {
     "evidence_rules": 2,
     "code_under_test": ["src/moduleforge/solvers/l2_layout.py", "src/moduleforge/solvers/l2_core.py",
                         "src/moduleforge/solvers/thermal_fem.py", "src/moduleforge/solvers/thermal_layout.py",
-                        "src/moduleforge/solvers/thermal_fv.py", "src/moduleforge/physics/peec.py", *FROZEN,
+                        "src/moduleforge/solvers/thermal_fv.py", "src/moduleforge/physics/peec/*.py", *FROZEN,
                         "experiments/runners/e008_run.py"],
     "code_must_match": [{"path": "src/moduleforge/solvers/thermal_fem.py", "objective": "O007"}],
     "requires_passed": ["O007"],

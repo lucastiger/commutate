@@ -1754,6 +1754,16 @@ def assemble_rows(run: Run, refs: list[RefCtx], smoke: bool) -> tuple[list[dict]
     return rows, extra
 
 
+# T0334 (registration blocker 1): a gate-only dev reference (twin_gates_only, dev path only) has no reference row, so
+# its layout and die rows take their own kinds.  mfos.metrics._hr_tables and research/o003/headroom_metrics.py read only
+# 'reference', 'layout' and 'die' rows and skip every other kind (research/o003/e008_row_contract.md sec. 1: the runner
+# may add kinds), so no metric reads these rows; the reported-only dev reports read DIE_KINDS.  Every gate row keeps a
+# finite L_sub_null_H, because the A1 null column is read on every row (row contract sec. 3).  The registered path never
+# calls twin_gates_only, so its rows keep the kinds 'layout' and 'die'.
+GATE_LAYOUT, GATE_DIE = "gate_layout", "gate_die"
+DIE_KINDS = ("die", GATE_DIE)  # die rows that thermal_report_from_rows and virtual_junction_report read (reported only)
+
+
 def vj_cols(vj: list[list[float]] | None, i: int) -> dict:
     """T0330: the die row's reported die-average columns (null when the result files carry no die-average)."""
     t = [None] * 3 if vj is None or len(vj) != 3 or any(len(v) <= i for v in vj) else [vj[lv][i] for lv in range(3)]
@@ -1772,7 +1782,8 @@ def virtual_junction_report(rows: list[dict], params: dict, band_extra: dict | N
     reference with a reference row: the h_lo that A1's formula (mfos.metrics.headroom_per_reference, unchanged) gives when
     every die row of that reference carries T_vj in place of Tj max (so the twin thermal gate F1(a2) is then also read on
     T_vj); null with a reason when any die of the reference has no T_vj.  Reads copies of the rows; nothing gated reads
-    the result.  Never raises (an error is recorded in the report).
+    the result.  Never raises (an error is recorded in the report).  T0334: the die rows are DIE_KINDS, so a gate-only
+    dev reference ('gate_die' rows, no reference row) gets its per-layout entries and no h_lo_vj.
     T0332: ``band_extra`` is vj_band_step's output.  Per reference it names the die-average best (the layout A1's formula
     picks on the T_vj copy) and, when the gated rows lack that layout's band, the band values solved for this report
     only; they are written into this function's own row copy before A1's formula runs, never into the gated rows."""
@@ -1782,7 +1793,7 @@ def virtual_junction_report(rows: list[dict], params: dict, band_extra: dict | N
     try:
         by: dict[str, dict[str, dict]] = {}
         for r in rows:
-            if r.get("kind") == "die":
+            if r.get("kind") in DIE_KINDS:  # T0334: a gate-only reference's die rows are 'gate_die'
                 lay = by.setdefault(r["reference_id"], {}).setdefault(r["layout_id"], {"role": r.get("role", r["layout_id"]),
                                                                                         "dies": {}})
                 lay["dies"][r["die_id"]] = r
@@ -2218,10 +2229,10 @@ def thermal_report_from_rows(rows: list[dict], g: dict, floor: float, limit: flo
     max_i(T_i + GCI_i) - max_j(T_j - GCI_j) (tj_bounds upper - lower) is <= tj_limit_K: that width is the conservative
     margin of a candidate with this layout's Tj and GCIs against a twin equal to it, so above the limit even a candidate
     thermally identical to the twin fails (one +inf GCI makes it unattainable).  Layouts other than the twin also get
-    their conservative margin against the twin."""
+    their conservative margin against the twin.  Die rows are DIE_KINDS ('die' and, T0334, 'gate_die')."""
     by: dict[str, dict[str, dict]] = {}
     for r in rows:
-        if r.get("kind") == "die":
+        if r.get("kind") in DIE_KINDS:  # T0334: the gate-only references' die rows ('gate_die') too
             lay = by.setdefault(r["reference_id"], {}).setdefault(r["layout_id"], {"dies": {}, "nodes": r["nodes"],
                                                                                     "role": r.get("role", r["layout_id"])})
             lay["dies"][r["die_id"]] = [float(r[f"Tj_l{lv}_K"]) for lv in range(3)]
@@ -3283,6 +3294,53 @@ def vj_failures(cfg: dict) -> list[str]:
     return out
 
 
+def gate_kind_failures(cfg: dict) -> list[str]:
+    """T0334 (registration blocker 1) on hand rows of a gate-only reference 'g' (TR_ROWS' temperatures; GATE_LAYOUT and
+    GATE_DIE rows, no reference row, as twin_gates_only writes them): (a) mfos.metrics._hr_tables, which A1 and K1 call
+    first, holds no entry for 'g', while the same rows labelled 'layout' / 'die' raise 'no reference row' (the
+    registration failure; this half shows the check can fail); (b) the A1 null column (kind column, L_sub_null_H) is read
+    on every row and is finite; (c) thermal_report_from_rows and virtual_junction_report give 'g' the same report as for the
+    same rows labelled 'die' (the reported-only dev reports keep covering the gate reference), with every layout."""
+    out = []
+    dies = [{"kind": GATE_DIE, "reference_id": "g", "layout_id": lab, "die_id": f"d{i}", "role": lab, "nodes": nodes,
+             "L_sub_null_H": 1e-8, **{f"Tj_l{lv}_K": tj[lv] for lv in range(3)},
+             **{c: tj[lv] - 0.25 for lv, c in enumerate(VJ_COLS)}} for lab, (nodes, ds) in TR_ROWS.items()
+            for i, tj in enumerate(ds)]
+    lays = [{"kind": GATE_LAYOUT, "reference_id": "g", "layout_id": lab, "role": lab, "fingerprint": lab,
+             **{c: 1e-8 * (1 + 0.01 * k + 0.001 * j) for j, c in enumerate(BAND_COLS)}, "L_sub_null_H": 1e-8}
+            for k, lab in enumerate(TR_ROWS)]
+    gate = lays + dies
+    plain = [dict(r, kind={GATE_LAYOUT: "layout", GATE_DIE: "die"}[r["kind"]]) for r in gate]
+    try:
+        if "g" in MX._hr_tables(gate):
+            out.append("gate kinds: mfos.metrics._hr_tables reads the gate-only rows")
+    except Exception as ex:  # noqa: BLE001
+        out.append(f"gate kinds: mfos.metrics._hr_tables raised on the gate-only rows: {type(ex).__name__}: {ex}")
+    try:
+        MX._hr_tables(plain)
+        out.append("gate kinds: the same rows as 'layout' / 'die' did not raise (the check cannot fail)")
+    except ValueError as ex:
+        if "no reference row" not in str(ex):
+            out.append(f"gate kinds: 'layout' / 'die' rows raised another error: {ex}")
+    try:
+        nv = MX.null_column(gate, "column", None, (), "L_sub_null_H")
+        if len(nv) != len(gate) or not all(math.isfinite(x) for x in nv):
+            out.append(f"gate kinds: null column {nv}")
+    except Exception as ex:  # noqa: BLE001
+        out.append(f"gate kinds: null column raised {type(ex).__name__}: {ex}")
+    g, lim = cfg["gates"], float(cfg["metric_params"]["tj_limit_K"])
+    tr_g, tr_p = (thermal_report_from_rows(x, g, 1e-3, lim).get("g") for x in (gate, plain))
+    if tr_g is None or json.dumps(tr_g, sort_keys=True) != json.dumps(tr_p, sort_keys=True) or \
+            sorted(tr_g["layouts"]) != sorted(TR_ROWS):
+        out.append(f"gate kinds: thermal report on gate_die rows {tr_g} != on die rows {tr_p}")
+    vj_g, vj_p = (virtual_junction_report(json.loads(json.dumps(x)), dict(cfg["metric_params"])) for x in (gate, plain))
+    q_g, q_p = vj_g["per_reference"].get("g"), vj_p["per_reference"].get("g")
+    if "error" in vj_g or q_g is None or json.dumps(q_g, sort_keys=True) != json.dumps(q_p, sort_keys=True) or \
+            sorted(q_g["layouts"]) != sorted(TR_ROWS) or not all(e["complete"] for e in q_g["layouts"].values()):
+        out.append(f"gate kinds: die-average report on gate_die rows {q_g} != on die rows {q_p}")
+    return out
+
+
 def vj_band_failures(cfg: dict, scfg: dict) -> list[str]:
     """T0332 (REPORTED, NOT GATED) on a fake-world drive of one reference.  Planted: the lowest-L_sub candidates up to X are
     hot in Tj max AND die-average; X (the first shortlisted candidate outside the driver's near-tie window, so the frozen
@@ -3788,6 +3846,10 @@ def selftest() -> int:
         f"columns; per scenario: analogue h_lo, 5 mutations + 1 positive control; {len(vf)} failures")
     failures += vf
     failures += vj_band_failures(cfg, scfg)
+    gk = gate_kind_failures(cfg)
+    log(f"selftest gate-only kinds (T0334): metric tables skip them, null column, thermal and die-average reports; "
+        f"{len(gk)} failures")
+    failures += gk
     failures += phase_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
@@ -4033,7 +4095,10 @@ def dev_pairs(rc: RefCtx, n: int, dseed: int, i: int) -> list:
 
 def twin_gates_only(run: Run, gates: list[RefCtx], n_pairs: dict, dseed: int, smoke: bool) -> tuple[list[dict], dict]:
     """Pre-registration dev rows without a search (O003 notes): the twin gates F1(a1), (a2) on the frozen twin of the
-    reference, and e_R of the twin against ``n_pairs`` random DRC-valid candidates of the same outline (dev seed)."""
+    reference, and e_R of the twin against ``n_pairs`` random DRC-valid candidates of the same outline (dev seed).
+    T0334: the rows are GATE_LAYOUT / GATE_DIE, not 'layout' / 'die': there is no reference row, so the metric must not
+    read them (mfos.metrics._hr_tables raised 'layout or die rows but no reference row' in the registration null check).
+    Columns, labels and values are unchanged."""
     rows, rep = [], {}
     run.drivers = getattr(run, "drivers", {})
     for rc in gates:
@@ -4066,17 +4131,17 @@ def twin_gates_only(run: Run, gates: list[RefCtx], n_pairs: dict, dseed: int, sm
         pe = [{"candidate": p.fp, "e_R": MX.ratio_band_estimate(five[p.fp], five[fw]), "R": five[p.fp][0] / five[fw][0]}
               for p in pairs]
         for fp, role, lab in ((fw, "twin", "twin"), (fr, "reconstruction", "reconstruction")):
-            rows.append({"kind": "layout", "reference_id": rc.rid, "layout_id": lab, "role": role, "fingerprint": fp,
+            rows.append({"kind": GATE_LAYOUT, "reference_id": rc.rid, "layout_id": lab, "role": role, "fingerprint": fp,
                          **dict(zip(BAND_COLS, five[fp], strict=True)), "L_sub_null_H": five[fp][0], "smoke": smoke})
             for k in range(len(th[fp][0]["tj"])):
-                rows.append({"kind": "die", "reference_id": rc.rid, "layout_id": lab, "die_id": f"d{k}", "fingerprint": fp,
+                rows.append({"kind": GATE_DIE, "reference_id": rc.rid, "layout_id": lab, "die_id": f"d{k}", "fingerprint": fp,
                              **{f"Tj_l{lv}_K": th[fp][lv]["tj"][k] for lv in range(3)},
                              "nodes": [t["nodes"] for t in th[fp]], "power_W": run.P[rc.rid],
                              "L_sub_null_H": five[fw][0], "smoke": smoke,
                              **vj_cols(None if any(t.get("tj_mean") is None for t in th[fp])
                                        else [t["tj_mean"] for t in th[fp]], k)})
         for p in pairs:
-            rows.append({"kind": "layout", "reference_id": rc.rid, "layout_id": f"pair_{p.fp[:12]}", "role": "dev_pair",
+            rows.append({"kind": GATE_LAYOUT, "reference_id": rc.rid, "layout_id": f"pair_{p.fp[:12]}", "role": "dev_pair",
                          "fingerprint": p.fp, **dict(zip(BAND_COLS, five[p.fp], strict=True)),
                          "L_sub_null_H": five[p.fp][0], "smoke": smoke})
         rep[rc.rid] = {"gate_a1": a1, "gate_a2": a2, "a1_lhs": abs(1 - five[fw][0] / five[fr][0]), "a1_rhs": 2 * e_tr,

@@ -1317,7 +1317,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "twin",
    "role": "twin",
@@ -1332,7 +1332,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "twin",
    "die_id": "d0",
@@ -1355,7 +1355,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "twin",
    "die_id": "d1",
@@ -1378,7 +1378,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "twin",
    "die_id": "d2",
@@ -1401,7 +1401,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "twin",
    "die_id": "d3",
@@ -1424,7 +1424,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "reconstruction",
    "role": "reconstruction",
@@ -1439,7 +1439,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "reconstruction",
    "die_id": "d0",
@@ -1462,7 +1462,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "reconstruction",
    "die_id": "d1",
@@ -1485,7 +1485,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "reconstruction",
    "die_id": "d2",
@@ -1508,7 +1508,7 @@
    "dev_row": true
   },
   {
-   "kind": "die",
+   "kind": "gate_die",
    "reference_id": "2D_Case_4",
    "layout_id": "reconstruction",
    "die_id": "d3",
@@ -1531,7 +1531,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "pair_30994bda12cd",
    "role": "dev_pair",
@@ -1546,7 +1546,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "pair_895df7fa8c23",
    "role": "dev_pair",
@@ -1561,7 +1561,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "pair_0e7890ed8308",
    "role": "dev_pair",
@@ -1576,7 +1576,7 @@
    "dev_row": true
   },
   {
-   "kind": "layout",
+   "kind": "gate_layout",
    "reference_id": "2D_Case_4",
    "layout_id": "pair_93b033071a81",
    "role": "dev_pair",
@@ -2066,11 +2066,26 @@
        "complete": false
       }
      },
+     "die_average_best": {
+      "best_id": null,
+      "fingerprint": null,
+      "role": null,
+      "tjmax_best_id": null,
+      "inductance_best_id": null,
+      "band_source": null,
+      "band_solved_for_report": false,
+      "new_solves": null,
+      "band_jobs": null,
+      "reason": "a die of this reference has no die-average (no band step needed)"
+     },
      "h_lo_vj": null,
      "h_lo_vj_reason": "a die of this reference has no die-average (its thermal result files were solved before T0330 and carry none)"
     }
    },
-   "min_h_lo_vj_counted": null
+   "min_h_lo_vj_counted": null,
+   "band_step": {
+    "note": "T0332, REPORTED, NOT GATED: the die-average best is the layout A1's formula (mfos.metrics.headroom_per_reference, unchanged) picks when T_vj replaces Tj max (virtual_junction_report's row copy).  If the gated rows lack its band columns, its BAND em_jobs are submitted through its reference's main Driver and the run's Scheduler (same job keys and solver settings, so a resumed run finds them) after every gated solve is done, and their values go into the report's row copy only.  A failure, a phase stop or --replay-only leaves h_lo_vj null with a reason"
+   }
   },
   "smoke": false,
   "note": "full-fidelity dev rows",
@@ -2360,7 +2375,7 @@
       },
       "fields_changed_from_source": []
      },
-     "twin_s": 0.026431333040818572,
+     "twin_s": 0.023721041856333613,
      "midpoint_decided_splits": [],
      "twin_copper": {
       "mode": "exact",
@@ -2393,7 +2408,7 @@
       "drc_clean_under_D_rules": true,
       "rules_violated_under_reference_rules": []
      },
-     "degrade_s": 0.039203291991725564,
+     "degrade_s": 0.03501787502318621,
      "walk": null,
      "gate_wires": {
       "placeholder_min_wire_length_m": 0.0015,
@@ -2456,7 +2471,7 @@
     },
     "twin_mode": "exact",
     "prep": {
-     "task": "T0332",
+     "task": "T0334",
      "script": "research/o003/e008_dev/gen2_0_prep.py",
      "quick_ok_draws": 100,
      "fingerprints": {
@@ -2540,9 +2555,9 @@
       "excluded": null
      },
      "D_l1_ratio_over_twin": 1.877174880689955,
-     "wall_s": 0.21011141617782414,
-     "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
-     "run_at": "2026-11-13T19:37:17"
+     "wall_s": 0.21090524992905557,
+     "runner_sha256": "df45060c94a8c421f1a0f741c0a4bd1af513bcf95353b4f5093524f3a76bbfed",
+     "run_at": "2026-11-13T21:37:43"
     }
    },
    "excluded": {},
@@ -2726,7 +2741,7 @@
        "wire_pitch_diameters"
       ]
      },
-     "twin_s": 1.4333125830162317,
+     "twin_s": 1.2670559589751065,
      "midpoint_decided_splits": [],
      "twin_copper": {
       "mode": "fit+signal_feet",
@@ -2761,7 +2776,7 @@
        "min_trace_width"
       ]
      },
-     "degrade_s": 5.85721654095687,
+     "degrade_s": 5.0869316251482815,
      "walk": {
       "start_l1_ratio": 1.3071128940192462,
       "steps": [
@@ -2958,7 +2973,7 @@
         "wire_pitch_diameters"
        ]
       },
-      "twin_s": 1.3101172500755638,
+      "twin_s": 1.3422487918287516,
       "midpoint_decided_splits": [],
       "twin_copper": {
        "mode": "fit+signal_feet",
@@ -2993,7 +3008,7 @@
         "min_trace_width"
        ]
       },
-      "degrade_s": 5.152032375102863,
+      "degrade_s": 5.107916250126436,
       "walk": {
        "start_l1_ratio": 1.3071128940192462,
        "steps": [
@@ -3094,7 +3109,7 @@
       }
      },
      "quick_ok_draws": 2000,
-     "wall_s": 7.281498041935265,
+     "wall_s": 7.24393454217352,
      "D_l1_ratio_over_twin": 1.3910401988110974,
      "D_target_l1_ratio": 1.3875000000000002,
      "D_moves": [
@@ -3136,24 +3151,17 @@
        "min_trace_width"
       ]
      },
-     "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
+     "runner_sha256": "df45060c94a8c421f1a0f741c0a4bd1af513bcf95353b4f5093524f3a76bbfed",
      "script": "research/o003/e008_dev/case4_prep.py",
-     "run_at": "2026-11-13T19:37:37"
+     "run_at": "2026-11-13T21:37:50"
     }
    }
   },
   "solve_log": [],
-  "merged": [
-   {
-    "reference_id": "2D_Case_4",
-    "by": "research/o003/e008_dev/case4_prep.py",
-    "what": "L0/L1 fail-fast record only; no rows added"
-   }
-  ],
   "rule_strictness_refresh": {
-   "task": "T0332",
+   "task": "T0334",
    "script": "research/o003/e008_dev/refresh_rule_strictness.py",
-   "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
+   "runner_sha256": "df45060c94a8c421f1a0f741c0a4bd1af513bcf95353b4f5093524f3a76bbfed",
    "rules_py_sha256": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
    "method": "measure_rules re-run on each dev layout (L0), equal to the stored record, then rule_strictness()",
    "references": {
@@ -3177,10 +3185,17 @@
     }
    },
    "previous": {
-    "task": "T0330",
-    "runner_sha256": "a06dba4f767cdd470345c47332d30c3908a3123419f40a0f72d2fc490266ba49",
+    "task": "T0332",
+    "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
     "rules_py_sha256": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5"
    }
-  }
+  },
+  "merged": [
+   {
+    "reference_id": "2D_Case_4",
+    "by": "research/o003/e008_dev/case4_prep.py",
+    "what": "L0/L1 fail-fast record only; no rows added"
+   }
+  ]
  }
 }
