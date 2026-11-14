@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T22:58:52+00:00 from repository state — do not edit_
+_generated 2026-11-14T22:59:33+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 41, done: 296, failed: 4, review: 1, running: 1
 - T0343 `running` critic/review: Review T0342 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-14T21:30:05+00:00 inbox_resolved {"id": "I0198", "status": "approved", "note": "Merge T0338 (sampler places a slot stack across split free windows; 2R draws DRC-clean candidates; dev streams by
 - 2026-11-14T21:30:36+00:00 merged {"task": "T0338"}
 - 2026-11-14T21:30:40+00:00 run_started {"run": "T0339-scientist-20261114T133040-ce3d", "task": "T0339", "role": "scientist", "session": "f02f1f7a-423c-44f5-b4b2-a2b7d96d7858"}
 - 2026-11-14T21:48:28+00:00 run_finished {"run": "T0339-scientist-20261114T133040-ce3d", "status": "completed", "cost": 0.568459, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 41, done: 296, failed: 4, review: 1, running: 1
 - 2026-11-14T22:53:21+00:00 run_finished {"run": "T0342-scientist-20261114T143612-61b6", "status": "completed", "cost": 1.646429, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T22:58:46+00:00 verified {"task": "T0342"}
 - 2026-11-14T22:58:52+00:00 run_started {"run": "T0343-critic-20261114T145852-ef34", "task": "T0343", "role": "critic", "session": "e9c8a29a-14b2-483a-9820-03d69803aaa6"}
+- 2026-11-14T22:59:27+00:00 sleep_detected {"gap_s": 367, "runs_extended": 1}
