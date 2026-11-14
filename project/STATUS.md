@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T20:05:20+00:00 from repository state — do not edit_
+_generated 2026-11-14T20:06:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 41, done: 294, failed: 4, todo: 1
 
 
 ## Recent events
-- 2026-11-14T18:41:24+00:00 task_added {"task": "T0338", "reason": "founder 2026-11-14: D0021 generator sampler repair"}
 - 2026-11-14T18:41:24+00:00 task_added {"task": "T0339", "reason": "founder 2026-11-14: D0021 successor experiment E009"}
 - 2026-11-14T18:41:24+00:00 inbox_opened {"id": "I0197", "kind": "budget_increase", "subject": "[O003] +$15 margin above the $250 cap for the E009 path (D0021 item 6)"}
 - 2026-11-14T18:41:36+00:00 inbox_resolved {"id": "I0196", "status": "answered", "note": "D0021 (founder, 2026-11-14): run E008-20261114T095904-2c22 ended with status error (the generator sampler cannot 
@@ -48,3 +47,4 @@ cancelled: 41, done: 294, failed: 4, todo: 1
 - 2026-11-14T20:03:58+00:00 run_started {"run": "T0340-scientist-20261114T120358-51be", "task": "T0340", "role": "scientist", "session": "d03be11c-47da-491d-ae2e-ddd44971e4a6"}
 - 2026-11-14T20:05:15+00:00 run_interrupted {"run": "T0340-scientist-20261114T120358-51be", "cost": 0.35342}
 - 2026-11-14T20:05:16+00:00 founder_stopped {"task": "T0340", "run": "T0340-scientist-20261114T120358-51be", "run_status": "interrupted", "task_status": "cancelled"}
+- 2026-11-14T20:05:54+00:00 task_rescoped {"task": "T0338", "reason": "research deliverables moved to T0339 (builder write scope)"}

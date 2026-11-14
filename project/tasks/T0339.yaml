@@ -9,8 +9,8 @@ depends_on:
 description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e009.md,\
   \ accepted 2026-11-14), items 2-4 and 7. Design the successor experiment E009 for\nO003. E009 is the\
   \ registered E008 (experiments/specs/E008.yaml, the content to start from) with three changes only:\n\
-  (a) the repaired generator sampler (merged by the task this one depends on; research/notes/e009-generator.md);\n\
-  (b) SearchInfeasible: a reference whose main or control screen cannot draw a DRC-valid candidate (derivative.generate's\n\
+  (a) the repaired generator sampler (merged by T0338, the task this one depends on);\n(b) SearchInfeasible:\
+  \ a reference whose main or control screen cannot draw a DRC-valid candidate (derivative.generate's\n\
   RuntimeError) is excluded and reported (reason SearchInfeasible, stage screen), like a TwinError, instead\
   \ of aborting\nthe run; E009 is INVALID only if no reference remains;\n(c) new freeze hashes. Everything\
   \ else stays as in E008's registered spec: the gated criteria and their parameters,\nthe metrics and\
@@ -36,11 +36,20 @@ description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runn
   \ the same\n   numbers as research/o003/e009_dev/feasibility_2r.py. Update --plan, state the expected\
   \ and upper billed vCPU-hours, and\n   confirm the 320 vCPU-hour cap still holds.\n5. research/o003/e009_dev/burst_full.sh,\
   \ from research/o003/e008_dev/burst_full.sh: EID E009, E009's spec and runner, state dir\n   ~/.cache/mf-burst/e009_full.\
-  \ Commit it executable (git mode 100755).\n6. research/notes/e009-design.md: a short note on what differs\
-  \ from E008 and why (D0021).\n\nHard limits (D0021 item 4). On 2D_Case_2R and 2D_Case_6, before E009\
-  \ is registered, only generator/DRC feasibility work:\nreference reconstruction by the frozen T0263\
-  \ script, spec_from_layout, twin() geometry fit, derivative sampling/build and\ndrc.check. No L1, l2_layout,\
-  \ EM, thermal, FV, degrade() or search run on them. Never read anything under\nexperiments/results/E008/E008-20261114T095904-2c22/work/*/solves/\
+  \ Commit it executable (git mode 100755).\n6. From T0338's original item 5 (moved here; the builder\
+  \ could not write research/):\n   research/o003/e009_dev/feasibility_2r.py (generator/DRC only, unsealed\
+  \ seeds): load the committed 2R ctx.pkl and\n   report, for the main housing (orientation and sequence\
+  \ mix), the acceptance rate p (DRC-clean per draw), the draws\n   and wall time per candidate, the estimated\
+  \ wall time to draw 2 x 20 000 candidates (main and control), and the\n   estimated probability that\
+  \ a 20 000-candidate screen hits the 20 000-consecutive-failure limit; assert it < 1e-6.\n   research/notes/e009-generator.md:\
+  \ its output and a short paragraph (what split the region, the new placement rule,\n   why development\
+  \ draws are unchanged). The builder's drafts of both are readable as\n   `git show 21bbf29a:research/o003/e009_dev/feasibility_2r.py`\
+  \ and `git show 21bbf29a:research/notes/e009-generator.md`;\n   check them against the merged derivative.py\
+  \ before reuse.\n7. research/notes/e009-design.md: a short note on what differs from E008 and why (D0021).\n\
+  \nHard limits (D0021 item 4). On 2D_Case_2R and 2D_Case_6, before E009 is registered, only generator/DRC\
+  \ feasibility work:\nreference reconstruction by the frozen T0263 script, spec_from_layout, twin() geometry\
+  \ fit, derivative sampling/build and\ndrc.check. No L1, l2_layout, EM, thermal, FV, degrade() or search\
+  \ run on them. Never read anything under\nexperiments/results/E008/E008-20261114T095904-2c22/work/*/solves/\
   \ or any L_sub or Tj of 2R or 6. E009 reuses no data from E008's run. No change to src/,\ntests/acceptance,\
   \ tools/, experiments/specs/, e008_run.py, the frozen reconstruction script, research/o003/references/,\n\
   research/o003/e008_dev/burst_full.sh or scripts/burst_gcp.sh. Never write\n/Users/lukeskywalker/mf/drafts/,\
@@ -69,6 +78,9 @@ definition_of_done:
   exists: null
   timeout_s: 900
 - cmd: uv run python experiments/runners/e009_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: uv run python research/o003/e009_dev/feasibility_2r.py
   exists: null
   timeout_s: 900
 - cmd: bash -n research/o003/e009_dev/burst_full.sh && bash research/o003/e009_dev/burst_full.sh --dry-run
@@ -143,4 +155,7 @@ lens: null
 trigger: null
 rationale: 'Founder 2026-11-14 (session, D0021 items 2-4, 7): E008 cannot search 2D_Case_2R as registered;
   E009 is E008 with the repaired sampler, a SearchInfeasible exclusion and new freeze hashes.'
-history: []
+history:
+- outcome: rescoped
+  summary: 'session: + T0338''s research deliverables (feasibility_2r.py, e009-generator.md)'
+  at: '2026-11-14T20:05:54+00:00'

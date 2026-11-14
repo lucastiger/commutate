@@ -38,21 +38,21 @@ description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runn
   \ decode.\n4. Unit tests in tests/unit/generate/test_derivative.py: a synthetic housing whose free region\
   \ is split by an\n   obstruction, where the old rule draws nothing and the new one draws DRC-clean layouts\
   \ that straddle it; the\n   single-window path is unchanged (same layouts for a fixed seed as the parent\
-  \ commit on a housing where one window\n   fits); and existing tests still pass.\n5. research/o003/e009_dev/feasibility_2r.py\
-  \ (generator/DRC only, unsealed seeds): load the committed 2R ctx.pkl and\n   report, for the main housing\
-  \ (orientation and sequence mix), the acceptance rate p (DRC-clean per draw), the draws and\n   wall\
-  \ time per candidate, the estimated wall time to draw 2 x 20 000 candidates (main and control), and\
-  \ the estimated\n   probability that a 20 000-candidate screen hits the 20 000-consecutive-failure limit.\
-  \ Assert that probability < 1e-6.\n   Put its output and a short paragraph (what split the region, the\
-  \ new placement rule, why development draws are\n   unchanged) in research/notes/e009-generator.md.\n\
-  \nHard limits (D0021 item 4). On 2D_Case_2R only generator/DRC feasibility work: load ctx.pkl, _Ctx,\
-  \ _sample, build,\ngenerate, params_of, drc.check. No L1, l2_layout, EM, thermal, FV, degrade(), twin(),\
-  \ prepare() or search on 2D_Case_2R or\n2D_Case_6, and do not use 2D_Case_6 at all. Never read anything\
-  \ under experiments/results/E008/E008-20261114T095904-2c22/work/2D_Case_2R/solves/ or any L_sub or Tj\n\
-  of 2R or 6. Never write experiments/results/E008/E008-20261114T095904-2c22 or /Users/lukeskywalker/mf/drafts/.\
+  \ commit on a housing where one window\n   fits); and existing tests still pass.\n5. (Moved to T0339:\
+  \ the feasibility report and the generator note are research files, outside the builder's write\n  \
+  \ scope.)\n\nHard limits (D0021 item 4). On 2D_Case_2R only generator/DRC feasibility work: load ctx.pkl,\
+  \ _Ctx, _sample, build,\ngenerate, params_of, drc.check. No L1, l2_layout, EM, thermal, FV, degrade(),\
+  \ twin(), prepare() or search on 2D_Case_2R or\n2D_Case_6, and do not use 2D_Case_6 at all. Never read\
+  \ anything under experiments/results/E008/E008-20261114T095904-2c22/work/2D_Case_2R/solves/ or any L_sub\
+  \ or Tj\nof 2R or 6. Never write experiments/results/E008/E008-20261114T095904-2c22 or /Users/lukeskywalker/mf/drafts/.\
   \ No change to anything outside derivative.py,\ntests/unit/generate/, research/o003/e009_dev/ and research/notes/.\
   \ Never run gcloud or start a VM. Never read\ndata/holdout/. Do not look at Hopkins / NC State PREES\
-  \ or 2D_Case_5 geometry."
+  \ or 2D_Case_5 geometry.\n\nRetry note (founder session, 2026-11-14). Attempts 1 and 2 completed the\
+  \ code (commit 21bbf29a: derivative.py and\ntests/unit/generate/test_derivative.py). They failed only\
+  \ on write scope, because this brief asked for two research/\nfiles. The session removed those files\
+  \ from the branch (they move to T0339). On this attempt write nothing outside\nsrc/, tests/unit/, tests/regression/\
+  \ or docs/. Re-run every definition-of-done command on the branch, fix only what\nfails, and report\
+  \ the outputs of the 2R feasibility and stream-identity checks."
 context_files:
 - src/moduleforge/generate/derivative.py
 - tests/unit/generate/test_derivative.py
@@ -77,13 +77,10 @@ definition_of_done:
     bad[:5]; print('E008 dev streams identical (gen2_0 main and control, 2 x 20000 candidates)')"
   exists: null
   timeout_s: 900
-- cmd: uv run python research/o003/e009_dev/feasibility_2r.py
-  exists: null
-  timeout_s: 900
 - cmd: uv run pytest -q tests/unit/generate
   exists: null
   timeout_s: 900
-- cmd: uv run ruff check src/moduleforge/generate research/o003/e009_dev tests/unit/generate
+- cmd: uv run ruff check src/moduleforge/generate tests/unit/generate
   exists: null
   timeout_s: 300
 - cmd: git diff --quiet "$(git merge-base HEAD main)" -- src/moduleforge/generate/twin.py src/moduleforge/generate/halfbridge.py
@@ -327,3 +324,6 @@ history:
 
     research/o003/e009_dev/feasibility_2r.py (outside builder write scope)'
   at: '2026-11-14T20:03:51+00:00'
+- outcome: rescoped
+  summary: 'session: research deliverables moved to T0339 (builder write scope)'
+  at: '2026-11-14T20:05:54+00:00'
