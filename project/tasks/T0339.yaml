@@ -148,12 +148,13 @@ model: null
 budget_usd: 6.0
 max_turns: 110
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 2
 branch: task/T0339-e009-successor-of-e008-with-the-repaired
 pr: null
 runs:
 - T0339-scientist-20261114T133040-ce3d
+- T0339-scientist-20261114T140304-d107
 created_by: session
 created_at: '2026-11-14T18:41:24+00:00'
 protected_approved: false
@@ -170,3 +171,130 @@ history:
 - outcome: rescoped
   summary: 'session: record review T0341''s 2R single-topology finding in the spec'
   at: '2026-11-14T21:29:44+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'BLOCKED (mis-specified task): T0339 asks me to create E009 as the successor of E008, but E009
+    is already a registered, completed experiment for O007 (the scikit-fem thermal reference). Its registered
+    spec experiments/specs/E009.yaml pins the runner experiments/runners/e009_run.py at sha256 7397e871b63931e47ced0a919951ed00a20a0861d4e91eba01a7ccaa655fe990,
+    and that file is in the checkout with exactly that hash. Its run E009-20261107T162152-a3cf has status
+    complete, and O007''s objective metrics and claim C004 (supported) cite it. O003 itself depends on
+    C004 for its Tj reference. Deliverable 2 means overwriting that pinned runner, and later registering
+    drafts/E009.yaml would overwrite specs/E009.yaml: mfos register() does not check for an existing registered
+    id. Choosing a different id myself'
+  report:
+    summary: 'BLOCKED (mis-specified task): T0339 asks me to create E009 as the successor of E008, but
+      E009 is already a registered, completed experiment for O007 (the scikit-fem thermal reference).
+      Its registered spec experiments/specs/E009.yaml pins the runner experiments/runners/e009_run.py
+      at sha256 7397e871b63931e47ced0a919951ed00a20a0861d4e91eba01a7ccaa655fe990, and that file is in
+      the checkout with exactly that hash. Its run E009-20261107T162152-a3cf has status complete, and
+      O007''s objective metrics and claim C004 (supported) cite it. O003 itself depends on C004 for its
+      Tj reference. Deliverable 2 means overwriting that pinned runner, and later registering drafts/E009.yaml
+      would overwrite specs/E009.yaml: mfos register() does not check for an existing registered id. Choosing
+      a different id myself (E010 appears unused) would contradict D0021, the planned O003 v6 metric names
+      and every definition-of-done command, which is a scope change I may not make. So I stopped. Nothing
+      was written or committed and none of the definition-of-done commands were run.'
+    failure_class: planning
+    root_cause: 'D0021 (items 2, 5 and 7) and the T0339 packet name the O003 successor experiment ''E009'',
+      but D0014 had already given that id to O007''s experiment, which was registered and run on 2026-11-07.
+      The decision and the packet were written without checking whether the id was free. mfos has no guard
+      against reusing an id: register() writes the draft over specs/<EID>.yaml, and the results directories
+      and seeds are keyed by the id.'
+    confidence: 0.97
+    evidence:
+    - 'FACT: experiments/specs/E009.yaml line 1-7: ''id: E009'', ''objective: O007'', ''status: registered'',
+      ''runner: uv run python experiments/runners/e009_run.py''; line 272 ''spec_hash: sha256:7d703f10e909b5281d177919c4d9fe7098e6cd670f1c26f938f3bb872d333c94'';
+      lines 273-274 ''runner_files: experiments/runners/e009_run.py: 7397e871b63931e47ced0a919951ed00a20a0861d4e91eba01a7ccaa655fe990''.'
+    - 'FACT: `shasum -a 256 experiments/runners/e009_run.py` = 7397e871b63931e47ced0a919951ed00a20a0861d4e91eba01a7ccaa655fe990,
+      the registered hash. The file is 723 lines and was last changed in commit 49f090ea [T0244] ''E009
+      design: ... scikit-fem ...''.'
+    - 'FACT: experiments/results/E009/E009-20261107T162152-a3cf/result.json contains "status": "complete".'
+    - 'FACT: project/objectives/O007/objective.yaml has evidence_plan [E009] and metrics E009.max_case_scaled_err,
+      E009.max_abs_err_K, E009.max_l2_consistency and E009.max_conservative_gci_K. project/claims/C004.yaml
+      cites E009 and has status: supported. O003''s hypothesis uses ''the scikit-fem thermal reference
+      verified in O007, claim C004''.'
+    - 'FACT: project/decisions/D0014-o006-fallback-scikit-fem.md:26 gives the id ''experiment **E009**''
+      to O007.'
+    - 'FACT: tools/mfos/mfos/experiments.py register() (lines ~104-130) reads drafts/<eid>.yaml if it
+      exists, then calls store.write_yaml(store.spec_path(eid), spec). Nothing checks whether specs/<eid>.yaml
+      is already registered, so registering a new E009 would overwrite O007''s registered spec.'
+    - 'FACT: a search for E010 in experiments/*/ and in project/ and research/notes/ found no matches,
+      so E010 appears unused.'
+    - 'INFERENCE: overwriting experiments/runners/e009_run.py from e008_run.py, as deliverable 2 asks,
+      makes runner_changes() report a mismatch for O007''s registered E009. That voids the reproducibility
+      and provenance of a completed experiment that C004, and through C004 O003, rely on.'
+    alternative_explanations:
+    - explanation: The founder deliberately wants to retire O007's E009 id and reuse it for O003 (for
+        example, if mfos keys experiments by (objective, id)).
+      how_to_discriminate: 'Ruled out by the code: Store.spec_path(eid) is experiments/{specs|drafts}/{eid}.yaml
+        with no objective component, so the two experiments would share the spec, runner and results paths.
+        D0021 also never mentions O007 or the collision. If this were intended, the founder would have
+        to say so explicitly and accept re-hashing O007''s records.'
+    - explanation: The E009 in D0021 is a placeholder name and any free id was meant.
+      how_to_discriminate: Only the founder can confirm. Note that D0021 item 5 freezes the name into
+        the O003 v6 metric names (E009.headroom_min_lo), and every definition-of-done command names E009,
+        so treating it as a placeholder needs at least an amended decision and a re-issued packet.
+    discriminating_tests:
+    - '`grep -n ''^id:\|^objective:\|^status:\|runner_files'' -A1 experiments/specs/E009.yaml`: shows
+      the registered O007 spec and the pinned runner hash.'
+    - '`shasum -a 256 experiments/runners/e009_run.py`: equals 7397e871..., the hash in specs/E009.yaml.'
+    - '`grep -n status experiments/results/E009/*/result.json`: shows ''complete''.'
+    - '`sed -n 104,130p tools/mfos/mfos/experiments.py`: register() writes over specs/<eid>.yaml without
+      checking for an existing id.'
+    recommended_actions:
+    - 'Founder: amend D0021 or add a short follow-up decision that renames O003''s successor experiment
+      to a free id. E010 appears unused across experiments/, project/ and research/notes/. Then update
+      the O003 v6 plan (evidence_plan, required_experiments, A1/K1 metric names, F3 text) to that id.'
+    - 'Re-issue T0339 with the id substituted everywhere: drafts/<EID>.yaml, runners/<eid>_run.py, research/o003/<eid>_dev/,
+      <EID>.dev_rows.json, the burst_full.sh state dir ~/.cache/mf-burst/<eid>_full, research/notes/<eid>-design.md,
+      and every definition-of-done command. The design content of D0021 items (a)-(c), 4 and 5a needs
+      no change.'
+    - 'Optional, tools change (founder approval needed, protected path): make `mfos exp register` and
+      the draft check refuse an id whose specs/<EID>.yaml is already registered, so a planning slip like
+      this cannot overwrite a frozen spec.'
+    - Do not edit or regenerate experiments/runners/e009_run.py. It is the frozen runner of O007's completed
+      E009, and C004 rests on it.
+    affects_acceptance_criteria: true
+    files_written: []
+    experiment_drafts: []
+- attempt: 1
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "o003/e009_dev/burst_full.sh: No such file or directory\n\nFAIL git ls-files -s research/o003/e009_dev/burst_full.sh\
+    \ | grep -q '^100755'\n\n\nFAIL uv run python -c \"import json; a = json.load(open('experiments/drafts/E008.dev_rows.json'));\
+    \ b = json.load(open('experiments/drafts/E009.dev_rows.json')); assert b['meta']['smoke'] is False;\
+    \ assert a['rows'] == b['rows'], 'E009 dev rows differ from E008'; assert b['meta']['replay_only']['solves_started']\
+    \ == 0; print(len(b['rows']), 'dev rows identical to E008')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nFileNotFoundError: [Errno 2] No such file or directory: 'experiments/drafts/E009.dev_rows.json'\n\
+    \nFAIL uv run python -c \"import sys, glob, os, importlib, yaml; sys.argv = ['x']; sys.path.insert(0,\
+    \ 'experiments/runners'); import e009_run; spec = yaml.safe_load(open('experiments/drafts/E009.yaml'));\
+    \ listed = {p for pat in spec['code_under_test'] for p in glob.glob(pat) if os.path.isfile(p)}; [importlib.import_module(p[4:-3].replace('/',\
+    \ '.').removesuffix('.__init__')) for p in sorted(listed) if p.startswith('src/') and p.endswith('.py')];\
+    \ used = {os.path.relpath(m.__file__) for n, m in list(sys.modules.items()) if n.startswith('moduleforge')\
+    \ and getattr(m, '__file__', None)}; miss = sorted(used - listed); assert not miss, miss; print(len(used),\
+    \ 'imported src files, all in code_under_test')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nFileNotFoundError: [Errno 2] No such file or directory: 'experiments/drafts/E009.yaml'\n\
+    \nFAIL uv run python -c \"from mfos.store import Store; from mfos import models as m; from mfos.evaluate\
+    \ import load_rows, null_check; from mfos.experiments import runner_files, code_hashes; s = Store();\
+    \ spec = s.read_yaml(s.spec_path('E009', draft=True), m.ExperimentSpec); lines, bad = null_check(s,\
+    \ spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad, bad; assert\
+    \ any('A1' in x and 'satisfied' in x for x in lines), lines; assert runner_files(s.root, spec.runner);\
+    \ n = len(code_hashes(s.root, spec.code_under_test)); assert n >= 27, n; print('E009 registration\
+    \ dry run OK,', n, 'code files')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does\
+    \ not match the project environment path `.venv` and will be ignored; use `--active` to target the\
+    \ active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1, in\
+    \ <module>\n  File \"/Users/lukeskywalker/mf/wt/T0339/tools/mfos/mfos/store.py\", line 98, in read_yaml\n\
+    \    return model.model_validate(yaml.safe_load(path.read_text()) or {})\n                       \
+    \                        ^^^^^^^^^^^^^^^^\n  File \"/Users/lukeskywalker/.local/share/uv/python/cpython-3.12.16-macos-aarch64-none/lib/python3.12/pathlib.py\"\
+    , line 1027, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n\
+    \         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/lukeskywalker/.local/share/uv/python/cpython-3.12.16-macos-aarch64-none/lib/python3.12/pathlib.py\"\
+    , line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n     \
+    \      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No\
+    \ such file or directory: '/Users/lukeskywalker/mf/wt/T0339/experiments/drafts/E009.yaml'\n\nFAIL\
+    \ uv run mfos exp check E009\nPROBLEM: draft /Users/lukeskywalker/mf/wt/T0339/experiments/drafts/E009.yaml\
+    \ missing\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project\
+    \ environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n"
+  at: '2026-11-14T22:03:00+00:00'
