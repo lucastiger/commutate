@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T18:44:15+00:00 from repository state — do not edit_
+_generated 2026-11-14T19:20:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,7 +10,7 @@ _generated 2026-11-14T18:44:15+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $233.49/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $234.37/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-14T18:44:15+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 119 | $233.49 | 3728844 | 1837230 | 243 | 0 |
+| O003 | 120 | $234.37 | 3763511 | 1852972 | 244 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -31,12 +31,9 @@ _generated 2026-11-14T18:44:15+00:00 from repository state — do not edit_
 ## Tasks
 cancelled: 40, done: 294, failed: 3, running: 1, todo: 1
 
-- T0338 `running` builder/implement: Generator: let the sampler place a slot stack across split free windows (2D_Case_2R's own topology is outside its support; D0021) (attempt 1)
+- T0338 `running` builder/implement: Generator: let the sampler place a slot stack across split free windows (2D_Case_2R's own topology is outside its support; D0021) (attempt 2)
 
 ## Recent events
-- 2026-11-14T17:55:42+00:00 inbox_resolved {"id": "I0187", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:44+00:00 inbox_resolved {"id": "I0189", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:46+00:00 inbox_resolved {"id": "I0191", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:49+00:00 inbox_resolved {"id": "I0193", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:53+00:00 inbox_resolved {"id": "I0165", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:56:17+00:00 inbox_resolved {"id": "I0185", "status": "approved", "note": "Approve T0329 (run E008); founder runs it on the VM with research/o003/e008_dev/burst_full.sh", "by": "human"}
@@ -49,3 +46,6 @@ cancelled: 40, done: 294, failed: 3, running: 1, todo: 1
 - 2026-11-14T18:41:36+00:00 inbox_resolved {"id": "I0196", "status": "answered", "note": "D0021 (founder, 2026-11-14): run E008-20261114T095904-2c22 ended with status error (the generator sampler cannot 
 - 2026-11-14T18:41:44+00:00 run_started {"run": "T0338-builder-20261114T104144-f272", "task": "T0338", "role": "builder", "session": "4b1d9ad3-6160-4d31-a3de-9e9d6b0fbdd4"}
 - 2026-11-14T18:43:42+00:00 inbox_resolved {"id": "I0197", "status": "approved", "note": "usd=31.5", "by": "human"}
+- 2026-11-14T19:20:08+00:00 run_finished {"run": "T0338-builder-20261114T104144-f272", "status": "completed", "cost": 0.88713, "subtype": "success", "report": "structured_output"}
+- 2026-11-14T19:20:08+00:00 task_failed_attempt {"task": "T0338", "signal": "scope_violation", "action": "repair"}
+- 2026-11-14T19:20:13+00:00 run_started {"run": "T0338-builder-20261114T112013-351b", "task": "T0338", "role": "builder", "session": "c455b389-d4a3-49c0-97d0-db1f5a272932"}
