@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T20:03:58+00:00 from repository state — do not edit_
+_generated 2026-11-14T20:04:40+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -29,9 +29,8 @@ _generated 2026-11-14T20:03:58+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 40, done: 294, failed: 4, running: 1, todo: 1
+cancelled: 41, done: 294, failed: 4, todo: 1
 
-- T0340 `running` scientist/investigate: Diagnose failure of T0338 (attempt 1)
 
 ## Recent events
 - 2026-11-14T17:56:55+00:00 burst_requested {"task": "T0329", "experiment": "E008", "cpu_hours": 98.7}
