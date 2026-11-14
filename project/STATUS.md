@@ -1,15 +1,8 @@
 # ModuleForge status
-_generated 2026-11-14T17:55:37+00:00 from repository state — do not edit_
+_generated 2026-11-14T17:56:16+00:00 from repository state — do not edit_
 
-## Founder inbox (8 open)
-- **I0165** [experiment_registration] register E008 (pre-registration)
-- **I0179** [experiment_registration] register E008 (pre-registration)
-- **I0181** [experiment_registration] register E008 (pre-registration)
+## Founder inbox (1 open)
 - **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
-- **I0187** [experiment_registration] register E008 (pre-registration)
-- **I0189** [experiment_registration] register E008 (pre-registration)
-- **I0191** [experiment_registration] register E008 (pre-registration)
-- **I0193** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -36,18 +29,10 @@ _generated 2026-11-14T17:55:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 294, failed: 3, proposed: 1
+cancelled: 39, done: 294, failed: 3, todo: 1
 
-- T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-14T07:57:03+00:00 run_started {"run": "T0337-critic-20261113T235703-b76c", "task": "T0337", "role": "critic", "session": "15cab19d-5042-4768-9f17-cd024dee794c"}
-- 2026-11-14T07:57:38+00:00 sleep_detected {"gap_s": 773, "runs_extended": 1}
-- 2026-11-14T08:08:05+00:00 run_finished {"run": "T0337-critic-20261113T235703-b76c", "status": "completed", "cost": 1.32739, "subtype": "success", "report": "structured_output"}
-- 2026-11-14T08:08:09+00:00 inbox_opened {"id": "I0194", "kind": "protected_change", "subject": "T0336: merge needs founder approval"}
-- 2026-11-14T17:49:58+00:00 inbox_resolved {"id": "I0194", "status": "approved", "note": "Merge T0336 (code_under_test completed with the run's full src import closure). Review T0337 accept.", "by": "hum
-- 2026-11-14T17:50:34+00:00 merged {"task": "T0336"}
-- 2026-11-14T17:50:34+00:00 inbox_opened {"id": "I0195", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-14T17:55:12+00:00 experiment_registered {"id": "E008", "hash": "sha256:206af2d225679693ac78e904a898f0a9107db03912e431cdefb525a0268e3f6b", "by": "founder"}
 - 2026-11-14T17:55:12+00:00 inbox_resolved {"id": "I0195", "status": "approved", "note": "Register E008 per D0020 (spec after T0332/T0334/T0336; local smoke on merged main: die-average columns and h_lo_v
 - 2026-11-14T17:55:27+00:00 inbox_resolved {"id": "I0167", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
@@ -56,3 +41,10 @@ cancelled: 39, done: 294, failed: 3, proposed: 1
 - 2026-11-14T17:55:35+00:00 inbox_resolved {"id": "I0175", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:36+00:00 inbox_resolved {"id": "I0177", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:38+00:00 inbox_resolved {"id": "I0179", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:40+00:00 inbox_resolved {"id": "I0181", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:42+00:00 inbox_resolved {"id": "I0187", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:44+00:00 inbox_resolved {"id": "I0189", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:46+00:00 inbox_resolved {"id": "I0191", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:49+00:00 inbox_resolved {"id": "I0193", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:55:53+00:00 inbox_resolved {"id": "I0165", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
+- 2026-11-14T17:56:17+00:00 inbox_resolved {"id": "I0185", "status": "approved", "note": "Approve T0329 (run E008); founder runs it on the VM with research/o003/e008_dev/burst_full.sh", "by": "human"}
