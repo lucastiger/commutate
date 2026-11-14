@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T07:57:03+00:00 from repository state — do not edit_
+_generated 2026-11-14T07:57:44+00:00 from repository state — do not edit_
 
 ## Founder inbox (13 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -48,7 +48,6 @@ cancelled: 39, done: 292, failed: 3, proposed: 1, review: 1, running: 1
 - T0337 `running` critic/review: Review T0336 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-14T05:32:07+00:00 run_started {"run": "T0334-scientist-20261113T213207-4d37", "task": "T0334", "role": "scientist", "session": "2049fa46-4600-4023-a4a4-e5d9d35944a0"}
 - 2026-11-14T06:06:30+00:00 run_finished {"run": "T0334-scientist-20261113T213207-4d37", "status": "completed", "cost": 3.07692, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T06:20:54+00:00 verified {"task": "T0334"}
 - 2026-11-14T06:21:00+00:00 run_started {"run": "T0335-critic-20261113T222100-0e45", "task": "T0335", "role": "critic", "session": "9c473e6f-c148-433e-881c-5305d837faa8"}
@@ -63,3 +62,4 @@ cancelled: 39, done: 292, failed: 3, proposed: 1, review: 1, running: 1
 - 2026-11-14T07:44:46+00:00 run_finished {"run": "T0336-scientist-20261113T232145-70ce", "status": "completed", "cost": 1.470621, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T07:56:56+00:00 verified {"task": "T0336"}
 - 2026-11-14T07:57:03+00:00 run_started {"run": "T0337-critic-20261113T235703-b76c", "task": "T0337", "role": "critic", "session": "15cab19d-5042-4768-9f17-cd024dee794c"}
+- 2026-11-14T07:57:38+00:00 sleep_detected {"gap_s": 773, "runs_extended": 1}
