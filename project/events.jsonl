@@ -2309,3 +2309,6 @@
 {"ts": "2026-11-14T06:35:47+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0192", "kind": "protected_change", "subject": "T0334: merge needs founder approval"}
 {"ts": "2026-11-14T07:16:08+00:00", "event": "task_added", "actor": "session", "task": "T0336", "reason": "founder 2026-11-13: complete E008 code_under_test before registration (T0335 finding 1)"}
 {"ts": "2026-11-14T07:21:38+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0192", "status": "approved", "note": "Merge T0334 (registration blockers: gate-only dev rows get their own kinds; L1 code_under_test path). Review T0335 accept_with_caveats; finding 1 handled by T0336.", "by": "human"}
+{"ts": "2026-11-14T07:21:41+00:00", "event": "merged", "actor": "orchestrator", "task": "T0334"}
+{"ts": "2026-11-14T07:21:41+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0193", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
+{"ts": "2026-11-14T07:21:45+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0336-scientist-20261113T232145-70ce", "task": "T0336", "role": "scientist", "session": "da153571-b0c1-4fb3-899b-f2e193803be4"}
