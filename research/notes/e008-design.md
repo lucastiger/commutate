@@ -985,3 +985,21 @@ hashed. make_spec.py got the same fix. All 43 path-valued fields and 35 path cit
 config.references[*].source.*, which are paths in the external PowerSynth2-pkg repository. The spec has no context field.
 No criterion, metric, parameter, tolerance, gate, stop rule, F3 order or cost rate changed. The declared F3 deviation's
 changed_after list gained T0334 and the missing T0332 entry.
+
+## 16. T0336 (2026-11-13): code_under_test completed (review T0335 finding 1)
+
+[F] code_under_test now names every src file the E008 code path loads: 26 src files plus the runner, 27 hashed files.
+The 12 added files are src/moduleforge/__init__.py, drc/__init__.py, generate/__init__.py, generate/halfbridge.py,
+geometry/__init__.py, geometry/conductors.py, geometry/layout.py, geometry/units.py, optimize/__init__.py,
+physics/__init__.py, solvers/__init__.py and solvers/l2_dd.py (all under src/moduleforge/). They are explicit paths, not
+globs, and nothing was removed.
+How the list was derived: (a) A static grep of every `from moduleforge…`/relative import, including function-level ones,
+in the runner, its two loaded research scripts and every src module. (b) A sys.modules check. Importing e008_run loads
+no moduleforge module, and neither does `--plan`. Importing every listed src module loads 25 files, 11 of them unlisted
+(the packet's 11). Calling derivative.halfbridge_housing_spec loads one more, generate/halfbridge.py. That is a
+function-level import in derivative.py (line 274), reached through dev_reference (gen2_0 dev rows) and the selftest, not
+through full(). canary.py, solvers/l2.py and solvers/thermal_series.py are never loaded.
+The draft's code_under_test block was spliced from make_spec.py's generated list, and the rest of the draft is unchanged
+(yaml-equal outside code_under_test). A full make_spec.py regeneration would have rewritten 1,720 lines: the
+draft carries content the generator does not produce, such as f3_declared_deviation, judged_reference_loader, metrics
+and freeze. T0334 likewise edited both files in parallel.

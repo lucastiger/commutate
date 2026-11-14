@@ -322,6 +322,14 @@ spec = {
     "code_under_test": ["src/moduleforge/solvers/l2_layout.py", "src/moduleforge/solvers/l2_core.py",
                         "src/moduleforge/solvers/thermal_fem.py", "src/moduleforge/solvers/thermal_layout.py",
                         "src/moduleforge/solvers/thermal_fv.py", "src/moduleforge/physics/peec/*.py", *FROZEN,
+                        # T0336 (review T0335 finding 1): every other src file the E008 code path loads, from the import
+                        # closure of the runner and the modules above, incl. function-level imports (sys.modules check)
+                        "src/moduleforge/__init__.py", "src/moduleforge/drc/__init__.py",
+                        "src/moduleforge/generate/__init__.py", "src/moduleforge/generate/halfbridge.py",
+                        "src/moduleforge/geometry/__init__.py", "src/moduleforge/geometry/conductors.py",
+                        "src/moduleforge/geometry/layout.py", "src/moduleforge/geometry/units.py",
+                        "src/moduleforge/optimize/__init__.py", "src/moduleforge/physics/__init__.py",
+                        "src/moduleforge/solvers/__init__.py", "src/moduleforge/solvers/l2_dd.py",
                         "experiments/runners/e008_run.py"],
     "code_must_match": [{"path": "src/moduleforge/solvers/thermal_fem.py", "objective": "O007"}],
     "requires_passed": ["O007"],
