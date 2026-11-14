@@ -36,16 +36,22 @@ description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runn
   \ the same\n   numbers as research/o003/e009_dev/feasibility_2r.py. Update --plan, state the expected\
   \ and upper billed vCPU-hours, and\n   confirm the 320 vCPU-hour cap still holds.\n5. research/o003/e009_dev/burst_full.sh,\
   \ from research/o003/e008_dev/burst_full.sh: EID E009, E009's spec and runner, state dir\n   ~/.cache/mf-burst/e009_full.\
-  \ Commit it executable (git mode 100755).\n6. From T0338's original item 5 (moved here; the builder\
-  \ could not write research/):\n   research/o003/e009_dev/feasibility_2r.py (generator/DRC only, unsealed\
-  \ seeds): load the committed 2R ctx.pkl and\n   report, for the main housing (orientation and sequence\
-  \ mix), the acceptance rate p (DRC-clean per draw), the draws\n   and wall time per candidate, the estimated\
-  \ wall time to draw 2 x 20 000 candidates (main and control), and the\n   estimated probability that\
-  \ a 20 000-candidate screen hits the 20 000-consecutive-failure limit; assert it < 1e-6.\n   research/notes/e009-generator.md:\
-  \ its output and a short paragraph (what split the region, the new placement rule,\n   why development\
-  \ draws are unchanged). The builder's drafts of both are readable as\n   `git show 21bbf29a:research/o003/e009_dev/feasibility_2r.py`\
-  \ and `git show 21bbf29a:research/notes/e009-generator.md`;\n   check them against the merged derivative.py\
-  \ before reuse.\n7. research/notes/e009-design.md: a short note on what differs from E008 and why (D0021).\n\
+  \ Commit it executable (git mode 100755).\n5a. Where the spec records D0021, also state review T0341's\
+  \ finding (project/reviews/T0338/T0341.json): on\n   2D_Case_2R every DRC-clean candidate has the twin's\
+  \ discrete configuration (orientation 0, sequence 0/1/0;\n   orientation 1 yields none), so E009's 2R\
+  \ search varies geometry only inside the reference's own topology, while\n   on gen2_0 about a quarter\
+  \ of candidates share the twin's topology. Give the measured mix from feasibility_2r.py.\n   This is\
+  \ a statement of the support, not a new metric, check or criterion.\n6. From T0338's original item 5\
+  \ (moved here; the builder could not write research/):\n   research/o003/e009_dev/feasibility_2r.py\
+  \ (generator/DRC only, unsealed seeds): load the committed 2R ctx.pkl and\n   report, for the main housing\
+  \ (orientation and sequence mix), the acceptance rate p (DRC-clean per draw), the draws\n   and wall\
+  \ time per candidate, the estimated wall time to draw 2 x 20 000 candidates (main and control), and\
+  \ the\n   estimated probability that a 20 000-candidate screen hits the 20 000-consecutive-failure limit;\
+  \ assert it < 1e-6.\n   research/notes/e009-generator.md: its output and a short paragraph (what split\
+  \ the region, the new placement rule,\n   why development draws are unchanged). The builder's drafts\
+  \ of both are readable as\n   `git show 21bbf29a:research/o003/e009_dev/feasibility_2r.py` and `git\
+  \ show 21bbf29a:research/notes/e009-generator.md`;\n   check them against the merged derivative.py before\
+  \ reuse.\n7. research/notes/e009-design.md: a short note on what differs from E008 and why (D0021).\n\
   \nHard limits (D0021 item 4). On 2D_Case_2R and 2D_Case_6, before E009 is registered, only generator/DRC\
   \ feasibility work:\nreference reconstruction by the frozen T0263 script, spec_from_layout, twin() geometry\
   \ fit, derivative sampling/build and\ndrc.check. No L1, l2_layout, EM, thermal, FV, degrade() or search\
@@ -65,6 +71,7 @@ context_files:
 - research/notes/e008-design.md
 - project/decisions/D0021-o003-e008-not-runnable-successor-e009.md
 - tools/mfos/mfos/experiments.py
+- project/reviews/T0338/T0341.json
 deliverables: []
 touches: []
 definition_of_done:
@@ -159,3 +166,6 @@ history:
 - outcome: rescoped
   summary: 'session: + T0338''s research deliverables (feasibility_2r.py, e009-generator.md)'
   at: '2026-11-14T20:05:54+00:00'
+- outcome: rescoped
+  summary: 'session: record review T0341''s 2R single-topology finding in the spec'
+  at: '2026-11-14T21:29:44+00:00'

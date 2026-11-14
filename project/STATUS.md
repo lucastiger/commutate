@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T21:29:18+00:00 from repository state — do not edit_
+_generated 2026-11-14T21:29:57+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0198** [protected_change] T0338: merge needs founder approval
