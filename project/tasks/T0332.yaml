@@ -3,7 +3,7 @@ objective: O003
 title: 'E008: solve the band for the die-average best so the reported h_lo_vj is not null (smoke finding)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Founder decision (founder session, 2026-11-13, after the local end-to-end smoke of the runner\
   \ as merged by T0330;\nwithin D0020 item 2, reported only): before E008 is registered, make the die-average\
@@ -131,4 +131,184 @@ lens: null
 trigger: null
 rationale: 'Founder 2026-11-13 (session): the local smoke showed h_lo_vj null because the die-average
   best has no band solves; fix before registering E008 (reported only, D0020 item 2).'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'E008 can now compute h_lo_vj on a real run. After the frozen driver finishes, the runner finds
+    the layout that A1''s formula picks on T_vj (the "die-average best"). If that layout has no band yet,
+    it solves the band for the report only. Nothing gated changes, and every definition-of-done command
+    exits 0 except one I could not run.
+
+
+    How it works:
+
+    - **Finding the layout.** `vj_best_layouts` calls `mfos.metrics.headroom_per_reference` (unchanged)
+    on the same T_vj copy of the rows that `virtual_junction_report` reads. It parses no exception text.
+    In a separate probe copy, a layout with no band gets placeholder band values. These cannot change
+    `best_id`, because the formula uses the band only for e_R, after it has chosen the best layout. The
+    probe''s h_lo is thrown away.
+
+    - **Solving the band.** `'
+  report:
+    summary: 'E008 can now compute h_lo_vj on a real run. After the frozen driver finishes, the runner
+      finds the layout that A1''s formula picks on T_vj (the "die-average best"). If that layout has no
+      band yet, it solves the band for the report only. Nothing gated changes, and every definition-of-done
+      command exits 0 except one I could not run.
+
+
+      How it works:
+
+      - **Finding the layout.** `vj_best_layouts` calls `mfos.metrics.headroom_per_reference` (unchanged)
+      on the same T_vj copy of the rows that `virtual_junction_report` reads. It parses no exception text.
+      In a separate probe copy, a layout with no band gets placeholder band values. These cannot change
+      `best_id`, because the formula uses the band only for e_R, after it has chosen the best layout.
+      The probe''s h_lo is thrown away.
+
+      - **Solving the band.** `vj_band_step` runs after `Run.drive` returns. In the dev path it also runs
+      after the band-check pairs. It builds the jobs with `Driver.em_jobs(Stub(fp, family), BAND)` on
+      that reference''s main Driver and runs them on the run''s own Scheduler, so job keys, levels and
+      the smoke em_map are the same as for every other band solve. Leftover prefetch hints are set aside
+      meanwhile and put back afterwards.
+
+      - **Failures.** A solver error, a killed job or NeedsLargerMachine (phase stop) is caught and recorded
+      as `h_lo_vj_reason`, with h_lo_vj null. It never raises and writes no `phase_b_needed.json`. `--replay-only`
+      submits nothing: a missing band gives null with a reason.
+
+      - **What is reported.** The band values go only into the report''s own row copy. The report gives
+      h_lo_vj, best_id_vj and a `die_average_best` record: the layout, its fingerprint, the Tj-max and
+      inductance-only bests, where its band came from ("solved for this report only" or "gated rows")
+      and the number of new solves.
+
+      - **Where it runs.** In `registered_run`, `evaluate()` runs first, then `rep["virtual_junction"]`
+      is replaced before anything is recorded (`vj_bands=False` turns the step off). In `--dev`, `meta.virtual_junction`
+      comes from the same function.
+
+
+      Checked on the founder''s smoke data, read only, without writing to it. On the smoke rows the code
+      names c000050 as the die-average best, with c000032 as the Tj-max best and c000021 as the inductance-only
+      best. Every band file for c000032 and c000021 already exists, so the job keys match. For c000050
+      only the lat0.5 file exists. So the founder''s smoke re-run should start exactly 3 new solves (thk_c,
+      thk_f, fil_f) and give a non-null h_lo_vj. I have not run it.
+
+
+      Cost: `--plan` now prices up to one band set per counted reference (4 solves at 0.5 mm) in every
+      case. Added billed vCPU-hours: expected +1.7 (97.0 → 98.7), upper +1.7 (145.4 → 147.1). If 2D_Case_6
+      were counted the range is 150.8–256.6. The 320 cap holds in every case. Without the extra set the
+      plan reproduces the old 97.0 / 145.4 / 149.7 / 255.0 exactly. Rates are unchanged. `cpu_hours_est`
+      moved from 97.0 to 98.7 because the plan''s expected number changed.
+
+
+      Spec and note: `config.reporting.virtual_junction` and `cost_estimate` were updated by the new script
+      `research/o003/e008_dev/t0332_spec_update.py`, and the design note has a new section 14. The dev
+      rows were not rebuilt, because their schema did not change. Only their meta changed: the three prep
+      scripts re-stamped `runner_sha256` (205a0666…, 3 places), as T0324 and T0330 did. The committed
+      `meta.virtual_junction` still shows T0330''s null, because those results predate the die-average
+      field.
+
+
+      Selftest: the new `vj_band_failures` builds the case the packet asked for. The die-average best
+      differs from both other bests and has no band in the gated rows. It checks:
+
+      - 4 new solves, and h_lo_vj non-null and equal to `headroom_per_reference` on the T_vj copy carrying
+      that band;
+
+      - rows, metrics, checks and the gated report byte-identical to a run with the step off;
+
+      - a resumed run solves nothing new and gives the same h_lo_vj;
+
+      - `--replay-only` gives null with a reason and starts no solve;
+
+      - a deliberately failing band job gives null with a reason, nothing gated changes, and the scheduler''s
+      queue is restored.
+
+
+      Two deliberately broken copies of the runner were caught: one writing the band into the gated rows,
+      and one with the step disabled. A third, with the replay-only branch removed, was not caught. That
+      is expected: the Scheduler''s own replay-only guard still stops any solve from starting.
+
+
+      Commands run (all exit 0):
+
+      - `e008_run.py --selftest` ("selftest passed", about 12 s)
+
+      - `--verify-freeze`
+
+      - `--check-references`
+
+      - `--plan`
+
+      - `bash -n research/o003/e008_dev/burst_full.sh && bash research/o003/e008_dev/burst_full.sh --dry-run`
+
+      - the dev-rows JSON assertion
+
+      - the spec keyword assertion
+
+      - `ruff check experiments/runners/e008_run.py`
+
+      - `mfos exp check E008`
+
+      - the `thermal_fem.py` shasum test (a216d5fe3209bcee)
+
+      - `mfos gate --fast` ("all gates passed")
+
+      - `t0332_spec_update.py`
+
+      - `gen2_0_prep.py T0332`
+
+      - `refresh_rule_strictness.py T0332`
+
+      - `case4_prep.py`. It first exited 2 because it takes no task argument; rerun without one it exited
+      0.
+
+
+      The protected-path command using `git merge-base` was blocked by the mfos guard hook. Instead I
+      ran `git diff --quiet HEAD --` on the same paths, which exited 0. I made no commits.
+
+
+      Hard limits kept: nothing was run on 2D_Case_2R or 2D_Case_6, no gcloud call or VM, no change to
+      `src/`, `tools/`, `tests/acceptance`, the frozen script, the references or any tolerance, and the
+      smoke directory was not written.'
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    evidence:
+    - '[F] On the smoke rows (copies; smoke dir not written), vj_best_layouts names c000050 as the die-average
+      best, with Tj-max best c000032 and inductance-only best c000021; all four band columns are missing'
+    - '[F] Driver.out_path with the smoke em_map names band files that all exist for c000032 and c000021
+      (keys reproduced); for c000050 only lat0.5 exists, so 3 solves are missing (thk_c, thk_f, fil_f)'
+    - '[F] e008_run.py --selftest exits 0; the new vj_band_failures check reports 0 failures'
+    - '[F] Mutant writing the band into the gated rows: selftest fails (3 failures). Mutant with the step
+      disabled: fails (5). Mutant with the replay-only branch removed: passes, because Scheduler.step
+      raises ReplayMissing before any launch'
+    - '[F] --plan without the extra set reproduces 97.0/145.4/149.7/255.0; with it 98.7/147.1/150.8/256.6
+      billed vCPU-hours; all within 320'
+    - '[F] Dev rows: rows identical to HEAD; only meta.per_reference.*.prep and meta.rule_strictness_refresh
+      differ (re-stamped runner_sha256 205a0666..., 3 places)'
+    - '[F] DoD commands exit 0 (selftest, verify-freeze, check-references, plan, burst dry-run, dev-rows
+      assertion, spec keywords, ruff, mfos exp check, thermal_fem sha, gate --fast); the protected-path
+      check was run as git diff --quiet HEAD because git merge-base is blocked by the mfos guard hook'
+    alternative_explanations: []
+    discriminating_tests:
+    - 'Founder smoke re-run from the smoke work dir: expect exactly 3 new solves (c000050 thk_c, thk_f,
+      fil_f), no existing file re-solved, h_lo_vj non-null with best_id_vj c000050; any re-solve or a
+      ''job key mismatch'' reason would prove the key claim wrong'
+    recommended_actions:
+    - 'Founder: re-run the local smoke (e008_run.py --dev --smoke --geoms gen2_0::0 --workdir <smoke work>)
+      and confirm 3 new solves and a non-null h_lo_vj in meta.virtual_junction.per_reference.housing70x40_gen2_0
+      (die_average_best.band_source ''solved for this report only'')'
+    - 'Orchestrator: run the merge-base protected-path DoD command, which the agent sandbox blocks; the
+      equivalent check against HEAD exited 0'
+    - 'Optional reviewer check: confirm that the setting-aside of prefetch hint jobs in _vj_wait is wanted.
+      Without it, the extra step would also launch hint jobs that no driver needed'
+    files_written:
+    - experiments/runners/e008_run.py
+    - experiments/drafts/E008.yaml
+    - experiments/drafts/E008.dev_rows.json
+    - research/notes/e008-design.md
+    - research/o003/e008_dev/t0332_spec_update.py
+    - research/o003/e008_dev/plan_T0332.json
+    - research/o003/e008_dev/gen2_0_prep_T0332.log
+    - research/o003/e008_dev/case4_prep_T0332.log
+    - research/o003/e008_dev/refresh_rule_strictness_T0332.log
+    experiment_drafts:
+    - experiments/drafts/E008.yaml
