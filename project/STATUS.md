@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T04:18:37+00:00 from repository state — do not edit_
+_generated 2026-11-14T04:32:53+00:00 from repository state — do not edit_
 
 ## Founder inbox (11 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)

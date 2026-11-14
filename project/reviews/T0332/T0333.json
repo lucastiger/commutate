@@ -1,0 +1,44 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "h_lo_vj stays null when the T_vj ordering needs a thermal batch the frozen driver never solved",
+      "detail": "The change adds only the die-average best's EM band. On T_vj, F3 eligibility can differ from Tj max. If no candidate in the first thermally solved batch is eligible on T_vj, headroom_per_reference needs the next batch, which has no die rows. vj_best_layouts and virtual_junction_report then leave h_lo_vj null with a reason. This is handled gracefully (nothing raises, nothing gated changes), but 'h_lo_vj is not null' holds only when T_vj's F3 stays inside the batches already solved. It also needs twin gate a2 to pass on T_vj, and the run must not be --replay-only.",
+      "evidence": "On the committed dev rows (housing70x40_gen2_0, where only c007559/c015905/c018860/c002784 have die rows) I planted T_vj = Tj max - 0.4 K, plus 10 K on all four checked candidates. vj_best_layouts returned best_id None with reason 'die-average best not determined: ValueError: ... a candidate F3 checks has no die rows'. The report gave h_lo_vj None with that same reason.",
+      "suggested_check": "On the founder's smoke re-run, record whether die_average_best.reason is ever an F3 'no die rows' error. If it is, decide whether thermal solves of the next batch are in scope.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Fix not yet shown on real solver output; committed dev rows still carry null h_lo_vj",
+      "detail": "The evidence that h_lo_vj becomes non-null is the fake-world selftest plus a read-only check on the smoke work dir, which the notes describe. That smoke work dir is not in this checkout (experiments/drafts/E008_dev_work has 48 solve files and no stream), so I could not reproduce the c000050 / 3-missing-files claim. The committed E008.dev_rows.json was not rebuilt, so its meta.virtual_junction still carries T0330's null. The null now comes from a different cause (no tj_mean). The note marks the expected result of the smoke re-run as inference.",
+      "evidence": "The ls of experiments/drafts/E008_dev_work/housing70x40_gen2_0 shows ctx.pkl plus 48 solves and no main/stream.json.gz. Section 14 of research/notes/e008-design.md marks the smoke re-run outcome '[I]'.",
+      "suggested_check": "Re-run the local smoke from its work dir and confirm that die_average_best.band_solved_for_report is true, new_solves is 3 and h_lo_vj is non-null for housing70x40_gen2_0.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Per-case added cost from the plan's simulator is not monotone in the number of added solves",
+      "detail": "if_all_counted:expected adds 8 solves for +1.1 billed vCPU-hours, while cases:expected adds 4 solves for +1.7. These deltas are differences of two packed schedule simulations, not sums of per-solve costs. The totals are still upper bounds, as stated, and every case stays far below the 320 cap (largest 256.6).",
+      "evidence": "A fresh --plan run reproduces vj_band_extra exactly: 97.0->98.7, 145.4->147.1, 149.7->150.8, 255.0->256.6. Its vj_band_extra block equals the spec's.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD commands: --selftest (passed, 'die-average best band (T0332): 0 failures'), --verify-freeze (all OK), --check-references, --plan (exit 0), bash -n and burst_full.sh --dry-run, the dev_rows JSON assertion, the spec keyword assertion, ruff (clean), mfos exp check E008, the thermal_fem sha prefix (verify-freeze shows a216d5fe3209bcee...), and mfos gate --fast ('all gates passed').",
+    "Recomputed --plan. vj_band_extra, every case's n_solves / vm_hours / usd / billed_vcpu_hours, and peak_memory_per_reference_GB (now written out in place of the old YAML alias) all equal the spec. cpu_hours_est 98.7 equals the expected billed vCPU-hours.",
+    "Checked that runner_sha256 205a0666... in the dev rows equals the current shasum of e008_run.py, and that rules_py_sha256 matches src/moduleforge/drc/rules.py.",
+    "Read mfos.metrics._hr_reference to confirm the probe argument: with lo only, band columns enter only via five(twin)/five(recon) for gate_a1 and five(best) for e_R after best is fixed. Confirmed empirically: on the committed dev rows with T_vj planted, 20 random band fills of the band-less candidates always gave the same best_id (c015905) as vj_best_layouts.",
+    "Constructed a missing-band case on real dev rows (c007559 and c015905 hot in T_vj). vj_best_layouts names c018860 (Tj-max and inductance-only best both c007559) with all 4 band columns missing. Without columns the report gives null with 'c018860 L_sub_c05_H: missing', which reproduces the smoke failure mode. With columns supplied, h_lo_vj = 0.277918537573215 exactly equals an independent headroom_per_reference on a T_vj copy carrying those columns. The input rows are unchanged.",
+    "Tested the tests with in-process mutants on vj_band_failures. Baseline gave 0 failures. Mutant M1 (band step targets the Tj-max best instead of the die-average best) gave 5 failures. Mutant M3 (band values leaked into the gated rows) gave 3 failures, including 'the step changed a gated row'.",
+    "Reviewed _vj_wait and Scheduler: the held queue is restored; a failed or killed job, NeedsLargerMachine and ReplayMissing are all caught as reasons; replay_only skips submission; there is no phase_b_needed.json write on this path. In registered_run the step runs after evaluate() and before er.* recording, and none of those read the replaced report."
+  ],
+  "caveats": [
+    "h_lo_vj is non-null only when the die-average best can be determined from thermal solves the frozen driver already made, twin gate a2 passes on T_vj, and the run is not --replay-only. Otherwise it is null with a reason, by design.",
+    "The DoD item `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance ...` could not be run in this checkout. It has a single 'review snapshot' commit and no main branch, and the guard hook blocks merge-base. The protected-path claim rests on the orchestrator's provenance check.",
+    "The byte-identical 'gated output unchanged' check in vj_band_failures runs on evaluate() and _gated_view, not on registered_run end to end. By reading the code, declared_sanity, er.rows, er.metric and er.sanity in registered_run do not read rep['virtual_junction'], and the step only reads JSON or shallow copies of the rows, so the argument holds.",
+    "No real-solver demonstration: the claim is supported by fake-world tests and my synthetic perturbation of the committed dev rows, not by a smoke or registered run."
+  ]
+}
