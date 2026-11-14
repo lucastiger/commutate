@@ -4,7 +4,7 @@ title: 'Generator: let the sampler place a slot stack across split free windows 
   is outside its support; D0021)'
 type: implement
 agent: builder
-status: failed
+status: running
 depends_on: []
 description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e009.md,\
   \ accepted 2026-11-14), item 2(a). Repair the candidate sampler in\nsrc/moduleforge/generate/derivative.py\
@@ -98,13 +98,14 @@ model: null
 budget_usd: 4.0
 max_turns: 90
 wall_minutes: null
-attempts: 2
-max_attempts: 2
+attempts: 3
+max_attempts: 3
 branch: task/T0338-generator-let-the-sampler-place-a-slot-s
 pr: null
 runs:
 - T0338-builder-20261114T104144-f272
 - T0338-builder-20261114T112013-351b
+- T0338-builder-20261114T121459-a4c3
 created_by: session
 created_at: '2026-11-14T18:41:24+00:00'
 protected_approved: false

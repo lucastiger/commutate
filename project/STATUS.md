@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T20:06:00+00:00 from repository state — do not edit_
+_generated 2026-11-14T20:14:59+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -21,7 +21,7 @@ _generated 2026-11-14T20:06:00+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 121 | $235.43 | 3776211 | 1858781 | 245 | 0 |
+| O003 | 122 | $235.43 | 3776211 | 1858781 | 245 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,11 +29,11 @@ _generated 2026-11-14T20:06:00+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 41, done: 294, failed: 4, todo: 1
+cancelled: 41, done: 294, failed: 3, running: 1, todo: 1
 
+- T0338 `running` builder/implement: Generator: let the sampler place a slot stack across split free windows (2D_Case_2R's own topology is outside its support; D0021) (attempt 3)
 
 ## Recent events
-- 2026-11-14T18:41:24+00:00 task_added {"task": "T0339", "reason": "founder 2026-11-14: D0021 successor experiment E009"}
 - 2026-11-14T18:41:24+00:00 inbox_opened {"id": "I0197", "kind": "budget_increase", "subject": "[O003] +$15 margin above the $250 cap for the E009 path (D0021 item 6)"}
 - 2026-11-14T18:41:36+00:00 inbox_resolved {"id": "I0196", "status": "answered", "note": "D0021 (founder, 2026-11-14): run E008-20261114T095904-2c22 ended with status error (the generator sampler cannot 
 - 2026-11-14T18:41:44+00:00 run_started {"run": "T0338-builder-20261114T104144-f272", "task": "T0338", "role": "builder", "session": "4b1d9ad3-6160-4d31-a3de-9e9d6b0fbdd4"}
@@ -48,3 +48,4 @@ cancelled: 41, done: 294, failed: 4, todo: 1
 - 2026-11-14T20:05:15+00:00 run_interrupted {"run": "T0340-scientist-20261114T120358-51be", "cost": 0.35342}
 - 2026-11-14T20:05:16+00:00 founder_stopped {"task": "T0340", "run": "T0340-scientist-20261114T120358-51be", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-14T20:05:54+00:00 task_rescoped {"task": "T0338", "reason": "research deliverables moved to T0339 (builder write scope)"}
+- 2026-11-14T20:14:59+00:00 run_started {"run": "T0338-builder-20261114T121459-a4c3", "task": "T0338", "role": "builder", "session": "281ba830-b511-4740-97fc-73a190722273"}
