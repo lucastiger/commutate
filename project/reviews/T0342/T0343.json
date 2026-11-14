@@ -1,0 +1,55 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "D1 counterfactual is wrong: a visible 'blocked' on attempt 1 would still have been retried",
+      "detail": "The diagnosis says the routing defect caused the automatic retry. It claims that if the block had been visible, it 'would have been routed as attempts_exhausted ... and would have gone to the founder'. The code says otherwise. loop._verify (loop.py:433-435) maps a reported block to 'attempts_exhausted' only when t.attempts >= t.max_attempts. Otherwise it maps it to 'dod_failed'. T0339 had max_attempts=2. On attempt 1, a visible block would therefore still have become dod_failed (class implementation), diagnose.respond (diagnose.py:147-149) would have returned 'repair', and the $0.86 second attempt would have run anyway. Only attempt 2's routing would change, to planning and then founder. The same mistake undermines recommendation 4(a): routing a blocked scientist report 'like a blocked builder report' does not deliver the proposed unit test ('status: blocked leads to no DoD run and a founder inbox item') while attempts < max. This does not affect the root cause (the id collision), the class (planning) or the main remedy (rename to E010). It does misstate how much the tooling fix would save, and it would mislead whoever implements 4(a).",
+      "evidence": "tools/mfos/mfos/loop.py:433-435: `if out.get(\"status\") == \"blocked\": self._fail(t, \"attempts_exhausted\" if t.attempts >= t.max_attempts else \"dod_failed\", ...)`. diagnose.py:147-149: implementation class with attempts < max_attempts returns 'repair'. main project/tasks/T0339.yaml: attempts 2, max_attempts 2. Events log: attempt 1 \u2192 `signal=dod_failed action=repair` at 22:03:00.",
+      "suggested_check": "Correct D1 to say the fix changes only the final attempt's routing, or add to 4(a) that loop.py:434 must route a blocked report straight to the founder whatever the attempt count, and make the unit test match.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Lesson overstates the keying: the runner path is a spec field, not derived from the id",
+      "detail": "The new lesson in lessons.md says the 'frozen runner ... [is] keyed by the id alone'. In mfos the runner comes from the spec's `runner:` field (e.g. E009.yaml line 7), and runner_files are hashed from it. The id-keyed parts are spec_path (store.py:191-192), results/<eid>/ (experiments.py:186, store.py:227), run ids (experiments.py:69) and metric prefixes. The collision on e009_run.py came from the naming convention and from T0339's DoD, which hard-codes the file name. The practical advice in the lesson is still right.",
+      "evidence": "store.py:191-192; experiments.py:69, 186; experiments/specs/E009.yaml:7 `runner: uv run python experiments/runners/e009_run.py`.",
+      "suggested_check": "Reword to: spec, results and metric names are keyed by the id, and runner file names follow the id by convention.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "lessons.md edit is outside the task's declared touches, but inside the scientist's write scope",
+      "detail": "T0342 declares touches/deliverables = [research/diagnoses/T0342.md] only. The diff also appends a line to project/memory/lessons.md. Policy grants the scientist 'project/memory/**' (.mfos/policy.toml:26), so this is not a scope violation, and the change is a single relevant lesson.",
+      "evidence": ".mfos/policy.toml:26; main project/tasks/T0342.yaml touches.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Minor wording imprecisions",
+      "detail": "(1) 'the identical packet ran again': the repair retry carries the failure output, so the packet is not byte-identical. (2) The diagnosis cites state.yml as the CI that runs doctor on main. state.yml triggers on project/ and experiments/{results,specs,drafts}, not on experiments/runners/**. A compliant T0339 would also add drafts, though, and ci.yml runs doctor on pushes to main as well, so the conclusion stands.",
+      "evidence": ".github/workflows/state.yml paths; .github/workflows/ci.yml line 40.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read T0339.yaml (main checkout). Its DoD needs e009_run.py --selftest/--verify-freeze/--check-references/--plan, drafts/E009.yaml, `mfos exp check E009`, and a git-diff guard that covers e008_run.py but not e009_run.py. Matches the diagnosis.",
+    "Read e009_run.py main() (lines 709-713): argparse defines only --smoke and --rows-out. shasum gives 7397e871\u2026e990, equal to runner_files in specs/E009.yaml. Registered spec: objective O007, status registered, spec_hash 7d703f10\u2026c94. Results dir E009-20261107T162152-a3cf exists.",
+    "Checked D0014 (lines 24-25: O007 and experiment E009), C004 (supported, cites E009), and O003 (depends_on [O007]; code_must_match on thermal_fem.py and requires_passed [O007] at lines 265-266). Checked D0021: 0 mentions of O007, C004 or supersession.",
+    "Read store.spec_path, experiments.register and validate_draft. Neither register nor validate_draft checks for an existing registered spec, and register writes specs/<eid>.yaml unconditionally. Confirms T4/D3.",
+    "Read loop._verify, loop._fail and diagnose.SIGNAL_CLASS/respond. dod_failed maps to implementation, attempts_exhausted to planning. Found that a block is mapped to attempts_exhausted only at the last attempt (Finding 1).",
+    "Read ScienceReport in models.py: no status field, and _Strict forbids extra keys. packets.py:107 tells agents to report `blocked`. A scripted model_validate check was denied by the sandbox, so I relied on reading the code.",
+    "Grepped T0339 run records: completed/success, is_error false, 13 and 21 turns, $0.568 and $0.857, denials 0, failure_class planning. Matches the diagnosis's table.",
+    "Checked the main events log: attempt 1 dod_failed\u2192repair at 22:03:00, attempt 2 dod_failed\u2192diagnose at 22:36:07, then investigation_spawned T0342 cls=implementation.",
+    "Checked whether E010 is free: no spec, draft or result exists, the registry has 0 matches, git history -S E010 has no commits, and research/src/tests/scripts have no hits. The only mentions are in T0339.yaml and T0342.yaml. Confirms E010 is free.",
+    "Checked policy gates: fast = ruff + unit tests (no doctor); full includes doctor --ci; loop runs _full_gate_ok only for high/critical risk. T0339 is medium risk. Confirms D2.",
+    "Checked O003 metric names (E008.headroom_min_lo, E008.headroom_max_hi_ind) and I0198 wording ('recorded in E009's spec by T0339'). Both match recommendation 1."
+  ],
+  "caveats": [
+    "The root cause (D0021/T0339 reused O007's registered id E009), the class (planning), H1-H6 and the main remedy (rename to E010, add e009_run.py to the DoD guard) are all supported by independent checks. The caveat applies only to the contributing-tooling analysis in D1 and to recommendation 4(a).",
+    "Recommendation 4(a) as written ('route like a blocked builder report') would not stop a non-final attempt from being retried automatically. If the goal is to send blocked scientist reports to the founder at once, loop.py:434 must change too.",
+    "I did not re-run the author's T2 temp-root runner_changes simulation, because scripted mfos imports were denied in my sandbox. Its conclusion follows directly from the hash mismatch any edit to e009_run.py would cause, and from the doctor check at cli.py:559-561."
+  ]
+}
