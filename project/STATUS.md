@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T17:49:57+00:00 from repository state — do not edit_
+_generated 2026-11-14T17:50:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (14 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -15,7 +15,7 @@ _generated 2026-11-14T17:49:57+00:00 from repository state — do not edit_
 - **I0189** [experiment_registration] register E008 (pre-registration)
 - **I0191** [experiment_registration] register E008 (pre-registration)
 - **I0193** [experiment_registration] register E008 (pre-registration)
-- **I0194** [protected_change] T0336: merge needs founder approval
+- **I0195** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -42,14 +42,11 @@ _generated 2026-11-14T17:49:57+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 293, failed: 3, merge: 1, proposed: 1
+cancelled: 39, done: 294, failed: 3, proposed: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
-- T0336 `merge` scientist/design_experiment: E008: complete code_under_test with every src file the run imports (review T0335 finding 1) (attempt 1)
 
 ## Recent events
-- 2026-11-14T06:21:34+00:00 sleep_detected {"gap_s": 906, "runs_extended": 1}
-- 2026-11-14T06:35:42+00:00 run_finished {"run": "T0335-critic-20261113T222100-0e45", "status": "completed", "cost": 2.056197, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T06:35:47+00:00 inbox_opened {"id": "I0192", "kind": "protected_change", "subject": "T0334: merge needs founder approval"}
 - 2026-11-14T07:16:08+00:00 task_added {"task": "T0336", "reason": "founder 2026-11-13: complete E008 code_under_test before registration (T0335 finding 1)"}
 - 2026-11-14T07:21:38+00:00 inbox_resolved {"id": "I0192", "status": "approved", "note": "Merge T0334 (registration blockers: gate-only dev rows get their own kinds; L1 code_under_test path). Review T033
@@ -63,3 +60,5 @@ cancelled: 39, done: 293, failed: 3, merge: 1, proposed: 1
 - 2026-11-14T08:08:05+00:00 run_finished {"run": "T0337-critic-20261113T235703-b76c", "status": "completed", "cost": 1.32739, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T08:08:09+00:00 inbox_opened {"id": "I0194", "kind": "protected_change", "subject": "T0336: merge needs founder approval"}
 - 2026-11-14T17:49:58+00:00 inbox_resolved {"id": "I0194", "status": "approved", "note": "Merge T0336 (code_under_test completed with the run's full src import closure). Review T0337 accept.", "by": "hum
+- 2026-11-14T17:50:34+00:00 merged {"task": "T0336"}
+- 2026-11-14T17:50:34+00:00 inbox_opened {"id": "I0195", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
