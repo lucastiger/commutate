@@ -34,7 +34,7 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0340-diagnose-failure-of-t0338
 pr: null
@@ -48,4 +48,8 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 0
+  outcome: founder_stopped
+  summary: T0340-scientist-20261114T120358-51be ended (interrupted) while the task was cancelled
+  at: '2026-11-14T20:05:16+00:00'

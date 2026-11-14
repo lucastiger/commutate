@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T20:04:40+00:00 from repository state — do not edit_
+_generated 2026-11-14T20:05:20+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,7 +10,7 @@ _generated 2026-11-14T20:04:40+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $235.07/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $235.43/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-14T20:04:40+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 121 | $235.08 | 3776211 | 1858781 | 245 | 0 |
+| O003 | 121 | $235.43 | 3776211 | 1858781 | 245 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -33,8 +33,6 @@ cancelled: 41, done: 294, failed: 4, todo: 1
 
 
 ## Recent events
-- 2026-11-14T17:56:55+00:00 burst_requested {"task": "T0329", "experiment": "E008", "cpu_hours": 98.7}
-- 2026-11-14T17:59:04+00:00 experiment_minted {"id": "E008", "run": "E008-20261114T095904-2c22"}
 - 2026-11-14T18:41:24+00:00 task_added {"task": "T0338", "reason": "founder 2026-11-14: D0021 generator sampler repair"}
 - 2026-11-14T18:41:24+00:00 task_added {"task": "T0339", "reason": "founder 2026-11-14: D0021 successor experiment E009"}
 - 2026-11-14T18:41:24+00:00 inbox_opened {"id": "I0197", "kind": "budget_increase", "subject": "[O003] +$15 margin above the $250 cap for the E009 path (D0021 item 6)"}
@@ -48,3 +46,5 @@ cancelled: 41, done: 294, failed: 4, todo: 1
 - 2026-11-14T20:03:51+00:00 task_failed_attempt {"task": "T0338", "signal": "scope_violation", "action": "diagnose"}
 - 2026-11-14T20:03:51+00:00 investigation_spawned {"task": "T0340", "about": "T0338", "cls": "implementation"}
 - 2026-11-14T20:03:58+00:00 run_started {"run": "T0340-scientist-20261114T120358-51be", "task": "T0340", "role": "scientist", "session": "d03be11c-47da-491d-ae2e-ddd44971e4a6"}
+- 2026-11-14T20:05:15+00:00 run_interrupted {"run": "T0340-scientist-20261114T120358-51be", "cost": 0.35342}
+- 2026-11-14T20:05:16+00:00 founder_stopped {"task": "T0340", "run": "T0340-scientist-20261114T120358-51be", "run_status": "interrupted", "task_status": "cancelled"}
