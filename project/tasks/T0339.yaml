@@ -3,7 +3,7 @@ objective: O003
 title: 'E009: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021)'
 type: design_experiment
 agent: scientist
-status: running
+status: failed
 depends_on:
 - T0338
 description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e009.md,\
@@ -298,3 +298,192 @@ history:
     \ missing\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project\
     \ environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n"
   at: '2026-11-14T22:03:00+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'BLOCKED: the task is mis-specified. Nothing has changed since attempt 1. D0021 names the O003
+    successor "E009", but E009 is already a registered, completed O007 experiment (the scikit-fem thermal
+    reference), and O003 itself depends on it. The definition of done requires overwriting that experiment''s
+    frozen runner, and registering the draft would then overwrite its registered spec. I wrote no files,
+    ran nothing on 2D_Case_2R or 2D_Case_6, and read no E008 solve data. A founder decision assigning
+    a free ID (E010 is unused everywhere) unblocks the task mechanically.
+
+
+    Why I am blocking again rather than retrying: no founder decision, inbox item or rescope since attempt
+    1 changes the ID, and the evidence below shows the collision is structural in mfos, not cosmetic.
+    Commands run, all read-only:'
+  report:
+    summary: 'BLOCKED: the task is mis-specified. Nothing has changed since attempt 1. D0021 names the
+      O003 successor "E009", but E009 is already a registered, completed O007 experiment (the scikit-fem
+      thermal reference), and O003 itself depends on it. The definition of done requires overwriting that
+      experiment''s frozen runner, and registering the draft would then overwrite its registered spec.
+      I wrote no files, ran nothing on 2D_Case_2R or 2D_Case_6, and read no E008 solve data. A founder
+      decision assigning a free ID (E010 is unused everywhere) unblocks the task mechanically.
+
+
+      Why I am blocking again rather than retrying: no founder decision, inbox item or rescope since attempt
+      1 changes the ID, and the evidence below shows the collision is structural in mfos, not cosmetic.
+      Commands run, all read-only:
+
+      - `cat` of the packet, D0021, T0339.yaml and I0198: exit 0
+
+      - `ls`, `git log` and `git status`: exit 0
+
+      - `ls project/tasks | grep T03[34]`: exit 1 (zsh glob error, harmless)
+
+      - `shasum -a 256 experiments/runners/e009_run.py`: exit 0
+
+      - greps and seds over tools/mfos/mfos/{experiments,evaluate,cli,store}.py, the O003 and O007 objectives,
+      the claims and the registry: exit 0, except one grep with an unquoted `--include=*.yaml`, which
+      zsh rejected (no output; I re-ran it without the flag, exit 0)
+
+
+      I did not run any of the DoD commands: they need files that cannot be created without the collision.'
+    failure_class: planning
+    root_cause: 'D0021 items 2, 5 and 7 and task T0339 (description and definition of done) give the O003
+      successor the ID E009. That ID has belonged to O007''s registered experiment since 2026-11-07. mfos
+      keys everything by experiment ID:
+
+      - spec file: `experiments/specs/<id>.yaml` (store.spec_path)
+
+      - frozen runner: `runner_files`
+
+      - results directory: `experiments/results/<id>/`
+
+      - run selection: registry `minted` entries per experiment
+
+      - metric names: `<id>.<metric>`
+
+
+      So a second "E009" cannot coexist with the first. Building it as specified means:
+
+      - overwriting O007''s frozen runner `experiments/runners/e009_run.py` (pinned sha256 7397e871…,
+      which the file matches today);
+
+      - on registration, overwriting O007''s registered spec (`register()` writes `store.spec_path(eid)`
+      and unlinks the draft);
+
+      - O003 v6''s metrics `E009.*` sharing a namespace with O007''s acceptance metrics (`E009.max_case_scaled_err`
+      and others).'
+    confidence: 0.97
+    evidence:
+    - 'FACT: experiments/specs/E009.yaml has id E009, objective O007 and status registered. It sets spec_hash
+      sha256:7d703f10…c94 and pins runner_files `experiments/runners/e009_run.py: 7397e871b63931e47ced0a919951ed00a20a0861d4e91eba01a7ccaa655fe990`,
+      and its code_under_test lists experiments/runners/e009_run.py.'
+    - 'FACT: `shasum -a 256 experiments/runners/e009_run.py` gives 7397e871…e990, the registered hash.
+      The file''s last commit is 49f090ea [T0244], the O007 E009 design.'
+    - 'FACT: experiments/results/E009/E009-20261107T162152-a3cf/result.json has status complete. experiments/registry.jsonl
+      line 5 mints run E009-20261107T162152-a3cf under spec_hash 7d703f10…. That run is cited by project/objectives/O007/evaluations/EV-O007-01.json
+      and O007/state.yaml.'
+    - 'FACT: O007''s objective.yaml sets evidence_plan [E009] and required_experiments [E009]. Its criteria
+      A1-A4 and K1/K2 use the metrics E009.max_case_scaled_err, E009.max_abs_err_K, E009.max_l2_consistency
+      and E009.max_conservative_gci_K.'
+    - 'FACT: O003''s objective.yaml (lines 265-266) requires code_must_match on thermal_fem.py against
+      the bytes EV-O007-01 evaluated, plus requires_passed [O007]. So O003 depends on the O007 E009 result
+      that the collision would disturb.'
+    - 'FACT: tools/mfos/mfos/store.py:191 resolves spec_path(eid) to experiments/{drafts|specs}/<eid>.yaml,
+      one file per ID with no objective namespace. In tools/mfos/mfos/experiments.py, register() (lines
+      104-131) writes store.spec_path(eid) and unlinks the draft, so registering an O003 draft E009 would
+      overwrite O007''s registered spec.'
+    - 'FACT: in tools/mfos/mfos/evaluate.py, _pick (lines 249-274) selects runs from store.results(spec.id)
+      and registry ''minted'' entries filtered by experiment ID and spec hash. tools/mfos/mfos/cli.py:561
+      (mfos doctor) reports ''<id>: runner changed after registration'' for any registered spec whose
+      runner_files no longer match.'
+    - 'FACT: the DoD runs experiments/runners/e009_run.py with --selftest, --verify-freeze, --check-references
+      and --plan, imports it as `e009_run`, and runs `mfos exp check E009` and `s.spec_path(''E009'',
+      draft=True)`. No compliant implementation exists that leaves O007''s pinned runner unchanged.'
+    - 'FACT: E010 appears nowhere in experiments/ (specs, drafts, runners, results), registry.jsonl, project/objectives,
+      project/decisions, project/tasks or project/claims. E004, E005 and E007 are referenced in the O002/O004/O005/O006
+      objectives or diagnoses, so they are not free.'
+    - 'FACT: project/events.jsonl has no event after attempt 1''s BLOCKED report that changes the ID.
+      The latest T0339-related events are task_added (18:41), I0196 answered (18:41) and I0198 approved
+      (21:30); I0198 still says ''recorded in E009''s spec by T0339''.'
+    - 'INFERENCE: D0021 picked ''the next number after E008'' without checking the registry. Experiment
+      IDs are global, not per objective.'
+    alternative_explanations:
+    - explanation: The founder meant the O003 successor to replace O007's E009 (supersede it).
+      how_to_discriminate: Refuted. D0021 never mentions O007, C004 or a supersession. O003 requires_passed
+        [O007] and code_must_match against EV-O007-01, which cites run E009-20261107T162152-a3cf. Replacing
+        that experiment would break O003's own prerequisite. Only a founder statement could change this
+        reading.
+    - explanation: mfos namespaces experiments per objective, so two objectives can each own an 'E009'.
+      how_to_discriminate: 'Refuted by the code: store.spec_path(eid) is experiments/specs/<eid>.yaml,
+        and _pick filters results and minted runs by spec.id only. One ID gives one spec file and one
+        results directory.'
+    - explanation: Only drafts are written before registration, so building the O003 E009 as a draft is
+        harmless and only registration is the founder's problem.
+      how_to_discriminate: 'Refuted. Deliverable 2 and the DoD require rewriting experiments/runners/e009_run.py,
+        which O007''s registered spec pins by sha256. That breaks O007''s frozen runner on merge (mfos
+        doctor: ''runner changed after registration'') and the reproducibility of a completed, claim-bearing
+        run.'
+    discriminating_tests:
+    - '`grep -n ''objective\|status\|runner_files'' -A1 experiments/specs/E009.yaml` shows objective O007,
+      status registered and the pinned runner hash (done).'
+    - '`shasum -a 256 experiments/runners/e009_run.py` equals the pinned 7397e871…e990 (done).'
+    - '`grep -rn E010 experiments project/objectives project/decisions project/tasks project/claims` returns
+      nothing, so E010 is free (done).'
+    - 'After a renaming decision, re-run `uv run mfos doctor` on the merged branch: it must report no
+      ''runner changed after registration'' for E009.'
+    recommended_actions:
+    - 'Founder: record a short decision amending D0021 (for example D0022) that names the O003 successor
+      with a free ID. E010 has no references anywhere. State that experiment IDs are global.'
+    - 'Re-scope T0339 to that ID, in the description and in every DoD command: experiments/drafts/E010.yaml,
+      experiments/runners/e010_run.py (copied from e008_run.py, with e009_run.py untouched), experiments/drafts/E010.dev_rows.json,
+      `import e010_run`, `mfos exp check E010`, `s.spec_path(''E010'', draft=True)`, burst_full.sh with
+      EID E010 and state dir ~/.cache/mf-burst/e010_full. Also add experiments/runners/e009_run.py to
+      the final `git diff --quiet` protected list.'
+    - Decide whether research/o003/e009_dev/, research/notes/e009-generator.md and research/notes/e009-design.md
+      keep their names; renaming them to e010 avoids confusion with O007's e009 work. The builder's drafts
+      at 21bbf29a sit under research/o003/e009_dev/ and can move unchanged.
+    - 'O003 v6 (D0021 item 5): use the metric names E010.headroom_min_lo and E010.headroom_max_hi_ind.
+      E009.* already names O007''s acceptance metrics.'
+    - Update the wording of I0198, T0338's commit and T0341's references from 'E009's spec' to the new
+      ID when the founder records the decision. No evidence changes.
+    - 'Orchestrator and tools (founder-approved change to tools/mfos): (1) after an agent reports BLOCKED,
+      open an inbox item instead of auto-retrying on dod_failed; this is attempt 2 with an unchanged packet.
+      (2) validate_draft should reject a draft whose ID already has a registered spec in experiments/specs/,
+      and `register` should refuse to overwrite one.'
+    - When the ID is fixed, the D0021 item 4 limits on 2D_Case_2R and 2D_Case_6 still apply. This attempt
+      did not load, run or read anything of 2R or 6, or of E008's run directory.
+    affects_acceptance_criteria: true
+- attempt: 2
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "o003/e009_dev/burst_full.sh: No such file or directory\n\nFAIL git ls-files -s research/o003/e009_dev/burst_full.sh\
+    \ | grep -q '^100755'\n\n\nFAIL uv run python -c \"import json; a = json.load(open('experiments/drafts/E008.dev_rows.json'));\
+    \ b = json.load(open('experiments/drafts/E009.dev_rows.json')); assert b['meta']['smoke'] is False;\
+    \ assert a['rows'] == b['rows'], 'E009 dev rows differ from E008'; assert b['meta']['replay_only']['solves_started']\
+    \ == 0; print(len(b['rows']), 'dev rows identical to E008')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nFileNotFoundError: [Errno 2] No such file or directory: 'experiments/drafts/E009.dev_rows.json'\n\
+    \nFAIL uv run python -c \"import sys, glob, os, importlib, yaml; sys.argv = ['x']; sys.path.insert(0,\
+    \ 'experiments/runners'); import e009_run; spec = yaml.safe_load(open('experiments/drafts/E009.yaml'));\
+    \ listed = {p for pat in spec['code_under_test'] for p in glob.glob(pat) if os.path.isfile(p)}; [importlib.import_module(p[4:-3].replace('/',\
+    \ '.').removesuffix('.__init__')) for p in sorted(listed) if p.startswith('src/') and p.endswith('.py')];\
+    \ used = {os.path.relpath(m.__file__) for n, m in list(sys.modules.items()) if n.startswith('moduleforge')\
+    \ and getattr(m, '__file__', None)}; miss = sorted(used - listed); assert not miss, miss; print(len(used),\
+    \ 'imported src files, all in code_under_test')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nFileNotFoundError: [Errno 2] No such file or directory: 'experiments/drafts/E009.yaml'\n\
+    \nFAIL uv run python -c \"from mfos.store import Store; from mfos import models as m; from mfos.evaluate\
+    \ import load_rows, null_check; from mfos.experiments import runner_files, code_hashes; s = Store();\
+    \ spec = s.read_yaml(s.spec_path('E009', draft=True), m.ExperimentSpec); lines, bad = null_check(s,\
+    \ spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad, bad; assert\
+    \ any('A1' in x and 'satisfied' in x for x in lines), lines; assert runner_files(s.root, spec.runner);\
+    \ n = len(code_hashes(s.root, spec.code_under_test)); assert n >= 27, n; print('E009 registration\
+    \ dry run OK,', n, 'code files')\"\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does\
+    \ not match the project environment path `.venv` and will be ignored; use `--active` to target the\
+    \ active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1, in\
+    \ <module>\n  File \"/Users/lukeskywalker/mf/wt/T0339/tools/mfos/mfos/store.py\", line 98, in read_yaml\n\
+    \    return model.model_validate(yaml.safe_load(path.read_text()) or {})\n                       \
+    \                        ^^^^^^^^^^^^^^^^\n  File \"/Users/lukeskywalker/.local/share/uv/python/cpython-3.12.16-macos-aarch64-none/lib/python3.12/pathlib.py\"\
+    , line 1027, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n\
+    \         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/lukeskywalker/.local/share/uv/python/cpython-3.12.16-macos-aarch64-none/lib/python3.12/pathlib.py\"\
+    , line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n     \
+    \      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No\
+    \ such file or directory: '/Users/lukeskywalker/mf/wt/T0339/experiments/drafts/E009.yaml'\n\nFAIL\
+    \ uv run mfos exp check E009\nPROBLEM: draft /Users/lukeskywalker/mf/wt/T0339/experiments/drafts/E009.yaml\
+    \ missing\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project\
+    \ environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n"
+  at: '2026-11-14T22:36:07+00:00'
