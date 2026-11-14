@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Cross-window placement only switches on when no single window can hold even the smallest stack",
+      "detail": "`_Ctx.split[o]` is True only if no window of the PHASE free region holds the minimal four-slot stack, and the new path (`_place_split`, `reach`) runs only then. A housing that is split, but where one window still holds the minimal stack, keeps the old single-window rule, so a stack can never straddle the obstruction there. D0021 2(a) reads more broadly: the sampler 'can place a slot stack across more than one free window'. The narrower trigger is what keeps the dev streams byte-identical (D0021 item 3), and the code comment says so, so this limits scope rather than being a bug. 2D_Case_2R does fall on the switched-on side (split = {0: True, 1: False}).",
+      "evidence": "Synthetic 70x40 housing, one die per switch, gate bars x 8..50 mm. Bars at y 17..23: split {0: True}, 46 of 46 clean orientation-0 candidates straddle. Bars at y 21..27: split {0: True}, 25 of 25 straddle. Bars at y 25..31: windows (1,24) and (32,39), split {0: False}, 50 clean orientation-0 candidates and 0 straddling (4000 draws, seed 3).",
+      "suggested_check": "State in the E009 design that the cross-window support applies only to orientations where `_Ctx.split` is True.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "On 2D_Case_2R the sampler's support is a single discrete configuration, the twin's own",
+      "detail": "All 1500 DRC-clean 2R candidates from the DoD seeds 101\u2013103, and all 500 from seed 101 alone, have the twin's key (0,0,1,0), topology x/DC-l-PHASEd-DC+d-PHASEl/split. The DC- band in orientation 0 is only y 7..13 mm, orientation 1 yields nothing clean, and the PHASE windows are (7,23) and (39,53). So the E009 search on 2R can only vary geometry inside the twin's topology, whereas on gen2_0 only 56 of 200 candidates share the twin's topology. The geometry and the measured rules (DC+/DC- spacing 24 mm) force this, not a defect in the change. It does narrow what a 2R search result can mean. Acceptance is about 10 clean per 3000 draws (2964 return None), at 12 ms per clean candidate, so the 20000 consecutive-failure limit is far away.",
+      "evidence": "DoD output: '1500 DRC-clean 2R candidates; the twin configuration (0, 0, 1, 0) drawn 1500 times'. Count by topology, seed 101: {'x/DC-l-PHASEd-DC+d-PHASEl/split': 500}. Rejection probe: 3000 draws, 2964 None, 10 clean.",
+      "suggested_check": "Report the 2R topology diversity, a single configuration, in the E009 design, so a 2R result is read as a within-topology search.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The DoD tests twin support only through the four discrete bits",
+      "detail": "D0021 item 4's acceptance test asks that 'the 2R twin's parameters lie in the sampler's support'. The DoD checks only (orient, hs_first, hs_die_first, ls_die_first). The twin's own continuous Params cannot be drawn: its slots run from u = 7 mm through the columns, while the sampler starts each slot at the column's inner edge. No candidate is close in copper either: the best same-topology candidate differs from the twin in 19\u201336 % of each net's area (symmetric difference). This matches the dev references (gen2_0 best 28\u201331 %, 2D_Case_4 best 52\u201361 %), so it is a long-standing property of how the twin and the sampler parametrise layouts, and the change does not make it worse.",
+      "evidence": "Best per-net symmetric difference / twin area over 200 same-topology candidates, seed 7. 2R: DC+ 0.192, DC- 0.358, PHASE 0.341. gen2_0: 0.306 / 0.284 / 0.309. case4: 0.515 / 0.614 / 0.586.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Some new tests prove less than they appear to",
+      "detail": "In `test_new_rule_layouts_straddle_...`, `all(not check(x, rules) for x in generate(...))` is tautological, because `generate` only returns layouts that pass `check`. The effect of the `reach` clip inside `limit()` is untested: if it were removed, DRC would reject more draws and the tests would most likely still pass. Also, `_place_split` returns None as soon as the forward pass fails at alpha = 1 (this can only happen with merged pairs) and never tries alpha = 0.5 or 0, whereas the docstring says the extras shrink 'until a placement exists'. The meaningful checks hold: the straddle assertion, the old rule drawing nothing, determinism, and the parent fingerprints.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD command 1 (2R): 1500 DRC-clean candidates; the twin's configuration (0,0,1,0) was drawn 1500 times.",
+    "Ran DoD command 2 (gen2_0 main and control streams, 2 x 20000 candidates against the sealed stream.json.gz): identical.",
+    "Ran `uv run pytest -q tests/unit/generate`: 110 passed. `ruff check` on generate and its tests: clean. `uv run mfos gate --fast`: all gates passed.",
+    "Loaded main's derivative.py, whose sha256 a93effe5... equals E008's freeze hash, as a separate module. Compared generate() fingerprints and families with the new code on halfbridge_housing_spec(1,2,3) x wires_per_die (1,3) and on the real 2D_Case_4 dev spec from the dev run's ctx.pkl, seeds 0 and 20261110, 150 candidates each: all identical.",
+    "Checked the split flags of both E008 dev geometries (gen2_0 and 2D_Case_4 from the dev-run ctx.pkl): {0: False, 1: False} for both. 2D_Case_4 has no stored stream; its stream is unchanged because the non-split code path and its RNG use are unchanged, which the comparison against main confirms.",
+    "Read `_place_split` by hand: whenever the backward pass succeeds, late[i] is itself a feasible start, so the forward pass always succeeds for non-merged pairs; candidate start intervals are in ascending order, as `_pick_start` needs; `reach` erodes blocked regions by 1 um, which can at worst cause rejections, never a DRC violation, because `_quick_ok` and `drc.check` still gate every output.",
+    "Adversarial synthetic housings with the bar pair moved (y 17..23, 21..27, 25..31): a partially split housing gets 0 straddling candidates (scope finding).",
+    "Measured 2R: 12 ms per DRC-clean candidate; about 10 clean per 3000 draws; copper closeness of the twin compared with the dev references.",
+    "twin.py, halfbridge.py and drc/*.py hash identically to main; twin.py also equals E008's frozen hash fd4ad327..."
+  ],
+  "caveats": [
+    "Cross-window placement works only in orientations where no single free window can hold the minimal stack. Housings with a split region where one window still holds it keep the single-window support.",
+    "On 2D_Case_2R every DRC-clean candidate has the twin's discrete configuration, so a 2R search can compare geometry only inside one topology.",
+    "The DoD shows only that the twin's four discrete bits are in the support, not its continuous parameters; the gap to the twin is about the same as on the dev references.",
+    "I could not run the DoD step `git diff --quiet \"$(git merge-base HEAD main)\" -- \u2026`: the mfos guard hook blocks merge-base, and this review snapshot has a single commit. I compared file hashes against main for twin.py, halfbridge.py and drc/ instead (identical). The other protected paths (optimize, geometry, solvers, physics, tests/acceptance, tools, experiments, project/objectives, project/decisions, the research reference scripts, scripts/burst_gcp.sh) were not checked; that is left to the orchestrator's provenance check."
+  ]
+}
