@@ -1,0 +1,46 @@
+{
+  "verdict": "accept",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "DoD sys.modules check cannot detect function-level imports",
+      "detail": "The first definition-of-done command imports only the files already listed in code_under_test and then checks sys.modules. A src file reached only through a function-level import (here generate/halfbridge.py, imported inside derivative.py at line 274) is never loaded by the check, so leaving it out would not fail. The current list is correct only because a separate static analysis found the file, not because this check enforces it.",
+      "evidence": "Mutation run: the same DoD one-liner with 'src/moduleforge/generate/halfbridge.py' subtracted from `listed` printed `miss = [] 25` (passes).",
+      "suggested_check": "Replace or extend the check with a static AST import closure over the runner, its by-path research scripts and src, compared to the listed set.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Registration dry-run bound n >= 26 is looser than the claimed 27 hashed files",
+      "detail": "code_hashes returns 27 entries (26 src files plus the runner). The DoD asserts only n >= 26, so it would still pass with one src file dropped.",
+      "evidence": "code_hashes(s.root, spec.code_under_test) returned 27 keys, listed in full.",
+      "suggested_check": "Assert n == 27, or better, assert set equality with the static import closure.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Design note says 'two loaded research scripts', but the runner loads three; headroom_metrics.py is unhashed",
+      "detail": "Besides o006_case4_layout.py (dev only) and o003_powersynth_references.py (frozen by sha256), evaluate() inserts research/o003 into sys.path and imports headroom_metrics.py for the rel-1e-9 metric cross-check sanity check in the registered run. It imports only mfos, so the src list is unaffected. It is not covered by code_under_test or by the freeze block. That is outside this claim's src-only scope.",
+      "evidence": "e008_run.py lines 2026-2029; headroom_metrics.py imports only mfos.metrics; E008.yaml line 1977 describes the cross-check.",
+      "suggested_check": "Decide whether research/o003/headroom_metrics.py should be hashed, since it gates a sanity check of the registered run.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Static grep of every intra-package import in src/moduleforge, including function-level and relative ones, plus the imports of e008_run.py and the three research scripts it loads (o006_case4_layout.py, o003_powersynth_references.py, headroom_metrics.py). Hand-built closure: 26 src files, all listed. canary.py, solvers/l2.py and solvers/thermal_series.py have no importer in the closure.",
+    "Searched src, the runner, the research scripts and tools/ for importlib, import_module, __import__ and other dynamic loads. The only by-path loads are the two research scripts. mfos imports no moduleforge. Pickle loads are the runner's own solve contexts. No non-.py data files exist in src.",
+    "Mutation test of DoD command 1: it still passes with halfbridge.py removed from the listed set, showing it cannot detect function-level imports.",
+    "Ran DoD command 1: '26 imported src files, all in code_under_test'.",
+    "Ran the registration dry run (rewritten to `import mfos.models` because the guard blocked `from mfos import models`): A1 satisfied (dev value 0.3254 >= 0.2), the twin_as_best null not satisfied (expected for a null), bad = [], runner_files present, code_hashes = 27 files, all enumerated.",
+    "Ran e008_run.py --verify-freeze: all freeze hashes, GridRule, thermal_fem sha, metric params and code_must_match OK.",
+    "Ran `uv run mfos exp check E008`: exit 0.",
+    "Ran `uv run mfos gate --fast`: 'all gates passed'.",
+    "Retrieved the base blob b617bf22 of experiments/drafts/E008.yaml from the main repo's object store and compared it structurally with the new draft: only code_under_test changed, 12 entries added, none removed, original order preserved with the runner last. Current file hashes match the diff post-images (08ed33b2, f4bc5264, 82d75fbc).",
+    "Compared make_spec.py's code_under_test expression (with FROZEN expanded) with the draft list: same entries, same order."
+  ],
+  "caveats": [
+    "The packet's `git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance tools \u2026` check was blocked by the mfos guard, and this review checkout has no main branch. That no protected path changed is inferred from the material diff, which touches only the E008 draft, make_spec.py and the design note.",
+    "A runtime exercise of dev_reference('gen2_0') to observe halfbridge.py being loaded was denied by the permission layer. Completeness rests on the static import closure, which over-approximates runtime imports, so the runtime set cannot exceed the listed set.",
+    "The completeness claim covers src files only. The research scripts the run loads are outside it: o003_powersynth_references.py is sha-frozen, while headroom_metrics.py (registered-run cross-check) and o006_case4_layout.py (dev only) are not hashed."
+  ]
+}
