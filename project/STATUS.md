@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T05:17:36+00:00 from repository state — do not edit_
+_generated 2026-11-14T05:18:16+00:00 from repository state — do not edit_
 
 ## Founder inbox (12 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -13,7 +13,7 @@ _generated 2026-11-14T05:17:36+00:00 from repository state — do not edit_
 - **I0185** [plan_approval] [O003] approve initial plan (1 tasks)
 - **I0187** [experiment_registration] register E008 (pre-registration)
 - **I0189** [experiment_registration] register E008 (pre-registration)
-- **I0190** [protected_change] T0332: merge needs founder approval
+- **I0191** [experiment_registration] register E008 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -40,15 +40,11 @@ _generated 2026-11-14T05:17:36+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 289, failed: 3, needs_founder: 1, proposed: 1
+cancelled: 39, done: 290, failed: 3, proposed: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
-- T0332 `needs_founder` scientist/design_experiment: E008: solve the band for the die-average best so the reported h_lo_vj is not null (smoke finding) (attempt 1)
 
 ## Recent events
-- 2026-11-13T20:27:22+00:00 run_finished {"run": "T0331-critic-20261113T120510-5f57", "status": "completed", "cost": 2.016545, "subtype": "success", "report": "structured_output"}
-- 2026-11-13T20:27:27+00:00 inbox_opened {"id": "I0188", "kind": "protected_change", "subject": "T0330: merge needs founder approval"}
-- 2026-11-13T20:53:08+00:00 inbox_resolved {"id": "I0188", "status": "approved", "note": "Merge T0330 (D0020 follow-up: expected outcome declared, reported die-average Tj, registration readings settled).
 - 2026-11-13T20:53:30+00:00 merged {"task": "T0330"}
 - 2026-11-13T20:53:30+00:00 inbox_opened {"id": "I0189", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
 - 2026-11-14T01:16:47+00:00 sleep_detected {"gap_s": 7240, "runs_extended": 0}
@@ -61,3 +57,6 @@ cancelled: 39, done: 289, failed: 3, needs_founder: 1, proposed: 1
 - 2026-11-14T04:18:32+00:00 sleep_detected {"gap_s": 902, "runs_extended": 1}
 - 2026-11-14T04:33:26+00:00 run_finished {"run": "T0333-critic-20261113T201757-d581", "status": "completed", "cost": 2.32237, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T04:33:30+00:00 inbox_opened {"id": "I0190", "kind": "protected_change", "subject": "T0332: merge needs founder approval"}
+- 2026-11-14T05:17:38+00:00 inbox_resolved {"id": "I0190", "status": "approved", "note": "Merge T0332 (band solves for the die-average best so h_lo_vj is computable; reported only). Review T0333 accept_w
+- 2026-11-14T05:18:12+00:00 merged {"task": "T0332"}
+- 2026-11-14T05:18:12+00:00 inbox_opened {"id": "I0191", "kind": "experiment_registration", "subject": "register E008 (pre-registration)"}
