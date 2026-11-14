@@ -511,26 +511,56 @@ class _Ctx:
                     self.sig[o][kn] = bb if prev is None else (min(prev[0], bb[0]), min(prev[1], bb[1]),
                                                                max(prev[2], bb[2]), max(prev[3], bb[3]))
         # per orientation: maximal v-intervals (mm, grid) whose strip is >= 40 % free of the keepouts' exclusion zones
-        self.vwin = {}
+        self.vwin = {o: self._v_windows(o, self.free[PHASE]) for o in (0, 1)}
+        # D0021: per orientation and net, the same windows of the net's own free region (a stack may straddle several), and
+        # whether the single-window rule can place even the smallest possible stack (sum of the minimal slot heights and the
+        # smallest gaps over all eight sequences, which no draw of ``_sample`` can undercut).  Where no window holds it the
+        # single-window rule draws nothing at all (every draw returns None), so ``_sample`` places the stack across windows.
+        self.bands = {o: {n: self._v_windows(o, self.free[n]) for n in NETS} for o in (0, 1)}
+        self.split = {}
         for o in (0, 1):
-            fr = _Frame(o)
-            ulo, vlo, uhi, vhi = fr.rect(*(c * 1e3 for c in self.allowed.bounds))
-            vs = np.arange(_g_up(vlo), _g_dn(vhi) - 1e-9, DESIGN_GRID_MM)
-            ok = []
-            for v in vs:
-                strip = box(*(c * 1e-3 for c in fr.rect(ulo, v, uhi, v + DESIGN_GRID_MM)))
-                ok.append(self.free[PHASE].intersection(strip).area / strip.area >= 0.4)
-            wins, i = [], 0
-            while i < len(vs):
-                if ok[i]:
-                    j = i
-                    while j + 1 < len(vs) and ok[j + 1]:
-                        j += 1
-                    wins.append((float(vs[i]), float(vs[j]) + DESIGN_GRID_MM))
-                    i = j + 1
-                else:
-                    i += 1
-            self.vwin[o] = wins
+            dv = _Frame(o).size(spec.die.w, spec.die.h)[1] * 1e3
+            least = math.inf
+            for combo in range(8):
+                seq = _sequence(combo & 1, combo >> 1 & 1, combo >> 2 & 1)
+                tot = sum(dv + 2 * self.dem if role == "die" else max(self.wmin[net], 2.0) for net, role, _ in seq)
+                tot += sum(0.0 if seq[i][0] == seq[i + 1][0] else self.sp[(seq[i][0], seq[i + 1][0])] for i in range(3))
+                least = min(least, tot)
+            self.split[o] = not any(w[1] - w[0] >= least for w in self.vwin[o])
+
+    def _v_windows(self, o: int, region) -> list:
+        fr = _Frame(o)
+        ulo, vlo, uhi, vhi = fr.rect(*(c * 1e3 for c in self.allowed.bounds))
+        vs = np.arange(_g_up(vlo), _g_dn(vhi) - 1e-9, DESIGN_GRID_MM)
+        ok = []
+        for v in vs:
+            strip = box(*(c * 1e-3 for c in fr.rect(ulo, v, uhi, v + DESIGN_GRID_MM)))
+            ok.append(region.intersection(strip).area / strip.area >= 0.4)
+        wins, i = [], 0
+        while i < len(vs):
+            if ok[i]:
+                j = i
+                while j + 1 < len(vs) and ok[j + 1]:
+                    j += 1
+                wins.append((float(vs[i]), float(vs[j]) + DESIGN_GRID_MM))
+                i = j + 1
+            else:
+                i += 1
+        return wins
+
+    def reach(self, net: str, o: int, va: float, vb: float, u_from: float, side: int, bound: float) -> float:
+        """Furthest u (mm, grid) from ``u_from`` towards ``side`` (+1 / -1), at most ``bound``, such that the band
+        ``va..vb`` (v, mm) stays inside the net's free region (keepouts and their spacing); ``bound`` if nothing is in the way."""
+        fr = _Frame(o)
+        a, b = (u_from, bound) if side > 0 else (bound, u_from)
+        if b <= a:
+            return bound
+        strip = box(*(c * 1e-3 for c in fr.rect(a, va, b, vb)))
+        blocked = strip.difference(self.free[net]).buffer(-1e-6, **_MIT)  # drops float slivers (1 um)
+        if blocked.is_empty:
+            return bound
+        ub = [c * 1e3 for c in fr.rect(*blocked.bounds)]
+        return _g_dn(ub[0]) if side > 0 else _g_up(ub[2])
 
 
 CLEAR_TOL_MM = 1e-6  # absolute tolerance 1e-9 m of the clearance comparison (the DRC's own snapping scale is nm)
@@ -647,6 +677,73 @@ def _pick_end(needed: float, limit: float, free_side: int, rng, extra_max: float
     return end if (limit - end) * free_side >= -1e-9 else limit
 
 
+def _pick_start(ivs, lo: float, hi: float, rng, target: float | None):
+    """A grid start in the union of intervals ``ivs`` within ``[lo, hi]``: the first feasible one at or after ``target``
+    (jumping over an obstruction), or, without ``target``, uniform by length; None if there is none."""
+    cl = []
+    for a, b in ivs:
+        a, b = _g_up(max(a, lo)), _g_dn(min(b, hi))
+        if a <= b + 1e-9:
+            cl.append((a, b))
+    if not cl:
+        return None
+    if target is not None:
+        for a, b in cl:
+            if b >= target - 1e-9:
+                return max(a, _g_up(target))
+        return None
+    w = np.array([b - a + DESIGN_GRID_MM for a, b in cl])
+    a, b = cl[int(rng.choice(len(cl), p=w / w.sum()))]
+    return a + DESIGN_GRID_MM * int(rng.integers(0, int(round((b - a) / DESIGN_GRID_MM)) + 1))
+
+
+def _place_split(cx: _Ctx, orient: int, seq, h_min, h_ext, merge, g_min, g_ext, dwin, rng):
+    """D0021: v extents ``((v0, v1) x 4, heights)`` of a four-slot stack whose slots may sit in different free windows of
+    their own nets (the gap between them straddles the obstruction), or None.
+
+    Slot ``i`` starts inside a window of its net's free region, with its centre inside ``dwin[i]`` if it is a die slot, and
+    after the previous slot by at least the minimal gap (0 for a merged pair, which must then touch).  The random extras
+    are shrunk (alpha 1, 0.5, 0) until a placement exists; a backward pass gives the latest start of every slot that still
+    leaves room for the rest, a forward pass draws the starts (with probability 0.7 the first feasible start at or after the
+    drawn gap, else uniformly in the feasible range)."""
+    for alpha in (1.0, 0.5, 0.0):
+        hts = [m + _snap(alpha * e) for m, e in zip(h_min, h_ext, strict=True)]
+        gaps = [m + _snap(alpha * e) for m, e in zip(g_min, g_ext, strict=True)]
+        feas = []
+        for i, (net, _, _) in enumerate(seq):
+            iv = [(a, b - hts[i]) for a, b in cx.bands[orient][net] if b - a >= hts[i]]
+            if i in dwin:
+                iv = [(max(a, dwin[i][0] - hts[i] / 2), min(b, dwin[i][1] - hts[i] / 2)) for a, b in iv]
+            feas.append([(a, b) for a, b in iv if a <= b + 1e-9])
+        late = [None] * 4
+        end = math.inf
+        for i in (3, 2, 1, 0):
+            hi = max((_g_dn(min(b, end)) for a, b in feas[i] if _g_up(a) <= _g_dn(min(b, end))), default=None)
+            if hi is None:
+                break
+            late[i] = hi
+            end = late[i] - hts[i - 1] - g_min[i - 1] if i else 0.0
+        else:
+            starts, prev_end = [], None
+            for i in range(4):
+                if i == 0:
+                    s0 = _pick_start(feas[0], -math.inf, late[0], rng, None)
+                else:
+                    lo = prev_end + g_min[i - 1]
+                    target = lo if merge[i - 1] else (prev_end + gaps[i - 1] if rng.random() < 0.7 else None)
+                    s0 = _pick_start(feas[i], lo, late[i], rng, target)
+                    if s0 is None and target is not None:
+                        s0 = _pick_start(feas[i], lo, late[i], rng, lo)
+                    if s0 is not None and merge[i - 1] and s0 != prev_end:
+                        return None
+                if s0 is None:
+                    return None
+                starts.append(s0)
+                prev_end = s0 + hts[i]
+            return [(a, a + h) for a, h in zip(starts, hts, strict=True)], hts
+    return None
+
+
 def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params | None:
     orient = int(rng.integers(2))
     hs_first, hs_die_first, ls_die_first = (int(rng.integers(2)) for _ in range(3))
@@ -702,47 +799,54 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
                 lo_w, hi_w, any_ = max(lo_w, bb[1] - reach - qpad[pad]), min(hi_w, bb[3] + reach - qpad[pad]), True
         if any_:
             dwin[i] = (lo_w, hi_w)
-    for alpha in (1.0, 0.5, 0.0):  # shrink the random extras until the stack fits where the signal copper is
-        hts = [m + _snap(alpha * e) for m, e in zip(h_min, h_ext, strict=True)]
-        gaps = [m + _snap(alpha * e) for m, e in zip(g_min, g_ext, strict=True)]
-        ids = sorted(dwin)
-        if len(ids) == 2:  # stretch / squeeze the gaps between the two die slots so that both windows can be met
-            i, j = ids
-            off = np.concatenate([[0.0], np.cumsum(np.array(hts[:3]) + np.array(gaps))])
-            span = (off[j] + hts[j] / 2) - (off[i] + hts[i] / 2)
-            smin, smax = dwin[j][0] - dwin[i][1], dwin[j][1] - dwin[i][0]
-            free_g = [k for k in range(i, j) if not merge[k]]
-            if span < smin and free_g:
-                add = _g_up((smin - span) / len(free_g))
-                for k in free_g:
-                    gaps[k] += add
-            elif span > smax:
-                cut = span - smax
-                for k in free_g:
-                    take = _g_up(min(cut, gaps[k] - g_min[k]))
-                    gaps[k] -= take
-                    cut -= take
-        total = sum(hts) + sum(gaps)
-        fits = [w for w in cx.vwin[orient] if w[1] - w[0] >= total]
-        if not fits:
-            continue
-        wlo, whi = fits[int(rng.integers(len(fits)))]
-        lo_v, hi_v = wlo, whi - total
-        off = 0.0
-        for i in range(4):
-            if i in dwin:
-                c = off + hts[i] / 2
-                lo_v, hi_v = max(lo_v, dwin[i][0] - c), min(hi_v, dwin[i][1] - c)
-            off += hts[i] + (gaps[i] if i < 3 else 0.0)
-        if hi_v >= lo_v:
-            break
+    split = cx.split[orient]
+    if split:  # D0021: no single window holds even the smallest stack; place the slots across the windows
+        placed = _place_split(cx, orient, seq, h_min, h_ext, merge, g_min, g_ext, dwin, rng)
+        if placed is None:
+            return None
+        sv, hts = placed
     else:
-        return None
-    v0 = max(_snap(rng.uniform(lo_v, hi_v)), _g_up(lo_v))
-    sv = []
-    for i in range(4):
-        sv.append((v0, v0 + hts[i]))
-        v0 += hts[i] + (gaps[i] if i < 3 else 0.0)
+        for alpha in (1.0, 0.5, 0.0):  # shrink the random extras until the stack fits where the signal copper is
+            hts = [m + _snap(alpha * e) for m, e in zip(h_min, h_ext, strict=True)]
+            gaps = [m + _snap(alpha * e) for m, e in zip(g_min, g_ext, strict=True)]
+            ids = sorted(dwin)
+            if len(ids) == 2:  # stretch / squeeze the gaps between the two die slots so that both windows can be met
+                i, j = ids
+                off = np.concatenate([[0.0], np.cumsum(np.array(hts[:3]) + np.array(gaps))])
+                span = (off[j] + hts[j] / 2) - (off[i] + hts[i] / 2)
+                smin, smax = dwin[j][0] - dwin[i][1], dwin[j][1] - dwin[i][0]
+                free_g = [k for k in range(i, j) if not merge[k]]
+                if span < smin and free_g:
+                    add = _g_up((smin - span) / len(free_g))
+                    for k in free_g:
+                        gaps[k] += add
+                elif span > smax:
+                    cut = span - smax
+                    for k in free_g:
+                        take = _g_up(min(cut, gaps[k] - g_min[k]))
+                        gaps[k] -= take
+                        cut -= take
+            total = sum(hts) + sum(gaps)
+            fits = [w for w in cx.vwin[orient] if w[1] - w[0] >= total]
+            if not fits:
+                continue
+            wlo, whi = fits[int(rng.integers(len(fits)))]
+            lo_v, hi_v = wlo, whi - total
+            off = 0.0
+            for i in range(4):
+                if i in dwin:
+                    c = off + hts[i] / 2
+                    lo_v, hi_v = max(lo_v, dwin[i][0] - c), min(hi_v, dwin[i][1] - c)
+                off += hts[i] + (gaps[i] if i < 3 else 0.0)
+            if hi_v >= lo_v:
+                break
+        else:
+            return None
+        v0 = max(_snap(rng.uniform(lo_v, hi_v)), _g_up(lo_v))
+        sv = []
+        for i in range(4):
+            sv.append((v0, v0 + hts[i]))
+            v0 += hts[i] + (gaps[i] if i < 3 else 0.0)
     # --- columns
     side, cols = {}, {}
     for net in NETS:
@@ -765,6 +869,8 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
     def limit(net, va, vb):
         free_side = -side[net]
         lim = uhi if free_side > 0 else ulo
+        if split:  # the slot also stays inside the net's free region (keepouts and their spacing)
+            lim = cx.reach(net, orient, va, vb, edge[net], free_side, lim)
         for m in NETS:
             if m == net or side[m] != free_side:
                 continue

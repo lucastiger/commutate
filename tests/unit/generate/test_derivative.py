@@ -749,3 +749,99 @@ def test_fingerprints_identical_across_processes():
     assert len(outs[0]) == 3 and outs[0] == outs[1]
     here = [x.fingerprint() for x in D.generate(dataclasses.replace(case4_spec(), wires_per_die=2), 3, seed=11)]
     assert outs[0] == here
+
+
+# ---------------------------------------------------------------------------------------- D0021: stack across windows
+def split_housing_spec():
+    """Generator housing (70 x 40 mm, one die per switch) with two fixed gate bars across the middle (y 17..19 and 21..23 mm).
+
+    In orientation 0 (v = y) the free region splits into the windows y 1..16 and 24..39 mm; the smallest four-slot stack
+    (two dies of 5 + 2 x die_edge_margin, two lands of >= 2 mm, gaps) is taller than either, so the single-window rule can place
+    nothing there.  Orientation 1 (v = x) is not split."""
+    from shapely.geometry import box
+    from moduleforge.geometry import Trace
+    s = D.halfbridge_housing_spec(1, wires_per_die=1)
+    ko = (Trace(GATE_HS, box(8e-3, 17e-3, 50e-3, 19e-3)), Trace(GATE_LS, box(8e-3, 21e-3, 50e-3, 23e-3)))
+    return dataclasses.replace(s, keepouts=ko)
+
+
+@pytest.fixture(scope="module")
+def split_spec():
+    return split_housing_spec()
+
+
+def test_split_region_is_detected_per_orientation(split_spec, hb, c4):
+    cx = D._Ctx(split_spec)
+    assert cx.split == {0: True, 1: False}
+    assert cx.vwin[0] == [(1.0, 16.0), (24.0, 39.0)]
+    assert max(b - a for a, b in cx.vwin[0]) < 22.0  # no window holds the 4 slots of the smallest stack
+    for spec in (hb, c4, D.halfbridge_housing_spec(2, wires_per_die=1)):  # housings with a window that holds a stack
+        assert not any(D._Ctx(spec).split.values())
+
+
+def test_old_rule_draws_nothing_where_the_region_is_split(split_spec):
+    cx = D._Ctx(split_spec)
+    old = D._Ctx(split_spec)
+    old.split = {0: False, 1: False}  # the single-window rule everywhere
+    n = {0: 0, 1: 0}
+    clean = {0: 0, 1: 0}
+    for tag, c in (("new", cx), ("old", old)):
+        rng = np.random.default_rng(5)
+        for _ in range(600):
+            p = D._sample(split_spec, c, rng)
+            if p is None or p.orient != 0:
+                continue
+            n[0] += tag == "new"
+            assert tag == "new", "the single-window rule returned a candidate in a split orientation"
+            try:
+                lay = D.build(split_spec, p)
+            except ValueError:
+                continue
+            clean[0] += D._quick_ok(split_spec, c, lay) and not check(lay, split_spec.rules)
+    assert n[0] > 0 and clean[0] > 0
+
+
+def test_new_rule_layouts_straddle_the_obstruction_and_are_drc_clean(split_spec):
+    lays = D.generate(split_spec, 40, 11)
+    assert all(not check(x, split_spec.rules) for x in lays)
+    ps = [D.params_of(x) for x in lays]
+    o0 = [p for p in ps if p.orient == 0]
+    assert len(o0) >= 5
+    for p in o0:
+        vs = sorted((s[1], s[3]) for s in p.slots)
+        assert vs[1][1] <= 16.0 + 1e-9 and vs[2][0] >= 24.0 - 1e-9  # two slots below the bars, two above
+        assert vs[2][0] - vs[1][1] >= 8.0  # the gap straddles the bars (18 mm span plus clearances)
+    for x in lays:  # no copper over the fixed gate bars
+        for t in x.traces[:3]:
+            assert all(t.polygon.distance(k.polygon) >= split_spec.rules.spacing_for(t.net, k.net) - 1e-9
+                       for k in split_spec.keepouts)
+
+
+def test_split_stack_is_deterministic(split_spec):
+    a = [x.fingerprint() for x in D.generate(split_spec, 8, 3)]
+    assert a == [x.fingerprint() for x in D.generate(split_spec, 8, 3)]
+    assert len(set(a)) == 8
+
+
+def test_split_reach_clips_a_slot_at_a_partial_keepout(split_spec):
+    cx = D._Ctx(split_spec)
+    # band y 24..28 mm across the whole width: the bar spans x 8..50 at y 21..23 (+ spacing), so the band at y 28..32 is free
+    assert cx.reach(DC_PLUS, 0, 28.0, 32.0, 8.0, 1, 60.0) == 60.0
+    # a band over the bars is blocked at once from x = 8 mm, and from the side of the bar's end a slot stops short of it
+    assert cx.reach(DC_PLUS, 0, 17.0, 19.0, 3.0, 1, 60.0) < 8.0
+    assert cx.reach(DC_PLUS, 0, 17.0, 19.0, 60.0, -1, 3.0) > 50.0
+
+
+# Fingerprint prefixes (16 hex) of the first six candidates, seed 7, of the parent commit (single-window rule only)
+_PARENT_FP = {
+    "hb2": ["4653a5c1c88e2292", "e83f08c0af94a4d7", "3c6ef8339f6dcf52", "dfc7190d4b06516f", "d0d198627f4c9666",
+            "34002982d1b357ff"],
+    "c4": ["ff655e5119be7833", "eea668b0f974bc89", "458fa3f3f1fd3b54", "00f978ea05a5bbab", "e6860e699b02bf1d",
+            "7812abaf364378e4"],
+}
+
+
+def test_single_window_path_is_unchanged_from_the_parent_commit(c4):
+    for name, spec in (("hb2", D.halfbridge_housing_spec(2, wires_per_die=1)), ("c4", c4)):
+        got = [x.fingerprint()[:16] for x in D.generate(spec, 6, 7)]
+        assert got == _PARENT_FP[name]
