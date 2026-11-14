@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T22:36:12+00:00 from repository state — do not edit_
+_generated 2026-11-14T22:36:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -34,7 +34,6 @@ cancelled: 41, done: 296, failed: 4, running: 1
 - T0342 `running` scientist/investigate: Diagnose failure of T0339 (attempt 1)
 
 ## Recent events
-- 2026-11-14T21:13:28+00:00 run_started {"run": "T0341-critic-20261114T131328-04c8", "task": "T0341", "role": "critic", "session": "16f84f99-0cb0-452e-a396-19e5fb493fed"}
 - 2026-11-14T21:14:02+00:00 sleep_detected {"gap_s": 1079, "runs_extended": 1}
 - 2026-11-14T21:29:11+00:00 run_finished {"run": "T0341-critic-20261114T131328-04c8", "status": "completed", "cost": 1.651311, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T21:29:15+00:00 inbox_opened {"id": "I0198", "kind": "protected_change", "subject": "T0338: merge needs founder approval"}
@@ -49,3 +48,4 @@ cancelled: 41, done: 296, failed: 4, running: 1
 - 2026-11-14T22:36:07+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "diagnose"}
 - 2026-11-14T22:36:07+00:00 investigation_spawned {"task": "T0342", "about": "T0339", "cls": "implementation"}
 - 2026-11-14T22:36:12+00:00 run_started {"run": "T0342-scientist-20261114T143612-61b6", "task": "T0342", "role": "scientist", "session": "d926a43d-78e0-44c3-ad0d-dcf4e42d5af9"}
+- 2026-11-14T22:36:47+00:00 sleep_detected {"gap_s": 927, "runs_extended": 1}
