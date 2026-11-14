@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T21:13:28+00:00 from repository state — do not edit_
+_generated 2026-11-14T21:14:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 41, done: 294, failed: 3, review: 1, running: 1, todo: 1
 - T0341 `running` critic/review: Review T0338 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-14T18:43:42+00:00 inbox_resolved {"id": "I0197", "status": "approved", "note": "usd=31.5", "by": "human"}
 - 2026-11-14T19:20:08+00:00 run_finished {"run": "T0338-builder-20261114T104144-f272", "status": "completed", "cost": 0.88713, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T19:20:08+00:00 task_failed_attempt {"task": "T0338", "signal": "scope_violation", "action": "repair"}
 - 2026-11-14T19:20:13+00:00 run_started {"run": "T0338-builder-20261114T112013-351b", "task": "T0338", "role": "builder", "session": "c455b389-d4a3-49c0-97d0-db1f5a272932"}
@@ -50,3 +49,4 @@ cancelled: 41, done: 294, failed: 3, review: 1, running: 1, todo: 1
 - 2026-11-14T20:56:05+00:00 run_finished {"run": "T0338-builder-20261114T121459-a4c3", "status": "completed", "cost": 0.86309, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T21:13:21+00:00 verified {"task": "T0338"}
 - 2026-11-14T21:13:28+00:00 run_started {"run": "T0341-critic-20261114T131328-04c8", "task": "T0341", "role": "critic", "session": "16f84f99-0cb0-452e-a396-19e5fb493fed"}
+- 2026-11-14T21:14:02+00:00 sleep_detected {"gap_s": 1079, "runs_extended": 1}
