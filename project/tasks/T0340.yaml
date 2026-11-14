@@ -1,0 +1,51 @@
+id: T0340
+objective: O003
+title: Diagnose failure of T0338
+type: investigate
+agent: scientist
+status: running
+depends_on: []
+description: 'Task T0338 (''Generator: let the sampler place a slot stack across split free windows (2D_Case_2R''s
+  own topology is outside its support; D0021)'') failed with preliminary class `implementation`: edited
+  files outside its write scope.
+
+  Failure output (tail):
+
+  ```
+
+  research/notes/e009-generator.md (outside builder write scope)
+
+  research/o003/e009_dev/feasibility_2r.py (outside builder write scope)
+
+  ```
+
+  Determine the true failure class and root cause. Follow skill mf-diagnosis: list at least two alternative
+  explanations, design a discriminating test, run it if cheap, and write your notes to research/diagnoses/T0340.md.'
+context_files:
+- project/tasks/T0338.yaml
+deliverables:
+- research/diagnoses/T0340.md
+touches:
+- research/diagnoses/T0340.md
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0340-diagnose-failure-of-t0338
+pr: null
+runs:
+- T0340-scientist-20261114T120358-51be
+created_by: orchestrator
+created_at: '2026-11-14T20:03:51+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

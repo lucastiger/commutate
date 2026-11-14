@@ -4,7 +4,7 @@ title: 'Generator: let the sampler place a slot stack across split free windows 
   is outside its support; D0021)'
 type: implement
 agent: builder
-status: running
+status: failed
 depends_on: []
 description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e009.md,\
   \ accepted 2026-11-14), item 2(a). Repair the candidate sampler in\nsrc/moduleforge/generate/derivative.py\
@@ -231,3 +231,99 @@ history:
 
     research/o003/e009_dev/feasibility_2r.py (outside builder write scope)'
   at: '2026-11-14T19:20:08+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Blocked by a write-scope conflict in the task spec, not by the code. Deliverable 5 and DoD
+    check 3 require research/o003/e009_dev/feasibility_2r.py and research/notes/e009-generator.md. The
+    builder write scope (.mfos/policy.toml: src/**, tests/unit/**, tests/regression/**, benchmarks/**,
+    docs/**, pyproject.toml, uv.lock) excludes research/**, which belongs to the scientist role. Attempt
+    1 was rejected as a scope_violation for exactly those two files. Removing them fails DoD 3, and keeping
+    them keeps the violation if the scope check covers the whole branch. Writing them again would repeat
+    the failed approach.
+
+
+    What is on the branch: attempt 1''s commit 21bbf29a changes derivative.py, the unit tests and the
+    two research files. I reviewed it and re-ran every DoD command on it without changing '
+  report:
+    status: blocked
+    summary: 'Blocked by a write-scope conflict in the task spec, not by the code. Deliverable 5 and DoD
+      check 3 require research/o003/e009_dev/feasibility_2r.py and research/notes/e009-generator.md. The
+      builder write scope (.mfos/policy.toml: src/**, tests/unit/**, tests/regression/**, benchmarks/**,
+      docs/**, pyproject.toml, uv.lock) excludes research/**, which belongs to the scientist role. Attempt
+      1 was rejected as a scope_violation for exactly those two files. Removing them fails DoD 3, and
+      keeping them keeps the violation if the scope check covers the whole branch. Writing them again
+      would repeat the failed approach.
+
+
+      What is on the branch: attempt 1''s commit 21bbf29a changes derivative.py, the unit tests and the
+      two research files. I reviewed it and re-ran every DoD command on it without changing or committing
+      anything. The change: _Ctx gains split[o], which is True when no single free window holds the smallest
+      possible stack. Only then does _sample use the new _place_split (per-net windows, gaps that straddle
+      the obstruction) and clip each slot''s u end at the net''s free region (_Ctx.reach). Elsewhere the
+      old draws run unchanged, in the old order. On 2D_Case_2R the gate bars split orientation 0 into
+      v windows (7, 23) and (39, 53).
+
+
+      Results:
+
+      - DoD 1: 1500 DRC-clean 2R candidates from seeds 101-103; the twin configuration (0,0,1,0) is among
+      them.
+
+      - DoD 2: the gen2_0 main and control dev streams (2 x 20000 candidates) are identical.
+
+      - DoD 3: p = 3.43e-3 per draw, about 292 draws (26 ms) per candidate, an estimated 17.4 min for
+      2 x 20000, abort probability at most 1.7e-23 (below 1e-6).
+
+      - pytest tests/unit/generate: 110 passed. Ruff, the protected-path diff and mfos gate --fast all
+      pass.
+
+
+      Decision needed from the founder or orchestrator: (a) grant this task a scope exception for research/o003/e009_dev/**
+      and research/notes/e009-generator.md (the task text already lists them as allowed) and accept 21bbf29a
+      as it is; or (b) move deliverable 5 and DoD 3 to a scientist task and drop the two research files
+      from this builder branch.'
+    checks_run:
+    - cmd: memory_pressure | tail -1; sysctl vm.swapusage
+      exit_code: 1
+    - cmd: '/usr/bin/time -l uv run python -c "<DoD 1: 2R generate seeds 101-103, twin configuration drawn>"  (time
+        -l blocked by sandbox; the python printed 1500 candidates)'
+      exit_code: 1
+    - cmd: 'uv run python -c "<DoD 1: 2R generate seeds 101-103, all DRC-clean, twin configuration drawn>"'
+      exit_code: 0
+    - cmd: 'uv run python -c "<DoD 2: E008 dev streams gen2_0 main+control identical>"'
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate research/o003/e009_dev tests/unit/generate
+      exit_code: 0
+    - cmd: git diff --quiet HEAD~1 -- <DoD protected path list>  (HEAD~1 = dd23bfd7 used as base because
+        the guard blocks git merge-base)
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/generate
+      exit_code: 0
+    - cmd: uv run python research/o003/e009_dev/feasibility_2r.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'Write-scope conflict: deliverable 5 and DoD 3 need research/o003/e009_dev/feasibility_2r.py and
+      research/notes/e009-generator.md, which are outside the builder write scope (policy: builder = src/**,
+      tests/unit/**, tests/regression/**, benchmarks/**, docs/**, pyproject.toml, uv.lock). Attempt 1''s
+      commit 21bbf29a, still on this branch, contains both files.'
+    - On 2D_Case_2R every DRC-clean draw (1028 of 300000 in the feasibility run, all 1500 in DoD 1) is
+      the twin's configuration (0,0,1,0). Orientation 1 (one window, v 7..48) produces no DRC-clean draw.
+      A search on 2R would only explore that one layout topology, which matters for E009's design.
+    - Identical draws are guaranteed only for housings where neither orientation is split. The note says
+      2D_Case_4, gen2_0 and halfbridge_housing_spec k=1..3 are unsplit in both orientations, but DoD 2
+      checks only gen2_0 directly. A housing split in only one orientation, such as 2R, gets a different
+      draw order.
+    - The sandbox blocked /usr/bin/time -l and sysctl vm.swapusage, so peak RSS was not measured. memory_pressure
+      reported 42 % free. Single processes; DoD 2 and the gate ran concurrently (2 processes).
+    - The guard blocks git merge-base, so the protected-path diff used HEAD~1 (dd23bfd7, the D0021 commit)
+      as base. Main has moved on since, by state-tick commits only.
+    files_changed: []
+- attempt: 2
+  outcome: scope_violation
+  summary: edited files outside its write scope
+  failure_output: 'research/notes/e009-generator.md (outside builder write scope)
+
+    research/o003/e009_dev/feasibility_2r.py (outside builder write scope)'
+  at: '2026-11-14T20:03:51+00:00'
