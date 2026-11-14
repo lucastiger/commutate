@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T22:03:04+00:00 from repository state — do not edit_
+_generated 2026-11-14T22:03:44+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -34,7 +34,6 @@ cancelled: 41, done: 296, failed: 3, running: 1
 - T0339 `running` scientist/design_experiment: E009: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 2)
 
 ## Recent events
-- 2026-11-14T20:05:16+00:00 founder_stopped {"task": "T0340", "run": "T0340-scientist-20261114T120358-51be", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-14T20:05:54+00:00 task_rescoped {"task": "T0338", "reason": "research deliverables moved to T0339 (builder write scope)"}
 - 2026-11-14T20:14:59+00:00 run_started {"run": "T0338-builder-20261114T121459-a4c3", "task": "T0338", "role": "builder", "session": "281ba830-b511-4740-97fc-73a190722273"}
 - 2026-11-14T20:56:05+00:00 run_finished {"run": "T0338-builder-20261114T121459-a4c3", "status": "completed", "cost": 0.86309, "subtype": "success", "report": "structured_output"}
@@ -49,3 +48,4 @@ cancelled: 41, done: 296, failed: 3, running: 1
 - 2026-11-14T21:48:28+00:00 run_finished {"run": "T0339-scientist-20261114T133040-ce3d", "status": "completed", "cost": 0.568459, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T22:03:00+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "repair"}
 - 2026-11-14T22:03:04+00:00 run_started {"run": "T0339-scientist-20261114T140304-d107", "task": "T0339", "role": "scientist", "session": "1478b260-0039-4fea-9564-54ae2fe51e66"}
+- 2026-11-14T22:03:39+00:00 sleep_detected {"gap_s": 912, "runs_extended": 1}
