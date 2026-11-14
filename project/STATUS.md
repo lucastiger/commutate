@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-14T18:21:50+00:00 from repository state — do not edit_
+_generated 2026-11-14T18:41:44+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
-- **I0196** [decision] E008 needs burst compute (~98.7 CPU-h)
+- **I0197** [budget_increase] [O003] +$15 margin above the $250 cap for the E009 path (D0021 item 6)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -21,7 +21,7 @@ _generated 2026-11-14T18:21:50+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 118 | $233.49 | 3728844 | 1837230 | 243 | 0 |
+| O003 | 119 | $233.49 | 3728844 | 1837230 | 243 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,16 +29,11 @@ _generated 2026-11-14T18:21:50+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 294, failed: 3, needs_founder: 1
+cancelled: 40, done: 294, failed: 3, running: 1, todo: 1
 
-- T0329 `needs_founder` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
+- T0338 `running` builder/implement: Generator: let the sampler place a slot stack across split free windows (2D_Case_2R's own topology is outside its support; D0021) (attempt 1)
 
 ## Recent events
-- 2026-11-14T17:55:30+00:00 inbox_resolved {"id": "I0169", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:32+00:00 inbox_resolved {"id": "I0171", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:35+00:00 inbox_resolved {"id": "I0175", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:36+00:00 inbox_resolved {"id": "I0177", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
-- 2026-11-14T17:55:38+00:00 inbox_resolved {"id": "I0179", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:40+00:00 inbox_resolved {"id": "I0181", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:42+00:00 inbox_resolved {"id": "I0187", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
 - 2026-11-14T17:55:44+00:00 inbox_resolved {"id": "I0189", "status": "rejected", "note": "superseded by I0195 (D0020 item 5)", "by": "human"}
@@ -49,3 +44,8 @@ cancelled: 39, done: 294, failed: 3, needs_founder: 1
 - 2026-11-14T17:56:55+00:00 inbox_opened {"id": "I0196", "kind": "decision", "subject": "E008 needs burst compute (~98.7 CPU-h)"}
 - 2026-11-14T17:56:55+00:00 burst_requested {"task": "T0329", "experiment": "E008", "cpu_hours": 98.7}
 - 2026-11-14T17:59:04+00:00 experiment_minted {"id": "E008", "run": "E008-20261114T095904-2c22"}
+- 2026-11-14T18:41:24+00:00 task_added {"task": "T0338", "reason": "founder 2026-11-14: D0021 generator sampler repair"}
+- 2026-11-14T18:41:24+00:00 task_added {"task": "T0339", "reason": "founder 2026-11-14: D0021 successor experiment E009"}
+- 2026-11-14T18:41:24+00:00 inbox_opened {"id": "I0197", "kind": "budget_increase", "subject": "[O003] +$15 margin above the $250 cap for the E009 path (D0021 item 6)"}
+- 2026-11-14T18:41:36+00:00 inbox_resolved {"id": "I0196", "status": "answered", "note": "D0021 (founder, 2026-11-14): run E008-20261114T095904-2c22 ended with status error (the generator sampler cannot 
+- 2026-11-14T18:41:44+00:00 run_started {"run": "T0338-builder-20261114T104144-f272", "task": "T0338", "role": "builder", "session": "4b1d9ad3-6160-4d31-a3de-9e9d6b0fbdd4"}

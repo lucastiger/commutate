@@ -1,0 +1,119 @@
+id: T0338
+objective: O003
+title: 'Generator: let the sampler place a slot stack across split free windows (2D_Case_2R''s own topology
+  is outside its support; D0021)'
+type: implement
+agent: builder
+status: running
+depends_on: []
+description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e009.md,\
+  \ accepted 2026-11-14), item 2(a). Repair the candidate sampler in\nsrc/moduleforge/generate/derivative.py\
+  \ so that it can place a slot stack across more than one free window. Nothing else.\n\nWhy (founder-session\
+  \ diagnosis, 2026-11-14, generator/DRC only). The first registered E008 run (experiments/results/E008/E008-20261114T095904-2c22,\
+  \ status error)\naborted because derivative.generate raised \"no DRC-valid candidate in 20000 consecutive\
+  \ draws for powersynth_2D_Case_2R\"\n(derivative.py:888) in both the main and the control screen. Locally,\
+  \ from the committed experiments/results/E008/E008-20261114T095904-2c22/work/2D_Case_2R/ctx.pkl\n(keys\
+  \ spec, reference, twin, D, snap025): 0 DRC-clean in 312 000 draws (unsealed seeds). About 65 % of draws\
+  \ return None at\nderivative.py:740 (the four-slot stack fits no window of cx.vwin even with every random\
+  \ extra shrunk to 0), 32 % at :793\n(_pick_end, the die row does not fit along u). No draw in orientation\
+  \ 0 even reaches Params. Yet the 2R reference and its\ntwin are DRC-clean, and build(spec, params_of(twin))\
+  \ is DRC-clean. The twin is orientation 0, hs_first 0, hs_die_first 1,\nls_die_first 0, sequence DC-\
+  \ land LS / PHASE die LS / DC+ die HS / PHASE land HS. Its slots (frame mm, u0 v0 u1 v1) are\n(7, 7,\
+  \ 47, 13), (7, 15, 47, 23), (7, 37, 33, 45), (7, 47, 47, 51): a 44 mm stack with a 14 mm gap, and a\
+  \ DC+ die slot\nnarrower in u than the others. The sampler's free windows for orientation 0 are (7,\
+  \ 23) and (39, 53) mm. _sample needs the\nwhole stack inside ONE window whose height is at least the\
+  \ stack's, so the reference's own topology is outside its\nsupport.\n\nRequired:\n1. Let _sample place\
+  \ the slots of one stack in more than one free window, with gaps that straddle the obstruction\n   between\
+  \ them, and slot u extents narrower than the column where the free region requires it. Find what splits\
+  \ 2R's\n   free region (_Ctx: allowed region, keep-outs, fixed signal copper) and model it as it is.\
+  \ Do not just widen priors.\n   build, the DRC and _quick_ok are the judges: only DRC-clean layouts\
+  \ are returned, as now.\n2. Development results must not move (D0021 item 3). E008's saved development\
+  \ candidate streams must stay\n   byte-identical (fingerprint and family), and so must every other derivative.generate\
+  \ call on development geometry\n   that experiments/runners/e008_run.py makes (2D_Case_4 seeds and others;\
+  \ enumerate them). One way that makes this\n   true by construction: decide per (spec, orientation)\
+  \ in _Ctx whether any single free window can hold the minimal\n   stack, and use the new placement only\
+  \ where none can, with no change to the random draws anywhere else. Choose and\n   justify. If identity\
+  \ cannot be kept, stop and say why instead (the founder decides).\n3. Do not change ReferenceSpec, Params,\
+  \ Layout or the family-string encoding: committed ctx.pkl files and params_of must\n   still load and\
+  \ decode.\n4. Unit tests in tests/unit/generate/test_derivative.py: a synthetic housing whose free region\
+  \ is split by an\n   obstruction, where the old rule draws nothing and the new one draws DRC-clean layouts\
+  \ that straddle it; the\n   single-window path is unchanged (same layouts for a fixed seed as the parent\
+  \ commit on a housing where one window\n   fits); and existing tests still pass.\n5. research/o003/e009_dev/feasibility_2r.py\
+  \ (generator/DRC only, unsealed seeds): load the committed 2R ctx.pkl and\n   report, for the main housing\
+  \ (orientation and sequence mix), the acceptance rate p (DRC-clean per draw), the draws and\n   wall\
+  \ time per candidate, the estimated wall time to draw 2 x 20 000 candidates (main and control), and\
+  \ the estimated\n   probability that a 20 000-candidate screen hits the 20 000-consecutive-failure limit.\
+  \ Assert that probability < 1e-6.\n   Put its output and a short paragraph (what split the region, the\
+  \ new placement rule, why development draws are\n   unchanged) in research/notes/e009-generator.md.\n\
+  \nHard limits (D0021 item 4). On 2D_Case_2R only generator/DRC feasibility work: load ctx.pkl, _Ctx,\
+  \ _sample, build,\ngenerate, params_of, drc.check. No L1, l2_layout, EM, thermal, FV, degrade(), twin(),\
+  \ prepare() or search on 2D_Case_2R or\n2D_Case_6, and do not use 2D_Case_6 at all. Never read anything\
+  \ under experiments/results/E008/E008-20261114T095904-2c22/work/2D_Case_2R/solves/ or any L_sub or Tj\n\
+  of 2R or 6. Never write experiments/results/E008/E008-20261114T095904-2c22 or /Users/lukeskywalker/mf/drafts/.\
+  \ No change to anything outside derivative.py,\ntests/unit/generate/, research/o003/e009_dev/ and research/notes/.\
+  \ Never run gcloud or start a VM. Never read\ndata/holdout/. Do not look at Hopkins / NC State PREES\
+  \ or 2D_Case_5 geometry."
+context_files:
+- src/moduleforge/generate/derivative.py
+- tests/unit/generate/test_derivative.py
+- project/decisions/D0021-o003-e008-not-runnable-successor-e009.md
+deliverables: []
+touches: []
+definition_of_done:
+- cmd: 'uv run python -c "import pickle; from moduleforge.generate import derivative as D; from moduleforge.drc
+    import check; c = pickle.load(open(''experiments/results/E008/E008-20261114T095904-2c22/work/2D_Case_2R/ctx.pkl'',
+    ''rb'')); s, tw = c[''spec''], c[''twin'']; assert not check(tw, s.rules); key = lambda p: (p.orient,
+    p.hs_first, p.hs_die_first, p.ls_die_first); lays = [x for sd in (101, 102, 103) for x in D.generate(s,
+    500, sd)]; assert all(not check(x, s.rules) for x in lays); ks = [key(D.params_of(x)) for x in lays];
+    kt = key(D.params_of(tw)); assert kt in ks, sorted(set(ks)); print(len(lays), ''DRC-clean 2R candidates;
+    the twin configuration'', kt, ''drawn'', ks.count(kt), ''times'')"'
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import gzip, json, pickle; from moduleforge.generate import derivative as D;
+    W = '/Users/lukeskywalker/mf/drafts/e008-dev-run-2026-11-13/full_work/housing70x40_gen2_0'; ctx =
+    pickle.load(open(W + '/ctx.pkl', 'rb')); bad = [(ns, k) for ns in ('main', 'control') for k, v in
+    json.load(gzip.open(W + '/' + ns + '/stream.json.gz', 'rt')).items() if [[x.fingerprint(), x.family]
+    for x in D.generate(ctx['spec'], *map(int, k.split(':')))] != [list(y) for y in v]]; assert not bad,
+    bad[:5]; print('E008 dev streams identical (gen2_0 main and control, 2 x 20000 candidates)')"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python research/o003/e009_dev/feasibility_2r.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run pytest -q tests/unit/generate
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check src/moduleforge/generate research/o003/e009_dev tests/unit/generate
+  exists: null
+  timeout_s: 300
+- cmd: git diff --quiet "$(git merge-base HEAD main)" -- src/moduleforge/generate/twin.py src/moduleforge/generate/halfbridge.py
+    src/moduleforge/optimize src/moduleforge/geometry src/moduleforge/drc src/moduleforge/solvers src/moduleforge/physics
+    tests/acceptance tools experiments project/objectives project/decisions research/scripts/o003_powersynth_references.py
+    research/o003/references scripts/burst_gcp.sh
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 90
+wall_minutes: null
+attempts: 1
+max_attempts: 2
+branch: task/T0338-generator-let-the-sampler-place-a-slot-s
+pr: null
+runs:
+- T0338-builder-20261114T104144-f272
+created_by: session
+created_at: '2026-11-14T18:41:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-14 (session, D0021 item 2a): E008''s run aborted because the sampler cannot
+  reach 2D_Case_2R''s own topology; repair the sampler with development draws unchanged.'
+history: []
