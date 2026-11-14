@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T06:35:49+00:00 from repository state — do not edit_
+_generated 2026-11-14T07:16:42+00:00 from repository state — do not edit_
 
 ## Founder inbox (13 open)
 - **I0165** [experiment_registration] register E008 (pre-registration)
@@ -41,13 +41,12 @@ _generated 2026-11-14T06:35:49+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 39, done: 291, failed: 3, needs_founder: 1, proposed: 1
+cancelled: 39, done: 291, failed: 3, needs_founder: 1, proposed: 1, todo: 1
 
 - T0329 `proposed` none/experiment: Run E008: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 - T0334 `needs_founder` scientist/design_experiment: E008: fix the two registration blockers (null check on gate-only dev rows; stale L1 code_under_test path) (attempt 1)
 
 ## Recent events
-- 2026-11-14T04:17:57+00:00 run_started {"run": "T0333-critic-20261113T201757-d581", "task": "T0333", "role": "critic", "session": "5a34cee3-58fc-4279-baa0-76a4baaba022"}
 - 2026-11-14T04:18:32+00:00 sleep_detected {"gap_s": 902, "runs_extended": 1}
 - 2026-11-14T04:33:26+00:00 run_finished {"run": "T0333-critic-20261113T201757-d581", "status": "completed", "cost": 2.32237, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T04:33:30+00:00 inbox_opened {"id": "I0190", "kind": "protected_change", "subject": "T0332: merge needs founder approval"}
@@ -62,3 +61,4 @@ cancelled: 39, done: 291, failed: 3, needs_founder: 1, proposed: 1
 - 2026-11-14T06:21:34+00:00 sleep_detected {"gap_s": 906, "runs_extended": 1}
 - 2026-11-14T06:35:42+00:00 run_finished {"run": "T0335-critic-20261113T222100-0e45", "status": "completed", "cost": 2.056197, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T06:35:47+00:00 inbox_opened {"id": "I0192", "kind": "protected_change", "subject": "T0334: merge needs founder approval"}
+- 2026-11-14T07:16:08+00:00 task_added {"task": "T0336", "reason": "founder 2026-11-13: complete E008 code_under_test before registration (T0335 finding 1)"}
