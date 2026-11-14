@@ -1764,7 +1764,7 @@ def vj_cols(vj: list[list[float]] | None, i: int) -> dict:
     return dict(zip(VJ_COLS, t, strict=True)) | {"GCI_vj_K": g}
 
 
-def virtual_junction_report(rows: list[dict], params: dict) -> dict:
+def virtual_junction_report(rows: list[dict], params: dict, band_extra: dict | None = None) -> dict:
     """T0330 (D0020 item 2): REPORTED, NOT GATED.  From the die rows' Tvj columns, per reference and thermally solved
     layout: T_vj per die at level 2, GCI_vj per die and its +inf count, tj_bounds on T_vj (upper, lower), whether
     T_vj <= Tj max at every die and level, and for every layout other than the twin and the reconstruction (the thermally
@@ -1772,7 +1772,10 @@ def virtual_junction_report(rows: list[dict], params: dict) -> dict:
     reference with a reference row: the h_lo that A1's formula (mfos.metrics.headroom_per_reference, unchanged) gives when
     every die row of that reference carries T_vj in place of Tj max (so the twin thermal gate F1(a2) is then also read on
     T_vj); null with a reason when any die of the reference has no T_vj.  Reads copies of the rows; nothing gated reads
-    the result.  Never raises (an error is recorded in the report)."""
+    the result.  Never raises (an error is recorded in the report).
+    T0332: ``band_extra`` is vj_band_step's output.  Per reference it names the die-average best (the layout A1's formula
+    picks on the T_vj copy) and, when the gated rows lack that layout's band, the band values solved for this report
+    only; they are written into this function's own row copy before A1's formula runs, never into the gated rows."""
     floor, limit = float(params.get("floor", 1e-3)), float(params.get("tj_limit_K", 2.0))
     out: dict = {"label": VJ_LABEL, "definition": VJ_DEFINITION, "tj_limit_K": limit, "floor_K": floor,
                  "per_reference": {}}
@@ -1809,27 +1812,190 @@ def virtual_junction_report(rows: list[dict], params: dict) -> dict:
                 e.update(margin_vs_twin_vj_K=m, passes_vj_2K=bool(m <= limit))
             r_out = {"layouts": per}
             if rid in refrows and refrows[rid].get("admissible", True):
-                sub = [dict(r) for r in rows if r.get("reference_id") == rid]
+                bx = ((band_extra or {}).get("per_reference") or {}).get(rid) or {}
+                if bx:
+                    r_out["die_average_best"] = {k: bx.get(k) for k in VJ_BEST_KEYS}
                 if all(e["complete"] for e in per.values()):
-                    for d in sub:
-                        if d.get("kind") == "die":
-                            d.update({f"Tj_l{lv}_K": d[c] for lv, c in enumerate(VJ_COLS)})
+                    sub = _vj_sub(rows, rid)
+                    if bx.get("columns") and bx.get("best_id") is not None:
+                        lay = next((r for r in sub if r.get("kind") == "layout" and r.get("layout_id") == bx["best_id"]), None)
+                        if lay is not None and not all(_num(lay.get(c)) for c in MX.HR_BAND):
+                            lay.update({c: float(bx["columns"][c]) for c in MX.HR_BAND})
                     try:
                         q = MX.headroom_per_reference(sub, "L_sub_H", dict(params))[rid]
                         r_out.update(h_lo_vj=q.get("h_lo"), best_id_vj=q.get("best_id"), counted_vj=q.get("counted"),
                                      gate_a2_vj=q.get("gate_a2"), n_tj_rejected_vj=q.get("n_tj_rejected"))
                         if q.get("counted") and _num(q.get("h_lo")):
                             h_all.append(float(q["h_lo"]))
+                        if bx and q.get("counted") and q.get("best_id") != bx.get("best_id"):  # cannot happen: same formula
+                            r_out["die_average_best_mismatch"] = [q.get("best_id"), bx.get("best_id")]
                     except Exception as ex:  # noqa: BLE001 - reported only
                         r_out.update(h_lo_vj=None, h_lo_vj_error=f"{type(ex).__name__}: {ex}"[:500])
+                    if r_out.get("h_lo_vj") is None and bx.get("reason"):
+                        r_out["h_lo_vj_reason"] = bx["reason"]
                 else:
                     r_out.update(h_lo_vj=None, h_lo_vj_reason="a die of this reference has no die-average (its thermal "
                                  "result files were solved before T0330 and carry none)")
             out["per_reference"][rid] = r_out
         out["min_h_lo_vj_counted"] = min(h_all) if h_all else None
+        if band_extra is not None:
+            out["band_step"] = {k: v for k, v in band_extra.items() if k != "per_reference"}
     except Exception as ex:  # noqa: BLE001 - reported only; never reaches a gated value
         out["error"] = f"{type(ex).__name__}: {ex}"[:1000]
     return out
+
+
+def _vj_sub(rows: list[dict], rid: str) -> list[dict]:
+    """Copies of reference ``rid``'s rows with T_vj in place of Tj max on every die row: the input A1's formula reads in
+    virtual_junction_report (T0330) and in vj_best_layouts (T0332).  The caller checks that every die carries T_vj."""
+    sub = [dict(r) for r in rows if r.get("reference_id") == rid]
+    for d in sub:
+        if d.get("kind") == "die":
+            d.update({f"Tj_l{lv}_K": d[c] for lv, c in enumerate(VJ_COLS)})
+    return sub
+
+
+VJ_BEST_KEYS = ("best_id", "fingerprint", "role", "tjmax_best_id", "inductance_best_id", "band_source",
+                "band_solved_for_report", "new_solves", "band_jobs", "reason")
+VJ_BAND_NOTE = ("T0332, REPORTED, NOT GATED: the die-average best is the layout A1's formula (mfos.metrics.headroom_per_reference, "
+                "unchanged) picks when T_vj replaces Tj max (virtual_junction_report's row copy).  If the gated rows lack its band "
+                "columns, its BAND em_jobs are submitted through its reference's main Driver and the run's Scheduler (same job "
+                "keys and solver settings, so a resumed run finds them) after every gated solve is done, and their values go "
+                "into the report's row copy only.  A failure, a phase stop or --replay-only leaves h_lo_vj null with a reason")
+
+
+def vj_best_layouts(rows: list[dict], params: dict) -> dict:
+    """T0332 (REPORTED, NOT GATED): per admissible reference whose every die row carries T_vj, the die-average best, i.e.
+    the best_id A1's formula (mfos.metrics.headroom_per_reference, unchanged, lo only) gives on _vj_sub's copy, with its
+    fingerprint and the band columns (MX.HR_BAND) its layout row lacks.  The formula needs those columns only for e_R,
+    after best_id is fixed (eligibility and order read L_sub and Tj only; gate_a1 reads the twin and the reconstruction),
+    so the probe fills a layout without them with its own L_sub_H times the twin's band ratios and discards the probe's
+    h_lo: no exception text is parsed.  Also the Tj-max best (the same formula on a plain copy) and the inductance-only best
+    (lowest L_sub_H, ties by layout_id), for the record.  Never raises: an error is recorded per reference."""
+    out: dict = {}
+    for ref in [r for r in rows if r.get("kind") == "reference" and r.get("admissible", True)]:
+        rid = ref["reference_id"]
+        dies = [r for r in rows if r.get("kind") == "die" and r.get("reference_id") == rid]
+        if not dies or not all(all(_num(d.get(c)) for c in VJ_COLS) for d in dies):
+            out[rid] = {"best_id": None, "reason": "a die of this reference has no die-average (no band step needed)"}
+            continue
+        try:
+            sub = _vj_sub(rows, rid)
+            lays = {r["layout_id"]: r for r in rows if r.get("kind") == "layout" and r.get("reference_id") == rid}
+            tw = next(r for r in sub if r.get("kind") == "layout" and r.get("role") == "twin")
+            for lay in sub:
+                if lay.get("kind") == "layout" and not all(_num(lay.get(c)) for c in MX.HR_BAND):
+                    lay.update({c: float(lay["L_sub_H"]) * float(tw[c]) / float(tw["L_sub_H"]) for c in MX.HR_BAND})
+            q = MX.headroom_per_reference(sub, "L_sub_H", dict(params), lo=True, hi=False)[rid]
+            e = {"best_id": q.get("best_id") if q.get("counted") else None, "counted_vj": q.get("counted")}
+            plain = json.loads(json.dumps([r for r in rows if r.get("reference_id") == rid], default=str))
+            try:
+                e["tjmax_best_id"] = MX.headroom_per_reference(plain, "L_sub_H", dict(params), lo=True, hi=False)[rid].get(
+                    "best_id")
+            except Exception as ex:  # noqa: BLE001 - reported only
+                e["tjmax_best_id"] = f"not available: {type(ex).__name__}"
+            cands = sorted((r for r in lays.values() if r.get("role") == "candidate"),
+                           key=lambda r: (float(r["L_sub_H"]), str(r["layout_id"])))
+            e["inductance_best_id"] = cands[0]["layout_id"] if cands else None
+            if not q.get("counted"):
+                e["reason"] = "not counted when T_vj replaces Tj max (a twin gate fails): no die-average best"
+            elif e["best_id"] is not None:
+                b = lays[e["best_id"]]
+                e.update(fingerprint=b["fingerprint"], role=b.get("role"), L_sub_H=float(b["L_sub_H"]),
+                         missing_band=[c for c in MX.HR_BAND if not _num(b.get(c))])
+                e["band_source"] = "gated rows (a band solve the frozen driver requested)" if not e["missing_band"] else None
+            out[rid] = e
+        except Exception as ex:  # noqa: BLE001 - reported only
+            out[rid] = {"best_id": None, "reason": f"die-average best not determined: {type(ex).__name__}: {ex}"[:500]}
+    return out
+
+
+def _vj_wait(sched: Scheduler, jobs: list[dict]) -> str | None:
+    """Run ``jobs`` on ``sched`` (the run's own Scheduler: its caps, defer_big, learned memory, fake) and wait for them.
+    Jobs still queued from prefetch hints that no driver needed are set aside meanwhile and put back after, so only these
+    jobs run.  -> None, or the reason they did not all finish (solver failure, killed, NeedsLargerMachine: phase stop).
+    Never raises; a job left running after a failure is waited for, never orphaned."""
+    held, sched.queue = sched.queue, {}
+    try:
+        sched.submit(jobs)
+        while not all(Scheduler.done(j) is not None for j in jobs):
+            if not sched.queue and not sched.running:
+                raise RuntimeError("band solves pending but no job queued")
+            sched.step()
+        return None
+    except Exception as ex:  # noqa: BLE001 - reported only
+        return f"{type(ex).__name__}: {ex}"[:500]
+    finally:
+        sched.queue.clear()
+        while sched.running:
+            try:
+                sched.step()
+            except Exception:  # noqa: BLE001, S110 - the failure is already recorded
+                pass
+        sched.queue = held
+
+
+def vj_band_step(run, rows: list[dict], params: dict, enabled: bool = True) -> dict | None:
+    """T0332 (REPORTED, NOT GATED), called after Run.drive has finished (every gated solve done) and the gated rows are
+    assembled; reads ``rows`` and never writes them.  Per reference: the die-average best (vj_best_layouts); if its layout
+    row lacks the band columns, its BAND em_jobs through its main Driver (Driver.em_jobs: the same job keys, levels and
+    solver settings as every band solve, so a resumed run finds them) on the run's Scheduler (_vj_wait), then the values
+    after band_solve_failures and a key check (the lat0.25 slot must be the row's own L_sub_H file).  --replay-only
+    (Scheduler.replay_only) starts no solve: missing results give a reason.  ``enabled`` False -> None (the step is off;
+    the selftest's mutation check).  Never raises."""
+    if not enabled:
+        return None
+    out: dict = {"note": VJ_BAND_NOTE, "per_reference": {}}
+    try:
+        best = vj_best_layouts(rows, params)
+    except Exception as ex:  # noqa: BLE001 - reported only
+        out["error"] = f"{type(ex).__name__}: {ex}"[:500]
+        return out
+    for rid, b in best.items():
+        e = dict(b, band_solved_for_report=False)
+        out["per_reference"][rid] = e
+        if b.get("best_id") is None or not b.get("missing_band"):
+            continue
+        try:
+            d = run.drivers[(rid, "main")]
+            d.load_stream()
+            fam = next((f for ch in (d.chunks or {}).values() for fp, f in ch if fp == b["fingerprint"]), None)
+            if fam is None:
+                e["reason"] = f"die-average best {b['best_id']}: not in the screened stream, no band job built"
+                continue
+            jobs = d.em_jobs(Stub(b["fingerprint"], fam), BAND)
+            outs = sorted({j["out"] for j in jobs})
+            e.update(band_jobs=[Path(o).name for o in outs], new_solves=sum(not Path(o).exists() for o in outs))
+            if getattr(run.sched, "replay_only", False):
+                if e["new_solves"]:
+                    e["reason"] = (f"--replay-only: {e['new_solves']} band result(s) of the die-average best {b['best_id']} "
+                                   "missing; no solve started")
+                    continue
+            else:
+                err = _vj_wait(run.sched, jobs)
+                if err is not None:
+                    e["reason"] = f"band solves of the die-average best {b['best_id']} did not finish: {err}"
+                    continue
+            recs = [Scheduler.done(j) for j in jobs]
+            bad = band_solve_failures(recs, str(b["best_id"]))
+            if bad:
+                e["reason"] = f"band solves of the die-average best not usable: {bad[:5]}"
+                continue
+            if float(recs[0]["L_H"]) != b["L_sub_H"]:
+                e["reason"] = f"lat0.25 slot {recs[0]['L_H']} != the row's L_sub_H {b['L_sub_H']}: job key mismatch"
+                continue
+            e.update(columns={c: float(r["L_H"]) for c, r in zip(BAND_COLS[1:], recs[1:], strict=True)},
+                     band_solved_for_report=True,
+                     band_source="solved for this report only (after every gated solve; not in the gated rows)")
+        except Exception as ex:  # noqa: BLE001 - reported only
+            e["reason"] = f"band step: {type(ex).__name__}: {ex}"[:500]
+    return out
+
+
+def vj_report_with_bands(run, rows: list[dict], params: dict, enabled: bool = True) -> dict:
+    """virtual_junction_report on a JSON copy of ``rows`` after vj_band_step (both paths: registered_run, dev)."""
+    vb = vj_band_step(run, rows, dict(params), enabled)
+    return virtual_junction_report(json.loads(json.dumps(rows, default=str)), dict(params), vb)
 
 
 HR = ("headroom_min_lo", "headroom_max_hi_ind")
@@ -2099,7 +2265,8 @@ class FakeLay(Stub):
 
 def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None, fv_eb_bad: set | None = None,
                fv_eb_nan: set | None = None, fv_pc_bad: set | None = None, fv_pc_missing: set | None = None,
-               fv_tj_nan: set | None = None, em_nan: set | None = None, em_nc: set | None = None):
+               fv_tj_nan: set | None = None, em_nan: set | None = None, em_nc: set | None = None,
+               hot_max_only: set | None = None, em_fail: set | None = None):
     """Deterministic fake solvers keyed by fingerprint.  'twin_best': every candidate is above the twin (twin rule);
     otherwise candidates reach ~0.70 of the twin's L_sub ('levelled': L1 floor reached in the first n_first).  Planted
     faults, filled by the selftest before the drive: ``hot`` fingerprints get +10 K on die 0 at every scikit-fem level
@@ -2112,7 +2279,9 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
     solve reports a NaN Tj on die 1 (not the first die, so a plain max() over dies drops it; F6(e) on its type and the
     aggregate must fail; T0310 finding 2); ``em_nan`` fingerprints' thk_f band solve returns a NaN L and ``em_nc``
     fingerprints' fil_f band solve reports GMRES flag 1 (not converged, finite L) (T0318 finding 0).  'snap*' is the off-grid
-    reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01."""
+    reference snapped to 0.25 mm: L = 20.1 nH against the reconstruction's 20.0 nH, so s_ref = 2 |20.1/20 - 1| = 0.01.
+    T0332: ``hot_max_only`` fingerprints get +10 K on die 0's Tj max at every level but not on its die-average (a hot spot
+    the mean does not see); ``em_fail`` fingerprints' band solves other than lat0.25 raise (a planted solver failure)."""
     lo = 1.05 if scenario == "twin_best" else 0.70
     # 'Dmiss' (D0018 selftest): L_sub(D)/L_sub(W) = 1.2505 >= 1.25 at the point, below it at the band's conservative end
     fixed = {"ref": 20e-9, "twin": 20.0004e-9, "Dmiss": 1.2505 * 20.0004e-9, "D": 27.5e-9, "snap": 20.1e-9}
@@ -2135,6 +2304,8 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
     def job(j):
         fp = j["fp"]
         if j["type"] == "em":
+            if fp in (em_fail or ()) and j["level"] != "lat0.25":
+                raise RuntimeError("planted band solver failure (T0332 selftest)")
             f = {"lat0.25": 1.0, "lat0.5": 1.004, "thk_c": 1.003, "thk_f": 0.9995, "fil_f": 1.0008}[j["level"]]
             k = BAND.index(j["level"])  # layout-dependent band levels, so e_R is O(1e-3) and the twin gate is testable
             L = lsub(fp) * f * (1 + (2e-3 * _u(fp, 10 + k) if k else 0.0))
@@ -2163,6 +2334,8 @@ def fake_world(scenario: str, hot: set | None = None, fv_bad: set | None = None,
                    "energy_balance": eb, "picard_iters": 3, "picard_residual_K": 1e-6, "fingerprint": fp}
             if j["type"] == "thermal":  # T0330: die-average 0.4 K below the max on every die and level (reported only)
                 rec["tj_mean"] = [t - VJ_FAKE_OFFSET_K for t in tj]
+                if fp in (hot_max_only or ()):  # T0332: tj is rec["tj"]; the die-average keeps the cool value
+                    tj[0] += 10.0
             if j["type"] == "fv" and not (fp in fv_pc_missing and lv == 1):
                 rec["picard_dT_K"] = 5e-4 if fp in fv_pc_bad and lv == 3 else 5e-5
             return rec
@@ -3110,6 +3283,118 @@ def vj_failures(cfg: dict) -> list[str]:
     return out
 
 
+def vj_band_failures(cfg: dict, scfg: dict) -> list[str]:
+    """T0332 (REPORTED, NOT GATED) on a fake-world drive of one reference.  Planted: the lowest-L_sub candidates up to X are
+    hot in Tj max AND die-average; X (the first shortlisted candidate outside the driver's near-tie window, so the frozen
+    driver never band-solves it) is hot in Tj max only.  Then the Tj-max A1 best, the inductance-only best and the
+    die-average best X are three different layouts and X has no band in the gated rows.  Checks: (1) vj_band_step names
+    X, solves its band through the Driver and Scheduler (4 new solves; the lat0.25 slot is the row's own file) and h_lo_vj
+    is non-null and equals headroom_per_reference on the T_vj copy carrying X's band computed here from the fake solver;
+    (2) mutation: rows, metrics, checks and the gated report are byte-identical to a drive with the step disabled, and
+    evaluate() after the step equals evaluate() without it; (3) a resumed run solves nothing new and gives the same
+    h_lo_vj; (4) --replay-only (Scheduler.replay_only): null with a reason, no solve, no new result file; (5) a planted
+    failing band job: null with a reason, nothing raised, gated output unchanged, the scheduler's queue restored."""
+    import tempfile
+    out: list[str] = []
+    mp = dict(cfg["metric_params"])
+    hot, hot_max, em_fail, calls = set(), set(), set(), []
+    lsub, l1, fjob = fake_world("headroom", hot, hot_max_only=hot_max, em_fail=em_fail)
+
+    def fj(j):
+        calls.append(j["out"])
+        return fjob(j)
+
+    def band5(fp):
+        return [fjob({"type": "em", "fp": fp, "level": lv})["L_H"] for lv in BAND]
+    seeds = {("fake0", "main"): 1000, ("fake0", "control"): 1001}
+
+    def drive(root: Path):
+        rc = RefCtx("fake0", "dev", None, FakeLay("ref0", None), twin=FakeLay("twin0", None), D=FakeLay("D0", None),
+                    area_m2=0.008)
+        rc.stack_type = DEFAULT_STACK
+        run = Run(cfg, root, Scheduler(1e9, 8, 2, fake=fj), smoke=False, threads=2, fake={"l1": l1})
+        _fake_screens(l1)([rc], seeds, scfg, root)
+        if not hot_max:  # plant once, from the hand shortlist and the driver's near-tie window computed by hand
+            with gzip.open(root / "fake0" / "main" / "stream.json.gz", "rt") as f:
+                asc = _hand_asc(json.load(f), l1, lsub, scfg["shortlist"])
+            ind, tw, ref = band5(asc[0]), band5("twin0"), band5("ref0")
+            w = max(2 * MX.ratio_band_estimate(ind, tw), 2 * MX.ratio_band_estimate(ind, ref))
+            k = next((i for i in range(1, 7) if lsub(asc[i]) > (1 + w) * lsub(asc[0])), None)
+            if k is None:
+                raise RuntimeError("synthetic case: no shortlisted candidate outside the near-tie window")
+            hot.update(asc[:k])
+            hot_max.add(asc[k])
+        run.drive([rc], seeds, scfg)
+        rows, extra = assemble_rows(run, [rc], smoke=False)
+        return run, rc, rows, extra
+
+    def gated(run, rc, rows, extra) -> str:
+        return json.dumps(rows, sort_keys=True, default=str) + _gated_view(*evaluate(run, [rc], rows, extra, cfg))
+    orig_save = save_ctx
+    globals()["save_ctx"] = lambda rc, wd: (wd.mkdir(parents=True, exist_ok=True), str(wd / "ctx.pkl"))[1]
+    try:
+        with tempfile.TemporaryDirectory() as ta, tempfile.TemporaryDirectory() as tb:
+            run, rc, rows, extra = drive(Path(ta))
+            before = gated(run, rc, rows, extra)
+            vr = vj_report_with_bands(run, rows, mp)
+            after = gated(run, rc, rows, extra)
+            q = vr["per_reference"]["fake0"]
+            x = next(iter(hot_max))
+            lab = next(r["layout_id"] for r in rows if r["kind"] == "layout" and r["fingerprint"] == x)
+            b = q.get("die_average_best") or {}
+            if b.get("best_id") != lab or len({lab, b.get("tjmax_best_id"), b.get("inductance_best_id")}) != 3:
+                out.append(f"vj band: die-average best {b} is not the planted {lab} distinct from the Tj-max and "
+                           "inductance-only bests")
+            if any(_num(r.get("L_sub_c05_H")) for r in rows if r.get("layout_id") == lab):
+                out.append("vj band: the synthetic case's die-average best already had a band (case not exercised)")
+            if not b.get("band_solved_for_report") or b.get("new_solves") != 4:
+                out.append(f"vj band: band not solved for the report as 4 new solves: {b}")
+            sub = _vj_sub(json.loads(json.dumps(rows)), "fake0")
+            next(r for r in sub if r.get("layout_id") == lab).update(dict(zip(MX.HR_BAND, band5(x)[1:], strict=True)))
+            want = MX.headroom_per_reference(sub, "L_sub_H", mp)["fake0"]
+            if not (_num(q.get("h_lo_vj")) and q["h_lo_vj"] == want["h_lo"] and q.get("best_id_vj") == lab == want["best_id"]):
+                out.append(f"vj band: h_lo_vj {q.get('h_lo_vj')} ({q.get('best_id_vj')}) != formula {want.get('h_lo')} "
+                           f"({want.get('best_id')})")
+            if before != after:
+                out.append("vj band: the step changed a gated row, metric, check or report value")
+            n = len(calls)  # (3) resume
+            run2, rc2, rows2, extra2 = drive(Path(ta))
+            q2 = vj_report_with_bands(run2, rows2, mp)["per_reference"]["fake0"]
+            if len(calls) != n or q2.get("h_lo_vj") != q["h_lo_vj"] or gated(run2, rc2, rows2, extra2) != before:
+                out.append(f"vj band: resume solved {len(calls) - n} jobs or changed h_lo_vj / the gated output")
+            # (2) mutation: the same drive with the step disabled
+            runb, rcb, rowsb, extrab = drive(Path(tb))
+            base = gated(runb, rcb, rowsb, extrab)
+            off = vj_report_with_bands(runb, rowsb, mp, enabled=False)
+            if base != before or off["per_reference"]["fake0"].get("h_lo_vj") is not None:
+                out.append("vj band: gated output differs with the step disabled, or h_lo_vj is non-null without it")
+            # (4) replay-only: no solve, no new result file
+            files = sorted(p_.name for p_ in Path(tb).rglob("*.json"))
+            runb.sched.replay_only, n = True, len(calls)
+            qr = vj_report_with_bands(runb, rowsb, mp)["per_reference"]["fake0"]
+            runb.sched.replay_only = False
+            if qr.get("h_lo_vj") is not None or "--replay-only" not in str(qr.get("h_lo_vj_reason")) or len(calls) != n \
+                    or sorted(p_.name for p_ in Path(tb).rglob("*.json")) != files:
+                out.append(f"vj band: replay-only gave {qr.get('h_lo_vj')} / {qr.get('h_lo_vj_reason')} or started a solve")
+            # (5) a failing extra job
+            em_fail.add(x)
+            held = dict(runb.sched.queue)
+            try:
+                qf = vj_report_with_bands(runb, rowsb, mp)["per_reference"]["fake0"]
+            except Exception as ex:  # noqa: BLE001
+                qf = {"raised": repr(ex)}
+            em_fail.discard(x)
+            if qf.get("h_lo_vj") is not None or "planted band solver failure" not in str(qf.get("h_lo_vj_reason")) or \
+                    gated(runb, rcb, rowsb, extrab) != base or runb.sched.queue != held or runb.sched.running:
+                out.append(f"vj band: a failing band job gave {qf} or changed the gated output / scheduler state")
+    except Exception as ex:  # noqa: BLE001
+        out.append(f"vj band: {type(ex).__name__}: {ex}")
+    finally:
+        globals()["save_ctx"] = orig_save
+    log(f"selftest die-average best band (T0332, reported only): {len(out)} failures")
+    return out
+
+
 def t0324_failures() -> list[str]:
     """T0324: (a) review T0323 finding 1: a non-default type with one admissible reference that is EXCLUDED and another
     that is inadmissible and kept is reported 'only reference excluded: <reason>' (spot_excluded), in either reference
@@ -3502,6 +3787,7 @@ def selftest() -> int:
     log(f"selftest die-average (T0330, reported only): uniform die, mean <= max (real solves, T0325 level-2 data), null "
         f"columns; per scenario: analogue h_lo, 5 mutations + 1 positive control; {len(vf)} failures")
     failures += vf
+    failures += vj_band_failures(cfg, scfg)
     failures += phase_failures(cfg)
     fr = freeze_checks(cfg)
     failures += [f"freeze {c['name']}" for c in fr if not c["passed"]]
@@ -3537,7 +3823,8 @@ def simulate(jobs: list[dict], vcpus: int, cap: float) -> float:
     return t
 
 
-def plan_jobs(r: dict, cm: dict, threads: int, n_near: int, batches: int, n_null: int, n_cand: int) -> list[dict]:
+def plan_jobs(r: dict, cm: dict, threads: int, n_near: int, batches: int, n_null: int, n_cand: int,
+              vj: bool = False) -> list[dict]:
     """Every solve of one reference with its (wall s, peak GB) from the cost model on that reference's own sizes:
     l2_layout unknowns from the lattice area (P3: 29.18 per 0.25 mm cell on Case 4), scikit-fem DOFs and FV cells as
     measured by thermal_fem.estimate_dofs / thermal_layout.build_layout_grid (plan_references; candidates use the
@@ -3584,6 +3871,8 @@ def plan_jobs(r: dict, cm: dict, threads: int, n_near: int, batches: int, n_null
         em("near", ["band_ind", "base"], f"near{k}", BAND[1:])
     for k in range(n_null):
         th("null", [f"batch{batches - 1}"], f"null{k}", "candidate")
+    if vj:  # T0332 (reported only): at most one band set of the die-average best, after every other solve of the reference
+        em("vj_band", sorted({j["group"].split(":", 1)[1] for j in J}), "vj_best", BAND[1:])
     return J
 
 
@@ -3634,12 +3923,13 @@ def _cost_jobs(J: list[dict], cm: dict, vm: dict, vcpus: int, cap: float, overhe
 
 
 def _plan_case(refs: list[dict], case: tuple, cm: dict, vm: dict, threads: int, vcpus: int, cap: float, cfg: dict,
-               args) -> dict:
-    """One --plan case (near ties, thermal batches, null checks) over the plan references ``refs``."""
+               args, vj: bool = True) -> dict:
+    """One --plan case (near ties, thermal batches, null checks) over the plan references ``refs``; ``vj``: with the
+    reported-only band set of the die-average best per counted reference (T0332)."""
     n_near, batches, n_null = case
     J = []
     for r in refs:
-        J += plan_jobs(r, cm, threads, n_near, batches, n_null, cfg["search"]["n_candidates"])
+        J += plan_jobs(r, cm, threads, n_near, batches, n_null, cfg["search"]["n_candidates"], vj)
     res = _cost_jobs(J, cm, vm, vcpus, cap)
     per_ref = {}
     for r in refs:
@@ -3698,13 +3988,27 @@ def plan(args, cfg: dict) -> int:
                                 "at the twin, no solve)", "if_all_counted": [r["name"] for r in refs_all]}
     out["cases"] = {c: _plan_case(refs_exp, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
     out["if_all_counted"] = {c: _plan_case(refs_all, v, cm, vm, threads, vcpus, cap, cfg, args) for c, v in cases.items()}
+    # T0332: the die-average best's band set (4 solves at 0.5 mm cells per counted reference, after every gated solve,
+    # reported only) is in every case above, as an upper bound (it runs only when that layout has no band yet); its share:
+    out["vj_band_extra"] = {"note": "per counted reference at most one band set (lat0.5, thk_c, thk_f, fil_f) of the "
+                            "die-average best, scheduled after every gated solve (T0332); priced in every case above"}
+    for grp, rs in (("cases", refs_exp), ("if_all_counted", refs_all)):
+        for c, v in cases.items():
+            w0 = _plan_case(rs, v, cm, vm, threads, vcpus, cap, cfg, SimpleNamespace(verbose=False), vj=False)
+            w1 = out[grp][c]
+            out["vj_band_extra"][f"{grp}:{c}"] = {
+                "n_solves_added": w1["n_solves"] - w0["n_solves"],
+                "billed_vcpu_hours_added": round(w1["billed_vcpu_hours"] - w0["billed_vcpu_hours"], 1),
+                "vm_hours_added": round(w1["vm_hours"] - w0["vm_hours"], 2), "usd_added": round(w1["usd"] - w0["usd"], 2),
+                "billed_vcpu_hours_without": w0["billed_vcpu_hours"], "billed_vcpu_hours": w1["billed_vcpu_hours"],
+                "cap_cpu_hours": 320, "within_cap": w1["billed_vcpu_hours"] <= 320}
     # the F6(e) spot check of an excluded reference's own stack type, priced for the record only (founder decision 2026-11-12,
     # T0322: such a type is reported, not gated, and the runner never runs it): calibration, scikit-fem levels 0-2 of the
     # reconstruction and finite-volume levels 1-3, alone on the VM (phase A part) plus phase B for any job above the cap
     out["f6e_spot_check_of_excluded_type"] = {}
     for r in refs_all:
         if r.get("expected_excluded_at_twin"):
-            J = [j for j in plan_jobs(r, cm, threads, 0, 0, 0, 0) if j["name"].split(":", 1)[1].startswith(
+            J = [j for j in plan_jobs(r, cm, threads, 0, 0, 0, 0, vj=False) if j["name"].split(":", 1)[1].startswith(
                 ("calibration", "reference:T", "fv:"))]
             out["f6e_spot_check_of_excluded_type"][r["name"]] = _cost_jobs(J, cm, vm, vcpus, cap, overhead=False)
     print(json.dumps(out, indent=1, default=str))
@@ -3856,9 +4160,12 @@ def dev(args) -> int:
                                                        cfg["metric_params"]["tj_limit_K"])}
     for rid, v in therm["per_reference"].items():
         log(f"{rid} thermal report ({therm['rule']}): {json.dumps(v['summary'])}")
+    # T0332: the die-average best's band, after every gated and band-check solve above; reported only
+    vj = vj_report_with_bands(run, rows, cfg["metric_params"]) if refs else \
+        virtual_junction_report(json.loads(json.dumps(rows, default=str)), dict(cfg["metric_params"]))
     doc = {"schema": "mfos.rows/1", "rows": rows, "meta": {
         "thermal_report": therm,
-        "virtual_junction": virtual_junction_report(json.loads(json.dumps(rows, default=str)), dict(cfg["metric_params"])),
+        "virtual_junction": vj,
         "smoke": smoke, "note": ("SMOKE ROWS (local): EM production slot solved at 0.5 mm cells (so the lateral term of "
                                  "e_R is zero), coarsened thermal rule, reduced candidate budget; not evidence"
                                  if smoke else "full-fidelity dev rows"),
@@ -3936,7 +4243,7 @@ def _manifest(workdir: Path, cfg: dict, seed: int) -> None:
 
 
 def registered_run(er, cfg: dict, seed: int, workdir: Path, recon=None, fake: dict | None = None, before_drive=None,
-                   threads: int | None = None) -> dict:
+                   threads: int | None = None, vj_bands: bool = True) -> dict:
     """The registered path (D0019).  Order: freeze checks (F3, F6(b)) before any reference is loaded, a failure voids the
     run; config.references in D0010 order through judged_reference (fingerprint first, e008_rules, the entry's
     keep-outs); prepare() per reference with the _quick_ok seed derive_seed(s, 2, i) (TwinError / DegradeError exclude
@@ -3983,6 +4290,8 @@ def registered_run(er, cfg: dict, seed: int, workdir: Path, recon=None, fake: di
     for r in rows:
         r.update(label=" / ".join(label), f3_declared_deviation=tag)  # T0321 finding 0: the exact statement
     met, checks, rep = evaluate(run, refs, rows, extra, cfg)
+    if "virtual_junction" in rep:  # T0332: after every gated solve and value; reported only (vj_band_step)
+        rep["virtual_junction"] = vj_report_with_bands(run, rows, cfg["metric_params"], vj_bands)
     rep.update(label=label, f3_declared_deviation=cfg.get("f3_declared_deviation"), deviation_statement=tag,
                references=[{k: e.get(k) for k in ("reference_id", "reconstruction_sha256", "admissible", "L_term_H")}
                            for e in entries])

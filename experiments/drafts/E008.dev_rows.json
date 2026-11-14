@@ -2456,7 +2456,7 @@
     },
     "twin_mode": "exact",
     "prep": {
-     "task": "T0330",
+     "task": "T0332",
      "script": "research/o003/e008_dev/gen2_0_prep.py",
      "quick_ok_draws": 100,
      "fingerprints": {
@@ -2540,9 +2540,9 @@
       "excluded": null
      },
      "D_l1_ratio_over_twin": 1.877174880689955,
-     "wall_s": 0.21713633392937481,
-     "runner_sha256": "a06dba4f767cdd470345c47332d30c3908a3123419f40a0f72d2fc490266ba49",
-     "run_at": "2026-11-13T11:17:39"
+     "wall_s": 0.21011141617782414,
+     "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
+     "run_at": "2026-11-13T19:37:17"
     }
    },
    "excluded": {},
@@ -2958,7 +2958,7 @@
         "wire_pitch_diameters"
        ]
       },
-      "twin_s": 1.994513584068045,
+      "twin_s": 1.3101172500755638,
       "midpoint_decided_splits": [],
       "twin_copper": {
        "mode": "fit+signal_feet",
@@ -2993,7 +2993,7 @@
         "min_trace_width"
        ]
       },
-      "degrade_s": 7.581843708176166,
+      "degrade_s": 5.152032375102863,
       "walk": {
        "start_l1_ratio": 1.3071128940192462,
        "steps": [
@@ -3094,7 +3094,7 @@
       }
      },
      "quick_ok_draws": 2000,
-     "wall_s": 10.52234208304435,
+     "wall_s": 7.281498041935265,
      "D_l1_ratio_over_twin": 1.3910401988110974,
      "D_target_l1_ratio": 1.3875000000000002,
      "D_moves": [
@@ -3136,9 +3136,9 @@
        "min_trace_width"
       ]
      },
-     "runner_sha256": "a06dba4f767cdd470345c47332d30c3908a3123419f40a0f72d2fc490266ba49",
+     "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
      "script": "research/o003/e008_dev/case4_prep.py",
-     "run_at": "2026-11-13T11:17:50"
+     "run_at": "2026-11-13T19:37:37"
     }
    }
   },
@@ -3151,9 +3151,9 @@
    }
   ],
   "rule_strictness_refresh": {
-   "task": "T0330",
+   "task": "T0332",
    "script": "research/o003/e008_dev/refresh_rule_strictness.py",
-   "runner_sha256": "a06dba4f767cdd470345c47332d30c3908a3123419f40a0f72d2fc490266ba49",
+   "runner_sha256": "205a0666fc4ebafd41895872a2f63089448f97485f0332b45b34ad0083d32025",
    "rules_py_sha256": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
    "method": "measure_rules re-run on each dev layout (L0), equal to the stored record, then rule_strictness()",
    "references": {
@@ -3175,6 +3175,11 @@
      "flag_2x": [],
      "report_unchanged": true
     }
+   },
+   "previous": {
+    "task": "T0330",
+    "runner_sha256": "a06dba4f767cdd470345c47332d30c3908a3123419f40a0f72d2fc490266ba49",
+    "rules_py_sha256": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5"
    }
   }
  }

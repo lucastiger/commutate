@@ -575,7 +575,23 @@ config:
       rows were replayed with no solve started); development results solved before T0330 carry null for it. Selftest: a uniform
       die gives its own temperature (zero-power solves at two coolant temperatures), mean <= max on every die (real solves
       and T0325''s level-2 data), and mutation: NaN, +/-100 K, null or absent columns change no gated metric, check or report
-      value, with a positive control'
+      value, with a positive control. T0332: h_lo_vj is made computable on a real run. After the frozen driver has finished
+      and the gated rows are assembled, per reference the runner determines the ''die-average best'': the layout A1''s formula
+      (mfos.metrics.headroom_per_reference, unchanged) picks on virtual_junction_report''s row copy with T_vj in place of
+      Tj max (vj_best_layouts; no exception text is parsed: a layout without band columns gets placeholder values in a probe
+      copy, which cannot change best_id because the formula reads the band only for e_R after best is fixed). If that layout''s
+      row lacks the band columns (L_sub_c05_H, L_sub_thk_c_H, L_sub_thk_f_H, L_sub_wire_f_H), its BAND em_jobs are submitted
+      through its reference''s main Driver and the run''s Scheduler (same job keys and solver settings as every other band
+      solve, so a resumed run finds them; phase A/B split as any job), only after every gated solve is done; their values
+      go into the report''s own row copy only, never into the gated rows, er.rows, the metrics, the checks, the stop rules
+      or the F3 order. The report then gives h_lo_vj with best_id_vj and die_average_best (layout, fingerprint, the Tj-max
+      and inductance-only bests for the record, band_source ''solved for this report only'' or ''gated rows'', new_solves).
+      Any failure (solver error, memory, phase stop) or --replay-only with a missing band leaves h_lo_vj null with h_lo_vj_reason;
+      it never raises and changes no gated value. --plan prices at most one band set per counted reference (cost_estimate.vj_band_extra).
+      Selftest (vj_band_failures): a synthetic case whose die-average best differs from the Tj-max best and the inductance-only
+      best and has no band in the gated rows: h_lo_vj non-null and equal to headroom_per_reference on the T_vj copy carrying
+      that band; rows, metrics, checks and the gated report byte-identical with the step disabled; resume solves nothing;
+      --replay-only and a planted failing band job give null with a reason and change nothing gated'
   twin_limitations:
   - rectangular merged bands are split by the midpoint-of-needs convention; the copper does not fix the boundary (T0297)
   - a column that fills the gap beside the narrower slot leaves no step, so the tie rule decides the split (T0300)
@@ -764,7 +780,7 @@ config:
   - 'NONE (T0330, D0020): after D0020 no item before registration needs the founder; every former item is in founder_decisions_settled
     (D0020 items 1-4, or item 5 where no decision was needed)'
   cost_estimate:
-    filled_by: e008_run.py --plan (T0324, dev near ties; research/o003/e008_dev/plan_T0324.json)
+    filled_by: e008_run.py --plan (T0332, dev near ties, with the die-average best's band set; research/o003/e008_dev/plan_T0332.json)
     threads_per_solve: 2
     why: 'two threads: mean wall 5751 s vs pinned 6364 s'
     vm:
@@ -788,8 +804,8 @@ config:
         near_ties: 1
         thermal_batches: 1
         null_extra_checks: 0
-        n_solves: 83
-        phase_a_hours: 7.9
+        n_solves: 87
+        phase_a_hours: 8.11
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           n: 273473536
@@ -814,19 +830,19 @@ config:
           low:
             phase_b_hours: 1.17
             phase_b_usd: 4.84
-            vm_hours: 9.07
-            usd: 9.68
-            billed_vcpu_hours: 72.6
+            vm_hours: 9.28
+            usd: 9.8
+            billed_vcpu_hours: 74.2
           high:
             phase_b_hours: 8.16
             phase_b_usd: 33.78
-            vm_hours: 16.07
-            usd: 38.62
-            billed_vcpu_hours: 128.5
-        vm_hours: 12.13
-        usd: 22.32
-        billed_vcpu_hours: 97.0
-        process_cpu_hours: 38.8
+            vm_hours: 16.27
+            usd: 38.75
+            billed_vcpu_hours: 130.2
+        vm_hours: 12.33
+        usd: 22.44
+        billed_vcpu_hours: 98.7
+        process_cpu_hours: 39.4
         peak_GB_per_reference:
           2D_Case_2R:
             em: 6.2
@@ -944,8 +960,8 @@ config:
         near_ties: 15
         thermal_batches: 2
         null_extra_checks: 8
-        n_solves: 175
-        phase_a_hours: 13.95
+        n_solves: 179
+        phase_a_hours: 14.16
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           n: 273473536
@@ -970,19 +986,19 @@ config:
           low:
             phase_b_hours: 1.17
             phase_b_usd: 4.84
-            vm_hours: 15.12
-            usd: 13.38
-            billed_vcpu_hours: 121.0
+            vm_hours: 15.33
+            usd: 13.51
+            billed_vcpu_hours: 122.6
           high:
             phase_b_hours: 8.16
             phase_b_usd: 33.78
-            vm_hours: 22.11
-            usd: 42.32
-            billed_vcpu_hours: 176.9
-        vm_hours: 18.17
-        usd: 26.02
-        billed_vcpu_hours: 145.4
-        process_cpu_hours: 56.9
+            vm_hours: 22.32
+            usd: 42.45
+            billed_vcpu_hours: 178.6
+        vm_hours: 18.38
+        usd: 26.14
+        billed_vcpu_hours: 147.1
+        process_cpu_hours: 57.5
         peak_GB_per_reference:
           2D_Case_2R:
             em: 6.2
@@ -1108,8 +1124,8 @@ config:
         near_ties: 1
         thermal_batches: 1
         null_extra_checks: 0
-        n_solves: 166
-        phase_a_hours: 10.69
+        n_solves: 174
+        phase_a_hours: 10.82
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           n: 273473536
@@ -1151,20 +1167,20 @@ config:
           low:
             phase_b_hours: 2.25
             phase_b_usd: 8.86
-            vm_hours: 12.94
-            usd: 15.41
-            billed_vcpu_hours: 103.5
+            vm_hours: 13.07
+            usd: 15.49
+            billed_vcpu_hours: 104.6
           high:
             phase_b_hours: 15.39
             phase_b_usd: 60.7
-            vm_hours: 26.08
-            usd: 67.24
-            billed_vcpu_hours: 208.6
-        vm_hours: 18.71
-        usd: 38.18
-        billed_vcpu_hours: 149.7
-        process_cpu_hours: 68.9
-        peak_GB_per_reference: &id002
+            vm_hours: 26.21
+            usd: 67.32
+            billed_vcpu_hours: 209.7
+        vm_hours: 18.85
+        usd: 38.26
+        billed_vcpu_hours: 150.8
+        process_cpu_hours: 69.8
+        peak_GB_per_reference:
           2D_Case_2R:
             em: 6.2
             thermal: 47.6
@@ -1286,8 +1302,8 @@ config:
         near_ties: 15
         thermal_batches: 2
         null_extra_checks: 8
-        n_solves: 350
-        phase_a_hours: 23.84
+        n_solves: 358
+        phase_a_hours: 24.05
         phase_b_big_memory_jobs:
         - job: 2D_Case_2R:fv:L3
           n: 273473536
@@ -1329,19 +1345,19 @@ config:
           low:
             phase_b_hours: 2.25
             phase_b_usd: 8.86
-            vm_hours: 26.09
-            usd: 23.46
-            billed_vcpu_hours: 208.7
+            vm_hours: 26.3
+            usd: 23.58
+            billed_vcpu_hours: 210.4
           high:
             phase_b_hours: 15.39
             phase_b_usd: 60.7
-            vm_hours: 39.23
-            usd: 75.29
-            billed_vcpu_hours: 313.9
-        vm_hours: 31.87
-        usd: 46.23
-        billed_vcpu_hours: 255.0
-        process_cpu_hours: 102.6
+            vm_hours: 39.44
+            usd: 75.42
+            billed_vcpu_hours: 315.5
+        vm_hours: 32.08
+        usd: 46.36
+        billed_vcpu_hours: 256.6
+        process_cpu_hours: 103.6
         peak_GB_per_reference:
           2D_Case_2R:
             em: 6.2
@@ -1498,7 +1514,15 @@ config:
         usd: 14.54
         billed_vcpu_hours: 35.3
         process_cpu_hours: 6.4
-    peak_memory_per_reference_GB: *id002
+    peak_memory_per_reference_GB:
+      2D_Case_2R:
+        em: 6.2
+        thermal: 47.6
+        fv: 410.7
+      2D_Case_6:
+        em: 4.8
+        thermal: 50.1
+        fv: 372.2
     measured_dev_run:
       source: research/o003/e008_dev/dev_run_measured_T0324.json
       groups:
@@ -1616,21 +1640,67 @@ config:
           peak_over_model:
           - 0.5341147603249006
           - 0.5373383217973707
-    statement: 'T0324: --plan re-run with the near ties of the full-fidelity dev rows (1, gen2_0); rates and cost model unchanged.
-      EXPECTED SET (2D_Case_6 excluded at its twin): expected 83 solves, 12.13 VM-hours, $22.32, 97.0 billed vCPU-hours, 38.8
-      process CPU-hours; upper (15 near ties) 175 solves, 18.17 VM-hours, $26.02, 145.4 billed vCPU-hours. IF 2D_Case_6 WERE
-      COUNTED: 149.7-255.0 billed vCPU-hours, $38.18-$46.23. Phase B: 2D_Case_2R:fv:L3 (273,473,536 cells, 410.7 GB) alone
-      on n2d-custom-8-499712-ext (488 GB), 4.22 h, $17.48 (founder decision 2026-11-12, settled). MEASURED ON THE DEV RUN
-      (research/o003/e008_dev/dev_run_measured_T0324.json, 107 solves, 34.7 solve-hours): 2D_Case_4:em:lat0.25 n 6: wall 2864
-      s (max 3008) vs model 5770 s, peak 15.2 GB (max 15.6) vs model 15.8 GB; 2D_Case_4:em:thk_f n 6: wall 1206 s (max 1279)
-      vs model 3254 s, peak 8.5 GB (max 8.9) vs model 8.3 GB; 2D_Case_4:thermal:2 n 2: wall 1049 s (max 1051) vs model 578
-      s, peak 9.2 GB (max 9.3) vs model 16.2 GB; housing70x40_gen2_0:em:lat0.25 n 34: wall 1990 s (max 2526) vs model 2422
-      s, peak 8.8 GB (max 9.4) vs model 9.0 GB; housing70x40_gen2_0:em:fil_f n 5: wall 722 s (max 769) vs model 691 s, peak
-      5.5 GB (max 5.7) vs model 2.9 GB; housing70x40_gen2_0:thermal:2 n 5: wall 1755 s (max 1781) vs model 1384 s, peak 20.4
-      GB (max 20.8) vs model 38.1 GB. Reading: EM wall is at or below the model (Case 4 about 0.4-0.7x), EM peak within about
-      1.1x except gen2_0 fil_f/thk_f (2.0x/1.4x, handled by Scheduler.learn); scikit-fem level-2 wall is ABOVE the model (Case
-      4 1.8x, gen2_0 1.3x) and its peak about 0.55x; the phase-A wall of the registered run may therefore exceed --plan''s
-      by the thermal share; rates are kept (no change made here). Not included: the dev run itself and its rerun.'
+    statement: 'T0332: --plan now prices, per counted reference, at most one reported-only band set of the die-average best
+      (4 solves at 0.5 mm cells: lat0.5, thk_c, thk_f, fil_f; scheduled after every gated solve; run only when that layout
+      has no band yet, so priced as an upper bound in every case). Added billed vCPU-hours: expected +1.7 (97.0 -> 98.7),
+      upper +1.7 (145.4 -> 147.1); +$0.12-$0.12; if 2D_Case_6 were counted 150.8-256.6. The 320 cpu_hours cap (read as billed
+      vCPU-hours, D0020 item 4) holds in every case (largest 256.6). Rates and cost model unchanged. Expected now 87 solves,
+      12.33 VM-hours, $22.44, 98.7 billed vCPU-hours; upper 179 solves, 18.38 VM-hours, $26.14, 147.1. cpu_hours_est = the
+      expected billed vCPU-hours, changed because the plan''s number changed || T0324: --plan re-run with the near ties of
+      the full-fidelity dev rows (1, gen2_0); rates and cost model unchanged. EXPECTED SET (2D_Case_6 excluded at its twin):
+      expected 83 solves, 12.13 VM-hours, $22.32, 97.0 billed vCPU-hours, 38.8 process CPU-hours; upper (15 near ties) 175
+      solves, 18.17 VM-hours, $26.02, 145.4 billed vCPU-hours. IF 2D_Case_6 WERE COUNTED: 149.7-255.0 billed vCPU-hours, $38.18-$46.23.
+      Phase B: 2D_Case_2R:fv:L3 (273,473,536 cells, 410.7 GB) alone on n2d-custom-8-499712-ext (488 GB), 4.22 h, $17.48 (founder
+      decision 2026-11-12, settled). MEASURED ON THE DEV RUN (research/o003/e008_dev/dev_run_measured_T0324.json, 107 solves,
+      34.7 solve-hours): 2D_Case_4:em:lat0.25 n 6: wall 2864 s (max 3008) vs model 5770 s, peak 15.2 GB (max 15.6) vs model
+      15.8 GB; 2D_Case_4:em:thk_f n 6: wall 1206 s (max 1279) vs model 3254 s, peak 8.5 GB (max 8.9) vs model 8.3 GB; 2D_Case_4:thermal:2
+      n 2: wall 1049 s (max 1051) vs model 578 s, peak 9.2 GB (max 9.3) vs model 16.2 GB; housing70x40_gen2_0:em:lat0.25 n
+      34: wall 1990 s (max 2526) vs model 2422 s, peak 8.8 GB (max 9.4) vs model 9.0 GB; housing70x40_gen2_0:em:fil_f n 5:
+      wall 722 s (max 769) vs model 691 s, peak 5.5 GB (max 5.7) vs model 2.9 GB; housing70x40_gen2_0:thermal:2 n 5: wall
+      1755 s (max 1781) vs model 1384 s, peak 20.4 GB (max 20.8) vs model 38.1 GB. Reading: EM wall is at or below the model
+      (Case 4 about 0.4-0.7x), EM peak within about 1.1x except gen2_0 fil_f/thk_f (2.0x/1.4x, handled by Scheduler.learn);
+      scikit-fem level-2 wall is ABOVE the model (Case 4 1.8x, gen2_0 1.3x) and its peak about 0.55x; the phase-A wall of
+      the registered run may therefore exceed --plan''s by the thermal share; rates are kept (no change made here). Not included:
+      the dev run itself and its rerun.'
+    vj_band_extra:
+      note: per counted reference at most one band set (lat0.5, thk_c, thk_f, fil_f) of the die-average best, scheduled after
+        every gated solve (T0332); priced in every case above
+      cases:expected:
+        n_solves_added: 4
+        billed_vcpu_hours_added: 1.7
+        vm_hours_added: 0.2
+        usd_added: 0.12
+        billed_vcpu_hours_without: 97.0
+        billed_vcpu_hours: 98.7
+        cap_cpu_hours: 320
+        within_cap: true
+      cases:upper:
+        n_solves_added: 4
+        billed_vcpu_hours_added: 1.7
+        vm_hours_added: 0.21
+        usd_added: 0.12
+        billed_vcpu_hours_without: 145.4
+        billed_vcpu_hours: 147.1
+        cap_cpu_hours: 320
+        within_cap: true
+      if_all_counted:expected:
+        n_solves_added: 8
+        billed_vcpu_hours_added: 1.1
+        vm_hours_added: 0.14
+        usd_added: 0.08
+        billed_vcpu_hours_without: 149.7
+        billed_vcpu_hours: 150.8
+        cap_cpu_hours: 320
+        within_cap: true
+      if_all_counted:upper:
+        n_solves_added: 8
+        billed_vcpu_hours_added: 1.6
+        vm_hours_added: 0.21
+        usd_added: 0.13
+        billed_vcpu_hours_without: 255.0
+        billed_vcpu_hours: 256.6
+        cap_cpu_hours: 320
+        within_cap: true
   f3_declared_deviation:
     decision: D0019 item 2 (founder session 2026-11-12)
     statement: 'DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before
@@ -1894,7 +1964,7 @@ sanity_checks:
 - name: recompute_agrees
   description: runner metrics equal mfos.metrics and research/o003/headroom_metrics.py (rel 1e-9)
 timeout_min: 6000
-cpu_hours_est: 97.0
+cpu_hours_est: 98.7
 evidence_rules: 2
 code_under_test:
 - src/moduleforge/solvers/l2_layout.py

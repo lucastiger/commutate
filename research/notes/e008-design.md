@@ -871,3 +871,90 @@ fact, and the dev-only smoke rule. **founder_decisions_before_registration now s
 
 **Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search run on 2D_Case_2R or 2D_Case_6. No gcloud call and
 no VM. No change to src/, tools/, the frozen script, references or tolerances.
+
+## 14. T0332 (2026-11-13): the die-average best's band, so h_lo_vj is computable on a real run (reported only)
+
+[F] = fact checked here. [I] = inference. Founder decision (founder session 2026-11-13, within D0020 item 2, reported only),
+prompted by the local smoke at a7dd36a2: meta.virtual_junction gave h_lo_vj = null with "ValueError: housing70x40_gen2_0/c000050
+L_sub_c05_H: missing". On T_vj, A1's formula picks c000050 (L1 rank 1, margin 1.95 K). The frozen driver never requests its
+band, because it is neither the Tj-max A1 best (c000032), the inductance-only best (c000021), a near tie nor the control best.
+
+**What the runner does now [F] (e008_run.py).**
+- `vj_best_layouts(rows, params)` names the **die-average best** per admissible reference. This is the `best_id` that
+  mfos.metrics.headroom_per_reference (unchanged, lo only) gives on `_vj_sub`'s copy, the T_vj row copy that
+  virtual_junction_report already used.
+  - No exception text is parsed. In a probe copy, a layout without band columns gets its own L_sub_H times the twin's band
+    ratios.
+  - This cannot change `best_id`. In `_hr_reference`, eligibility and order read only L_sub and the die rows, and gate_a1
+    reads only the twin and the reconstruction. The band enters only through e_R, after best is fixed. The probe's h_lo is
+    discarded.
+  - For the record it also gives the Tj-max best and the inductance-only best.
+- `vj_band_step(run, rows, params)` runs only after Run.drive has returned, so every gated solve is done. In the dev path it
+  also runs after the band-check pairs.
+  - If the die-average best's row lacks L_sub_c05_H / L_sub_thk_c_H / L_sub_thk_f_H / L_sub_wire_f_H, it builds
+    `Driver.em_jobs(Stub(fp, family), BAND)` on that reference's main Driver. The family comes from the screened stream.
+    These are the same job dicts, keys and levels the driver would build, smoke em_map included.
+  - It runs them on the run's own Scheduler (`_vj_wait`). Queued prefetch hints are set aside meanwhile and put back after,
+    so only these jobs run. A job above the solo cap with defer_big raises NeedsLargerMachine inside `_vj_wait`, which is
+    caught and recorded as a reason. It writes no phase_b_needed.json and does not stop the run.
+  - Before the values are used, they pass `band_solve_failures`, and a key check: the lat0.25 slot must equal the row's own
+    L_sub_H.
+  - `--replay-only` builds the jobs and counts the missing files. It submits nothing, so there is a reason and no solve.
+- `virtual_junction_report(rows, params, band_extra)` writes those values into its own row copy only, then runs A1's formula
+  as before. Per reference it reports h_lo_vj, best_id_vj and `die_average_best`, which holds the layout, the fingerprint,
+  the Tj-max and inductance-only bests, band_source ("solved for this report only (after every gated solve; not in the
+  gated rows)" or "gated rows"), new_solves and the band_jobs file names. Any failure leaves h_lo_vj null with
+  h_lo_vj_reason. Nothing raises.
+- Registered path: `registered_run` calls `evaluate()` (every metric, check and the report), then replaces
+  rep["virtual_junction"] with `vj_report_with_bands(...)` before anything is recorded. `vj_bands=False` turns the step off.
+  Dev path: meta.virtual_junction comes from the same function.
+
+**Why nothing gated can change [F, selftest; I for the argument].** The step reads the rows and never writes them. The band
+values exist only in the report's JSON copy. The new result files are extra solves of the same key scheme. The frozen driver
+asks for a band only by its own rules, so on a resume it reads exactly what it read before. Selftest `vj_band_failures`, on
+a fake-world drive:
+- planted: candidates below X hot in Tj max and T_vj; X, the first shortlisted candidate outside the driver's near-tie
+  window, hot in Tj max only;
+- the die-average best is X, distinct from the Tj-max best and the inductance-only best, and X has no band in the gated
+  rows;
+- 4 new solves; h_lo_vj is non-null and equals headroom_per_reference on the T_vj copy that carries X's band, computed from
+  the fake solver independently;
+- rows plus `_gated_view` are byte-identical before and after the step and against a drive with the step disabled;
+- a resume solves 0 new jobs and gives the same h_lo_vj;
+- --replay-only gives null with a reason, starts no solve and writes no file;
+- a planted failing band job gives null with a reason, changes no gated value and leaves the scheduler's queue restored.
+
+Three runner mutants were checked in a temp copy:
+- writing the band into the gated rows: caught (3 failures);
+- step disabled: caught (5 failures);
+- replay-only branch removed: not caught. This is correct, because the Scheduler's own ReplayMissing guard then raises
+  before any launch, so no solve starts either way.
+
+**Cost [F, --plan; research/o003/e008_dev/plan_T0332.json].** At most one band set per counted reference is priced in every
+case, as an upper bound: 4 solves at 0.5 mm cells (lat0.5, thk_c, thk_f, fil_f) after every other solve of the reference.
+The lat0.25 slot already exists from the shortlist. Added billed vCPU-hours:
+- expected: +1.7 (97.0 -> 98.7);
+- upper: +1.7 (145.4 -> 147.1);
+- if 2D_Case_6 were counted: 150.8-256.6.
+
+Without the extra set, the plan reproduces 97.0 / 145.4 / 149.7 / 255.0 exactly. The 320 cap holds in every case. Rates and
+the cost model are unchanged. cpu_hours_est 97.0 -> 98.7, because the plan's expected number changed.
+Spec text: research/o003/e008_dev/t0332_spec_update.py, which is idempotent and reads every number from the plan.
+
+**Keys and the dev rows [F].** No job key changed: out_path, em_jobs, th_kw and the job dict are untouched, and only new
+functions call them. The dev rows were not rebuilt, because the rows' schema did not change. Only the report section gained
+keys. The committed meta.virtual_junction therefore still carries T0330's null (its results predate tj_mean). Hashes:
+gen2_0_prep.py, case4_prep.py and refresh_rule_strictness.py re-stamped runner_sha256 (3 places), as T0324 and T0330 did.
+
+**Checked read-only on the smoke work dir [F].** Run on copies of its rows.json, `vj_best_layouts` names c000050 as the
+die-average best (Tj-max best c000032, inductance-only best c000021), with all four band columns missing. `Driver.out_path`
+with the smoke em_map gives the band file names. For c000032 and c000021 all of them exist, so the key scheme is reproduced.
+For c000050 only the lat0.5 file exists, so 3 are missing (thk_c, thk_f, fil_f). Nothing was written there.
+
+**Expected on the founder's smoke re-run [I].** The work dir resumes. The frozen driver re-solves nothing. The step then solves
+c000050's band: under the smoke em_map, lat0.25 -> lat0.5, so its L_sub file is the lat0.5 slot, leaving 3 new solves:
+thk_c, thk_f and fil_f. h_lo_vj should then be non-null with best_id_vj c000050. What would prove this wrong: any re-solve
+of an existing file, a key-check reason, or best_id_vj other than c000050.
+
+**Not done.** No twin, degrade, prepare, L1, l2_layout, thermal or search on 2D_Case_2R or 2D_Case_6. No gcloud call and no VM.
+No change to src/, tools/, tests/acceptance, the frozen script, references or tolerances. The smoke work dir was not written.
