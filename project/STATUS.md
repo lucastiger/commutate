@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T22:06:14+00:00 from repository state — do not edit_
+_generated 2026-11-15T22:06:57+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -27,17 +27,16 @@ _generated 2026-11-15T22:06:14+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 2 | $3.43 | 75003 | 50572 | 3 | 0 |
+| O008 | 4 | $3.43 | 75003 | 50572 | 3 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 304, failed: 4
+cancelled: 44, done: 304, failed: 4, running: 2
 
+- T0353 `running` critic/review: Review OBJ-O008 (statistics) (attempt 1)
+- T0354 `running` critic/review: Review OBJ-O008 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T11:04:31+00:00 verified {"task": "T0349"}
-- 2026-11-15T11:04:38+00:00 run_started {"run": "T0350-critic-20261115T030438-8ccc", "task": "T0350", "role": "critic", "session": "813d9817-065f-4bd8-a3ae-ce38b9445e6b"}
-- 2026-11-15T11:05:12+00:00 sleep_detected {"gap_s": 376, "runs_extended": 1}
 - 2026-11-15T11:09:44+00:00 run_finished {"run": "T0350-critic-20261115T030438-8ccc", "status": "completed", "cost": 1.855946, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T11:09:48+00:00 inbox_opened {"id": "I0203", "kind": "protected_change", "subject": "T0349: merge needs founder approval"}
 - 2026-11-15T20:03:03+00:00 inbox_resolved {"id": "I0203", "status": "approved", "note": "Merge T0349 (diagnosis of EV-O003-01: E010 void; the frozen search cannot reach the 2R designer's level). Review 
@@ -50,3 +49,6 @@ cancelled: 44, done: 304, failed: 4
 - 2026-11-15T21:43:23+00:00 run_finished {"run": "T0351-critic-20261115T133710-bab2", "status": "completed", "cost": 1.486634, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T21:46:31+00:00 run_finished {"run": "T0352-critic-20261115T133711-be38", "status": "completed", "cost": 1.945286, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T22:06:09+00:00 loop_started {"pid": 26177}
+- 2026-11-15T22:06:16+00:00 objective_draft_review {"objective": "O008", "ref": "38b97be630e1882e3df9f76cd9a163bb2a67b148", "tasks": ["T0353", "T0354"]}
+- 2026-11-15T22:06:56+00:00 run_started {"run": "T0353-critic-20261115T140656-e293", "task": "T0353", "role": "critic", "session": "c06debc0-d131-4b08-888e-3ee3eec64092"}
+- 2026-11-15T22:06:57+00:00 run_started {"run": "T0354-critic-20261115T140657-07cf", "task": "T0354", "role": "critic", "session": "b35f2ba3-5a0d-44fe-aeca-7f8cd950463f"}
