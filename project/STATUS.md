@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-14T23:02:46+00:00 from repository state — do not edit_
+_generated 2026-11-15T00:25:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0199** [protected_change] T0342: merge needs founder approval
@@ -29,8 +29,9 @@ _generated 2026-11-14T23:02:46+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 41, done: 297, failed: 4, needs_founder: 1
+cancelled: 41, done: 297, failed: 3, needs_founder: 2
 
+- T0339 `needs_founder` scientist/design_experiment: E009: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 2)
 - T0342 `needs_founder` scientist/investigate: Diagnose failure of T0339 (attempt 1)
 
 ## Recent events
