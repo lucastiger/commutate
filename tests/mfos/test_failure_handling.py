@@ -583,3 +583,44 @@ def test_an_invalid_evaluation_gets_its_own_diagnosis_once_the_run_s_has_started
     assert "same run is INVALID" not in Store().task(first.id).description
     ev_id = diags[1].title.split()[-1]
     assert diags[1].context_files == [f"project/objectives/O900/evaluations/{ev_id}-invalid.json"]  # the file written
+
+
+# ------------------------------------------------------------------------------------------------ state commits
+def test_a_state_tick_never_commits_work_it_did_not_stage(sandbox):
+    """2026-11-15: a founder merge of tools/ and .claude/ changes was staged when a tick ran, and the tick committed the
+    whole index as mfos-bot commit 6b4986f3, which the main audit (scripts/audit_main.py) rightly failed. A tick now
+    waits while anything outside the state paths, or founder-owned, is staged, or a merge is in progress."""
+    s = Store()
+    o = Orchestrator(s)
+    head = s.git("rev-parse", "HEAD")
+    guard = sandbox / ".claude" / "hooks" / "guard.py"
+    guard.write_text(guard.read_text() + "\n# founder edit\n")
+    s.git("add", ".claude/hooks/guard.py")
+    (sandbox / "project" / "events.jsonl").write_text("{}\n")  # some state to commit
+    o._commit_state("tick")
+    assert s.git("rev-parse", "HEAD") == head  # nothing committed
+    assert s.git("diff", "--cached", "--name-only") == ".claude/hooks/guard.py"  # the founder's work is left as it was
+    o._commit_state("tick")  # one event per reason, not one per tick
+    deferred = [e for e in s.events() if e.get("event") == "state_commit_deferred"]
+    assert len(deferred) == 1 and ".claude/hooks/guard.py" in deferred[0]["reason"]
+    s.git("reset", "-q", "--", ".claude/hooks/guard.py")
+    o._commit_state("tick")
+    assert s.git("rev-parse", "HEAD") != head
+    assert s.git("show", "--name-only", "--format=", "HEAD").split() == ["project/events.jsonl"]
+
+
+def test_a_state_tick_waits_for_a_merge_in_progress_and_for_staged_founder_files(sandbox):
+    s = Store()
+    o = Orchestrator(s)
+    head = s.git("rev-parse", "HEAD")
+    (sandbox / ".git" / "MERGE_HEAD").write_text(head + "\n")
+    (sandbox / "project" / "events.jsonl").write_text("{}\n")
+    o._commit_state("tick")
+    assert s.git("rev-parse", "HEAD") == head
+    (sandbox / ".git" / "MERGE_HEAD").unlink()
+    charter = sandbox / "project" / "charter.md"
+    charter.write_text("draft by the founder\n")
+    s.git("add", "project/charter.md")
+    o._commit_state("tick")
+    assert s.git("rev-parse", "HEAD") == head  # a founder-owned file staged by the founder is not the bot's to commit
+    assert any("project/charter.md" in e.get("reason", "") for e in s.events() if e.get("event") == "state_commit_deferred")

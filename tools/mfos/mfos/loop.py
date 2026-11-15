@@ -91,6 +91,7 @@ class Orchestrator:
         # 1 = plan only (founder triggers execution) · 2 = execute, founder approves every merge
         # 3 = autonomous within policy. See docs/ARCHITECTURE.md §22.
         self.level = int(self.pol.get("autonomy", {}).get("level", 3))
+        self._deferred = ""  # why the last state commit waited (one event per reason, not one per tick)
 
     # ================================================================== loop
     def run_forever(self, poll_s: int = 30, max_cycles: Optional[int] = None) -> None:
@@ -1264,6 +1265,16 @@ class Orchestrator:
         existing = [p for p in paths if (self.s.root / p).exists()]
         if not existing:
             return
+        # A state commit holds only what this method stages. It used to commit the whole index: a founder's merge was
+        # staged when a tick ran, and the bot's commit 6b4986f3 carried tools/ and .claude/ changes with no founder
+        # approval, so the main audit failed (2026-11-15). Someone else's staged work or merge in progress: wait.
+        why_not = self._foreign_index()
+        if why_not:
+            if why_not != self._deferred:
+                self.s.event("state_commit_deferred", reason=why_not)
+            self._deferred = why_not
+            return
+        self._deferred = ""
         founder_owned = [":(exclude,glob)project/objectives/*/objective.yaml", ":(exclude)project/charter.md",
                          ":(exclude)project/decisions", ":(exclude)project/customers"]
         self.s.git("add", "-A", "--", *existing, *founder_owned, check=False)
@@ -1278,6 +1289,22 @@ class Orchestrator:
             msg += f"\n\n{self.s.founder_trailer}"
         self.s.git("commit", "-q", "-m", msg, check=False)
         self._push()
+
+    FOUNDER_OWNED = ("project/charter.md", "project/decisions/", "project/customers/")
+
+    def _foreign_index(self) -> str:
+        """Why the index is not the orchestrator's to commit now, or "": a merge, cherry-pick, revert or rebase in
+        progress, or staged entries outside the state paths or founder-owned (staged before this tick, so not ours)."""
+        for head in ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD"):
+            if self.s.git("rev-parse", "-q", "--verify", head, check=False).strip():
+                return f"{head} exists: a {head.split('_')[0].lower().replace('cherry', 'cherry-pick')} is in progress"
+        for d in ("rebase-merge", "rebase-apply"):
+            if (self.s.root / self.s.git("rev-parse", "--git-path", d, check=False).strip()).exists():
+                return "a rebase is in progress"
+        staged = self.s.git("diff", "--cached", "--name-only", check=False).split()
+        foreign = [p for p in staged if not p.startswith(self.STATE_PATHS) or p.startswith(self.FOUNDER_OWNED)
+                   or fnmatch.fnmatch(p, "project/objectives/*/objective.yaml")]
+        return ("staged by someone else: " + ", ".join(foreign[:5])) if foreign else ""
 
     def _records_founder_decision(self, staged: list[str]) -> bool:
         """True when a staged inbox item was resolved by the founder: at a terminal ("human") or by a session on
