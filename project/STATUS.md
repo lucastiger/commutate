@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T01:26:03+00:00 from repository state — do not edit_
+_generated 2026-11-15T01:32:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 43, done: 298, failed: 4
 
 
 ## Recent events
-- 2026-11-15T00:25:42+00:00 task_rescoped {"task": "T0339", "reason": "successor id E010 (E009 is O007's); D0022"}
 - 2026-11-15T00:26:17+00:00 run_started {"run": "T0339-scientist-20261114T162617-5161", "task": "T0339", "role": "scientist", "session": "97d77ad2-cd74-426a-801f-b6687b4e818c"}
 - 2026-11-15T00:27:59+00:00 inbox_resolved {"id": "I0199", "status": "approved", "note": "Merge T0342 (diagnosis: T0339 failed on the successor id, a planning error; fixed by D0022). Review T0343 accept_
 - 2026-11-15T00:28:10+00:00 merged {"task": "T0342"}
@@ -48,3 +47,4 @@ cancelled: 43, done: 298, failed: 4
 - 2026-11-15T01:25:17+00:00 sleep_detected {"gap_s": 979, "runs_extended": 1}
 - 2026-11-15T01:25:59+00:00 run_interrupted {"run": "T0345-scientist-20261114T172443-b2c9", "cost": 0.541449}
 - 2026-11-15T01:25:59+00:00 founder_stopped {"task": "T0345", "run": "T0345-scientist-20261114T172443-b2c9", "run_status": "interrupted", "task_status": "cancelled"}
+- 2026-11-15T01:32:08+00:00 loop_started {"pid": 12013}
