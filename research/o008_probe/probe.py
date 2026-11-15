@@ -13,8 +13,9 @@ Two questions, under the reference's own measured rules (spec.rules, the rules t
         widen    null (b), inductance-blind: maximise power copper area only.
       Shortfall s = L1(result) / L1(W) - 1.
 
-Usage: uv run python research/o008_probe/probe.py {2R|Case4} OUT.json [draws] [proxy]
+Usage: uv run python research/o008_probe/probe.py {2R|Case4} OUT.json [draws] [proxy] [diesfixed]
   proxy: first optimise the twin by a long L1-guided descent (PROXY_STEPS) and use that layout W* in place of W
+  diesfixed: the die-row parameters (row_*) never move: not in the proxy, the degradation or any search (review T0358)
 """
 import json
 import pickle
@@ -35,6 +36,7 @@ SEED0 = 20261115  # development seeds, unrelated to any sealed seed
 MAX_STEPS = 60
 ASCENT_PROPOSALS = 400
 PROXY_STEPS = 200
+DIES_FIXED = "diesfixed" in sys.argv[4:]  # die rows (row_*) held fixed in the proxy, the degradation and every search
 BARE, FROZEN_TARGET = T.DEGRADE_RATIO, T.DEGRADE_RATIO * (1 + T.DEGRADE_MARGIN)
 
 
@@ -54,6 +56,12 @@ def wire_mm(lay):
     return sum(w.length for w in lay.wires if w.net in NETS) * 1e3
 
 
+def movable():
+    """The walk parameters a degradation may move: all of them, or (DIES_FIXED) all but the die rows (row_*)."""
+    idx = np.arange(T.WALK_FIRST, T.WALK_END)
+    return np.array([i for i in idx if not (DIES_FIXED and D.Params.NAMES[i].startswith("row_"))])
+
+
 def ascent(spec, W, l_w, rng):
     """Randomised degradation: accept a joint move of 2-4 copper parameters if it is DRC-clean and raises L1; stop at the
     frozen L1 target or after ASCENT_PROPOSALS proposals."""
@@ -62,7 +70,7 @@ def ascent(spec, W, l_w, rng):
         if cur / l_w >= FROZEN_TARGET:
             break
         v = p.to_vector().copy()
-        for i in rng.choice(np.arange(T.WALK_FIRST, T.WALK_END), size=int(rng.integers(2, 5)), replace=False):
+        for i in rng.choice(movable(), size=int(rng.integers(2, 5)), replace=False):
             v[i] += float(rng.choice([-1, 1]) * rng.choice([0.5, 1.0, 1.5, 2.0]))
         q = D.Params.from_vector(v)
         if any(c[0] >= c[2] - 1e-9 or c[1] >= c[3] - 1e-9 for c in q.cols + q.slots):
@@ -93,7 +101,9 @@ def descend(spec, p, lay, l_w, mode, max_steps=None, keep=False):
     cur, area, wl, steps = score(lay), copper_mm2(lay), wire_mm(lay), 0
     for _ in range(max_steps):
         best = None
-        for _, _, q in T._walk_candidates(p):
+        for name, _, q in T._walk_candidates(p):
+            if DIES_FIXED and name.startswith("row_"):
+                continue
             cl = clean(spec, q)
             if cl is None:
                 continue
@@ -113,12 +123,13 @@ def descend(spec, p, lay, l_w, mode, max_steps=None, keep=False):
 def main():
     ref, out = sys.argv[1], sys.argv[2]
     draws = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-    proxy = len(sys.argv) > 4 and sys.argv[4] == "proxy"
+    proxy = "proxy" in sys.argv[4:]
     c = pickle.load(open(CTX[ref], "rb"))
     spec, W = c["spec"], c["twin"]
     l_w = T._l1(W)
     res = {"reference": ref, "ctx": CTX[ref], "l1_W_nH": l_w * 1e9, "bare_target": BARE, "frozen_l1_target": FROZEN_TARGET,
-           "rules_min_width_power_mm": spec.rules.min_width_power * 1e3, "max_steps": MAX_STEPS}
+           "rules_min_width_power_mm": spec.rules.min_width_power * 1e3, "max_steps": MAX_STEPS,
+           "dies_fixed": DIES_FIXED}
     t0 = time.time()
     if proxy:
         # designer proxy W*: a long L1-guided descent from the twin; degradations, searches and shortfalls are then

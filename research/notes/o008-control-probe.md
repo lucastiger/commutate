@@ -52,9 +52,29 @@ With W* as the target, degradations reach the target on both references, and bot
 every draw by a wide margin, while the guided search recovers to within 2 % on 2R and comes close on Case 4 within 60
 steps.
 
+### Target = the designer proxy W*, die rows held fixed everywhere (after review T0358)
+Run on 2026-11-15 with `diesfixed`: the die-row parameters (row_*) never move, in the proxy, the degradation or any
+search. Outputs `probe_{2R,Case4}_proxy_diesfixed.json`.
+
+| | 2D_Case_2R | 2D_Case_4 |
+|---|---|---|
+| L1(W*) / L1(W) | 0.934 (12 steps) | 0.670 (73 steps) |
+| frozen degrade of W* | 1.391 | 1.392 |
+| random draws reaching 1.25 / 1.3875 | 5 / 5 of 5 | 5 / 5 of 5 |
+| guided s | -0.3 % to +1.1 %; 5 of 5 within 2 % | -0.4 % to +5.3 %; 3 of 5 within 2 %, all at the step cap |
+| compact s (null d) | -0.0 % to +1.5 %; **5 of 5 within 2 %** | +12 % to +21 %; 0 of 5 |
+| widen s (null b) | +7 % to +17 % | +12 % to +21 % |
+
+With die rows fixed, 2R's copper-only optimum is shallower (6.6 % below the twin, against 10.2 % with die rows free)
+and blind compaction reaches it on every draw: the control does not discriminate on 2R. With die rows free in the
+proxy, the degradation, the search and the nulls alike (the previous table), compaction failed on every draw on both
+layouts. Most of Case 4's L1 gain is copper (33 % of the 37 %).
+
 ## What follows for O008 (proposals)
 1. The control's target is a designer proxy W*, found by a frozen, long L1-guided descent from the twin under the
-   reference's own rules and confirmed at l2_layout (the lower of W and W* by L_sub), not the twin itself.
+   reference's own rules and confirmed at l2_layout (the lower of W and W* by L_sub), not the twin itself. Die rows
+   move in the proxy, the degradation, the search and the nulls alike: held fixed, the control does not discriminate
+   on 2R.
 2. Nulls (b) and (d) are judged per layout and must fail; the probe suggests they do by 3-19 %.
 3. Case 4 becomes usable (degradations of W* reach 1.25); the synthetic housings can be dropped from the count.
 4. The search budget matters: on Case 4 all guided runs were still improving at 60 steps.
