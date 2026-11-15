@@ -2,7 +2,7 @@
 
 Nov 15, 2026 · @Lucas
 
-> Snapshot of the living Claude Doc "Commutate Plan and Timeline" (https://claude.ai/artifact/FEGt6mrR4zoLEXmvNg9cYk), exported 2026-11-15 (doc revision 53). The doc is the working copy: edit it there and re-export to update this file. Dates without a year are 2026-27.
+> Snapshot of the living Claude Doc "Commutate Plan and Timeline" (https://claude.ai/artifact/FEGt6mrR4zoLEXmvNg9cYk), exported 2026-11-15 (doc revision 56). The doc is the working copy: edit it there and re-export to update this file. Dates without a year are 2026-27.
 
 Commutate keeps the re-layout direction and spends the next ten weeks building what E010 and the reference screening showed is missing: coverage of the layout features real modules use, a search that starts from the reference layout and can beat it, and a fast thermal model. Re-layout gains are tested on fresh references by about the end of January 2027. The first product, a paid re-layout sprint that Commutate runs on a partner's module with their new dies, ships about 02-26, and coverage of most half-bridge SiC modules follows by the end of March. The day-60 review on Nov 27, 2026 closes O003 with no verdict, and the day-90 line on Dec 27, 2026 (a paid or LOI-backed sprint) runs on the customer track in parallel.
 
@@ -59,7 +59,7 @@ O003 ends with no verdict, recorded honestly, and the day-60 review sets the nex
 
 **How.**
 
-1. Approve I0203 (merge diagnosis T0349) with `--no-replan`.
+1. Done on 11-15: I0203 approved (diagnosis T0349 merged) with `--no-replan`.
 2. Accept decision record D0023, drafted by the session: E010 void, the finding, and the design rule from T0349 (rehearse a planted-headroom control on a development reference whose twin the sampler cannot draw).
 3. Pause O003 (`mfos objective pause O003`) so the loop spends nothing more on it.
 4. Thesis review on 11-27: set A-T3 to "untested, instrument insufficient", decide the order of work (sections 2 and 3 before current-sharing work, with the reason recorded), set the coverage target (section 2), and set budgets.
@@ -359,11 +359,11 @@ The policy's daily cap of $120 is not binding. Pace is set by founder approvals 
 
 ## Decisions for the founder
 
-Fourteen decisions, five of them at the thesis review; the first two are due now.
+Fourteen decisions, five of them at the thesis review; the first is done and the census go-ahead is due now.
 
 | Decision | Needed by | Recommendation |
 | --- | --- | --- |
-| Approve I0203 (merge diagnosis T0349) | Nov 16, 2026 | Approve with `--no-replan` |
+| I0203 approved, diagnosis T0349 merged (done 11-15) | Nov 16, 2026 | Approve with `--no-replan` |
 | Go ahead with the coverage census and the candidates' screens | Nov 16, 2026 | Start now |
 | Accept D0023: E010 void, no verdict, T0349's design rule | Nov 20, 2026 | Accept |
 | Order of work: coverage and the search before current-mismatch work (amends O003's rule) | Nov 27, 2026 | Amend, with the reason recorded |
