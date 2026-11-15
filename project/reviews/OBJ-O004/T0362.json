@@ -1,0 +1,77 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "l2_layout's required 0.125 mm level is demonstrated infeasible on 2D_Case_4, so E004 is INVALID by the draft's own rules",
+      "detail": "scope_in and F1/A2 require every layout on l2_layout's 0.5/0.25/0.125 mm ladder. The P3 addendum (research/notes/o006-p3-em-convergence.md lines 284-307) records that the 0.125 mm Case 4 solves never finished: two ran 8.7 h and 6.8 h (RSS 64 and 35 GB), and 0.5->0.25 mm took ~35x longer for 4x the unknowns. That projects to roughly 68 h per 0.125 mm solve, past the VM's 20 h cap. The draft has no pilot or cost line for this: F7 pilots only FastHenry, and the cost note covers only '$0.24 per 0.25 mm solve'. Under the draft's rules a missing or divergent third level gives +inf, so every Case 4 pair fails F1's 0.5 % ratio gate. That leaves fewer than 3 pairs on that reference, so E004 is INVALID. Dropping Case 4 breaks F4's 3-reference minimum. Case 4 also carries the only pair at the low end of the required span (proxy L1 ratio 0.628, or 0.670 under O008's fallback). Even if each solve fit the 20 h cap, 5 Case 4 layouts x 20 h x $2.10/h is about $210 against $90.49 remaining. As drafted, the sample cannot resolve the decision.",
+      "evidence": "P3 addendum: '0.125 mm solves did not finish. Two ran for 8.7 h and 6.8 h (RSS 64 and 35 GB) ... well beyond the VM's 20 h cap'; 'What remains unobserved: The 0.5/0.25/0.125 mm observed order on Case 4 (O004's F1 ladder)'. Case 4 has 4.11 M unknowns at 0.25 mm, 6941-7202 s per solve on n2-highmem-32. Generator-layout 0.125 mm solves (7.5-7.9 M unknowns) needed 35-39 GB and 3.1-3.7 h (research/l2_layout_vm*/solve_*_r2.json).",
+      "suggested_check": "Before approval, run a founder burst pilot of one Case 4 0.125 mm l2_layout solve (or a lean variant such as a cropped domain), or redefine the Case 4 estimate; cost it inside the $100 budget.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F1's pair exclusion is correlated with the outcome and can remove the only pairs on which A1, K1 and the L1 null have power",
+      "detail": "The draft justifies the 0.5 % l2_layout ratio gate with P3's 0.1-0.2 %, but those figures are for perturbations of 1.4-3.1 %. I applied the same three-level estimator to pairs of geometrically different generator layouts (ratios 0.38-1.44). Their ratio estimates were 0.02-1.18 % at the finest level and 0.04-2.1 % for the 0.25 mm value: 4 of 10 (finest) or 6 of 10 (0.25 mm) exceed 0.5 %. The deep designer-proxy pairs, which are the only ones in O009's decision band r = 0.8-0.9, are therefore the likeliest to be excluded. One pair per reference may be dropped without invalidity, and F4's span rule is not stated to apply after exclusion. On the pairs that remain (r >= 0.95), A1's 2 % passes any solver whose 1-r is wrong by up to ~40 %. K1's 5 % cannot fire on them: a 0.98 pair would need r_FH <= 0.93. The L1 null could pass on them too. A pass, or a kill that cannot fire, could then rest on powerless pairs.",
+      "evidence": "Scratch recomputation from research/l2_layout_vm*/solve_s*_d*_r{0,1,2}.json with P3's GCI rule: e.g. (7,2,interleaved)/(11,6,u_shaped) R 1.2329/1.2493/1.2585, ratio estimate 1.18 % finest and 2.10 % at 0.25 mm; (3,6,side_by_side)/(11,6,u_shaped) 0.77 % / 1.42 %. O008 probe: proxies at 0.898 (2R) and 0.628 (Case 4) at L1; P4 single-feature pairs at 0.97-0.99.",
+      "suggested_check": "Apply F4's span and its '3 below 0.90' rule to the counted pairs after exclusion, or make exclusion of any proxy or sub-0.90 pair INVALID; measure ratio estimates on a development proxy pair before setting 0.5 %.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "FastHenry deck models bond wires with a never-refined 2x2 equal-current bundle, adding a ~2 % low-frequency internal-inductance bias that no FastHenry estimate contains",
+      "detail": "The exporter maps each round wire to an equal-GMD square (a = 0.8711 d) split into wire_n x wire_n filaments, and run_fh.py keeps wire_n = 2 on k0, k1 and k2. For an isolated straight segment the four filaments carry equal current by symmetry, so the bundle keeps the low-frequency internal inductance (GMD 0.446 a, the same as the round wire's 0.7788 r). At 10-20 MHz the Al skin depth is 18-27 um against r = 150 um, so the high-frequency wire should have nearly none. l2_layout's skin-graded rings largely remove it. The excess is 32-38 pH/mm, about 0.45-0.54 nH (2.0-2.4 %) on Case 4's loop. That matches the sign, size and rise with frequency of P4's measured FastHenry-minus-l2 gap (+0.18 to +0.54 nH). A constant additive bias b shifts a ratio by about b/L_relayout - b/L_ref, which is 1.1 % on an r = 0.63 pair: more than half of A1's 2 % on the most decision-relevant pair. A1 is judged on raw values 'whatever a diagnosis attributes', so a deficit in the reference deck can fail l2_layout. E_FH from FastHenry's own ladder will not show it.",
+      "evidence": "research/scripts/o006_p4/fh_export.py lines 28-30, 70, 81, 177 ('nwinc={lev.wire_n} nhinc={lev.wire_n}'); run_fh.py lines 43-45 (wire_n=2 at every level); P4 table: FH - l2 = +0.18/+0.22, +0.21/+0.25, +0.49/+0.54 nH at 10/20 MHz; Case 4 wires d = 0.30 mm, one per die, ~12-16 mm. Formulas: DC internal inductance mu0/(8 pi) per length (Grover 1946); thin-skin internal inductance mu0 delta/(4 pi r).",
+      "suggested_check": "Refine the wire cross-section in FastHenry's ladder (wire_n 2/4/8 or skin-graded), or add a wire-filament term to E_FH; confirm on the F7 development pair that FastHenry minus l2 for the wire group shrinks.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Several criteria don't say which mesh level their value and estimate belong to, so they cannot be recomputed one way only",
+      "detail": "P3's three-level GCI (f1 = finest) estimates the error of the 0.125 mm value. A1 judges l2_layout at 0.25 mm, whose error is about r^p/(r^p-1) x |e21|, i.e. 1.6-2.2x larger at p = 0.7-0.9. For example, a ratio estimate of 0.47 % at the finest level is 0.88 % at 0.25 mm. F1's '<= 0.5 %', A2's pairing of L_L2 with E_L2 (0.25 mm value, extrapolated value or finest value?) and K2's levels are all unstated. Depending on the reading, the gate is about 1.6-2.2x looser or tighter than written, and A2 can mix a coarse value with a fine-level estimate.",
+      "evidence": "P3 section 3 estimator definitions; scratch recomputation of finest versus 0.25 mm estimates on generator ladders (e.g. u_shaped d6: GCI 2.06 % finest versus 3.54 % at 0.25 mm).",
+      "suggested_check": "Name the level and estimator for every L and E in A1, A2, K2 and F1, and use the estimate of the 0.25 mm value wherever the 0.25 mm value is judged.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "F4's span (at least 3 pairs below 0.90, low end 0.65 at L1) may be unattainable and is measured with the model the proxies exploit",
+      "detail": "Proxies give 0.898 on 2R (0.934 under O008's die-rows-fixed fallback) and 0.628 on Case 4 (0.670 under the fallback, which misses the 0.65 end). P4-scale single-feature changes give 0.97-0.99, so the third sub-0.90 pair has to come from large frozen parameter ranges. The span is in L1 ratios, but proxy pairs are L1-descent optima, whose L2 ratios are likely closer to 1.",
+      "evidence": "research/notes/o008-control-probe.md tables; O008 objective lines 64-68 (Tj fallback to die rows fixed); P4 ratios 0.987 and 0.969.",
+      "suggested_check": "Draw the frozen rules on development seeds at L1 and report the ratio distribution before registration; state the span at l2_layout 0.5 mm as well.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A1 compares solutions on the same 0.25 mm grid, and A2 gets easier as either solver's estimate widens",
+      "detail": "FastHenry's finest level (k2) uses the same 0.25 mm cell-centred trace lattice as the judged l2_layout level, so the shared grid error cancels in A1; only F1's ladders bound it. A2's |dL|/(E_L2+E_FH) is passed more easily the wider either estimate is (P4's combined band was +/-19-22 %). The inconclusive branch ('(b) not resolved because FastHenry's estimate is too wide') can therefore only be reached through +inf.",
+      "evidence": "P4 section 1.1 (lattice concept shared) and k2 = 0.25 mm in run_fh.py; P4 combined-estimate column.",
+      "suggested_check": "State A2 as a consistency check only, and word the inconclusive branch as 'an estimate of +inf'.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "No consequence is stated if a declared null passes A1",
+      "detail": "A1 says the constant and L1 nulls 'must fail' but not what follows if one passes (INVALID? inconclusive?). The constant null fails trivially given the span. There is no evidence yet that the L1 null fails at 2 % on these pairs, because no l2_layout solve has been made on the proxies.",
+      "evidence": "o008-control-probe.md line 87: 'An l2_layout check of W against W* on both references is the cheap next test.'",
+      "suggested_check": "Make 'the L1 null passes A1' a gated sanity failure (INVALID), as O008 does for its nulls.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the P3 note and its 2026-11-02 addendum: the 0.125 mm Case 4 solves did not finish (8.7 h and 6.8 h, 64 and 35 GB), projected past the 20 h VM cap; costed 5 Case 4 layouts against the $90.49 remaining budget.",
+    "Extracted wall time, memory and unknown counts from research/l2_layout_vm*/solve_*_r2.json (generator layouts at 0.125 mm: 7.5-7.9 M unknowns, 35-39 GB, 3.1-3.7 h) and compared them with the 2R, Case 6 and Case 4 counts at 0.25 mm.",
+    "Recomputed three-level ratio GCI estimates (P3's Roache rule) for all 10 pairs of five generator ladders, at the finest level and at 0.25 mm: 0.02-1.18 % and 0.04-2.1 %, against the draft's 0.1-0.2 % rationale and its 0.5 % gate.",
+    "Verified that the 2x2 equal-current filament bundle reproduces the low-frequency square GMD (0.4458 a against 0.44705 a). Computed the wire internal-inductance excess at 10 and 20 MHz (32-38 pH/mm, 0.45-0.54 nH on Case 4) and the resulting ratio shift on an r = 0.63 pair (1.1 %). Confirmed wire_n = 2 is fixed on every level in run_fh.py.",
+    "Checked the equal-GMD square side a = 0.7788/(2*0.44705) d = 0.8711 d against Grover's GMD values.",
+    "Checked the power of A1 and K1 on pairs near 1 analytically (|r_a/r_b - 1| is about |delta_a - delta_b| for small delta = 1 - r): K1 cannot fire on pairs at r >= 0.95.",
+    "Checked the span feasibility against O008's probe proxy ratios (0.898/0.628, or 0.934/0.670 under the fallback) and P4's single-feature ratios (0.97-0.99)."
+  ],
+  "caveats": [
+    "Even if every criterion passes, the agreement holds only for the exported conductor model (Layout.to_conductors) with ideal die shorts and point-contact terminals. Reconstruction errors and shared model choices are invisible to A1 and A2, so 'agrees on real public modules' means agreement on these reconstructions as exported.",
+    "10 and 20 MHz are both deep in the skin-effect regime (copper thickness / skin depth about 10-14), so the two frequencies are nearly redundant tests.",
+    "My wire-bias figure is a closed-form estimate (Grover's GMD formulas and the thin-skin formula), not a FastHenry run. Its agreement with P4's measured differences is suggestive, not proof.",
+    "The ratio-estimate spread comes from generator-layout pairs that differ in family and die count, which is more than real re-layout pairs would. It shows that the 0.1-0.2 % figure does not carry over to large-change pairs, not the exact exclusion rate.",
+    "The 2 % and 5 % thresholds do follow from O009's 10 % and 20 % lines (h error about r*d)."
+  ]
+}
