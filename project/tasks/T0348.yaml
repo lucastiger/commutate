@@ -3,7 +3,7 @@ objective: O003
 title: Diagnose failure of T0347
 type: investigate
 agent: scientist
-status: running
+status: cancelled
 depends_on: []
 description: "Task T0347 ('Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019's public\
   \ reference set (2D_Case_2R, 2D_Case_6)') failed with preliminary class `experimental`: sanity checks\
@@ -27,7 +27,7 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0348-diagnose-failure-of-t0347
 pr: null
@@ -41,4 +41,8 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 0
+  outcome: founder_stopped
+  summary: T0348-scientist-20261115T023527-8a7a ended (error) while the task was cancelled
+  at: '2026-11-15T10:36:08+00:00'
