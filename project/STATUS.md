@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T01:32:53+00:00 from repository state — do not edit_
+_generated 2026-11-15T02:18:52+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,7 +10,7 @@ _generated 2026-11-15T01:32:53+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $248.97/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $249.80/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-15T01:32:53+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 131 | $248.97 | 3965810 | 1935956 | 263 | 0 |
+| O003 | 132 | $249.80 | 3978995 | 1939428 | 267 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,14 +29,12 @@ _generated 2026-11-15T01:32:53+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 43, done: 298, failed: 3, running: 1
+cancelled: 43, done: 298, failed: 3, review: 1, running: 1
 
-- T0339 `running` scientist/design_experiment: E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 4)
+- T0339 `review` scientist/design_experiment: E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 4)
+- T0346 `running` critic/review: Review T0339 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-15T00:27:59+00:00 inbox_resolved {"id": "I0199", "status": "approved", "note": "Merge T0342 (diagnosis: T0339 failed on the successor id, a planning error; fixed by D0022). Review T0343 accept_
-- 2026-11-15T00:28:10+00:00 merged {"task": "T0342"}
-- 2026-11-15T00:28:14+00:00 run_started {"run": "T0344-planner-20261114T162814-40a6", "task": "T0344", "role": "planner", "session": "a9db03ba-2130-43db-9d43-a4bae887bb7f"}
 - 2026-11-15T00:28:43+00:00 replan_declined {"objective": "O003", "reason": "D0021/D0022 plan in force; T0344 stopped"}
 - 2026-11-15T00:28:49+00:00 run_interrupted {"run": "T0344-planner-20261114T162814-40a6", "cost": 0.5233}
 - 2026-11-15T00:28:49+00:00 founder_stopped {"task": "T0344", "run": "T0344-planner-20261114T162814-40a6", "run_status": "interrupted", "task_status": "cancelled"}
@@ -49,3 +47,6 @@ cancelled: 43, done: 298, failed: 3, running: 1
 - 2026-11-15T01:25:59+00:00 founder_stopped {"task": "T0345", "run": "T0345-scientist-20261114T172443-b2c9", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-15T01:32:08+00:00 loop_started {"pid": 12013}
 - 2026-11-15T01:32:53+00:00 run_started {"run": "T0339-scientist-20261114T173253-ddef", "task": "T0339", "role": "scientist", "session": "32daf321-40f4-4205-8010-715f7238b99b"}
+- 2026-11-15T02:02:36+00:00 run_finished {"run": "T0339-scientist-20261114T173253-ddef", "status": "completed", "cost": 0.8299, "subtype": "success", "report": "structured_output"}
+- 2026-11-15T02:18:45+00:00 verified {"task": "T0339"}
+- 2026-11-15T02:18:52+00:00 run_started {"run": "T0346-critic-20261114T181852-3a11", "task": "T0346", "role": "critic", "session": "221cff2a-e7fc-4312-bdf9-bbcc73c45de4"}
