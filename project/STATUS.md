@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T02:36:39+00:00 from repository state — do not edit_
+_generated 2026-11-15T02:37:18+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0200** [protected_change] T0339: merge needs founder approval
@@ -34,7 +34,6 @@ cancelled: 43, done: 299, failed: 3, needs_founder: 1
 - T0339 `needs_founder` scientist/design_experiment: E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 4)
 
 ## Recent events
-- 2026-11-15T01:09:00+00:00 run_finished {"run": "T0339-scientist-20261114T162617-5161", "status": "completed", "cost": 5.725581, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T01:24:37+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "diagnose"}
 - 2026-11-15T01:24:37+00:00 investigation_spawned {"task": "T0345", "about": "T0339", "cls": "implementation"}
 - 2026-11-15T01:24:43+00:00 run_started {"run": "T0345-scientist-20261114T172443-b2c9", "task": "T0345", "role": "scientist", "session": "fe0706e8-dc4e-44d4-96a3-83d79f2602f9"}
@@ -49,3 +48,4 @@ cancelled: 43, done: 299, failed: 3, needs_founder: 1
 - 2026-11-15T02:19:27+00:00 sleep_detected {"gap_s": 1012, "runs_extended": 1}
 - 2026-11-15T02:30:54+00:00 run_finished {"run": "T0346-critic-20261114T181852-3a11", "status": "completed", "cost": 2.679465, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T02:36:36+00:00 inbox_opened {"id": "I0200", "kind": "protected_change", "subject": "T0339: merge needs founder approval"}
+- 2026-11-15T02:37:13+00:00 sleep_detected {"gap_s": 380, "runs_extended": 0}
