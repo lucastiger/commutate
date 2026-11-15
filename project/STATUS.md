@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T00:28:14+00:00 from repository state — do not edit_
+_generated 2026-11-15T00:28:54+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -10,7 +10,7 @@ _generated 2026-11-15T00:28:14+00:00 from repository state — do not edit_
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
-| O003 | active | - | 0/1 | $242.18/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
+| O003 | active | - | 0/1 | $242.70/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $9.51/$100 | The L2 inductance reference is accurate on reconstructed public modules, so it can judge O003's headroom |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
@@ -21,7 +21,7 @@ _generated 2026-11-15T00:28:14+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 129 | $242.18 | 3885048 | 1903962 | 258 | 0 |
+| O003 | 129 | $242.70 | 3885048 | 1903962 | 258 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,15 +29,11 @@ _generated 2026-11-15T00:28:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 41, done: 298, failed: 3, running: 2
+cancelled: 42, done: 298, failed: 3, running: 1
 
 - T0339 `running` scientist/design_experiment: E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 3)
-- T0344 `running` planner/plan: Plan O003 (diagnosis:T0342 of T0339 (implementation)) (attempt 1)
 
 ## Recent events
-- 2026-11-14T22:36:07+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "diagnose"}
-- 2026-11-14T22:36:07+00:00 investigation_spawned {"task": "T0342", "about": "T0339", "cls": "implementation"}
-- 2026-11-14T22:36:12+00:00 run_started {"run": "T0342-scientist-20261114T143612-61b6", "task": "T0342", "role": "scientist", "session": "d926a43d-78e0-44c3-ad0d-dcf4e42d5af9"}
 - 2026-11-14T22:36:47+00:00 sleep_detected {"gap_s": 927, "runs_extended": 1}
 - 2026-11-14T22:53:21+00:00 run_finished {"run": "T0342-scientist-20261114T143612-61b6", "status": "completed", "cost": 1.646429, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T22:58:46+00:00 verified {"task": "T0342"}
@@ -50,3 +46,6 @@ cancelled: 41, done: 298, failed: 3, running: 2
 - 2026-11-15T00:27:59+00:00 inbox_resolved {"id": "I0199", "status": "approved", "note": "Merge T0342 (diagnosis: T0339 failed on the successor id, a planning error; fixed by D0022). Review T0343 accept_
 - 2026-11-15T00:28:10+00:00 merged {"task": "T0342"}
 - 2026-11-15T00:28:14+00:00 run_started {"run": "T0344-planner-20261114T162814-40a6", "task": "T0344", "role": "planner", "session": "a9db03ba-2130-43db-9d43-a4bae887bb7f"}
+- 2026-11-15T00:28:43+00:00 replan_declined {"objective": "O003", "reason": "D0021/D0022 plan in force; T0344 stopped"}
+- 2026-11-15T00:28:49+00:00 run_interrupted {"run": "T0344-planner-20261114T162814-40a6", "cost": 0.5233}
+- 2026-11-15T00:28:49+00:00 founder_stopped {"task": "T0344", "run": "T0344-planner-20261114T162814-40a6", "run_status": "interrupted", "task_status": "cancelled"}

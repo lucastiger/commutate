@@ -2385,3 +2385,6 @@
 {"ts": "2026-11-15T00:27:59+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0199", "status": "approved", "note": "Merge T0342 (diagnosis: T0339 failed on the successor id, a planning error; fixed by D0022). Review T0343 accept_with_caveats: the note's counterfactual is wrong (a visible 'blocked' on attempt 1 would still have been retried); lesson slightly overstates id keying.", "by": "human"}
 {"ts": "2026-11-15T00:28:10+00:00", "event": "merged", "actor": "orchestrator", "task": "T0342"}
 {"ts": "2026-11-15T00:28:14+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0344-planner-20261114T162814-40a6", "task": "T0344", "role": "planner", "session": "a9db03ba-2130-43db-9d43-a4bae887bb7f"}
+{"ts": "2026-11-15T00:28:43+00:00", "event": "replan_declined", "actor": "session", "objective": "O003", "reason": "D0021/D0022 plan in force; T0344 stopped"}
+{"ts": "2026-11-15T00:28:49+00:00", "event": "run_interrupted", "actor": "orchestrator", "run": "T0344-planner-20261114T162814-40a6", "cost": 0.5233}
+{"ts": "2026-11-15T00:28:49+00:00", "event": "founder_stopped", "actor": "orchestrator", "task": "T0344", "run": "T0344-planner-20261114T162814-40a6", "run_status": "interrupted", "task_status": "cancelled"}
