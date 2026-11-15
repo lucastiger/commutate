@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T11:04:38+00:00 from repository state — do not edit_
+_generated 2026-11-15T11:05:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -35,7 +35,6 @@ cancelled: 44, done: 300, failed: 4, review: 1, running: 1
 - T0350 `running` critic/review: Review T0349 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-15T04:17:16+00:00 inbox_opened {"id": "I0202", "kind": "decision", "subject": "E010 needs burst compute (~102.1 CPU-h)"}
 - 2026-11-15T04:17:16+00:00 burst_requested {"task": "T0347", "experiment": "E010", "cpu_hours": 102.1}
 - 2026-11-15T04:24:13+00:00 experiment_minted {"id": "E010", "run": "E010-20261114T202413-80c1"}
 - 2026-11-15T10:35:22+00:00 task_failed_attempt {"task": "T0347", "signal": "sanity_failed", "action": "fix_experiment"}
@@ -50,3 +49,4 @@ cancelled: 44, done: 300, failed: 4, review: 1, running: 1
 - 2026-11-15T10:58:58+00:00 run_finished {"run": "T0349-scientist-20261115T023528-c5fc", "status": "completed", "cost": 3.486942, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T11:04:31+00:00 verified {"task": "T0349"}
 - 2026-11-15T11:04:38+00:00 run_started {"run": "T0350-critic-20261115T030438-8ccc", "task": "T0350", "role": "critic", "session": "813d9817-065f-4bd8-a3ae-ce38b9445e6b"}
+- 2026-11-15T11:05:12+00:00 sleep_detected {"gap_s": 376, "runs_extended": 1}
