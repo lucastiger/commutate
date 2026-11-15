@@ -34,39 +34,57 @@ the source of truth for everything it cites. Times are Pacific unless marked UTC
   loop can restart. demo/ is the founder's local demo (http://127.0.0.1:8751/) and is not in the repository.
 - **The plan**: "Commutate Plan and Timeline". The living copy is a Claude Docs doc the founder owns
   (https://claude.ai/artifact/FEGt6mrR4zoLEXmvNg9cYk). A snapshot is in `project/plan/commutate-plan-and-timeline.md`,
-  with the timeline image beside it (committed by the loop's state commit fb2a1639).
+  with the timeline image beside it. The snapshot matches doc revision 57 exactly, apart from its header and the image
+  in place of the drawing.
   - v1 is a paid derivative re-layout sprint, shipping about 2027-02-26.
   - The validation objective O009 reaches a verdict about 2027-01-29.
   - Broad coverage (at least 80 % of a census of SiC half-bridge modules) is due about 2027-03-26.
-  - Its decisions table lists 14 dated founder decisions.
-- **Dates**: day-60 review 2026-11-27; day-90 line 2026-12-27; the plan aims for a signed LOI by 12-18.
+  - Its decisions table lists 14 dated founder decisions and is the checklist for them; the first (I0203) is done.
+- **Dates**:
+  - day-60 review 2026-11-27;
+  - signed LOI target 12-18;
+  - day-90 line 12-27;
+  - the freeze of the generator, twin, search and thermal model, 12-28. No fresh judged reference is opened before it.
 
 ## Next steps, in order
 1. **Check that no O003 planner task has appeared.** There was none at handoff, and needs_replan was false after
    T0349's merge. If one appears, cancel it; the loop now stops its agent.
 2. **Session drafts D0023.** E010 is void with no verdict: the frozen D0008 search does not reach the 2R designer's
    level, so E010's h = 0 is not evidence of no headroom. It also records T0349's design rule: rehearse every
-   planted-headroom control on a development reference whose twin the sampler cannot draw. The founder accepts it.
-   Then the session pauses O003 (`uv run mfos objective pause O003`, which only sets needs_founder) and adds the design
+   planted-headroom control on a development reference whose twin the sampler cannot draw. The founder accepts it; the
+   plan asks for that by 11-20. Then the session pauses O003 (`uv run mfos objective pause O003`, which only sets needs_founder) and adds the design
    rule to project/memory/lessons.md.
 3. **Get the founder's explicit go-ahead for the coverage census** (plan section 2), unless they gave it when starting
    the session. Decide which objective owns it, because O003 has no budget. Recommended: draft O008 first, with the
-   census as its first task.
+   census as its first task. Also prepare the screening question list for the founder to send to PREES and customer
+   contacts: T0314's 14 questions (`research/notes/o003-twin-coverage.md`, item 4), plus substrates per module, die
+   array, die rotation, separate diode dies and terminal pads per net.
 4. **Prepare the thesis review (11-27):**
    - A-T3 becomes "untested, instrument insufficient";
    - amend O003's rule on the order of work (coverage and the search before current-mismatch work);
    - choose the thermal yardstick (recommended: die-average Tj gated, hottest node reported);
    - the v1 definition and its ship gate;
-   - the coverage target;
-   - budgets.
+   - the coverage target (at least 80 % of census modules by the end of March, following customers first);
+   - budgets (the plan estimates $550-770 of agent spend through January).
 5. **Draft O008** (search seeded at the twin, reach, quarter-turned dies, side-by-side blocks, planted controls on
-   development geometry, where 2R and 2D_Case_6 become development layouts) and refresh the O002 and O004 drafts.
-   Plan sections 3-5.
+   development geometry, where 2R and 2D_Case_6 become development layouts) and refresh the O002 and O004 drafts, for
+   founder approval by 11-30 (plan sections 3-5).
+   - O002's draft already reserves E007 for its own experiment.
+   - O002's A1 rests on E006, O006's experiment (verdict INCONCLUSIVE). The refresh moves that check to claim C004
+     (O007, PASS).
 6. **Make the four tooling fixes in a founder session** (plan section 11; agents cannot write tools/):
    - runners register run-directory artifact paths, and the launcher fetches the artifact store;
    - one diagnosis per failure (E010 spawned T0348 and T0349);
    - the guard hook reads `from mfos import models` as the `mfos import` command;
    - one parameterised burst launcher.
+
+   Then add the pre-flight checklist for task briefs (role write scope, free experiment id, no check that depends on a
+   later step).
+7. **Support the customer track** (plan section 10; the founder leads it):
+   - draft the two-page capability brief when asked, from recorded claims only (C002, C004; no headroom claim before
+     O009);
+   - prepare the data-access and file-format requests (the decision is due 12-14);
+   - the sealed path for partner geometry is part of plan section 9.
 
 ## Standing instructions from the founder
 - **Gated commands are the founder's.** Never run `mfos objective approve`, `mfos exp register` or
@@ -78,9 +96,11 @@ the source of truth for everything it cites. Times are Pacific unless marked UTC
 - **VMs and data:**
   - Agents never run gcloud or start VMs; the founder launches them, so keep VM cost low.
   - Never read data/holdout/.
-  - Customer files never go to Claude or any AI service unless the NDA allows third-party processing.
-- **Leakage rule:** nobody opens NC State PREES, 2D_Case_5 or customer geometry until O008's code is frozen with hashes
-  recorded. Fact-only screening answers are allowed and are declared when used.
+  - Customer files never go to Claude or any AI service unless the NDA allows third-party processing. Otherwise they
+    go through the sealed path (plan section 9).
+- **Leakage rule** (plan section 6): nobody opens NC State PREES, 2D_Case_5 or customer geometry until the generator,
+  twin, search and thermal model are frozen with code hashes recorded (the 12-28 freeze). Fact-only screening answers
+  are allowed and are declared when used.
 - **Watchers**: the founder wants every state change reported promptly. Use Monitor polls every 10-15 s that post a line
   on each change, re-armed on every expiry, including while waiting for an answer, and read the state that changed.
 - **Commits** only when asked, ending with the Co-Authored-By line. No pushes and no gh. The shell is zsh, where
