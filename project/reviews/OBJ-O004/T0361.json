@@ -1,0 +1,76 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "2D_Case_4 is a judged reference although O006's frozen F4 excludes it from O004's judged set, and its cross-solver result is already known",
+      "detail": "O006 is approved and evaluated (EV-O006-01). Its failure mode F4 says: 'PowerSynth 2D_Case_4 ... is the EM pilot module and is excluded from both [O003's and O004's judged sets]', with the response 'a leaked layout or seed is excluded from O002, O003 and O004 evaluation'. The O004 draft still names 2D_Case_4 as one of its three references. The leak is not only formal. P4 already solved FastHenry and l2_layout on Case 4's reference and on two pairs of the same rule types E004 will draw (die shift and trace width), and it found the agreement figures (+0.8 to +2.5 % on L, die_shift ratio diff 0.0015). After seeing the trace_width ratio disagree (0.9824 vs 0.9692), P4 traced the gap to the 4 mm plane cell and concluded 'with planes at <= 2 mm FastHenry's trace_width ratio sits within ~0.0005 of l2_layout's'. That is a FastHenry mesh choice made by looking at agreement on a judged reference. The exporter E004 will use starts from P4's exporter, which was developed on Case 4. F2's control ('no pair is seen before its solves'; 'development uses gen2_0 only') is therefore not true of Case 4. Removing Case 4 leaves two references, and F4 of this draft requires at least 3, so the design can either respect the frozen leakage rule or meet its own sample rule, not both. Either way a PASS would not be admissible evidence that the hypothesis holds against its null.",
+      "evidence": "project/objectives/O006/objective.yaml lines 96-99 (F4 detection and response); research/notes/o006-p4-fasthenry-feasibility.md lines 23-32 and 159-164 (Case 4 FH vs l2 values, the plane-cell finding, 'within ~0.0005'); draft scope_in, F2 and F4.",
+      "suggested_check": "Before approval, either replace Case 4 with an unseen reference and keep F4's 3-reference rule, or get a founder decision that amends O006 F4, reports Case 4 as development only, and restates the minimum reference count and the hypothesis's scope.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F1 exclusions let A1 pass without establishing (a) 'every pre-registered pair', and they hide the pairs that give K1 its power",
+      "detail": "Hypothesis (a) is about every pre-registered pair, but F1 drops a pair whose ratio estimate is above 0.5 % (l2) or 1 % (FastHenry). A1 and K1 are both computed on the same metric, max_ratio_diff, so a dropped pair can neither pass nor fire the kill. F1 allows a run with only 3 pairs left per reference, while F4 demands 4. Which count applies after exclusion is not stated, nor whether the span rule (at least 3 pairs below 0.90) is checked after exclusion. The exclusion is likely to track effect size. P3's 0.1-0.2 % ratio estimates come only from small perturbations (1-R = 1.36 % and 3.09 %), and P3 itself warns that 'ratio errors may grow with the size of' the re-layouts. P4's two-level FastHenry trace_width ratio estimate was already 2.2 %. My sensitivity check shows that A1's power sits almost entirely in the low-ratio pairs. A predictor whose change 1-r is wrong by a factor of 2 still scores only 2.0 % at r = 0.98, while a 10 % error in the change fails A1 at r = 0.8 (2.5 %). So the pairs most likely to be dropped are the ones that make the test discriminating and the ones O009 decides on (r = 0.8-0.9, the proxy pairs at 0.63-0.93).",
+      "evidence": "Draft F1 and F4 text; P3 note lines 21-23 and 258-259; scratch check: |(1-(1-r)k)/r - 1| for r in {0.98, 0.9, 0.8, 0.65} and k in {0.5, 0.9, 1.1, 2}.",
+      "suggested_check": "Make any F1-excluded pair count as 'not met' for A1 (INCONCLUSIVE) and as a candidate for K1 on its raw value, and apply F4's count and span rules after exclusion.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A2 can be met without informative agreement, and the inconclusive branch contradicts how A2 works",
+      "detail": "A2 divides |L_L2 - L_FH| by (E_L2 + E_FH), and neither estimate has an upper cap (absolute estimates are 'reported, not a gate'). A wide but finite FastHenry estimate therefore makes A2 easier to meet. P4's two-level estimate was 11-14 % of L, and l2_layout's estimate is about 7.7 % at 0.5 mm. With estimates that wide, A2 adds nothing beyond K2's 15 % bound. decision_if_inconclusive describes the case where '(b) is not resolved because FastHenry's estimate is too wide', but under A2's formula a too-wide estimate gives a pass, not an unresolved result; only +inf (divergence) fails. A2 also does not say whether L_L2 is the 0.25 mm value or the finest or extrapolated value that its three-level E describes.",
+      "evidence": "Draft A2 description and decision_if_inconclusive; research/notes/o006-p4-fasthenry-feasibility.md lines 14-16.",
+      "suggested_check": "Add a cap (for example E_FH/L <= a stated fraction), with a wider estimate making (b) unresolved, and name the L2 level used in A2.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1 is a point test at the null boundary while FastHenry's ratio may carry up to 1 % error",
+      "detail": "The null is that ratios differ by more than 2 %. A1 compares the raw point value with 2 %, but F1 lets FastHenry's ratio estimate reach 1 %, half the threshold. So a pass bounds the gap between l2_layout at 0.25 mm and a converged FastHenry only to about 3 %, not 2 %. The decision margin probably absorbs this: 3 % at r = 0.9 moves h by about 2.7 points, still inside the 10-point gap. But the claim that a pass 'establishes the hypothesis against its stated null' holds only for the stated levels' outputs, not for the converged quantity the null is about.",
+      "evidence": "Draft A1 (uncertainty: point), F1 (FastHenry ratio estimate <= 1 %), F7 (a fallback that would test 'at FastHenry's own estimate').",
+      "suggested_check": "Either judge A1 on |d| plus FastHenry's ratio estimate, or state the established tolerance as 2 % plus FastHenry's ratio estimate.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "decision_if_pass extends to O009's winners, which these pairs do not represent",
+      "detail": "The notes say the designer-proxy pairs bring optimiser-selected re-layouts into the sample, 'so O009 needs no separate FastHenry re-check of its winners'. But the proxy pairs come from an L1 descent, while O008's search picks its winner by l2_layout at 0.25 mm from a fixed shortlist. A winner chosen as the minimum of l2_layout is chosen partly on l2_layout's own error (optimizer's curse), and L1-selected pairs cannot sample that bias. In my simulation, with near-tied shortlists of N = 5-20 and a per-candidate l2-vs-FastHenry ratio error of sd 0.5 %, the winner's error was biased by -0.6 to -0.9 %. With sd 1 % the bias was -1.2 to -1.9 %, and the winner exceeded 2 % in 11-37 % of cases.",
+      "evidence": "project/objectives/O008/objective.yaml line 13 ('L1 screen; l2_layout at 0.25 mm on a fixed shortlist'); draft notes; scratch Monte Carlo (seed 1, 200k trials).",
+      "suggested_check": "Drop the 'no separate re-check' claim, or add l2_layout-selected shortlist winners to E004's pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Small, clustered sample from one software source; the title says 'real public modules'",
+      "detail": "Hypothesis (a) is a census of about 12-15 pairs, but the decision generalises to O009 re-layouts. A clean 0/12 bounds the share of failing future pairs only at about 22 % (one-sided 95 %), and 0/3 references bounds the share of failing references only at about 63 %. The pairs cluster in 3 references from one PowerSynth sample set (2 if Case 4 is removed), and the two frequencies are strongly correlated. D0019 calls these samples 'a software tool's sample', not real modules.",
+      "evidence": "Zero-failure bounds 1-0.05^(1/n) computed in a scratch script: n = 12 gives 0.221, n = 15 gives 0.181, n = 3 gives 0.632.",
+      "suggested_check": "Title and claim should read 'PowerSynth public sample designs', and the generalisation limit should be stated in decision_if_pass.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Declared nulls 'must fail' but no consequence is given if one passes",
+      "detail": "The constant-ratio null fails robustly: its max error is 23-38 % over the minimum span [0.65, 0.98] for medians 0.80-0.90, provided the span survives exclusion. The draft does not say what happens if the L1-ratio null meets A1 (INVALID? design error?). Calling L1 a 'null' is also odd, since L1 uses the geometry.",
+      "evidence": "Draft A1 description; scratch: max(med/0.65-1, 1-med/0.98).",
+      "suggested_check": "State that a null meeting A1 makes the run INVALID (design error), as O006 F3 does for its constant-k null.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read O006's objective (approved and evaluated, EV-O006-01). Its F4 detection excludes 2D_Case_4 from O004's judged set as the EM pilot module.",
+    "Read the P4 and P3 notes: FastHenry vs l2 values on Case 4 for the reference and the die_shift and trace_width pairs; the plane-cell finding made after the disagreement was seen; P3's ratio estimates cover only 1-R of 1.4-3.1 %.",
+    "Read O008's search definition: the winner is picked by l2_layout at 0.25 mm from a shortlist, while O004's proxy pairs come from an L1 descent.",
+    "Scratch computation: the constant-median ratio null has max error 23-38 % over the span [0.65, 0.98], so it fails A1 if the span holds.",
+    "Scratch sensitivity of A1 to errors in the predicted change 1-r: little power at r = 0.98 (factor-2 error gives 2.0 %), strong at r <= 0.8.",
+    "Zero-failure one-sided 95 % upper bounds: 0/12 gives 22 %, 0/15 gives 18 %, 0/3 gives 63 %.",
+    "Monte Carlo of optimizer's-curse bias for winners chosen as the l2_layout minimum (N = 5-20, sd 0.5-1 %): bias -0.6 to -1.9 %, P(|err| > 2 %) up to 37 %.",
+    "Checked A2's formula against decision_if_inconclusive: a wide finite estimate makes A2 pass, contradicting the inconclusive branch."
+  ],
+  "caveats": [
+    "I could not see the earlier O004 review records (T0133/T0134); project/reviews/ does not exist at this commit.",
+    "The size of the optimizer's-curse bias depends on the unknown spread of l2-vs-FastHenry ratio errors across a shortlist; the simulated sd values (0.5-1 %) are assumptions drawn from P4's measured differences.",
+    "Whether F4's count and span rules apply before or after F1 exclusion is ambiguous in the draft; the exclusion finding assumes the reading that lets A1 pass with excluded pairs."
+  ]
+}
