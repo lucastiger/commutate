@@ -1,0 +1,83 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "K1 cannot fire for the instrument the null hypothesis describes",
+      "detail": "K1 kills only if min h_ctrl/h_plant < 0.5. The D0008 random search that failed the control in E010 on 2D_Case_2R recovered 0.161/0.220 = 0.732 (D0023 numbers), so under O008's criteria that null-true outcome is INCONCLUSIVE, not FAIL. O008's search keeps the D0008 random screen beside the seeded search, so its recovery should be at least the screen's. In absolute terms K1 fires only if L_sub(best)/L_sub(W) > (1 - 0.5 h_plant)/(1 - h_plant): 1.125 at h_plant 0.20, 1.196 at Case_4's L1 h_plant 0.281, and 1.41-1.54 on generator housings, where the frozen degradation overshoots to L1(D)/L1(W) 1.80-2.10 (h_plant 0.44-0.52). A search that ends 7.5 % short of the designer, which O009's 10 %/20 % headroom thresholds cannot use, is not killed. The outcomes reduce to PASS or INCONCLUSIVE, and decision_if_fail's stop line is practically unreachable. This contradicts the claim that the kill criteria can actually fire and that the thresholds follow from the decision.",
+      "evidence": "Packet D0023: h_ctrl 0.161, h_plant 0.220, w_ctrl 0.013, best = 1.0755 L_sub(W). Hand computation: recovery 0.732 >= 0.5; K1 boundary L(best)/L(W) = 0.9/0.8 = 1.125 at h_plant 0.2. Scratch degrade() runs on 6 generator housing layouts: L1(D)/L1(W) = 1.819, 1.949, 1.806, 1.867, 1.799, 2.096.",
+      "suggested_check": "Define K1 on L_sub(best)/L_sub(W) (shortfall against the twin, tied to O009's thresholds), and confirm that E010's 2R control would have fired it.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A2 is a tautology already met by the generator that failed E010",
+      "detail": "A2 measures the symmetric difference between W and build(params_of(W)). params_of parses the parameter vector from the layout's family string, twin() returns a derivative.build output, and build is deterministic, so the metric is zero for any twin that twin() returns. It cannot distinguish a parameterisation that reaches the twin from one that does not. The property that failed in E010 (W outside the sampler's support) is checked only in F2, by a per-coordinate range test against a drawn pool plus an attached-form test. Marginal ranges do not establish joint support. This contradicts the claim that no criterion would be met by a predictor that ignores the decision-relevant information.",
+      "evidence": "Scratch run with the current (E010-era) code via e010_run.dev_reference: gen2_0 (twin mode exact) and 2D_Case_4 (mode fit+signal_feet) both give A2 symdiff = 0.0 mm2 and identical fingerprints. D0023/T0349: this same generator's sampler could not draw the 2R twin.",
+      "suggested_check": "Make the sampler-support test, or the twin-versus-reference copper difference, the A2 metric, and check that it fails on the E010 generator for 2R.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The frozen degradation is undone by an inductance-blind copper-widening heuristic",
+      "detail": "twin.py's frozen degradation mainly narrows the landing bands (move 1 alone on 223/225 default-rule layouts per its docstring). A monotone narrowing is reversed by a monotone widening that uses no inductance model. F1's guard, a minimum number of changed coordinates whose value is left to registration, does not measure this. F3 declares only 'D unchanged' and 'D0008 screen alone' as nulls, and no DRC-only, inductance-blind baseline. On the generator-family development layouts (gen2_0, synthetic housings) the control therefore does not show that the L1-screened search adds anything. The objective names no different degradation rule.",
+      "evidence": "Scratch script: halfbridge_housing_spec(n = 2, 3, 4; 2 wires/die), 2 layouts each (generate seeds 4244-4246), W.degrade applied narrow_landing only, changing 2-4 parameters. A greedy pass that widens slot/column extents in 0.5 mm steps while the layout builds and is DRC-clean (no L1, no L2) ended at L1/L1(W) = 0.806, 0.550, 0.561, 1.104, 0.770, 0.976, i.e. recovery 1.24, 1.47, 1.54, 0.88, 1.29, 1.02. On 2D_Case_4 (D under the 1.5 mm floor, 9 coordinates changed, 33 mm L1 distance) the same widening reached 0.872 L1(W) but left one min_trace_width violation under the reference's rules.",
+      "suggested_check": "Add a declared null 'DRC-feasible copper widening, no inductance model' and require the degradation rule to defeat it on every development layout before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "D violates the reference's own design rules on the PowerSynth layouts; a search seeded at D with DRC as a hard constraint is ill-posed",
+      "detail": "To reach the 1.25 target, E010 built D under a 1.5 mm power-width floor, below the reference minimum (2R: 4.0 mm; Case_4: about 5 mm). At the reference minimum the rule reaches the target on only 3/8 development layouts, and Case_4 raises DegradeError at 1.232. In O003 this was harmless because the control's candidates came from the reference's spec and did not depend on D. O008 seeds the local search at D and makes DRC a hard constraint, but does not say under which rules the seeded search runs. Under D's relaxed rules the candidates are not admissible for the reference. Under the reference's rules the seed is infeasible, so repairing it widens the narrowed strips back and recovers part of the planted headroom without any search. F1's 'move count from D' is then undefined.",
+      "evidence": "Scratch run on 2D_Case_4: reference min_width_power 4.9997 mm, D rule 1.5 mm; check(D, reference rules) gives 2 min_trace_width violations (DC-, PHASE); check(W, reference rules) gives none. E010.yaml lines 287-303 and 1907-1910 (2R: 1.5 mm vs its own 4.0 mm; Case_4 1.232 at 5 mm, DegradeError).",
+      "suggested_check": "Specify the seeded search's rule set, and use a degradation that is DRC-clean under the reference's rules, or report h_plant after a declared DRC repair as move 0.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The registered control repeats the development problem; the sealed seed randomises only the search",
+      "detail": "Every layout in scope is development geometry, and twin.py's degrade() is deterministic, so the D used in the registered run is the same D the search is developed and tuned on. The sealed seed changes only the search's own randomness, and a deterministic pattern search would simply replay development. F5's 'frozen before any control solve' conflicts with design work on development seeds on the same layouts. A pass establishes existence on tuned instances, not a frozen search that O009 can rely on unchanged on fresh references.",
+      "evidence": "twin.py docstring lines 54-57: 'applies deterministic geometric moves ... No search and no solver in the choice of a move'. O008 F5: 'development seeds for design work only'.",
+      "suggested_check": "Hold out some development layouts, or use a seeded, randomised degradation family drawn only at registration, for the registered control.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The sample cannot resolve the freeze decision",
+      "detail": "Each layout gets one degraded copy and one sealed seed. The number of synthetic housings is unspecified, and the feature-extension layouts are 'FOUNDER TO SET'. No success rate or seed sensitivity can be estimated. Because the generator-family layouts are non-discriminating (see the widening finding), A1 is effectively decided by two layouts, 2R and Case_4.",
+      "evidence": "O008 scope_in, hypothesis statement and A1 description; scratch widening results.",
+      "suggested_check": "Register several degradations and seeds per layout, and report the fraction that pass.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "w_ctrl is uncapped and depends on the candidate chosen",
+      "detail": "w_ctrl = 2 e_R(best, D) is computed on the candidate the search returns. O008 states no cap like O003's F1(c) w <= 0.05. With e_R = 0.05, w_ctrl = 0.10, and at h_plant 0.20 A1 then accepts a recovery of 0.5, the same as K1's boundary.",
+      "evidence": "O008 A1 description; O003 F1(c) (objective.yaml line 139).",
+      "suggested_check": "Cap w_ctrl (for example 2 e_R <= 0.02) as a gated sanity check.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "No default action for the likeliest negative outcome",
+      "detail": "decision_if_inconclusive gives a default only when A1 is missed on one layout by less than w_ctrl. An E010-like miss (0.046 against w_ctrl 0.013) with K1 not fired goes to an open founder decision.",
+      "evidence": "O008 decision_if_inconclusive; D0023 numbers.",
+      "suggested_check": "State the default for an A1 miss larger than w_ctrl.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed K1 from D0023's E010 2R control numbers: recovery 0.161/0.220 = 0.732 >= 0.5, so K1 does not fire on the null-true case; derived the K1 boundary L(best)/L(W) = (1 - 0.5 h)/(1 - h): 1.125 at h = 0.2, 1.196 at h = 0.281, 1.41-1.54 at h = 0.44-0.52",
+    "Ran W.degrade on 6 generator housing layouts (n = 2, 3, 4; 2 wires/die): only narrow_landing applied, 2-4 parameters changed, L1(D)/L1(W) 1.80-2.10",
+    "Wrote an inductance-blind DRC-only copper-widening heuristic and applied it to each D: L1/L1(W) 0.55-1.10, recovery 0.88-1.54, at or below W on 5/6",
+    "Loaded 2D_Case_4 via e010_run.dev_reference, built W with twin() and D with degrade() under d_spec (1.5 mm floor): D has 2 min_trace_width violations under the reference's rules, W has none; widening reached 0.872 L1(W) but left 1 violation",
+    "Computed A2's metric (power-copper symmetric difference between W and build(params_of(W))) with the existing E010-era code on gen2_0 and Case_4: 0.0 mm2 on both, identical fingerprints",
+    "Read twin.py (deterministic degradation, docstring), derivative.py (params_of parses the family string), the E010 spec's floor rationale (2R 4.0 mm vs 1.5 mm; 3/8 reach target at the reference minimum) and O003 F1(b)/F1(c)"
+  ],
+  "caveats": [
+    "The widening check used L1 at 20 MHz, not l2_layout at 0.25 mm, and was run on generator housings and Case_4 only; 2D_Case_2R was not loaded.",
+    "O008 does not name its degradation rule; I assumed it inherits the frozen twin.py rule with E010's 1.5 mm floor (D0018).",
+    "K1's 0.5 is marked PROPOSED for the founder to set; the blocker concerns the criterion as drafted, and a K1 defined on the shortfall against the twin would address it.",
+    "The extended sampler's (reach) behaviour is not built yet; the claim that K1 cannot fire assumes the extended search's recovery is at least the D0008 screen's, as the hypothesis keeps that screen beside the seeded search."
+  ]
+}
