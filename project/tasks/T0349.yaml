@@ -3,7 +3,7 @@ objective: O003
 title: Diagnose failure of EV-O003-01
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: 'Task EV-O003-01 (''evaluation EV-O003-01'') failed with preliminary class `experimental`:
   evidence inadmissible.
@@ -48,4 +48,144 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'EV-O003-01 is INVALID for two independent reasons. The decisive one is experimental: the F1(b)
+    planted-headroom control failed on 2D_Case_2R, the only counted reference (2D_Case_6 was excluded
+    with TwinError, as predicted). The control''s best candidate has L_sub = 1.0755 × L_sub(twin W); passing
+    needed ≤ 1.0172 × W. The main search''s best is also 6.1 % above W. The driver and the check are computed
+    correctly: I recomputed every number from the raw checkpoints and they match to 1e-12. The cause is
+    that the frozen generator sampler plus the 20,000-draw random screen cannot reach the level of 2R''s
+    own design. W is a valid, DRC-clean point of the parameter space, but `_sample` cannot produce it:
+    it builds slots only from a column''s inner edge outward, while W''s DC+ and DC− slots straddle their'
+  report:
+    summary: 'EV-O003-01 is INVALID for two independent reasons. The decisive one is experimental: the
+      F1(b) planted-headroom control failed on 2D_Case_2R, the only counted reference (2D_Case_6 was excluded
+      with TwinError, as predicted). The control''s best candidate has L_sub = 1.0755 × L_sub(twin W);
+      passing needed ≤ 1.0172 × W. The main search''s best is also 6.1 % above W. The driver and the check
+      are computed correctly: I recomputed every number from the raw checkpoints and they match to 1e-12.
+      The cause is that the frozen generator sampler plus the 20,000-draw random screen cannot reach the
+      level of 2R''s own design. W is a valid, DRC-clean point of the parameter space, but `_sample` cannot
+      produce it: it builds slots only from a column''s inner edge outward, while W''s DC+ and DC− slots
+      straddle their columns. W rewritten in the sampler''s form is DRC-clean at L1 = 0.998 × W, but it
+      needs a PHASE column edge at 47 mm that the sampler cannot draw (largest drawn value 45.5 mm). With
+      that edge at 45.5 mm the layout gives L1 = 1.018 × W, which still beats all 40,000 drawn candidates
+      (best +3.05 % main, +6.2 % control). So the sampler''s reach near W and its thin low-inductance
+      tail both stand in the way. This is the outcome the frozen O003 F1(b) text anticipates ("if the
+      reference is near-optimal, (b) may fail … INVALID"). The control did its job: K1 would otherwise
+      have fired a kill (headroom_max_hi_ind 0 < 0.10, search levelled) from a search that never reached
+      the reference designer''s level. The second problem is an independent implementation/plumbing defect.
+      evaluation_report.json is intact (sha256 matches) but sits at work/evaluation_report.json under
+      a bare artifact name. The evaluator only looks at the run-dir root or the main checkout''s .mfos/artifacts,
+      and the burst script never fetched the VM''s artifact store. E008''s runner has the same pattern.
+      Notes: research/diagnoses/T0349.md. Commands run: reads and inline python3 (exit 0); sampler_support.py
+      smoke and full runs (0); recompute_f1b.py (0); attached_twin.py (0); ruff (1 for 6 style errors,
+      then 0 after fixes, outputs re-verified identical); uv run mfos gate --fast (0, all gates passed).
+      Peak memory under 100 MB.'
+    status: completed
+    failure_class: experimental
+    root_cause: 'On 2D_Case_2R the frozen D0008 instrument cannot come close to the reference''s own design,
+      so the planted-headroom control (F1(b)) is unpassable. derivative._sample builds every slot from
+      its column''s inner edge outward, so the twin W (DC+/DC- slots straddling their columns; PHASE column
+      outer edge at 47 mm) lies outside its support. The nearest sampler-representable copper we tested
+      is at +1.8 % L1, and the random prior''s lower tail ends at +3.05 % (main) and +6.2 % (control)
+      in 20,000 draws. The control needed its best within +1.72 % of W at L2 and got +7.55 %. The check,
+      shortlist and selection code are correct. Secondary, independent implementation defect: evaluation_report.json
+      was registered under a bare name while written to <run>/work/, and its content-addressed copy stayed
+      on the burst VM, so the evaluator could not resolve it.'
+    confidence: 0.85
+    evidence:
+    - '[fact] Recomputed from raw checkpoints (recompute_f1b.json): L_sub(W) 13.8923 nH, L_sub(D) 17.8168
+      nH, L_sub(control best 6bde57) 14.9413 nH, h_plant 0.22027, h_ctrl 0.16139, w_ctrl 0.01341. Threshold
+      0.20685 means L_cb must be <= 1.0172 L_W; observed 1.0755. Matches the runner report to 1e-12.'
+    - '[fact] Both h_plant and h_ctrl use bands[...][0] = L_sub (e010_run.py 2252-2256). With L_term 7
+      nH on both sides the control still fails (h_ctrl_mod 0.116 vs h_plant_mod 0.158), so mixed bases
+      are not the cause.'
+    - '[fact] The 16 L2-solved candidates of each stream are exactly its 16 lowest-L1 unique fingerprints,
+      and the control best is the minimum of those 16. All 20,000 fingerprints per stream are unique.'
+    - '[fact] L2/L1 ratio over the 32 solved candidates is 1.228-1.290 (twin 1.244). Passing from the
+      control''s best L1 (1.0622 x W) would need a ratio <= 1.191.'
+    - '[fact] Fraction of the L1 pool within 2/3/5/7/10/15 % of L1(W): main 0/0/1/3/23/184, control 0/0/0/2/23/199
+      of 20,000 each.'
+    - '[fact] W rebuilt from its parameter vector is DRC-clean, passes _quick_ok and has the same fingerprint.
+      W is outside the drawn range in 13 of 36 geometric coordinates over the 40,000 run candidates. The
+      nearest candidate is 83 mm (Manhattan) from W, D is 44 mm.'
+    - '[fact] derivative.py: slots are (column edge, v0, end, v1); the docstring says ''the slots attach
+      to the column''s inner edge''. None of 645 non-None proposals (out of 50,000) has a slot straddling
+      its column; W has two.'
+    - '[fact] attached_twin.json: W in the sampler''s attached form is DRC-clean at L1 = 0.998 W but needs
+      the PHASE column edge at 47 mm. With the edge at 45.5 mm (largest drawn) it is DRC-clean at L1 =
+      1.018 W, better than all 40,000 draws.'
+    - '[fact] L2(W) equals L2(reconstruction) to 3e-14, twin copper symdiff is 0, and L1 (independent
+      numpy PEEC) also ranks W below all 40,000 candidates.'
+    - '[fact] Frozen O003 F1(b) text: ''(b) reduces to L_sub(best of the control) <= about L_sub(W)(1
+      + 1.25 w_ctrl) ... If the reference is near-optimal, (b) may fail and E008 is INVALID''.'
+    - '[fact] The only full F1(b) rehearsal (T0324, gen2_0) was on a generator-housing layout whose twin
+      is the reconstruction itself, so W was inside the sampler''s support by construction there.'
+    - '[fact] <run>/work/evaluation_report.json sha256 1e966f2b... equals the result.json artifact hash.
+      evaluate.py looks only at <run_dir>/<name> and the main .mfos/artifacts. burst_gcp.sh fetches only
+      experiments/results/$EID. ExperimentRun.artifact writes to a cwd-relative .mfos/artifacts on the
+      VM.'
+    - '[fact] Phase B (fv3, 195M cells, 235 GB peak) completed ok. result.json status complete, all declared
+      sanity checks present. Manifest config and seed hashes are consistent.'
+    alternative_explanations:
+    - explanation: 'Implementation: the F1(b) check or control selection is wrong (band index, non-minimal
+        inductance_best, shortlist not the top-16 by L1, L_term on one side only).'
+      how_to_discriminate: 'Recompute h_plant/h_ctrl from the raw checkpoints and check shortlist identity.
+        Done: everything matches and both h use L_sub. Rejected.'
+    - explanation: 'Model/solver artefact: W''s L_sub is biased low (e.g. overlapping slot/column rectangles
+        counted twice), so the twin is unrealistically good.'
+      how_to_discriminate: 'Compare W with the reconstruction and with an independent model. Done: L2(W)
+        = L2(R) to 3e-14, copper symdiff 0, and L1 also ranks W below all 40,000 candidates. A bias shared
+        by L1 and L2 is not excluded; a FastHenry cross-check of the W/control-best ratio would settle
+        it.'
+    - explanation: 'Experimental, multi-fidelity: L1 misranks on 2R, so the L1 shortlist misses candidates
+        that are good at L2.'
+      how_to_discriminate: 'L2/L1 ratio spread over the solved candidates. Done: 1.228-1.290 vs the 1.191
+        needed, so not the main cause. Remaining check: L2 solves of the lowest-L1 unsolved candidates
+        or of the attached-form W variants.'
+    - explanation: 'Infrastructure: the phase A/B split or the VM resume corrupted state.'
+      how_to_discriminate: 'Manifest hashes, fingerprint consistency, and which solves F1(b) uses. Done:
+        consistent, and F1(b) uses only phase-A EM solves. Rejected.'
+    discriminating_tests:
+    - 'Independent recomputation of h_plant, h_ctrl and w_ctrl from checkpoint.jsonl, plus shortlist identity
+      (recompute_f1b.py). Result: matches; rejects the implementation explanation.'
+    - 'Module-level (L_term = 7 nH) recomputation. Result: still fails; rejects the mixed-basis hypothesis.'
+    - 'L2/L1 ratio spread over the 32 solved candidates vs the ratio a pass would need. Result: needed
+      ratio is 3 % below the observed minimum; the ranking explanation is not supported.'
+    - 'Parameter-support test (sampler_support.py, 50,000 raw proposals plus 200 DRC-valid, diagnostic
+      seed). Result: W is outside _sample''s construction and no proposal straddles a column.'
+    - 'Copper-reachability test (attached_twin.py). Result: the sampler form of W is DRC-clean at 0.998
+      W but needs an unreachable 47 mm PHASE edge; the reachable 45.5 mm variant is at 1.018 W and beats
+      all draws.'
+    - 'Not run (would refine, not overturn): L2/FastHenry solves of the attached-form variants and of
+      the next-lowest-L1 unsolved control candidates.'
+    recommended_actions:
+    - 'Founder decision memo before any further O003 work. Replans are exhausted (3/3), spend is $252.88
+      of a $264.99 override (about $12 left, below E010''s planned $17.48 phase B), and max_evaluations
+      is 1. Options, not ranked: (a) record E010 as ''D0008 search does not reach the 2R designer''s level''
+      (no verdict, the case O003 F1(b) anticipates); (b) a successor experiment with a NEW id and fresh
+      sealed seeds, declared as an F3 deviation, with a sampler whose support includes the twin and/or
+      a local search seeded at W, positive-controlled first on a dev reference whose twin lies outside
+      the current support; (c) a reference set loaded only after the generator freeze (the pending NC
+      State PREES question).'
+    - Do not read E010's h = 0 or K1 as evidence of no headroom on 2R. The run is void, and the search
+      never reached the twin's level.
+    - 'Implementation task for any successor runner, not E010: register run-dir-relative artifact names
+      (work/evaluation_report.json) or write the report at the run-dir root; have the burst fetch include
+      artifact-store entries or set MFOS_ARTIFACT_STORE inside the fetched tree; add a selftest that resolves
+      artifacts exactly as tools/mfos/mfos/evaluate.py does. E008''s runner has the same latent defect.'
+    - 'Design rule for future planted-headroom controls (memory item for project/memory, not written here):
+      rehearse on at least one dev reference whose twin is not a sampler output, and report as a pre-registration
+      check whether the twin lies inside the sampler''s support.'
+    affects_acceptance_criteria: true
+    files_written:
+    - research/diagnoses/T0349.md
+    - research/diagnoses/T0349/sampler_support.py
+    - research/diagnoses/T0349/sampler_support.json
+    - research/diagnoses/T0349/recompute_f1b.py
+    - research/diagnoses/T0349/recompute_f1b.json
+    - research/diagnoses/T0349/attached_twin.py
+    - research/diagnoses/T0349/attached_twin.json
+    experiment_drafts: []
