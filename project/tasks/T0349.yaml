@@ -3,7 +3,7 @@ objective: O003
 title: Diagnose failure of EV-O003-01
 type: investigate
 agent: scientist
-status: needs_founder
+status: merge
 depends_on: []
 description: 'Task EV-O003-01 (''evaluation EV-O003-01'') failed with preliminary class `experimental`:
   evidence inadmissible.
@@ -42,8 +42,8 @@ runs:
 - T0349-scientist-20261115T023528-c5fc
 created_by: orchestrator
 created_at: '2026-11-15T10:35:24+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0203
 target: null
 lens: null
 trigger: null
@@ -189,3 +189,7 @@ history:
     - research/diagnoses/T0349/attached_twin.py
     - research/diagnoses/T0349/attached_twin.json
     experiment_drafts: []
+- outcome: merge_approved
+  summary: I0203
+  replan: false
+  at: '2026-11-15T20:03:03+00:00'
