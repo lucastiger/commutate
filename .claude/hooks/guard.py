@@ -42,6 +42,9 @@ BASH_DENY = [
 # answer, objective approve, exp register/run/mint, claim approve/annotate, loop, start, stop, task start, ...) is a
 # founder or orchestrator act. An agent running them in its worktree was only caught afterwards, by the scope check.
 MFOS_CMD = re.compile(r"\bmfos(?:\.cli)?\s+([a-z-]+)((?:\s+[^;&|\n]*)?)")
+# A Python import of the package is not a command: `from mfos import models` read as `mfos import` and blocked an
+# agent's registration dry run and a critic's metrics check (2026-11-14/15, T0350).
+PY_IMPORT = re.compile(r"\bfrom\s+mfos(?:\.\w+)*\s+import\b|\bimport\s+mfos\b")
 AGENT_MFOS_ALLOWED = {"gate", "status", "doctor", "costs"}
 AGENT_MFOS_SUB_ALLOWED = {"exp": {"check"}, "inbox": {"", "list", "show"}, "task": {"list", "show"},
                           "objective": {"show"}, "claim": {"list", "show"}}
@@ -49,7 +52,7 @@ AGENT_MFOS_SUB_ALLOWED = {"exp": {"check"}, "inbox": {"", "list", "show"}, "task
 
 def mfos_denied(cmd: str) -> str:
     """Why an agent may not run this mfos command, or "" if it may."""
-    for mt in MFOS_CMD.finditer(cmd):
+    for mt in MFOS_CMD.finditer(PY_IMPORT.sub(" ", cmd)):
         sub, rest = mt.group(1), (mt.group(2) or "").split()
         if sub in AGENT_MFOS_ALLOWED:
             continue

@@ -305,7 +305,17 @@ if [ -n "$NAME" ] && gcloud compute scp --zone "$ZONE" --quiet --recurse "$NAME:
   echo "copied $FETCH back"
   # A finished job's cache is spent: clear it so a later MF_GCP_RESUME=1 run cannot be seeded with stale results.
   if [ -n "$CACHE" ] && [ "$RC" = 0 ]; then rm -rf "$CACHE"; fi
-  if [ "$MODE" = exp ]; then echo "the orchestrator picks the results up on its next tick"; fi
+  if [ "$MODE" = exp ]; then
+    # The evaluator resolves an artifact in the run directory, then in THIS machine's content store: E010's report
+    # stayed in the VM's store and a complete run was INVALID (T0349). Copy the store back and check every artifact.
+    if gcloud compute scp --zone "$ZONE" --quiet --recurse "$NAME:mf/.mfos/artifacts" "$WORK/" > /dev/null 2>&1; then
+      mkdir -p .mfos/artifacts; cp -R "$WORK/artifacts/." .mfos/artifacts/
+      echo "copied the run's artifact store back"
+    fi
+    python3 scripts/check_run_artifacts.py "$FETCH/$RUN_ID" .mfos/artifacts \
+      || echo "WARNING: a registered artifact of $RUN_ID does not resolve here, so its evaluation will be INVALID" >&2
+    echo "the orchestrator picks the results up on its next tick"
+  fi
 else
   echo "nothing to copy back at $FETCH" >&2
   if [ -n "$CACHE" ] && [ -d "$CACHE/fetched" ]; then

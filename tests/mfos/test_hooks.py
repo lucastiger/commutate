@@ -62,6 +62,20 @@ def _load_guard():
     return mod
 
 
+def test_python_import_of_mfos_is_not_an_mfos_command():
+    """`from mfos import models` read as the command `mfos import` and blocked agents' registration dry runs and a
+    critic's metrics check (2026-11-14/15, T0350). Imports pass; real commands next to them are still refused."""
+    guard = _load_guard()
+    assert guard.mfos_denied('uv run python -c "from mfos import models as m; print(m.Task)"') == ""
+    assert guard.mfos_denied('uv run python -c "from mfos import metrics, evidence"') == ""
+    assert guard.mfos_denied('uv run python -c "import mfos\nprint(mfos.__file__)"') == ""
+    assert guard.mfos_denied("uv run python -c 'import mfos.cli as c'") == ""
+    assert guard.mfos_denied("uv run mfos gate --fast") == ""
+    assert "mfos approve" in guard.mfos_denied('python -c "from mfos import models" && uv run mfos approve I0001')
+    assert "mfos exp register" in guard.mfos_denied("uv run mfos exp register E011")
+    assert "mfos approve" in guard.mfos_denied("python -m mfos.cli approve I0001")
+
+
 def test_temp_paths_on_macos_layout(monkeypatch):
     """macOS: /tmp -> /private/tmp and $TMPDIR=/var/folders/.../T -> /private/var/folders/.../T.
     The guard sees resolved paths, so both forms must count as temporary (this failed on a real Mac)."""

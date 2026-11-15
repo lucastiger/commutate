@@ -727,6 +727,11 @@ class Orchestrator:
         """Queue an independent scientist diagnosis. If the caller holds the objective state,
         pass it in (the caller saves it) so no stale copy can overwrite this log entry."""
         tid = self.s.new_task_id()
+        context = f"project/tasks/{t.id}.yaml"
+        if t.id.startswith("EV-"):  # an INVALID evaluation is recorded as <id>-invalid.json (T0349's brief cited <id>.json)
+            ev_dir = f"project/objectives/{t.objective}/evaluations"
+            invalid = f"{ev_dir}/{t.id}-invalid.json"
+            context = invalid if (self.s.root / invalid).exists() else f"{ev_dir}/{t.id}.json"
         inv = m.Task(
             id=tid, objective=t.objective, title=f"Diagnose failure of {t.id}", type="investigate",
             agent="scientist", status="todo", risk="medium",
@@ -738,8 +743,7 @@ class Orchestrator:
             deliverables=[f"research/diagnoses/{tid}.md"], touches=[f"research/diagnoses/{tid}.md"],
             budget_usd=self.pol.get("budgets", {}).get("diagnosis_usd", 5.0),
             created_by="orchestrator", created_at=now(),
-            context_files=[f"project/objectives/{t.objective}/evaluations/{t.id}.json" if t.id.startswith("EV-")
-                           else f"project/tasks/{t.id}.yaml"],
+            context_files=[context],
         )
         self.s.save_task(inv)
         line = f"diagnosis:{tid} of {t.id} ({cls})"
@@ -888,8 +892,21 @@ class Orchestrator:
                 self._objective_passed(oid, obj, st, ev.id, [])
         elif ev.verdict == "INVALID":
             st.log.append(f"verdict:INVALID {ev.id}")
-            self._spawn_investigation(self._pseudo(oid, ev.id), "experimental", "evidence inadmissible",
-                                      "\n".join(ev.validity_problems), st=st)
+            problems = "\n".join(ev.validity_problems)
+            queued = self._queued_diagnosis_of_runs(oid, list(ev.results_used.values()))
+            if queued is not None:
+                # One failure, one diagnosis: E010's run spawned T0348 for the experiment task's sanity failure and
+                # T0349 for the INVALID evaluation of the same run, two seconds apart (2026-11-15). A diagnosis that
+                # has not started yet takes the evaluation's problems instead.
+                queued.description += (f"\n\nThe evaluation {ev.id} of the same run is INVALID (evidence "
+                                       f"inadmissible):\n```\n{problems[-2500:]}\n```")
+                queued.context_files.append(f"project/objectives/{oid}/evaluations/{ev.id}-invalid.json")
+                self.s.save_task(queued)
+                st.log.append(f"diagnosis:{queued.id} also covers {ev.id}")
+                self.s.event("investigation_merged", task=queued.id, about=ev.id)
+            else:
+                self._spawn_investigation(self._pseudo(oid, ev.id), "experimental", "evidence inadmissible",
+                                          problems, st=st)
         else:  # FAIL or INCONCLUSIVE
             st.log.append(f"verdict:{ev.verdict} {ev.id}")
             # Put the decision registered before the evidence in front of the founder now; the diagnosis below
@@ -927,6 +944,15 @@ class Orchestrator:
             self.s.save_objective_state(oid, st)
         self.s.event("evaluation_rereview", objective=oid, evaluation=ev_id, ref=ref, critics=len(lenses))
         return ev_id, ref, len(lenses)
+
+    def _queued_diagnosis_of_runs(self, oid: str, run_ids: list[str]) -> Optional[m.Task]:
+        """A diagnosis of this objective, not yet started, whose brief names one of these runs (the experiment task's
+        failure summary carries the run id). None if every such diagnosis is already running or finished."""
+        for t in self.s.tasks(oid):
+            if t.type == "investigate" and t.status == "todo" and t.attempts == 0 and \
+                    any(r and r in t.description for r in run_ids):
+                return t
+        return None
 
     def _pseudo(self, oid: str, ev_id: str) -> m.Task:
         return m.Task(id=ev_id, objective=oid, title=f"evaluation {ev_id}", type="experiment", agent="none")
