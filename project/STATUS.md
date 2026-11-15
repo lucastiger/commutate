@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T21:32:04+00:00 from repository state — do not edit_
+_generated 2026-11-15T21:34:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -34,7 +34,6 @@ cancelled: 44, done: 302, failed: 4
 
 
 ## Recent events
-- 2026-11-15T10:35:24+00:00 investigation_spawned {"task": "T0349", "about": "EV-O003-01", "cls": "experimental"}
 - 2026-11-15T10:35:27+00:00 run_started {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "role": "scientist", "session": "dbd44023-b7c0-4b0e-a8b3-6e16ee41c982"}
 - 2026-11-15T10:35:28+00:00 run_started {"run": "T0349-scientist-20261115T023528-c5fc", "task": "T0349", "role": "scientist", "session": "4f720fe6-06db-4a31-a50a-f085b5679a00"}
 - 2026-11-15T10:36:08+00:00 run_stopped_for_founder {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "task_status": "cancelled"}
@@ -49,3 +48,4 @@ cancelled: 44, done: 302, failed: 4
 - 2026-11-15T20:03:03+00:00 inbox_resolved {"id": "I0203", "status": "approved", "note": "Merge T0349 (diagnosis of EV-O003-01: E010 void; the frozen search cannot reach the 2R designer's level). Review 
 - 2026-11-15T20:09:06+00:00 merged {"task": "T0349"}
 - 2026-11-15T20:09:44+00:00 sleep_detected {"gap_s": 380, "runs_extended": 0}
+- 2026-11-15T21:34:29+00:00 loop_started {"pid": 97506}
