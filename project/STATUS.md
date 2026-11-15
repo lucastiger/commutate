@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T22:54:38+00:00 from repository state — do not edit_
+_generated 2026-11-15T23:02:46+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -31,11 +31,10 @@ _generated 2026-11-15T22:54:38+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 308, failed: 4
+cancelled: 44, done: 308, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-15T21:37:10+00:00 run_started {"run": "T0351-critic-20261115T133710-bab2", "task": "T0351", "role": "critic", "session": "86f2b7ba-93d2-4146-9ccf-f8049a3669c9"}
 - 2026-11-15T21:37:11+00:00 run_started {"run": "T0352-critic-20261115T133711-be38", "task": "T0352", "role": "critic", "session": "1e87a00a-b27f-4df0-ab04-8215fd3f4d19"}
 - 2026-11-15T21:43:23+00:00 run_finished {"run": "T0351-critic-20261115T133710-bab2", "status": "completed", "cost": 1.486634, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T21:46:31+00:00 run_finished {"run": "T0352-critic-20261115T133711-be38", "status": "completed", "cost": 1.945286, "subtype": "success", "report": "structured_output"}
@@ -50,3 +49,4 @@ cancelled: 44, done: 308, failed: 4
 - 2026-11-15T22:46:26+00:00 run_started {"run": "T0356-critic-20261115T144626-6418", "task": "T0356", "role": "critic", "session": "cd048e60-0e01-41b6-9a72-50e9a02411aa"}
 - 2026-11-15T22:53:16+00:00 run_finished {"run": "T0355-critic-20261115T144625-a603", "status": "completed", "cost": 1.520757, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T22:54:33+00:00 run_finished {"run": "T0356-critic-20261115T144626-6418", "status": "completed", "cost": 1.682925, "subtype": "success", "report": "structured_output"}
+- 2026-11-15T23:02:45+00:00 objective_draft_review {"objective": "O008", "ref": "226ee5c425f8913d43bfbe6f1c5245520cfc7dd5", "tasks": ["T0357", "T0358"]}
