@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-15T04:15:56+00:00 from repository state — do not edit_
+_generated 2026-11-15T04:16:36+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0201** [experiment_registration] register E010 (pre-registration)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,8 +33,6 @@ cancelled: 43, done: 300, failed: 3
 
 
 ## Recent events
-- 2026-11-15T01:25:59+00:00 run_interrupted {"run": "T0345-scientist-20261114T172443-b2c9", "cost": 0.541449}
-- 2026-11-15T01:25:59+00:00 founder_stopped {"task": "T0345", "run": "T0345-scientist-20261114T172443-b2c9", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-15T01:32:08+00:00 loop_started {"pid": 12013}
 - 2026-11-15T01:32:53+00:00 run_started {"run": "T0339-scientist-20261114T173253-ddef", "task": "T0339", "role": "scientist", "session": "32daf321-40f4-4205-8010-715f7238b99b"}
 - 2026-11-15T02:02:36+00:00 run_finished {"run": "T0339-scientist-20261114T173253-ddef", "status": "completed", "cost": 0.8299, "subtype": "success", "report": "structured_output"}
@@ -48,3 +46,5 @@ cancelled: 43, done: 300, failed: 3
 - 2026-11-15T04:07:40+00:00 merged {"task": "T0339"}
 - 2026-11-15T04:07:40+00:00 inbox_opened {"id": "I0201", "kind": "experiment_registration", "subject": "register E010 (pre-registration)"}
 - 2026-11-15T04:15:42+00:00 objective_approved {"objective": "O003", "criteria_hash": "sha256:c5216a81858566b45698a03fe5770e3c7f1ddcd98151a8bb6fd0329ad55619e7"}
+- 2026-11-15T04:16:27+00:00 experiment_registered {"id": "E010", "hash": "sha256:0f9a4d0ffd5b3e31cf03a93f7dbea42c121bad0a3b6c163ff33bfb5377e2eae8", "by": "founder"}
+- 2026-11-15T04:16:27+00:00 inbox_resolved {"id": "I0201", "status": "approved", "note": "Register E010 per D0021/D0022 (E008 + repaired sampler + SearchInfeasible exclusion + new freeze hashes); O003 v6
