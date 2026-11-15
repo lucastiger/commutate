@@ -53,7 +53,8 @@ SI = ("D0021 item 2(b): a reference whose main or control screen cannot draw a D
       "search_infeasible_failures)")
 c["failure_consequences"]["SearchInfeasible"] = SI
 sc = next(x for x in spec["sanity_checks"] if x["name"] == "at_least_one_counted_reference")
-sc["description"] += " E010 (D0021 item 2(b)): a SearchInfeasible exclusion (stage screen) counts like a TwinError."
+sc["description"] = ("F1(a): E010 INVALID if no reference remains; a SearchInfeasible exclusion (stage screen, D0021 item "
+                     "2(b)) counts like a TwinError.")  # review T0346 finding 3: the appended E008 text read garbled
 
 # the deviation record: D0021 where E008 records D0019/D0020, with review T0341's support finding (packet item 5a)
 fz = json.loads((DEV / "feasibility_2r.json").read_text()) if (DEV / "feasibility_2r.json").exists() else None

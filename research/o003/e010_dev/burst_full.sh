@@ -15,7 +15,7 @@
 #      from its own workdir on the same disk (every finished solve is a result file there), running each big job alone.
 # Then the run directory is copied back to experiments/results/E010/<run id> and the VM is deleted.
 # Re-running this script resumes from its state file (it never mints twice). Commands, expected output and failure modes:
-# research/notes/e010-design.md section 11.
+# research/notes/e008-design.md section 11 (E008's launch procedure; E010's is the same with E010's ids and paths).
 #   research/o003/e010_dev/burst_full.sh --dry-run    print every command in order, run none
 #   research/o003/e010_dev/burst_full.sh              do it (needs gcloud, the registered spec on main)
 # Environment: MF_GCP_ZONE (us-central1-a), MF_GCP_ZONES (zones to try for the create, default MF_GCP_ZONE then the
