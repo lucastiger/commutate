@@ -1,0 +1,58 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "'(i) Support' is called sufficient on its own to fail the control, but the diagnosis's own numbers do not show that",
+      "detail": "\u00a72.2 H-D says there are 'two separate shortfalls, each enough to fail the control'. The very next bullet admits that 'even an exhaustive search of the support could only pass narrowly by this route'. The +1.8 % L1 figure comes from one hand-built attached-form variant (PHASE outer edge at 45.5 mm, 1.0182 L1(W)). Across the 32 L2 solves, L2/L1 runs from 1.228 to 1.290; the twin's ratio is 1.244. At the low end of that range the variant's L2/L_W would be 1.018\u00d71.228/1.244 \u2248 1.005, which is under the 1.0172 pass limit. So the support restriction alone has not been shown to fail F1(b). The demonstrated cause is (ii), too little prior mass in the lower tail, together with the 20,000-draw budget. The phrase 'so the planted-headroom control cannot be passed' in \u00a74 is too strong for the same reason. The failure class (experimental) and the recommended actions do not change.",
+      "evidence": "attached_twin re-run: L1/L1W = 0.99781 (u1=47), 1.01820 (u1=45.5), 1.05614 (u1=44). L2/L1 range recomputed: main 1.2284\u20131.2905, control 1.2420\u20131.2836, twin 1.2437. Pass needs L_cb/L_W \u2264 1.01720.",
+      "suggested_check": "Run l2_layout on the 45.5 mm attached variant, or reword (i) as 'narrows the margin' rather than 'sufficient'.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "'13 of 36 coordinates outside the drawn range' is attributed to the 40,000 run candidates but comes from the 200-draw diagnostic sample",
+      "detail": "\u00a72.2 Test 2 says, labelled [fact], that across the 40,000 DRC-valid run candidates W lies outside the drawn range in 13 of 36 geometric coordinates. I recomputed the ranges from both streams' stream.json.gz (40,000 unique fingerprints, one topology). The count is 11, not 13: slot1_u0 and slot3_u0 fall inside the run's range. The number 13 matches sampler_support.json's drc_valid block, which holds only n=200 draws from the diagnostic seed. The quoted examples (slot0_u0 [12, 19.5]; slot1_u1 and slot3_u1 [37, 41]) and the 83 mm nearest-candidate distance (83.25) are right for the 40,000. The argument is unaffected.",
+      "evidence": "Recomputed over 40,000: outside = col_DC+_v1, col_PHASE_v0, col_PHASE_u1, col_PHASE_v1, slot0_u0, slot1_u0 (W 7 vs [7.5, 26.5]), slot1_u1, slot2_u0, slot3_u1, row_LS_u0, land_LS \u2192 11. Minimum Manhattan distance 83.25 mm; D to W 44.0 mm.",
+      "suggested_check": "Correct the count to 11 for the run pool, or attribute 13 to the 200-draw sample.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Code reading of _sample confirmed: slots always start at the column's attached edge, and the PHASE outer edge is capped at pad u1 + 1.5",
+      "detail": "In derivative._sample a slot is (edge, v0, end, v1) or (end, v0, edge, v1), with edge being the column's attached edge, so a slot can never straddle its column. Widening (+0 to 6 mm) applies to c1 only when side<0. For PHASE, the pad centre is at 42.5 and the housing centre at 27.5, so near=+1, and in the W-like orientation c1 \u2264 g_up(44) + 1.5 = 45.5 mm. The flipped side (15 %) attaches the slots on the opposite side, which is not W-like. This supports the \u00a72.2/\u00a74 statements.",
+      "evidence": "PHASE pad u0v0u1v1 = [41, 31, 44, 34] mm; allowed u range 7\u201348 mm; derivative.py lines 853\u2013867 and 941\u2013942.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Problem 2 (artifact path) independently confirmed",
+      "detail": "work/evaluation_report.json has sha256 1e966f2b\u2026 and bytes 48998, matching the result.json artifact entry. e010_run.registered_run writes to workdir/evaluation_report.json but registers the bare name (lines 4713\u20134716). evaluate.py looks up rd/name and then store.mfos/artifacts/<sha>. The main checkout's .mfos/artifacts/1e/ has no such entry. burst_gcp.sh fetches only experiments/results/$EID. e008_run.py lines 4377\u20134380 have the same pattern.",
+      "evidence": "shasum output; evaluate.py lines 187\u2013196; evidence.py lines 77\u201387; burst_gcp.sh line 117.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the evaluator record EV-O003-01-invalid.json in the main checkout: exactly the two validity problems quoted, K1 'satisfied', A1 'not_satisfied', verdict INVALID.",
+    "Recomputed F1(b) from main/control checkpoint.jsonl with my own script (not the author's): L_W=13.8923 nH, L_D=17.8168 nH, L_cb=14.9413 nH, h_plant 0.220265, h_ctrl 0.161391, threshold 0.206852, pass limit L_cb/L_W \u2264 1.01720 against an observed 1.07551. The control best is the minimum of 16 L_sub solves, and the solved sets equal the 16 lowest-L1 fingerprints in both streams.",
+    "Recomputed the L1 tail relative to L1(W): main minimum excess 3.052 %, counts 0/0/1/3/23/184; control 6.216 %, counts 0/0/0/2/23/199. Both match the diagnosis.",
+    "Recomputed the L2/L1 ratio ranges (main 1.2284\u20131.2905, control 1.2420\u20131.2836, twin 1.2437) and re-derived the H-C bound 1.0172\u00d71.2437/1.0622 \u2248 1.191, about 3 % below the minimum ratio. Correct.",
+    "Margin check on F1(b): the deficit h_plant \u2212 h_ctrl = 0.0589 against w_ctrl = 0.0134, so no plausible band width could flip the check.",
+    "Read e010_run.evaluate lines 2246\u20132256: h_plant and h_ctrl both use bands[..][0] (L_sub) and inductance_best. H-A rejection confirmed.",
+    "Read derivative._sample (lines 747\u2013942): slots attach to the column's edge, no straddling is possible, and the c1 widening only applies when side<0. The PHASE pad u1 is 44 mm (from the run's ctx.pkl), so c1 \u2264 45.5 in the W-like orientation.",
+    "Re-ran the attached-twin construction through D.build, the DRC check and _quick_ok: DRC-clean at 47, 45.5 and 44 mm, with L1/L1(W) 0.9978, 1.0182 and 1.0561.",
+    "Parsed all 40,000 stream.json.gz candidates: one topology, 40,000 unique fingerprints, W outside the range on 11 (not 13) of 36 coordinates, nearest candidate 83.25 mm, D 44.0 mm.",
+    "Verified levelling/record in evaluation_report.json (levelled true, h_lo 0, h_hi 0, counted true; L_sub twin equals the reconstruction to about 3e-14), the 2D_Case_6 TwinError at prepare in runner.phaseA.log, phase_b_needed.json (exit 75, one fv3 job), and the fv3 solve (status ok, 195,112,960 cells, peak 235.3 GB, energy balance 9.67e-13); run.json exit 0 after 4056.5 s.",
+    "Verified the artifact defect chain: sha256 of work/evaluation_report.json equals the result.json entry; it is registered as a bare name; the evaluator resolves rd/name or the main store, and neither exists; the burst fetch copies only experiments/results/$EID; e008_run has the same pattern at lines 4377\u20134380.",
+    "Checked O003 failure_modes F1: response 'experimental failure (INVALID) when (b) \u2026 fails', matching the stated failure class. The E010 spec expected_outcome predicted INCONCLUSIVE via +inf GCI and an unlevelled K1, and the gen2_0 rehearsal value was h_ctrl 0.6835 \u2265 h_plant 0.4112 \u2212 w_ctrl, both as \u00a72.3 states."
+  ],
+  "caveats": [
+    "The diagnosis's own scripts (research/diagnoses/T0349/*.py and *.json) are not in this review checkout. I rebuilt the key computations from the diff and from my own code and ran them against the committed run directory, but I did not run the author's files byte-for-byte.",
+    "The support argument (i) is shown only at L1, for one hand-built attached-form variant. It narrows the margin but is not shown to be sufficient on its own; the established root cause is the thin prior tail combined with the fixed 20,000-draw budget, under a sampler that cannot express W.",
+    "I did not recompute w_ctrl through mfos.metrics.ratio_band_estimate, because a guard hook blocks that import for agents. A rough check of the band ratios is consistent with 2 e_R \u2248 1.3 %, and the F1(b) deficit is 4.4 times w_ctrl, so this cannot change the result.",
+    "Remaining uncertainties the diagnosis itself acknowledges: H-C (L1 misranking outside the 32 L2-solved candidates) and a shared L1/L2 bias (H-B residual) were not tested with an external solver or more L2 solves.",
+    "Budget figures in \u00a75 are a snapshot: state.yaml now shows $256.37 spent against the $264.99 override, versus the $252.88 quoted."
+  ]
+}
