@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T01:24:43+00:00 from repository state — do not edit_
+_generated 2026-11-15T01:25:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -33,7 +33,6 @@ cancelled: 43, done: 298, failed: 4
 
 
 ## Recent events
-- 2026-11-14T22:59:27+00:00 sleep_detected {"gap_s": 367, "runs_extended": 1}
 - 2026-11-14T23:02:39+00:00 run_finished {"run": "T0343-critic-20261114T145852-ef34", "status": "completed", "cost": 1.160071, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T23:02:43+00:00 inbox_opened {"id": "I0199", "kind": "protected_change", "subject": "T0342: merge needs founder approval"}
 - 2026-11-15T00:25:42+00:00 task_rescoped {"task": "T0339", "reason": "successor id E010 (E009 is O007's); D0022"}
@@ -48,3 +47,4 @@ cancelled: 43, done: 298, failed: 4
 - 2026-11-15T01:24:37+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "diagnose"}
 - 2026-11-15T01:24:37+00:00 investigation_spawned {"task": "T0345", "about": "T0339", "cls": "implementation"}
 - 2026-11-15T01:24:43+00:00 run_started {"run": "T0345-scientist-20261114T172443-b2c9", "task": "T0345", "role": "scientist", "session": "fe0706e8-dc4e-44d4-96a3-83d79f2602f9"}
+- 2026-11-15T01:25:17+00:00 sleep_detected {"gap_s": 979, "runs_extended": 1}

@@ -66,7 +66,11 @@ description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runn
   \ (founder session, 2026-11-14; D0022). The successor's id is E010. E009 is O007's registered,\ncompleted\
   \ scikit-fem thermal experiment (experiments/specs/E009.yaml, experiments/runners/e009_run.py, claim\
   \ C004):\nnever write, rename or run anything of E009. D0021 says E009 throughout; read it as E010 (D0022).\
-  \ Attempt 1 stopped\ncorrectly on this."
+  \ Attempt 1 stopped\ncorrectly on this.\n\nRetry note (founder session, 2026-11-14, attempt 4). Attempt\
+  \ 3's design passed every check except the registration dry run, which could not pass yet: O003's criteria\
+  \ still name E008.* until O003 v6 (D0021 item 7), so null_check skipped every criterion. The dry run\
+  \ now reads O003's criteria as E010.* in memory. The session ran it on the branch: A1 satisfied (0.3254),\
+  \ null not, 27 code files. Change nothing unless a check fails; re-run the checks and report."
 context_files:
 - experiments/specs/E008.yaml
 - experiments/runners/e008_run.py
@@ -115,13 +119,15 @@ definition_of_done:
     'imported src files, all in code_under_test')"
   exists: null
   timeout_s: 600
-- cmd: uv run python -c "from mfos.store import Store; from mfos import models as m; from mfos.evaluate
+- cmd: 'uv run python -c "from mfos.store import Store; from mfos import models as m; from mfos.evaluate
     import load_rows, null_check; from mfos.experiments import runner_files, code_hashes; s = Store();
-    spec = s.read_yaml(s.spec_path('E010', draft=True), m.ExperimentSpec); lines, bad = null_check(s,
-    spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad, bad; assert
-    any('A1' in x and 'satisfied' in x for x in lines), lines; assert runner_files(s.root, spec.runner);
-    n = len(code_hashes(s.root, spec.code_under_test)); assert n >= 27, n; print('E010 registration dry
-    run OK,', n, 'code files')"
+    obj = s.objective(''O003''); [setattr(c, ''metric'', c.metric.replace(''E008.'', ''E010.'')) for c
+    in obj.acceptance.pass_all + obj.acceptance.fail_any]; s.objective = lambda oid, _o=obj: _o; spec
+    = s.read_yaml(s.spec_path(''E010'', draft=True), m.ExperimentSpec); lines, bad = null_check(s, spec,
+    load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad, bad; assert any(''A1''
+    in x and ''satisfied'' in x for x in lines), lines; assert runner_files(s.root, spec.runner); n =
+    len(code_hashes(s.root, spec.code_under_test)); assert n >= 27, n; print(''E010 registration dry run
+    OK (O003 criteria read as E010.*, as O003 v6 will name them),'', n, ''code files'')"'
   exists: null
   timeout_s: 900
 - cmd: uv run mfos exp check E010
@@ -688,3 +694,6 @@ history:
     \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
     \ in <module>\nAssertionError: []\n"
   at: '2026-11-15T01:24:37+00:00'
+- outcome: rescoped
+  summary: 'session: registration dry run reads O003 criteria as E010.* (O003 v6 pending)'
+  at: '2026-11-15T01:25:21+00:00'
