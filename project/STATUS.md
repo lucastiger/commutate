@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T20:53:59+00:00 from repository state — do not edit_
+_generated 2026-11-15T21:30:03+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,6 +15,7 @@ _generated 2026-11-15T20:53:59+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
+| O008 | draft | - | 0/3 | $0.00/$60 | <one line: what we will know when this is done> |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
