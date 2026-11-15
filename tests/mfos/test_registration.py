@@ -52,3 +52,17 @@ def test_a_runner_without_a_repository_file_cannot_be_registered(sandbox):
     p.write_text(p.read_text().replace(RUNNER, "experiments/runners/missing.py"))
     with pytest.raises(RuntimeError, match="cannot freeze"):
         experiments.register(s, "E000")
+
+
+def test_an_id_that_is_already_registered_cannot_be_registered_again(sandbox):
+    """D0021 (2026-11-14) named O003's successor E009, which O007 had registered: registering a new draft under that
+    id would have replaced O007's frozen spec."""
+    s = Store()
+    draft = s.spec_path("E000", draft=True).read_text()
+    experiments.register(s, "E000")
+    frozen = s.spec_path("E000").read_text()
+    s.spec_path("E000", draft=True).write_text(draft)  # a new design that reuses the id
+    assert any("already registered" in p for p in experiments.validate_draft(Store(), "E000"))
+    with pytest.raises(RuntimeError, match="already registered"):
+        experiments.register(Store(), "E000")
+    assert s.spec_path("E000").read_text() == frozen

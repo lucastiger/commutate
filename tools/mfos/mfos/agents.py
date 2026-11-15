@@ -261,6 +261,19 @@ class AgentRunner:
         except ChildProcessError:
             return True
 
+    def stop(self, rec: RunRecord) -> bool:
+        """Stop the agent of a task the founder took out of the pipeline; poll() then records how the run ended."""
+        if rec.status != "running" or not self._alive(rec.pid):
+            return False
+        try:  # an agent's command line names its task; a recycled pid is not ours to stop
+            cmd = subprocess.run(["ps", "-o", "command=", "-p", str(rec.pid)], capture_output=True, text=True).stdout
+        except OSError:
+            cmd = ""
+        if rec.task_id not in cmd:
+            return False
+        self._kill(rec.pid)
+        return True
+
     def poll(self, rec: RunRecord) -> RunRecord:
         """Advance a running record. Safe to call after an orchestrator restart."""
         if rec.status != "running":

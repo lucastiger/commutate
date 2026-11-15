@@ -2,12 +2,15 @@
 usage-limit scheduling with session resume, token and denial accounting, and the run archive."""
 import datetime as dt
 import json
+import subprocess
+import sys
 import tarfile
 import time
+from pathlib import Path
 
 import pytest
 
-from mfos import diagnose
+from mfos import diagnose, gates
 from mfos import models as m
 from mfos.agents import AgentRunner, RunRecord
 from mfos.cli import main as cli
@@ -434,3 +437,99 @@ def test_a_review_parked_by_the_founder_or_infrastructure_blocks_the_merge(sandb
     o._merge = lambda task: pytest.fail("must not merge past a parked review")
     o._advance(t)
     assert Store().task("T9712").status == "review"
+
+
+# ------------------------------------------------------------------------------------------------ 2026-11-14 fixes
+@pytest.mark.parametrize("agent, task_type", [("scientist", "design_experiment"), ("builder", "implement")])
+def test_a_blocked_report_goes_to_the_founder_without_a_retry_or_a_diagnosis(sandbox, monkeypatch, agent, task_type):
+    """T0339 (2026-11-14) reported blocked twice on a mis-named experiment id; the loop retried it and then spawned a
+    diagnosis that rediscovered the block."""
+    assert m.ScienceReport(status="blocked", summary="E009 belongs to O007").status == "blocked"
+    s = Store()
+    o = Orchestrator(s)
+    monkeypatch.setattr(gates, "run_dod", lambda *a: pytest.fail("a blocked task's checks are not run"))
+    monkeypatch.setattr(o.git, "changed_files", lambda path: [])
+    t = m.Task(id="T9720", objective="O000", title="design", type=task_type, agent=agent, status="verify",
+               attempts=1, max_attempts=2)
+    s.save_task(t)
+    o._verify(t, Path("."), {"status": "blocked", "summary": "E009 belongs to O007"})
+    t = Store().task("T9720")
+    assert (t.status, t.attempts, t.history[-1]["outcome"]) == ("needs_founder", 1, "blocked")
+    items = [i for i in Store().inbox("open") if "T9720" in i.refs]
+    assert len(items) == 1 and items[0].kind == "decision" and "E009 belongs to O007" in items[0].summary
+    assert not [x for x in Store().tasks() if x.type == "investigate"]
+
+
+@pytest.mark.parametrize("held_as", ["needs_founder", "cancelled"])
+@pytest.mark.parametrize("dod_ok", [True, False])
+def test_a_hold_set_while_the_definition_of_done_runs_is_kept(sandbox, monkeypatch, held_as, dod_ok):
+    """2026-11-14: T0339 was held while its checks ran; the loop saved its own copy, so the hold became `todo` and
+    attempt 2 started on the same brief."""
+    s = Store()
+    o = Orchestrator(s)
+
+    def run_dod(store, task, path):
+        x = Store().task(task.id)
+        x.status = held_as
+        x.history.append({"outcome": "held"})
+        Store().save_task(x)
+        return [gates.CheckResult("dod", dod_ok, "check output")]
+    monkeypatch.setattr(gates, "run_dod", run_dod)
+    monkeypatch.setattr(o.git, "changed_files", lambda path: ["src/moduleforge/x.py"])
+    t = m.Task(id="T9721", objective="O000", title="build", type="implement", agent="builder", status="verify",
+               attempts=1, max_attempts=2)
+    s.save_task(t)
+    o._verify(t, Path("."), {"status": "completed", "summary": "done"})
+    t = Store().task("T9721")
+    assert t.status == held_as
+    assert [h["outcome"] for h in t.history[-2:]] == ["held", "held_during_verify"]
+    assert not [x for x in Store().tasks() if x.type in ("investigate", "review")]
+
+
+@pytest.mark.parametrize("no_replan", [True, False])
+def test_a_merged_diagnosis_replans_only_if_the_founder_did_not_decline(sandbox, no_replan):
+    """2026-11-14: diagnosis T0342's merge was approved with --no-replan, and planner T0344 started anyway."""
+    s = Store()
+    st = s.objective_state("O000")
+    st.needs_replan = False
+    s.save_objective_state("O000", st)
+    s.save_task(m.Task(id="T9722", objective="O000", title="Diagnose failure of T9", type="investigate",
+                       agent="scientist", status="needs_founder"))
+    item = s.add_inbox(kind="protected_change", subject="T9722: merge needs founder approval", summary="",
+                       refs=["T9722"])
+    assert cli(["approve", item.id] + (["--no-replan"] if no_replan else [])) == 0
+    t = Store().task("T9722")
+    assert t.status == "merge" and t.history[-1]["replan"] is (not no_replan)
+    Orchestrator(Store())._post_merge(t)
+    assert Store().objective_state("O000").needs_replan is (not no_replan)
+
+
+@pytest.mark.parametrize("held_as", ["needs_founder", "cancelled"])
+def test_the_agent_of_a_task_held_or_cancelled_mid_run_is_stopped(sandbox, held_as):
+    """2026-11-14: cancelling T0340 and T0344 left their agents running (and spending) until they were killed by
+    hand. The loop now stops them, and the run is the founder's stop: the attempt is given back."""
+    s = Store()
+    o = Orchestrator(s)
+    o._start_agent = lambda *a, **k: pytest.fail("a founder-stopped task must not be resumed")
+    agent = [sys.executable, "-c", "import time; time.sleep(120)", "working on T9723"]  # names its task, as claude -p
+    other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"], start_new_session=True)
+    proc = subprocess.Popen(agent, start_new_session=True)
+    s.save_task(m.Task(id="T9723", objective="O000", title="diagnose", type="investigate", agent="scientist",
+                       status=held_as, attempts=1))
+    s.save_task(m.Task(id="T9724", objective="O000", title="diagnose", type="investigate", agent="scientist",
+                       status=held_as, attempts=1))
+    o.runner.save(RunRecord(run_id="T9723-r", task_id="T9723", role="scientist", session_id="x", cwd=".",
+                            started="", pid=proc.pid, deadline=time.time() + 600))
+    try:
+        # a record whose pid now belongs to another process (recycled) is not stopped
+        assert not o.runner.stop(RunRecord(run_id="T9724-r", task_id="T9724", role="scientist", session_id="y",
+                                           cwd=".", started="", pid=other.pid, deadline=time.time() + 600))
+        assert other.poll() is None
+        o._poll_runs()
+        assert proc.poll() is not None
+    finally:
+        for p in (proc, other):
+            if p.poll() is None:
+                p.kill()
+    t = Store().task("T9723")
+    assert (t.status, t.attempts, t.history[-1]["outcome"]) == (held_as, 0, "founder_stopped")

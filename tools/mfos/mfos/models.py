@@ -458,6 +458,9 @@ class ScienceReport(_Strict):
     """Scientist output. For diagnosis tasks the failure fields are mandatory in spirit;
     for design/investigation tasks failure_class is 'none'."""
 
+    # T0339 (2026-11-14): without this field a scientist's "blocked" was invisible and the loop retried the same brief
+    status: Literal["completed", "blocked", "partial"] = Field(
+        default="completed", description="'blocked' when the task is impossible or mis-specified (say why in summary)")
     summary: str
     failure_class: Literal["implementation", "model", "experimental", "planning", "business", "infrastructure",
                            "none"] = "none"

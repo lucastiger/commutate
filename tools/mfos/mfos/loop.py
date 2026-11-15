@@ -236,6 +236,11 @@ class Orchestrator:
 
     def _poll_runs(self) -> None:
         for rec in self.runner.active():
+            held = self._task_for_run(rec)
+            # A cancel or hold takes the task out of the pipeline, so its agent is stopped rather than left spending
+            # until it ends (2026-11-14: T0340 and T0344 had to be killed by hand); _founder_stopped then records it.
+            if held is not None and held.status in ("cancelled", "needs_founder") and self.runner.stop(rec):
+                self.s.event("run_stopped_for_founder", run=rec.run_id, task=held.id, task_status=held.status)
             rec = self.runner.poll(rec)
             if rec.status == "running":
                 continue
@@ -427,12 +432,11 @@ class Orchestrator:
         if bad:
             self._fail(t, "scope_violation", "edited files outside its write scope", "\n".join(bad))
             return
+        if out.get("status") == "blocked":
+            self._blocked(t, str(out.get("summary", "")))
+            return
         if t.agent == "builder" and not files:
             self._fail(t, "dod_failed", "no changes were produced", "")
-            return
-        if out.get("status") == "blocked":
-            self._fail(t, "attempts_exhausted" if t.attempts >= t.max_attempts else "dod_failed",
-                       "agent reported blocked", str(out.get("summary", ""))[:2000])
             return
         results = gates.run_dod(self.s, t, path)
         if t.type == "design_experiment":
@@ -442,6 +446,8 @@ class Orchestrator:
                 for prob in experiments.validate_draft(sub, eid):
                     results.append(gates.CheckResult(f"draft:{eid}", False, prob))
         ok, text = gates.summarize(results)
+        if self._held_during_verify(t, ok, text):
+            return
         if not ok:
             self._fail(t, "dod_failed", "definition of done not met", text)
             return
@@ -455,6 +461,32 @@ class Orchestrator:
         else:
             t.status = "merge"
         self.s.save_task(t)
+
+    def _blocked(self, t: m.Task, summary: str) -> None:
+        """An agent that reports its task impossible or mis-specified (the packet tells it to) goes to the founder:
+        a retry on the same brief repeats the block, and a diagnosis rediscovers it (T0339, T0342, 2026-11-14)."""
+        t.history.append({"attempt": t.attempts, "outcome": "blocked", "summary": "agent reported blocked",
+                          "failure_output": summary[-4000:], "at": now()})
+        t.status = "needs_founder"
+        self.s.save_task(t)
+        self.s.event("task_blocked", task=t.id)
+        self.s.add_inbox(kind="decision", subject=f"{t.id} blocked: the agent reports the task impossible or mis-specified",
+                         summary=summary[-1500:], refs=[t.id, t.objective],
+                         options=[f"re-scope, then `mfos task retry {t.id}`", "cancel", "give guidance"])
+
+    def _held_during_verify(self, t: m.Task, ok: bool, text: str) -> bool:
+        """The definition of done can run for many minutes. A task the founder held or cancelled meanwhile stays where
+        they put it: the result is recorded, and nothing is retried, diagnosed, reviewed or merged (2026-11-14: a hold
+        of T0339 set during its checks was overwritten with `todo`, and attempt 2 started on the same brief)."""
+        disk = self.s.task(t.id)
+        if disk.status not in ("needs_founder", "cancelled"):
+            return False
+        disk.history.append({"attempt": t.attempts, "outcome": "held_during_verify",
+                             "summary": f"definition of done {'met' if ok else 'not met'} while the task was {disk.status}",
+                             "failure_output": "" if ok else text[-4000:], "at": now()})
+        self.s.save_task(disk)
+        self.s.event("held_during_verify", task=t.id, status=disk.status, dod_ok=ok)
+        return True
 
     def _review_lenses(self, t: m.Task) -> list[str]:
         ladder = self.pol.get("review_ladder", {})
@@ -637,7 +669,13 @@ class Orchestrator:
             last = next((h for h in reversed(t.history) if h.get("outcome") == "agent_finished"), {})
             self.s.write_json(self.s.objective_dir(t.objective) / "diagnoses" / f"{t.id}.json", last.get("report", {}))
             st = self.s.objective_state(t.objective)
-            st.needs_replan = True
+            # A founder who approved the merge with --no-replan has declined the replan the diagnosis would ask for
+            # (2026-11-14: diagnosis T0342 was merged with --no-replan and planner T0344 started anyway).
+            approval = next((h for h in reversed(t.history) if h.get("outcome") == "merge_approved"), None)
+            if approval is not None and approval.get("replan") is False:
+                st.log.append(f"diagnosis {t.id} merged; founder declined a replan ({approval.get('summary')})")
+            else:
+                st.needs_replan = True
             self.s.save_objective_state(t.objective, st)
 
     # ------------------------------------------------------------------ failure routing

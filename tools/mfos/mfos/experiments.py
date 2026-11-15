@@ -101,7 +101,20 @@ def runner_changes(root: Path, spec: m.ExperimentSpec) -> list[str]:
             if not (root / rel).is_file() or _file_sha256(root / rel) != want]
 
 
+def _registered_elsewhere(store: Store, eid: str) -> Optional[str]:
+    """The problem if ``eid`` already has a registered spec. Experiment ids are global across objectives, and a
+    registered spec is immutable: D0021 (2026-11-14) named O003's successor E009, O007's registered experiment."""
+    reg = store.spec_path(eid)
+    if reg.exists() and store.read_yaml(reg, m.ExperimentSpec).status == "registered":
+        return (f"{eid} is already registered ({reg.relative_to(store.root)}); a registered spec is immutable, so give "
+                "the new design a free experiment id")
+    return None
+
+
 def register(store: Store, eid: str, by: str = "founder", override_null: Optional[str] = None) -> m.ExperimentSpec:
+    taken = _registered_elsewhere(store, eid)
+    if taken:
+        raise RuntimeError(taken)
     draft = store.spec_path(eid, draft=True)
     src = draft if draft.exists() else store.spec_path(eid)
     spec = store.read_yaml(src, m.ExperimentSpec)
@@ -237,6 +250,9 @@ def validate_draft(store: Store, eid: str) -> list[str]:
     p = store.spec_path(eid, draft=True)
     if not p.exists():
         return [f"draft {p} missing"]
+    taken = _registered_elsewhere(store, eid)
+    if taken:
+        return [taken]
     try:
         spec = store.read_yaml(p, m.ExperimentSpec)
     except Exception as e:  # schema violation

@@ -157,6 +157,8 @@ def _resolve(s: Store, iid: str, status: str, note: str, replan: bool = True) ->
         t.protected_approved = True
         t.approval = iid
         t.status = "merge"
+        # the founder's replan choice travels with the merge: a merged diagnosis replans only if they did not decline
+        t.history.append({"outcome": "merge_approved", "summary": iid, "replan": replan, "at": now()})
         s.save_task(t)
     elif item.kind == "infrastructure" and status in ("approved", "answered"):
         for ref in item.refs:  # the cause is fixed: every task it parked goes back to todo
