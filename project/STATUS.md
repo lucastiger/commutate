@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T04:17:16+00:00 from repository state — do not edit_
+_generated 2026-11-15T04:24:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0202** [decision] E010 needs burst compute (~102.1 CPU-h)
@@ -34,7 +34,6 @@ cancelled: 43, done: 300, failed: 3, needs_founder: 1
 - T0347 `needs_founder` none/experiment: Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
 
 ## Recent events
-- 2026-11-15T02:18:45+00:00 verified {"task": "T0339"}
 - 2026-11-15T02:18:52+00:00 run_started {"run": "T0346-critic-20261114T181852-3a11", "task": "T0346", "role": "critic", "session": "221cff2a-e7fc-4312-bdf9-bbcc73c45de4"}
 - 2026-11-15T02:19:27+00:00 sleep_detected {"gap_s": 1012, "runs_extended": 1}
 - 2026-11-15T02:30:54+00:00 run_finished {"run": "T0346-critic-20261114T181852-3a11", "status": "completed", "cost": 2.679465, "subtype": "success", "report": "structured_output"}
@@ -49,3 +48,4 @@ cancelled: 43, done: 300, failed: 3, needs_founder: 1
 - 2026-11-15T04:16:50+00:00 task_added {"task": "T0347", "reason": "founder 2026-11-14: run registered E010 (D0021/D0022)"}
 - 2026-11-15T04:17:16+00:00 inbox_opened {"id": "I0202", "kind": "decision", "subject": "E010 needs burst compute (~102.1 CPU-h)"}
 - 2026-11-15T04:17:16+00:00 burst_requested {"task": "T0347", "experiment": "E010", "cpu_hours": 102.1}
+- 2026-11-15T04:24:13+00:00 experiment_minted {"id": "E010", "run": "E010-20261114T202413-80c1"}
