@@ -17,6 +17,10 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
 - **Coverage census** (`research/notes/coverage-census.md`): 0 of 14 commercial modules confirmed representable today,
   at most 5 of 14 even if every unknown answer is favourable. The planned extensions (quarter-turned dies,
   side-by-side blocks) block no known commercial module; separate diode dies block 6 and multi-pad terminals 4.
+- **A hint, not evidence:** an L1-only development probe (`research/notes/o008-control-probe.md`) found that a local
+  search seeded at the twin, under each reference's own measured rules, reaches layouts 10 % (2D_Case_2R) and 37 %
+  (2D_Case_4) below the twins at L1. L1 on these geometries is outside C002's scope and the references are development
+  geometry already seen, so this cannot count for A-T3; an l2_layout check of the two layouts is the cheap next test.
 - **Customers:** `project/customers/` holds only its README. No customer conversation is on record, and the charter
   counts customer evidence only when it is recorded there. Outreach drafts are ready
   (`research/notes/outreach-drafts.md`).
@@ -36,8 +40,9 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
 
 ### 2. Day 60: continue or stop, and the recorded reason
 - **Case for continuing.** The failure is diagnosed and specific: the search instrument lacks reach (T0349), not the
-  physics or the thesis; the fix is scoped (O008) and testable on development geometry by 12-28; the product is
-  defined (plan, "First product"), and the commercial test is 30 days away.
+  physics or the thesis; the fix is scoped (O008) and testable on development geometry by 12-28, and the L1 probe
+  suggests a seeded search finds what the random screen could not; the product is defined (plan, "First product"),
+  and the commercial test is 30 days away.
 - **Case against** (as a skeptical investor would put it). After 60 days there is no headroom evidence on any module,
   no customer conversation on record, the generator family represents at most about a third of sampled commercial
   modules, and each fix so far has exposed a deeper gap.
