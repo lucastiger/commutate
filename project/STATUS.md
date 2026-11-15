@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T00:25:37+00:00 from repository state — do not edit_
+_generated 2026-11-15T00:26:17+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0199** [protected_change] T0342: merge needs founder approval
@@ -21,7 +21,7 @@ _generated 2026-11-15T00:25:37+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 127 | $242.18 | 3885048 | 1903962 | 258 | 0 |
+| O003 | 128 | $242.18 | 3885048 | 1903962 | 258 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,14 +29,12 @@ _generated 2026-11-15T00:25:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 41, done: 297, failed: 3, needs_founder: 2
+cancelled: 41, done: 297, failed: 3, needs_founder: 1, running: 1
 
-- T0339 `needs_founder` scientist/design_experiment: E009: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 2)
+- T0339 `running` scientist/design_experiment: E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021) (attempt 3)
 - T0342 `needs_founder` scientist/investigate: Diagnose failure of T0339 (attempt 1)
 
 ## Recent events
-- 2026-11-14T21:48:28+00:00 run_finished {"run": "T0339-scientist-20261114T133040-ce3d", "status": "completed", "cost": 0.568459, "subtype": "success", "report": "structured_output"}
-- 2026-11-14T22:03:00+00:00 task_failed_attempt {"task": "T0339", "signal": "dod_failed", "action": "repair"}
 - 2026-11-14T22:03:04+00:00 run_started {"run": "T0339-scientist-20261114T140304-d107", "task": "T0339", "role": "scientist", "session": "1478b260-0039-4fea-9564-54ae2fe51e66"}
 - 2026-11-14T22:03:39+00:00 sleep_detected {"gap_s": 912, "runs_extended": 1}
 - 2026-11-14T22:21:20+00:00 run_finished {"run": "T0339-scientist-20261114T140304-d107", "status": "completed", "cost": 0.857478, "subtype": "success", "report": "structured_output"}
@@ -50,3 +48,5 @@ cancelled: 41, done: 297, failed: 3, needs_founder: 2
 - 2026-11-14T22:59:27+00:00 sleep_detected {"gap_s": 367, "runs_extended": 1}
 - 2026-11-14T23:02:39+00:00 run_finished {"run": "T0343-critic-20261114T145852-ef34", "status": "completed", "cost": 1.160071, "subtype": "success", "report": "structured_output"}
 - 2026-11-14T23:02:43+00:00 inbox_opened {"id": "I0199", "kind": "protected_change", "subject": "T0342: merge needs founder approval"}
+- 2026-11-15T00:25:42+00:00 task_rescoped {"task": "T0339", "reason": "successor id E010 (E009 is O007's); D0022"}
+- 2026-11-15T00:26:17+00:00 run_started {"run": "T0339-scientist-20261114T162617-5161", "task": "T0339", "role": "scientist", "session": "97d77ad2-cd74-426a-801f-b6687b4e818c"}
