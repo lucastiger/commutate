@@ -2410,3 +2410,6 @@
 {"ts": "2026-11-15T04:15:42+00:00", "event": "objective_approved", "actor": "founder", "objective": "O003", "criteria_hash": "sha256:c5216a81858566b45698a03fe5770e3c7f1ddcd98151a8bb6fd0329ad55619e7"}
 {"ts": "2026-11-15T04:16:27+00:00", "event": "experiment_registered", "actor": "orchestrator", "id": "E010", "hash": "sha256:0f9a4d0ffd5b3e31cf03a93f7dbea42c121bad0a3b6c163ff33bfb5377e2eae8", "by": "founder"}
 {"ts": "2026-11-15T04:16:27+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0201", "status": "approved", "note": "Register E010 per D0021/D0022 (E008 + repaired sampler + SearchInfeasible exclusion + new freeze hashes); O003 v6 approved; registration dry run on main OK (A1 satisfied 0.3254, null not; 27 code files)", "by": "human"}
+{"ts": "2026-11-15T04:16:50+00:00", "event": "task_added", "actor": "session", "task": "T0347", "reason": "founder 2026-11-14: run registered E010 (D0021/D0022)"}
+{"ts": "2026-11-15T04:17:16+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0202", "kind": "decision", "subject": "E010 needs burst compute (~102.1 CPU-h)"}
+{"ts": "2026-11-15T04:17:16+00:00", "event": "burst_requested", "actor": "orchestrator", "task": "T0347", "experiment": "E010", "cpu_hours": 102.1}

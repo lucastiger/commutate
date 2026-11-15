@@ -1,0 +1,42 @@
+id: T0347
+objective: O003
+title: 'Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019''s public reference set
+  (2D_Case_2R, 2D_Case_6)'
+type: experiment
+agent: none
+status: needs_founder
+depends_on: []
+description: 'The registered E010 spec (D0021, D0022; E008''s successor) runs on merged main on burst
+  compute: its 102.1 CPU-h estimate exceeds the local limit, so the loop parks this task for the founder.
+  The founder launches it with research/o003/e010_dev/burst_full.sh (founder''s VM, phase A n2d-custom-8-81920-ext,
+  phase B the same VM resized to n2d-custom-8-499712-ext). The result copied back into experiments/results/E010
+  closes this task. Agents never launch VMs.'
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: E010
+risk: high
+model: null
+budget_usd: 0.5
+max_turns: 1
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-15T04:16:50+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder 2026-11-14 (session): E010 registered (I0201); its run replaces cancelled T0329 (D0021
+  item 1).'
+history:
+- outcome: awaiting_burst
+  summary: ~102.1 CPU-h exceeds local limit
+  at: '2026-11-15T04:17:16+00:00'
+  since: 1794716236.517727
