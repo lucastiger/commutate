@@ -1,0 +1,83 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "A3 never binds, so O008 can PASS while the search fails on most draws of 2D_Case_2R",
+      "detail": "The hypothesis is stated per layout: 'on each discriminating development layout ... for the large majority of degradations D_j'. The null is that the search 'does not get back to the twin's level on most degradations'. With 6 draws per layout, A1 allows at most 3 failures in total. So no layout can have more than 3 failures, and its pass fraction is always at least 3/6 = 0.5. A3 (>= 0.5) is therefore implied by A1 and constrains nothing. Its stated purpose, 'no layout may fail on most of its draws, however well the others do', is already met by A1 alone. The result is a PASS with 21/24 passing draws (LCB 0.708), A3 = 0.5 and K1 not firing, in which 2D_Case_2R, the layout that motivated O008, passes only 3/6. Its per-layout Clopper-Pearson lower bound is then 0.153, so the per-layout null is not rejected. If the other three layouts pass every draw, P(PASS) is 0.656 when 2R's true per-draw rate is 0.5 and 0.456 when it is 0.4, a rate at which the null is true on 2R. Six draws cannot establish a per-layout 'large majority' at 95 % at all: 6/6 gives an LCB of only 0.607, and 9/9 all-pass draws would be needed to reach 0.70. The decision also needs per-reference reliability: 'O009 repeats this control on every fresh reference, so the freeze needs a control that passes reliably'. So the claim that meeting every criterion establishes the hypothesis against its null is false for a plausible outcome.",
+      "evidence": "Scratch computation (scipy): CP one-sided 95 % LCB 21/24 = 0.7077, 20/24 = 0.6582, 3/6 = 0.153, 6/6 = 0.607. Convolution of per-layout binomials with 6 draws each: P(<= 3 failures) = 0.656 for p = (1, 1, 1, 0.5), 0.456 for (1, 1, 1, 0.4) and 0.566 for (1, 1, 0.95, 0.5).",
+      "suggested_check": "Make the per-layout criterion bind, for example at least 5/6 per layout or at least 9 draws per layout with a per-layout bound. Otherwise restate the hypothesis as pooled and drop the 'on each layout' reading and the per-reference reliability argument.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The twin W of the two synthetic housings is undefined, and twins of generator housings are trivially beaten",
+      "detail": "Half of the counted draws (12 of 24) come from two synthetic housings whose reference W is never defined. The draft excludes gen2_0 from the count because its control 'passed by a wide margin'. gen2_0 is exactly the kind of case at issue: a generator housing whose W is a reconstruction of a generator layout. If the synthetic housings' W is built the same way, those 12 draws pass almost surely, whatever the search does. The inductance-aware null (c) would pass them too. A1 is then decided by the 12 PowerSynth draws alone, and at most 3 failures in total means at least 9/12 must pass there. Calling these housings 'discriminating' is unsupported. The null check is also pooled (evaluate.null_check judges the pooled A1/A3 value), so a non-discriminating layout stays invisible as long as another layout fails the null.",
+      "evidence": "E010 result.json, E008 full-fidelity dev run (T0324) on gen2_0: control h_ctrl 0.6835 against h_plant 0.4112. With R_D 1.6983 this gives L(best)/L(W) = (1 - 0.6835) x 1.6983 \u2248 0.54, so the control best was about 46 % below W. tools/mfos/mfos/evaluate.py: null_check and _annotate judge the nulls only on the criterion's pooled metric.",
+      "suggested_check": "Define how the synthetic housings' W is built (near-optimal and outside the sampler's support, like 2R), and require each null to fail on each layout, not only on the pool.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The F6 band cap voids the run on any single draw, and that can also hide the kill",
+      "detail": "The rule is w_j = 2 e_R(best_j, W) <= 0.02, gated per draw, and 'a band above the cap makes the run INVALID'. That is e_R <= 0.01 on all 24 draws. Development geometry often exceeds this. In E008's band check on 2D_Case_4, 3 of the 4 twin-vs-random pairs had e_R > 0.01 (0.0125, 0.0179, 0.0096, 0.0064). gen2_0's main search best had e_R 0.0187, and its control band was 0.058. Even if only 5 % of draws exceed the cap, the run is INVALID with probability 0.71 (0.92 at 10 %). So the sample may never resolve the decision. Second, the evaluator puts INVALID before FAIL. A poor search that ends far from W's geometry, which is the K1 scenario, is the case most likely to have a large e_R, so the run goes INVALID instead of K1 firing. The void is also unnecessary for such draws: when s_j > 0.02 the draw fails under any capped band, so the band does not affect its outcome.",
+      "evidence": "E010 result.json line 539 (T0324 record): 'BAND CHECK ... e_R [0.00956, 0.01254, 0.00635, 0.01785]'; gen2_0 'e_R 0.0187', 'w_ctrl 0.0581'. 1 - (1 - q)^24 = 0.708 at q = 0.05 and 0.920 at q = 0.10. evaluate.py line 488: INVALID is decided before FAIL.",
+      "suggested_check": "Use min(w_j, 0.02) as the band, and void the run only when a draw's pass or fail outcome depends on a band above the cap.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Null (c) cannot be fixed by the prescribed remedy, and is not an information-ignoring null for this decision",
+      "detail": "Null (c) is the D0008 random screen alone, built from the reference's spec. That spec has the same housing, dies and W-derived rules for every D_j of a layout, so null (c) does not depend on the degradation family. Yet decision_if_inconclusive says that when a null meets A1 or A3, 'the redesign changes the degradation family, not the search'. Changing the degradation family cannot make null (c) fail. A second evaluation would be INCONCLUSIVE again and would use up the stop line. Moreover, the hypothesised instrument runs 'beside the D0008 random screen', with reach added to both the domain and the sampler (A2). If null (c) passes, reach alone recovers W, which supports freezing the generator. The draft would instead record it as non-discriminating and move a working instrument toward stopping inductance-search work.",
+      "evidence": "O008 F3(c) and decision_if_inconclusive text. evaluate._annotate marks a pass criterion that any declared null satisfies as non_discriminating, which yields INCONCLUSIVE.",
+      "suggested_check": "Treat null (c) as a reported ablation of the seeded component, not a gating null, or give it its own decision rule.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Power is modest, and the draw count is undefined if a layout cannot supply valid degradations",
+      "detail": "With independent draws, P(A1 met) is 0.505 at a true pass rate of 0.85 and 0.786 at 0.90. A good search therefore often misses A1 and uses up the single redesign. The draft also concedes that no DRC-clean degradation family reaching R_D >= 1.25 has been shown on 2D_Case_4 (1.232). It does not say how A1, A3 or the 'at most 3 failures' arithmetic changes if a layout contributes fewer than 6 draws. With 18 draws, A1 requires 17/18 (LCB 0.762; 16/18 gives 0.690). The redraw rule could also never terminate on such a layout.",
+      "evidence": "scipy: binom.sf(20, 24, p) = 0.505 (p = 0.85), 0.786 (0.90), 0.970 (0.95). CP 17/18 = 0.762, 16/18 = 0.690.",
+      "suggested_check": "Freeze in the spec a maximum number of redraws per layout and what A1/A3 become when a layout drops out, and state the operating characteristic beside the thresholds.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The pooled CP bound covers only the four fixed layouts, not fresh references",
+      "detail": "With fixed layouts and equal allocation, pooled Clopper-Pearson is valid and conservative for the average pass rate over these four layouts (Hoeffding's Poisson-binomial bound). It says nothing about reliability on fresh references, where the effective sample is 4 layouts, and 2 of those (2R, Case 4) are the very geometry the move set and reach were designed and tuned on, on development degradations of the same W. The title is honest about this ('held-out degradations of the development layouts'), but decision_if_pass extrapolates to O009's fresh references.",
+      "evidence": "Hypothesis, decision_if_pass and scope_in text. The reach in build item (1) is specified from 2R's twin.",
+      "suggested_check": "State in decision_if_pass that reliability on fresh references is untested here and rests on O009's per-reference control.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "mfos's null mechanism replaces one prediction column, but A1's null outcome depends on the null's own band",
+      "detail": "evaluate.null_values substitutes a single `pred` column (null_column kind 'column' or 'stratum_mean'). A null's pass on a draw depends on s_j^null and on its own w_j^null = 2 e_R(null_best, W). That requires five-level solves of each null's best and a precomputed per-null pass-margin column. F7 does not specify this. If only s_j is substituted, the nulls are judged against the real search's band.",
+      "evidence": "tools/mfos/mfos/evaluate.py:365-374; tools/mfos/mfos/metrics.py:791-801.",
+      "suggested_check": "Specify the A1 metric on a per-draw margin column (s_j - min(w_j, 0.02)) that each null supplies from its own solves.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The stated CP values are correct, and K1 can fire",
+      "detail": "I recomputed 21/24 \u2192 0.7077 and 20/24 \u2192 0.6582, as stated. K1 (median s_j > 0.05) can fire: null (a) fires it by construction (s_j >= 0.25), and so would a stalled local search. A1 and K1 cannot both be met (A1 implies median s_j <= 0.02), so the verdict logic is consistent, apart from the F6 pre-emption above.",
+      "evidence": "scipy beta.ppf(0.05, x, n - x + 1).",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the one-sided 95 % Clopper-Pearson lower bounds for n = 24, 18, 12 and 6 (scipy beta.ppf). The stated 0.708 and 0.658 are confirmed; 6/6 gives 0.607, and 9 all-pass draws are needed for a per-layout LCB of 0.70.",
+    "Proved that A3 is implied by A1 at 6 draws per layout (at most 3 failures in total means every layout has at least 3/6 = 0.5).",
+    "Computed the operating characteristic of A1 by convolving per-layout binomials: P(PASS) = 0.656 for per-layout pass rates (1, 1, 1, 0.5) and 0.456 for (1, 1, 1, 0.4); for a common rate, 0.505 at 0.85 and 0.786 at 0.90.",
+    "Read the evaluator (tools/mfos/mfos/evaluate.py): INVALID takes priority over FAIL; nulls are judged on the pooled criterion metric and make it non_discriminating; null_check at registration covers every pass criterion; null_values substitutes a single pred column.",
+    "Read E010's result.json T0324 development record. Case 4 band-check e_R values are 0.0096-0.0179 (3 of 4 above 0.01). On gen2_0, e_R was 0.0187, w_ctrl 0.0581, and h_ctrl 0.6835 against h_plant 0.4112 with R_D 1.6983, which I derived as a control best about 46 % below W.",
+    "Computed the probability that the run is voided by the per-draw band cap: 1 - (1 - q)^24 = 0.71 at q = 0.05 and 0.92 at q = 0.10.",
+    "Checked degrade() and ratio_band_estimate in the repository to confirm what e_R and the degradation moves are."
+  ],
+  "caveats": [
+    "The drawn thresholds are still PROPOSED and the founder may change them at approval. The blocker goes away if A3 is made to bind, or if the hypothesis is restated as pooled and the per-reference reliability argument is dropped.",
+    "The band-cap finding uses e_R values from twin-vs-random pairs and from gen2_0. A best_j that is geometrically close to W may have a smaller e_R, so the voiding risk is plausible but not measured for recovered candidates.",
+    "I did not assess whether the in_domain predicate (A2) and the reach construction are correct; that belongs to the physics and numerics lenses."
+  ]
+}
