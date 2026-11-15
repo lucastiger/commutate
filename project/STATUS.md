@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T21:34:35+00:00 from repository state — do not edit_
+_generated 2026-11-15T21:37:11+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -27,16 +27,16 @@ _generated 2026-11-15T21:34:35+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
+| O008 | 2 | $0.00 | 0 | 0 | 0 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 302, failed: 4
+cancelled: 44, done: 302, failed: 4, running: 2
 
+- T0351 `running` critic/review: Review OBJ-O008 (statistics) (attempt 1)
+- T0352 `running` critic/review: Review OBJ-O008 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T10:35:27+00:00 run_started {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "role": "scientist", "session": "dbd44023-b7c0-4b0e-a8b3-6e16ee41c982"}
-- 2026-11-15T10:35:28+00:00 run_started {"run": "T0349-scientist-20261115T023528-c5fc", "task": "T0349", "role": "scientist", "session": "4f720fe6-06db-4a31-a50a-f085b5679a00"}
-- 2026-11-15T10:36:08+00:00 run_stopped_for_founder {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "task_status": "cancelled"}
 - 2026-11-15T10:36:08+00:00 run_finished {"run": "T0348-scientist-20261115T023527-8a7a", "status": "error", "cost": 0.403363, "subtype": "error_during_execution", "report": "missing"}
 - 2026-11-15T10:36:08+00:00 founder_stopped {"task": "T0348", "run": "T0348-scientist-20261115T023527-8a7a", "run_status": "error", "task_status": "cancelled"}
 - 2026-11-15T10:58:58+00:00 run_finished {"run": "T0349-scientist-20261115T023528-c5fc", "status": "completed", "cost": 3.486942, "subtype": "success", "report": "structured_output"}
@@ -49,3 +49,6 @@ cancelled: 44, done: 302, failed: 4
 - 2026-11-15T20:09:06+00:00 merged {"task": "T0349"}
 - 2026-11-15T20:09:44+00:00 sleep_detected {"gap_s": 380, "runs_extended": 0}
 - 2026-11-15T21:34:29+00:00 loop_started {"pid": 97506}
+- 2026-11-15T21:36:47+00:00 objective_draft_review {"objective": "O008", "ref": "0df043d9a6a8ae1c054ed2b88da3bbca3742398a", "tasks": ["T0351", "T0352"]}
+- 2026-11-15T21:37:10+00:00 run_started {"run": "T0351-critic-20261115T133710-bab2", "task": "T0351", "role": "critic", "session": "86f2b7ba-93d2-4146-9ccf-f8049a3669c9"}
+- 2026-11-15T21:37:11+00:00 run_started {"run": "T0352-critic-20261115T133711-be38", "task": "T0352", "role": "critic", "session": "1e87a00a-b27f-4df0-ab04-8215fd3f4d19"}
