@@ -1,0 +1,60 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The per-draw band b_j can be as large as the 2 % tolerance itself, so A1 measures the band rather than the search",
+      "detail": "A draw passes only when s_j + 2 e_R(best_j, W*) <= 0.02, so the working tolerance is 2 % - b_j, not 2 %. The draft gives no evidence on how large b_j will be and has no registration check that bounds it (E010 at least checked e_R <= 0.02). The only e_R values measured on these geometries are of the same order as the tolerance. On 2D_Case_4, twin-vs-random pairs gave e_R of 0.00635-0.01785, so b = 1.3-3.6 %; two of the four pairs exceed 2 %. The 2R control best gave w_ctrl = 0.013, and gen2_0's best gave e_R 0.0187. ratio_band_estimate is zero only for a candidate geometrically identical to W*. A candidate at W*'s inductance but with different geometry therefore carries b > 0 and can fail even at s_j = 0, while exactly undoing the degradation (a failure mode F1 itself names) passes. I re-scored the probe's own stand-in search, which is the proxy rule. On 2R it passes 5/5 draws at b = 0, 4/5 at b = 0.013 and 2/5 at b = 0.0135; three of its draws sit at s = +0.69 to +0.77 %, right on the effective line. On Case 4 it passes 2/5 at b = 0 and 0/5 for any b >= 0.0127. So whether a draw passes can turn on the fourth decimal place of an unmeasured band, and the outcome can use up the plan's single redesign. The claim that the thresholds and the sample can resolve the decision is not supported.",
+      "evidence": "tools/mfos/mfos/metrics.py:372-384 (ratio_band_estimate; identical layouts give 0). experiments/specs/E010.yaml:716-718, 725, 753-754 (Case 4 e_R [0.00956, 0.01254, 0.00635, 0.01785]; gen2_0 e_R 0.0187). D0023: w_ctrl 0.013 on 2R. research/o008_probe/probe_{2R,Case4}_proxy.json guided s values. My re-scoring is in the checks list.",
+      "suggested_check": "Before registration, measure b_j for best-vs-W* pairs on development draws and freeze a pre-registration bound such as max b_j <= 0.01, or state the tolerance as 2 % net of the band.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The nulls are judged one-sidedly: unresolved null draws count as failures, and there is no paired search-versus-null test",
+      "detail": "The stated null includes 'the search does no better than an inductance-blind heuristic'. The design rejects that clause only because the null misses 7 of 8. A null draw within its band of the line counts as a failure, which is conservative for the search but anti-conservative for the discrimination check. The nulls' best layouts lie geometrically far from W* (copper widened), so their bands are expected to be larger than the search's. That pushes null draws into 'unresolved = fail' because of band width, not because of an inductance gap. A null at 6/8 on each layout (true rate 0.75, judged failing on both layouts with probability 0.40) leaves a PASS standing against a search at 15/16. On the pooled counts, 15/16 vs 12/16 gives a one-sided Fisher p of 0.17; on the same draws, a sign test with 3 discordant draws gives p = 0.125. The second clause of the hypothesis, that heuristics 'do not', and the rejection of the null are then not statistically established. The probe's L1 gaps (compaction at +3.1 to +8.8 % on 2R, +14 to +19 % on Case 4) make this unlikely to change the decision, which is why this is major and not a blocker.",
+      "evidence": "F1 detection; scope_in per-draw rule ('unresolved ... counts as a failure'). scipy: Fisher exact [[15,1],[12,4]] p = 0.166; binom.cdf(6,8,0.75)^2 = 0.40.",
+      "suggested_check": "Require each gating null to fail resolvably (s_j - b_j > 0.02) on at least 2 of 8 draws per layout, or to lose a paired per-draw comparison with the search.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The control target and the planted headroom are both defined by the search's own L1 guidance",
+      "detail": "W* is the fixed point of a steepest single-parameter L1 descent with 0.5 mm steps. The probe's degradations are stochastic L1 ascents from W*. The planted headroom therefore lies along the directions L1 sees as steepest, and the target is an attractor of exactly the move set the search's L1 screen uses. The probe's 'guided' stand-in is literally the proxy rule. A pure L1 descent with no reach, no L2 shortlist and no die or wire moves is therefore expected to pass. The control cannot show that the search finds headroom L1 misranks (C002: 23-38 % of pairs under 5 % apart are misordered, the F4 concern), or headroom that is not L1-locally optimal, which is what O009's fresh-reference headroom claims need. F3's argument that 'a biased proxy can make the control harder, not easier' fails for searches that share the proxy's guidance. Combined with b_j = 0 for exact identity, retracing is the easiest way to pass.",
+      "evidence": "scope_in proxy rule; research/o008_probe/probe.py ascent() and docstring; probe note Method section.",
+      "suggested_check": "Report, as an ablation, the proxy rule alone (L1 descent, no L2 shortlist) on the same draws. If it passes A1, state that PASS shows only basin recovery at L1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "K1 pools the median across layouts, so one layout can mask a coarse result on another; the stated null maps to INCONCLUSIVE, not FAIL",
+      "detail": "Eight draws at -2 % on 2R and eight at +11 % on Case 4 give a pooled median of 4.5 %, so K1 does not fire even though Case 4 is too coarse for O009's 10 % line. A1 protects 2R against being carried by the other layouts, but K1 has no such protection. A result matching the null ('misses on more than one draw in eight on some layout') with a median <= 5 % is INCONCLUSIVE. Because FAIL and INCONCLUSIVE both lead to one diagnosis and one redesign, the practical consequence is small. K1 can fire: on the probe's data, compaction's pooled median is 11.4 % and the guided search's is 1.0 %.",
+      "evidence": "statistics.median([-0.02]*8 + [0.11]*8) = 0.045; probe medians recomputed.",
+      "suggested_check": "Use the maximum over layouts of the per-layout median for K1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 binds only with exactly two layouts, and its Clopper-Pearson bound treats clustered draws as independent",
+      "detail": "The minimum passing count under A3's 0.70 bound is 15/16, above A1's floor of 14. At 24 draws it is 21, equal to A1's floor; at 40 draws it is 34, below A1's floor of 35. So once feature extensions add layouts, the description's 'binds beyond A1' is false. Draws within a layout share W* and its landscape, so the pooled Clopper-Pearson bound is not a reliability bound over layouts (there are two clusters). A3 works as a count rule, not as an interval.",
+      "evidence": "scipy beta.ppf: 7/8 -> 0.529, 15/16 -> 0.736, 14/16 -> 0.656, 21/24 -> 0.708, 34/40 is the minimum for n = 40.",
+      "suggested_check": "Restate A3 as an explicit failure count per number of counted layouts, and drop the reliability reading.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the Clopper-Pearson one-sided 95 % lower bounds with scipy: 7/8 = 0.529, 15/16 = 0.736, 14/16 = 0.656 (the draft's numbers are correct). Also 21/24 = 0.708 and the minimum k for n = 24, 32, 40 (21, 28, 34), which shows A3 stops binding beyond A1 once there are three or more layouts.",
+    "Computed the operating characteristic for two layouts (at least 7/8 on each and at least 15/16 pooled): P(PASS) is 0.026 at p = 0.7, 0.14 at 0.8, 0.52 at 0.9, 0.81 at 0.95 and 0.96 at 0.98.",
+    "Computed how often a null with true per-draw rate q is judged failing A1 on both layouts: 0.93 at q = 0.5, 0.40 at q = 0.75, 0.12 at q = 0.85. Fisher exact 15/16 vs 12/16 gives p = 0.166; a paired sign test with 3 discordant draws gives p = 0.125.",
+    "Read ratio_band_estimate in tools/mfos/mfos/metrics.py: e_R = 0 for identical layouts and is a conservative GCI with a factor of 3; b_j = 2 e_R.",
+    "Collected the e_R values measured earlier on these geometries from experiments/specs/E010.yaml (Case 4 pairs 0.0064-0.0179; gen2_0 0.0187) and D0023 (2R w_ctrl 0.013).",
+    "Re-scored the probe's per-draw guided and compaction shortfalls (research/o008_probe/*_proxy.json) under the per-draw band rule for b from 0 to 0.0357: on 2R the guided search passes 5/5 at b = 0, 4/5 at 0.013 and 2/5 at 0.0135; on Case 4 it passes 0/5 for any b >= 0.0127. Compaction fails resolvably on 4/5 2R draws at b >= 0.0127.",
+    "Checked that K1 can fire: on the probe's data the pooled median is 11.4 % for compaction (fires) and 1.0 % for the guided search (does not). Built a masking example: 8 draws at -2 % plus 8 at +11 % give a median of 4.5 %."
+  ],
+  "caveats": [
+    "The probe numbers are L1 only, on development geometry, and the guided search is a stand-in. The e_R values for best-vs-W* pairs have never been measured; the blocker is that resolvability is unestablished and the nearest measurements on these layouts are of the same order as the tolerance, not that A1 is proven unreachable.",
+    "Even if fixed, a PASS would show reliability only on the two development layouts on which the search, its budget and W* were developed (only the draws are fresh). The draft says this; O009's per-reference control carries any generalisation.",
+    "The feature-extension layouts are FOUNDER TO SET, so the counted set, and with it A3's role, is not yet fixed.",
+    "Heredoc scripts were denied by the session's permission mode, so the checks ran as inline `python -c` commands; no repository file was modified."
+  ]
+}
