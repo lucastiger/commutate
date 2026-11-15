@@ -1,0 +1,80 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The control target is the fixed point of the guidance it tests, and the planted headroom can be seen by L1 by construction",
+      "detail": "W* is the end point of a steepest single-parameter L1 descent with 0.5 mm steps. The probe's degradation family, which E011's 'may use L1 to accept a move' allows, is a stochastic L1 ascent from W*: it accepts only joint moves that raise L1, in 0.5 mm multiples. The search's \u00b10.5 mm moves lie on the same lattice. So every planted degradation can be seen by L1. The region where L1 misranks (C002, F4: pairs under 5 % apart misordered 23-38 %) is excluded from the planted headroom by construction. The probe's 'guided' stand-in, which recovered 2R to within 2 % on 5 of 5 draws, is the proxy rule itself, ablation (e). That ablation is reported but not gated. A1 and A3 therefore cannot show that anything the search adds beyond the proxy rule, such as the L2 shortlist, contributes. A pass certifies that a search containing an L1 descent, with enough budget, gets back to the level of an L1 descent from L1-ascent-perturbed starts. That is narrower than 'recovers planted headroom', and it adds little to O009 beyond running the proxy rule from W directly. decision_if_pass and F3 already state the L1-reachable limit, so this restricts scope and does not invalidate the claim.",
+      "evidence": "research/o008_probe/probe.py ascent(): 'accept a joint move ... if it is DRC-clean and raises L1', steps from {0.5,1.0,1.5,2.0} mm; the guided search and the proxy both use descend(mode='guided'). I recomputed the 2R proxy at L1 from E010's ctx.pkl: L1(W*)/L1(W) = 0.8979 after 27 steps, matching the probe.",
+      "suggested_check": "Gate the search against ablation (e) by the A3 rule, or plant part of each D_j with a rule that does not use L1 (L2-gated R_D only), so that headroom L1 misranks is also planted.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Evidence that the control discriminates on 2R is L1-only and has a thin margin",
+      "detail": "On 2R with die rows free, null (d) compaction lands at +3.07 % to +8.84 % at L1. A3 needs s_null - b_j > 0.02 on at least 4 of 8 draws. With the band bound (max b_j <= 0.02), that means s_null above 0.03-0.04. The probe note itself says L1 is biased low by 5-14 % and not mesh-converged on these geometries. If L2 shrinks W*'s 10.2 % L1 gain over W, compaction could recover W* on 2R and A3 would fail. K1's claim that the probe's compaction 'would fire it' rests on a 2R median of 5.95 %, only 0.95 points above the threshold. On Case 4, compaction and widening give identical s on 3 of 5 draws (with die rows held fixed, on all 5), and every compaction run hit the 60-step cap. On Case 4 the two gating nulls are therefore close to one null, and their failure margin is confounded with budget. The registration null check on L2 development rows covers this risk before any sealed draw, which is why this is minor.",
+      "evidence": "From the probe JSON for 2R with the proxy: compact s = 0.0595, 0.0307, 0.0671, 0.0485, 0.0884. For Case 4: compact = widen = 0.1401, 0.1525 and 0.1807 on draws 0, 2 and 4, and all compaction runs step-capped (60*). I recomputed K1's medians: 2R 0.0595, Case 4 0.1751.",
+      "suggested_check": "In E011's design, report each null's s_j and b_j at L2 on the development draws per layout, with the null run to the search's full budget, before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A3's paired win is resolved against the search's band only",
+      "detail": "band_e_R estimates the discretisation error of a ratio. For the paired difference s_search - s_null, the resolving quantity is e_R(best_search, best_null), or a combination of both bands, not b_j of the search alone. The rule therefore understates the uncertainty when the null's layout is less well resolved, for example with narrower strips. This matters only on draws where the null did not fail resolvably, so its effect on the verdict is small.",
+      "evidence": "src/moduleforge/optimize/search.py: every e_R is band_e_R 'on the ratio'. A3's text: 'below the null's by more than the search's band b_j'.",
+      "suggested_check": "Define the paired margin as 2 e_R(best_search, best_null) from the stored band solves, or as b_search + b_null.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The stated operating characteristic covers A1 only, but is labelled P(PASS)",
+      "detail": "PASS also requires A3: per layout, two nulls each with a 7-of-8 paired-win hurdle and a 4-of-8 resolved-failure hurdle. That is four extra hurdles across two layouts. If they were independent with per-draw probability 0.95, P(PASS) at a per-draw A1 pass probability of 0.95 would be 0.70 rather than 0.89. The hurdles are positively correlated with A1, so the true value lies between 0.70 and 0.89. A good search therefore has an unstated chance of roughly 10-30 % of an INCONCLUSIVE verdict, which counts toward the one-redesign stop line.",
+      "evidence": "Recomputed with binom.sf(6,8,p): per layout 0.943/0.813/0.657/0.255, two layouts 0.889/0.661/0.432/0.065, matching the draft. Including four independent 7/8 hurdles at q=0.95: 0.702/0.522/0.341/0.051.",
+      "suggested_check": "In E011's spec, state the joint OC of A1 and A3 from development-draw rates.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A Tj-blind frozen search conflicts with O009's Tj-bounded question",
+      "detail": "Die rows are free in the proxy, the degradations and the search, and Tj is reported but not gated. decision_if_pass freezes the search for O009 'unchanged'. A-T3 asks for headroom at <= +2 K Tj, yet build item (2) plans a search 'scored so thermal and current-sharing terms can be added later'. Adding those terms would void the freeze. Keeping the search unchanged means O009's search optimises without regard to Tj, and its output can only be filtered for Tj afterwards. A pass in O008 cannot certify recovery of headroom that is feasible for Tj.",
+      "evidence": "scope_in: 'Because dies move, the hottest-die Tj ... is reported, not gated'. decision_if_pass: 'O009 uses them unchanged'. Notes, build work (2).",
+      "suggested_check": "State in decision_if_pass whether O009 filters candidates by Tj after the search or adds a Tj term, which would need a new control.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Evidence for the null's 'no better than a blind heuristic' clause can never produce FAIL, and its default response changes the test",
+      "detail": "A3 not met while A1 is met gives INCONCLUSIVE, and the default redesign then changes the degradation family or the proxy rule, never the search. The first clause of the null can therefore never produce FAIL. The response to evidence for it is to change the control, chosen knowing that a heuristic passed. The plan's single-redesign stop line limits this. K1 can still fire, as shown by the probe's compaction medians, so the kill criterion is live for the shortfall clause.",
+      "evidence": "tools/mfos/mfos/evaluate.py lines 489-497: FAIL only from fail_any; otherwise PASS or INCONCLUSIVE. decision_if_inconclusive.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Stronger inductance-blind nulls do not break discrimination on 2R at L1",
+      "detail": "I tested whether the gating compaction null is a strawman. Dropping its monotone constraint (allowing copper-for-wire trades), weighting wire length \u00d710, or minimising wire length alone gave s = +5.95 % and +3.07 % (identical to the probe's null for both compaction variants) and +28 % (wire-only, stuck after 7 steps) on the probe's draws 0 and 1. I found no blind variant that recovers W* at L1.",
+      "evidence": "Reproduced D_0 and D_1 with R_D = 1.3725 and 1.3909, matching the probe, from 2R's E010 ctx.pkl with development seeds 20261115+j.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed 2R's designer proxy at L1 from E010's ctx.pkl with the probe's own descend(): L1(W*)/L1(W) = 0.8979 after 27 steps, as reported",
+    "Reproduced the probe's degraded draws D_0 and D_1 on 2R (R_D = 1.3725, 1.3909)",
+    "Ran three stronger inductance-blind nulls on 2R D_0 and D_1 (unconstrained copper-minus-wire compaction, wire-weighted \u00d710 compaction, wire-length-only): s = +5.95 %/+3.07 % for both compaction variants and +28 % for wire-only, so none recovers W*",
+    "Recomputed A1's operating characteristic with the binomial (0.943/0.813/0.657/0.255 per layout; 0.889/0.661/0.432/0.065 for two layouts) and the joint OC including A3's paired hurdles under independence (0.70 at p=0.95)",
+    "Recomputed K1's probe medians (2R compaction 5.95 %, Case 4 17.5 %): K1 can fire, with a thin margin on 2R",
+    "Checked logically that A1 met implies the per-layout median s_j <= 0.02, so PASS and K1 cannot both hold",
+    "Read evaluator verdict logic (FAIL from fail_any only; nulls that meet a pass criterion flag it non-discriminating, giving INCONCLUSIVE)",
+    "Read probe.py: the degradation is an L1 ascent on 0.5 mm-multiple joint moves; the guided stand-in is the proxy rule itself",
+    "Read the probe JSON per draw: on Case 4, compaction equals widening on 3 of 5 draws and every compaction run is step-capped; on 2R the guided runs take 43-59 of 60 steps",
+    "Checked that band_e_R in search.py is an estimator on the ratio, which bears on A3's paired band"
+  ],
+  "caveats": [
+    "A pass certifies recovery from degradations that L1 can see, of the level an L1 local descent reaches over the search's own parameters, on two development layouts whose W* the developers know. It does not show any benefit of the L2 shortlist over the proxy rule, recovery of headroom L1 misranks, or transfer to fresh references.",
+    "Whether the control discriminates at L2 on 2R is not yet shown. The probe is L1-only and the compaction margins on 2R are thin (+3.1 % to +8.8 % at L1 against an effective resolved line of 3-4 %). This rests on E011's registration null check on L2 development rows.",
+    "The stated P(PASS) values cover A1 only. The joint chance of passing A1 and A3 for a good search is lower: between about 0.70 and 0.89 at a per-draw pass probability of 0.95.",
+    "The control does not gate Tj, although die rows move. It cannot certify headroom that is feasible for Tj, which is what A-T3 and O009 need.",
+    "My independent L1 re-runs covered 2R draws 0-1 only. Case 4's context is not in the repository and was not re-run. Longer background runs were denied by the session's permission mode."
+  ]
+}

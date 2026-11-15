@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T23:35:18+00:00 from repository state — do not edit_
+_generated 2026-11-15T23:37:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,7 @@ _generated 2026-11-15T23:35:18+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | draft | - | 0/2 | $15.35/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | draft | - | 0/2 | $17.60/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -27,16 +27,14 @@ _generated 2026-11-15T23:35:18+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 10 | $15.35 | 357055 | 262319 | 24 | 0 |
+| O008 | 10 | $17.60 | 411688 | 300390 | 33 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 311, failed: 4, running: 1
+cancelled: 44, done: 312, failed: 4
 
-- T0360 `running` critic/review: Review OBJ-O008 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T22:15:04+00:00 run_finished {"run": "T0354-critic-20261115T140657-07cf", "status": "completed", "cost": 1.917719, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T22:46:12+00:00 objective_draft_review {"objective": "O008", "ref": "bebd4c0dbacc32aefbd3de0dd36e0e34e3794eee", "tasks": ["T0355", "T0356"]}
 - 2026-11-15T22:46:25+00:00 run_started {"run": "T0355-critic-20261115T144625-a603", "task": "T0355", "role": "critic", "session": "8b641c83-eaec-45c4-9b19-f70caf007f26"}
 - 2026-11-15T22:46:26+00:00 run_started {"run": "T0356-critic-20261115T144626-6418", "task": "T0356", "role": "critic", "session": "cd048e60-0e01-41b6-9a72-50e9a02411aa"}
@@ -51,3 +49,4 @@ cancelled: 44, done: 311, failed: 4, running: 1
 - 2026-11-15T23:26:29+00:00 run_started {"run": "T0359-critic-20261115T152629-08ec", "task": "T0359", "role": "critic", "session": "49daf6e5-94b7-4c94-a3a3-8e0939329547"}
 - 2026-11-15T23:26:31+00:00 run_started {"run": "T0360-critic-20261115T152631-b179", "task": "T0360", "role": "critic", "session": "f2cacb45-e086-4143-b032-3e6e89a55e22"}
 - 2026-11-15T23:35:13+00:00 run_finished {"run": "T0359-critic-20261115T152629-08ec", "status": "completed", "cost": 1.688795, "subtype": "success", "report": "structured_output"}
+- 2026-11-15T23:37:46+00:00 run_finished {"run": "T0360-critic-20261115T152631-b179", "status": "completed", "cost": 2.255259, "subtype": "success", "report": "structured_output"}
