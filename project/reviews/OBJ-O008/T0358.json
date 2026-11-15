@@ -1,0 +1,66 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's gating null rule is not in the acceptance block, so the deterministic verdict is PASS where the objective's own rule says INCONCLUSIVE",
+      "detail": "The hypothesis requires that inductance-blind heuristics fail 'by a resolved margin'. F1 makes a gating null count as beaten only if (i) it fails resolvably (s_j - b_j > 0.02) on at least 2 of 8 draws and (ii) the search's s_j is below the null's on at least 7 of 8 draws; otherwise the result is INCONCLUSIVE. Neither condition is a pass_all criterion. The mfos evaluator (tools/mfos/mfos/evaluate.py, _annotate and null_values) flags a pass criterion as non_discriminating in only one case: when the null's own column meets the criterion. Only pass_all and fail_any set the verdict (lines 487-497). The registration check (null_check, line 440) uses the same rule. So 'E011's registration check must show (a), (b) and (d) beaten', and the INCONCLUSIVE response, are not enforced by any deterministic check. F7 only adds metric functions; a metric in no criterion gates nothing. Result: A1 and A2 can both be met, and the evaluator records PASS, while a compaction null sits within noise of the search. The claim's first clause ('if every pass criterion is met, the hypothesis is established against its stated null') is false as drafted. The scenario is plausible: on 2R the probe's compaction null missed the deeper, die-moving proxy by as little as 3.07 % at L1, and the die-fixed proxy is shallower.",
+      "evidence": "Ran mfos.evaluate.judge on constructed per-layout rows with band 0.01. Search s = [.010,.012,.015,.018,.019,.011,.016,.030] gives pass fraction 0.875 (A1 satisfied). Compaction null s = [.018,.017,.019,.016,.018,.019,.030,.029] gives 0.75 (not satisfied), so the evaluator calls A1 discriminating and the verdict is PASS. Under F1's rule the null has 0 resolved failures (2 needed) and the search is lower on only 5 of 8 draws (7 needed), so the result should be INCONCLUSIVE. grep found no paired or resolved null comparison anywhere in tools/mfos.",
+      "suggested_check": "Add a pass_all criterion (e.g. A3: E011.null_beaten_min >= 1), recomputed from the per-draw s_j and b_j columns of the search and of each gating null with F1's resolved and paired rule, and make the registration check evaluate it on development rows.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Die-row asymmetry: the target and the degraded copies hold die rows fixed, the search does not, so A1 can be met without recovering the planted headroom",
+      "detail": "W* is a local optimum only within the die-fixed subspace, and every D_j degrades only non-die parameters. The search's move set includes die rows. The nulls' move sets are not stated with respect to die rows. The probe's descent with die rows free reached L1(W*)/L1(W) = 0.628 on Case 4, which hints that a large share of the headroom there may come from die-row moves. If so, a search that is good at moving dies but poor at undoing copper degradation reaches s_j <= 0.02, or even s_j << 0, and wins the paired comparison against copper-only nulls. The control would then not test recovery of the planted headroom. 'Near-optimal' holds only in the die-fixed subspace. This weakens what a pass certifies for O009: a negative headroom finding on a reference where die moves give nothing.",
+      "evidence": "twin._walk_candidates covers indices 4-39, including row_HS_u0..row_LS_gap (indices 32-37). The probe's proxy descent therefore moved die rows (Case 4: 120 steps, 0.628). The draft's scope fixes die rows in the proxy and degradation only, and lets the search range over the whole domain, die rows included.",
+      "suggested_check": "Either judge s_j with the search's die rows also held fixed (and report the die-free run beside it), or define W* over the search's own domain; also state the nulls' move sets explicitly.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The probe evidence for the nulls' margin and for degradation feasibility comes from a design the draft no longer uses",
+      "detail": "In the probe, the proxy, the randomised degradation and all three searches moved die rows. Two numbers rest on that design: the stated 3-24 % null miss, and Case 4's degradations reaching 1.25 (5 of 5 draws). The die-fixed W* lies between the twin W and the die-moving W*. Case 4's twin could not be degraded to 1.25 under its own rules (frozen degrade stopped at a local maximum of 1.232; random draws reached 1.13-1.18). L1 ratios also overstate L2 ratios on Case 4 (1.421 at L1 against 1.325 at L2, D0018). With only two counted layouts, losing Case 4 under F6 makes E011 INVALID. A shallower proxy also narrows compaction's margin, which on 2R was already only 3.07-8.8 % at L1. The draft says the proxy will be re-measured, but nothing yet shows the sample can resolve the decision in its frozen configuration.",
+      "evidence": "Recorded probe outputs: 2R proxy draws changed 22-27 coordinates, compaction s 0.031-0.088, widen 0.084-0.242. Case 4 proxy draws: compaction 0.140-0.187, widen 0.140-0.210, guided 0.012-0.036 with every run at the 60-step cap. Case 4 against the twin: 0/5 draws reached 1.25.",
+      "suggested_check": "Before approval or registration, re-run the probe with die rows fixed in the proxy and the degradation (L1, then L2 on a few draws): report the die-fixed L1(W*)/L1(W), the R_D each layout can reach, and the compaction null's s_j - b_j on each layout.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "7 of 8 is an in-sample count and does not reject a per-draw miss-rate null",
+      "detail": "Read as a statement about the sample, the stated null ('misses on more than one draw in eight') is decided exactly by A1. Read as a per-draw miss rate, a search with a 15 % miss rate passes both layouts 43 % of the time, and one with a 10 % miss rate fails 34 % of the time. Draws share W*, so the independence assumption behind these figures is optimistic. The draft acknowledges this; it limits how far 'established' reaches.",
+      "evidence": "Recomputed P(>=7 of 8 | p) = 0.943, 0.813, 0.657, 0.255 per layout and 0.889, 0.661, 0.432, 0.065 for two layouts at p = 0.95, 0.90, 0.85, 0.70. These match A1's description.",
+      "suggested_check": "None required; keep the reported pooled bound and state the per-layout operating characteristic in E011.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F1(a) meeting A1 is meant to be INVALID, but the evaluator would record INCONCLUSIVE",
+      "detail": "Null (a) (return D_j unchanged) declared as a null baseline would make A1 non_discriminating, so the verdict would be INCONCLUSIVE. INVALID needs a gated sanity check, and none is declared for this case.",
+      "evidence": "evaluate.py lines 431-436 and 495-497.",
+      "suggested_check": "Declare a gated sanity check in E011: null (a) meets A1 means the run fails sanity, so the verdict is INVALID.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Individual draw bands are unbounded while the search passes at the point value",
+      "detail": "Only the median b_j is bounded (<= 0.01). A draw whose best_j moved a die row has a different topology from W*, so its band may be wide, yet it still counts as passing at s_j <= 0.02 even when that is not resolved. The nulls are judged resolvably, which is conservative, but the search's pass count can include unresolved passes.",
+      "evidence": "Draft scope_in item on per-draw outcome; A1 uses uncertainty point.",
+      "suggested_check": "Report, per layout, how many draws pass resolvably (s_j + b_j <= 0.02), or bound the maximum b_j as well as the median.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read the mfos evaluator's verdict and null logic (tools/mfos/mfos/evaluate.py lines 1-31, 365-497; models.NullSpec; metrics.null_column). Confirmed that pass_all and fail_any alone set the verdict, that a null only makes a criterion non_discriminating when it meets that criterion, and that tools/mfos has no paired or resolved null comparison (grep).",
+    "Built adversarial search and compaction-null rows for one layout and ran mfos.evaluate.judge on A1. The evaluator gives PASS (search 0.875 satisfied, null 0.75 not satisfied); F1's rule gives INCONCLUSIVE (0 resolved null failures, search lower on 5 of 8 draws).",
+    "Recomputed A1's operating characteristic with the binomial formula; it matches the draft's 0.94/0.81/0.66/0.26 per layout and 0.89/0.66/0.43/0.07 for two layouts. The sign-test chance level for the paired '7 of 8 lower' rule is 0.035.",
+    "Tabulated research/o008_probe/*.json. It confirms the stated 3-24 % null miss (2R compaction minimum 3.07 %), that Case 4's guided runs all hit the 60-step cap, and that Case 4's twin could not be degraded to 1.25 (1.13-1.18 random; frozen degrade stopped at 1.232).",
+    "Read twin._walk_candidates and the probe's descent and ascent code. The move set covers indices 4-39, including the six die-row parameters (32-37), so the probe's W* (Case 4 at 0.628 of the twin), its degradations and its searches all moved die rows, unlike the frozen die-fixed design."
+  ],
+  "caveats": [
+    "I could not run the L1 check of the die-row effect on 2D_Case_2R: the die-fixed proxy depth, and how much a die-row-only descent adds below it. This session's permission mode refused every script that loads the saved E010 context. The die-row findings therefore rest on the code and the recorded probe outputs, not on a new measurement.",
+    "The Case 4 development context (research/o003/e008_dev/full_work/2D_Case_4/ctx.pkl) is not in the repository, so nothing about Case 4 could be re-run.",
+    "The blocker can be fixed without changing any threshold: add a pass criterion that encodes F1's resolved and paired null comparison, recomputed from the per-draw columns, and have the registration check evaluate it.",
+    "K1 can fire: null (a) gives s_j >= 0.25, and the probe's Case 4 compaction medians were about 17 %. FAIL and INCONCLUSIVE lead to almost the same action (one diagnosis and one redesign under the shared stop line)."
+  ]
+}

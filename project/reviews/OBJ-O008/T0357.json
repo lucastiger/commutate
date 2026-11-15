@@ -1,0 +1,74 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's per-layout null test gates nothing: PASS is possible while a blind null recovers W* on 2D_Case_2R",
+      "detail": "The pass criteria are only A1 and A2. The hypothesis ('inductance-blind heuristics do not, by a resolved margin') and the first clause of the null are tested only by F1's per-layout rule (a resolved failure on at least 2 of 8 draws, plus a paired search win on at least 7 of 8). That rule is not a pass_all or fail_any criterion. The evaluator has only two ways to turn a run into a non-PASS: (i) a failed sanity check, which gives INVALID, not the INCONCLUSIVE that F1 promises; (ii) native null discrimination, which recomputes the same aggregated A1 metric with the null's column and flags A1 only if the null also meets it. A1's metric is the minimum over layouts. If compaction recovers W* on 2R on 8 of 8 draws but fails on Case 4, its A1 value is 0 < 0.875. A1 then counts as discriminating and the evaluator returns PASS, although 2R's control does not discriminate at all. This is the masking that A1's description ('so 2R cannot be carried by the others') is meant to prevent. The registration check (`null_check`) uses the same aggregated rule, so it cannot enforce 'beaten on every layout' either, and it accepts --override-null. F7 adds only mfos.metrics functions. Functions alone change no verdict. The scenario is plausible: in the probe, blind compaction came back to within +1.25 % of 2R's twin on all 5 draws, and from -5.4 % to +1.3 %. With die rows fixed, the proxy is shallower, and W* = W is possible (L1 is biased low by 5-14 %, and the probe's 2R gain was only 10 % with dies moving). Either way compaction would pass most 2R draws. So the claim fails as written in two places: 'if every pass criterion is met, the hypothesis is established against its stated null' and 'no criterion would be met by a predictor that ignores the decision-relevant information'.",
+      "evidence": "tools/mfos/mfos/evaluate.py:365-374 (null_values computes rc's metric over all rows with the null column), :425-437 (_annotate sets non_discriminating only if the null meets the criterion), :470-497 (verdict comes only from pass_all, fail_any and problems), :319-324 (failed sanity -> problems -> INVALID), :440-462 (null_check uses the same aggregated rule). research/o008_probe/probe_2R.json: compact s vs twin = -0.054, +0.0125, -0.031, -0.047, +0.0105. In a no-import reimplementation of the rule, P(evaluator flags A1) = 0 whenever the null fails Case 4, for any 2R recovery rate q2R in {0.6, 0.8, 0.9, 1.0}, while P(2R non-discriminating per layout) = 0.11, 0.50, 0.81, 1.00.",
+      "suggested_check": "Add a pass_all criterion, e.g. A3: E011.null_beaten_min >= 1, the minimum over counted layouts and gating nulls (b, d) of F1's resolved-and-paired indicator, recomputed from per-draw rows. Then confirm on synthetic rows (null perfect on 2R, failing on Case 4) that the evaluator returns INCONCLUSIVE.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F1's 'beaten' threshold lets a null that recovers most draws count as beaten",
+      "detail": "Two resolved failures out of 8 make a null 'beaten' even if it passes the other 6. The paired leg asks only that the search be strictly lower on 7 of 8 draws, by any margin, with no band. Take a blind null with per-draw recovery q and every failure resolvable (the case most favourable to calling it beaten). It meets the resolved-failure leg with probability 0.63 per layout at q = 0.75 and 0.50 at q = 0.8. The search (p about 0.95) and such a null are hard to tell apart at n = 8: the null itself meets 7 of 8 with probability 0.37 at q = 0.75. So 'by a resolved margin' amounts to 'at least two resolved misses'. A control that a blind heuristic passes 75-80 % of the time can still be certified discriminating.",
+      "evidence": "Binomial: P(>=2 failures of 8) = 0.633 at q = 0.75 and 0.497 at q = 0.8. Sign test P(>=7/8 | 0.5) = 0.035.",
+      "suggested_check": "Tie 'beaten' to the null's own A1-type rate, e.g. resolved failures on at least 4 of 8 per layout, or a paired win by more than b_j, and report its OC beside A1's.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The control is close to self-referential: an L1 ascent from an L1 descent fixed point, undone by an L1 descent on the same lattice",
+      "detail": "In the probe, the degradation family is a stochastic L1 ascent (moves accepted only if they raise L1) from W*. W* is itself the fixed point of a steepest L1 descent over the same parameters with \u00b10.5 mm steps, and the search is an L1 descent on that lattice. Any L1 coordinate descent with enough budget should then fall back into W*'s basin; the probe's 2R guided run passed 5 of 5. A1's per-draw p then mostly measures budget, not search quality. F1 names 'undoing the degradation' as a failure mode, but only reports diagnostics for it (changed-parameter count, distance, moves), and ablation (e) is reported, not gated. scope_in does not say whether the frozen family uses L1 to pick its moves. decision_if_pass limits the certificate to L1-descent-reachable headroom, so this is a scope limit, not a defect. The null's third clause (cannot support O009's 10 %/20 % lines) is refuted only within that limit.",
+      "evidence": "research/o008_probe/probe.py docstring and ascent(): 'accept a joint move of 2-4 copper parameters if it is DRC-clean and raises L1'. In probe_2R_proxy.json, guided s ranged from -3.7 % to +0.8 % across the 5 draws.",
+      "suggested_check": "State in scope_in whether the degradation family may use L1 (or L2) to choose moves. Report ablation (e)'s A1 value beside the search's in the evaluation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F1's INCONCLUSIVE response contradicts the evaluator when K1 fires",
+      "detail": "The evaluator ranks FAIL above everything else. A search no better than compaction with a median s_j above 5 % is therefore a FAIL (decision_if_fail), while F1's text says 'gating null not beaten: INCONCLUSIVE', with a redesign of the degradation family or proxy, 'not the search'. The deterministic outcome is the right one, so the kill can fire, but the text tells the diagnosis to redesign the control rather than the search.",
+      "evidence": "evaluate.py:492-493 (fail_checks are judged before pass_checks).",
+      "suggested_check": "Restrict F1's INCONCLUSIVE response to the case where A1 is met.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The null's 'misses on more than one draw in eight' clause can only produce INCONCLUSIVE, never FAIL",
+      "detail": "Suppose a search misses on 2-4 draws per layout with a median at or below 5 %. A1 is not met and K1 does not fire, so the result is INCONCLUSIVE. At per-draw p = 0.9, a good search is not PASSed 34 % of the time over two layouts. FAIL and INCONCLUSIVE lead to nearly the same action (one redesign in all), so this is not decision-material.",
+      "evidence": "OC check recomputed: 0.943/0.813/0.657/0.255 per layout and 0.889/0.661/0.432/0.065 for two layouts, at p = 0.95/0.9/0.85/0.7. These match the draft.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Draws pass on point values; only the median band is bounded",
+      "detail": "s_j <= 0.02 is judged at the point value. The band bound is median b_j <= 0.01, so individual draws with b_j comparable to the 2 % tolerance can pass or fail inside discretisation error. This is reported, not gated.",
+      "evidence": "scope_in: per-draw outcome and band bound.",
+      "suggested_check": "Report the count of draws with |s_j - 0.02| < b_j per layout.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Counted layouts are the development layouts; die moves are reported but thermally ungated",
+      "detail": "Sealed draws give an unbiased per-layout pass rate for the tuned search on 2R and Case 4 only, and the draft says so. The search may move die rows while W* may not, so s_j can be met by die moves that O009's +2 K Tj limit could reject. Tj is only reported.",
+      "evidence": "scope_in control and per-draw bullets; decision_if_pass.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed A1's operating characteristic from the binomial: per layout 0.943/0.813/0.657/0.255 and two layouts 0.889/0.661/0.432/0.065 at p = 0.95/0.9/0.85/0.7. These match the draft.",
+    "Read tools/mfos/mfos/evaluate.py (judge, null_values, _annotate, null_check, evaluate). The verdict comes only from pass_all, fail_any, admissibility problems (failed sanity gives INVALID) and native null discrimination on the same aggregated metric. FAIL ranks above PASS and INCONCLUSIVE. No route turns F1's per-layout rule into INCONCLUSIVE.",
+    "Re-implemented the evaluator's null rule without importing mfos (an in-process run with mfos imported was denied by the sandbox). With a min-over-layouts A1, a null failing Case 4 is never flagged, whatever its 2R recovery rate. The 2R per-layout non-discrimination probability is 0.11/0.50/0.81/1.00 for q2R = 0.6/0.8/0.9/1.0.",
+    "Read research/o008_probe/probe.py and the probe JSONs. The degradation is an L1 ascent. On 2R, compaction is within +1.25 % of the twin on all 5 draws. Against the probe's die-moving W*, compaction misses by 3.1-8.8 % on 2R and 14-19 % on Case 4.",
+    "Computed F1's 'beaten' leg: P(at least 2 resolved failures of 8) = 0.63 at q = 0.75 and 0.50 at q = 0.8. Sign test P(at least 7 of 8 | 0.5) = 0.035.",
+    "Checked that K1 can fire (it is in fail_any, judged at the point value, and outranks the other outcomes). A1 met implies K1 cannot fire, so the two are consistent."
+  ],
+  "caveats": [
+    "An in-process demonstration with the actual mfos evaluator objects was blocked by the sandbox's command policy. The masking finding rests on reading evaluate.py plus a no-import reimplementation of the same rule.",
+    "The plausibility of compaction recovering a die-fixed W* on 2R is extrapolated from the L1-only probe against the twin and the die-moving proxy. E011's development runs at L2 would settle it.",
+    "The blocker can be fixed before approval by adding one pass criterion. The rest of the design (A1's 7-of-8 per layout, K1's per-layout median, F6's exclusion floor, sealed draws) held up under the checks above."
+  ]
+}
