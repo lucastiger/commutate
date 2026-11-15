@@ -1,0 +1,116 @@
+id: O008
+title: A search seeded at the reference's twin, in a parameterisation that contains the twin, recovers planted loop-inductance headroom on every development layout
+kind: build
+priority: 1
+risk: high
+depends_on: []
+unlocks: []
+hypothesis:
+  statement: >-
+    The derivative-layout search, extended with (i) reach, a parameterisation of the generator family that contains each
+    development reference's own twin W (build(params_of(W)) reproduces W's power copper with zero symmetric difference,
+    and W is a point of the sampler's support), and (ii) a local search seeded at the reference's twin, beside the D0008
+    random screen (DRC-valid moves of slot extents, column edges, die positions and wire landings; DRC a hard constraint;
+    L1 screen; l2_layout at 0.25 mm on a fixed shortlist; sealed seeds; a fixed budget per reference), recovers planted
+    loop-inductance headroom on every development layout: given a degraded copy D of the twin with
+    L_sub(D) >= 1.25 L_sub(W), made by a frozen degradation rule, as its reference, the search returns a candidate with
+    h_ctrl >= h_plant - w_ctrl, where h_ctrl = 1 - L_sub(best) / L_sub(D), h_plant = 1 - L_sub(W) / L_sub(D) and
+    w_ctrl = 2 e_R(best, D) (O003 F1(b), unchanged). Development layouts: gen2_0, PowerSynth 2D_Case_4 and 2D_Case_2R
+    (development geometry under D0023), and synthetic housings with a split free region; 2D_Case_2R is the D0023
+    rehearsal case, a reference whose twin the D0008 sampler cannot draw (T0349).
+  null_hypothesis: >-
+    Even a search that starts from the reference's own twin cannot recover a planted 20 % inductance headroom on the
+    development layouts within a fixed budget; the search instrument cannot support any headroom claim, and the
+    parametric route to derivative re-layout does not work as built.
+  why_it_matters: >-
+    E010 (D0023, diagnosis T0349) showed that the D0008 random search cannot reach the 2D_Case_2R designer's layout:
+    the twin lies outside the sampler's support and the best of 40,000 draws sat 3.05 % above it at L1, so the
+    planted-headroom control failed and O003 has no verdict. Without a search that passes this control no headroom
+    claim can be made (O009, plan section 7), and starting from the reference is also the product: a derivative
+    re-layout begins from the customer's layout (plan section 3). Every later feature extension (section 2's ranked
+    list) is checked by the same control.
+  decision_if_pass: >-
+    Freeze the generator with its reach, the twin construction, the degradation rule and the seeded search, with code
+    hashes recorded, before any judged reference is loaded (the 12-28 freeze, plan section 6). The validation objective
+    (working id O009) uses them unchanged on fresh references. Each feature extension the founder adds passes this
+    control on its own development layout before the freeze.
+  decision_if_fail: >-
+    Plan stop line (risks table): one diagnosis (mf-diagnosis) and one redesign under a new experiment id; a second
+    failure stops inductance-search work and goes to the founder, with the reference-native representation route
+    (plan section 13) as the alternative to decide. No continuation by default.
+  decision_if_inconclusive: >-
+    Founder decision after a diagnosis. If A2 is met and A1 is missed on one development layout only, by less than
+    w_ctrl, the diagnosis says whether the budget, the move set or the L1 screen limits the search before any redesign.
+scope_in:
+  - >-
+    development geometry only: gen2_0, 2D_Case_4, 2D_Case_2R and synthetic housings. 2D_Case_6 joins only if a feature
+    extension makes it representable (its twin fails today on side-by-side switch blocks, T0314). No judged reference
+    (NC State PREES modules, 2D_Case_5, customer geometry) is loaded before the freeze, and none is screened beyond
+    fact-only answers (plan section 6)
+  - >-
+    the loop-inductance objective only (L_sub from l2_layout at 0.25 mm, the D0008 band rule for e_R); thermal and
+    current-sharing terms are reported where the runner computes them, never gated here
+  - >-
+    feature extensions: FOUNDER TO SET at approval from the screening answers (research/notes/module-screening-questions.md)
+    and the coverage census (research/notes/coverage-census.md). Candidates: separate diode dies (6 of 14 census
+    modules), several terminal pads per net (4 of 14, conditional), quarter-turned dies (2D_Case_5 only), side-by-side
+    switch blocks (2D_Case_6 only). Each one added here brings its own development layout, which must also pass A1 and A2
+scope_out:
+  - any judged reference, and any headroom claim about a real module (O009)
+  - Tj-aware search, current-sharing and gate-loop objectives (plan section 8)
+  - the accuracy of l2_layout on real module geometry (O004)
+evidence_plan: [E011]
+acceptance:
+  required_experiments: [E011]
+  pass_all:
+    - {id: A1, metric: E011.control_margin_min, comparator: ">=", threshold: 0.0, uncertainty: {use: point},
+       description: "min over the development layouts of h_ctrl - (h_plant - w_ctrl), O003 F1(b)'s check as a margin: >= 0 on every layout means the seeded search, given the degraded copy D with a new sealed seed and the fixed budget, reaches the twin's level within its own band. w_ctrl already carries the discretisation band, so the point value is compared"}
+    - {id: A2, metric: E011.reach_symdiff_max_mm2, comparator: "<=", threshold: 0.0, uncertainty: {use: point},
+       description: "max over the development layouts of the power-copper symmetric difference between the twin and build(params_of(twin)) in mm^2: zero means the parameterisation contains each twin exactly. That the twin's parameters also lie in the sampler's support is a gated sanity check (F2)"}
+  fail_any:
+    - {id: K1, metric: E011.control_recovery_min, comparator: "<", threshold: 0.5, uncertainty: {use: point},
+       description: "min over the development layouts of h_ctrl / h_plant below 0.5: even seeded at the reference, the search recovers less than half the planted headroom on some development layout. PROPOSED threshold, for the founder to set at approval"}
+  max_evaluations: 2
+failure_modes:
+  - id: F1
+    description: "The control is passed trivially: the degradation is undone by a single move of the seeded search"
+    detection: "the degradation rule is frozen in E011's spec before any control solve; per layout, the number of parameters that D changes against W and its parameter-space distance are reported; the rule must change at least as many coordinates as the spec states at registration, chosen from development data, not from control outcomes; the move count from D to the control's best is reported"
+    response: "design error: strengthen the degradation rule before registration"
+  - id: F2
+    description: "Reach claimed but not delivered: the twin builds exactly but the sampler or the move set cannot reach it"
+    detection: "gated sanity checks per layout: W rebuilt from params_of(W) is DRC-clean and reproduces its fingerprint; W lies inside the sampler's support (the coordinate-range and attached-form tests of T0349 section 2.2, applied to a pool drawn from a development seed); the L1 lower tail of the random screen's pool relative to W is reported (minimum excess; counts within 2, 3, 5, 7, 10 and 15 %), per D0023's rule"
+    response: "a failed check is INVALID: fix the parameterisation under a new experiment id"
+  - id: F3
+    description: "A search that returns its input, or the random screen alone, would pass"
+    detection: "declared null baselines: (a) the degraded copy D returned unchanged gives h_ctrl = 0 and fails A1 by construction; (b) the D0008 random screen alone, same budget, reported per layout with the expectation that it fails A1 on 2D_Case_2R as in E010; a pass of (b) on every layout is reported, since it would make the seeded search unnecessary rather than invalid"
+    response: "report; (a) passing would be INVALID (a defect in the margin computation)"
+  - id: F4
+    description: "Local L1 misranking: near the optimum, pairs under 5 % apart are misordered 23-38 % of the time (C002), so the L1 screen may discard the best moves"
+    detection: "l2_layout confirms a fixed shortlist; the L1-L2 rank correlation within each layout's shortlist and the L2/L1 ratio range are reported, as in T0349's H-C test"
+    response: "report; if A1 is missed, the diagnosis tests this first"
+  - id: F5
+    description: "Leakage or forking paths: the search tuned on control outcomes"
+    detection: "the move set, budget, shortlist size, degradation rule and seeds are frozen and hashed in E011's spec before any control solve; development seeds for design work only; 2D_Case_2R's E010 values are known (D0023), so it is development geometry and never a judged reference"
+    response: "a change after freezing voids the run"
+budget: {usd: 140, cpu_hours: 60, wall_days: 28}
+require_plan_approval: true
+notes: >-
+  Draft by the founder session of 2026-11-15, after D0023 (E010 void, O003 paused) and the coverage census. The founder
+  chose "core now, features later": this draft holds what every route needs (reach, a search seeded at the twin, the
+  planted-headroom control on development geometry), and the feature extensions are added at approval, by 11-30, from
+  the screening answers. The census (research/notes/coverage-census.md, 14 commercial modules, free public sources)
+  found no commercial module known to need quarter-turned dies or side-by-side blocks, the two extensions plan
+  section 3 names; separate diode dies (6 of 14) and several terminal pads per net (4 of 14, conditional on pins
+  mapping to pads) block more, and most layout questions are unanswered. That matches the plan's early sign that
+  fewer than half of modules are representable even after O008's extensions, so the representation-route decision
+  (plan section 13, due 01-20) is proposed for the 11-27 thesis review.
+  PROPOSED, for the founder to set at approval: K1's 0.5; max_evaluations 2 (the plan's one diagnosis and one
+  redesign); the budget (plan estimate $140-220 agent and $10-25 VM for O008 with its extensions; $140 here is the low
+  end, for the core). Experiment id E011 is free (experiments/specs and drafts checked, 2026-11-15) and is the one the
+  plan names. A1's margin and the definitions of h_ctrl, h_plant and w_ctrl are O003 F1(b)'s, unchanged.
+  Build work (planner, after approval): (1) reach in generate/derivative.py and generate/twin.py: slots that straddle
+  or overlap their column, column outer edges up to the edge-margin limit, with a test that each development twin lies
+  in the new space and that the D0008 development streams change only where declared; (2) a seeded local search in a
+  new optimize/ package (pattern search or a small evolution strategy, DRC as a hard constraint, sealed seeds, scored so
+  thermal and current-sharing terms can be added later); (3) E011, pre-registered, development-only; (4) review,
+  registration by the founder, run, evaluation. Every task brief passes skill mf-planning's pre-flight checks.
