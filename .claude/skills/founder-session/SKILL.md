@@ -27,3 +27,9 @@ writes, so these rules are yours to keep.
 ## Before you add or rewrite a task
 Run the pre-flight checks in skill mf-planning ("Pre-flight checks for every task brief"): the deliverables lie in the
 agent role's write scope, any experiment id is free, and no definition-of-done command depends on a later step.
+
+## Working with the founder (founder's instructions, 2026-11-15)
+- Write emails with common sense: short, and asking for a call rather than sending a questionnaire. At most three
+  questions in an email; the full lists are for the call.
+- For anything the founder must do, give the exact instructions and commands, and say explicitly whether to run them
+  now or later (and when, or after what).
