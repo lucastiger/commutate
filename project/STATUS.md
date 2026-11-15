@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T04:08:24+00:00 from repository state — do not edit_
+_generated 2026-11-15T04:15:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (1 open)
 - **I0201** [experiment_registration] register E010 (pre-registration)
@@ -33,7 +33,6 @@ cancelled: 43, done: 300, failed: 3
 
 
 ## Recent events
-- 2026-11-15T01:25:17+00:00 sleep_detected {"gap_s": 979, "runs_extended": 1}
 - 2026-11-15T01:25:59+00:00 run_interrupted {"run": "T0345-scientist-20261114T172443-b2c9", "cost": 0.541449}
 - 2026-11-15T01:25:59+00:00 founder_stopped {"task": "T0345", "run": "T0345-scientist-20261114T172443-b2c9", "run_status": "interrupted", "task_status": "cancelled"}
 - 2026-11-15T01:32:08+00:00 loop_started {"pid": 12013}
@@ -48,3 +47,4 @@ cancelled: 43, done: 300, failed: 3
 - 2026-11-15T04:07:17+00:00 inbox_resolved {"id": "I0200", "status": "approved", "note": "Merge T0339 (E010 design: E008 + repaired sampler + SearchInfeasible exclusion + new freeze hashes, per D0021/D00
 - 2026-11-15T04:07:40+00:00 merged {"task": "T0339"}
 - 2026-11-15T04:07:40+00:00 inbox_opened {"id": "I0201", "kind": "experiment_registration", "subject": "register E010 (pre-registration)"}
+- 2026-11-15T04:15:42+00:00 objective_approved {"objective": "O003", "criteria_hash": "sha256:c5216a81858566b45698a03fe5770e3c7f1ddcd98151a8bb6fd0329ad55619e7"}
