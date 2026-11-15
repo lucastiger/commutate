@@ -1,0 +1,79 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "On Case 4, A3 may test the nulls' step budget rather than their blindness to inductance",
+      "detail": "A3 is meant to show that recovering W* needs inductance information. In the probe, on 2D_Case_4 with the proxy as target, both inductance-blind nulls stopped at the 60-step cap. Compaction hit the cap on 5 of 5 draws and widening on 3 of 5. The two nulls returned identical s on 3 of 5 draws (die rows free) and on 5 of 5 draws (die rows fixed), so on Case 4 compaction behaves as widening. The degradation moved D_j 44-65 mm (Manhattan) from W*, but 60 steps of 0.5 mm cover at most 30 mm. The probe also found that 33 % of Case 4's 37 % L1 gain is copper. That is the kind of headroom blind compaction recovered completely on 2R with die rows fixed, where it converged within 44-60 steps. So the 12-21 % null failures on Case 4 are plausibly a budget artefact. The draft gives the nulls the 'same budget' without saying in what unit (steps, L1 evaluations or L2 solves). Because A3 is a minimum over layouts, a PASS still needs 2R. On 2R the nulls converged (41-59 steps) and failed by 3-9 % at L1, so the verdict is not carried by Case 4 alone. But the claim that blind heuristics are beaten on every layout may hold on Case 4 only under the budget.",
+      "evidence": "research/o008_probe/probe_Case4_proxy.json: compaction steps 60/60/60/60/60, widening steps 60/59/60/58/60; s for compaction vs widening 0.1401/0.1401, 0.1751/0.1851, 0.1525/0.1525, 0.1874/0.2098, 0.1807/0.1807. probe_Case4_proxy_diesfixed.json: compaction and widening identical on all 5 draws, all at the cap. Degradation Manhattan distance 44.5-64.5 mm. probe_2R_proxy.json: compaction steps 59/48/48/51/41.",
+      "suggested_check": "Run gating nulls (b) and (d), which need no inductance model, to their own local optimum instead of a shared step cap. Report cap hits, and treat a null that stopped at its cap as not resolvably beaten.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The target, the degradation and the search share one L1 landscape and one move set, so the control certifies only recovery within an L1 basin",
+      "detail": "W* is a local optimum of steepest single-parameter L1 descent with 0.5 mm moves. D_j is reached by an L1 ascent from W*. The search screens with L1 over the same parameters. The planted headroom is therefore visible to L1 by construction. A1 and A3 would be met by ablation (e), L1 descent alone with no L2 shortlist: the probe's 'guided' descent is that ablation, and it passed 2R on 5 of 5 draws. A PASS therefore cannot credit the L2 shortlist, and the control cannot detect F4 (C002's misranking of pairs under 5 % apart), because no headroom invisible to L1 is planted. W* is called 'near-optimal', but it is only the bottom of its own basin: 37 % below the twin on Case 4 at L1. The draft states this limit in decision_if_pass and F3. Within that limit, the claim that a PASS refutes the null clause 'cannot support headroom claims at O009's 10 % and 20 % lines' holds only for headroom an L1 descent can reach.",
+      "evidence": "research/o008_probe/probe.py: descend() is used for both the proxy and the guided search; ascent() accepts a move only if L1 rises. probe_2R_proxy.json: guided s = -0.0041, -0.0368, +0.0069, +0.0077, +0.0069, all without hitting the cap.",
+      "suggested_check": "Report ablation (e)'s A1 and A3 values beside the search's in the verdict, and state in O009 that a negative headroom finding covers only L1-reachable headroom.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "On 2R, the control discriminates only through die-row moves, whose temperature effect is reported but never gated",
+      "detail": "With die rows fixed, blind compaction recovered 2R's proxy on 5 of 5 draws (s at most 1.48 %). The draft therefore keeps die rows free, and on 2R A3 then rests entirely on die-row moves found by L1 descent. Those moves change Tj. O008 only reports Tj. O009 bounds Tj at +2 K (A-T3) and is to use the proxy rule unchanged. If W*'s die moves are thermally inadmissible, an O008 PASS would certify a capability O009 cannot use. On copper alone, the probe found the search no better than blind compaction on 2R.",
+      "evidence": "probe_2R_proxy_diesfixed.json: compaction s = +0.0036, +0.0138, -0.0000, +0.0148, +0.0054. probe_2R_proxy.json (die rows free): compaction s = +0.0307 to +0.0884.",
+      "suggested_check": "Before freezing, decide what happens when Tj(W*) - Tj(W) exceeds 2 K at the coarse thermal level (for example, fall back to the die-fixed proxy or exclude the layout), so that O009 does not inherit a proxy it cannot use.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A1's point threshold of 2 % is the same size as the allowed band, so draws near the line are decided by discretisation",
+      "detail": "A1 decides on a point s_j <= 0.02, while the frozen band bound allows b_j up to 0.02 (median up to 0.01). In the probe, the Case 4 guided shortfalls sit around the line: 2 of 5 pass, and 3 of 5 are within 0.013 (E010's band) of 0.02. An outcome on Case 4 could then be decided by discretisation error. A false PASS is not harmful downstream: the true shortfall would still be well under K1's 5 % and O009's 10 % line. The main cost is power, meaning wasted redesigns. Separately, every draw on a layout is divided by the same single L_sub(W*) solve, so its error moves all 8 s_j together. The stated operating characteristic, which assumes independent draws, therefore overstates how sharply A1 separates.",
+      "evidence": "probe_Case4_proxy.json guided s: 0.0122, 0.0226, 0.0336, 0.0356, 0.0184. D0023: w_ctrl = 0.013 in E010.",
+      "suggested_check": "Report the A1 count with the band applied conservatively (s_j + b_j <= 0.02) beside the point count. Include the common-mode error of L_sub(W*) in the operating characteristic.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "No operating characteristic is stated for A3, and on 2R it is near its resolution limit",
+      "detail": "Only A1's operating characteristic is stated. On 2R, A3 needs at least 4 of 8 draws where the null fails with s_null - b_null > 0.02. The probe's L1 compaction shortfalls of 3.1-8.8 % may shrink at L2: D0018 reports an L1 ratio of 1.421 against an L2 ratio of 1.325. Scaling the shortfalls by that 0.77 and taking b = 0.02 leaves 3 of 5 draws as resolved failures; with b = 0.013, 4 of 5. P(PASS) for a truly good search is therefore below A1's quoted figures. The registration check on development draws partly covers this.",
+      "evidence": "Recomputed from probe_2R_proxy.json: resolved null failures 5/5 (b=0.01, no L2 scaling), 4/5 (b=0.013), 3/5 (b=0.02, L2 scaling 0.77); paired wins 5/5 in every case.",
+      "suggested_check": "State P(A1 and A3 and not K1) from the development draws' s_j and b_j at L2 in E011's spec.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 is guaranteed true by the build's own tests, so it adds nothing at evaluation",
+      "detail": "The build task's definition of done includes a test that each development twin lies in the new domain, and in_domain is written by the code under test. Showing the predicate false for 2R under E010's code proves it is not always true. It does not stop the new domain being fitted to the two twins. The real reach evidence is F2's fingerprint reproduction, and A1 needs reach implicitly. This cannot cause a false PASS, but A2 should not be read as evidence of reach on fresh references.",
+      "evidence": "objective.yaml notes, build work item (1); A2 description.",
+      "suggested_check": "Count A2 as a sanity gate and test reach per reference in O009.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The sealed run re-randomises only D_j and the search seeds on two layouts already used to shape the design",
+      "detail": "W* comes from a deterministic, frozen descent, so it and its landscape are already known from the probe. The die-rows-free choice, A3's 4 of 8 and the budget were chosen after probing these same two counted layouts, and registration requires A3 met on their development draws. A PASS is therefore a replication over the degradation's randomness on known landscapes. That matches the declared scope in decision_if_pass; it is not evidence about fresh references.",
+      "evidence": "research/notes/o008-control-probe.md; objective notes (four revisions on 2026-11-15); F1 detection (registration check).",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed A1's operating characteristic, P(at least 7 of 8) per layout and squared for two layouts, at p = 0.95/0.90/0.85/0.70/0.50: 0.943/0.813/0.657/0.255/0.035 and 0.889/0.661/0.432/0.065/0.001. These match the draft. One-sided 95 % Clopper-Pearson lower bounds: 0.829 for 16/16, 0.736 for 15/16 and 0.656 for 14/16.",
+    "Re-read all six probe JSON files. Every number the draft quotes is confirmed: blind nulls fail by 3-24 % with die rows free; compaction medians are 5.95 % (2R) and 17.5 % (Case 4); with die rows fixed, compaction recovers 2R on 5 of 5 draws (at most 1.48 %); guided within 2 % on 2R 5/5 and Case 4 2/5; L1(W*)/L1(W) = 0.898 and 0.628.",
+    "Found in the probe data that the Case 4 nulls stop at the 60-step cap: compaction on 5/5 draws and widening on 3/5. Compaction and widening return identical s on 3/5 draws (die rows free) and 5/5 (die rows fixed). The degradation's Manhattan distance of 44-65 mm exceeds the 30 mm that 60 steps can cover.",
+    "Checked how well A3 resolves on 2R with the probe's compaction and guided shortfalls, for b in {0.01, 0.013, 0.02}, with and without D0018's L1-to-L2 ratio scaling of 0.77: 3-5 of 5 draws are resolved null failures, and 5 of 5 are paired wins.",
+    "Checked how well A1 resolves at the 2 % line: 3 of 5 Case 4 guided draws, and 1 of 5 on 2R, lie within 0.013 of 0.02.",
+    "Checked the logic of the verdict. A K1 firing (median above 0.05) implies at least 4 draws above 0.05, so A1 cannot also be met. A3's paired 7-of-8 condition allows at most one tie with a null that recovers W*. Null (a) fails A1 by construction, since R_D >= 1.25.",
+    "Read twin.py's walk constants (36 walk parameters, 0.5 mm steps) and probe.py's descent and ascent to confirm that the proxy, the degradation and the searches use the same move set and the same L1."
+  ],
+  "caveats": [
+    "A PASS shows only that, on 2D_Case_2R and 2D_Case_4, an L1-guided search seeded at a degraded copy D_j gets back to the level of an L1 local optimum (W*) that the same move set reaches from the twin. It says nothing about headroom L1 cannot see, about the value of the L2 shortlist, or about fresh references.",
+    "On Case 4, A3's 'beaten' may reflect the nulls' step budget rather than their blindness to inductance, unless the gating nulls run to convergence. The evidence that the control discriminates rests on 2R.",
+    "On 2R, the control discriminates only through die-row moves. Their Tj cost is reported but not gated, while O009 bounds Tj at +2 K and is to use the proxy rule unchanged.",
+    "A1's 2 % line is decided on point values, with a band that may reach 2 % itself. The 'within 2 %' claim is resolved only to about plus or minus b_j.",
+    "The stated operating characteristic covers A1 alone and assumes independent draws. The probability that the full verdict passes (A1 and A3 and not K1) is not characterised.",
+    "The kill criterion K1 can fire: a search no better than blind compaction gives a Case 4 median of about 17.5 % at L1. On 2R alone, compaction's median of 5.95 % at L1, about 4.6 % if scaled by D0018's single L1/L2 example, might not fire it. With either layout excluded, F6 makes the run INVALID anyway.",
+    "If a blind null matches the search while A1 is met, the outcome is INCONCLUSIVE and the response changes the test, not the search. That outcome can never cause a FAIL, though max_evaluations 2 caps it."
+  ]
+}
