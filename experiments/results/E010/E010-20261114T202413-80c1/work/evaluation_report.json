@@ -1,0 +1,1178 @@
+{
+ "label": [
+  "public benchmarks, low power, indicative"
+ ],
+ "f3_declared_deviation": {
+  "decision": "D0019 item 2 (founder session 2026-11-12)",
+  "statement": "DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before E008's freeze (T0263 twin check, T0314 diagnosis), and E008's runner and spec changed afterwards (T0316, T0317); no inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018 decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged since T0300 except src/moduleforge/generate/derivative.py. DECLARED F3 DEVIATION (D0021, E010): the generator sampler was changed after 2D_Case_2R was loaded (T0338: a slot stack may straddle split free windows); before E010's registration 2R and 2D_Case_6 were used only for generator/DRC feasibility (no L1, l2_layout, EM, thermal, FV, degrade() or search; no solve value of run E008-20261114T095904-2c22 read); E010 reuses no E008 run data",
+  "wording": "T0322 (review T0321 finding 0): the statement and rules_changed were made exact; before, they said no power-copper rule changed, while the power-width floor of the yardstick D (D0018 decision 1, T0316) did. The same statement is carried verbatim by every row, the evaluation report, the notes and research/notes/e008-design.md (selftest: full_orchestration)",
+  "loaded_before_freeze": [
+   {
+    "task": "T0263",
+    "commit": "6e96ca9b",
+    "date": "2026-11-11 01:01:50 -0800",
+    "what": "reconstructions, snapping, measure_rules, twin-space check (L0, L1 inside twin only): 2R TwinError signal_wire_length, Case 6 TwinError no (orientation, sequence)"
+   },
+   {
+    "task": "T0314",
+    "commit": "e9c7fa90",
+    "date": "2026-11-11 10:26:59 -0800",
+    "what": "twin and degradation coverage at L0/L1 on 2R, Case 6 and Case 4 (which rule binds; 2R under R1: twin exact, L1(W)/L1(ref) 1.0000, L1(D)/L1(W) 1.395)"
+   }
+  ],
+  "changed_after": [
+   {
+    "task": "T0316",
+    "commit": "79363620",
+    "date": "2026-11-11 20:39:45 -0800",
+    "what": "D0018 decisions 1-2 (D as a yardstick under the 1.5 mm power-width floor; exclusion when no valid D exists), found on the dev layout 2D_Case_4"
+   },
+   {
+    "task": "T0317",
+    "commit": "8cebdb56",
+    "date": "2026-11-12 07:24:06 -0800",
+    "what": "D0018 fix-list item 1 (min_signal_wire_length dropped from E008's rules), prompted by 2R; solver failures in D's band solves -> INVALID (T0318 finding 0)"
+   },
+   {
+    "task": "T0320",
+    "commit": "this task",
+    "date": "2026-11-12",
+    "what": "judged-reference loader, T0319 guard, registered path of full(), --check-references, real sizes in --plan; no rule, gate, tolerance, generator, twin, degradation or search change"
+   },
+   {
+    "task": "T0322",
+    "commit": "this task",
+    "date": "2026-11-12",
+    "what": "review T0321 findings 0 and 2 (exact deviation wording; freeze checks before any reference is loaded, also in --check-references), F6(e) report-only for a type whose only reference is excluded (founder decision), phase A stop and phase B resume for burst_full.sh; no rule, gate, tolerance, generator, twin, degradation or search change"
+   },
+   {
+    "task": "T0324",
+    "commit": "this task",
+    "date": "2026-11-13",
+    "what": "row labels by role (twin = reconstruction), --replay-only, F6(e) mixed-type report (review T0323 finding 1), burst_full.sh resume read, rules_changed names D0018 decision 2 and the INVALID rule; no rule, gate, tolerance, generator, twin, degradation or search change"
+   },
+   {
+    "task": "T0330",
+    "commit": "this task",
+    "date": "2026-11-13",
+    "what": "D0020: reported-only die-average Tj (result files carry tj_mean; die-row columns Tvj_l0..2_K, GCI_vj_K; evaluation report 'virtual_junction'); Driver.out_path factored out of job() unchanged (the replay found every saved result); expected outcome stated; no rule, gate, tolerance, generator, twin, degradation or search change"
+   },
+   {
+    "task": "T0332",
+    "commit": "1bbf2a8e",
+    "date": "2026-11-13",
+    "what": "reported-only band solve for the die-average best (vj_best_layouts, vj_band_step; h_lo_vj in the report only); no job key changed; no rule, gate, tolerance, generator, twin, degradation or search change (entry added by T0334)"
+   },
+   {
+    "task": "T0334",
+    "commit": "this task",
+    "date": "2026-11-13",
+    "what": "registration blockers: the gate-only dev references' rows (twin_gates_only, dev path only) are kinds gate_layout and gate_die, which the metric skips; the reported-only thermal and die-average reports read gate_die too; code_under_test names the L1 package (src/moduleforge/physics/peec/*.py) instead of the stale peec.py; no rule, gate, tolerance, generator, twin, degradation or search change"
+   },
+   {
+    "task": "T0338",
+    "commit": "242a6d7a",
+    "date": "2026-11-14",
+    "what": "D0021 item 2(a): generator sampler across split free windows (src/moduleforge/generate/derivative.py)"
+   },
+   {
+    "task": "T0339",
+    "commit": "this task",
+    "date": "2026-11-14",
+    "what": "E010 design: D0021 item 2(b) SearchInfeasible exclusion, new freeze hashes, --check-references draw-rate check (item 4), dev rows replayed"
+   }
+  ],
+  "src_unchanged_since": {
+   "task": "T0300",
+   "commit": "096b127b",
+   "git_date": "2026-11-10 11:31:43 -0800 (19:31 UTC; D0019 as restated in the T0320 packet says 11:31 UTC, git records 11:31 local time, -0800)"
+  },
+  "known_before_freeze": [
+   "L0: reconstruction geometry, fingerprints, snap records, measured rules, DRC under own rules, mesh-only unknown / DOF counts, stack types",
+   "L1 (physics.peec inside twin()/degrade()): 2R L1(W)/L1(ref) and L1(D)/L1(W) under R1 (T0314)",
+   "twin outcomes: 2R TwinError under raw measure_rules, twin under R1; Case 6 TwinError under every variant"
+  ],
+  "not_known_before_freeze": [
+   "any l2_layout L_sub or band solve",
+   "any thermal solve (scikit-fem or finite volume), P_ref",
+   "any search, screen or candidate",
+   "D of 2R under the D0018 floor",
+   "twin gates"
+  ],
+  "rules_changed": "no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed (D0019 item 2); the power-width floor of the yardstick D did (D0018 decision 1, T0316: D is built under min(reference minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R's own 4.0 mm); a reference whose D misses F1(b) (DegradeError, or L_sub(D)/L_sub(W) below 1.25 at the conservative end of its band) is excluded instead of failing the run (D0018 decision 2, T0316); a non-finite or non-converged band solve of D or W makes the run INVALID (T0317, review T0318 finding 0); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (min_signal_wire_length, D0018 item 1, T0317); O003 scope_in's enumerated rules are the complete meaning of 'at least as strict as the reference's own' (D0019 item 5)",
+  "carried_by": "deviation_tag(cfg) -> every row (column f3_declared_deviation, the full statement since T0322), the evaluation report (f3_declared_deviation and deviation_statement), the result notes; quoted verbatim in research/notes/e008-design.md section 11",
+  "d0021": {
+   "decision": "D0021 items 2-4 and 7 (founder session 2026-11-14); successor id E010 by D0022 (D0021's text says E009)",
+   "changes": [
+    "(a) generator sampler: a slot stack may be placed across more than one free window where no single window holds the minimal stack (_Ctx.split; T0338, merged 242a6d7a)",
+    "(b) D0021 item 2(b): a reference whose main or control screen cannot draw a DRC-valid candidate (derivative.generate raises 'no DRC-valid candidate in 20000 consecutive draws') is excluded and reported (reason SearchInfeasible, stage screen) like a TwinError: no driver, no rows, no spot check; E010 is INVALID only if no reference remains. Any other failed solve or screen still stops the run (e010_run.SearchInfeasible, Run.search_infeasible; selftest search_infeasible_failures)",
+    "(c) new freeze hashes (config.freeze.files: derivative.py changed, the others equal)"
+   ],
+   "unchanged": "O003's thresholds and comparators, gated criteria and parameters, metrics and recompute entries, null baselines, stop rules, F3 order, budgets, bands, D0019's reference set, D0020's Tj rule and readings, twin.py (twin and degradation), the search driver, the cost-model rates, the sealed-seed policy (a new mint gives E010 its own seeds); 2D_Case_6 is still expected to be excluded (TwinError)",
+   "loaded_before_freeze": [
+    {
+     "task": "D0021 diagnosis",
+     "date": "2026-11-14",
+     "what": "founder session: generator/DRC only on 2R, 0 DRC-clean in 312 000 draws under E008's sampler"
+    },
+    {
+     "task": "T0338 / T0341 / T0339",
+     "date": "2026-11-14",
+     "what": "generator/DRC feasibility on 2R (sampling, build, drc.check, twin() geometry fit with_l1=False, spec_from_layout); --check-references' draw-rate check on 2R and 2D_Case_6"
+    }
+   ],
+   "dev_streams": "D0021 item 3: the sealed gen2_0 main and control streams of the E008 dev run (2 x 20 000 candidates) are byte-identical under the new sampler (T0338, T0341, T0339 DoD), so E008's development rows carry over (experiments/drafts/E010.dev_rows.json, rebuilt by --replay-only, no solve)",
+   "support_on_2R": "REVIEW T0341 FINDING (a statement of the support, not a metric, check or criterion): on 2D_Case_2R every DRC-clean candidate has the twin's discrete configuration (orientation 0, sequence 0/1/0; orientation 1 yields none), so E010's 2R search varies geometry only inside the reference's own topology, while on gen2_0 about a quarter of candidates share the twin's topology. The cross-window support applies only to orientations where _Ctx.split is True (2R: {0: True, 1: False}). measured (research/o003/e010_dev/feasibility_2r.py, unsealed seeds, 300,000 draws per seed): 2R orientation mix of DRC-clean draws {'0': 2026}, (orient, hs_first, hs_die_first, ls_die_first) mix {'(0, 0, 1, 0)': 2026}, topology mix {'x/DC-l-PHASEd-DC+d-PHASEl/split': 2026}; gen2_0 (dev): 56 of 200 DRC-clean candidates share the twin's topology"
+  }
+ },
+ "metrics": {
+  "headroom_min_lo": 0.0,
+  "headroom_min_lo_Lterm0": 0.0,
+  "headroom_min_lo_Lterm17p5": 0.0,
+  "headroom_min_lo_recon": 0.0,
+  "headroom_max_hi_ind": 0.0,
+  "headroom_max_hi_ind_Lterm0": 0.0,
+  "headroom_max_hi_ind_Lterm17p5": 0.0,
+  "headroom_max_hi_ind_recon": 0.0,
+  "null_twin_as_best_h_lo": 0.0,
+  "l1_only_null_h_lo": -0.0,
+  "stack_type_a3": 0.8921723785368131,
+  "n_counted_references": 1.0,
+  "n_excluded_references": 1.0
+ },
+ "checks": [
+  {
+   "name": "recompute_agrees",
+   "passed": true,
+   "value": null,
+   "threshold": null,
+   "detail": "mfos.metrics vs research/o003/headroom_metrics.py, rel 1e-9"
+  },
+  {
+   "name": "F1b_D_definition:2D_Case_2R",
+   "passed": true,
+   "value": 1.2521738062895018,
+   "threshold": 1.25,
+   "detail": "R_D=1.28249 e_R(D,W)=0.01182 band failures [] walk=null"
+  },
+  {
+   "name": "F1b_control:2D_Case_2R",
+   "passed": false,
+   "value": 0.16139121104027043,
+   "threshold": 0.20685187746482248,
+   "detail": "h_plant=0.22027 h_ctrl=0.16139 w_ctrl=0.01341"
+  },
+  {
+   "name": "driver_s_ref_matches_rows:2D_Case_2R",
+   "passed": true,
+   "value": 0.0,
+   "threshold": 0.0,
+   "detail": "on_grid=True"
+  },
+  {
+   "name": "F1c_band_width:2D_Case_2R",
+   "passed": true,
+   "value": 0.010150815044302597,
+   "threshold": 0.05,
+   "detail": "{\"w_ind\": 0.010150815044302597, \"w_a1\": 0.003033796235064168}"
+  },
+  {
+   "name": "F6a_own_three_grids:2D_Case_2R",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "[]"
+  },
+  {
+   "name": "F6c_energy_balance:2D_Case_2R",
+   "passed": true,
+   "value": 2.1673773886732306e-12,
+   "threshold": 1e-06,
+   "detail": "42 values, 3 finite-volume spot-check solves included; NaN/inf fails"
+  },
+  {
+   "name": "F6c_picard:2D_Case_2R",
+   "passed": true,
+   "value": 5.650773302079415e-05,
+   "threshold": 0.0001,
+   "detail": "42 values, 3 finite-volume spot-check solves included; NaN/inf fails"
+  },
+  {
+   "name": "F6d_operating_point:2D_Case_2R",
+   "passed": true,
+   "value": 59.952148087590444,
+   "threshold": 60.0,
+   "detail": "P_ref=59.4794 W per die"
+  },
+  {
+   "name": "F6e_stack_type_spot_check:other:13fbac2ad296",
+   "passed": true,
+   "value": 0.8921723785368131,
+   "threshold": 1.0,
+   "detail": "reference 2D_Case_2R"
+  },
+  {
+   "name": "F6e_stack_type_spot_check",
+   "passed": true,
+   "value": 0.8921723785368131,
+   "threshold": 1.0,
+   "detail": "{\"checked\": {\"other:13fbac2ad296\": [\"2D_Case_2R\", 0.8921723785368131]}, \"no_admissible_reference\": [], \"only_reference_excluded\": {\"other:d34d9682c1b0\": \"only reference excluded: TwinError\"}}"
+  },
+  {
+   "name": "fail_fast_twin_and_D",
+   "passed": true,
+   "value": 1,
+   "threshold": null,
+   "detail": "{\"2D_Case_6\": [\"TwinError\", \"prepare\", \"no (orientation, sequence) of the generator space matches the reference geometry\"]}"
+  },
+  {
+   "name": "F1b_D_definition",
+   "passed": true,
+   "value": 1,
+   "threshold": null,
+   "detail": "1 counted-path references checked; excluded for D's definition: []"
+  },
+  {
+   "name": "at_least_one_counted_reference",
+   "passed": true,
+   "value": 1,
+   "threshold": 1,
+   "detail": "excluded: ['2D_Case_6']"
+  }
+ ],
+ "declared": [
+  {
+   "name": "freeze_hashes",
+   "passed": true,
+   "value": 8,
+   "threshold": null,
+   "detail": "{\"freeze:src/moduleforge/generate/derivative.py\": true, \"freeze:src/moduleforge/generate/twin.py\": true, \"freeze:src/moduleforge/optimize/search.py\": true, \"freeze:src/moduleforge/geometry/snap.py\": true, \"freeze:src/moduleforge/drc/rules.py\": true, \"freeze:src/moduleforge/geometry/stack.py\": true, \"freeze:research/scripts/o003_powersynth_references.py\": true, \"degrade_power_width_floor\": true}"
+  },
+  {
+   "name": "grid_rule_frozen",
+   "passed": true,
+   "value": null,
+   "threshold": null,
+   "detail": "['0226b7709e2554013008a05f05d952bf646711edc0eb5967498864417a120e9a', 'equal']"
+  },
+  {
+   "name": "thermal_fem_sha256",
+   "passed": true,
+   "value": null,
+   "threshold": null,
+   "detail": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753"
+  },
+  {
+   "name": "metric_params_exact",
+   "passed": true,
+   "value": null,
+   "threshold": null,
+   "detail": "{\"floor\": 0.001, \"tj_limit_K\": 2.0}"
+  },
+  {
+   "name": "F1b_control",
+   "passed": false,
+   "value": 1,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": false}"
+  },
+  {
+   "name": "F1c_band_width",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "F6a_own_three_grids",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "F6c_energy_balance",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "F6c_picard",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "F6d_operating_point",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "driver_s_ref_matches_rows",
+   "passed": true,
+   "value": 0,
+   "threshold": 0,
+   "detail": "{\"2D_Case_2R\": true}"
+  },
+  {
+   "name": "F1a1_F1a2_twin_gates",
+   "passed": true,
+   "value": 0,
+   "threshold": null,
+   "detail": "per reference (a failed gate excludes it, F1(a), not INVALID): {\"2D_Case_2R\": {\"gate_a1\": true, \"gate_a2\": true, \"counted\": true}}"
+  },
+  {
+   "name": "fail_fast_twin_and_D",
+   "passed": true,
+   "value": 1,
+   "threshold": null,
+   "detail": "{\"2D_Case_6\": [\"TwinError\", \"prepare\", \"no (orientation, sequence) of the generator space matches the reference geometry\"]}"
+  },
+  {
+   "name": "F1b_D_definition",
+   "passed": true,
+   "value": 1,
+   "threshold": null,
+   "detail": "1 counted-path references checked; excluded for D's definition: []"
+  },
+  {
+   "name": "at_least_one_counted_reference",
+   "passed": true,
+   "value": 1,
+   "threshold": 1,
+   "detail": "excluded: ['2D_Case_6']"
+  },
+  {
+   "name": "F6e_stack_type_spot_check",
+   "passed": true,
+   "value": 0.8921723785368131,
+   "threshold": 1.0,
+   "detail": "{\"checked\": {\"other:13fbac2ad296\": [\"2D_Case_2R\", 0.8921723785368131]}, \"no_admissible_reference\": [], \"only_reference_excluded\": {\"other:d34d9682c1b0\": \"only reference excluded: TwinError\"}}"
+  },
+  {
+   "name": "recompute_agrees",
+   "passed": true,
+   "value": null,
+   "threshold": null,
+   "detail": "mfos.metrics vs research/o003/headroom_metrics.py, rel 1e-9"
+  }
+ ],
+ "report": {
+  "2D_Case_2R": {
+   "record": {
+    "reference_id": "2D_Case_2R",
+    "admissible": true,
+    "counted": true,
+    "s_ref": 0.0,
+    "gate_a1": true,
+    "gate_a2": true,
+    "L_sub_twin_H": 1.3892347688319653e-08,
+    "L_sub_recon_H": 1.389234768832008e-08,
+    "tj_twin": [
+     398.2322604496081,
+     0.2048171894955326,
+     398.27838457525684,
+     398.1861363239593,
+     0
+    ],
+    "tj_recon": [
+     398.2322604496081,
+     0.2048171894955326,
+     398.27838457525684,
+     398.1861363239593,
+     0
+    ],
+    "comparator": "twin",
+    "L_term_H": 7e-09,
+    "a": 0.6649490950261415,
+    "best_id": null,
+    "r": 1.0,
+    "e_R": 0.0,
+    "w": 0.0,
+    "h_lo": 0.0,
+    "f3_complete": true,
+    "n_thermal_checked": 4,
+    "n_tj_rejected": 2,
+    "checked_ids": [
+     "c000204",
+     "c015195",
+     "c005595",
+     "c017372"
+    ],
+    "n_tj_inf": 2,
+    "opt_id": null,
+    "h_opt_hi": 0.0,
+    "ind_id": "c000204",
+    "w_levelling": 0.010150815044302597,
+    "levelled": true,
+    "w_ind": 0.0,
+    "r_ind": 1.0,
+    "h_hi": 0.0
+   },
+   "levelling": {
+    "n_candidates": 20000,
+    "l1_min_first": 1.1510765521141627e-08,
+    "l1_min_all": 1.1510765521141627e-08,
+    "n_first": 5000,
+    "l1_pool_median": 1.5587510126720374e-08,
+    "l1_twin": 1.1169850323452718e-08,
+    "l1_pool_median_headroom": -0.3954985676031968,
+    "w_ind": 0.010150815044302597,
+    "w_ind_recon": 0.010150815044422501,
+    "levelled": true
+   },
+   "h_plant": 0.22026538484413138,
+   "h_ctrl": 0.16139121104027043,
+   "w_ctrl": 0.013413507379308909,
+   "R_D": 1.282487631769561,
+   "e_R_D": 0.011818369522298058,
+   "near_ties": 1,
+   "null_new_checks": 6,
+   "l1_only_null_best": "0d6ac9d0b122eb1c06828a00daec6317f0d73f9aff235f0eeba266803ea5ce4a",
+   "l1_only_null_h_lo": -0.0,
+   "l1_only_null_w_source": "twin rule",
+   "info": {
+    "measured_rules": {
+     "gap_dcp_phase": 0.0020000000000000018,
+     "gap_phase_dcm": 0.0019999999999999983,
+     "gap_dcp_dcm": 0.023999999999999994,
+     "gap_signal_dcp": 0.001999999999999995,
+     "gap_signal_phase": 0.0020000000000000018,
+     "gap_signal_dcm": 0.018,
+     "gap_signal_source": 0.003999999999999997,
+     "gap_signal_hs_ls": 0.0019999999999999983,
+     "gap_other_min": null,
+     "signal_wire_diameter_range": [
+      0.0003,
+      0.0003
+     ],
+     "n_nonpositive_signal_wire_diameters": 0,
+     "signal_wire_length_range": [
+      0.005343747255265294,
+      0.010395982008944099
+     ],
+     "min_width_power": 0.0039996899414062505,
+     "min_width_other": 0.00399904638671875,
+     "min_wire_pitch": 0.0007485089385217067,
+     "min_wire_pitch_diameters": 2.4950297950723557,
+     "die_spacing": 0.0040000000000000036,
+     "die_edge_margin": 0.0009999999999999937,
+     "edge_margin": 0.0019999999999999996,
+     "longest_gate_wire": 0.010395982008944099,
+     "longest_kelvin_wire": null,
+     "max_gate_pad_to_copper": 0.008,
+     "max_kelvin_pad_to_copper": null,
+     "signal_unmeasured": {},
+     "n_traces": 5,
+     "n_dies": 4,
+     "n_wires": 4,
+     "n_signal_wires": 4
+    },
+    "rules_record": {
+     "function": "e008_run.e008_rules",
+     "decision": "D0018 model-fix list item 1 (T0314 R1, T0315 finding 2)",
+     "source": "drc.rules.measure_rules",
+     "dropped": {
+      "min_signal_wire_length": null
+     },
+     "dropped_source_values_m": {
+      "min_signal_wire_length": 0.005343747
+     },
+     "measured_min_signal_wire_length_m": 0.005343747,
+     "overrides": {},
+     "kept_upper_bounds_m": {
+      "max_gate_wire_length": 0.010395983,
+      "max_kelvin_wire_length": null,
+      "max_signal_wire_length": 0.010395983
+     },
+     "fields_changed_from_source": [
+      "min_signal_wire_length"
+     ]
+    },
+    "label": "public benchmarks, low power, indicative",
+    "reference_entry": {
+     "reference_id": "2D_Case_2R",
+     "kind": "public",
+     "vault_id": null,
+     "reconstruction_sha256": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+     "sic_mosfet_half_bridge": true,
+     "separate_antiparallel_diode_dies": false,
+     "admissible": true,
+     "reason": "public reference; only MOS dies (layout script defines power_lead, signal_lead, MOS); set by D0019 item 1 (the D0010 public fallback, no customer reference was admitted)",
+     "decided_at": "2026-11-12 (founder decision D0019, founder session)",
+     "L_term_H": 7e-09,
+     "L_term_source": "config.L_term.public_H: public reference -> 7 nH (Z. Chen, PhD dissertation, Virginia Tech, 2013, Q3D of the CPES laminated DC terminals; research/notes/o003-public-benchmarks.md line 61; D0011)",
+     "on_grid_0p5mm": true,
+     "snapping_check": "not required: on the 0.5 mm grid, s_ref = 0 (O003 notes: the check applies only to a reference not on the 0.5 mm grid); T0263 snap records 0 / 0 / 0 at 0.5 / 0.25 / 0.125 mm",
+     "label": "public benchmarks, low power, indicative"
+    },
+    "f3_declared_deviation": "DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before E008's freeze (T0263 twin check, T0314 diagnosis), and E008's runner and spec changed afterwards (T0316, T0317); no inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018 decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged since T0300 except src/moduleforge/generate/derivative.py. DECLARED F3 DEVIATION (D0021, E010): the generator sampler was changed after 2D_Case_2R was loaded (T0338: a slot stack may straddle split free windows); before E010's registration 2R and 2D_Case_6 were used only for generator/DRC feasibility (no L1, l2_layout, EM, thermal, FV, degrade() or search; no solve value of run E008-20261114T095904-2c22 read); E010 reuses no E008 run data",
+    "twin_s": 0.11363706800000273,
+    "midpoint_decided_splits": [],
+    "twin_copper": {
+     "mode": "fit",
+     "per_net": {
+      "DC+": {
+       "symdiff_mm2": 0.0,
+       "fraction": 0.0
+      },
+      "DC-": {
+       "symdiff_mm2": 0.0,
+       "fraction": 0.0
+      },
+      "PHASE": {
+       "symdiff_mm2": 0.0,
+       "fraction": 0.0
+      }
+     }
+    },
+    "D_rule": {
+     "decision": "D0018",
+     "floor_m": 0.0015,
+     "reference_min_width_power_m": 0.003999689,
+     "D_min_width_power_m": 0.0015,
+     "narrowed_below_reference": true,
+     "narrowest_power_strip_m": 0.0014999389648437502,
+     "cells_across": {
+      "0.5mm": 2.9998779296875004,
+      "0.25mm": 5.999755859375001
+     },
+     "drc_clean_under_D_rules": true,
+     "rules_violated_under_reference_rules": [
+      "min_trace_width"
+     ]
+    },
+    "degrade_s": 0.7165641240000014,
+    "walk": null,
+    "gate_wires": {
+     "placeholder_min_wire_length_m": 0.0015,
+     "gated": false,
+     "reference": {
+      "n_gate_wires": 4,
+      "shortest_m": 0.005343747255265294,
+      "n_below_placeholder": 0
+     },
+     "twin": {
+      "n_gate_wires": 4,
+      "shortest_m": 0.004596822856133049,
+      "n_below_placeholder": 0
+     },
+     "D": {
+      "n_gate_wires": 4,
+      "shortest_m": 0.004596822856133049,
+      "n_below_placeholder": 0
+     },
+     "drc_clean_samples": {
+      "n_gate_wires": 36,
+      "shortest_m": 0.004596822856133049,
+      "n_below_placeholder": 0
+     },
+     "shortest_overall_m": 0.004596822856133049,
+     "any_below_placeholder": false
+    },
+    "quick_ok": {
+     "draws": 2000,
+     "drc_clean": 9,
+     "rejected_clean": 0,
+     "flag": false,
+     "rejection_rate_ub95": 0.28312883556311347
+    },
+    "rule_strictness": {
+     "gap_dcp_phase": {
+      "value_m": 0.0020000000000000018,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     },
+     "gap_phase_dcm": {
+      "value_m": 0.0019999999999999983,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     },
+     "gap_dcp_dcm": {
+      "value_m": 0.023999999999999994,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": true
+     },
+     "gap_signal_dcp": {
+      "value_m": 0.001999999999999995,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     },
+     "gap_signal_phase": {
+      "value_m": 0.0020000000000000018,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     },
+     "gap_signal_dcm": {
+      "value_m": 0.018,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": true
+     },
+     "gap_signal_source": {
+      "value_m": 0.003999999999999997,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     },
+     "gap_signal_hs_ls": {
+      "value_m": 0.0019999999999999983,
+      "smallest_dc_link_gap_m": 0.0019999999999999983,
+      "flag_2x": false
+     }
+    },
+    "D_definition": {
+     "R_D": 1.282487631769561,
+     "e_R_D": 0.011818369522298058,
+     "conservative": 1.2521738062895018,
+     "threshold": 1.25,
+     "L1_ratio": 1.3884073957712981,
+     "band_failures": []
+    }
+   },
+   "twin_mode": "fit"
+  },
+  "F6e": {
+   "other:13fbac2ad296": {
+    "reference": "2D_Case_2R",
+    "a3": 0.8921723785368131,
+    "status": "checked"
+   },
+   "other:d34d9682c1b0": {
+    "reference": null,
+    "a3": null,
+    "excluded_references": {
+     "2D_Case_6": "TwinError"
+    },
+    "status": "only reference excluded: TwinError"
+   }
+  },
+  "excluded": {
+   "2D_Case_6": {
+    "reason": "TwinError",
+    "detail": "no (orientation, sequence) of the generator space matches the reference geometry",
+    "stage": "prepare"
+   }
+  },
+  "virtual_junction": {
+   "label": "REPORTED, NOT GATED (D0020 item 2): die-average Tj ('virtual junction temperature'), NOT the registered criterion (O003's Tj is the maximum nodal value on the die top face, three-level gci_capped, D0013); it decides nothing",
+   "definition": "per die and thermal level: T_vj = (1/A) * integral over the die top face of T_h dA, the area-weighted mean of the scikit-fem solution T_h over the die's top face (the heat-source face, area A = the die footprint), as thermal_fem.solve computes ThermalResult.tj_mean: the facet load vector of the top face (FacetBasis, intorder 4) restricted to the face DOFs, divided by its sum A (checked against the footprint area to 1e-6), dotted with the nodal temperatures; the method of T0325's tj_osc.py.  Per die: GCI_vj = mfos.metrics.gci_capped(T_vj levels 0, 1, 2, floor 1e-3 K); per layout: mfos.metrics.tj_bounds on T_vj",
+   "tj_limit_K": 2.0,
+   "floor_K": 0.001,
+   "per_reference": {
+    "2D_Case_2R": {
+     "layouts": {
+      "twin": {
+       "role": "twin",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        393.29443127518294,
+        392.57364106552694,
+        392.27383799592087,
+        391.9006382749162
+       ],
+       "gci_vj_K": [
+        0.10692983593088456,
+        0.1559172195425873,
+        0.11935794099372288,
+        0.10981447852607573
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 393.40136111111383,
+       "tvj_lower_K": 393.18750143925206,
+       "self_margin_vj_K": 0.21385967186176913,
+       "mean_le_max": true
+      },
+      "reconstruction": {
+       "role": "reference",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        392.27383799592087,
+        391.9006382749162,
+        393.29443127518294,
+        392.57364106552694
+       ],
+       "gci_vj_K": [
+        0.11935794099372288,
+        0.10981447852607573,
+        0.10692983593088456,
+        0.1559172195425873
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 393.40136111111383,
+       "tvj_lower_K": 393.18750143925206,
+       "self_margin_vj_K": 0.21385967186176913,
+       "mean_le_max": true
+      },
+      "c000204": {
+       "role": "a1",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        390.1444312501525,
+        390.2959084318221,
+        390.68120512385,
+        390.45417124153926
+       ],
+       "gci_vj_K": [
+        0.10760544498552349,
+        0.11809235908188498,
+        0.10502017923563756,
+        0.11305234319578972
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 390.78622530308564,
+       "tvj_lower_K": 390.5761849446144,
+       "self_margin_vj_K": 0.2100403584712467,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -2.401276136166416,
+       "passes_vj_2K": true
+      },
+      "c015195": {
+       "role": "a1",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        392.6444298687744,
+        392.28341798306883,
+        392.6205622827306,
+        392.0955252522195
+       ],
+       "gci_vj_K": [
+        0.11347323757689765,
+        0.11571163652320138,
+        0.11161627678731634,
+        0.11310501299355735
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 392.7579031063513,
+       "tvj_lower_K": 392.5309566311975,
+       "self_margin_vj_K": 0.2269464751537953,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -0.42959833290075267,
+       "passes_vj_2K": true
+      },
+      "c005595": {
+       "role": "a1",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        391.2069340080039,
+        390.9061869171764,
+        391.7476430283082,
+        391.563403304651
+       ],
+       "gci_vj_K": [
+        0.11259778549806754,
+        0.1140170848507438,
+        0.11636160591628197,
+        0.10689831607521683
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 391.86400463422444,
+       "tvj_lower_K": 391.6312814223919,
+       "self_margin_vj_K": 0.23272321183253553,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -1.3234968050276166,
+       "passes_vj_2K": true
+      },
+      "c017372": {
+       "role": "a1",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        393.56160780825576,
+        393.46333889274507,
+        392.30658783628235,
+        391.28131287581965
+       ],
+       "gci_vj_K": [
+        0.14950419124616587,
+        0.11317230655791377,
+        0.10773124803577616,
+        0.11692009640221102
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 393.7111119995019,
+       "tvj_lower_K": 393.4121036170096,
+       "self_margin_vj_K": 0.2990083824922749,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": 0.5236105602498355,
+       "passes_vj_2K": true
+      },
+      "c018325": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        391.932374987663,
+        391.92378346832066,
+        391.00583447656663,
+        390.92400725297705
+       ],
+       "gci_vj_K": [
+        0.11049788270987904,
+        0.13097680948014556,
+        0.10828341297880684,
+        0.11935253555400038
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 392.0547602778008,
+       "tvj_lower_K": 391.82187710495316,
+       "self_margin_vj_K": 0.23288317284766435,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -1.1327411614512357,
+       "passes_vj_2K": true
+      },
+      "c018826": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        390.4136013253319,
+        390.247085192458,
+        391.05737776071146,
+        390.8580138367778
+       ],
+       "gci_vj_K": [
+        0.12145962040477798,
+        0.12138881763625875,
+        0.1207119229107434,
+        0.11180849434865081
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 391.1780896836222,
+       "tvj_lower_K": 390.9366658378007,
+       "self_margin_vj_K": 0.2414238458214868,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -2.0094117556298556,
+       "passes_vj_2K": true
+      },
+      "c017741": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        392.3814326549641,
+        392.3871079811229,
+        390.69407165259827,
+        390.33784503436226
+       ],
+       "gci_vj_K": [
+        0.11710241644948383,
+        0.11616995391904084,
+        0.10444737753552147,
+        0.1065260170356197
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 392.5032779350419,
+       "tvj_lower_K": 392.27093802720384,
+       "self_margin_vj_K": 0.23233990783808167,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -0.6842235042101379,
+       "passes_vj_2K": true
+      },
+      "c014260": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        390.77427395359916,
+        390.88561508761234,
+        391.4376552657666,
+        390.8948241166378
+       ],
+       "gci_vj_K": [
+        0.11649129075493647,
+        0.10875746769798411,
+        0.10964457515065362,
+        0.10192434408246243
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 391.5472998409172,
+       "tvj_lower_K": 391.32801069061594,
+       "self_margin_vj_K": 0.21928915030127882,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -1.6402015983348406,
+       "passes_vj_2K": true
+      },
+      "c002933": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        391.61474435372696,
+        391.50085470560714,
+        391.5826245670438,
+        391.27532012220576
+       ],
+       "gci_vj_K": [
+        0.1431806086542764,
+        0.12980723020760365,
+        0.14298689449859125,
+        0.1251858204909695
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 391.75792496238125,
+       "tvj_lower_K": 391.4715637450727,
+       "self_margin_vj_K": 0.2863612173085812,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -1.4295764768708068,
+       "passes_vj_2K": true
+      },
+      "c012484": {
+       "role": "null",
+       "die_ids": [
+        "d0",
+        "d1",
+        "d2",
+        "d3"
+       ],
+       "complete": true,
+       "tvj_l2_K": [
+        392.08234688229703,
+        392.46729442100855,
+        391.8916415211305,
+        391.4851936216752
+       ],
+       "gci_vj_K": [
+        0.11606050579963778,
+        0.11920926889573025,
+        0.11065590068753295,
+        0.11269436163843238
+       ],
+       "n_gci_vj_inf": 0,
+       "tvj_upper_K": 392.58650368990425,
+       "tvj_lower_K": 392.34808515211284,
+       "self_margin_vj_K": 0.23841853779140365,
+       "mean_le_max": true,
+       "margin_vs_twin_vj_K": -0.6009977493478118,
+       "passes_vj_2K": true
+      }
+     },
+     "die_average_best": {
+      "best_id": null,
+      "fingerprint": null,
+      "role": null,
+      "tjmax_best_id": null,
+      "inductance_best_id": "c000204",
+      "band_source": null,
+      "band_solved_for_report": false,
+      "new_solves": null,
+      "band_jobs": null,
+      "reason": null
+     },
+     "h_lo_vj": 0.0,
+     "best_id_vj": null,
+     "counted_vj": true,
+     "gate_a2_vj": true,
+     "n_tj_rejected_vj": 0
+    }
+   },
+   "min_h_lo_vj_counted": 0.0,
+   "band_step": {
+    "note": "T0332, REPORTED, NOT GATED: the die-average best is the layout A1's formula (mfos.metrics.headroom_per_reference, unchanged) picks when T_vj replaces Tj max (virtual_junction_report's row copy).  If the gated rows lack its band columns, its BAND em_jobs are submitted through its reference's main Driver and the run's Scheduler (same job keys and solver settings, so a resumed run finds them) after every gated solve is done, and their values go into the report's row copy only.  A failure, a phase stop or --replay-only leaves h_lo_vj null with a reason"
+   }
+  },
+  "label": [
+   "public benchmarks, low power, indicative"
+  ],
+  "f3_declared_deviation": {
+   "decision": "D0019 item 2 (founder session 2026-11-12)",
+   "statement": "DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before E008's freeze (T0263 twin check, T0314 diagnosis), and E008's runner and spec changed afterwards (T0316, T0317); no inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018 decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged since T0300 except src/moduleforge/generate/derivative.py. DECLARED F3 DEVIATION (D0021, E010): the generator sampler was changed after 2D_Case_2R was loaded (T0338: a slot stack may straddle split free windows); before E010's registration 2R and 2D_Case_6 were used only for generator/DRC feasibility (no L1, l2_layout, EM, thermal, FV, degrade() or search; no solve value of run E008-20261114T095904-2c22 read); E010 reuses no E008 run data",
+   "wording": "T0322 (review T0321 finding 0): the statement and rules_changed were made exact; before, they said no power-copper rule changed, while the power-width floor of the yardstick D (D0018 decision 1, T0316) did. The same statement is carried verbatim by every row, the evaluation report, the notes and research/notes/e008-design.md (selftest: full_orchestration)",
+   "loaded_before_freeze": [
+    {
+     "task": "T0263",
+     "commit": "6e96ca9b",
+     "date": "2026-11-11 01:01:50 -0800",
+     "what": "reconstructions, snapping, measure_rules, twin-space check (L0, L1 inside twin only): 2R TwinError signal_wire_length, Case 6 TwinError no (orientation, sequence)"
+    },
+    {
+     "task": "T0314",
+     "commit": "e9c7fa90",
+     "date": "2026-11-11 10:26:59 -0800",
+     "what": "twin and degradation coverage at L0/L1 on 2R, Case 6 and Case 4 (which rule binds; 2R under R1: twin exact, L1(W)/L1(ref) 1.0000, L1(D)/L1(W) 1.395)"
+    }
+   ],
+   "changed_after": [
+    {
+     "task": "T0316",
+     "commit": "79363620",
+     "date": "2026-11-11 20:39:45 -0800",
+     "what": "D0018 decisions 1-2 (D as a yardstick under the 1.5 mm power-width floor; exclusion when no valid D exists), found on the dev layout 2D_Case_4"
+    },
+    {
+     "task": "T0317",
+     "commit": "8cebdb56",
+     "date": "2026-11-12 07:24:06 -0800",
+     "what": "D0018 fix-list item 1 (min_signal_wire_length dropped from E008's rules), prompted by 2R; solver failures in D's band solves -> INVALID (T0318 finding 0)"
+    },
+    {
+     "task": "T0320",
+     "commit": "this task",
+     "date": "2026-11-12",
+     "what": "judged-reference loader, T0319 guard, registered path of full(), --check-references, real sizes in --plan; no rule, gate, tolerance, generator, twin, degradation or search change"
+    },
+    {
+     "task": "T0322",
+     "commit": "this task",
+     "date": "2026-11-12",
+     "what": "review T0321 findings 0 and 2 (exact deviation wording; freeze checks before any reference is loaded, also in --check-references), F6(e) report-only for a type whose only reference is excluded (founder decision), phase A stop and phase B resume for burst_full.sh; no rule, gate, tolerance, generator, twin, degradation or search change"
+    },
+    {
+     "task": "T0324",
+     "commit": "this task",
+     "date": "2026-11-13",
+     "what": "row labels by role (twin = reconstruction), --replay-only, F6(e) mixed-type report (review T0323 finding 1), burst_full.sh resume read, rules_changed names D0018 decision 2 and the INVALID rule; no rule, gate, tolerance, generator, twin, degradation or search change"
+    },
+    {
+     "task": "T0330",
+     "commit": "this task",
+     "date": "2026-11-13",
+     "what": "D0020: reported-only die-average Tj (result files carry tj_mean; die-row columns Tvj_l0..2_K, GCI_vj_K; evaluation report 'virtual_junction'); Driver.out_path factored out of job() unchanged (the replay found every saved result); expected outcome stated; no rule, gate, tolerance, generator, twin, degradation or search change"
+    },
+    {
+     "task": "T0332",
+     "commit": "1bbf2a8e",
+     "date": "2026-11-13",
+     "what": "reported-only band solve for the die-average best (vj_best_layouts, vj_band_step; h_lo_vj in the report only); no job key changed; no rule, gate, tolerance, generator, twin, degradation or search change (entry added by T0334)"
+    },
+    {
+     "task": "T0334",
+     "commit": "this task",
+     "date": "2026-11-13",
+     "what": "registration blockers: the gate-only dev references' rows (twin_gates_only, dev path only) are kinds gate_layout and gate_die, which the metric skips; the reported-only thermal and die-average reports read gate_die too; code_under_test names the L1 package (src/moduleforge/physics/peec/*.py) instead of the stale peec.py; no rule, gate, tolerance, generator, twin, degradation or search change"
+    },
+    {
+     "task": "T0338",
+     "commit": "242a6d7a",
+     "date": "2026-11-14",
+     "what": "D0021 item 2(a): generator sampler across split free windows (src/moduleforge/generate/derivative.py)"
+    },
+    {
+     "task": "T0339",
+     "commit": "this task",
+     "date": "2026-11-14",
+     "what": "E010 design: D0021 item 2(b) SearchInfeasible exclusion, new freeze hashes, --check-references draw-rate check (item 4), dev rows replayed"
+    }
+   ],
+   "src_unchanged_since": {
+    "task": "T0300",
+    "commit": "096b127b",
+    "git_date": "2026-11-10 11:31:43 -0800 (19:31 UTC; D0019 as restated in the T0320 packet says 11:31 UTC, git records 11:31 local time, -0800)"
+   },
+   "known_before_freeze": [
+    "L0: reconstruction geometry, fingerprints, snap records, measured rules, DRC under own rules, mesh-only unknown / DOF counts, stack types",
+    "L1 (physics.peec inside twin()/degrade()): 2R L1(W)/L1(ref) and L1(D)/L1(W) under R1 (T0314)",
+    "twin outcomes: 2R TwinError under raw measure_rules, twin under R1; Case 6 TwinError under every variant"
+   ],
+   "not_known_before_freeze": [
+    "any l2_layout L_sub or band solve",
+    "any thermal solve (scikit-fem or finite volume), P_ref",
+    "any search, screen or candidate",
+    "D of 2R under the D0018 floor",
+    "twin gates"
+   ],
+   "rules_changed": "no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed (D0019 item 2); the power-width floor of the yardstick D did (D0018 decision 1, T0316: D is built under min(reference minimum, config.degrade_power_width_floor_m = 1.5 mm), i.e. 1.5 mm for 2R where T0314 used 2R's own 4.0 mm); a reference whose D misses F1(b) (DegradeError, or L_sub(D)/L_sub(W) below 1.25 at the conservative end of its band) is excluded instead of failing the run (D0018 decision 2, T0316); a non-finite or non-converged band solve of D or W makes the run INVALID (T0317, review T0318 finding 0); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (min_signal_wire_length, D0018 item 1, T0317); O003 scope_in's enumerated rules are the complete meaning of 'at least as strict as the reference's own' (D0019 item 5)",
+   "carried_by": "deviation_tag(cfg) -> every row (column f3_declared_deviation, the full statement since T0322), the evaluation report (f3_declared_deviation and deviation_statement), the result notes; quoted verbatim in research/notes/e008-design.md section 11",
+   "d0021": {
+    "decision": "D0021 items 2-4 and 7 (founder session 2026-11-14); successor id E010 by D0022 (D0021's text says E009)",
+    "changes": [
+     "(a) generator sampler: a slot stack may be placed across more than one free window where no single window holds the minimal stack (_Ctx.split; T0338, merged 242a6d7a)",
+     "(b) D0021 item 2(b): a reference whose main or control screen cannot draw a DRC-valid candidate (derivative.generate raises 'no DRC-valid candidate in 20000 consecutive draws') is excluded and reported (reason SearchInfeasible, stage screen) like a TwinError: no driver, no rows, no spot check; E010 is INVALID only if no reference remains. Any other failed solve or screen still stops the run (e010_run.SearchInfeasible, Run.search_infeasible; selftest search_infeasible_failures)",
+     "(c) new freeze hashes (config.freeze.files: derivative.py changed, the others equal)"
+    ],
+    "unchanged": "O003's thresholds and comparators, gated criteria and parameters, metrics and recompute entries, null baselines, stop rules, F3 order, budgets, bands, D0019's reference set, D0020's Tj rule and readings, twin.py (twin and degradation), the search driver, the cost-model rates, the sealed-seed policy (a new mint gives E010 its own seeds); 2D_Case_6 is still expected to be excluded (TwinError)",
+    "loaded_before_freeze": [
+     {
+      "task": "D0021 diagnosis",
+      "date": "2026-11-14",
+      "what": "founder session: generator/DRC only on 2R, 0 DRC-clean in 312 000 draws under E008's sampler"
+     },
+     {
+      "task": "T0338 / T0341 / T0339",
+      "date": "2026-11-14",
+      "what": "generator/DRC feasibility on 2R (sampling, build, drc.check, twin() geometry fit with_l1=False, spec_from_layout); --check-references' draw-rate check on 2R and 2D_Case_6"
+     }
+    ],
+    "dev_streams": "D0021 item 3: the sealed gen2_0 main and control streams of the E008 dev run (2 x 20 000 candidates) are byte-identical under the new sampler (T0338, T0341, T0339 DoD), so E008's development rows carry over (experiments/drafts/E010.dev_rows.json, rebuilt by --replay-only, no solve)",
+    "support_on_2R": "REVIEW T0341 FINDING (a statement of the support, not a metric, check or criterion): on 2D_Case_2R every DRC-clean candidate has the twin's discrete configuration (orientation 0, sequence 0/1/0; orientation 1 yields none), so E010's 2R search varies geometry only inside the reference's own topology, while on gen2_0 about a quarter of candidates share the twin's topology. The cross-window support applies only to orientations where _Ctx.split is True (2R: {0: True, 1: False}). measured (research/o003/e010_dev/feasibility_2r.py, unsealed seeds, 300,000 draws per seed): 2R orientation mix of DRC-clean draws {'0': 2026}, (orient, hs_first, hs_die_first, ls_die_first) mix {'(0, 0, 1, 0)': 2026}, topology mix {'x/DC-l-PHASEd-DC+d-PHASEl/split': 2026}; gen2_0 (dev): 56 of 200 DRC-clean candidates share the twin's topology"
+   }
+  },
+  "deviation_statement": "DECLARED F3 DEVIATION (D0019): both judged references (2D_Case_2R, 2D_Case_6) were loaded at L0/L1 before E008's freeze (T0263 twin check, T0314 diagnosis), and E008's runner and spec changed afterwards (T0316, T0317); no inductance (l2_layout), thermal or search result of either reference existed; no design rule of the reference, the twin or the candidates on power copper, power wires or dies changed; the power-width floor of the yardstick D did (D0018 decision 1, T0316); the change prompted by 2R removed the lower bound on gate and Kelvin wire length (T0317); src/ unchanged since T0300 except src/moduleforge/generate/derivative.py. DECLARED F3 DEVIATION (D0021, E010): the generator sampler was changed after 2D_Case_2R was loaded (T0338: a slot stack may straddle split free windows); before E010's registration 2R and 2D_Case_6 were used only for generator/DRC feasibility (no L1, l2_layout, EM, thermal, FV, degrade() or search; no solve value of run E008-20261114T095904-2c22 read); E010 reuses no E008 run data",
+  "references": [
+   {
+    "reference_id": "2D_Case_2R",
+    "reconstruction_sha256": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+    "admissible": true,
+    "L_term_H": 7e-09
+   },
+   {
+    "reference_id": "2D_Case_6",
+    "reconstruction_sha256": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+    "admissible": true,
+    "L_term_H": 7e-09
+   }
+  ]
+ }
+}
