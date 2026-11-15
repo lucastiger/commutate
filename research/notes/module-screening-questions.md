@@ -1,13 +1,13 @@
 # Module screening questions (fact-only), for PREES and customer contacts
 
-Drafted by the founder session, 2026-11-15, for the founder to send (plan section 2, step 2). Source: T0314's 14
+Drafted by the founder session, 2026-11-15, as the founder's checklist for screening calls (plan section 2, step 2). It is not sent by email: the short emails, which ask for a call, are in `research/notes/outreach-drafts.md`. Source: T0314's 14
 screening questions (`research/notes/o003-twin-coverage.md`, section 4) plus the plan's five additions (substrates per
 module, die array, die rotation, separate diode dies, terminal pads per net), merged where they overlap.
 
 Leakage rule (plan section 6): we ask for facts only, never geometry, until the 12-28 freeze. Every answer used in a
 screen or a coverage table is recorded with its source and declared as a fact-only screening answer.
 
-## Part A: text to send
+## Part A: questions for the call (not for email)
 
 > We are surveying how wire-bonded SiC half-bridge power modules are built. The questions below can be answered from
 > a datasheet or a short verbal description. Please do not send drawings, layout files, photos or copper dimensions:
