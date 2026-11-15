@@ -1,0 +1,60 @@
+{
+  "id": "EV-O003-01",
+  "objective": "O003",
+  "timestamp": "2026-11-15T10:35:24+00:00",
+  "criteria_hash": "sha256:c5216a81858566b45698a03fe5770e3c7f1ddcd98151a8bb6fd0329ad55619e7",
+  "evaluator_version": "2.0.0",
+  "results_used": {
+    "E010": "E010-20261114T202413-80c1"
+  },
+  "validity_problems": [
+    "E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R",
+    "E010/E010-20261114T202413-80c1: artifacts: evaluation_report.json missing from the run directory and the artifact store"
+  ],
+  "pass_checks": [
+    {
+      "id": "A1",
+      "metric": "E010.headroom_min_lo",
+      "comparator": ">=",
+      "threshold": 0.2,
+      "value": 0.0,
+      "bound_used": 0.0,
+      "verdict": "not_satisfied",
+      "recomputed": true,
+      "runner_value": 0.0,
+      "null_value": 0.0,
+      "null_bound": 0.0
+    }
+  ],
+  "fail_checks": [
+    {
+      "id": "K1",
+      "metric": "E010.headroom_max_hi_ind",
+      "comparator": "<",
+      "threshold": 0.1,
+      "value": 0.0,
+      "bound_used": 0.0,
+      "verdict": "satisfied",
+      "recomputed": true,
+      "runner_value": 0.0,
+      "null_value": null,
+      "null_bound": null
+    }
+  ],
+  "verdict": "INVALID",
+  "explanation": "Evidence not admissible: E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R; E010/E010-20261114T202413-80c1: artifacts: evaluation_report.json missing from the run directory and the artifact store",
+  "unused_runs": {},
+  "checks": {
+    "E010": {
+      "on_main": "ok",
+      "spec_in_commit": "ok",
+      "lockfile": "ok",
+      "runner_files": "ok",
+      "code_under_test": "ok",
+      "artifacts": "evaluation_report.json missing from the run directory and the artifact store",
+      "registry": "ok",
+      "code_must_match": "ok",
+      "requires_passed": "ok"
+    }
+  }
+}

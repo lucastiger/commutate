@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-15T10:34:45+00:00 from repository state — do not edit_
+_generated 2026-11-15T10:35:28+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0202** [decision] E010 needs burst compute (~102.1 CPU-h)
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -21,7 +21,7 @@ _generated 2026-11-15T10:34:45+00:00 from repository state — do not edit_
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
-| O003 | 132 | $252.48 | 4011486 | 1954184 | 274 | 0 |
+| O003 | 134 | $252.48 | 4011486 | 1954184 | 274 | 0 |
 | O004 | 6 | $9.51 | 225161 | 160260 | 17 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
@@ -29,17 +29,12 @@ _generated 2026-11-15T10:34:45+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 43, done: 300, failed: 3, needs_founder: 1
+cancelled: 43, done: 300, failed: 4, running: 2
 
-- T0347 `needs_founder` none/experiment: Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019's public reference set (2D_Case_2R, 2D_Case_6) (attempt 0)
+- T0348 `running` scientist/investigate: Diagnose failure of T0347 (attempt 1)
+- T0349 `running` scientist/investigate: Diagnose failure of EV-O003-01 (attempt 1)
 
 ## Recent events
-- 2026-11-15T02:18:52+00:00 run_started {"run": "T0346-critic-20261114T181852-3a11", "task": "T0346", "role": "critic", "session": "221cff2a-e7fc-4312-bdf9-bbcc73c45de4"}
-- 2026-11-15T02:19:27+00:00 sleep_detected {"gap_s": 1012, "runs_extended": 1}
-- 2026-11-15T02:30:54+00:00 run_finished {"run": "T0346-critic-20261114T181852-3a11", "status": "completed", "cost": 2.679465, "subtype": "success", "report": "structured_output"}
-- 2026-11-15T02:36:36+00:00 inbox_opened {"id": "I0200", "kind": "protected_change", "subject": "T0339: merge needs founder approval"}
-- 2026-11-15T02:37:13+00:00 sleep_detected {"gap_s": 380, "runs_extended": 0}
-- 2026-11-15T04:07:17+00:00 inbox_resolved {"id": "I0200", "status": "approved", "note": "Merge T0339 (E010 design: E008 + repaired sampler + SearchInfeasible exclusion + new freeze hashes, per D0021/D00
 - 2026-11-15T04:07:40+00:00 merged {"task": "T0339"}
 - 2026-11-15T04:07:40+00:00 inbox_opened {"id": "I0201", "kind": "experiment_registration", "subject": "register E010 (pre-registration)"}
 - 2026-11-15T04:15:42+00:00 objective_approved {"objective": "O003", "criteria_hash": "sha256:c5216a81858566b45698a03fe5770e3c7f1ddcd98151a8bb6fd0329ad55619e7"}
@@ -49,3 +44,9 @@ cancelled: 43, done: 300, failed: 3, needs_founder: 1
 - 2026-11-15T04:17:16+00:00 inbox_opened {"id": "I0202", "kind": "decision", "subject": "E010 needs burst compute (~102.1 CPU-h)"}
 - 2026-11-15T04:17:16+00:00 burst_requested {"task": "T0347", "experiment": "E010", "cpu_hours": 102.1}
 - 2026-11-15T04:24:13+00:00 experiment_minted {"id": "E010", "run": "E010-20261114T202413-80c1"}
+- 2026-11-15T10:35:22+00:00 task_failed_attempt {"task": "T0347", "signal": "sanity_failed", "action": "fix_experiment"}
+- 2026-11-15T10:35:22+00:00 investigation_spawned {"task": "T0348", "about": "T0347", "cls": "experimental"}
+- 2026-11-15T10:35:24+00:00 evaluation_invalid {"objective": "O003", "problems": ["E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R", "E010/E010-20261114T202413-80c1:
+- 2026-11-15T10:35:24+00:00 investigation_spawned {"task": "T0349", "about": "EV-O003-01", "cls": "experimental"}
+- 2026-11-15T10:35:27+00:00 run_started {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "role": "scientist", "session": "dbd44023-b7c0-4b0e-a8b3-6e16ee41c982"}
+- 2026-11-15T10:35:28+00:00 run_started {"run": "T0349-scientist-20261115T023528-c5fc", "task": "T0349", "role": "scientist", "session": "4f720fe6-06db-4a31-a50a-f085b5679a00"}

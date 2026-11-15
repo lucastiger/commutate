@@ -1,0 +1,44 @@
+id: T0348
+objective: O003
+title: Diagnose failure of T0347
+type: investigate
+agent: scientist
+status: running
+depends_on: []
+description: "Task T0347 ('Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019's public\
+  \ reference set (2D_Case_2R, 2D_Case_6)') failed with preliminary class `experimental`: sanity checks\
+  \ failed in E010-20261114T202413-80c1.\nFailure output (tail):\n```\n[\n {\n  \"name\": \"F1b_control\"\
+  ,\n  \"passed\": false,\n  \"value\": 1.0,\n  \"threshold\": 0.0,\n  \"detail\": \"{\\\"2D_Case_2R\\\
+  \": false}\"\n },\n {\n  \"name\": \"F1b_control:2D_Case_2R\",\n  \"passed\": false,\n  \"value\": 0.16139121104027043,\n\
+  \  \"threshold\": 0.20685187746482248,\n  \"detail\": \"h_plant=0.22027 h_ctrl=0.16139 w_ctrl=0.01341\"\
+  \n }\n]\n```\nDetermine the true failure class and root cause. Follow skill mf-diagnosis: list at least\
+  \ two alternative explanations, design a discriminating test, run it if cheap, and write your notes\
+  \ to research/diagnoses/T0348.md."
+context_files:
+- project/tasks/T0347.yaml
+deliverables:
+- research/diagnoses/T0348.md
+touches:
+- research/diagnoses/T0348.md
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0348-diagnose-failure-of-t0347
+pr: null
+runs:
+- T0348-scientist-20261115T023527-8a7a
+created_by: orchestrator
+created_at: '2026-11-15T10:35:22+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

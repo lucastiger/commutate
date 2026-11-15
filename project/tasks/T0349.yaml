@@ -1,0 +1,51 @@
+id: T0349
+objective: O003
+title: Diagnose failure of EV-O003-01
+type: investigate
+agent: scientist
+status: running
+depends_on: []
+description: 'Task EV-O003-01 (''evaluation EV-O003-01'') failed with preliminary class `experimental`:
+  evidence inadmissible.
+
+  Failure output (tail):
+
+  ```
+
+  E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R
+
+  E010/E010-20261114T202413-80c1: artifacts: evaluation_report.json missing from the run directory and
+  the artifact store
+
+  ```
+
+  Determine the true failure class and root cause. Follow skill mf-diagnosis: list at least two alternative
+  explanations, design a discriminating test, run it if cheap, and write your notes to research/diagnoses/T0349.md.'
+context_files:
+- project/objectives/O003/evaluations/EV-O003-01.json
+deliverables:
+- research/diagnoses/T0349.md
+touches:
+- research/diagnoses/T0349.md
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0349-diagnose-failure-of-ev-o003-01
+pr: null
+runs:
+- T0349-scientist-20261115T023528-c5fc
+created_by: orchestrator
+created_at: '2026-11-15T10:35:24+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []

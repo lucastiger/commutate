@@ -2414,3 +2414,9 @@
 {"ts": "2026-11-15T04:17:16+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0202", "kind": "decision", "subject": "E010 needs burst compute (~102.1 CPU-h)"}
 {"ts": "2026-11-15T04:17:16+00:00", "event": "burst_requested", "actor": "orchestrator", "task": "T0347", "experiment": "E010", "cpu_hours": 102.1}
 {"ts": "2026-11-15T04:24:13+00:00", "event": "experiment_minted", "actor": "orchestrator", "id": "E010", "run": "E010-20261114T202413-80c1"}
+{"ts": "2026-11-15T10:35:22+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0347", "signal": "sanity_failed", "action": "fix_experiment"}
+{"ts": "2026-11-15T10:35:22+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0348", "about": "T0347", "cls": "experimental"}
+{"ts": "2026-11-15T10:35:24+00:00", "event": "evaluation_invalid", "actor": "orchestrator", "objective": "O003", "problems": ["E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R", "E010/E010-20261114T202413-80c1: artifacts: evaluation_report.json missing from the run directory and the artifact store"]}
+{"ts": "2026-11-15T10:35:24+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0349", "about": "EV-O003-01", "cls": "experimental"}
+{"ts": "2026-11-15T10:35:27+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "role": "scientist", "session": "dbd44023-b7c0-4b0e-a8b3-6e16ee41c982"}
+{"ts": "2026-11-15T10:35:28+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0349-scientist-20261115T023528-c5fc", "task": "T0349", "role": "scientist", "session": "4f720fe6-06db-4a31-a50a-f085b5679a00"}

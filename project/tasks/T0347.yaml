@@ -4,7 +4,7 @@ title: 'Run E010: module-level loop-inductance headroom at <= +2 K Tj on D0019''
   (2D_Case_2R, 2D_Case_6)'
 type: experiment
 agent: none
-status: needs_founder
+status: failed
 depends_on: []
 description: 'The registered E010 spec (D0021, D0022; E008''s successor) runs on merged main on burst
   compute: its 102.1 CPU-h estimate exceeds the local limit, so the loop parks this task for the founder.
@@ -40,3 +40,13 @@ history:
   summary: ~102.1 CPU-h exceeds local limit
   at: '2026-11-15T04:17:16+00:00'
   since: 1794716236.517727
+- outcome: sanity_failed
+  summary: E010-20261114T202413-80c1 on mf-e010-1794716653
+- attempt: 0
+  outcome: sanity_failed
+  summary: sanity checks failed in E010-20261114T202413-80c1
+  failure_output: "[\n {\n  \"name\": \"F1b_control\",\n  \"passed\": false,\n  \"value\": 1.0,\n  \"\
+    threshold\": 0.0,\n  \"detail\": \"{\\\"2D_Case_2R\\\": false}\"\n },\n {\n  \"name\": \"F1b_control:2D_Case_2R\"\
+    ,\n  \"passed\": false,\n  \"value\": 0.16139121104027043,\n  \"threshold\": 0.20685187746482248,\n\
+    \  \"detail\": \"h_plant=0.22027 h_ctrl=0.16139 w_ctrl=0.01341\"\n }\n]"
+  at: '2026-11-15T10:35:22+00:00'
