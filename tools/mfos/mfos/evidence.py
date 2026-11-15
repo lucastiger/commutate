@@ -76,6 +76,15 @@ class ExperimentRun:
 
     def artifact(self, name: str, path: str | Path) -> m.ArtifactRef:
         p = Path(path)
+        # The evaluator resolves <run_dir>/<name>, then the content store of the machine it runs on. E010 registered
+        # work/evaluation_report.json under its bare name, and the store copy stayed on the burst VM, so a complete run
+        # was INVALID (T0349). A bare name of a file inside the run directory is registered as its run-directory path.
+        try:
+            rel = p.resolve().relative_to(self.run_dir.resolve()).as_posix()
+        except ValueError:
+            rel = None
+        if rel is not None and name == p.name:
+            name = rel
         digest = file_sha256(p)
         store_root = Path(os.environ.get("MFOS_ARTIFACT_STORE", ".mfos/artifacts"))
         dest = store_root / digest[:2] / digest

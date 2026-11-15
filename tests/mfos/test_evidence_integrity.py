@@ -101,6 +101,26 @@ def test_an_artifact_edited_after_the_run_is_inadmissible(sandbox):
     assert "sha256 changed" in ev.checks["E000"]["artifacts"]
 
 
+def test_a_bare_artifact_name_in_a_run_subdirectory_resolves_without_the_store(tmp_path, monkeypatch):
+    """E010 (T0349): the runner wrote work/evaluation_report.json and registered the bare name; the store copy stayed
+    on the burst VM, so the evaluator, which looks in <run_dir>/<name> and then its own store, found neither."""
+    from mfos.evidence import ExperimentRun
+    monkeypatch.setenv("MFOS_ARTIFACT_STORE", str(tmp_path / "vm_store"))
+    monkeypatch.chdir(tmp_path)
+    run = ExperimentRun("E999", run_dir="results/E999/r1")
+    work = run.run_dir / "work"
+    work.mkdir()
+    (work / "evaluation_report.json").write_text("{}")
+    ref = run.artifact("evaluation_report.json", work / "evaluation_report.json")
+    assert ref.name == "work/evaluation_report.json" and (run.run_dir / ref.name).exists()
+    (run.run_dir / "rows.json").write_text("{}")
+    assert run.artifact("rows.json", tmp_path / "results/E999/r1/rows.json").name == "rows.json"
+    assert run.artifact("report", work / "evaluation_report.json").name == "report"  # a chosen name is kept
+    outside = tmp_path / "big.bin"
+    outside.write_bytes(b"x")
+    assert run.artifact("big.bin", outside).name == "big.bin"  # outside the run directory: the content store has it
+
+
 def test_a_result_from_a_commit_not_on_main_is_inadmissible(sandbox):
     s = prepare(sandbox)
     s.git("checkout", "-qb", "side")

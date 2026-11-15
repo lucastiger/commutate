@@ -35,3 +35,15 @@ edit, so two tasks with overlapping `touches` never run concurrently.
 Tasks without machine-checkable DoD · "investigate and fix" in one task · tasks that restate the
 objective · speculative infrastructure no criterion needs · more than one open task per file ·
 re-running an evaluation instead of designing a discriminating experiment.
+
+## Pre-flight checks for every task brief (all three failed briefs of 2026-11-14 missed one)
+1. **Write scope.** Every deliverable and `touches` glob lies inside the agent's `[role_write_scopes]` in
+   `.mfos/policy.toml`: builder src/, tests/unit/, tests/regression/, benchmarks/, docs/, pyproject.toml, uv.lock;
+   scientist research/, experiments/drafts/, experiments/runners/, tests/acceptance_drafts/, project/memory/; scout
+   research/notes/, project/memory/literature/. No role writes tools/, .claude/, .mfos/, experiments/specs/,
+   project/decisions/ or tests/acceptance/; a brief that needs them goes to the founder.
+2. **Free experiment id.** Ids are global across objectives: list `experiments/specs/` and `experiments/drafts/`,
+   and the ids the evidence plans of draft objectives reserve, before naming one (D0021 named O007's E009, D0022).
+3. **No check that depends on a later step.** Every definition-of-done command must pass on main plus this task's
+   own changes; nothing that needs a later approval, registration or merge (E010's registration dry run needed O003
+   v6, which came after its design task).

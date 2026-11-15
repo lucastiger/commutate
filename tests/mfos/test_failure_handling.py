@@ -533,3 +533,53 @@ def test_the_agent_of_a_task_held_or_cancelled_mid_run_is_stopped(sandbox, held_
                 p.kill()
     t = Store().task("T9723")
     assert (t.status, t.attempts, t.history[-1]["outcome"]) == (held_as, 0, "founder_stopped")
+
+
+# ------------------------------------------------------------------------------------------------ one diagnosis
+def _invalid_e900_run(sandbox, monkeypatch):
+    """An E900 run whose evaluation is INVALID, and its experiment task as the loop leaves it after the failure."""
+    from test_seeded_failures import setup
+
+    from mfos import experiments
+    from mfos.store import now
+    setup(sandbox, monkeypatch)
+    monkeypatch.setenv("SEEDED_MISREPORT", "1")
+    res = experiments.run(Store(), "E900", force=True)
+    s = Store()
+    t = m.Task(id=s.new_task_id(), objective="O900", title="Run E900", type="experiment", agent="none",
+               experiment="E900", status="failed", attempts=1, created_by="orchestrator", created_at=now())
+    s.save_task(t)
+    return s, t, res.run_id
+
+
+def test_an_invalid_evaluation_joins_the_queued_diagnosis_of_its_run(sandbox, monkeypatch):
+    """E010 (2026-11-15): the experiment task's sanity failure spawned T0348 and the INVALID evaluation of the same run
+    spawned T0349, two seconds apart, at $5 each. A diagnosis of the run that has not started takes the evaluation's
+    problems and its record instead of a second diagnosis being queued."""
+    s, t, run_id = _invalid_e900_run(sandbox, monkeypatch)
+    o = Orchestrator(s)
+    o._spawn_investigation(t, "experimental", f"sanity checks failed in {run_id}", "[]")
+    o._maybe_evaluate("O900", s.objective("O900"), s.objective_state("O900"))
+    diags = [x for x in Store().tasks("O900") if x.type == "investigate"]
+    assert len(diags) == 1
+    ev_id = Store().objective_state("O900").log[-2].split()[-1]  # "verdict:INVALID EV-O900-01"
+    assert f"The evaluation {ev_id} of the same run is INVALID" in diags[0].description
+    assert "runner reported" in diags[0].description  # the evaluation's own problems reach the diagnosis
+    assert f"project/objectives/O900/evaluations/{ev_id}-invalid.json" in diags[0].context_files
+    assert (sandbox / "project" / "objectives" / "O900" / "evaluations" / f"{ev_id}-invalid.json").exists()
+    assert Store().objective_state("O900").log[-1] == f"diagnosis:{diags[0].id} also covers {ev_id}"
+
+
+def test_an_invalid_evaluation_gets_its_own_diagnosis_once_the_run_s_has_started(sandbox, monkeypatch):
+    s, t, run_id = _invalid_e900_run(sandbox, monkeypatch)
+    o = Orchestrator(s)
+    o._spawn_investigation(t, "experimental", f"sanity checks failed in {run_id}", "[]")
+    first = next(x for x in Store().tasks("O900") if x.type == "investigate")
+    first.status, first.attempts = "running", 1
+    s.save_task(first)
+    o._maybe_evaluate("O900", s.objective("O900"), s.objective_state("O900"))
+    diags = [x for x in Store().tasks("O900") if x.type == "investigate"]
+    assert len(diags) == 2 and diags[1].title.startswith("Diagnose failure of EV-O900")
+    assert "same run is INVALID" not in Store().task(first.id).description
+    ev_id = diags[1].title.split()[-1]
+    assert diags[1].context_files == [f"project/objectives/O900/evaluations/{ev_id}-invalid.json"]  # the file written
