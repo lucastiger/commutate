@@ -1,0 +1,83 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "The draft never fixes where the control search starts, and a search that returns its seed passes A1 and K1 can never fire",
+      "detail": "The hypothesis says the search is 'seeded at the reference's twin', and the null speaks of 'a search that starts from the reference's own twin'. Under the control convention this draft inherits, D is only a yardstick: D0018 says 'the control never builds from D', and search.run_control builds every control candidate from the real reference's spec. In that frame the reference's twin is W itself. A search seeded at W that returns its seed scores h_ctrl = h_plant, a margin of w_ctrl >= 0 and a recovery of 1.0, so A1 passes and K1 cannot fire. F3(a)'s declared null covers only 'D returned unchanged', not this case. The other reading, seeding at D, cannot work on a named development layout with DRC as a hard constraint. On 2D_Case_4, D0018's floor lets D narrow its landing bands from 5 mm to 1.5 mm, below the reference's own 5 mm power-width minimum (E010 spec), so D is not a DRC-valid start. The draft does not say the degradation rule or the search's rule set changes to fix this. So no criterion here is guaranteed to fail for a search that ignores the control's information. F3(a) ('fails A1 by construction') and F1 ('move count from D') only hold under a reading the text does not impose.",
+      "evidence": "O008 hypothesis and null wording; D0018 Context and decision 1; src/moduleforge/optimize/search.py:427-445 (run_control calls _screen(run, spec, ...) and uses d only for l_sub, band and e_R); experiments/specs/E010.yaml around lines 860-866 (Case 4: landing bands 5 -> 1.5 mm under the floor; degrade() raised DegradeError under the 5 mm rule)",
+      "suggested_check": "State that the control search is seeded at D (or twin(D)), with D DRC-valid under the rules the search enforces, and that it has no access to W or params_of(W); add 'return the seed' as a declared null that must fail A1.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The frozen degradation is a short greedy walk on the same 0.5 mm grid the seeded search moves on, so passing A1 may only mean undoing the author's own perturbation",
+      "detail": "degrade() narrows landing bands and then walks coordinate by coordinate, in \u00b10.5 mm steps (WALK_STEP_MM = design grid), over the column, slot, die-row and landing-line parameters, greedily raising L1. On development data that walk took 7 steps on Case 4 and 16 steps on 2R. A coordinate pattern search, the move set the draft proposes, is exactly the inverse operation, and it gets back to W in about the same number of moves. F1's only gate is circular: 'the rule must change at least as many coordinates as the spec states'. The move count from D to the best candidate is reported but never gated. A1 therefore does not separate 'can find inductance headroom' from 'can reverse a perturbation it shares a lattice with', and O009 relies on the first.",
+      "evidence": "src/moduleforge/generate/twin.py lines 720-770 (SPREAD_STEP_MM, WALK_STEP_MM = D.DESIGN_GRID_MM, _walk_candidates \u00b10.5 mm over Params.NAMES[4:N_COPPER_PARAMS]); E010.yaml (Case 4: 7 walk steps; 2R: 16 walk steps)",
+      "suggested_check": "Gate a minimum parameter-space distance or improving-move count, or draw D off the search's move lattice.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "D is deterministic, so the 'new sealed seed' gives no fresh test, and the rehearsal D0023 requires reveals each E011 outcome in advance",
+      "detail": "degrade() uses no random number generator, so each development layout has exactly one D, known during development. D0023 rule 4 requires the control to be rehearsed before registration on 2R. That rehearsal runs on the same D E011 will use. With a deterministic local search, which pattern search is, the sealed seed changes nothing in the control's outcome. The move set, budget and shortlist can then be tuned (with development seeds, which F5 allows) against the exact E011 control. F5's 'frozen before any control solve' gives no out-of-sample protection in this setup.",
+      "evidence": "grep finds no rng, seed or random use in src/moduleforge/generate/twin.py apart from docstrings about test populations; D0023 decision 4; O008 F5",
+      "suggested_check": "Make the degradation draw from the sealed seed (several random D per layout) so that E011's D cannot be seen during design.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1's tolerance w_ctrl has no cap, and D is narrowed on purpose, so A1 can pass with partial recovery and can even hold alongside K1",
+      "detail": "w_ctrl = 2 e_R(best, D) has no ceiling here, and nothing like O003's F1(c) cap (w <= 0.05) replaces it. D0018 itself warns that D's narrow strips 'could widen e_R(best, D), and with it w_ctrl, making the control easier to pass'. Development data show the effect: on gen2_0, e_R(D, W) = 0.1235 at R_D = 1.698. A seeded search's best should sit near W, so e_R(best, D) will be about e_R(W, D). To first order that is 0.1235 / R_D^2 \u2248 0.043, giving w_ctrl \u2248 0.086, so A1 accepts L(best) up to about 1.146 L(W), a recovery of only 0.79. If the band is not rescaled, A1 accepts 1.42 L(W), a recovery of 0.40. For comparison, 2R's E010 band accepted only 1.017 L(W). h_plant also has no upper bound (gen2_0's D landed at 1.70 against a 1.25 target), and the allowed miss in units of L(W) grows with L(D). When w_ctrl > h_plant/2, A1 and K1 hold together, and evaluate.py then returns FAIL.",
+      "evidence": "Scratch computation: R_D = 1.6983, e_R = 0.1235 \u2192 A1 allows 1.4195 L(W) (recovery at the edge 0.399); e_R = 0.029 \u2192 1.0985 L(W); 2R-like e_R = 0.0065 \u2192 1.0163 L(W). E010.yaml gen2_0 dev line: 'D: R_D 1.6983, e_R 0.1235'. tools/mfos/mfos/evaluate.py:491 checks FAIL first.",
+      "suggested_check": "Add a gated cap on w_ctrl (for example <= 0.05, as O003's F1(c)) and an upper bound on R_D.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "One D per layout and in effect two layouts that can discriminate cannot show the reliability the freeze decision needs",
+      "detail": "Each layout gets one D and one search seed, and the only uncertainty compared is a point value with a discretisation band. gen2_0 does not discriminate: its E010 control beat W by a wide margin (h_ctrl 0.68 against h_plant 0.41). The synthetic housings are generator layouts as well, so in practice A1's minimum is decided by 2R and Case 4. The decision is a freeze for O009, where this control is repeated on every fresh reference and a failure makes that run INVALID. That decision needs P(control passes) to be high. A 4/4 pass is consistent with a per-layout success rate as low as 0.47 (one-sided 95 % Clopper\u2013Pearson). At p = 0.8 a true per-layout rate gives P(all 4 pass) = 0.41, so both kinds of error are likely.",
+      "evidence": "Scratch computation: 0.05^(1/n) = 0.368, 0.473, 0.549 for n = 3, 4, 5; p^4 = 0.24, 0.41, 0.66 for p = 0.7, 0.8, 0.9. E010.yaml gen2_0 control values.",
+      "suggested_check": "Run several seeded D per discriminating layout and gate a lower confidence bound on the per-draw pass rate.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "D0023 rule 4 is met in name only: reach plus F2 put every development twin inside the new support",
+      "detail": "2R qualifies as the rehearsal case only because the old D0008 sampler cannot draw its twin. A2 and F2 require the new sampler's support to contain every development twin, so E011 has no layout outside the support. Any dependence of the move set or the random screen on sampler bounds is therefore never exercised before O009's fresh references.",
+      "evidence": "O008 hypothesis ('a reference whose twin the D0008 sampler cannot draw'); F2 gated support check; D0023 decision 4",
+      "suggested_check": "State whether the seeded search's moves are limited to the sampler's ranges, and if they are, include one development twin outside them.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The stop line cannot be reached as written: the redesign gets a new experiment id, but the metrics are bound to E011",
+      "detail": "decision_if_fail plans 'one redesign under a new experiment id', and max_evaluations is 2. Every metric, however, is E011.*, and required_experiments is [E011]. A second evaluation of a redesign needs a replan that amends the acceptance block, and that dependency is not stated.",
+      "evidence": "O008 acceptance and decision_if_fail",
+      "suggested_check": "Name the redesign's experiment id in the criteria, or say that a replan amends the metrics.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "A2's exact-zero threshold is not spuriously unpassable",
+      "detail": "I checked whether shapely leaves tiny non-zero areas that would make '<= 0.0' impossible to meet. Identical regions on the 0.5 mm grid, built as different unions of rectangles, gave a symmetric difference of exactly 0 in 5000 of 5000 random cases. E010 also recorded zero on Case 4.",
+      "evidence": "Scratch shapely test, 5000 cases, 0 non-zero",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read D0018, E010.yaml (dev-run lines for gen2_0, Case 4 and 2R), search.run_control and twin.degrade/_walk. Confirmed that control candidates come from the reference's spec, that D is only a yardstick, that D may break the reference's power-width rule (Case 4: 5 -> 1.5 mm), and that the walk moves \u00b10.5 mm on the design grid over column, slot, die-row and landing parameters.",
+    "Grepped twin.py for RNG use: degrade() is deterministic.",
+    "Computed A1's allowed L(best)/L(W) and the recovery at the A1 edge for e_R values from development data (0.0065, 0.029, 0.1235, and a 1/R_D^2-rescaled \u2248 0.043): the tolerance ranges from 1.016 to 1.42 L(W). Showed that A1 and K1 hold together when w_ctrl > h_plant/2.",
+    "Checked verdict precedence in tools/mfos/mfos/evaluate.py: FAIL wins over PASS.",
+    "Clopper\u2013Pearson lower bounds for an all-pass result at n = 3 to 6 layouts, and P(all pass) at per-layout rates of 0.7, 0.8 and 0.9.",
+    "Shapely float test: an exact-zero symmetric difference holds for identical regions built differently (5000 cases), so A2's 0.0 threshold is meetable."
+  ],
+  "caveats": [
+    "This is a draft that has not been approved, and E011 does not exist yet. Several findings, the blocker included, are fixable by tighter wording (seed definition, a degradation draw from the sealed seed, a w_ctrl cap) without a redesign.",
+    "The e_R(W, D) \u2248 0.043 figure is a first-order rescaling of the recorded e_R(D, W) = 0.1235, not a solve. The true band for a seeded best on gen2_0 or Case 4 is unmeasured.",
+    "I could not run the full twin, degrade and l2_layout pipeline within budget, so the claim that a pattern search inverts the walk is argued from the code (same coordinates, same grid, greedy walk), not shown by a run.",
+    "The repo copy of objective.yaml has slightly different line wrapping from the packet. I read part of it, and that part matched the packet's content."
+  ]
+}

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T21:37:11+00:00 from repository state — do not edit_
+_generated 2026-11-15T21:43:27+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,7 @@ _generated 2026-11-15T21:37:11+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | draft | - | 0/2 | $0.00/$140 | A search seeded at the reference's twin, in a parameterisation that contains the twin, recovers planted loop-inductance headroom on every development layout |
+| O008 | draft | - | 0/2 | $1.49/$140 | A search seeded at the reference's twin, in a parameterisation that contains the twin, recovers planted loop-inductance headroom on every development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -27,17 +27,15 @@ _generated 2026-11-15T21:37:11+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 2 | $0.00 | 0 | 0 | 0 | 0 |
+| O008 | 2 | $1.49 | 32789 | 23983 | 1 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 302, failed: 4, running: 2
+cancelled: 44, done: 303, failed: 4, running: 1
 
-- T0351 `running` critic/review: Review OBJ-O008 (statistics) (attempt 1)
 - T0352 `running` critic/review: Review OBJ-O008 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T10:36:08+00:00 run_finished {"run": "T0348-scientist-20261115T023527-8a7a", "status": "error", "cost": 0.403363, "subtype": "error_during_execution", "report": "missing"}
 - 2026-11-15T10:36:08+00:00 founder_stopped {"task": "T0348", "run": "T0348-scientist-20261115T023527-8a7a", "run_status": "error", "task_status": "cancelled"}
 - 2026-11-15T10:58:58+00:00 run_finished {"run": "T0349-scientist-20261115T023528-c5fc", "status": "completed", "cost": 3.486942, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T11:04:31+00:00 verified {"task": "T0349"}
@@ -52,3 +50,4 @@ cancelled: 44, done: 302, failed: 4, running: 2
 - 2026-11-15T21:36:47+00:00 objective_draft_review {"objective": "O008", "ref": "0df043d9a6a8ae1c054ed2b88da3bbca3742398a", "tasks": ["T0351", "T0352"]}
 - 2026-11-15T21:37:10+00:00 run_started {"run": "T0351-critic-20261115T133710-bab2", "task": "T0351", "role": "critic", "session": "86f2b7ba-93d2-4146-9ccf-f8049a3669c9"}
 - 2026-11-15T21:37:11+00:00 run_started {"run": "T0352-critic-20261115T133711-be38", "task": "T0352", "role": "critic", "session": "1e87a00a-b27f-4df0-ab04-8215fd3f4d19"}
+- 2026-11-15T21:43:23+00:00 run_finished {"run": "T0351-critic-20261115T133710-bab2", "status": "completed", "cost": 1.486634, "subtype": "success", "report": "structured_output"}
