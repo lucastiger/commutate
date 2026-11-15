@@ -1,0 +1,75 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "An inductance-blind 'snap to the DRC limits' predictor is not among the nulls. It plausibly inverts the degradation because the search's rules are measured from W.",
+      "detail": "The protocol says the search has no access to W, but it runs under the reference's own measured rules. drc.rules.measure_rules builds those rules from W's own tightest features. The minimum power width is W's narrowest power copper. Each power-net spacing class is W's smallest gap in that class, and die spacing and edge margin are W's own minima. So by construction W sits on the boundary of the search's feasible set in exactly the coordinates a degradation must move: D_j has to be DRC-clean under these rules and still reach R_D >= 1.25. The only geometric levers are monotone and known in advance: narrow bands, spread pairs apart, lengthen wires, or climb L1 (twin.py degrade). A predictor with no inductance model (widen every band to the limit, close every inter-net gap to its class limit, pull landings toward their dies) therefore heads straight back to W's features. F3 declares only null (b), which widens power bands. F1 asks only that the family defeat (b), and any family with a spread component defeats (b) while staying invertible by compaction. The draft's own F1 premise does not hold either: several coordinates changed jointly can still be undone one move at a time. Nothing in A1, A3 or F3 would reveal that the control was passed this way, so the claim that 'no criterion would be met by a predictor that ignores the decision-relevant information' is not established. The gap matters more because in O009 the rules are measured from the start layout itself, so the leak exists only in the control. The control would then be easier than the use it certifies.",
+      "evidence": "src/moduleforge/drc/rules.py:449-475: every rule is the layout's own tightest feature. src/moduleforge/generate/twin.py:30-76: degradation moves are narrow_landing, centre_landing, spread (move slots apart in v) and an L1-ascent walk. research/notes/o003-twin-coverage.md:35: under its own rules 2R degrades by spread[2,up]x1mm, spread[3,up]x1mm and 16 walk steps, with narrowing skipped (min_trace_width binding). O008 F1 detection: 'the family must defeat null (b) of F3'. F3 lists only (a), (b) and (c).",
+      "suggested_check": "Add a declared null (d): move every coordinate to its DRC limit under W's measured rules in the inductance-lowering direction, with no inductance model and the same budget. Require the family to defeat it on every development layout, and make A1/A3 INCONCLUSIVE if it meets them.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The two synthetic housings have no defined W; if W is a generator draw they are the same kind of non-discriminating layout as the excluded gen2_0, yet they supply half of A1's sample",
+      "detail": "The hypothesis needs each layout's twin W. A synthetic housing has no designer layout, and the draft never says what its W is. Any W built by the generator is its own exact twin: it lies inside the domain and, unless built otherwise, inside the sampler's support. It is also not designer-optimised. gen2_0 is excluded from the count for exactly this reason ('its E010 control passed by a wide margin'). Yet the synthetics provide 12 of A1's 24 draws and 2 of A3's 4 layouts, so A1 effectively tests only about 9 of 12 draws on Case_4 and 2R. F3's nulls are judged on whole criteria, not per layout. Null (c) failing on 2R would therefore certify A1 and A3 as discriminating even if it passes every synthetic draw.",
+      "evidence": "O008 hypothesis: 'two synthetic housings with a split free region drawn from E011's sealed seed at run time; gen2_0 is reported, not counted'. twin.py docstring step 0: a generator-built layout's twin IS the layout ('exact'). grep finds no definition of a synthetic reference layout in project/, research/ or experiments/.",
+      "suggested_check": "Define W for the synthetic housings (for example the result of a fixed, long designer-proxy optimisation), and require that null (c) fail on each counted layout separately, not only on the pooled criterion.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1 and A3 can pass with the motivating layout (2R) passing only half its draws, so they do not show the 'passes reliably' the decision needs",
+      "detail": "A1 pools 24 draws from 4 layouts into a Clopper\u2013Pearson bound as if they were independent and identically distributed. But draws on one layout share W and the search, and the population O009 cares about is references. A3's threshold of 3/6 has a Clopper\u2013Pearson lower bound of about 0.15. If the synthetics and Case_4 always pass and 2R passes with p = 0.5, then P(A1 and A3) = 0.66; with p = 0.3 it is still 0.26. A search that passes 80 % of draws on every layout gets P = 0.26. So the criteria reward heterogeneity: easy layouts subsidise the hard one. That contradicts why_it_matters ('O009 repeats this control on every fresh reference, so the freeze needs a control that passes reliably, not once').",
+      "evidence": "Recomputed with scipy: one-sided 95 % Clopper\u2013Pearson lower bound 21/24 = 0.7077, 20/24 = 0.6582 (the draft's figures are correct). Pass probability under A1 (at most 3 failures) and A3 (at least 3/6 on each layout): (1,1,1,0.5) -> 0.656; (1,1,1,0.3) -> 0.256; all 0.8 -> 0.264; all 0.9 -> 0.786.",
+      "suggested_check": "Base A3 on a per-layout lower bound, or raise it to at least 5/6, and count only the designer-derived layouts in A1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The per-draw pass band 2 e_R is a discretisation band, not a decision tolerance: in practice it demands recovery to within about 0.3\u20131 % of W",
+      "detail": "A draw passes when s_j <= 2 e_R(best_j, W). From E010's stored band solves on 2R, 2 e_R between two DRC-clean, geometrically very different layouts was only 0.0030\u20130.0102. For a best_j close to W, the errors cancel further in the ratio and the band shrinks toward 0. A search that ends 0.5\u20131 % above W, which is irrelevant to O009's 10 % and 20 % lines, can therefore fail its draw. This is likely given L1's local misranking (C002: pairs under 5 % apart misordered 23\u201338 % of the time). The band is also asymmetric: it is widest for geometries unlike W and narrowest for near-W recoveries. Between A1 (about 1 %) and K1 (5 %) lies a wide INCONCLUSIVE zone in which the decision-relevant answer is 'adequate'. That zone spends the one-redesign stop line. The threshold does not follow from the decision.",
+      "evidence": "mfos.metrics.ratio_band_estimate applied to experiments/results/E010/E010-20261114T202413-80c1/rows.json against the twin. Candidate c000204: s = +0.0613, 2e_R = 0.0102. c015195: s = +0.0710, 2e_R = 0.0030. control_best: s = +0.0755, 2e_R = 0.0074. D: s = +0.2825, 2e_R = 0.0236.",
+      "suggested_check": "Pass a draw when s_j <= max(2 e_R, tau), with tau taken from O009's headroom lines (for example 0.02), and keep 2 e_R only as an uncertainty term.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "R_D >= 1.25 under the reference's own rules is probably unreachable on 2D_Case_4, so the 4-layout, 24-draw sample behind A1's arithmetic may not exist",
+      "detail": "Under Case_4's measured rules the landing bands are already at the 5 mm minimum, so narrowing does nothing. All six spread moves are infeasible (the binding rule is min_spacing to the gate pads). Only the steepest-L1-ascent walk acts, and it stops at a local maximum of L1(D)/L1(W) = 1.232. A randomised family will typically climb less than steepest ascent. On this layout the L2 ratio has also run below the L1 ratio (1.421 at L1 against 1.325 at L2). So L_sub(D_j)/L_sub(W) at 0.25 mm is likely well below 1.25. The redraw rule then never terminates, or Case_4 drops out and the synthetics dominate A1. The draft admits the family is 'not shown yet', so A1's 21/24 and A3's four layouts are not established as achievable.",
+      "evidence": "research/notes/o003-twin-coverage.md:38: Case 4 R0 'narrow_landing (bands 5.0 -> 5.0 mm: already at the minimum), 75 walk steps. Skipped: ... all six spreads (min_spacing to GATE_HS/GATE_LS)'; local_maximum 1.232. twin.py docstring: Case 4 L1 ratio 1.421 against L2 ratio 1.325.",
+      "suggested_check": "Before approval, show one development draw of the proposed family on Case_4 with L_sub(D)/L_sub(W) >= 1.25 at 0.25 mm under the measured rules, or state the fallback (drop it, or a lower R_D) and recompute A1's draw arithmetic.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F6 makes any single draw with 2 e_R > 0.02 void the whole run: the stall case and the large-improvement case both become INVALID instead of FAIL or PASS",
+      "detail": "F6 says 'a band above the cap makes the run INVALID'. The band is widest when best_j differs most from W. That happens in two cases: the search stalls near D_j, or it finds a layout far better than W (likely if a synthetic W is a random draw). One such draw out of 24 pre-empts K1, or voids a strong success, and the prescribed remedy ('fix the discretisation or the shortlist rule') is the wrong one. In E010's D (relaxed 1.5 mm floor), 2 e_R(D, W) was 0.0236. Under 2R's own rules, very different candidates stayed at or below 0.0102, so the cap may rarely bind. The defect is structural rather than shown.",
+      "evidence": "E010 2R rows: D vs twin 2e_R = 0.0236 > 0.02; main-search candidates 0.0030\u20130.0102.",
+      "suggested_check": "Count a draw whose band exceeds the cap as a failure, or as a pass only if s_j <= 0, rather than voiding the run.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "The control certifies local descent back to a planted point, not the ability to find headroom beyond a designer's layout",
+      "detail": "In the control, the headroom lies by construction along the inverse of a known, L-raising perturbation, and on Case_4 and 2R that perturbation is mostly an L1-ascent walk. In O009 the headroom, if any, lies in directions the designer did not take. Passing is necessary for O009 but not sufficient. 'The parametric route to derivative re-layout works' (the null's negation) is broader than what is tested.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the one-sided 95 % Clopper\u2013Pearson lower bounds for 19\u201324 of 24 with scipy: 21/24 = 0.7077 and 20/24 = 0.6582 match the draft.",
+    "Computed exact P(A1 and A3) for mixed per-layout pass rates: 2R at p = 0.5 with the other layouts always passing gives 0.656; a uniform p = 0.8 gives 0.264.",
+    "Recomputed s and 2 e_R against the twin for every E010 2R layout with mfos.metrics.ratio_band_estimate from the stored five-level band solves: candidates 0.0030\u20130.0102, control best 0.0074 at s = 0.0755, D 0.0236 at s = 0.2825.",
+    "Checked the K1 logic: E010's s = 0.0755 > 0.05 would fire it, and K1 cannot fire whenever A1 passes (21 or more draws with s <= 0.02 force the median <= 0.02).",
+    "Read drc.rules.measure_rules and confirmed that every measured rule is the reference's own tightest feature, so W lies on the feasible boundary that the control's search is given.",
+    "Read twin.py degrade() and the moves its docstring describes, and the twin-coverage table: under its own rules, Case_4's degradation is walk-only (narrowing has no effect, all spreads infeasible) and reaches a local maximum at 1.232 L1; 2R's is spread plus walk.",
+    "Searched the repository for a definition of a synthetic-housing reference W and found none."
+  ],
+  "caveats": [
+    "The degradation family, the move set and the synthetic-housing W are not yet defined. Whether the DRC-limit null (d) actually meets A1 is inferred from how measure_rules and the existing degrade() moves are built; I did not simulate it.",
+    "The e_R magnitudes come from one layout (2R) in E010, mostly under 2R's own rules. D's band there was computed with the relaxed 1.5 mm floor, which O008 drops.",
+    "I did not run a degradation draw on Case_4 under its measured rules at L2. The infeasibility of R_D >= 1.25 rests on the recorded L1 walk terminal (1.232) and the L1-versus-L2 ratio gap recorded on that layout."
+  ]
+}

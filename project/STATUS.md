@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-15T22:13:51+00:00 from repository state — do not edit_
+_generated 2026-11-15T22:15:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -15,7 +15,7 @@ _generated 2026-11-15T22:13:51+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | draft | - | 0/2 | $5.01/$140 | A search seeded at a degraded copy of the reference, in a parameterisation that contains the reference's twin, recovers planted loop-inductance headroom on held-out degradations of the development layouts |
+| O008 | draft | - | 0/2 | $6.93/$140 | A search seeded at a degraded copy of the reference, in a parameterisation that contains the reference's twin, recovers planted loop-inductance headroom on held-out degradations of the development layouts |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -27,16 +27,14 @@ _generated 2026-11-15T22:13:51+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 4 | $5.01 | 111269 | 77774 | 4 | 0 |
+| O008 | 4 | $6.93 | 148814 | 105629 | 6 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 305, failed: 4, running: 1
+cancelled: 44, done: 306, failed: 4
 
-- T0354 `running` critic/review: Review OBJ-O008 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T11:09:48+00:00 inbox_opened {"id": "I0203", "kind": "protected_change", "subject": "T0349: merge needs founder approval"}
 - 2026-11-15T20:03:03+00:00 inbox_resolved {"id": "I0203", "status": "approved", "note": "Merge T0349 (diagnosis of EV-O003-01: E010 void; the frozen search cannot reach the 2R designer's level). Review 
 - 2026-11-15T20:09:06+00:00 merged {"task": "T0349"}
 - 2026-11-15T20:09:44+00:00 sleep_detected {"gap_s": 380, "runs_extended": 0}
@@ -51,3 +49,4 @@ cancelled: 44, done: 305, failed: 4, running: 1
 - 2026-11-15T22:06:56+00:00 run_started {"run": "T0353-critic-20261115T140656-e293", "task": "T0353", "role": "critic", "session": "c06debc0-d131-4b08-888e-3ee3eec64092"}
 - 2026-11-15T22:06:57+00:00 run_started {"run": "T0354-critic-20261115T140657-07cf", "task": "T0354", "role": "critic", "session": "b35f2ba3-5a0d-44fe-aeca-7f8cd950463f"}
 - 2026-11-15T22:13:47+00:00 run_finished {"run": "T0353-critic-20261115T140656-e293", "status": "completed", "cost": 1.578319, "subtype": "success", "report": "structured_output"}
+- 2026-11-15T22:15:04+00:00 run_finished {"run": "T0354-critic-20261115T140657-07cf", "status": "completed", "cost": 1.917719, "subtype": "success", "report": "structured_output"}
