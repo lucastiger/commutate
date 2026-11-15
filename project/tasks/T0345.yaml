@@ -32,7 +32,7 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0345-diagnose-failure-of-t0339
 pr: null
@@ -46,4 +46,8 @@ target: null
 lens: null
 trigger: null
 rationale: ''
-history: []
+history:
+- attempt: 0
+  outcome: founder_stopped
+  summary: T0345-scientist-20261114T172443-b2c9 ended (interrupted) while the task was cancelled
+  at: '2026-11-15T01:25:59+00:00'
