@@ -1,0 +1,14 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+housing powersynth_2D_Case_2R: split orientations {0: True, 1: False}; v windows {0: [(7.0, 23.0), (39.0, 53.0)], 1: [(7.0, 48.0)]}
+[main, seed 20261114] 300000 draws in 13.99 s; outcomes {'sampler None': 296171, '_quick_ok': 2648, 'DRC-clean': 1028, 'DRC': 153}
+  DRC-clean mix (orient, hs_first, hs_die_first, ls_die_first): {'(0, 0, 1, 0)': 1028}; orientation {'0': 1028}; topology {'x/DC-l-PHASEd-DC+d-PHASEl/split': 1028}
+  twin configuration (0, 0, 1, 0) drawn 1028 times; longest failure run 3138; generate(spec, 20) ok True
+  p = 3.427e-03 (99.9 % Wilson lower bound 3.112e-03); draws per candidate 292; wall per candidate 13.61 ms; P(20000-candidate screen hits 20000 consecutive failures) <= 1.673e-23 (q 8.366e-28)
+[control, seed 20261115] 300000 draws in 14.52 s; outcomes {'sampler None': 296132, '_quick_ok': 2742, 'DRC-clean': 998, 'DRC': 128}
+  DRC-clean mix (orient, hs_first, hs_die_first, ls_die_first): {'(0, 0, 1, 0)': 998}; orientation {'0': 998}; topology {'x/DC-l-PHASEd-DC+d-PHASEl/split': 998}
+  twin configuration (0, 0, 1, 0) drawn 998 times; longest failure run 2011; generate(spec, 20) ok True
+  p = 3.327e-03 (99.9 % Wilson lower bound 3.017e-03); draws per candidate 301; wall per candidate 14.55 ms; P(20000-candidate screen hits 20000 consecutive failures) <= 1.129e-22 (q 5.646e-27)
+estimated wall time for 2 x 20000 candidates (main + control), drawing only, this Mac: 9.4 min
+counts equal to --check-references (research/o003/e010_dev/check_references.json): True
+gen2_0 (dev): 56 of 200 DRC-clean candidates share the twin's topology x/PHASEl-DC+d-PHASEd-DC-l/split
+wrote research/o003/e010_dev/feasibility_2r.json

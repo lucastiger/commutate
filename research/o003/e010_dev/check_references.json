@@ -1,0 +1,131 @@
+{
+ "rule": "D0021 item 4: rebuild + fingerprint + generator/DRC draw rate (main and control); mesh counts not recomputed (config.compute.plan_references, T0320)",
+ "references": {
+  "2D_Case_2R": {
+   "fingerprint_ok": true,
+   "fingerprint": "66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a",
+   "on_grid_0p5mm": true,
+   "baseplate_area_m2": 0.0033,
+   "mesh_counts": {
+    "source": "config.compute.plan_references (E008 T0320, same fingerprint)",
+    "fingerprint_in_size_note": true
+   },
+   "feasibility": {
+    "ok": true,
+    "twin": "fit",
+    "namespaces": {
+     "main": {
+      "seed": 20261114,
+      "draws": 300000,
+      "outcomes": {
+       "sampler None": 296171,
+       "_quick_ok": 2648,
+       "DRC-clean": 1028,
+       "DRC": 153
+      },
+      "drc_clean": 1028,
+      "wall_s": 13.66,
+      "split": {
+       "0": true,
+       "1": false
+      },
+      "config_mix": {
+       "(0, 0, 1, 0)": 1028
+      },
+      "orientation_mix": {
+       "0": 1028
+      },
+      "topology_mix": {
+       "x/DC-l-PHASEd-DC+d-PHASEl/split": 1028
+      },
+      "longest_failure_run": 3138,
+      "twin_config": "(0, 0, 1, 0)",
+      "twin_topology": "x/DC-l-PHASEd-DC+d-PHASEl/split",
+      "twin_config_draws": 1028,
+      "twin_drc_clean": true,
+      "generate_20": {
+       "ok": true
+      },
+      "p": 0.003426666666666667,
+      "p_lo999": 0.0031124010733829975,
+      "draws_per_candidate": 291.8287937743191,
+      "s_per_candidate_mac": 0.013292689769436398,
+      "draw_s_20000_mac_h": 0.07384827649686888,
+      "q_gap": 8.365967657153665e-28,
+      "p_abort_20000": 1.673193531430733e-23,
+      "ok": true
+     },
+     "control": {
+      "seed": 20261115,
+      "draws": 300000,
+      "outcomes": {
+       "sampler None": 296132,
+       "_quick_ok": 2742,
+       "DRC-clean": 998,
+       "DRC": 128
+      },
+      "drc_clean": 998,
+      "wall_s": 13.81,
+      "split": {
+       "0": true,
+       "1": false
+      },
+      "config_mix": {
+       "(0, 0, 1, 0)": 998
+      },
+      "orientation_mix": {
+       "0": 998
+      },
+      "topology_mix": {
+       "x/DC-l-PHASEd-DC+d-PHASEl/split": 998
+      },
+      "longest_failure_run": 2011,
+      "twin_config": "(0, 0, 1, 0)",
+      "twin_topology": "x/DC-l-PHASEd-DC+d-PHASEl/split",
+      "twin_config_draws": 998,
+      "twin_drc_clean": true,
+      "generate_20": {
+       "ok": true
+      },
+      "p": 0.0033266666666666666,
+      "p_lo999": 0.003017228493975364,
+      "draws_per_candidate": 300.6012024048096,
+      "s_per_candidate_mac": 0.013835112307638765,
+      "draw_s_20000_mac_h": 0.0768617350424376,
+      "q_gap": 5.646216244750041e-27,
+      "p_abort_20000": 1.1292432489500082e-22,
+      "ok": true
+     }
+    },
+    "draws": 600000,
+    "drc_clean": 2026,
+    "p": 0.0033766666666666667,
+    "p_lo999": 0.0031530069956577545,
+    "s_per_candidate_mac": 0.013835112307638765,
+    "p_abort_20000": 1.1292432489500082e-22,
+    "draw_s_20000_mac_h": 0.0768617350424376,
+    "plan_screen_s_per_candidate": 0.5267848733073952,
+    "plan_rule": "0.45 s + 0.01384 s (Mac draw time per DRC-clean candidate, slower namespace) x 5.55 (largest measured Mac -> VM factor; inference for pure-Python sampling)"
+   },
+   "wall_s": 28.11,
+   "peak_rss_GB": 0.128
+  },
+  "2D_Case_6": {
+   "fingerprint_ok": true,
+   "fingerprint": "71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7",
+   "on_grid_0p5mm": true,
+   "baseplate_area_m2": 0.0024,
+   "mesh_counts": {
+    "source": "config.compute.plan_references (E008 T0320, same fingerprint)",
+    "fingerprint_in_size_note": true
+   },
+   "feasibility": {
+    "ok": null,
+    "twin": "TwinError: no (orientation, sequence) of the generator space matches the reference geometry",
+    "note": "no twin: no screen runs (excluded at prepare, F1(a))"
+   },
+   "wall_s": 0.03,
+   "peak_rss_GB": 0.128
+  }
+ }
+}
