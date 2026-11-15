@@ -1,0 +1,68 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The effective pass line is about 0.7\u20131.0 %, not 2 %. Searches good enough for the 10 %/20 % lines would mostly come out INCONCLUSIVE",
+      "detail": "A draw passes only if s_j + 2 e_R(best_j, W*) <= 0.02. E010's own 2R bands give 2 e_R = 0.0134 (w_ctrl) and 0.0102 (w_ind), so on 2R a draw needs s_j <= 0.007\u20130.010. In the probe's 2R proxy run, three of the five guided draws sit at +0.69 %, +0.77 % and +0.69 % (L1). With b = 0.0134 those three are unresolved and count as failures, giving 2 of 5 rather than the '5 of 5 within 2 %' the note reports. On Case 4 every guided draw (+1.2 % to +3.6 %, all at the step cap) fails under the band rule. The pass count is also unforgiving. With independent draws and a per-draw pass probability of 0.90, P(A1 and A3) is about 0.52; at 0.85 it is 0.28. It reaches 0.8 only at p \u2248 0.95. K1 fires only above a 5 % median. A search that sits 1\u20132 % above W* is adequate by K1's own reasoning about the 10 %/20 % lines, yet it falls in the INCONCLUSIVE band and uses up the plan's single redesign. So the thresholds do not follow from the decision. This is a power problem, not a false-pass risk.",
+      "evidence": "experiments/results/E010/.../work/evaluation_report.json: w_ctrl 0.013414, w_ind 0.010151; research/o008_probe/probe_2R_proxy.json guided s = -0.0041, -0.0368, +0.0069, +0.0077, +0.0069; probe_Case4_proxy.json guided s = +0.0122 \u2026 +0.0356, all hit_step_cap; binomial operating characteristic computed in a scratch script.",
+      "suggested_check": "Before registration, from development draws at l2_layout, report b_j on each layout and the operating characteristic P(PASS | per-draw p). Set the tolerance as an effective line, for example s_j + b_j <= 0.02 + b_ref or s_j <= 0.02 with a separate resolution rule, so that a 1\u20132 % search can PASS.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Null discrimination is checked by 'the null does not meet A1', with unresolved null draws counted as failures. 'Better than the blind heuristic' can therefore rest on unresolved differences",
+      "detail": "Each gating null is judged with the same rule as the search, and an unresolved draw counts as a failure. A null draw that cannot be told apart from passing (s - b <= 0.02 < s + b) therefore counts against the null and supports the claim that the criterion discriminates. A null that passes 6 of 8 draws is also declared non-discriminating-safe, so the search at 7/8 against compaction at 6/8 would be reported as 'inductance-blind heuristics do not'. The null hypothesis says 'does no better than an inductance-blind heuristic', which calls for a resolved comparison. A threshold that the null falls just short of is not that. The probe's margins (2R compaction at least +3.1 % at L1, which may shrink at L2) make a decision flip unlikely on the two current layouts, but nothing guards against it on the feature-extension layouts that join later.",
+      "evidence": "Draft scope_in per-draw rule ('a draw within its band of the line is unresolved and counts as a failure'); F1 detection ('A null that meets A1 or A3 on any layout makes that criterion non-discriminating'); probe_2R_proxy compaction s = 0.0307\u20130.0884 at L1.",
+      "suggested_check": "Require each gating null to fail resolvably (s_j - b_j > 0.02) on at least two draws per layout, or compare search and null draw by draw with their bands.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "W* comes from the same L1 single-parameter descent family as the search, so F3's 'a biased proxy can make the control harder, not easier' is wrong for an L1-guided search",
+      "detail": "W* is the end point of a steepest L1 descent over twin._walk_candidates (columns, slots, die rows, landing lines; 0.5 mm steps). The probe built D_j by L1 ascent over the same parameters, and the search uses an L1 screen over a move set that includes these parameters. Blind nulls fail partly by construction, because the target's depth comes from L1, which they ignore. An L1-guided descent is favoured by construction: the probe's plain guided descent reaches W*'s level on 2R. The control therefore cannot detect misses the target shares with the search: L1 misranking (C002: pairs under 5 % apart misordered 23\u201338 %) and optima outside the descent's basin. Those are the misses that would make an O009 finding of '< 10 % headroom' false. A pass shows the search can recover headroom an L1 local descent can reach. It does not show the null's clause that the search 'cannot support headroom claims at O009's lines' is rejected for negative findings.",
+      "evidence": "Draft scope_in proxy rule; probe.py ascent() and _walk_candidates (twin.py:741\u2013753, WALK_FIRST..WALK_END covers columns, slots, die rows and landing lines); probe_2R_proxy guided draws within 2 % at L1.",
+      "suggested_check": "Fix F3's text, and state in decision_if_pass that the control certifies recovery of L1-descent-reachable headroom only. Optionally add one target that is not generated by L1 descent, such as an L2-guided or differently parameterised optimum, as a reported check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Tj is not gated, yet the proxy, the degradation and the search can all move die rows and landings",
+      "detail": "_walk_candidates includes the 6 die-row and 2 landing parameters, so W* (37 % below the twin on Case 4 at L1) and best_j can cut inductance by moving dies, which raises Tj. Only W*'s hottest-die Tj is reported; best_j's Tj is not. O009 and A-T3 judge headroom at <= +2 K Tj. The search frozen on a pass could therefore be certified on moves that O009's thermal bound rules out.",
+      "evidence": "twin.py:741\u2013742 comment (12 column + 16 slot + 6 row + 2 landing entries); draft F3 detection reports W*'s Tj only; scope_in says thermal terms are never gated.",
+      "suggested_check": "Report the hottest-die Tj of best_j and of W* against W per draw. Alternatively, fix die rows in the proxy and the degradation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 binds beyond A1 only when exactly two layouts are counted",
+      "detail": "Recomputed one-sided 95 % Clopper\u2013Pearson bounds: 7/8 \u2192 0.529, 14/16 \u2192 0.656, 15/16 \u2192 0.736, 21/24 \u2192 0.708, 28/32 \u2192 0.736. With three or more counted layouts, A1 met on every layout already implies A3 \u2265 0.70, so A3 becomes redundant once a feature-extension layout joins. The description 'it binds beyond A1' holds only for the two-layout case.",
+      "evidence": "scipy beta.ppf scratch computation.",
+      "suggested_check": "State A3's purpose for N \u2265 3 layouts, or tie its threshold to the number of counted layouts.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "why_it_matters understates the blind nulls' miss range",
+      "detail": "The text says both blind heuristics 'failed on every draw by 3-19 %'. In the probe, widen on 2R reaches +24.2 %, so the range is 3\u201324 %. The K1 description's medians (about 6 % on 2R, 17 % on Case 4) check out.",
+      "evidence": "probe_2R_proxy.json widen s up to 0.2418.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the one-sided 95 % Clopper\u2013Pearson lower bounds: 7/8 = 0.529, 14/16 = 0.656 and 15/16 = 0.736 match the draft; 21/24 = 0.708 and 28/32 = 0.736 show A3 is redundant with three or more layouts.",
+    "Computed the binomial operating characteristic of A1 and A3 together, assuming independent draws: P(PASS) is 0.14, 0.28, 0.52, 0.81 and 0.92 at per-draw p = 0.80, 0.85, 0.90, 0.95 and 0.97. With p = 0.95 on 2R and 0.5 or 0.7 on Case 4, P(PASS) is 0.02 or 0.19.",
+    "Pulled E010's recorded bands on 2R from evaluation_report.json (w_ctrl = 0.01341, w_ind = 0.01015) and applied the draft's pass rule s_j + b_j <= 0.02 to the probe's per-draw guided shortfalls: 2R gives 2\u20135 of 5 depending on b, Case 4 gives 0 of 5.",
+    "Re-read every per-draw row of the four probe JSON files: guided, compact and widen s, R_D, changed coordinates and Manhattan distance. This verified K1's quoted null medians (2R compact median 5.95 %, Case 4 17.5 %) and found widen's 2R maximum of 24.2 %.",
+    "Checked twin._walk_candidates and WALK_FIRST..WALK_END (twin.py:741\u2013753). The proxy descent and the probe's degradation move columns, slots, die rows and landing lines, so W*, D_j and the search share the parameter set, and die moves (a Tj risk) are within reach.",
+    "Checked the K1 logic: if A1 holds, the median s is at most 0.02, so K1 cannot fire alongside a pass. K1 can fire, because returning D_j gives s >= 0.25 and the probe's compaction gives medians of 6\u201317 %."
+  ],
+  "caveats": [
+    "The pass design is valid only for the development layouts it uses (2R, Case 4). The search, its budget and the degradation family are being developed on these same W*. A pass shows recovery on fresh sealed draws from known layouts, not reliability on new references (the draft says so in decision_if_pass).",
+    "What a pass certifies: from degraded copies, the search recovers headroom that an L1 local descent over the walk parameters can reach. It does not cover headroom missed through L1 misranking or outside the descent's basin. Negative headroom findings in O009 built on this control carry the same limit.",
+    "As written (pass needs s_j + b_j <= 0.02, about 0.7\u20131.0 % effective on 2R; seven of eight draws per layout), the design has low power. Searches adequate for the 10 %/20 % lines are likely to come out INCONCLUSIVE rather than PASS.",
+    "Not assessable yet: the feature-extension layouts (FOUNDER TO SET), the search budget, the shortlist size, the redraw limit and the degradation family's bounds are all unset. On Case 4 the probe's guided runs were still at the 60-step cap.",
+    "All the probe evidence is L1 only, and L1 is biased low by 5\u201314 % on these geometries. The null margins and the guided shortfalls at l2_layout have not been measured."
+  ]
+}
