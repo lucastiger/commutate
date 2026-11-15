@@ -72,18 +72,20 @@ scope_in:
   - >-
     the per-draw outcome, from L_sub at 0.25 mm: s_j = L_sub(best_j) / L_sub(W*) - 1; the draw passes when s_j <= 0.02.
     The band b_j = 2 e_R(best_j, W*) by the D0008 band rule is reported per draw. Before registration, E011's design
-    measures b_j on development draws on every counted layout and freezes a bound (PROPOSED: median b_j <= 0.01); if the
+    measures b_j on development draws on every counted layout and freezes a bound (median b_j <= 0.01); if the
     bound fails, the band rule or the tolerance is redesigned before registration. E011's spec states the operating
     characteristic P(PASS | per-draw pass probability) for the frozen thresholds. No single draw voids the run
   - >-
     the loop-inductance objective only; thermal and current-sharing terms are reported where the runner computes them,
     never gated here
   - >-
-    feature extensions: FOUNDER TO SET at approval from the screening answers (research/notes/module-screening-questions.md,
-    research/notes/outreach-drafts.md) and the coverage census (research/notes/coverage-census.md). Candidates: separate
-    diode dies (6 of 14 census modules), several terminal pads per net (4 of 14, conditional), quarter-turned dies
-    (2D_Case_5 only), side-by-side switch blocks (2D_Case_6 only). Each one added here brings a designer-derived
-    development layout that joins the counted set
+    feature extensions: none, the core only (founder, 2026-11-15), unless screening answers received before approval
+    (research/notes/module-screening-questions.md, research/notes/outreach-drafts.md) show that a design partner's or a
+    January candidate's module needs one; the session then proposes it and the founder adds it here before approving.
+    After approval, each extension gets its own objective or a criteria change. Candidates from the coverage census
+    (research/notes/coverage-census.md): separate diode dies (6 of 14 census modules), several terminal pads per net
+    (4 of 14, conditional), quarter-turned dies (2D_Case_5 only), side-by-side switch blocks (2D_Case_6 only). An
+    extension added here brings a designer-derived development layout that joins the counted set
 scope_out:
   - any judged reference, and any headroom claim about a real module (O009)
   - "any claim about the twins' own headroom (W* is a control target, not evidence for A-T3)"
@@ -94,12 +96,12 @@ acceptance:
   required_experiments: [E011]
   pass_all:
     - {id: A1, metric: E011.control_layout_pass_min, comparator: ">=", threshold: 0.875, uncertainty: {use: point},
-       description: "min over the counted layouts of the fraction of that layout's 8 draws that pass (s_j <= 0.02): at least 7 of 8 on every layout, so 2R cannot be carried by the others. Operating characteristic with independent draws: P(PASS) per layout is 0.94, 0.81, 0.66 and 0.26 at per-draw pass probabilities 0.95, 0.90, 0.85 and 0.70; with two layouts 0.89, 0.66, 0.43 and 0.07. The pooled one-sided 95 % Clopper-Pearson bound is reported, not gated: draws within a layout share W*, so it is a count, not a reliability bound over references. PROPOSED"}
+       description: "min over the counted layouts of the fraction of that layout's 8 draws that pass (s_j <= 0.02): at least 7 of 8 on every layout, so 2R cannot be carried by the others. Operating characteristic with independent draws: P(PASS) per layout is 0.94, 0.81, 0.66 and 0.26 at per-draw pass probabilities 0.95, 0.90, 0.85 and 0.70; with two layouts 0.89, 0.66, 0.43 and 0.07. The pooled one-sided 95 % Clopper-Pearson bound is reported, not gated: draws within a layout share W*, so it is a count, not a reliability bound over references. Founder-set (2026-11-15)"}
     - {id: A2, metric: E011.reach_outside_max, comparator: "<=", threshold: 0.0, uncertainty: {use: point},
        description: "max over the development layouts of 1 - in_domain(W): in_domain is a predicate the parameterisation and the sampler implement from their own construction (joint constraints, not marginal ranges) and returns true when params_of(W) lies in the search's domain and in the random sampler's support. Before registration it must be shown false for 2D_Case_2R under E010's frozen generator (F2), so A2 is not met by construction"}
   fail_any:
     - {id: K1, metric: E011.control_shortfall_median_max, comparator: ">", threshold: 0.05, uncertainty: {use: point},
-       description: "max over the counted layouts of the median of s_j over that layout's draws, above 5 %: on some layout the search typically ends more than 5 % above the proxy, too coarse for O009's 10 % and 20 % headroom lines; per layout, so one layout cannot mask another. The probe's blind compaction would fire it (medians about 6 % on 2R and 17 % on Case 4 at L1); E010's 2R control (7.55 % above the twin) would have. PROPOSED"}
+       description: "max over the counted layouts of the median of s_j over that layout's draws, above 5 %: on some layout the search typically ends more than 5 % above the proxy, too coarse for O009's 10 % and 20 % headroom lines; per layout, so one layout cannot mask another. The probe's blind compaction would fire it (medians about 6 % on 2R and 17 % on Case 4 at L1); E010's 2R control (7.55 % above the twin) would have. Founder-set (2026-11-15)"}
   max_evaluations: 2
 failure_modes:
   - id: F1
@@ -149,10 +151,10 @@ notes: >-
   The census (research/notes/coverage-census.md) found no commercial module known to need the two extensions plan
   section 3 names; separate diode dies (6 of 14) and several terminal pads per net (4 of 14, conditional) block more.
   The representation-route decision (plan section 13) is proposed for the 11-27 thesis review.
-  PROPOSED, for the founder to set at approval: 8 draws per layout, A1's 7 of 8, K1's 5 %, the 2 % tolerance, the band
-  bound (median b_j <= 0.01) and R_D's range [1.25, 1.60]; max_evaluations 2 (the plan's one diagnosis and one
-  redesign; a redesign gets a new experiment id from the pre-flight check, E012 being O009's, and the founder amends
-  required_experiments and the metric names by a criteria change, thresholds unchanged); the budget. Cost: about
+  Founder-set on 2026-11-15 (the proposed defaults accepted): 8 draws per layout, A1's 7 of 8, K1's 5 %, the 2 %
+  tolerance, the band bound (median b_j <= 0.01), R_D's range [1.25, 1.60], max_evaluations 2 (the plan's one
+  diagnosis and one redesign; a redesign gets a new experiment id from the pre-flight check, E012 being O009's, and the founder amends
+  required_experiments and the metric names by a criteria change, thresholds unchanged) and the budget below, which the 11-27 thesis review may revise. Cost: about
   $0.24 per 0.25 mm l2_layout solve on the 8-vCPU N2D (project/memory/lessons.md, 2026-11-09); with an 8-16 solve
   shortlist a draw costs about $2-4, so 16 draws, the proxy confirmations, the gating nulls and the coarse Tj checks are
   about $50-100 of VM, above the plan's $10-25 for O008. Agent budget $140 is the plan's low end, for the core.
