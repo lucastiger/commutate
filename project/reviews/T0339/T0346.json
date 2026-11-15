@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "E010 id justified by a decision D0022 that does not exist",
+      "detail": "The E010 title ('D0021, id D0022'), research/notes/e010-design.md ('id E010 by D0022') and spec_diff.md ('the experiment's own id (D0022)') cite D0022, but project/decisions ends at D0021 and no file anywhere defines D0022. D0021 names the successor E009, and E009 is now O007's registered thermal-reference experiment. The renaming E009 -> E010 is therefore not on record. Remedy: record D0022 (or cite where the founder decided the id) before registration.",
+      "evidence": "ls project/decisions -> D0017..D0021 only; grep -rl D0022 -> only research/notes/e010-design.md, research/o003/e010_dev/spec_diff.md, make_spec.py, experiments/drafts/E010.yaml; experiments/specs/E009.yaml objective O007",
+      "suggested_check": "ls project/decisions | grep D0022",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "burst_full.sh points the founder to a section that does not exist",
+      "detail": "The launch script's header says 'Commands, expected output and failure modes: research/notes/e010-design.md section 11'. e010-design.md has no numbered sections; the launch procedure is section 11 of e008-design.md. This looks like a leftover from the E008->E010 rename in a founder-facing VM procedure. Remedy: point it at e008-design.md section 11 or add the section.",
+      "evidence": "research/o003/e010_dev/burst_full.sh line 18; grep '^## ' research/notes/e008-design.md shows '## 11. T0322 ... launch procedure'; e010-design.md uses bold paragraph headings only",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Garbled at_least_one_counted_reference description names E008",
+      "detail": "The sanity-check description reads 'F1(a): E008 INVALID if no reference remains E010 (D0021 item 2(b)): a SearchInfeasible exclusion (stage screen) counts like a TwinError.' make_spec.py appended the E010 clause to E008's text without fixing the id. Runner docstrings (e.g. line 255) also still say 'E008 is INVALID only if no reference remains'. Remedy: reword to 'E010 INVALID if no reference remains; a SearchInfeasible exclusion counts like a TwinError'.",
+      "evidence": "experiments/drafts/E010.yaml lines 1980-1982",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "In-flight jobs of a SearchInfeasible reference are not cancelled, and the concurrent path is untested",
+      "detail": "Run.search_infeasible drops the reference's drivers and its queued jobs but not its running jobs. In a real run these can be the other namespace's screen (about 3 h on 2R) or L2 solves the main driver started after its screen finished, before the control screen failed. By code reading this is harmless to the verdict: step() only learns timing from them, and assemble_rows/evaluate skip excluded references. It still wastes VM time. The selftest's fake scheduler runs every job synchronously inside _launch and writes the screens before drive, so this concurrency path is never exercised. The case where the excluded reference was a non-default stack type's spot reference is also untested (fakes use DEFAULT_STACK only).",
+      "evidence": "e010_run.py Run.search_infeasible (deletes from sched.queue only); Scheduler._launch fake branch; search_infeasible_failures.screens() pre-writes every screen.json",
+      "suggested_check": "Selftest case with a real-subprocess or delayed fake scheduler in which main finishes and queues solves before control's screen fails.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Planned 2R screen rate is Mac-timing dependent",
+      "detail": "--check-references on my rerun (machine under load from the parallel gate) gave a plan screen rate of 0.561 s per candidate against the spec's 0.527. This is a cost line only, and the Mac->VM factor for pure-Python sampling is declared an inference. The 320 vCPU-hour cap has a wide margin (upper 150.5).",
+      "evidence": "--check-references log: '2D_Case_2R ... plan screen s/candidate 0.5614'",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "2D_Case_6 peak-memory entry dropped from cost_estimate",
+      "detail": "make_spec.py now takes peak_memory_per_reference_GB from --plan's expected case, which excludes 2D_Case_6, so the E008 entry (fv 372.2 GB) disappears. spec_diff lists it as a --plan cost line. The phase-B machine is unaffected because 2R's 410.7 GB FV level-3 job is the largest.",
+      "evidence": "E008 {'2D_Case_2R':..., '2D_Case_6': {...}} vs E010 {'2D_Case_2R': ...}",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran e010_run.py --selftest: 'selftest passed', exit 0; search_infeasible reports 3 cases plus the other-error stop, 0 failures",
+    "Mutation-tested search_infeasible_failures: baseline 0 failures. With is_search_infeasible forced False, the selftest crashes on the abort ('job ... failed: RuntimeError: no DRC-valid candidate'). With any failed screen treated as infeasible, it reports 'a screen failing with another error did not stop the run'. Both mutations are detected",
+    "Ran --verify-freeze: all freeze hashes OK (derivative.py 13556bef...; twin.py, search.py, snap.py, rules.py, stack.py and the frozen script equal to E008's)",
+    "Ran feasibility_2r.py: 2R main 1028/300000 and control 998/300000 DRC-clean, all in the twin's configuration (0,0,1,0); counts equal check_references.json; only wall-time fields changed in the regenerated JSON (restored with git checkout)",
+    "Re-derived P(abort) by hand: q = (1-3.017e-3)^20001 ~ 5e-27, 20000*q ~ 1.1e-22, matching the reported 1.129e-22",
+    "Ran --check-references: exit 0; 2R fingerprint ok, 2026/600000 DRC-clean; 2D_Case_6 TwinError as D0021 expects",
+    "Ran --plan (exit 0), ruff on e010_run.py (clean), mfos exp check E010 (no errors), mfos gate --fast ('all gates passed')",
+    "Dev rows: E010 rows == E008 rows (59), smoke False, solves_started 0; the meta differs only in merged/per_reference/rule_strictness_refresh provenance",
+    "Regenerated the gen2_0 main and control dev streams with the current derivative.generate: identical to E008's stream.json.gz (D0021 item 3)",
+    "code_under_test coverage: all 26 imported moduleforge files are listed",
+    "Read the full e008_run.py -> e010_run.py diff: changes are the renames, SearchInfeasible, the Scheduler.done/submit/step handling, Run.drive pass and search_infeasible, the new --check-references with draw_feasibility, and the selftest. burst_full.sh differs from E008's only by the renames",
+    "Compared the spec cost-estimate changes (peak memory, e010_statement) against make_spec.py's derivation"
+  ],
+  "caveats": [
+    "Could not run the DoD's 'git diff --quiet $(git merge-base HEAD main) -- src tests/acceptance tools ...' check: the guard hook blocks merge-base, and the review snapshot is one commit with no main branch. Protected-path immutability is unverified by me",
+    "Could not run the DoD's mfos null_check registration dry run: the guard hook blocked it as a founder/orchestrator action ('mfos import models')",
+    "The SearchInfeasible exclusion is verified only on the fake scheduler, where jobs complete synchronously. The concurrent case (one namespace's screen fails while the other's screen or solves are running) is reasoned from code, not tested",
+    "The 2R feasibility uses unsealed seeds and the E008 run's ctx.pkl spec: a rate estimate, as declared, not evidence; the registered run's screens use fresh sealed seeds"
+  ]
+}
