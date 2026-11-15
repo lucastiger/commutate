@@ -1,8 +1,8 @@
 # ModuleForge status
-_generated 2026-11-15T20:02:51+00:00 from repository state — do not edit_
+_generated 2026-11-15T20:09:10+00:00 from repository state — do not edit_
 
-## Founder inbox (1 open)
-- **I0203** [protected_change] T0349: merge needs founder approval
+## Founder inbox (0 open)
+- nothing needs you
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,13 +29,10 @@ _generated 2026-11-15T20:02:51+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 301, failed: 4, needs_founder: 1
+cancelled: 44, done: 302, failed: 4
 
-- T0349 `needs_founder` scientist/investigate: Diagnose failure of EV-O003-01 (attempt 1)
 
 ## Recent events
-- 2026-11-15T10:35:22+00:00 task_failed_attempt {"task": "T0347", "signal": "sanity_failed", "action": "fix_experiment"}
-- 2026-11-15T10:35:22+00:00 investigation_spawned {"task": "T0348", "about": "T0347", "cls": "experimental"}
 - 2026-11-15T10:35:24+00:00 evaluation_invalid {"objective": "O003", "problems": ["E010/E010-20261114T202413-80c1: sanity checks failed: F1b_control, F1b_control:2D_Case_2R", "E010/E010-20261114T202413-80c1:
 - 2026-11-15T10:35:24+00:00 investigation_spawned {"task": "T0349", "about": "EV-O003-01", "cls": "experimental"}
 - 2026-11-15T10:35:27+00:00 run_started {"run": "T0348-scientist-20261115T023527-8a7a", "task": "T0348", "role": "scientist", "session": "dbd44023-b7c0-4b0e-a8b3-6e16ee41c982"}
@@ -49,3 +46,5 @@ cancelled: 44, done: 301, failed: 4, needs_founder: 1
 - 2026-11-15T11:05:12+00:00 sleep_detected {"gap_s": 376, "runs_extended": 1}
 - 2026-11-15T11:09:44+00:00 run_finished {"run": "T0350-critic-20261115T030438-8ccc", "status": "completed", "cost": 1.855946, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T11:09:48+00:00 inbox_opened {"id": "I0203", "kind": "protected_change", "subject": "T0349: merge needs founder approval"}
+- 2026-11-15T20:03:03+00:00 inbox_resolved {"id": "I0203", "status": "approved", "note": "Merge T0349 (diagnosis of EV-O003-01: E010 void; the frozen search cannot reach the 2R designer's level). Review 
+- 2026-11-15T20:09:06+00:00 merged {"task": "T0349"}
