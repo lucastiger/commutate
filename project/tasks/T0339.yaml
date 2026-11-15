@@ -3,7 +3,7 @@ objective: O003
 title: 'E010: successor of E008 with the repaired sampler and a SearchInfeasible exclusion (D0021)'
 type: design_experiment
 agent: scientist
-status: running
+status: failed
 depends_on:
 - T0338
 description: "Founder decision D0021 (project/decisions/D0021-o003-e008-not-runnable-successor-e010.md,\
@@ -499,3 +499,192 @@ history:
 - outcome: rescoped
   summary: 'session: successor id E010 (E009 is O007''s); D0022'
   at: '2026-11-15T00:25:42+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'E010 is designed and committed (2fd52080) on the task branch. It is the registered E008 with
+    only D0021''s three changes: (a) the repaired generator sampler (only derivative.py''s freeze hash
+    moves; make_spec.py asserts this), (b) SearchInfeasible exclusion, (c) new freeze hashes. I ran every
+    DoD command myself and all exited 0, except the registration dry run, which the mfos guard hook blocked;
+    the orchestrator should run it.
+
+
+    Commands run and exit codes:
+
+    - e010_run.py --selftest: 0
+
+    - --verify-freeze: 0
+
+    - --check-references: 0
+
+    - --plan: 0
+
+    - feasibility_2r.py: 0
+
+    - bash -n plus burst_full.sh --dry-run: 0
+
+    - git ls-files mode: 100755
+
+    - dev rows equal to E008''s: 0 (59 rows, solves_started 0)
+
+    - code_under_test import check: 0 (26 src files)
+
+    - mfos exp check E010: 0
+
+    - ruff: 0
+
+    - gen2_0 2 x 20 000 s'
+  report:
+    summary: 'E010 is designed and committed (2fd52080) on the task branch. It is the registered E008
+      with only D0021''s three changes: (a) the repaired generator sampler (only derivative.py''s freeze
+      hash moves; make_spec.py asserts this), (b) SearchInfeasible exclusion, (c) new freeze hashes. I
+      ran every DoD command myself and all exited 0, except the registration dry run, which the mfos guard
+      hook blocked; the orchestrator should run it.
+
+
+      Commands run and exit codes:
+
+      - e010_run.py --selftest: 0
+
+      - --verify-freeze: 0
+
+      - --check-references: 0
+
+      - --plan: 0
+
+      - feasibility_2r.py: 0
+
+      - bash -n plus burst_full.sh --dry-run: 0
+
+      - git ls-files mode: 100755
+
+      - dev rows equal to E008''s: 0 (59 rows, solves_started 0)
+
+      - code_under_test import check: 0 (26 src files)
+
+      - mfos exp check E010: 0
+
+      - ruff: 0
+
+      - gen2_0 2 x 20 000 stream identity: 0
+
+      - protected-path git diff against base 242a6d7a: 0. The hook blocks merge-base, so I diffed against
+      HEAD~1 = the T0338 merge.
+
+      - mfos gate --fast: 0 ("all gates passed")
+
+
+      Not run by me: the registration dry-run command (null_check, code_hashes). The guard blocked it
+      twice ("`mfos import models` is a founder or orchestrator action", a substring match on `from mfos
+      import models`). I did not work around the guard. The orchestrator must run that DoD item.
+
+
+      Results:
+
+      - 2D_Case_2R: 2026 DRC-clean in 600 000 sampler draws (main seed 20261114 reproduces the builder''s
+      1028/300 000 exactly). p = 3.38e-3, about 14 ms per candidate on this Mac, P(a 20 000-candidate
+      screen hits the limit) <= 1.1e-22.
+
+      - On 2R every DRC-clean candidate has the twin''s configuration (0,0,1,0), with orientation 1 yielding
+      none. On gen2_0, 56 of 200 candidates share the twin''s topology (T0341 confirmed). This is stated
+      in config.f3_declared_deviation.d0021.support_on_2R.
+
+      - 2D_Case_6: TwinError, as expected.
+
+      - --plan: expected 102.1 billed vCPU-hours (12.76 VM-h, $22.70), upper 150.5 (18.81 VM-h, $26.40).
+      E008 was 98.7 / 147.1. The 320 cap holds in every case, including if 2D_Case_6 were counted (152.0
+      / 257.4). D0021''s quoted VM cost of $22.44 / $26.14 is now $0.26 higher.'
+    failure_class: none
+    confidence: 0.85
+    evidence:
+    - 'FACT: e010_run.py --selftest prints ''selftest passed''. The new search_infeasible_failures runs
+      the real screen child on a 70x40 housing with a 30 mm power-width rule; derivative.generate raises
+      ''no DRC-valid candidate in 20000 consecutive draws''. 3 cases (main+control infeasible, control
+      only, only reference -> INVALID), a resume, and a planted ''ValueError'' screen that must still
+      stop the run: 0 failures.'
+    - 'FACT: with vs without the infeasible reference, these are byte-identical: rows; all metrics except
+      n_excluded_references (1 vs 0); whole per-reference checks of the other references; name/passed/value/threshold
+      of every aggregate check. The exception is fail_fast_twin_and_D, whose value is the exclusion count
+      and is asserted 1 vs 0.'
+    - 'FACT: the selftest''s resume case found a real bug in my first version: a driver counted as pending
+      before its reference was excluded later in the same pass (''drivers pending but no job queued'').
+      It is fixed by counting pending drivers after the pass.'
+    - 'FACT: check_references.json and feasibility_2r.py report identical outcome counts (the same function
+      and constants; feasibility_2r.py asserts equality).'
+    - 'FACT: make_spec.py walks the registered E008 spec and the draft key by key and refuses to write
+      if any difference lacks a reason. spec_diff.md lists 86 keys: id/title/status/runner/dev_rows/code_under_test
+      runner path; derivative.py hash; failure_consequences.SearchInfeasible; one clause in the at_least_one_counted_reference
+      description; the deviation statement and d0021 record; changed_after; the 2R screen rate and basis;
+      and --plan cost lines.'
+    - 'FACT: the dev-rows DoD assertion passes. The meta differs from E008''s only in provenance (runner_sha256
+      re-stamped by the e010_dev copies of gen2_0_prep.py, case4_prep.py and refresh_rule_strictness.py,
+      plus timings).'
+    - 'FACT: the replay ran on a worktree copy of full_work (333 files, sha256 list equal to the source),
+      which I deleted afterwards. Nothing under /Users/lukeskywalker/mf/drafts was written.'
+    alternative_explanations:
+    - explanation: The 2R screen rate on the VM could be slower than modelled. The Mac -> VM factor 5.55
+        used for pure-Python sampling is an inference, since the FV solver is where it was measured.
+      how_to_discriminate: Compare the registered run's screen.json s_per_candidate for 2R with 0.527
+        s. Even 3x slower adds under 1 VM-hour and stays far below the 320 cap.
+    - explanation: The ctx.pkl spec used by feasibility_2r.py might not equal the spec the E010 runner
+        builds, so the 2R feasibility would describe a different housing.
+      how_to_discriminate: 'Already tested: the outcome counts from ctx.pkl''s spec equal those of --check-references,
+        which rebuilds the spec from the frozen reconstruction (equal at 300 000 draws per seed).'
+    discriminating_tests:
+    - 'Orchestrator: run the registration dry-run DoD command (null_check / code_hashes) that the guard
+      blocked for me.'
+    - 'After registration: 2R''s main and control screen.json must show status ok. A SearchInfeasible
+      on 2R would contradict P <= 1.1e-22 and point to a spec or seed path the feasibility check did not
+      cover.'
+    recommended_actions:
+    - Run the registration dry-run DoD command as orchestrator. It was blocked for the scientist role
+      by the mfos guard.
+    - 'Founder: O003 v6 (D0021 item 5) must rename E008 -> E010 in evidence_plan, required_experiments
+      and the A1/K1 metric names before E010 is registered. validate_draft currently finds no E010.* criteria
+      to check.'
+    - 'Founder: note the two judgement calls in E010. (1) --check-references no longer recomputes mesh
+      counts on 2R/6 before registration, because D0021 item 4 allows no l2_layout, thermal or FV code
+      on them. plan_references keeps E008''s T0320 counts, tied to the fingerprints; --mesh-counts recomputes
+      them after registration. (2) The 2R screen rate is 0.45 s + measured draw time x 5.55.'
+    - 'Process note: some scratch files went to the sandbox''s $TMPDIR (/private/tmp/claude-501), which
+      the packet forbids: three small test scripts and logs, and Python''s own temp dirs during the selftest.
+      I deleted my files. Later steps used a worktree-local temp dir, also deleted. The selftest''s tempfile
+      use is inherited from e008_run.py.'
+    files_written:
+    - experiments/runners/e010_run.py
+    - experiments/drafts/E010.yaml
+    - experiments/drafts/E010.dev_rows.json
+    - research/o003/e010_dev/make_spec.py
+    - research/o003/e010_dev/spec_diff.md
+    - research/o003/e010_dev/burst_full.sh
+    - research/o003/e010_dev/feasibility_2r.py
+    - research/o003/e010_dev/feasibility_2r.json
+    - research/o003/e010_dev/feasibility_2r.log
+    - research/o003/e010_dev/check_references.json
+    - research/o003/e010_dev/plan.json
+    - research/o003/e010_dev/plan_T0339.log
+    - research/o003/e010_dev/replay_T0339.log
+    - research/o003/e010_dev/gen2_0_prep.py
+    - research/o003/e010_dev/case4_prep.py
+    - research/o003/e010_dev/refresh_rule_strictness.py
+    - research/o003/e010_dev/gen2_0_prep_T0339.log
+    - research/o003/e010_dev/case4_prep_T0339.log
+    - research/o003/e010_dev/refresh_rule_strictness_T0339.log
+    - research/notes/e010-generator.md
+    - research/notes/e010-design.md
+    experiment_drafts:
+    - experiments/drafts/E010.yaml
+    affects_acceptance_criteria: false
+- attempt: 3
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "FAIL uv run python -c \"from mfos.store import Store; from mfos import models as m;\
+    \ from mfos.evaluate import load_rows, null_check; from mfos.experiments import runner_files, code_hashes;\
+    \ s = Store(); spec = s.read_yaml(s.spec_path('E010', draft=True), m.ExperimentSpec); lines, bad =\
+    \ null_check(s, spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert not bad,\
+    \ bad; assert any('A1' in x and 'satisfied' in x for x in lines), lines; assert runner_files(s.root,\
+    \ spec.runner); n = len(code_hashes(s.root, spec.code_under_test)); assert n >= 27, n; print('E010\
+    \ registration dry run OK,', n, 'code files')\"\n\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\nTraceback (most recent call last):\n  File \"<string>\", line 1,\
+    \ in <module>\nAssertionError: []\n"
+  at: '2026-11-15T01:24:37+00:00'

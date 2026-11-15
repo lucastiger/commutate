@@ -2388,3 +2388,7 @@
 {"ts": "2026-11-15T00:28:43+00:00", "event": "replan_declined", "actor": "session", "objective": "O003", "reason": "D0021/D0022 plan in force; T0344 stopped"}
 {"ts": "2026-11-15T00:28:49+00:00", "event": "run_interrupted", "actor": "orchestrator", "run": "T0344-planner-20261114T162814-40a6", "cost": 0.5233}
 {"ts": "2026-11-15T00:28:49+00:00", "event": "founder_stopped", "actor": "orchestrator", "task": "T0344", "run": "T0344-planner-20261114T162814-40a6", "run_status": "interrupted", "task_status": "cancelled"}
+{"ts": "2026-11-15T01:09:00+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0339-scientist-20261114T162617-5161", "status": "completed", "cost": 5.725581, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-15T01:24:37+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0339", "signal": "dod_failed", "action": "diagnose"}
+{"ts": "2026-11-15T01:24:37+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0345", "about": "T0339", "cls": "implementation"}
+{"ts": "2026-11-15T01:24:43+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0345-scientist-20261114T172443-b2c9", "task": "T0345", "role": "scientist", "session": "fe0706e8-dc4e-44d4-96a3-83d79f2602f9"}
