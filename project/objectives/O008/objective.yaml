@@ -40,7 +40,9 @@ hypothesis:
     certifies: on these development layouts, from fresh degraded copies, the search recovers headroom that an L1 local
     descent over the search's parameters can reach. It does not cover headroom an L1 descent misses (L1 misranking,
     C002; optima outside the descent's basin), so a negative headroom finding in O009 carries the same limit; it says
-    nothing about Tj, which O009 bounds; and reliability on fresh references rests on O009's per-reference control.
+    nothing about Tj: O009 filters the frozen search's candidates by its Tj bound after the search, as O003 did, and a
+    Tj term in the search's score would need a new control; and reliability on fresh references rests on O009's
+    per-reference control.
   decision_if_fail: >-
     Plan stop line (risks table): one diagnosis (mf-diagnosis) and one redesign under a new experiment id; a second
     failure stops inductance-search work and goes to the founder, with the reference-native representation route (plan
@@ -62,7 +64,8 @@ scope_in:
     one parameter set throughout: the proxy descent, the degradation family, the search and every null move the same
     parameters (columns, slots, die rows, landing lines), so the target is an optimum of the search's own domain (review
     T0358). Because dies move, the hottest-die Tj of W, W* and each best_j at the thermal reference's coarsest level is
-    reported, not gated
+    reported. If Tj(W*) exceeds Tj(W) by more than 2 K there, that layout's proxy falls back to the same descent with
+    die rows held fixed, so O009 never inherits a proxy its Tj bound rules out (review T0359)
   - >-
     the designer proxy: a steepest single-parameter L1 descent from W (0.5 mm steps, DRC-clean, to a local optimum or a
     frozen step limit); W* is whichever of W and that result has the lower L_sub at 0.25 mm; L1(W*) / L1(W) and
@@ -77,10 +80,12 @@ scope_in:
   - >-
     the per-draw outcome, from L_sub at 0.25 mm: s_j = L_sub(best_j) / L_sub(W*) - 1; the draw passes when s_j <= 0.02.
     The band b_j = 2 e_R(best_j, W*) by the D0008 band rule is reported per draw, with the per-layout count of draws
-    within their band of the line (|s_j - 0.02| < b_j). Before registration, E011's design measures b_j on development
+    within their band of the line (|s_j - 0.02| < b_j) and A1's count with the band applied conservatively
+    (s_j + b_j <= 0.02) beside the point count. Before registration, E011's design measures b_j on development
     draws on every counted layout and freezes a bound (median b_j <= 0.01 and max b_j <= 0.02); if the bound fails, the
-    band rule or the tolerance is redesigned before registration. E011's spec states the operating characteristic
-    P(PASS | per-draw pass probability) for the frozen thresholds. No single draw voids the run
+    band rule or the tolerance is redesigned before registration. E011's spec states the joint operating
+    characteristic of A1 and A3 (and K1 not firing) from the development draws' s_j and b_j at L2, including the
+    common-mode error of the single L_sub(W*) solve that every draw on a layout shares. No single draw voids the run
   - >-
     the loop-inductance objective only; thermal and current-sharing terms are reported where the runner computes them,
     never gated here
@@ -102,19 +107,19 @@ acceptance:
   required_experiments: [E011]
   pass_all:
     - {id: A1, metric: E011.control_layout_pass_min, comparator: ">=", threshold: 0.875, uncertainty: {use: point},
-       description: "min over the counted layouts of the fraction of that layout's 8 draws that pass (s_j <= 0.02): at least 7 of 8 on every layout, so 2R cannot be carried by the others. Operating characteristic with independent draws: P(PASS) per layout is 0.94, 0.81, 0.66 and 0.26 at per-draw pass probabilities 0.95, 0.90, 0.85 and 0.70; with two layouts 0.89, 0.66, 0.43 and 0.07. The pooled one-sided 95 % Clopper-Pearson bound is reported, not gated: draws within a layout share W*, so it is a count, not a reliability bound over references. Founder-set (2026-11-15)"}
+       description: "min over the counted layouts of the fraction of that layout's 8 draws that pass (s_j <= 0.02): at least 7 of 8 on every layout, so 2R cannot be carried by the others. Operating characteristic of A1 alone, with independent draws (A3 lowers P(PASS) further; the joint figure is in E011's spec): P(A1 met) per layout is 0.94, 0.81, 0.66 and 0.26 at per-draw pass probabilities 0.95, 0.90, 0.85 and 0.70; with two layouts 0.89, 0.66, 0.43 and 0.07. The pooled one-sided 95 % Clopper-Pearson bound is reported, not gated: draws within a layout share W*, so it is a count, not a reliability bound over references. Founder-set (2026-11-15)"}
     - {id: A2, metric: E011.reach_outside_max, comparator: "<=", threshold: 0.0, uncertainty: {use: point},
-       description: "max over the development layouts of 1 - in_domain(W): in_domain is a predicate the parameterisation and the sampler implement from their own construction (joint constraints, not marginal ranges) and returns true when params_of(W) lies in the search's domain and in the random sampler's support. Before registration it must be shown false for 2D_Case_2R under E010's frozen generator (F2), so A2 is not met by construction"}
+       description: "max over the development layouts of 1 - in_domain(W): in_domain is a predicate the parameterisation and the sampler implement from their own construction (joint constraints, not marginal ranges) and returns true when params_of(W) lies in the search's domain and in the random sampler's support. Before registration it must be shown false for 2D_Case_2R under E010's frozen generator (F2), so A2 is not met by construction. A2 is a sanity gate on these layouts, not evidence of reach on fresh references, which O009 tests per reference (review T0359)"}
     - {id: A3, metric: E011.null_beaten_min, comparator: ">=", threshold: 1.0, uncertainty: {use: point},
-       description: "min over the counted layouts and the gating nulls (b) widen and (d) compaction of the beaten indicator, recomputed from the per-draw s_j and b_j of the search and of each null: a null is beaten on a layout when it fails resolvably (s_j - b_j > 0.02) on at least 4 of that layout's 8 draws, and the search's s_j is below the null's by more than the search's band b_j on at least 7 of the 8 draws (paired on the same D_j). A null not beaten on any one layout makes A3 0, so the verdict cannot be PASS (reviews T0357, T0358). The 4 of 8 was set by the session after T0357; the founder may change it at approval"}
+       description: "min over the counted layouts and the gating nulls (b) widen and (d) compaction of the beaten indicator, recomputed from the per-draw s_j and b_j of the search and of each null: a null is beaten on a layout when it fails resolvably (s_j - b_j > 0.02) on at least 4 of that layout's 8 draws, and the search's s_j is below the null's by more than b_j(search) + b_j(null) on at least 7 of the 8 draws (paired on the same D_j). Each null runs to its own local optimum within a generous frozen step limit; a null run that stops at that limit does not count as a resolved failure (review T0359: on Case 4 the probe's nulls stopped at a 60-step cap). A null not beaten on any one layout makes A3 0, so the verdict cannot be PASS (reviews T0357, T0358). The 4 of 8 was set by the session after T0357; the founder may change it at approval"}
   fail_any:
     - {id: K1, metric: E011.control_shortfall_median_max, comparator: ">", threshold: 0.05, uncertainty: {use: point},
-       description: "max over the counted layouts of the median of s_j over that layout's draws, above 5 %: on some layout the search typically ends more than 5 % above the proxy, too coarse for O009's 10 % and 20 % headroom lines; per layout, so one layout cannot mask another. The probe's blind compaction would fire it (medians about 6 % on 2R and 17 % on Case 4 at L1, die rows free); E010's 2R control (7.55 % above the twin) would have. Founder-set (2026-11-15)"}
+       description: "max over the counted layouts of the median of s_j over that layout's draws, above 5 %: on some layout the search typically ends more than 5 % above the proxy, too coarse for O009's 10 % and 20 % headroom lines; per layout, so one layout cannot mask another. The probe's blind compaction would fire it (medians about 6 % on 2R, close to the line, and 17 % on Case 4 at L1, die rows free); E010's 2R control (7.55 % above the twin) would have. Founder-set (2026-11-15)"}
   max_evaluations: 2
 failure_modes:
   - id: F1
     description: "The control is passed by an inductance-blind heuristic, or by undoing the degradation"
-    detection: "declared nulls, each computed on the same draws with its own solves and band and judged per layout: (a) return the seed D_j unchanged; (b) widen every power band to the DRC limit, no inductance model, same budget; (d) compaction: more power copper and shorter power wires, no inductance model, same budget (review T0354); all move the search's parameters. (b) and (d) gate through A3; E011's registration check (mfos exp check with development rows) must show A3 met on development draws. (a) is a gated sanity check: it must fail A1 (it fails by construction, s_j >= 0.25). Per draw the changed-parameter count, the parameter-space distance from W* and the search's move count are reported. Reported ablations, not gating, with their A1 values beside the search's: (c) the D0008 random screen alone, and (e) the proxy rule alone (the L1 descent with no L2 shortlist), same budget"
+    detection: "declared nulls, each computed on the same draws with its own solves and band and judged per layout: (a) return the seed D_j unchanged; (b) widen every power band to the DRC limit, no inductance model, same budget; (d) compaction: more power copper and shorter power wires, no inductance model, same budget (review T0354); all move the search's parameters. (b) and (d) gate through A3; E011's registration check (mfos exp check with development rows) must show A3 met on development draws. (a) is a gated sanity check: it must fail A1 (it fails by construction, s_j >= 0.25). Per draw the changed-parameter count, the parameter-space distance from W* and the search's move count are reported. Reported ablations, not gating, with their A1 and A3 values beside the search's in the evaluation: (c) the D0008 random screen alone, and (e) the proxy rule alone (the L1 descent with no L2 shortlist), same budget"
     response: "A3 not met while A1 is met: INCONCLUSIVE, then the inconclusive default; (a) meeting A1: INVALID (a defect in the computation)"
   - id: F2
     description: "Reach claimed but not delivered, or A2 met by construction"
@@ -146,7 +151,14 @@ notes: >-
   Draft by the founder session of 2026-11-15, revised four times the same day after draft reviews T0351/T0352,
   T0353/T0354, T0355/T0356 and T0357/T0358, and a development probe (research/notes/o008-control-probe.md,
   research/o008_probe/). The founder chose "core now, features later" and accepted the proposed default numbers.
-  Changes in the last revision: the null test gates as criterion A3 instead of sitting in F1 only, because the
+  After T0359 and T0360 (both accept with caveats) the session folded in, with no further review: nulls run to their
+  own optimum and a capped run is not a resolved failure; a Tj fallback to the die-fixed proxy; O009 filters by Tj
+  after the search; the paired margin uses both bands; the joint operating characteristic with the shared W* error;
+  the conservative A1 count; A2 as a sanity gate; ablation (e)'s A1 and A3 reported beside the search's. Open, by
+  choice: the control plants only L1-visible headroom, so a pass certifies recovery of L1-descent-reachable headroom
+  (both reviews; decision_if_pass and F3 say so); gating the search against ablation (e) was not adopted, because a
+  plain L1 descent that recovers headroom serves O009 as well.
+  Changes in the revision before: the null test gates as criterion A3 instead of sitting in F1 only, because the
   evaluator decides from pass_all and fail_any alone (T0357, T0358 blocker); a null counts as beaten only with resolved
   failures on at least 4 of 8 draws and a paired win by more than the search's band (T0357); the proxy, the degradation,
   the search and the nulls move the same parameters, die rows included (T0358): a die-fixed re-run of the probe showed
