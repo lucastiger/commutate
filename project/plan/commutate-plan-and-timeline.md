@@ -2,7 +2,7 @@
 
 Nov 15, 2026 · @Lucas
 
-> Snapshot of the living Claude Doc "Commutate Plan and Timeline" (https://claude.ai/artifact/FEGt6mrR4zoLEXmvNg9cYk), exported 2026-11-15 (doc revision 56). The doc is the working copy: edit it there and re-export to update this file. Dates without a year are 2026-27.
+> Snapshot of the living Claude Doc "Commutate Plan and Timeline" (https://claude.ai/artifact/FEGt6mrR4zoLEXmvNg9cYk), exported 2026-11-15 (doc revision 57). The doc is the working copy: edit it there and re-export to update this file. Dates without a year are 2026-27.
 
 Commutate keeps the re-layout direction and spends the next ten weeks building what E010 and the reference screening showed is missing: coverage of the layout features real modules use, a search that starts from the reference layout and can beat it, and a fast thermal model. Re-layout gains are tested on fresh references by about the end of January 2027. The first product, a paid re-layout sprint that Commutate runs on a partner's module with their new dies, ships about 02-26, and coverage of most half-bridge SiC modules follows by the end of March. The day-60 review on Nov 27, 2026 closes O003 with no verdict, and the day-90 line on Dec 27, 2026 (a paid or LOI-backed sprint) runs on the customer track in parallel.
 
@@ -132,7 +132,7 @@ A thermal model fast enough to sit inside the search, and a temperature measure 
 **How.**
 
 1. Founder decides the yardstick at or just after the thesis review. Recommended: die-average Tj gated, hottest-node Tj reported.
-2. Session revises the O002 draft: model choice, criteria in the chosen yardstick (ranking and layout-to-layout differences against the scikit-fem reference, claim C004), and a new experiment id.
+2. Session revises the O002 draft: model choice, criteria in the chosen yardstick (ranking and layout-to-layout differences against the scikit-fem reference, claim C004), and its experiment E007, the id the draft already reserves. The draft's A1 rests on E006, O006's experiment (verdict INCONCLUSIVE); the refresh moves that check to claim C004 (O007, PASS).
 3. Scientist and builder tasks: implement the model in `src/moduleforge/thermal/`, tested against analytic limits, symmetry and power scaling.
 4. A pre-registered experiment on generated layouts compares L1 with the reference at the operating point.
 5. Wire the model into the search's score (section 3) once O002 passes.
