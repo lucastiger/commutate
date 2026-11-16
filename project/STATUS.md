@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T00:48:27+00:00 from repository state — do not edit_
+_generated 2026-11-16T00:57:54+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -21,7 +21,7 @@ _generated 2026-11-16T00:48:27+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 8 | $15.18 | 376184 | 237665 | 36 | 0 |
+| O002 | 10 | $15.18 | 376184 | 237665 | 36 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 14 | $23.71 | 549278 | 404912 | 35 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -31,13 +31,12 @@ _generated 2026-11-16T00:48:27+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 322, failed: 4
+cancelled: 44, done: 322, failed: 4, running: 2
 
+- T0371 `running` critic/review: Review OBJ-O002 (statistics) (attempt 1)
+- T0372 `running` critic/review: Review OBJ-O002 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T00:09:58+00:00 objective_draft_review {"objective": "O004", "ref": "a6fb177fef8ccf715f5b8d42c388109944d7f5ae", "tasks": ["T0365", "T0366"]}
-- 2026-11-16T00:10:36+00:00 run_started {"run": "T0365-critic-20261115T161036-2811", "task": "T0365", "role": "critic", "session": "ff921fcd-1399-4288-88ef-7196a6a05f88"}
-- 2026-11-16T00:10:37+00:00 run_started {"run": "T0366-critic-20261115T161037-9e05", "task": "T0366", "role": "critic", "session": "10d5e30e-584f-4dab-b2dc-d7a2f162b601"}
 - 2026-11-16T00:17:26+00:00 run_finished {"run": "T0366-critic-20261115T161037-9e05", "status": "completed", "cost": 1.700482, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T00:17:27+00:00 run_finished {"run": "T0365-critic-20261115T161036-2811", "status": "completed", "cost": 1.782424, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T00:20:34+00:00 objective_draft_review {"objective": "O004", "ref": "5ea0dd66fab4b0f07d13e29c0982e1c433563c35", "tasks": ["T0367", "T0368"]}
@@ -50,3 +49,6 @@ cancelled: 44, done: 322, failed: 4
 - 2026-11-16T00:34:36+00:00 run_started {"run": "T0370-critic-20261115T163436-82b8", "task": "T0370", "role": "critic", "session": "3e0168ba-3eca-477c-aeb4-c32d4cc099c4"}
 - 2026-11-16T00:42:04+00:00 run_finished {"run": "T0370-critic-20261115T163436-82b8", "status": "completed", "cost": 1.819915, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T00:43:21+00:00 run_finished {"run": "T0369-critic-20261115T163435-cb66", "status": "completed", "cost": 1.923405, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T00:57:38+00:00 objective_draft_review {"objective": "O002", "ref": "68776023c8656a1ebd835c2e76c2f196292813c6", "tasks": ["T0371", "T0372"]}
+- 2026-11-16T00:57:52+00:00 run_started {"run": "T0371-critic-20261115T165752-eb6a", "task": "T0371", "role": "critic", "session": "f1e56f2f-cd4d-4700-aea1-76454c19fac6"}
+- 2026-11-16T00:57:54+00:00 run_started {"run": "T0372-critic-20261115T165754-852d", "task": "T0372", "role": "critic", "session": "1c9d58cf-4bd4-4e85-b933-fbe862a7c521"}
