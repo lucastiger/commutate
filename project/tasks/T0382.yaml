@@ -39,7 +39,12 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ budget and coarse L2 cells.\n   - --dev: development seeds only. Runs the L1 stages locally, then\
   \ writes experiments/drafts/E011.dev_jobs.json, the L2 job manifest for a burst VM with a cost estimate\
   \ per job.\n   Rows follow n7's schema.\n\nThe dev L2 analysis (band bound, joint operating characteristic,\
-  \ dev_rows) is a later task, after the founder's burst run."
+  \ dev_rows) is a later task, after the founder's burst run.\n\nNote from the founder session (2026-11-16):\
+  \ O008's one parameter set is the frozen objective's 'columns, slots, die rows, landing lines': Params.NAMES[twin.WALK_FIRST:twin.WALK_END]\
+  \ (indices 4-39), the set the L1 probe (research/o008_probe) and the T0376 kill shot used. The four\
+  \ power-wire foot offsets foot_{HS,LS}_land_{du,dv} are not in it (founder decision 2026-11-16, recorded\
+  \ by the founder session). E011's spec and runner name this set, and the runner records movable_indices()\
+  \ in each row's provenance."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py

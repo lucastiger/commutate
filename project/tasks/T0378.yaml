@@ -3,7 +3,7 @@ objective: O008
 title: Seeded local search over the derivative parameterisation (optimize/local.py)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0377
 - T0376
@@ -40,7 +40,12 @@ description: "Build item (2) of the objective notes. Create src/moduleforge/opti
   \ is a superset test (no upper bound on stack gaps), and its docstring calls it the local search's domain\
   \ although the walk can leave it. Keep the search's moves inside in_domain, or state plainly in the\
   \ docstring and the report that they are not kept inside; test it on the 2R spec, the only split-free-region\
-  \ spec. Reach mode yields 3-5x fewer DRC-clean draws per raw draw; report the yield of your moves."
+  \ spec. Reach mode yields 3-5x fewer DRC-clean draws per raw draw; report the yield of your moves.\n\
+  \nNote from the founder session (2026-11-16), for any retry of this task: O008's one parameter set is\
+  \ the frozen objective's 'columns, slots, die rows, landing lines': Params.NAMES[twin.WALK_FIRST:twin.WALK_END]\
+  \ (indices 4-39), the set the L1 probe and the T0376 kill shot used; the power-wire foot offsets foot_{HS,LS}_land_{du,dv}\
+  \ are not in it (founder decision 2026-11-16). movable_indices() must return exactly tuple(range(twin.WALK_FIRST,\
+  \ twin.WALK_END)) (die rows dropped when dies_fixed): drop _FOOT_LAND and the foot step."
 context_files:
 - src/moduleforge/optimize/search.py
 - src/moduleforge/generate/derivative.py
@@ -96,3 +101,120 @@ history:
 - outcome: capacity_resume
   summary: 09c86f72-5b9d-4300-b748-a86c1ca85a30
   at: '2026-11-16T15:05:12+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Added src/moduleforge/optimize/local.py with the shared descend primitive and the seeded local_search,
+    plus 16 tests. They are committed as bedff0e8. All DoD commands and the fast gate exit 0.
+
+
+    **descend:**
+
+    - Steepest single-parameter descent, with `step_mm` and `dies_fixed`.
+
+    - Every candidate must build, be DRC-clean under spec.rules and satisfy in_domain(reach=True).
+
+    - Ties go to the first in Params.NAMES order. The neighbourhood is ±step per parameter plus the twin''s
+    reach jumps.
+
+    - It returns local_optimum or step_limit, the step count and the trajectory. At step_limit the neighbourhood
+    is not examined once more.
+
+
+    **local_search:**
+
+    - Signature is (spec, seed_layout, seed, solvers, cfg, workdir, score). No input can carry W or W*.
+
+    - Each iteration screens the single-parameter neighbourho'
+  report:
+    status: completed
+    summary: 'Added src/moduleforge/optimize/local.py with the shared descend primitive and the seeded
+      local_search, plus 16 tests. They are committed as bedff0e8. All DoD commands and the fast gate
+      exit 0.
+
+
+      **descend:**
+
+      - Steepest single-parameter descent, with `step_mm` and `dies_fixed`.
+
+      - Every candidate must build, be DRC-clean under spec.rules and satisfy in_domain(reach=True).
+
+      - Ties go to the first in Params.NAMES order. The neighbourhood is ±step per parameter plus the
+      twin''s reach jumps.
+
+      - It returns local_optimum or step_limit, the step count and the trajectory. At step_limit the neighbourhood
+      is not examined once more.
+
+
+      **local_search:**
+
+      - Signature is (spec, seed_layout, seed, solvers, cfg, workdir, score). No input can carry W or
+      W*.
+
+      - Each iteration screens the single-parameter neighbourhood plus seeded joint moves through the
+      injected score. The default score is L1.
+
+      - It perturbs when stuck. The budget is counted in distinct-fingerprint L1 evaluations.
+
+      - At the end the K lowest-score distinct layouts go to l_sub, and the best is the lowest L_sub.
+
+      - Randomness comes from SeedSequence([seed, kind, counter]). The config is a frozen dataclass with
+      a stable hash.
+
+      - Solves are appended to a JSONL Store (reusing search.Store), so a rerun re-solves nothing.
+
+      - Per run it records steps, L1 evaluations, whether it stopped at the budget, whether it was still
+      improving in the last 10 %, moves, changed parameters, Manhattan distance from the seed, Spearman
+      rank correlation of L1 and L_sub, the L2/L1 ratio range, and the yield per move kind.
+
+
+      **Domain:** every candidate the search moves to satisfies in_domain(reach=True), so the moves are
+      kept inside it. The seed layout only has to build and be DRC-clean, because a degraded copy can
+      lie outside the domain. `stats[''seed_in_domain'']` records whether it did. The docstring says this.
+      The 2R test checks that every layout visited after the seed is in the reach domain and DRC-clean.
+
+
+      **Yield (valid / proposed, Case 4, real L1, 800 evaluations):**
+
+      - Single ±step moves: 68 %.
+
+      - Reach jumps: 52 %.
+
+      - Joint moves: 22 %.
+
+      - Perturbations on the 70x40 housing with a synthetic score: 6 %.
+
+
+      **Wall time per L1 evaluation on Case 4:** 0.013–0.016 s (800 evaluations: 12.7 s of L1 in 15.9
+      s wall). This is in the module docstring.
+
+
+      **Scope calls:**
+
+      - Movable parameters are the columns, slots, die rows and landing lines (Params.NAMES[4:38]) plus
+      the wire-landing foot parameters `foot_*_land_du` and `foot_*_land_dv`, which move in 0.125 mm steps.
+      I read "wire landings" in the packet as these. If the founder meant only the landing lines, drop
+      `_FOOT_LAND` in `movable_indices`, so that the proxy rule and the nulls use the same set.
+
+      - I added a `LocalSolvers(l1, l_sub)` dataclass rather than reusing `search.Solvers`, which also
+      requires band and thermal callables this search does not use.'
+    files_changed:
+    - src/moduleforge/optimize/local.py
+    - tests/unit/optimize/test_local_search.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize/test_local_search.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/optimize tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'The ''wire landings'' parameters are my reading of the packet: the foot_*_land_du/dv entries at
+      0.125 mm steps. If the founder meant otherwise, the proxy rule and the nulls must use the same movable
+      set.'
+    - If the seed lies outside in_domain and none of its neighbours is inside it, the search ends with
+      stop_reason 'no_moves'. This has not been exercised on a seed outside the domain.
+    - descend at step_limit does not check whether the layout is also a local optimum, so it reports step_limit.
+    - Case 4 yield and wall time were measured with an ad-hoc script on the development twin. They are
+      recorded in the docstring but are not an automated test.

@@ -30,7 +30,16 @@ description: "Build item (3a) of the objective notes. Create src/moduleforge/opt
   \ session, 2026-11-16 (from T0377's reviews T0402 and T0403): twin._net_side can misread a column's\
   \ side for straddling slots that the reach domain allows. Add a test that the proxy and the degradation\
   \ build the intended column sides on 2R and Case 4 (Case 4's twin is also outside the legacy domain),\
-  \ and report any case where the reading is ambiguous."
+  \ and report any case where the reading is ambiguous.\n\nNote from the founder session (2026-11-16):\
+  \ O008's one parameter set is the frozen objective's 'columns, slots, die rows, landing lines': Params.NAMES[twin.WALK_FIRST:twin.WALK_END]\
+  \ (indices 4-39), the set the L1 probe (research/o008_probe) and the T0376 kill shot used. The four\
+  \ power-wire foot offsets foot_{HS,LS}_land_{du,dv} are not in it (founder decision 2026-11-16, recorded\
+  \ by the founder session). T0378's optimize.local.movable_indices() also moves the foot offsets. If\
+  \ it still does when you start, remove them as this task's first change: _FOOT_LAND and its use in movable_indices,\
+  \ the foot step in _step_of if nothing else needs it, and the module docstring's mention; update tests/unit/optimize/test_local_search.py\
+  \ so that it asserts movable_indices() == tuple(range(twin.WALK_FIRST, twin.WALK_END)) and that no foot_*\
+  \ parameter moves. This corrects the scope to the frozen objective; it does not weaken a test. The proxy\
+  \ descent and the degradation family call local.movable_indices(); do not hard-code a set."
 context_files:
 - src/moduleforge/optimize/local.py
 - research/o008_probe/probe.py
@@ -44,6 +53,8 @@ deliverables:
 touches:
 - src/moduleforge/optimize/control.py
 - tests/unit/optimize/test_control.py
+- src/moduleforge/optimize/local.py
+- tests/unit/optimize/test_local_search.py
 definition_of_done:
 - cmd: uv run pytest -q tests/unit/optimize/test_control.py
   exists: null

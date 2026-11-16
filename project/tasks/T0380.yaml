@@ -21,7 +21,13 @@ description: "Build item (3b) of the objective notes. Create src/moduleforge/opt
   \ DRC-clean and in_domain;\n- (b) ends where no single widening move is DRC-feasible, or at the step\
   \ limit with that terminal kind;\n- (d)'s blind score is monotone non-decreasing along its trajectory;\n\
   - determinism;\n- (c) respects the L1 budget and calls l_sub exactly shortlist times;\n- on the 70x40\
-  \ housing, a capped run reports step_limit."
+  \ housing, a capped run reports step_limit.\n\nNote from the founder session (2026-11-16): O008's one\
+  \ parameter set is the frozen objective's 'columns, slots, die rows, landing lines': Params.NAMES[twin.WALK_FIRST:twin.WALK_END]\
+  \ (indices 4-39), the set the L1 probe (research/o008_probe) and the T0376 kill shot used. The four\
+  \ power-wire foot offsets foot_{HS,LS}_land_{du,dv} are not in it (founder decision 2026-11-16, recorded\
+  \ by the founder session). The nulls move exactly the set optimize.local.movable_indices() returns (no\
+  \ hard-coded set); T0379 removes the foot offsets T0378 added to it. Do not write tests that depend\
+  \ on foot_* moves."
 context_files:
 - src/moduleforge/optimize/local.py
 - src/moduleforge/optimize/search.py
