@@ -1,0 +1,68 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Default proxy rule includes reach jumps, not only 0.5 mm steps",
+      "detail": "O008 scope_in defines the proxy as 'a steepest single-parameter L1 descent from W (0.5 mm steps, DRC-clean, to a local optimum or a frozen step limit)', and control.py's docstring says the same. But proxy_descent defaults to reach=True, and local.descend then also offers the reach jumps of twin._walk_candidates: one coordinate each, but of any length, e.g. a column edge to the outline limit. Run from 2R's twin, the default proxy took 4 such jumps in 25 steps; from Case 4's twin, 2 in 73. The rule arguably matches 'the search's own domain' (review T0358), but it is a different rule from the text that is to be frozen.",
+      "evidence": "proxy_descent(spec_2R, params_of(twin), twin._l1, step_limit=200) -> 25 steps, local_optimum, L1 ratio 0.91379, jumps ['col_PHASE_outer>limit','slot1_attach>col_outer','col_DC+_outer>limit','col_DC-_outer>limit']; Case 4 -> 73 steps, L1 ratio 0.65327, 2 jumps",
+      "suggested_check": "Name the reach jumps and the in-domain test in E011's frozen proxy rule, or default proxy_descent to single 0.5 mm steps; also fix the docstring.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The default proxy is shallower than the probe proxy the objective's discrimination evidence used",
+      "detail": "Inside in_domain(reach=True), the descent stops earlier than the probe's DRC-only descent. On 2R it ends at an L1 ratio of 0.914 against the probe's 0.898; on Case 4 at 0.653 against 0.628 (about 4 % higher L1). The objective's case that blind nulls fail (3-24 % on every draw, 'guided descent within 2 % on 2R') was measured against the deeper probe proxy. A shallower W* makes A1 easier and may shrink the A3 margin, so the probe figures do not carry over to this control as built.",
+      "evidence": "proxy_descent(reach=True) vs reach=False on the same twins: 2R 0.91379 (25 steps) vs 0.89786 (27 steps, matches probe_2R_proxy.json); Case 4 0.65327 (73 steps) vs 0.62797 (120 steps, matches probe_Case4_proxy.json's 0.62797)",
+      "suggested_check": "Before registration, E011's design should re-measure the null margins and the joint operating characteristic against the implemented in-domain proxy, not the probe's.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "No test shows the frozen L1 target 1.3875 is reachable under the in-domain constraint on the development layouts",
+      "detail": "Every assertion that a draw reaches its target uses targets of 1.05-1.15. The single run at 1.3875 (the column-sides helper) does not check where it stopped. In my runs at the default config (400 proposals), 2 of 4 draws on 2R stopped at the proposal limit (1.370, 1.333); Case 4 reached the target on 3 of 3. The probe likewise fell short on 1 of 5 draws per layout. Short draws lean on the L2 window and on redraws (F6 feasibility). This is not a code defect.",
+      "evidence": "degrade_draw(2R W*, SeedSequence([20261115,0,s,0]), default cfg): s=0 target 1.3904; s=1 target 1.3909; s=2 proposals 1.3702; s=3 proposals 1.3327",
+      "suggested_check": "In E011's design, report each layout's rate of reaching the target with development seeds, and the redraw rate at L2.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Changes to local.py go beyond the declared deliverables",
+      "detail": "The diff also changes T0378's local.py and its tests. The movable set drops the foot landing offsets, citing a 'founder decision 2026-11-16' I could not find in project/decisions. That does match scope_in's '(columns, slots, die rows, landing lines)'. Other changes: jumps are filtered by the movable set; checkpoint keys now include LocalSolvers.tag, so existing local_checkpoint.jsonl stores will not be reused; LocalConfig validates its fields; the world fixture now searches rng seeds 3-59 for an 8 mm start; and the tie-order test moved to reach=False, so tie order with reach jumps is no longer tested there. All 21 local-search tests pass.",
+      "evidence": "git diff of src/moduleforge/optimize/local.py and tests/unit/optimize/test_local_search.py; grep for the decision in project/decisions returned nothing",
+      "suggested_check": "Record the foot-offset decision as a decision record, or point to where it is recorded.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "One assertion in the no-L2 test cannot fail",
+      "detail": "`assert not any('l2_layout' in m for m in sys.modules if m.startswith('moduleforge.optimize.control'))` filters to module names that start with 'moduleforge.optimize.control', and none of those can contain 'l2_layout'. The monkeypatch of l2_layout's solve*/l2*/run* names also misses names already bound by `from ... import`. The real protection comes from the signatures and the raising l_sub.",
+      "evidence": "tests/unit/optimize/test_control.py::test_degradation_and_proxy_never_call_l2",
+      "suggested_check": "Check that 'moduleforge.solvers.l2_layout' is not among control's imports (inspect or ast), instead of filtering sys.modules.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Ablation (e) is not bound by the proxy's frozen step limit",
+      "detail": "proxy_alone defaults to step_limit=100000, so only the L1 budget ends it, while the proxy rule has a frozen step limit. This fits 'same budget', but E011 should state which limit ablation (e) uses.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three DoD commands. test_control.py: 15 passed, the slow probe anchor included (it reproduces 27 steps and L1 ratio 0.8979 on 2R). The slow-marked command runs that same anchor. ruff: clean. test_local_search.py: 21 passed.",
+    "Replayed degrade_draw's random-number protocol against research/o008_probe/probe.py's ascent by patching _Space to the probe's DRC-only rule, starting from the probe-rule W* of 2R with seeds 20261115+j. All 5 draws match probe_2R_proxy.json exactly (L1 ratios 1.372546, 1.390909, 1.441094, 1.400524, 1.426218; changed counts and Manhattan distances identical).",
+    "Ran the default (reach=True) proxy_descent on 2R's E010 twin: 25 steps, local optimum, L1 ratio 0.91379, 4 reach jumps. Ran it on Case 4's twin: 73 steps, 0.65327, 2 jumps; with dies_fixed: 63 steps, 0.70143. The probe-rule descent on Case 4 reproduces the probe's 0.62797 in 120 steps.",
+    "Ran degrade_draw at the frozen defaults (target 1.3875, 400 proposals) from the in-domain W*: 2R reached the target on 2 of 4 draws (1.3702 and 1.3327 stopped at the proposal limit); Case 4 reached it on 3 of 3 (1.4208, 1.3896, 1.3897).",
+    "Recomputed the constants by hand: FROZEN_L1_TARGET = 1.25 x 1.11 = 1.3875; min_gain 1e-12 H = 0.001 nH, about 1e-4 relative at L1 of 10-19 nH; the window [1.25, 1.60] is closed at both ends; the sub-seed is SeedSequence([sealed_seed, layout_index, draw, attempt]).",
+    "Checked the budget accounting of descend(max_evals) against local_search: both count distinct fingerprints with the start included. When the budget runs out, descend's final layout is the lowest score it evaluated.",
+    "Read the redraw, tie (choose_proxy) and dies_fixed logic, and checked the tests would catch an off-by-one in the redraw limit, an open window, a tie going to the descent, and die rows moving."
+  ],
+  "caveats": [
+    "What a pass certifies depends on the default proxy being an in-domain descent with reach jumps. Its L1 depth differs from the probe's DRC-only proxy (2R 0.914 vs 0.898; Case 4 0.653 vs 0.628). E011's frozen spec must describe that rule and re-establish the null margins against it.",
+    "The proxy is checked against the probe only on the reach=False path (the slow anchor). Nothing pins the terminal values of the default reach=True path that E011 will use.",
+    "Whether a layout can supply its 8 draws in [1.25, 1.60] (F6) is not shown: with the in-domain constraint, some 2R draws stop below the 1.3875 L1 target.",
+    "I could not see the original task brief (T0379), so 'complete' is judged against O008's text and the probe."
+  ]
+}

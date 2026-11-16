@@ -3,7 +3,7 @@ objective: O008
 title: Designer proxy rule, randomised degradation family and ablation (e)
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on:
 - T0378
 description: "Build item (3a) of the objective notes. Create src/moduleforge/optimize/control.py, built\
@@ -183,3 +183,6 @@ history:
       exit_code: 0
     - cmd: uv run pytest -q tests/unit/optimize/test_control.py tests/unit/optimize/test_local_search.py
       exit_code: 0
+- outcome: full_gate_passed
+  summary: 10a1047559fea3922706c104997667053b84b5e8
+  at: '2026-11-16T20:36:03+00:00'

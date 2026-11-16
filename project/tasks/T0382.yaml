@@ -66,7 +66,34 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ it after each run from the returned layout and W*'s parameters, over movable_indices(). Nulls (b)\
   \ and (d) stop at their own local optimum or at nulls.NULL_STEP_LIMIT = 200 steps; a capped null is\
   \ recorded as capped (the A3 metric's capped column) and is never a resolved failure; development mode\
-  \ reports how many null runs hit the cap."
+  \ reports how many null runs hit the cap.\n\nFounder decision 2026-11-16 20:30 UTC on the proxy rule\
+  \ (reviews T0421/T0422 of T0379): E011 freezes the designer proxy as T0379 built it: control.proxy_descent\
+  \ with reach=True, i.e. a steepest single-parameter L1 descent from W over movable_indices() whose moves\
+  \ are the search's own single-parameter moves (+-0.5 mm steps and the twin's reach jumps), every state\
+  \ DRC-clean under the reference's measured rules and inside in_domain(reach=True), minimum gain per\
+  \ step control.MIN_GAIN_H = 1e-12 H, to a local optimum or the frozen step limit. The spec names the\
+  \ reach jumps and the in-domain test explicitly, because O008's text says '0.5 mm steps'; the reason\
+  \ is O008's 'the target is an optimum of the search's own domain' (review T0358): the probe's DRC-only\
+  \ proxy on 2D_Case_2R lies outside the domain (in_domain fails at row_LS_gap, the die-row gap cap gmin\
+  \ + 2 mm), so the search could not reach it. Measured by the reviewers: L1(W*)/L1(W) = 0.914 on 2R (probe\
+  \ 0.898) and 0.653 on 2D_Case_4 (probe 0.628).\nConsequences for the design:\n1. The probe's null margins\
+  \ and T0376's L2 figures were measured against the deeper probe proxy and do not carry over: development\
+  \ mode re-measures the null margins ((b), (d), and (d) compaction on 2R in particular) and the joint\
+  \ operating characteristic against this in-domain proxy, on development draws (the I0205 burst), and\
+  \ the spec's registration check uses those rows.\n2. Report the threshold-free descent and the probe's\
+  \ DRC-only proxy (reach=False) as sensitivity rows, with the die-row gap cap named as a known limit\
+  \ of the search (it is recorded for O009 and the thesis review).\n3. Pin the reach=True proxy's terminal\
+  \ values (steps, L1 ratio) on both development layouts in a regression test; only the reach=False path\
+  \ is pinned today.\n4. Seed streams: numpy's SeedSequence drops trailing zero entropy words, so [seed,\
+  \ li, j, 0] equals [seed, li, j]. Put a nonzero domain tag first in every entropy list in control.py\
+  \ (degradation) and keep the search's sealed seed distinct from the degradation's, as O008 already requires;\
+  \ add a test that the streams differ.\n5. The degradation family can stall below the 1.3875 L1 target\
+  \ (2 of 4 draws on 2R at 400 proposals; 1.14-1.16 from an unoptimised W on Case 4) or overshoot in one\
+  \ move: report per counted layout the L1 stop distribution, the rate of reaching the target and the\
+  \ L2 redraw rate (F6), and cost the r_d_at_l2 calls made for draws that missed the L1 target.\n6. State\
+  \ ablation (e)'s step limit (proxy_alone defaults to 100000, so only the L1 budget ends it).\n7. In\
+  \ tests/unit/optimize/test_control.py, replace the vacuous no-L2 assertion with an import check (ast\
+  \ or inspect) that moduleforge.solvers.l2_layout is not imported by control."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
@@ -88,6 +115,8 @@ deliverables:
 touches:
 - experiments/drafts/E011*
 - experiments/runners/e011_run.py
+- src/moduleforge/optimize/control.py
+- tests/unit/optimize/test_control.py
 definition_of_done:
 - cmd: uv run python experiments/runners/e011_run.py --selftest
   exists: null

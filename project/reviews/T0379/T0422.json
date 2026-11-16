@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The proxy rule used in production (reach=True) is stopped by the reach domain and takes multi-mm jumps, so it is shallower than the probe's W* on both development layouts",
+      "detail": "The objective defines the proxy as a steepest single-parameter L1 descent in 0.5 mm steps that only has to be DRC-clean. proxy_descent defaults to reach=True. In that mode every state must also pass in_domain(reach=True), which caps the die-row gap at gmin+2 mm, and the descent also takes the reach jumps of _walk_candidates (for example col_PHASE_outer>limit), which are not 0.5 mm steps. The only regression anchor tests reach=False, so the configuration E011 will actually use has no pinned value. Measured: on 2R the probe's W* lies outside the reach domain (in_domain fails at 'row_LS_gap'; 11 of its 27 trajectory states are outside). With reach=True the proxy reaches L1(W*)/L1(W) = 0.914 (25 steps, 4 of them jumps), against 0.898 for the probe rule. With the domain test kept and jumps removed it reaches 0.917. On Case 4: 0.653 (reach=True) against 0.628 (probe rule). The 2R value sits between the probe's die-free proxy (0.898, where compaction failed by about 6 %) and its die-fixed proxy (0.934, where compaction recovered within 0.4 %). So the discrimination evidence that motivated 'die rows free' does not carry over automatically. Keeping the proxy inside the search's own domain is defensible ('the target is an optimum of the search's own domain'), so this narrows what the work shows rather than making the code wrong.",
+      "evidence": "Scratch runs on the E010 2R twin (judged_reference) and the Case 4 dev twin (dev_reference): reach=True gave local_optimum, 25 steps, 0.9138 (jumps col_PHASE_outer>limit, slot1_attach>col_outer, col_DC+_outer>limit, col_DC-_outer>limit); domain with no jumps (monkeypatched _walk_candidates) gave 19 steps, 0.9174; reach=False gave 27 steps, 0.8979; in_domain of the probe W* returned (False, 'row_LS_gap'). Case 4 gave 73 steps, 0.6533 with reach=True and 120 steps, 0.628 with reach=False. probe_2R_proxy_diesfixed.json gives 0.934, with compaction s=+0.0036 on draw 0.",
+      "suggested_check": "Before registration, have E011's spec state explicitly that the proxy uses reach=True with jumps, and re-measure null (d) compaction against this in-domain 2R proxy on development draws.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Sub-seed entropy collides through numpy's trailing-zero rule",
+      "detail": "numpy's SeedSequence treats trailing zero entropy words as absent. So attempt 0 of a draw, [seed, li, j, 0], gives the same stream as [seed, li, j], and layout 0 / draw 0 / attempt 0 gives the same stream as default_rng(sealed_seed). local_search uses SeedSequence([seed, 1, it]) and SeedSequence([seed, 2, n]). If E011 ever passed the same sealed seed to both, the degradation of layout 1, draw j, attempt 0 would share its RNG stream with search iteration j. The packet does not cover E011's seed wiring, so this is a latent defect.",
+      "evidence": "SeedSequence([7,1,3]) and SeedSequence([7,1,3,0]) produce identical integers; [7,1,3,1] differs (scratch check).",
+      "suggested_check": "Put a nonzero domain tag in the entropy (for example [seed, 0xDE6, li, j, a]) and test that it is distinct from the search's streams.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The family can stall far below target from an unoptimised W, and can overshoot in one move",
+      "detail": "From Case 4's twin W (the case where choose_proxy returns W) the default family stopped at its 400-proposal limit at L1 ratios of only 1.16 and 1.14. Such draws would likely fail the L2 window and trigger F6. On the housing spec a single accepted move took the ratio from below the target to 3.09 (and 1.95 with target 1.2), so the stop only happens after the target has been crossed. On the development proxies the overshoot was small (at most 1.42). Every attempt calls r_d_at_l2 even when the L1 target was not reached, at about $0.24 per 0.25 mm solve.",
+      "evidence": "Case 4 proxy: 4 of 4 draws reached the target (1.3896 to 1.4208). Case 4 from W: 1.1648 and 1.1435 after 400 proposals. 2R proxy: 4 of 6 reached 1.3875, the others ended at 1.3702 and 1.3327. Housing: draw 1 accepted one move to 3.0904.",
+      "suggested_check": "Have E011's design report the family's L1 stop distribution per counted layout for the W* actually chosen.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Changes outside the declared deliverables, and an unverifiable cited decision",
+      "detail": "The diff also changes local.py:\n- it drops the foot_*_land_* offsets from the movable set, citing a 'founder decision 2026-11-16' that has no ADR in project/decisions;\n- it adds the BUDGET kind;\n- it changes checkpoint keys to include solvers.tag, which invalidates existing checkpoints;\n- it adds LocalConfig validation.\nIn test_local_search, the world fixture is now chosen by scanning rng seeds 3 to 59 for one that gives an 8 mm Manhattan seed, and a tie-order test now runs with reach=False. The movable-set change agrees with the objective's scope_in ('columns, slots, die rows, landing lines'), and all 62 local/search tests pass, so this is a matter of provenance and scope.",
+      "evidence": "git diff in the packet; grep of project/decisions finds no 2026-11-16 decision; pytest on test_local_search.py and test_search.py: 62 passed.",
+      "suggested_check": "Record the foot-offset decision as an ADR, or cite where it is recorded.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Weak or vacuous test assertions",
+      "detail": "In test_degradation_and_proxy_never_call_l2, the assertion that no module whose name starts with 'moduleforge.optimize.control' contains 'l2_layout' can never fail, and the l2_layout monkeypatch only covers names starting with solve, l2 or run. test_descend_with_a_restricted_movable_set contains dead code ('slot0_u2' if False else ...). The no-L2 guarantee rests mainly on the function signatures, which the test does check.",
+      "evidence": "test_control.py line ~588; test_local_search.py line ~892.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-ran all three definition-of-done commands: test_control.py 15 passed (98.9 s), with -m slow 1 passed, ruff clean on optimize and tests/unit/optimize.",
+    "Ran the other optimize tests the diff touches (test_local_search.py, test_search.py): 62 passed.",
+    "Reproduced the probe anchor separately: proxy_descent(reach=False) on the rebuilt 2R twin gives 27 steps and 0.8979, matching probe_2R_proxy.json.",
+    "Measured the production proxy (reach=True): 2R 0.9138 (25 steps, 4 jumps); domain-only with no jumps 0.9174; Case 4 0.6533 against 0.628 for the probe rule. The probe's 2R W* fails in_domain at row_LS_gap.",
+    "Ran degrade_draw with the default frozen config (target 1.3875, 400 proposals): 2R proxy 4/6 reached the target (others 1.37, 1.33); Case 4 proxy 4/4; Case 4 twin W 0/2 (1.16, 1.14); housing showed one-move overshoot to 3.09.",
+    "Confirmed by code comparison that degrade_draw consumes the RNG in the same order as the probe's ascent (k, then choice, then sign/magnitude per parameter), so the only difference from the probe is the domain test.",
+    "Cross-process determinism: draw_degradations under PYTHONHASHSEED 0 and 12345 in separate interpreters gave identical fingerprints and L1 ratios.",
+    "SeedSequence trailing-zero check: [7,1,3] and [7,1,3,0] give identical streams."
+  ],
+  "caveats": [
+    "The production proxy is an L1 local optimum of the reach domain: die gaps are capped at gmin+2 mm and reach jumps are taken. It is not the probe's DRC-only 0.5 mm descent, and it is shallower on 2R (0.914 against 0.898) and on Case 4 (0.653 against 0.628). E011 must freeze reach=True explicitly and re-establish null discrimination on 2R; the probe's numbers do not carry over.",
+    "The degradation family was tested here only from the descent proxies. From an unoptimised W (if choose_proxy returns W) it may not reach the L1 target within 400 proposals (Case 4: 1.14 to 1.16), which would push the layout toward F6.",
+    "Nothing here was checked at L2. Whether the default family's draws land in R_D in [1.25, 1.60] at L_sub 0.25 mm is untested.",
+    "Sub-seeds are safe only if E011 uses a sealed seed for the degradation that differs from the search's (numpy's trailing-zero equivalence).",
+    "Several of my scratch commands were refused by the harness permission layer (scripts that pickle-load the E010 ctx). I rebuilt 2R and Case 4 through the E010 runner's judged_reference/dev_reference instead; the 2R twin's L1 (11.1699 nH) matches the probe."
+  ]
+}
