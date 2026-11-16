@@ -10,28 +10,31 @@ hypothesis:
     On DRC-valid wire-bonded half-bridge layouts from moduleforge.generate on the default DBC stack (with die-attach and
     SiC die layers), with one die size per (family, dies) stratum (the derivative regime: the die is fixed), in steady
     state with temperature-dependent conductivity, coolant at 65 °C and a uniform heat-transfer coefficient of
-    5000 W/(m² K) at the baseplate, at two load levels (P_ref, equal power per die such that the hottest die of the
-    stratum's development layout rises 60 K above the coolant, the operating point of claim C004; and 0.5 P_ref), a
-    fast L1 thermal model (median at most 1 s per evaluation on one core) predicts, against the verified scikit-fem
-    thermal reference of claim C004 and at each load level, for the die-average junction temperature (the yardstick):
-    the difference between two layouts of the same stratum within 0.5 K; each die's value within 3 % of its die-local
-    rise; and the spread across each switch's paralleled dies within 1 K and within half the error of a stratum-mean
-    predictor (each as a 95th percentile, upper 95 % bound), on fresh sealed seeds.
+    5000 W/(m² K) at the baseplate, at two load levels (P_ref, equal power per die such that the hottest node of the
+    stratum's development layout rises 60 K above the coolant at the reference's level 0, the calibration rule of claim
+    C004; and 0.5 P_ref), a fast L1 thermal model (median at most 1 s per evaluation on one core) predicts, against the
+    verified scikit-fem thermal reference of claim C004 and at each load level, for the die-average junction temperature
+    (the yardstick): the difference between two layouts of the same stratum within 0.5 K; each die's value within 3 % of
+    its die-local rise; and the spread across each switch's paralleled dies within 1 K and within half the error of a
+    stratum-mean predictor (each as a 95th percentile, upper 95 % bound), on fresh sealed seeds. The claim is for these
+    criteria jointly.
   null_hypothesis: >-
-    L1 thermal is too inaccurate to enforce a +2 K Tj budget during search, or no better than a lookup on die position;
-    search needs the thermal reference in the loop or a better fast model.
+    L1 thermal is too inaccurate to enforce a +2 K budget on die-average Tj during search, or no better than a
+    stratum-mean or die-position predictor; search needs the thermal reference in the loop or a better fast model.
   why_it_matters: >-
-    The thesis promises bounded junction temperature (A-T2), and A-T3's headroom is stated at <= +2 K Tj. Today's thermal
-    reference is accurate but slow (about 15 minutes per layout at the middle grid), so E010 checked Tj on at most 8
-    candidates per reference after optimising inductance alone; a search that cannot see Tj cannot find layouts that
-    improve both (plan section 4). The yardstick is the die-average Tj: O003's hottest-node rule cannot certify +2 K on
-    real dies because the hot spot moves between grid levels and its estimate is infinite (D0020, T0325), while the
-    die-average converges and is the quantity datasheet thermal resistances refer to.
+    The thesis promises bounded junction temperature (A-T2), and A-T3's headroom is stated at <= +2 K Tj. The thermal
+    reference is accurate but slow (about 25 minutes and 15 GB per layout at level 2 of its frozen rule on 2D_Case_2R in
+    E010; about 3 minutes at level 1), so E010 checked Tj on at most 8 candidates per reference after optimising
+    inductance alone; a search that cannot see Tj cannot find layouts that improve both (plan section 4). The yardstick
+    is the die-average Tj: O003's hottest-node rule cannot certify +2 K on real dies because the hot spot moves between
+    grid levels and its estimate is infinite (D0020, T0325), while the die-average converges and is the quantity
+    datasheet thermal resistances refer to.
   decision_if_pass: >-
     The search (O008's, then O009's) adds the frozen L1 thermal model to its score or uses it as a screen, with the
-    thermal reference auditing the shortlisted candidates; both judge die-average Tj and report the hottest node. On
-    another stack, housing or operating point, or on a reconstructed reference, comparisons use the thermal reference
-    only (outside this objective's scope).
+    thermal reference auditing the shortlisted candidates; both judge die-average Tj and report the hottest node. A pass
+    is shown on random generator layouts; L1's error on L1-selected candidates is reported here and audited on every
+    shortlist in O008 and O009 (optimiser's curse). A +2 K budget on the hottest node is out of scope. On another stack,
+    housing or operating point, or on a reconstructed reference, comparisons use the thermal reference only.
   decision_if_fail: >-
     Diagnose (missing physics: lateral spreading, k(T), patterned copper); if not fixable within budget, the search keeps
     thermal as a reference check on a shortlist and optimises inductance under that check, more slowly (plan, risks
@@ -40,58 +43,64 @@ hypothesis:
 scope_in:
   - >-
     generator families of moduleforge.generate, 2-6 parallel dies per switch, the default DBC stack and housing with
-    die-attach and SiC die layers added; one die size drawn per stratum and used for every layout in it; C004's scope
+    die-attach and SiC die layers added; one die size drawn per stratum and used for every layout in it; C004's scope.
+    Every (family, die-count band) cell is sampled, the bands being 2-3 and 4-6 dies per switch; a claim beyond the
+    strata drawn is not made
   - >-
     steady state; k(T) for every layer material from cited sources; coolant 65 °C; uniform h = 5000 W/(m² K) at the
     baseplate bottom; equal power per die, uniform over each die's top area, at P_ref and 0.5 P_ref per stratum, P_ref
-    fixed before any judged solve from a reference solve of the stratum's development layout; Tj at P_ref within the SiC
-    rating (sanity check)
+    fixed before any judged solve by the calibration rule above; Tj at P_ref within the SiC rating (sanity check)
   - >-
     the yardstick is each die's average junction temperature over its top face (a Galerkin integral on the reference,
-    the L1 model's own average), with the spread per switch over its paralleled dies; the hottest-node Tj of each die is
-    reported, not gated. This ASSUMES the founder's decision 5 at the 11-27 thesis review (die-average gated, hottest
-    node reported); if the review decides otherwise, this draft is revised before approval
+    the L1 model's own average), with the spread per switch over its paralleled dies; the hottest die of a layout is the
+    die the reference ranks hottest by its die average at the judged level, for L1 and the reference alike; the
+    hottest-node Tj of each die is reported, not gated. This ASSUMES the founder's decision 5 at the 11-27 thesis review
+    (die-average gated, hottest node reported); if the review decides otherwise, this draft is revised before approval
   - >-
-    the reference is solvers.thermal_fem at its frozen grid rule (O007; code_must_match on the files of EV-O007-01), at
-    the grid level whose three-level estimate (mfos.metrics.gci_capped) of die-average Tj meets F1 on the development
-    layouts, with three-level checks on a frozen subset of the judged layouts
+    the reference is solvers.thermal_fem at its frozen grid rule (O007; code_must_match on the files of EV-O007-01),
+    judged at level 1 with level-2 checks on a frozen subset (F1), or at level 2 if the development check of F1 shows
+    level 1 insufficient. E010's three-level solves on 2D_Case_2R (research/notes/o002-reference-convergence.md) give
+    level-2 estimates of 0.11-0.16 K for absolute die averages but only up to 0.044 K for pair differences and 0.049 K
+    for spreads, and level-1-to-level-2 steps of pair differences of at most 0.036 K
 scope_out:
   - transient thermal impedance (Zth); bond-wire heat paths; solder voids or fillets; non-uniform h; TIM layers
   - electro-thermal coupling (losses fixed per die); AMB and other stacks; comparisons across die sizes; reconstructed
     benchmark layouts
-  - the hottest-node Tj as a criterion (reported only)
+  - the hottest-node Tj as a criterion, and a +2 K budget on the hottest node (reported only)
 evidence_plan: [E007]
 acceptance:
   required_experiments: [E007]
   pass_all:
     - {id: A1, metric: E007.dtj_pair_err_p95_K_max_load, comparator: "<=", threshold: 0.5, uncertainty: {use: ci},
-       description: "max over the two load levels of the 95th percentile over same-stratum (same-die) layout pairs of |(Tj,avg,hottest die,a - Tj,avg,hottest die,b)_L1 - (...)_ref| in K, upper 95 % bound per level (layout-clustered bootstrap, self-pairs excluded); a quarter of the +2 K budget"}
+       description: "max over the two load levels of the 95th percentile over same-stratum (same-die) layout pairs of |(Tj,avg,hottest die,a - Tj,avg,hottest die,b)_L1 - (...)_ref| in K, upper 95 % bound per level by the bound F3 selects; a quarter of the +2 K budget"}
     - {id: A2, metric: E007.tjavg_local_rel_err_p95_max_load, comparator: "<=", threshold: 0.03, uncertainty: {use: ci},
-       description: "max over load levels of the 95th percentile over dies of |Tj,avg,L1 - Tj,avg,ref| / (Tj,avg,ref - mean baseplate-bottom temperature), upper 95 % bound (clustered by layout); 3 % because a lookup on die position alone reached about 5.6 % of the die-local rise for the hottest node (review T0132; re-measured for the die-average on development rows, F2)"}
+       description: "max over load levels of the 95th percentile over dies of |Tj,avg,L1 - Tj,avg,ref| / (Tj,avg,ref - mean baseplate-bottom temperature), upper 95 % bound by the bound F3 selects; 3 % because a lookup on die position alone reached about 5.6 % of the die-local rise for the hottest node (review T0132; re-measured for the die average on development rows, F2). Reported per stratum beside the pooled value, with the die-position null per stratum"}
     - {id: A3, metric: E007.switch_spread_err_p95_K_max_load, comparator: "<=", threshold: 1.0, uncertainty: {use: ci},
-       description: "max over load levels of the 95th percentile over layouts and switches of |spread_L1 - spread_ref| in K, spread = max - min of die-average Tj over one switch's paralleled dies, upper 95 % bound"}
+       description: "max over load levels of the 95th percentile over layouts and switches of |spread_L1 - spread_ref| in K, spread = max - min of die-average Tj over one switch's paralleled dies, upper 95 % bound. A stratum-mean spread may meet A3 alone (reviews T0369, T0370); A4 carries the spread test"}
     - {id: A4, metric: E007.switch_spread_err_ratio_vs_stratum_mean, comparator: "<=", threshold: 0.5, uncertainty: {use: ci},
-       description: "A3's statistic at P_ref divided by the same statistic for the stratum-mean-spread predictor, upper 95 % bound: L1 must capture at least half of the layout-dependent spread variation, so A3 cannot pass on a uniform stratum alone"}
+       description: "A3's statistic at P_ref divided by the same statistic for the stratum-mean-spread predictor, upper 95 % bound: L1 must capture at least half of the layout-dependent spread variation. Reported per die-count band beside the pooled value"}
     - {id: A5, metric: E007.l1_eval_s_p50, comparator: "<=", threshold: 1.0, uncertainty: {use: point},
-       description: "median wall time per L1 thermal evaluation on one core: fast enough to sit inside the search ('seconds per layout', plan section 4), against about 15 minutes for the reference at its middle grid"}
+       description: "median wall time per L1 thermal evaluation on one core: fast enough to sit inside the search ('seconds per layout', plan section 4), against about 3 minutes for the reference at level 1"}
   fail_any:
     - {id: K1, metric: E007.dtj_pair_err_p95_K_max_load, comparator: ">", threshold: 1.5, uncertainty: {use: ci},
-       description: "at some load level L1 cannot enforce a +2 K budget (lower 95 % bound above 1.5 K)"}
+       description: "at some load level L1 cannot enforce a +2 K budget on die-average Tj (lower 95 % bound above 1.5 K)"}
     - {id: K2, metric: E007.tjavg_local_rel_err_p95_max_load, comparator: ">", threshold: 0.15, uncertainty: {use: ci},
        description: "L1's per-die average Tj definitely off by more than 15 % of the die-local rise at some load level"}
+    - {id: K3, metric: E007.switch_spread_err_ratio_vs_stratum_mean, comparator: ">", threshold: 1.0, uncertainty: {use: ci},
+       description: "L1's spread error definitely no better than the stratum-mean spread (lower 95 % bound of A4's ratio above 1): the 'no better than a stratum-mean predictor' half of the null (review T0369). With kill bounds over three criteria and two load levels, the false-kill rate at the boundaries is up to about 10-20 %, not 5 %"}
   max_evaluations: 1
 failure_modes:
   - id: F1
-    description: "The thermal reference not converged at the resolution A1 needs, or the operating point outside the physical envelope"
-    detection: "gated sanity checks: energy balance |Q_out/Q_in - 1| <= 1e-6 on every reference solve; on the three-level subset, gci_capped of every die-average Tj at most 0.05 K and of every pair difference at most 0.1 K (a fifth of A1's 0.5 K), the subset chosen by a frozen rule before any judged solve; Tj at P_ref at most 175 °C on every layout. The reference itself is verified by C004 (O007): analytic cases within 1 % and 0.05 K, agreement with the in-house finite-volume solver within the combined estimates, estimates at most 0.5 K for the hottest node; this objective needs the tighter die-average estimates, shown on development layouts before registration"
-    response: "experimental failure (INVALID); refine the reference's grid level or lower the load under a new experiment id (founder decision for the load); the hypothesis is untouched"
+    description: "The thermal reference not converged at the resolution the criteria need, or the operating point outside the physical envelope"
+    detection: "gated sanity checks: energy balance |Q_out/Q_in - 1| <= 1e-6 on every reference solve; on the three-level subset (levels 0-2, chosen by a frozen rule before any judged solve, at least 2 layouts per cell), the gci_capped estimate of every same-stratum pair difference and every spread at most 0.1 K, and of every absolute die average at most 0.3 K (a sixth of A2's 3 % of a 60 K rise), a sequence whose steps are all below 0.01 K counting as converged with estimate 3 max|d| (E010: 8 of 153 pair sequences had steps of at most 0.005 K and gci_capped returned +inf); when judging at level 1, the level-1 value of every subset pair difference and spread within 0.1 K of its level-2 value; Tj at P_ref at most 175 °C on every layout. Before approval of E007's registration, the same three-level check on two generator development layouts (C004's development layouts) confirms or refutes level 1, since E010's data are from one PowerSynth geometry"
+    response: "experimental failure (INVALID); judge at level 2 or lower the load under a new experiment id (founder decision for the load or the extra cost); the hypothesis is untouched"
   - id: F2
-    description: "A layout-ignorant predictor meets a criterion"
-    detection: "null baselines at P_ref: (a) a die-size-aware isolated-die spreading model without inter-die coupling; (b) a development-trained lookup on (family, dies, die size, load) returning the cell mean; (c) a development-trained lookup on die position (family, dies, die size, load, switch, die index); (d) the stratum mean for A1 and the stratum-mean spread for A3/A4. On development rows, `mfos exp check E007 --rows <dev rows>` must show each null failing A1-A4 at its point estimate before registration"
+    description: "A layout-ignorant predictor meets the criteria"
+    detection: "null baselines at P_ref, each defined so that it can be computed on the judged rows: (c) a die-position lookup on (family, dies, load, switch, die index), leave-one-layout-out within the stratum; (d) the in-sample stratum mean for A1 and the in-sample stratum-mean spread for A3/A4; and (a) a die-size-aware isolated-die spreading model without inter-die coupling. Each null must fail pass_all (at least one of A1-A4; A3 alone may be met by (d), A4 carries the spread test). On development rows, `mfos exp check E007 --rows <dev rows>` must show this before registration. The development-trained lookup of the earlier draft (b) is dropped: with one die size per stratum it equals (d)"
     response: "design error: revise E007's design; a threshold change is a founder decision on the objective"
   - id: F3
-    description: "The sample cannot resolve the thresholds, or the CI undercovers"
-    detection: "E007's design-time simulation on development rows, with per-layout errors drawn both normal and heavy-tailed (Student t, 3 degrees of freedom) and clustered by layout: the smallest sample (strata and layouts per stratum) at which an L1 whose true p95 is 0.6 x each threshold passes A1-A4 with power >= 0.8 and each upper bound's simulated coverage is >= 0.95 under both error models is registered, with per-stratum results reported; the sample's reference cost must fit the budget (notes)"
+    description: "The sample cannot resolve the thresholds, or the confidence bound undercovers"
+    detection: "E007's design-time simulation on development rows, with per-layout errors drawn both normal and heavy-tailed (Student t, 3 degrees of freedom) and clustered by layout, using the exact implementation that will judge: the layout-clustered percentile bootstrap under-covered a p95 upper bound in review T0369's simulation (0.83-0.935 at 6 x 8 to 20 x 10 layouts), so E007 selects, before registration, a bound whose simulated coverage is at least 0.95 under both error models (an order-statistic or binomial bound over layouts, BCa, or a calibrated bootstrap) and the smallest sample, with every cell of scope_in drawn, at which an L1 whose true p95 is 0.6 x each threshold passes A1-A4 with power at least 0.8; the bound is added to mfos.metrics with the other functions (notes). The sample's reference cost must fit the budget"
     response: "redesign under a new experiment id before registration"
   - id: F4
     description: "k(T) effects untested"
@@ -103,34 +112,47 @@ failure_modes:
     response: "never re-evaluate on data that has been seen"
   - id: F6
     description: "The die-average yardstick hides a hot spot that matters"
-    detection: "the hottest-node Tj of every die, from the reference and from L1 where it has one, is reported with its estimate (infinite where the hot spot moves, D0020) beside the die-average; the largest hottest-node minus die-average gap per stratum is reported"
-    response: "report; if the gap exceeds 2 K on some stratum, founder decision before the search relies on the die-average alone"
-budget: {usd: 120, cpu_hours: 120, wall_days: 28}
+    detection: "the hottest-node Tj of every die, from the reference and from L1 where it has one, is reported with its estimate (infinite where the hot spot moves, D0020) beside the die average; the largest hottest-node minus die-average gap per stratum is reported"
+    response: "report; if the gap exceeds 2 K on some stratum, founder decision before the search relies on the die average alone"
+  - id: F7
+    description: "L1 is accurate on random layouts but not on the layouts a search selects with it (optimiser's curse)"
+    detection: "per cell, two layouts optimised against L1 by a frozen rule (lowest L1 hottest-die average among a fixed number of random draws of the stratum), solved by the reference; their A1-type pair errors against same-stratum random layouts are reported beside A1, not gated"
+    response: "report; O008 and O009 audit every shortlist with the reference"
+budget: {usd: 120, cpu_hours: 60, wall_days: 28}
 require_plan_approval: true
 notes: >-
   Draft by the founder session of 2026-10-31, revised after draft reviews T0127/T0128 (round 1, both reject) and
-  T0131/T0132 (round 2, both accept with caveats); refreshed by the founder session of 2026-11-15 (handoff step 5,
-  plan section 4). Changes in the refresh: the thermal reference is the scikit-fem reference verified by O007 (claim
-  C004, PASS), so the old A1 on E006 (O006's experiment, INCONCLUSIVE) is removed and O002 depends on O007; the
-  yardstick is the die-average Tj, gated, with the hottest node reported (D0020, T0325; plan section 4 recommendation,
-  ASSUMED pending the founder's decision at the 11-27 thesis review); the operating point is C004's (hottest die 60 K
-  above the coolant at P_ref) with a half-power level, replacing 30 and 60 W per die; the speed criterion is 1 s per
-  evaluation ('seconds per layout', plan section 4) instead of 50 ms; the sample is set by F3's power simulation inside
-  the budget, not fixed at 15 strata x 10 layouts; F6 reports what the die-average yardstick could hide. Founder
-  answers of 2026-10-31 kept: dTj 0.5 K, spread 1 K, steady state with k(T) and uniform h. Experiment id E007 is the
-  one this draft already reserved (experiments/specs and drafts checked, 2026-11-15).
-  Cost: $11.44 spent of $120. The reference takes about 15 minutes per layout at its middle grid (plan section 4), so
-  E007 at, say, 6 strata x 8 layouts x 2 load levels with a three-level subset is about 100-150 reference solves, about
-  25-40 CPU-hours, local or on an E2 burst VM sized by memory (about $5-20); the plan estimated $0-10 of VM, and F3
-  sets the sample.
+  T0131/T0132 (round 2, both accept with caveats); refreshed by the founder session of 2026-11-15 (handoff step 5, plan
+  section 4) and revised after draft reviews T0369 (statistics) and T0370 (physics), both reject.
+  The refresh: the thermal reference is the scikit-fem reference verified by O007 (claim C004, PASS), so the old A1 on
+  E006 (O006's experiment, INCONCLUSIVE) is removed and O002 depends on O007; the yardstick is the die-average Tj, gated,
+  with the hottest node reported (D0020, T0325; plan section 4 recommendation, ASSUMED pending the founder's decision at
+  the 11-27 thesis review); the operating point is C004's calibration (hottest node 60 K above the coolant at P_ref)
+  with a half-power level, replacing 30 and 60 W per die; the speed criterion is 1 s per evaluation; F6 reports what the
+  die average could hide.
+  This revision, by finding: F1 gates pair differences and spreads at 0.1 K and absolute die averages at 0.3 K, because
+  0.05 K on absolute die averages is not reachable at level 2 (both blockers), measured from E010's existing solves
+  (research/notes/o002-reference-convergence.md, research/o002_refresh/); judging at level 1 with a level-2 subset,
+  because level-1-to-level-2 steps of pair differences are at most 0.036 K, which also brings the cost back inside the
+  plan (T0370, T0369); a confidence bound with demonstrated coverage instead of the percentile bootstrap (T0369); F2
+  asks each null to fail pass_all and drops the duplicate null (both); every (family, die-count band) cell sampled
+  (T0369); K3 kills on 'no better than a stratum-mean spread' (T0369); F7 reports L1's error on L1-selected layouts
+  (both); the hottest die and P_ref are defined, and the hottest-node budget is out of scope (both).
+  Founder answers of 2026-10-31 kept: dTj 0.5 K, spread 1 K, steady state with k(T) and uniform h. Experiment id E007
+  is the one this draft already reserved (experiments/specs and drafts checked, 2026-11-15).
+  Cost: $11.44 spent of $120 before these reviews (about $3.70 more for them). Reference solves at level 1 take about 3
+  minutes; at level 2 about 25 minutes and 15 GB on 2R in E010 (generator layouts may be up to twice the size). E007 at
+  6 cells x 8 layouts x 2 loads at level 1 with a 12-layout level-2 subset and the F7 layouts is about 15-30 CPU-hours,
+  local or on an E2 burst VM sized by memory (about $5-15); the plan estimated $0-10 of VM, and F3 sets the sample.
   For the founder to set at approval (PROPOSED): the yardstick (pending 11-27), the load levels (P_ref and 0.5 P_ref),
-  A5's 1 s, F1's 0.05 K and 0.1 K, F6's 2 K. Requires founder-approved additions to tools/mfos (protected), as the
-  earlier draft noted: quantile-of-relative-error, quantile-of-absolute-error, median and ratio-to-null functions in
-  mfos.metrics, a per-level max aggregation, and self-pair exclusion in the layout-clustered pairwise bootstrap.
+  A5's 1 s, F1's 0.1 K and 0.3 K and its 0.01 K step floor, F6's 2 K, K3's ratio of 1, the die-count bands. Requires
+  founder-approved additions to tools/mfos (protected): quantile-of-relative-error, quantile-of-absolute-error, median
+  and ratio-to-null functions in mfos.metrics, a per-level max aggregation, self-pair exclusion in the layout-clustered
+  pairwise statistics, the confidence bound F3 selects, and the step-floor rule (shared with O004).
   Build work (planner, after approval): (1) die-attach and SiC die layers in LayerStack with cited k(T) for every
   material, if not already present from O007; (2) the L1 thermal model in src/moduleforge/thermal/ (a calibrated
   coarse-grid solve or superposition of precomputed per-housing responses; the design picks one, plan section 4),
-  tested against analytic limits, symmetry and power scaling, frozen before E007; (3) a generator option fixing one
-  die size per stratum; (4) E007 on fresh sealed layouts, rows per die (with switch and die index) and per layout,
-  recompute entries for A1-A5, nulls per F2, code_must_match tying E007's reference to C004's evaluation; (5) review,
-  registration, run, evaluation.
+  tested against analytic limits, symmetry and power scaling, frozen before E007; (3) a generator option fixing one die
+  size per stratum; (4) E007 on fresh sealed layouts, rows per die (with switch and die index) and per layout,
+  recompute entries for A1-A5 and K3, nulls per F2, code_must_match tying E007's reference to C004's evaluation;
+  (5) review, registration, run, evaluation.
