@@ -39,7 +39,22 @@ description: "Build item (3a) of the objective notes. Create src/moduleforge/opt
   \ the foot step in _step_of if nothing else needs it, and the module docstring's mention; update tests/unit/optimize/test_local_search.py\
   \ so that it asserts movable_indices() == tuple(range(twin.WALK_FIRST, twin.WALK_END)) and that no foot_*\
   \ parameter moves. This corrects the scope to the frozen objective; it does not weaken a test. The proxy\
-  \ descent and the degradation family call local.movable_indices(); do not hard-code a set."
+  \ descent and the degradation family call local.movable_indices(); do not hard-code a set.\n\nReview\
+  \ T0414 of T0378 (founder session, 2026-11-16): fix these in optimize/local.py together with the foot-offset\
+  \ removal above, each with a test.\n1. descend(movable=...) does not restrict the reach jumps: _Space.neighbours\
+  \ always appends every twin._walk_candidates(..., reach=True) jump, so a restricted movable set can\
+  \ still move column and slot u-coordinates. Drop a jump whose changed parameters are not all in the\
+  \ movable set; test that descend(movable=[i]) changes only parameter i.\n2. The search moves only inside\
+  \ in_domain(spec, ., reach=True), and a DRC-clean seed outside it usually stops after one evaluation\
+  \ (stop_reason 'no_moves'). O008's move set is the parameterisation's DRC-feasible domain, i.e. in_domain(reach=True)\
+  \ and DRC-clean. So the degradation family must keep every D_j inside in_domain(reach=True) (reject\
+  \ or redraw a move that leaves it; twin.degrade checks DRC only, so do not use it as is), and a test\
+  \ asserts that every D_j it produces on the development layouts is in the domain. The designer proxy\
+  \ descent uses descend, which already stays in the domain.\n3. Store keys local:{fingerprint}:l1 / :lsub\
+  \ do not identify the solver: E011 runs l_sub at 0.5 mm in development and 0.25 mm when judged, so a\
+  \ reused workdir would silently return the wrong resolution. Put a solver/config tag in the key (or\
+  \ a header record checked on resume); test that a changed tag re-solves.\n4. LocalConfig: validate budget\
+  \ >= 1 and shortlist >= 1 in __post_init__."
 context_files:
 - src/moduleforge/optimize/local.py
 - research/o008_probe/probe.py

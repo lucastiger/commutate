@@ -27,7 +27,10 @@ description: "Build item (3b) of the objective notes. Create src/moduleforge/opt
   \ power-wire foot offsets foot_{HS,LS}_land_{du,dv} are not in it (founder decision 2026-11-16, recorded\
   \ by the founder session). The nulls move exactly the set optimize.local.movable_indices() returns (no\
   \ hard-coded set); T0379 removes the foot offsets T0378 added to it. Do not write tests that depend\
-  \ on foot_* moves."
+  \ on foot_* moves.\n\nReview T0414 of T0378 (founder session, 2026-11-16): a null that moves a restricted\
+  \ parameter subset relies on descend honouring movable for the reach jumps, which T0379 fixes in local.py;\
+  \ until then do not pass a restricted movable set. Every null candidate stays inside in_domain(reach=True)\
+  \ and is DRC-clean, as the search's are."
 context_files:
 - src/moduleforge/optimize/local.py
 - src/moduleforge/optimize/search.py

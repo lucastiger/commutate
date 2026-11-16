@@ -44,7 +44,13 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ (indices 4-39), the set the L1 probe (research/o008_probe) and the T0376 kill shot used. The four\
   \ power-wire foot offsets foot_{HS,LS}_land_{du,dv} are not in it (founder decision 2026-11-16, recorded\
   \ by the founder session). E011's spec and runner name this set, and the runner records movable_indices()\
-  \ in each row's provenance."
+  \ in each row's provenance.\n\nReview T0414 of T0378 (founder session, 2026-11-16): E011 gates each\
+  \ draw on the search's stats['seed_in_domain'] (a D_j outside in_domain(reach=True) is a defect of the\
+  \ degradation family, reported and redrawn within the frozen limit, never scored), and development mode\
+  \ checks that the 2D_Case_2R and 2D_Case_4 twins are in the domain (A2). The l_sub checkpoint key carries\
+  \ the resolution (T0379), so development (0.5 mm) and judged (0.25 mm) solves never share a cached value.\
+  \ The unit tests use separable scores, so E011's development rows are the first evidence the search\
+  \ recovers inductance headroom."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
