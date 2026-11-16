@@ -1,10 +1,11 @@
 # ModuleForge status
-_generated 2026-11-16T15:41:28+00:00 from repository state — do not edit_
+_generated 2026-11-16T16:09:49+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (4 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0212** [external_action] [O002] Burst VM run of n2's level-2 development solves (F1 pre-registration check)
+- **I0222** [protected_change] T0378: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -13,40 +14,35 @@ _generated 2026-11-16T15:41:28+00:00 from repository state — do not edit_
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | active | - | 0/1 | $33.79/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
-| O004 | active | - | 0/1 | $42.95/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
+| O004 | active | - | 0/1 | $46.26/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $41.74/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $43.15/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 16 | $33.79 | 746698 | 435011 | 51 | 0 |
+| O002 | 17 | $33.79 | 746698 | 435011 | 51 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 26 | $42.95 | 941817 | 611635 | 61 | 0 |
+| O004 | 27 | $46.26 | 952274 | 613946 | 61 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 24 | $41.74 | 927770 | 568773 | 70 | 0 |
+| O008 | 24 | $43.15 | 953271 | 584314 | 76 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 346, failed: 4, review: 1, running: 3, todo: 16
+cancelled: 45, done: 347, failed: 4, needs_founder: 1, review: 1, running: 3, todo: 15
 
-- T0378 `review` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 1)
+- T0378 `needs_founder` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 1)
 - T0384 `running` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 3)
-- T0386 `running` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 3)
-- T0415 `running` critic/review: Review T0378 (numerics) (attempt 1)
+- T0386 `review` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 3)
+- T0412 `running` planner/plan: Plan O002 (founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions are in mfos.metrics (no replan)) (attempt 1)
+- T0416 `running` critic/review: Review T0386 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-16T14:31:23+00:00 sleep_detected {"gap_s": 3289, "runs_extended": 3}
-- 2026-11-16T14:33:50+00:00 replan_declined {"objective": "O008", "reason": "T0376 kill shot did not fire; approved plan stands; T0413 stopped"}
-- 2026-11-16T14:34:11+00:00 run_stopped_for_founder {"run": "T0413-planner-20261116T063047-98ff", "task": "T0413", "task_status": "cancelled"}
-- 2026-11-16T14:34:11+00:00 run_finished {"run": "T0413-planner-20261116T063047-98ff", "status": "error", "cost": 1.211135, "subtype": "error_during_execution", "report": "missing"}
-- 2026-11-16T14:34:11+00:00 founder_stopped {"task": "T0413", "run": "T0413-planner-20261116T063047-98ff", "run_status": "error", "task_status": "cancelled"}
-- 2026-11-16T14:34:17+00:00 run_started {"run": "T0386-builder-20261116T063417-22a2", "task": "T0386", "role": "builder", "session": "6d2cb963-af9a-4c6b-9ef7-7aeedfedd369"}
 - 2026-11-16T15:00:08+00:00 run_finished {"run": "T0378-builder-20261116T063048-cc86", "status": "error", "cost": 0.975169, "subtype": "success", "report": "missing"}
 - 2026-11-16T15:00:08+00:00 capacity_backoff {"task": "T0378", "minutes": 5, "parsed_reset": false}
 - 2026-11-16T15:05:12+00:00 run_started {"run": "T0378-builder-20261116T070512-3f46", "task": "T0378", "role": "builder", "session": "09c86f72-5b9d-4300-b748-a86c1ca85a30"}
@@ -56,3 +52,9 @@ cancelled: 45, done: 346, failed: 4, review: 1, running: 3, todo: 16
 - 2026-11-16T15:29:23+00:00 sleep_detected {"gap_s": 643, "runs_extended": 3}
 - 2026-11-16T15:35:09+00:00 run_finished {"run": "T0414-critic-20261116T072844-1197", "status": "completed", "cost": 1.332667, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T15:35:19+00:00 run_started {"run": "T0415-critic-20261116T073519-57cf", "task": "T0415", "role": "critic", "session": "4f1729a8-ae1f-493e-947a-9279d0972ba0"}
+- 2026-11-16T15:42:03+00:00 run_finished {"run": "T0415-critic-20261116T073519-57cf", "status": "completed", "cost": 1.410079, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T15:42:03+00:00 run_finished {"run": "T0386-builder-20261116T063417-22a2", "status": "completed", "cost": 3.304953, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T15:48:00+00:00 verified {"task": "T0386"}
+- 2026-11-16T16:09:41+00:00 inbox_opened {"id": "I0222", "kind": "protected_change", "subject": "T0378: merge needs founder approval"}
+- 2026-11-16T16:09:49+00:00 run_started {"run": "T0416-critic-20261116T080949-bbcc", "task": "T0416", "role": "critic", "session": "9a417be0-83b5-4eee-9afb-7c2681964c7d"}
+- 2026-11-16T16:09:49+00:00 run_started {"run": "T0412-planner-20261116T080949-4d80", "task": "T0412", "role": "planner", "session": "93b69c9d-c4b8-4bdd-829e-9c1055b50eaf"}
