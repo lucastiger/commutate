@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "FastHenry's ratio-estimate feasibility (F1's 1 % cap) is checked on only one development pair, and FastHenry is the solver that missed it in P4",
+      "detail": "F7(c) measures the F1 exclusion rate on every Case 4 development pair, but only on l2_layout's ladder. FastHenry's three-level ratio estimate is checked only by F7(a), on 'one development pair' that the objective does not name. P4 found that FastHenry's trace-width ratio moved 0.66 % from k0 to k1, and its post-hoc check traced all of that step to the 4 mm plane pitch at k0. The objective does not fix FastHenry's plane-pitch ladder, so P4's own advice ('start at plane pitch <= 2 mm') is not binding. With a 4/2/1 mm plane ladder and a converged k2, gci_capped's lucky-grid branch gives 1.25|d1|/4: 0.21 % for P4's 2 mm edge move. It passes 1 % once the k0 artefact is about 5x larger, which is plausible for the large moves the span needs (r <= 0.75, three pairs below 0.90). Those pairs would then be excluded, A1 could not be met, and the run would end INCONCLUSIVE. This happens on exactly the large-effect pairs that carry coverage. A pass would still be correct; the risk is that the design cannot resolve the decision.",
+      "evidence": "research/o006_p4/results.json ratio_diff trace_width: R_fh k0 0.96299, k1 0.96956, k2 null, R_fh_est 0.0223. P4 note \u00a73.4: k0 with 2 mm planes gives 0.96988 ('the plane pitch causes all of the k0 -> k1 change'). Scratch: gci_capped(0, d1, d1+1e-4) = 0.21 % at d1 = 0.66 %, 0.41 % at 2x, 0.62 % at 3x, 1.03 % at 5x.",
+      "suggested_check": "Before registration, have F7(a) (or a new F7 item) report FastHenry's three-level ratio estimate on the Case 4 development pairs with r <= 0.75 and on a trace-edge move, and fix FastHenry's coarsest plane pitch at <= 2 mm in the frozen ladder.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The retry rule's direct-solver fallback cannot run at any level the judged solves use, so a cap of two retries makes crash-driven INVALID or INCONCLUSIVE likely",
+      "detail": "F1 retries a crash up to twice, 'FastHenry's direct solver where the multipole one crashes, D0002'. Direct LU needs about 8F^2 bytes (P4 \u00a73.1 says it stops at about 15-20k filaments on 16 GB). That is about 84 GB at k1 (102k filaments), about 750 GB for the k1 thickness runs at nh 9 (about 306k), and about 1.36 TB at k2 (413k). So the fallback does not exist where it is needed, and the rule reduces to three multipole attempts. P4 measured 8 crashes in 32 attempts (25 %, Wilson 13-42 %). The crashes are SIGSEGVs 1-4 s into the run, not tied to the geometry, and cheap to retry. Assuming independent attempts, the chance that some finest-level run among about 15 layouts still lacks a value is about 21 % (range 3-68 %). That outcome is INVALID by F1. Across the roughly 75 FastHenry runs (3 lateral levels plus 2 thickness runs per layout), the chance is about 69 % (range 15-99.7 %). The objective does not say what a missing middle-level or thickness run means: excluded, or INVALID. The crash is value-independent, so no verdict is biased. But the stated fallback is factually unavailable, and the cap makes resolution unlikely within a $100 budget that has about 40 VM-hours per attempt.",
+      "evidence": "research/o006_p4/results.json n_filaments: k1 102192, k2 412584. P4 note \u00a73.3: 8/32 crashes, all within 1-4 s, 'retrying works'. Scratch: 8F^2 = 83.5 GB, 749 GB, 1362 GB. P(3 crashes) = 0.0156 at p = 0.25; 1-(1-q)^15 = 0.21; 1-(1-q)^75 = 0.69.",
+      "suggested_check": "Replace the two-retry cap with unlimited (or about 10) retries of runs that crash before the preconditioner is formed, drop the direct-solver fallback above about 20k filaments, and define what a missing non-finest run means.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Several model choices both solvers share are not listed in scope_out",
+      "detail": "The P4 exporter reads Layout.to_conductors(), the same conductor model l2_layout solves. It shares the trace lattice and leaves out gate and Kelvin wires, power-lead posts and die attach in both tools. Signal traces become floating conductors. scope_out lists only ideal die shorts, point-contact terminals, mitred polylines and lattice snapping, and F6 diagnoses only dies and terminal tabs. Agreement between the two solvers cannot detect these omissions.",
+      "evidence": "research/scripts/o006_p4/fh_export.py docstring line 41: 'not modelled (both): gate and Kelvin wires, power-lead posts, the ceramic (non-conductive), die attach as a conductor'. P4 note \u00a71: 'the exporter reads only Layout.to_conductors(), the model l2_layout solves'.",
+      "suggested_check": "List every shared omission in scope_out so that the claim's scope names them.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The covered 'ratio range' is not tied to a solver",
+      "detail": "decision_if_pass limits the pass to 'the ratio range the counted pairs cover', but the span is checked only on L1 at registration. If L1 overstates effects, the FastHenry or l2_layout span could be narrower. I checked that a constant-ratio predictor still fails A1 under plausible compression: 4.3 % even for a span of [0.90, 0.98]. So the null-predictor property holds; only the stated scope is ambiguous.",
+      "evidence": "Scratch: best constant c = 2/(1/lo + 1/hi) gives 13.3 % on [0.75, 0.98], 10.1 % on [0.80, 0.98], 7.1 % on [0.85, 0.98] and 4.3 % on [0.90, 0.98].",
+      "suggested_check": "State the covered range on FastHenry's finest ratios.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The FastHenry binary differs from D0002's recorded hash",
+      "detail": "P4 ran a rebuilt binary (sha256 eaa6d6fc\u2026), not D0002's 15bfbcd1\u2026, and the burst VM will use a Linux build. D0002 pins the tarball and the build, not the binary. 'The pinned FastHenry build' should require recording the binary sha256 and passing the D0002 self-test on each VM.",
+      "evidence": "research/notes/o006-p4-fasthenry-feasibility.md \u00a71 'Discrepancy'.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The FastHenry thickness ladder is not a ratio-2 refinement",
+      "detail": "With rh = 2, nh 3/5/9 gives surface filaments of about t/4, t/10 and t/46. gci_capped's docstring assumes r = 2. The estimate depends on the observed contraction rho, so it stays conservative if the sequence keeps contracting geometrically. It is a different use of the function from the one documented.",
+      "evidence": "research/o006_p4/results.json levels k0_nh5/k0_nh9: rh 2.0. Trace-width thickness ratio sequence 0.96299, 0.96713, 0.96921 gives gci_capped 0.26 %.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed F8's constant-ratio bound: the best constant on [0.75, 0.98] errs by 13.3 %. It still fails A1 at 10.1 %, 7.1 % and 4.3 % if FastHenry's span is compressed to a lower end of 0.80, 0.85 or 0.90. A1 cannot be met by a predictor that ignores the geometry.",
+    "Recomputed the clustered bounds: 1 - 0.05^(1/13) = 20.6 % and 1 - 0.05^(1/2) = 77.6 %, as stated.",
+    "Ran mfos.metrics.gci_capped on P3's l2_layout ladders (1.0/0.5/0.25 mm): base 0.99 %, trace_width 0.96 %, die_shift 1.02 % of L. This confirms K2's 'about 1 % lateral' rationale.",
+    "Tested the 'steps below 0.1 % count as converged' rule on P3's divergent trace-width ratio sequence (steps 0.0073 %, 0.0252 %; gci_capped gives +inf). The rule gives 3 max|d| = 0.076 %. Extrapolating each L by Richardson and dividing moves the ratio by 0.033 %, so the rule bounds it.",
+    "Checked the claimed P4 absolute agreement of 0.8-2.5 % against the P4 table and results.json: confirmed.",
+    "Computed FastHenry's gci_capped behaviour with P4's k0 plane-pitch artefact under the lucky-grid branch: 0.21 % at the observed d1, and about 1 % at 5x.",
+    "Computed direct-LU memory (8F^2) at P4's filament counts: about 84 GB at k1, about 750 GB for the k1 nh 9 thickness runs, about 1.36 TB at k2.",
+    "Computed the probability that a run lacks a value under the two-retry cap from P4's 8/32 crash rate and its Wilson interval: about 21 % for the finest runs alone and about 69 % across all FastHenry runs, at the central rate.",
+    "Computed skin depths: Cu 20.9 / 14.8 \u00b5m and Al 25.9 / 18.3 \u00b5m at 10 / 20 MHz. Both frequencies are in the high-frequency regime (P3: L differs by 0.6 % and ratios by about 0.01 % between them).",
+    "Checked the size of the round-versus-square wire term (T0364): the equal-GMD square side 0.8711 d, with its 2D equivalent radius of 0.5902 side, gives ln(0.514/0.5) = 2.8 % of the log term, about 0.6-0.8 % of a wire's partial self-inductance. Consistent with the stated 0.6 %.",
+    "Read the P4 exporter's model table and docstring to see which model choices the two solvers share."
+  ],
+  "caveats": [
+    "The pass statement follows from A1, A2 and F1 as written. A1 met means every pair was counted, FastHenry's ratio estimate is <= 1 % and the raw difference is <= 2 %. That establishes ratio agreement within 2 % plus FastHenry's estimate, but only against FastHenry, which shares the conductor model, the lattice and the leaving-out of gate/Kelvin wires and power-lead posts. It is not agreement with the real module.",
+    "Whether the design can resolve the decision depends on F7. The FastHenry exclusion risk on large-effect pairs and the crash-driven INVALID risk under the two-retry cap should be fixed before registration, or the run will probably end INCONCLUSIVE or INVALID for reasons unrelated to the solvers' values.",
+    "K1 and K2 can fire on raw values whatever the exclusions. Their only escape is the value-independent INVALID for a missing finest solve, which is why the crash cap matters.",
+    "10 and 20 MHz are both deep in the high-frequency regime and give nearly identical ratios, so 'both frequencies' adds no independent evidence.",
+    "Physics lens only; the statistical clustering of the 13 pairs was checked arithmetically, not judged."
+  ]
+}

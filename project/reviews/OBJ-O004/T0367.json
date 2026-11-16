@@ -1,0 +1,87 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "A missing solve turns a kill that has already happened into an uncounted INVALID, and nothing stops the next run from redrawing the pairs",
+      "detail": "F1 says that a pair lacking either solver's finest value 'cannot be judged by K1, so the run is INVALID'. That is false whenever another completed pair already exceeds 5 %. K1 is a maximum over pairs, so one such pair settles it whatever the missing value is. mfos/evaluate.py checks problems (INVALID) before kill criteria (lines 487-491), so the observed kill is discarded. Under D0023, INVALID evaluations are not counted. decision_if_fail says a pair whose FastHenry ratio is known is never reused, but that rule applies only to FAIL, not to INVALID. A rerun under a new id with freshly drawn pairs can therefore miss a rare defect class that was already seen. The odds are material: from the P4 crash data (finding 2), INVALID from finest-level crashes alone is about 21 % at the measured crash rate (3-69 % across its CI).",
+      "evidence": "evaluate.py lines 487-491: INVALID takes precedence over FAIL. Computed P(at least one of 15 layouts lacks its finest FastHenry value after 3 attempts) = 1-(1-p^3)^15: 0.032 / 0.210 / 0.685 for p = 0.13 / 0.25 / 0.42.",
+      "suggested_check": "Fire K1 (FAIL) when any completed pair exceeds 5 % even if other pairs are missing, and extend the 'known FastHenry ratio is never reused' rule to INVALID outcomes.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Two retries is too few for the measured crash rate; the direct-solver fallback cannot run at the levels judged; missing non-finest solves are undefined",
+      "detail": "P4 measured multipole SIGSEGV crashes in 8 of 32 attempts (25 %, Wilson CI 13-42 %), in random rather than geometry-tied cases. The crashes happen 1-4 s into the run, so retrying is cheap. Even so, F1 caps retries at two. The fallback F1 names, FastHenry's direct solver, cannot run at the second or third level: P4 says direct LU stops at about 15-20k filaments on 16 GB and cannot run any thickness-resolved Case 4 deck (k1 has 102k filaments, k2 413k). Each layout also needs about four multipole solves: k1, k2, and the k1 thickness runs at nh 5 and 9. F1 defines what happens when a finest value is missing, but not when a coarser-level or thickness-ladder solve is missing, which leaves the estimate undefined. If such a gap counts as missing data or an exclusion, then across about 60 multipole solves P(at least one missing) is about 61 % at p = 0.25 (12 % at p = 0.13, 99 % at p = 0.42). The run would then be INVALID, or would end INCONCLUSIVE through A1, for reasons unrelated to the two solvers' values. That undercuts the claim that the sample can resolve the decision.",
+      "evidence": "research/notes/o006-p4-fasthenry-feasibility.md \u00a73.1 line 120 (direct LU limit), \u00a73.2 table (k1 102,192 and k2 412,584 filaments), \u00a73.3 (8/32 crashes, early and cheap). Computed 1-(1-p^3)^60.",
+      "suggested_check": "Retry crashed multipole solves until they complete, up to about 10 attempts (0.25^10 is about 1e-6), and state what a missing non-finest or thickness solve means for F1.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "On P3's only measured data, F1's 0.5 % cap is likely to exclude the large-effect pairs the registered span requires, and F7(c) tolerates too many exclusions",
+      "detail": "F1 says P3's ratio estimates are '3-5 % of the effect size'. P3's own table gives 12.6 % for die_shift (1.72e-3 on 1-R = 0.0136) and 3.5 % for trace_width; the 3.7 % figure is die_shift's lateral step alone. If the uncancelled error scales with the size of the move, a die-row shift at r = 0.75 extrapolates to an l2_layout ratio estimate of about 1.3 % at 0.25 mm, and to about 0.4 % at r = 0.90. That is the lateral step halved at order 1 with Roache's 1.25, plus the filament term, both scaled by the effect. The 1.3 % is well above the 0.5 % cap, so the pair would be excluded and A1 could not be met. F7(c) acts only if more than one Case 4 development pair is excluded. With about 6 development pairs, one exclusion implies a per-pair rate near 1/6, which gives P(all 13 judged pairs counted) = (5/6)^13 \u2248 0.09. Even zero exclusions out of 6 leaves the rate's 95 % upper bound at 39 %. The design therefore leans heavily towards INCONCLUSIVE unless the pilot result drives a change.",
+      "evidence": "research/notes/o006-p3-em-convergence.md table lines 156-161 and \u00a75.4 lines 219-222. Hand extrapolation at 0.25 mm for die_shift: |1-r| = 0.06 \u2192 0.24 %, 0.10 \u2192 0.42 %, 0.25 \u2192 1.27 %. (5/6)^13 = 0.093; 1-0.05^(1/6) = 0.393.",
+      "suggested_check": "Correct the '3-5 %' quote, and have F7(c) report the implied P(no exclusion among 13), or trigger the founder decision on any development exclusion among the large-effect pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "K1 on excluded pairs makes no allowance for FastHenry's own error, so the reference's discretisation can fire the kill",
+      "detail": "Excluded pairs stay in K1 on their raw values. Exclusion can happen because FastHenry's own ratio estimate is above 1 %. P4's FastHenry ratio moved by 0.68 % (22 % of a 3 % effect) between k0 and k1 because of the plane pitch. So a large FastHenry estimate on a large-effect pair could push the raw difference past 5 %, and the FAIL would be attributed to l2_layout. Diagnosis follows, so the main cost is a spent evaluation and a possibly misleading refuted claim.",
+      "evidence": "P4 \u00a73.4: trace_width ratio 0.96299 at k0 vs 0.96956 at k1.",
+      "suggested_check": "State that a K1 firing on an excluded pair is recorded as a fail of the comparison, not as a refutation of l2_layout, until diagnosis.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'steps below 0.1 % count as converged' rule has a cliff at its boundary and cannot be built with gci_capped's floor",
+      "detail": "Ratio steps of (0.099 %, 0.099 %), which are stagnant with rho = 1, get the converged estimate 3 max|d| = 0.30 %. Steps of (0.101 %, 0.099 %) get gci_capped = 6.4 %, which excludes the pair; steps of (0.099 %, 0.101 %) get +inf. The rule also accepts growing sequences. For a two-term (h, h^2) model, 3 max|d| does bound the error (the exact maximum is 2 max|d|), so the effect on the 2 % A1 band is negligible. However, gci_capped's floor argument sets sub-floor steps to zero and returns 0, not 3 max|d|. Implementing the rule with floor = 1e-3 would understate the estimate, so a new protected metric function is needed.",
+      "evidence": "Ran mfos.metrics.gci_capped on ratio sequences built at r = 0.9: (7e-5, 2.5e-4) \u2192 inf; with floor = 1e-3 \u2192 0.0; rule \u2192 0.075 %. (1.01e-3, 0.99e-3) \u2192 6.45 %.",
+      "suggested_check": "Specify the rule as its own metric function, with a test that it returns 3 max|d| (not 0) and that the steps are relative.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Coverage of a move type rests on a single counted pair, judged on L1 rather than on the reference",
+      "detail": "A move type is 'covered' if one counted pair has |1-r| >= 6 % at L1. With one pair, a clean result bounds that type's failing share only at 95 %; with two pairs (one per reference), at 78 %. decision_if_pass extends the judge role to every covered move type. The 6 % threshold is also measured on L1, and FastHenry's ratio for the same pair may be smaller.",
+      "evidence": "1-0.05^(1/1) = 0.95; 1-0.05^(1/2) = 0.776.",
+      "suggested_check": "State the per-type one-sided bound next to the per-type count in any pass statement.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The constant-predictor, clustered-bound and headroom arithmetic recompute correctly",
+      "detail": "On [0.75, 0.98] the best constant ratio gives a maximum relative error of 13.3 %, as F8 states. If L1 overstates effects and FastHenry's ratios span only [0.85, 0.99] or [0.90, 0.99], it is still 7.6 % or 4.8 %. A constant predictor could meet 2 % only if FastHenry's span were as narrow as about [0.94, 0.98]. The zero-failure bounds are 20.6 % for 13 independent pairs and 77.6 % for 2 clusters. A1 is stricter than hypothesis (a), so a pass implies the statement, given that E_FH is a valid bound. A1 met excludes K1, and A2 met (\u2264 10 % with both caps) excludes K2, so the criteria are consistent. why_it_matters says 'under 2 points', but the established band of 2 % plus E_FH (at most 1 %) gives up to about 2.7 points at r = 0.9. That is still inside the 10-point gap.",
+      "evidence": "Script: constant c = 0.8497, max deviation 0.1329; 1-0.05^(1/13) = 0.2058.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The judged references are already development geometry with l2_layout values read",
+      "detail": "Under D0023, 2R and Case 6 are development geometry, and E010 read l2_layout values on 2R. Build item (2) adapts l2_layout to the reconstructions' stacks and outlines, which F2's 'Case 4, gen2_0 and dev seeds only' does not mention. No FastHenry solve has been run on them, so agreement cannot have been tuned. This is not leakage of the outcome under test.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the best-case error of a constant-ratio predictor on [0.75, 0.98] (13.3 %) and on narrower FastHenry spans (7.6 %, 4.8 %, 2.1 %).",
+    "Recomputed the one-sided 95 % zero-failure bounds: 20.6 % for 13 independent pairs, 77.6 % for 2 clusters, 95 % for 1 pair.",
+    "Read mfos/evaluate.py: INVALID (problems) takes precedence over FAIL (lines 487-491).",
+    "From P4's crash data (8/32, CI 13-42 %), computed P(INVALID or missing) with 2 retries: finest only over 15 layouts, 3-69 %; about 60 multipole solves, 12-99 %.",
+    "Confirmed from the P4 note that direct LU cannot run at the k1 and k2 levels (102k and 413k filaments).",
+    "Ran mfos.metrics.gci_capped on ratio sequences near the 0.1 % boundary and with floor = 1e-3: found the cliff and found that the floor returns 0.",
+    "Derived the two-term (h, h^2) bound on the finest error: 0.333 d1 - 1.667 d2, at most 2 max|d|, so 3 max|d| is conservative there.",
+    "Checked F1's '3-5 % of effect' quote against P3's table (die_shift 12.6 %, trace_width 3.5 %) and extrapolated the ratio estimates to r = 0.75-0.94.",
+    "Checked internal consistency: A1 met excludes K1, A2 met excludes K2, and A1 is stricter than hypothesis (a)."
+  ],
+  "caveats": [
+    "A pass establishes agreement with FastHenry on identically exported geometry. Both tools share the exporter's choices (ideal die shorts, point terminals), so the criteria can be met by two tools that both ignore that physics. F6 reports this but does not judge it.",
+    "The kill criteria can fire, but as written an observed K1 exceedance is voided whenever any pair lacks a finest solve. This happens in roughly 1 run in 5 at P4's measured crash rate, until the INVALID and retry rules are fixed.",
+    "Whether the design can resolve the decision depends on F7's pilot. On P3's measured ratio estimates, large-effect die-shift pairs are expected to fail F1's 0.5 % cap.",
+    "The extrapolations in findings 3 (P3 scaling) and 2 (crash odds) assume uncancelled error that scales linearly with effect size and independent crash attempts. Both are inferences from O006's single development module.",
+    "Later scratch scripts were denied by the harness, so the P3 extrapolation and the F7 power figures were computed by hand. The crash odds, the bounds and the gci_capped edge cases were run in uv/python."
+  ]
+}
