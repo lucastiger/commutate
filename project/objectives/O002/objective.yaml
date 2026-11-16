@@ -17,7 +17,8 @@ hypothesis:
     (the yardstick): the difference between two layouts of the same stratum within 0.5 K; each die's value within 3 % of
     its die-local rise; and the spread across each switch's paralleled dies within 1 K and within half the error of a
     stratum-mean predictor (each as a 95th percentile, upper 95 % bound), on fresh sealed seeds. The claim is for these
-    criteria jointly.
+    criteria jointly: A3 (spread within 1 K) and A5 (speed) are each met by a layout-ignorant predictor on their own;
+    A1 and A4 are the criteria that separate L1 from the F2 nulls (reviews T0371, T0372).
   null_hypothesis: >-
     L1 thermal is too inaccurate to enforce a +2 K budget on die-average Tj during search, or no better than a
     stratum-mean or die-position predictor; search needs the thermal reference in the loop or a better fast model.
@@ -72,7 +73,7 @@ acceptance:
   required_experiments: [E007]
   pass_all:
     - {id: A1, metric: E007.dtj_pair_err_p95_K_max_load, comparator: "<=", threshold: 0.5, uncertainty: {use: ci},
-       description: "max over the two load levels of the 95th percentile over same-stratum (same-die) layout pairs of |(Tj,avg,hottest die,a - Tj,avg,hottest die,b)_L1 - (...)_ref| in K, upper 95 % bound per level by the bound F3 selects; a quarter of the +2 K budget"}
+       description: "max over the two load levels of the 95th percentile over same-stratum (same-die) layout pairs of |(Tj,avg,hottest die,a - Tj,avg,hottest die,b)_L1 - (...)_ref| in K, upper 95 % bound per level by the bound F3 selects; a quarter of the +2 K budget. The same statistic with each model's own hottest die (the maximum of L1's die averages against the maximum of the reference's), which is what a search scores, is reported beside it; if it exceeds 0.5 K while A1 is met, founder decision before the search scores with L1 (reviews T0371, T0372)"}
     - {id: A2, metric: E007.tjavg_local_rel_err_p95_max_load, comparator: "<=", threshold: 0.03, uncertainty: {use: ci},
        description: "max over load levels of the 95th percentile over dies of |Tj,avg,L1 - Tj,avg,ref| / (Tj,avg,ref - mean baseplate-bottom temperature), upper 95 % bound by the bound F3 selects; 3 % because a lookup on die position alone reached about 5.6 % of the die-local rise for the hottest node (review T0132; re-measured for the die average on development rows, F2). Reported per stratum beside the pooled value, with the die-position null per stratum"}
     - {id: A3, metric: E007.switch_spread_err_p95_K_max_load, comparator: "<=", threshold: 1.0, uncertainty: {use: ci},
@@ -92,15 +93,15 @@ acceptance:
 failure_modes:
   - id: F1
     description: "The thermal reference not converged at the resolution the criteria need, or the operating point outside the physical envelope"
-    detection: "gated sanity checks: energy balance |Q_out/Q_in - 1| <= 1e-6 on every reference solve; on the three-level subset (levels 0-2, chosen by a frozen rule before any judged solve, at least 2 layouts per cell), the gci_capped estimate of every same-stratum pair difference and every spread at most 0.1 K, and of every absolute die average at most 0.3 K (a sixth of A2's 3 % of a 60 K rise), a sequence whose steps are all below 0.01 K counting as converged with estimate 3 max|d| (E010: 8 of 153 pair sequences had steps of at most 0.005 K and gci_capped returned +inf); when judging at level 1, the level-1 value of every subset pair difference and spread within 0.1 K of its level-2 value; Tj at P_ref at most 175 °C on every layout. Before approval of E007's registration, the same three-level check on two generator development layouts (C004's development layouts) confirms or refutes level 1, since E010's data are from one PowerSynth geometry"
+    detection: "gated sanity checks: energy balance |Q_out/Q_in - 1| <= 1e-6 on every reference solve; on the three-level subset (levels 0-2, chosen by a frozen rule before any judged solve, at least 2 layouts per cell), the gci_capped estimate of every same-stratum pair difference and every spread at most 0.1 K, and of every absolute die average, at the judged level and at each load, at most 1 % of that die's local rise (a third of A2's 3 %; the die-local rise excludes the baseplate rise and is about 25-47 K at P_ref, review T0372; at level 1 the error is the level-1 value's distance from the level-2 value plus the level-2 estimate), a sequence whose steps are all below 0.01 K counting as converged with estimate 3 max|d| (E010: 8 of 153 pair sequences had steps of at most 0.005 K and gci_capped returned +inf); when judging at level 1, the level-1 value of every subset pair difference and spread within 0.1 K of its level-2 value; Tj at P_ref at most 175 °C on every layout. Before approval of E007's registration, the same three-level check on two generator development layouts (C004's development layouts) confirms or refutes level 1, since E010's data are from one PowerSynth geometry"
     response: "experimental failure (INVALID); judge at level 2 or lower the load under a new experiment id (founder decision for the load or the extra cost); the hypothesis is untouched"
   - id: F2
     description: "A layout-ignorant predictor meets the criteria"
-    detection: "null baselines at P_ref, each defined so that it can be computed on the judged rows: (c) a die-position lookup on (family, dies, load, switch, die index), leave-one-layout-out within the stratum; (d) the in-sample stratum mean for A1 and the in-sample stratum-mean spread for A3/A4; and (a) a die-size-aware isolated-die spreading model without inter-die coupling. Each null must fail pass_all (at least one of A1-A4; A3 alone may be met by (d), A4 carries the spread test). On development rows, `mfos exp check E007 --rows <dev rows>` must show this before registration. The development-trained lookup of the earlier draft (b) is dropped: with one die size per stratum it equals (d)"
+    detection: "null baselines at P_ref, each defined so that it can be computed on the judged rows: (c) a die-position lookup on (family, dies, load, switch, die index), leave-one-layout-out within the stratum; (d) the stratum mean for A1 and the stratum-mean spread for A3/A4, both per (stratum, switch) and leave-one-layout-out, like (c), since the per-switch and pooled definitions change A4's denominator by up to 2x (review T0372); and (a) a die-size-aware isolated-die spreading model without inter-die coupling. Each null's point estimate must fail A1 (exceed 0.5 K), and the spread nulls' point estimates must fail A4; a null failing only by a wide upper bound does not count (review T0371). A1 and A2 of every null are reported per stratum (the die-position null came close to A2's 3 % in 2-die strata, review T0372). On development rows, `mfos exp check E007 --rows <dev rows>` must show this before registration. The development-trained lookup of the earlier draft (b) is dropped: with one die size per stratum it equals (d)"
     response: "design error: revise E007's design; a threshold change is a founder decision on the objective"
   - id: F3
     description: "The sample cannot resolve the thresholds, or the confidence bound undercovers"
-    detection: "E007's design-time simulation on development rows, with per-layout errors drawn both normal and heavy-tailed (Student t, 3 degrees of freedom) and clustered by layout, using the exact implementation that will judge: the layout-clustered percentile bootstrap under-covered a p95 upper bound in review T0369's simulation (0.83-0.935 at 6 x 8 to 20 x 10 layouts), so E007 selects, before registration, a bound whose simulated coverage is at least 0.95 under both error models (an order-statistic or binomial bound over layouts, BCa, or a calibrated bootstrap) and the smallest sample, with every cell of scope_in drawn, at which an L1 whose true p95 is 0.6 x each threshold passes A1-A4 with power at least 0.8; the bound is added to mfos.metrics with the other functions (notes). The sample's reference cost must fit the budget"
+    detection: "E007's design-time simulation on development rows, with per-layout errors drawn both normal and heavy-tailed (Student t, 3 degrees of freedom) and clustered by layout, using the exact implementation that will judge: the layout-clustered percentile bootstrap under-covered a p95 upper bound in review T0369's simulation (0.83-0.935 at 6 x 8 to 20 x 10 layouts), so E007 selects, before registration, a bound whose simulated coverage is at least 0.95 under both error models (an order-statistic or binomial bound over layouts, BCa, or a calibrated bootstrap) with layouts as the independent units (a distribution-free 95 % bound on a p95 is infinite below 59 units, review T0372), and the smallest sample, with every cell of scope_in drawn and the layouts per stratum fixed in advance, at which an L1 whose true p95 is 0.6 x each threshold passes A1-A4 jointly with power at least 0.8 (the reviews expect about 100-200 layouts). The coverage requirement also applies to A4's ratio bound and to the lower bounds of K1-K3 (review T0371). The bound is added to mfos.metrics with the other functions (notes); per-stratum values are reported by a rule fixed before the run; the sample's reference cost must fit the budget"
     response: "redesign under a new experiment id before registration"
   - id: F4
     description: "k(T) effects untested"
@@ -118,7 +119,7 @@ failure_modes:
     description: "L1 is accurate on random layouts but not on the layouts a search selects with it (optimiser's curse)"
     detection: "per cell, two layouts optimised against L1 by a frozen rule (lowest L1 hottest-die average among a fixed number of random draws of the stratum), solved by the reference; their A1-type pair errors against same-stratum random layouts are reported beside A1, not gated"
     response: "report; O008 and O009 audit every shortlist with the reference"
-budget: {usd: 120, cpu_hours: 60, wall_days: 28}
+budget: {usd: 120, cpu_hours: 100, wall_days: 28}
 require_plan_approval: true
 notes: >-
   Draft by the founder session of 2026-10-31, revised after draft reviews T0127/T0128 (round 1, both reject) and
@@ -142,10 +143,18 @@ notes: >-
   is the one this draft already reserved (experiments/specs and drafts checked, 2026-11-15).
   Cost: $11.44 spent of $120 before these reviews (about $3.70 more for them). Reference solves at level 1 take about 3
   minutes; at level 2 about 25 minutes and 15 GB on 2R in E010 (generator layouts may be up to twice the size). E007 at
-  6 cells x 8 layouts x 2 loads at level 1 with a 12-layout level-2 subset and the F7 layouts is about 15-30 CPU-hours,
-  local or on an E2 burst VM sized by memory (about $5-15); the plan estimated $0-10 of VM, and F3 sets the sample.
+  about 100-200 layouts x 2 loads at level 1 (about 1.5-3 minutes each), with a 2-per-cell level-2 subset (about 25-50
+  minutes and 15-30 GB each) and the F7 layouts, is about 35-70 CPU-hours, local or on an E2 burst VM sized by memory
+  (about $15-35); the plan estimated $0-10 of VM, and F3 sets the sample. A coarse-grid version of the reference itself
+  would pass A1-A4 by wide margins in review T0372's check (A1 p95 0.02-0.06 K), so A5's speed is likely to decide the
+  outcome.
+  After T0371 and T0372 (both accept with caveats) the session folded in, with no further review: the claim rests on
+  A1 and A4 jointly with the rest; each null's point estimate must fail A1, with per-null, per-stratum A1 and A2; the
+  stratum-mean spread null per switch and leave-one-layout-out; layouts as F3's units, coverage for the ratio and kill
+  bounds, a fixed allocation and the expected 100-200 layouts; F1's absolute gate relative to the die-local rise at the
+  judged level and each load; A1 with each model's own hottest die reported.
   For the founder to set at approval (PROPOSED): the yardstick (pending 11-27), the load levels (P_ref and 0.5 P_ref),
-  A5's 1 s, F1's 0.1 K and 0.3 K and its 0.01 K step floor, F6's 2 K, K3's ratio of 1, the die-count bands. Requires
+  A5's 1 s, F1's 0.1 K, its 1 % of the die-local rise and its 0.01 K step floor, F6's 2 K, K3's ratio of 1, the die-count bands. Requires
   founder-approved additions to tools/mfos (protected): quantile-of-relative-error, quantile-of-absolute-error, median
   and ratio-to-null functions in mfos.metrics, a per-level max aggregation, self-pair exclusion in the layout-clustered
   pairwise statistics, the confidence bound F3 selects, and the step-floor rule (shared with O004).
