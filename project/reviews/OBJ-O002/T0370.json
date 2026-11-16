@@ -1,0 +1,84 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's 0.05 K bound on each die-average estimate cannot be met at the finest level the frozen rule allows, so E007 would come out INVALID by construction",
+      "detail": "F1 requires gci_capped \u2264 0.05 K for every die-average Tj on the three-level subset, and \u2264 0.1 K for every pair difference. gci_capped (tools/mfos/mfos/metrics.py:128) caps the order at 1. In the branch where 1/4 \u2264 rho \u2264 1/2 it returns 1.25\u00b7|d2|, and it is never below 1.25\u00b7max(|d2|, |d1|/4). So 0.05 K needs |T_L2 \u2212 T_L1| \u2264 0.04 K and |T_L1 \u2212 T_L0| \u2264 0.16 K. The only die-average three-level data in the repo is E010. E010 uses the same thermal_fem bytes as EV-O007-01 (sha a216d5fe\u2026, code_must_match) at C004's operating point. There, d2 is 0.082\u20130.125 K and d1 is about 0.28\u20130.42 K. Level 2 is the finest level of the frozen rule (gci_capped estimates f2 from levels 0\u20132). A coarser triple would be worse. Level 3 means 8\u00d7 the DOFs, and level 2 already takes 10\u201370 GB and 1.5\u20132.3 h per solve (E009 design note \u00a77). The pair leg also fails: hottest-die pairs whose levels change by only 1\u20133 mK return +inf through the stagnation branch, for example [0.2602, 0.2595, 0.2573] K. A requirement on 'every' pair of a subset will almost surely hit such a case. F1's response is INVALID and a new experiment id, so as drafted the experiment cannot reach PASS or FAIL. That falsifies 'the thresholds and the sample can resolve the decision'. The draft does defer this ('shown on development layouts before registration'), but the evidence already in the repo points the other way. The 0.05 K is also tighter than anything A1\u2013A4 need: A2's 3 % of a die-local rise is about 1 K.",
+      "evidence": "Recomputed from experiments/results/E010/E010-20261114T202413-80c1/rows.json with mfos.metrics.gci_capped (matches the stored GCI_vj_K exactly): 48 dies, die-average GCI min/median/max 0.102/0.114/0.156 K, 0 of 48 \u2264 0.05 K, d2 0.0815\u20130.1247 K. Hottest-die pair differences over 11 layouts: median GCI 0.012 K, but 3 of 55 pairs are +inf (c015195\u2013c017741, c005595\u2013c012484, c017741\u2013c014260) with level-to-level changes of 1\u20135 mK. On E010 the hottest/centroid-node estimates (about 0.03\u20130.07 K) are smaller than the die-average ones. E009's generator-layout centroid-node GCI is 0.03\u20130.099 K. So generator layouts are unlikely to do better (inference).",
+      "suggested_check": "Before approval, compute die-average and pair-difference gci_capped on two default-stack generator development layouts at levels 0\u20132. Set F1's per-die bound from what A1\u2013A4 actually need (e.g. \u2264 0.1\u00b7A1 on pairs and spreads, with a stagnation-aware floor) rather than a fixed 0.05 K.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The cost basis (15 min per layout at the middle grid, 25\u201340 CPU-h) contradicts F1, which forces judged solves to level \u2265 2",
+      "detail": "The notes price E007 at about 100\u2013150 reference solves at the middle grid (15 min each, 25\u201340 CPU-h). But the reference must be judged at the level whose three-level estimate meets F1, and only the finest level of a triple has one. Measured level-2 solves take 5554\u20138331 s and 10\u201370 GB (and the E009 table puts level 1 near 194 s, not 15 min). 96+ level-2 solves plus the three-level subset come to about 150\u2013350 CPU-h, over the 120 cpu_hours cap, and need a highmem burst VM. Within budget, F3's power simulation would then select a much smaller sample than the 6 \u00d7 8 used for the cost estimate. Whether p95 upper bounds over that few layouts can resolve A1\u2013A4 is not shown.",
+      "evidence": "research/notes/o007-e009-design.md \u00a77: fresh-layout L2 8331 s, side_by_side_6 L2 5554 s, scikit-fem L2 peaks 10\u201342 GB measured and about 70 GB extrapolated. Objective notes: 'about 15 minutes per layout at its middle grid \u2026 about 25-40 CPU-hours'.",
+      "suggested_check": "Re-price E007 at the level F1 actually admits, and run F3's power simulation at the sample size that budget affords before approval.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3 on its own is met by a layout-ignorant predictor, so 'no criterion would be met by such a predictor' is false for A3, and F2 as literally written would flag it",
+      "detail": "The earlier null pilot (hottest-node yardstick, level 0) found the stratum-mean-spread null's pooled p95 error of the per-switch spread was 0.50 K at 25 W and 1.02 K at 45 W, and below 1 K in 11 of 15 strata at 45 W. P_ref is 32\u201347 W per die (E009), so at the max over load levels this null sits at or below A3's 1 K. The draft concedes this in A4's description ('so A3 cannot pass on a uniform stratum alone'). The pass conjunction is still protected, because the null's A4 ratio is 1 > 0.5. But the claim is stated per criterion. F2 also requires 'each null failing A1-A4 at its point estimate' on development rows, which this null will probably not do for A3. F2's response (revise E007's design; threshold changes are a founder decision) cannot fix a property the objective itself fixes.",
+      "evidence": "research/notes/o006-p2-thermal-nulls.md \u00a72 table (last column) and \u00a73: 'the stratum-mean-spread null has a p95 error below 1 K in 11 of 15 strata at 45 W and in all strata at 25 W'; pooled 0.50 / 1.02 K.",
+      "suggested_check": "Recompute the stratum-mean-spread null for the die-average on development rows at P_ref. Either restate F2 so A3 is covered by A4, or make A3 itself discriminate.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Passing establishes a +2 K budget on die-average Tj, not on the hottest-node Tj that A-T3/O003 define",
+      "detail": "The null is phrased as 'too inaccurate to enforce a +2 K Tj budget', and O003's +2 K is defined on the hottest node. Die-average pair accuracy does not bound hottest-node pair accuracy, because the hottest-node minus die-average gap varies between layouts. The draft acknowledges this (decision 5 assumed; F6 reports the gap).",
+      "evidence": "D0020 context; scope_in item 3; F6.",
+      "suggested_check": "Keep F6's 2 K gap rule and state explicitly that the hottest-node budget is out of scope.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Random-pair accuracy does not bound L1's error on candidates the optimizer selects",
+      "detail": "A1\u2013A4 are measured on random DRC-valid generator layouts. A search that scores on L1 will pick the layouts where L1 is most favourable, a winner's-curse effect, so the p95 on random pairs overstates accuracy on the shortlist. decision_if_pass mitigates this with reference audits of shortlisted candidates.",
+      "evidence": "decision_if_pass; A1 definition.",
+      "suggested_check": "Report L1 \u2212 reference error on the audited shortlist, separately from the random sample, in O008/O009.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 is pooled over dies, so many-die strata dominate it; the strongest null is close to 3 % in some strata, and null (b) duplicates null (d)",
+      "detail": "The die-position lookup null reached only 3.2\u20133.6 % of the die-local rise in side_by_side/2, interleaved/2 and interleaved/3 (hottest node). A pooled pass does not imply a pass in each stratum. With one die size per stratum, null (b) is the stratum mean trained out of sample, so it adds nothing over (d).",
+      "evidence": "research/notes/o006-p2-thermal-nulls.md \u00a73.",
+      "suggested_check": "Report A2 and the die-position null per stratum alongside the pooled value.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "P_ref and 'hottest die' are ambiguous between hottest-node and die-average definitions",
+      "detail": "P_ref is set so that 'the hottest die \u2026 rises 60 K' (C004 used the hottest node). A1 uses the 'hottest die' without saying whether it is chosen by L1, by the reference, or separately by each. The max is 1-Lipschitz, so the metric is robust either way, but rows must define it to be recomputable.",
+      "evidence": "hypothesis statement; A1 description.",
+      "suggested_check": "Fix both definitions in E007's row contract.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "K1 and K2 can fire; A1 discriminates against the layout-ignorant nulls",
+      "detail": "In the pilot, the stratum-mean pair null (predicted difference 0) has p95 3.2\u20138.8 K at 45 W and 1.6\u20134.5 K at 25 W. An L1 with no layout information would therefore exceed K1's 1.5 K at P_ref, and A1's 0.5 K is 3\u201318\u00d7 below every null. A die-position-lookup-quality L1 fails A2 (about 6 % against 3 %) and is killed through K1.",
+      "evidence": "research/notes/o006-p2-thermal-nulls.md \u00a72\u20133.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed gci_capped of the die-average Tj (Tvj_l0..2_K) for all 48 dies in E010's rows with mfos.metrics.gci_capped: 0.102\u20130.156 K, 0 of 48 \u2264 0.05 K, recomputed values identical to the stored GCI_vj_K.",
+    "Derived from the gci_capped source (order cap 1) that F1's 0.05 K requires |T_L2 \u2212 T_L1| \u2264 0.04 K; observed d2 is 0.082\u20130.125 K.",
+    "Built hottest-die die-average pair differences over E010's 11 layouts and recomputed their gci_capped (floor 1e-3 K): median 0.012 K, 3 of 55 pairs +inf despite mK-level changes (stagnation branch).",
+    "Confirmed that E010 uses the C004 thermal_fem bytes (sha a216d5fe\u2026, same as EV-O007-01) through its spec.",
+    "Read E009's per-die rows: P_ref is 32\u201347 W per die at a 60 K hottest-node rise; centroid-node GCI at level 2 is 0.03\u20130.099 K; within-switch die spreads are about 0.5\u20139 K.",
+    "Checked measured reference cost and memory per level (E009 design note \u00a77) against the objective's 15 min / 25\u201340 CPU-h cost basis.",
+    "Checked each pass and kill criterion against the pre-registered null pilot (o006-p2-thermal-nulls.md): A1 and K1 discriminate; A3 alone is met by the stratum-mean-spread null in most strata; the A2 die-position null is 3.2\u20138.8 %."
+  ],
+  "caveats": [
+    "The die-average convergence data comes from E010 (2D_Case_2R, a reconstructed benchmark with its own stack recipe and a 4\u00d76 mm die), not from default-stack generator layouts. That generator layouts behave the same is an inference, supported by E009's centroid-node estimates and by E010's die-average estimates exceeding its node estimates.",
+    "The null pilot used the hottest-node yardstick at grid level 0, not the die-average at the judged level, so the A3/A4 null magnitudes are indicative.",
+    "The draft flags F1's 0.05 K and 0.1 K as PROPOSED, for the founder to set, and defers the die-average estimates to before registration. The blocker can be fixed by revising F1 and the cost basis before approval; nothing else found argues against the core design (A1, K1 and A4 discriminate as intended).",
+    "Multi-line shell scripts were refused in this session, so all checks were run as one-line Python commands against the result files."
+  ]
+}
