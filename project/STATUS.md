@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T17:37:44+00:00 from repository state — do not edit_
+_generated 2026-11-16T17:38:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -45,7 +45,6 @@ cancelled: 45, done: 351, failed: 4, needs_founder: 1, proposed: 1, review: 2, r
 - T0419 `proposed` builder/implement: F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review T0411 findings 1-2) (attempt 0)
 
 ## Recent events
-- 2026-11-16T16:25:14+00:00 sleep_detected {"gap_s": 481, "runs_extended": 3}
 - 2026-11-16T16:25:15+00:00 run_finished {"run": "T0418-critic-20261116T081637-d3db", "status": "completed", "cost": 2.191171, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T16:25:27+00:00 run_started {"run": "T0396-scientist-20261116T082527-88e2", "task": "T0396", "role": "scientist", "session": "13bf75d0-f5d8-4d88-b403-935856986e88"}
 - 2026-11-16T16:58:41+00:00 run_finished {"run": "T0395-builder-20261116T082437-92ea", "status": "completed", "cost": 0.850593, "subtype": "success", "report": "structured_output"}
@@ -60,3 +59,4 @@ cancelled: 45, done: 351, failed: 4, needs_founder: 1, proposed: 1, review: 2, r
 - 2026-11-16T17:37:30+00:00 verified {"task": "T0396"}
 - 2026-11-16T17:37:35+00:00 merged {"task": "T0378"}
 - 2026-11-16T17:37:44+00:00 run_started {"run": "T0379-builder-20261116T093744-60f2", "task": "T0379", "role": "builder", "session": "5a8d8e79-b99e-480d-b07f-f9d8872a0093"}
+- 2026-11-16T17:38:19+00:00 sleep_detected {"gap_s": 600, "runs_extended": 3}
