@@ -1,0 +1,86 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "K1 and K2 are hidden by INVALID exactly where l2_layout gets ratios wrong: F4's span is measured with the tool under test, and F1 exclusions cascade into F4",
+      "detail": "The claim says the kill criteria can actually fire. In mfos/evaluate.py (lines 487-491) any failed sanity check makes the verdict INVALID before fail_any is looked at. O004 makes three things INVALID-level sanity failures: (1) F4, the span of the counted pairs after F1 exclusion ([0.75, 0.98] with at least 3 below 0.90), measured on l2_layout's own 0.5 mm ratios; (2) F1, every pair of one reference excluded; (3) F8, a null meeting A1. Each of these is most likely to trip when l2_layout is wrong. Example: suppose l2_layout systematically understates the ratio change, so r_L2 = 1 - 0.8(1 - r_FH), and FastHenry's ratios run from 0.70 to 0.99. Then l2_layout's smallest ratio is 0.76, F4 fails and the run is INVALID, although K1's raw metric is 8.6 %, well past its 5 % kill line. A fresh-pair rerun, which is F4's prescribed response, reproduces the same INVALID, so a solver with this defect can never be killed. F1 exclusions also fall mostly on the large-effect pairs that F4 needs (next finding), so 'excluded ones included' in K1 does not do what its wording promises. F8's L1-null gate likewise turns 'l2 off by more than 5 % while L1 agrees with FastHenry' into INVALID instead of FAIL. The INVALID branch also carries none of decision_if_fail's ban on using l2_layout as judge.",
+      "evidence": "tools/mfos/mfos/evaluate.py:487-497 (problems \u2192 INVALID before the fail_any check). Scratch computation: k=0.8 compression gives l2 min ratio 0.760, F4 fails, K1 max |r_L2/r_FH - 1| = 0.086; k=0.85 gives min 0.745, span holds, K1 = 0.064 and FAIL fires. So a little more under-sensitivity flips a kill into INVALID.",
+      "suggested_check": "Measure the span (F4) on FastHenry's ratios, or on L1's, before any exclusion, and make a shortfall in the counted span after F1 exclusion INCONCLUSIVE rather than INVALID, so K1 and K2 are always evaluated.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The 0.5 % F1 ratio gate and the F4 span pull against each other; on P3's own data the large-effect pairs F4 needs would be excluded",
+      "detail": "At 0.25 mm, P3's frozen ratio estimates are 8.1 % (die_shift) and 5.3 % (trace_width) of the effect size 1-R. If the ratio error grows roughly in proportion to the perturbation, which is the first-order expectation once cancellation weakens, the 0.5 % gate trips at 1-R of about 6-9 %, that is r below about 0.91-0.94. Even with the smaller three-level estimates (about half), it trips at 1-R of about 12-18 %. F4 needs at least 3 pairs below 0.90 and one at or below 0.75, so the expected outcome is mass exclusion and then INVALID, not a resolved decision. The objective admits that P3's 0.1-0.2 % covers small perturbations only and puts off the check to a Case 4 proxy pair. It does not say what happens if that check fails: F7's 'founder decision' covers pilot cost, not this conflict.",
+      "evidence": "research/o006_p3/results.json pair_ratios: die_shift ratio_est 1.06-1.12e-3 at 1-R = 0.0138; trace_width 1.44-1.62e-3 at 1-R = 0.0306. Scratch: the gate trips at 1-R = 0.062 (die_shift scaling) and 0.094 (trace_width scaling).",
+      "suggested_check": "Before registration, report ratio_est against 1-R on development pairs with r of about 0.75-0.85 on Case 4, and state in advance the action if ratio_est exceeds 0.5 % there.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The 'conservative estimate' (P3's three-level rule, observed order uncapped) is not conservative on the 1.0/0.5/0.25 mm ladder by the project's own evidence",
+      "detail": "P3's three-level GCI uses the observed order with no cap. On Case 4 the 1.0/0.5/0.25 mm L ladder gives p_obs = 1.47-1.53, so the GCI is about 0.56 % of L. The P3 addendum itself says this order may be pre-asymptotic, because generator ladders fell to about 0.72 at 0.5/0.25/0.125 mm. At p = 0.72 the Richardson error left at 0.25 mm is 1.23 % of L, so the estimate understates it by about 2.2\u00d7. Even capping p at 1 gives 0.99 %. The thermal side capped the order at 1 for this very reason (D0012); the EM side does not. The same rule credits an artefact-driven FastHenry ratio sequence (P4: the k0\u2192k1 trace_width jump came from the 4 mm plane cell) with a very high order. Illustratively, steps of 0.0066 then 0.0003 give p of about 4.4 and an estimate of about 2e-5, against about 2e-3 under the project's D0013 branch (iii). This weakens the stated result ('2 % plus FastHenry's ratio estimate'), the F1 gate, and the absolute bands that decision_if_pass tells downstream claims to quote. It does not create a false A1 pass, because A1 is judged on raw values.",
+      "evidence": "results.json supp_1.0_0.5_0.25 p_obs 1.466-1.530 (L), 0.83-0.84 (die_shift ratio). Scratch: GCI 0.559 % against Richardson at p=0.72 of 1.230 % against the p\u22641 cap at 0.995 %. P3 addendum: 'the order observed here may be pre-asymptotic'.",
+      "suggested_check": "Freeze an EM estimator with the order capped (and D0013-style branches for rho < 1/4 and |rho| \u2265 1) and recompute Case 4's 0.25 mm estimates with it before setting A2's caps.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The estimator definition is inconsistent and leaves diverging ratio sequences undefined",
+      "detail": "F1 says a sequence is 'monotone or their estimate is +inf'. P3's rule, which scope_in adopts, gives a finite 3\u00b7max|e| for non-monotone sequences. On exactly O004's ladder, Case 4's trace_width ratio does not contract: 0.969067 \u2192 0.969138 \u2192 0.969390, with the change growing under refinement (|e21| = 2.5e-4 > |e32| = 7.1e-5). Under P3 the pair passes the 0.5 % gate at 7.6e-4. Under F1's +inf reading it is excluded. A diverging sequence's 3\u00b7max|e| is not a bound either.",
+      "evidence": "results.json pair_ratios[2..3] supp_1.0_0.5_0.25 kind 'non-contracting', gci 7.56e-4 / 7.60e-4.",
+      "suggested_check": "Write one estimator into the spec, with the branch for |rho| \u2265 1 stated, for both L and ratio sequences.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The pairs validate a narrower move set and ratio range than the judge role a pass grants",
+      "detail": "The pair rules move die rows, power-trace widths and terminal-near copper. O008, which O004 would license l2_layout to judge, moves slot extents, column edges, die positions and wire landings, and reports designer proxies 10 % (2R) and 37 % (Case 4, r of about 0.63) below the twins at L1, outside [0.75, 0.98]. The two solvers' models differ most in the wires (round disc-and-ring bundle against a square of equal GMD). Pairs that keep the wire count and landings unchanged cancel that difference in the ratio, so the test is least sensitive to the component where the models diverge. O009's FastHenry re-check of winners limits the harm to the judgements of non-winners.",
+      "evidence": "project/objectives/O008/objective.yaml lines 12, 33; research/notes/o006-p4-fasthenry-feasibility.md wire-model table (line 69).",
+      "suggested_check": "Include a wire-landing or wire-count rule among the frozen perturbations, or limit decision_if_pass to the move types and ratio range tested.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The constant-ratio null cannot fail once F4 holds, so it is not a real check",
+      "detail": "For any set of ratios spanning [0.75, 0.98], the best possible constant has max |c/r - 1| = 13.3 %, far above A1's 2 %. The median ratio does worse. The constant-ratio gate in F8 can therefore never fire while F4 holds; the L1-ratio null is the only one that tests anything. Also, the evaluator's own treatment of declared nulls is 'non_discriminating' \u2192 INCONCLUSIVE, while F8 says INVALID (see the blocker).",
+      "evidence": "Scratch: c* = 0.8497, min max error 0.1329.",
+      "suggested_check": "Drop the constant null or replace it with one that is harder to beat (for example a copper-area-change proxy), and align F8 with the evaluator's non_discriminating path.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "FastHenry's equal-GMD square wire tends to the wrong high-frequency limit as its cross-section is refined",
+      "detail": "Equal GMD (a = 0.8711 d) matches a round wire for uniform (DC) current only. At 10-20 MHz the skin depth in Al (19-27 \u00b5m) is much smaller than the wire, so current flows at the surface. The relevant length is then the square's logarithmic capacity, 0.5902 a, which is 1.028 r, against r for the round wire. Refining wire_n therefore converges to a partial self-inductance about 0.64 % below that of a 16 mm, 0.3 mm round wire. This is a systematic bias in FastHenry's absolute L of a few tenths of a percent of loop L, which mostly cancels in ratios unless the wire geometry changes. In addition, uniform 8\u00d78 filaments (33 \u00b5m) are still coarser than the skin depth.",
+      "evidence": "Scratch: HF GMD ratio square/circle 1.0282; partial self-L difference 0.637 % (Grover partial self-inductance, l = 16 mm, d = 0.3 mm).",
+      "suggested_check": "Report the round-versus-square wire term in the F3 diagnostic, or use a polygonal wire section in the exporter.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The 26 % failure-share bound assumes 10 independent pairs",
+      "detail": "There are 5 pairs per reference from a shared rule set. If the pairs cluster by reference, the 0-of-n one-sided 95 % bound is 45 % for an effective n of 5 and 78 % for 2, not 25.9 %.",
+      "evidence": "Scratch: 1-0.05^(1/n) gives 0.259 / 0.451 / 0.776 for n = 10 / 5 / 2.",
+      "suggested_check": "State the bound per reference, or justify treating the pairs as independent.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos/evaluate.py: INVALID (any failed sanity check) takes precedence over fail_any, so F1, F4 and F8 sanity failures hide K1 and K2.",
+    "Built an adversarial scenario where l2_layout understates ratio changes by 20 % and FastHenry's ratios span 0.70-0.99: F4 fails, so the run is INVALID, while K1's metric is 8.6 % (>5 %); at 15 % compression the span holds and K1 fires at 6.4 %.",
+    "Read the per-level L and ratio values from research/o006_p3/results.json and recomputed the three-level GCI on the 1.0/0.5/0.25 mm ladder: p_obs 1.48 gives 0.56 % of L, against 1.23 % implied at p = 0.72 and 0.99 % with the order capped at 1.",
+    "Computed ratio_est/(1-R) at 0.25 mm (0.081 die_shift, 0.053 trace_width) and the effect size at which the 0.5 % F1 gate trips (1-R of about 6-9 %).",
+    "Found that Case 4's trace_width ratio sequence does not contract on O004's exact ladder (|e21| > |e32|), which exposes the conflict between F1's '+inf' wording and P3's 3\u00b7max|e| rule.",
+    "Computed the best-constant predictor's minimum max error over the [0.75, 0.98] span (13.3 %): the constant null cannot meet A1 once F4 holds.",
+    "Computed the high-frequency equivalent-radius bias of FastHenry's equal-GMD square wire (logarithmic capacity 0.5902 a, giving 1.028 r; -0.64 % partial self-L for a 16 mm, 0.3 mm wire).",
+    "Computed one-sided 95 % zero-failure bounds for n = 10, 5, 2 (0.259, 0.451, 0.776).",
+    "Compared O004's perturbation family and ratio span with O008's move set and proxy depths (2R 10 %, Case 4 37 % below the twin)."
+  ],
+  "caveats": [
+    "Physics lens only; statistics and provenance were not reviewed in depth.",
+    "The scaling of ratio_est with effect size is inferred from two small Case 4 perturbations (1-R of 1.4 % and 3.1 %); the real scaling is unmeasured until the pre-registration proxy-pair check.",
+    "The FastHenry ratio-estimate example uses P4's post-hoc plane-pitch diagnostic as a stand-in for an unrun third level; it shows how the estimator behaves, not a measured k2 value.",
+    "I could not inspect O009 (not drafted in the repo), so the scope finding uses O008's stated move set."
+  ]
+}
