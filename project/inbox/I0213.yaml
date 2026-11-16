@@ -1,0 +1,47 @@
+id: I0213
+kind: plan_approval
+subject: '[O002] approve initial plan (8 tasks)'
+summary: 'O002 was approved on 2026-11-16 and nothing has been built yet. The objective notes list five
+  build items. Item (1) is already done: LayerStack has die-attach and 4H-SiC layers, and every material
+  has a cited k(T) law (geometry/stack.py, from O007). Still missing: src/moduleforge/thermal, a fixed-die-size
+  generator option, the E007 draft and the protected mfos.metrics functions. Four things are most likely
+  to kill the objective or E007''s design:
+
+  (i) A5 jointly with A1/A2. On side_by_side_6 the frozen reference already has 168 k DOF at level 0 and
+  1.24 M at level 1 (about 155 s), so L1 must be well over 10x faster than level 0 and still accurate.
+
+  (ii) F2. If the hottest-die average varies by less than about 0.5 K across random same-die layouts of
+  a stratum, the stratum-mean null meets A1 and the design fails.
+
+  (iii) F1. If level 1 is not enough on generator layouts, judging at level 2 would break the 100 CPU-hour
+  budget.
+
+  (iv) F3. The sample that gives both coverage and power may not fit the budget.
+
+  The plan tests these cheaply first. n1 measures candidate L1 models and the nulls on reference solves
+  of development layouts. n2 runs F1''s pre-registration check, reusing cached frozen-rule solves where
+  the frozen bytes reproduce them. n5 runs F3''s simulation and drafts the protected metrics patch, using
+  n1''s measured error scales. n3, the generator option, runs alongside. Only then do n4 (freeze L1),
+  n6/n7 (E007 spec, runner and development rows with the F2 null check) and n8 (the single run) follow.
+  Two founder actions sit on the path: applying n5''s protected patch before n7, and a burst VM for the
+  level-2 development solves that do not fit this Mac. Registering E007 also waits for decision 5 at the
+  11-27 thesis review, which the die-average yardstick ASSUMES.'
+refs:
+- O002
+- T0392
+- T0393
+- T0394
+- T0395
+- T0396
+- T0397
+- T0398
+- T0399
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T01:46:31+00:00'
+resolved_at: null
+resolved_by: null

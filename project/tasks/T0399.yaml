@@ -1,0 +1,40 @@
+id: T0399
+objective: O002
+title: 'Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts
+  at P_ref and 0.5 P_ref'
+type: experiment
+agent: none
+status: proposed
+depends_on:
+- T0398
+- T0395
+- T0394
+description: The orchestrator runs the registered E007 on merged main once n7's draft is registered. Registration
+  needs founder approval and waits for decision 5 at the 11-27 thesis review (die-average yardstick).
+  It runs on burst compute if the registered cpu_hours_est exceeds the policy's local rule. It feeds A1-A5
+  and K1-K3 and uses the objective's single evaluation (max_evaluations 1).
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: E007
+risk: medium
+model: null
+budget_usd: 0.5
+max_turns: 1
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: This is the required experiment task for E007, the only evidence for O002's verdict. It depends
+  on the frozen L1 (n4), the generator option (n3) and the finished design (n7).
+history: []

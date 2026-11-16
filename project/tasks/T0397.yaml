@@ -1,0 +1,185 @@
+id: T0397
+objective: O002
+title: 'E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2
+  subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan)'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0393
+- T0394
+- T0395
+- T0396
+description: 'Draft experiments/drafts/E007.yaml and experiments/runners/e007_run.py on mfos.evidence.ExperimentRun,
+  following experiments/specs/E009.yaml with e009_run.py, and experiments/specs/E008.yaml with e008_run.py.
+
+
+  Spec, provenance and freeze:
+
+  - requires_passed [O007].
+
+  - code_must_match on src/moduleforge/solvers/thermal_fem.py with O007''s EV-O007-01 (sha256 a216d5fe...);
+  the frozen GridRule of research/o007_dev3/frozen_config.json, key for key.
+
+  - code_under_test: src/moduleforge/thermal/*.py (the L1, frozen, F5), generate/halfbridge.py, geometry/stack.py
+  and drc.
+
+  - Sealed seeds for layout generation, the per-stratum die-size draw (draw_die_size_mm), the F7 draws
+  and the timing order.
+
+
+  Sample and operating point:
+
+  - The allocation of research/o002_e007/f3_simulation.json, with every (family, band) cell drawn and
+  the layouts per stratum fixed.
+
+  - Per stratum, a development layout with the stratum''s die size, from a recorded development seed.
+  P_ref comes from its level-0 reference solve (hottest node 60 K above 65 C coolant within C004''s tolerance,
+  h = 5000), fixed before any judged solve. The second load is 0.5 P_ref.
+
+
+  Judging and sanity checks:
+
+  - Judge at level 1, as n2 found. If n2 refuted level 1, stop and say so: under F1''s response that is
+  a founder decision.
+
+  - A level-2 subset chosen by a frozen rule from the sealed seed before any solve (at least 2 layouts
+  per cell), with F1''s gates as gated sanity checks, using the step-floor rule.
+
+  - Energy balance <= 1e-6 on every solve; Tj at P_ref <= 175 C.
+
+
+  Rows and recompute:
+
+  - Rows follow research/o002_e007/e007_row_contract.md: per die, switch, layout and pair, with family,
+  dies, stratum, die size, switch, die index, load, L1 and reference tj_mean, die-local rise, and reference
+  tj_max (L1''s too if it has one). No geometry in rows (F5).
+
+  - Recompute entries for A1-A5 and K1-K3, under the objective''s metric names, through the n5 functions.
+
+
+  Nulls per F2, at P_ref:
+
+  - (c) die-position lookup and (d) stratum mean / stratum-mean spread, both per (stratum, switch) and
+  leave-one-layout-out;
+
+  - (a) a die-size-aware isolated-die spreading model without inter-die coupling (for example solvers.thermal_series);
+
+  - each with A1 and A2 per stratum.
+
+
+  Reported, not gated:
+
+  - A1 with each model''s own hottest die;
+
+  - per-stratum A2 beside the die-position null;
+
+  - A4 per die-count band;
+
+  - the F4 constant-k ablation at both loads;
+
+  - F6: the hottest node of every die, with its estimate on the three-level subset, and the largest hottest-node
+  minus die-average gap per stratum;
+
+  - F7: per cell, two L1-optimised layouts (lowest L1 hottest-die average among a fixed number of sealed
+  random draws), solved by the reference, with their A1-type errors against same-stratum random layouts.
+
+
+  A5 is the median L1 wall time per evaluation on one thread.
+
+
+  Modes:
+
+  - --selftest: fake solvers, full row assembly and recompute through research/o002_e007/e007_metrics.py,
+  including a mutation check that a wrong hottest die is caught;
+
+  - --verify-freeze;
+
+  - --plan: every solve with its memory and time, cpu_hours_est and $, and local or burst per policy local_cpu_hours_max;
+
+  - --dev: development geometry only, used by n7.
+
+
+  Run every reference solve in a subprocess with checkpoint and resume. C004''s development and fresh
+  layouts are never judged. List open choices the objective leaves undecided under a ''founder decisions
+  before registration'' heading in the spec instead of deciding them.
+
+
+  Do not edit src/, tools/ or tests/acceptance. Never start a VM.'
+context_files:
+- project/objectives/O002/objective.yaml
+- experiments/specs/E009.yaml
+- experiments/runners/e009_run.py
+- experiments/specs/E008.yaml
+- experiments/runners/e008_run.py
+- tools/mfos/mfos/evidence.py
+- tools/mfos/mfos/models.py
+- research/o002_e007/f3_simulation.json
+- research/o002_e007/e007_row_contract.md
+- research/o002_e007/e007_metrics.py
+- research/notes/o002-f1-dev-check.md
+- research/notes/o002-l1-design.md
+- research/o007_dev3/frozen_config.json
+- src/moduleforge/thermal/__init__.py
+- src/moduleforge/generate/halfbridge.py
+- src/moduleforge/solvers/thermal_series.py
+deliverables:
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_run.py
+- research/notes/e007-design.md
+touches:
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_run.py
+- experiments/runners/e007_*.py
+- research/o002_e007/**
+- research/notes/e007-design.md
+definition_of_done:
+- cmd: null
+  exists: experiments/drafts/E007.yaml
+  timeout_s: 900
+- cmd: null
+  exists: experiments/runners/e007_run.py
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e007_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e007_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run python experiments/runners/e007_run.py --plan
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "s = open('experiments/drafts/E007.yaml').read(); missing = [k for k in ['requires_passed',
+    'O007', 'code_must_match', 'a216d5fe', 'code_under_test', 'src/moduleforge/thermal', 'sealed', 'cpu_hours_est',
+    'dtj_pair_err_p95_K_max_load', 'tjavg_local_rel_err_p95_max_load', 'switch_spread_err_p95_K_max_load',
+    'switch_spread_err_ratio_vs_stratum_mean', 'l1_eval_s_p50', 'die_position', 'stratum_mean', 'isolated_die',
+    'constant_k', 'F6', 'F7'] if k not in s]; assert not missing, missing"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check experiments/runners/e007_run.py
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: This is E007's design and runner, the only experiment in acceptance.required_experiments. It
+  brings together n2 (judged level), n3 (die size), n4 (frozen L1) and n5 (bound, allocation, metrics).
+history: []

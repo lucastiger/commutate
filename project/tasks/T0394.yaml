@@ -1,0 +1,88 @@
+id: T0394
+objective: O002
+title: 'Generator option: one fixed die size per stratum (die_size_mm), random stream and default output
+  unchanged'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'This is build item (3) of the objective notes (scope_in: one die size per (family, dies)
+  stratum).
+
+
+  In src/moduleforge/generate/halfbridge.py:
+
+  - Add `die_size_mm: float | None = None` to generate_layouts and _build. When set, every die of every
+  layout has that size. s is still drawn and then replaced, so for a given seed every other parameter
+  draw is identical until the first DRC-driven divergence.
+
+  - None must give byte-identical layouts to today''s code. Capture the fingerprints (Layout.fingerprint)
+  of several seeded layouts across families and die counts before changing anything, and pin them in a
+  regression test.
+
+  - Raise ValueError unless die_size_mm is a multiple of DESIGN_GRID_MM within the generator''s own draw
+  range, 4.0-5.5 mm.
+
+  - Add `draw_die_size_mm(rng)`, returning a draw from the same snapped distribution as _build''s s, so
+  runners can draw one size per stratum.
+
+  - Update the module docstring.
+
+
+  Unit tests in tests/unit/generate/test_halfbridge.py:
+
+  - the fixed size on every die, across the three families and 2-6 dies, including 6 dies at 5.5 mm;
+
+  - the None regression;
+
+  - the validation errors;
+
+  - determinism in the seed;
+
+  - draw_die_size_mm''s support.'
+context_files:
+- src/moduleforge/generate/halfbridge.py
+- tests/unit/generate/test_halfbridge.py
+- src/moduleforge/geometry/layout.py
+deliverables:
+- src/moduleforge/generate/halfbridge.py
+- tests/unit/generate/test_halfbridge.py
+touches:
+- src/moduleforge/generate/halfbridge.py
+- tests/unit/generate/**
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "from moduleforge.generate.halfbridge import generate_layouts; L = generate_layouts(6,
+    seed=7, family='u_shaped', dies_per_switch=4, die_size_mm=5.0); assert all(abs(d.w - 5e-3) < 1e-12
+    and abs(d.h - 5e-3) < 1e-12 for lay in L for d in lay.dies)"
+  exists: null
+  timeout_s: 300
+- cmd: uv run ruff check src/moduleforge/generate tests/unit/generate
+  exists: null
+  timeout_s: 300
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: low
+model: null
+budget_usd: 2.5
+max_turns: 40
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: E007 samples one die size per stratum (derivative regime). n6 and n7 need this to generate
+  their sealed and development layouts.
+history: []

@@ -1,0 +1,165 @@
+id: T0392
+objective: O002
+title: 'L1 thermal design study on development layouts: speed and accuracy of candidate fast models against
+  the level-1 reference, plus early F2 null check'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: 'Cheap test that could falsify the hypothesis: A5 jointly with A1/A2, plus an early F2 warning.
+  Use development geometry only. Deliverables: research/o002_l1/design_study.py (prototype code stays
+  in research/o002_l1/, never in src), research/o002_l1/design_study.json and research/notes/o002-l1-design.md.
+
+
+  Development set:
+
+  - C004''s two development layouts (E009 config.dev_layouts, dev_seed 20261101: side_by_side_6 and u_shaped_2).
+
+  - New layouts from a recorded development seed (never a sealed seed): at least 2 (family, dies) strata,
+  one in each die-count band (2-3 and 4-6), at least 4 layouts per stratum.
+
+  - All layouts of a stratum have the same die size. Draw by rejection on the generator''s die size s,
+  or use n3''s die_size_mm option if it has merged.
+
+
+  Operating point (objective): 65 C coolant, h = 5000 W/(m2 K), k(T), equal power per die, uniform over
+  each die''s top face. P_ref per stratum comes from C004''s calibration rule: the hottest node of the
+  stratum''s development layout rises 60 K above the coolant at level 0 of the reference. The second load
+  is 0.5 P_ref.
+
+
+  Reference:
+
+  - solvers.thermal_fem.solve_layout at the frozen GridRule of research/o007_dev3/frozen_config.json (E009
+  fem_rule, amg_gs_sweeps 2), level 1, bytes unchanged (sha256 a216d5fe...).
+
+  - Energy balance <= 1e-6 on every solve.
+
+  - Die average = tj_mean. Die-local rise = tj_mean - mean baseplate-bottom temperature. For uniform h
+  that mean equals T_c + P_total/(h A_bottom); check this against the solve.
+
+  - Cache per-solve summaries as JSON (no fields) under research/o002_l1/cache/ so n4 can reuse them.
+
+  - Reference compute: at most 3 CPU-hours, one solve at a time, within the local memory rule.
+
+
+  Candidates (at least two, from the notes'' two families):
+
+  (a) A calibrated coarse-grid solve: a coarser GridRule of thermal_fem, or a structured FV/FD grid with
+  a sparse direct solve, with k(T) by Kirchhoff transform or a few Picard steps.
+
+  (b) Superposition of precomputed per-housing responses with a k(T) correction.
+
+  (c) Others, if promising.
+
+
+  Measure for each candidate and load:
+
+  - median wall time per evaluation on one thread (OPENBLAS/OMP/MKL threads = 1); one-off precomputation
+  is reported separately.
+
+  - Point estimates against the level-1 reference: A1-type (p95 over same-stratum layout pairs of the
+  pair-difference error of the reference-ranked hottest die''s average, self-pairs excluded); A2-type
+  (p95 of |error| / die-local rise); A3-type (p95 of the per-switch spread error); A4-type (ratio of A3''s
+  statistic to that of the stratum-mean-spread null, per (stratum, switch), leave-one-layout-out).
+
+
+  Nulls on the same reference values: (d) stratum mean and (c) die-position lookup on (family, dies, load,
+  switch, die index), both leave-one-layout-out, with A1-type and A4-type point estimates per load. Set
+  f2_warning true if any null''s A1-type point estimate at P_ref is <= 0.5 K.
+
+
+  Choose one candidate and write the design note:
+
+  - the method, with citations;
+
+  - why it should hold on unseen strata;
+
+  - the API for n4: moduleforge.thermal.evaluate(layout, power_W, *, h, T_c, constant_k=False) -> L1Result,
+  with per-die tj_mean in layout.dies order and tj_max if the method has one;
+
+  - what constant_k holds k at (for F4);
+
+  - risks.
+
+  Targets for n4 (0.6 x the A1/A2 thresholds, F3''s power design point): median <= 1 s, A1-type <= 0.3
+  K and A2-type <= 0.018 at both loads. Set meets_targets accordingly. If no candidate meets them, say
+  so plainly; chosen still names the best candidate.
+
+
+  JSON keys:
+
+  - candidates[name][P_ref|half_P_ref] with median_eval_s, a1_pair_err_p95_K, a2_rel_err_p95, a3_spread_err_p95_K,
+  a4_ratio_vs_stratum_mean;
+
+  - nulls[stratum_mean|die_position][load] with a1_pair_err_p95_K and a4_ratio_vs_stratum_mean;
+
+  - chosen, meets_targets, f2_warning, dev_seed, layouts (each with fingerprint, family, dies, die_size_mm,
+  stratum), reference_solves (each with energy_balance), reference.thermal_fem_sha256.
+
+
+  Do not edit src/, tests/, tools/ or experiments/.'
+context_files:
+- project/objectives/O002/objective.yaml
+- src/moduleforge/solvers/thermal_fem.py
+- src/moduleforge/solvers/thermal_fv.py
+- src/moduleforge/solvers/thermal_series.py
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/generate/halfbridge.py
+- research/o007_dev3/frozen_config.json
+- experiments/specs/E009.yaml
+- research/notes/o002-reference-convergence.md
+- docs/thermal_model.md
+- research/notes/o006-p2-thermal-nulls.md
+deliverables:
+- research/o002_l1/design_study.py
+- research/o002_l1/design_study.json
+- research/notes/o002-l1-design.md
+touches:
+- research/o002_l1/**
+- research/notes/o002-l1-design.md
+definition_of_done:
+- cmd: null
+  exists: research/o002_l1/design_study.json
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o002-l1-design.md
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('research/o002_l1/design_study.json')); c = d['candidates'];
+    assert len(c) >= 2, sorted(c); assert d['chosen'] in c, d['chosen']; ks = ['median_eval_s', 'a1_pair_err_p95_K',
+    'a2_rel_err_p95', 'a3_spread_err_p95_K', 'a4_ratio_vs_stratum_mean']; bad = [(n, l, k) for n, v in
+    c.items() for l in ('P_ref', 'half_P_ref') for k in ks if k not in v[l]]; assert not bad, bad; nl
+    = d['nulls']; assert all(k in nl[n][l] for n in ('stratum_mean', 'die_position') for l in ('P_ref',
+    'half_P_ref') for k in ('a1_pair_err_p95_K', 'a4_ratio_vs_stratum_mean')); assert isinstance(d['f2_warning'],
+    bool) and isinstance(d['meets_targets'], bool); assert all(s['energy_balance'] <= 1e-6 for s in d['reference_solves']);
+    assert len(d['layouts']) >= 8 and len({x['stratum'] for x in d['layouts']}) >= 2; assert d['reference']['thermal_fem_sha256'].startswith('a216d5fe')"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o002_l1
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: A5 (1 s) is likely to decide the outcome (objective notes, review T0372). F2's null failure
+  on A1 depends on within-stratum variation that nobody has measured. This is the cheapest test of both,
+  and n4 needs its design choice.
+history: []

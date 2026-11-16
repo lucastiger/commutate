@@ -1,0 +1,113 @@
+id: T0398
+objective: O002
+title: 'E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on
+  the dev structure'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0397
+description: 'Prerequisite: the founder has applied research/o002_e007/e007_metrics.patch to the protected
+  tools/mfos. If the functions are not on main, stop and say so.
+
+
+  Run `e007_run.py --dev` and write experiments/drafts/E007.dev_rows.json:
+
+  - development geometry only: the per-stratum development layouts and further layouts from recorded development
+  seeds, never a sealed seed;
+
+  - judged level 1, full fidelity (meta.smoke false);
+
+  - locally, within the policy''s local_cpu_hours_max (6 CPU-hours);
+
+  - one solve at a time.
+
+
+  Then:
+
+  (1) Run `uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json`.
+
+  (2) F2: record in meta.f2_nulls, for each null (die_position, stratum_mean, isolated_die), its A1 point
+  estimate at P_ref (A1_point_K), its A4 point estimate (A4_point) if it predicts spreads, and per-stratum
+  A1 and A2. Each null''s A1 point estimate must exceed 0.5 K, and each spread null''s A4 point estimate
+  must exceed 0.5. If any null meets A1 or A4, stop and report it: F2''s response is a design revision,
+  not a fix here.
+
+  (3) Re-run n5''s coverage simulation with the selected bound on the dev rows'' actual structure and
+  record it in meta.f3_dev.coverage[statistic][normal|t3].
+
+  (4) Record A5 on the dev rows (meta.l1_eval_s_p50).
+
+  (5) Update cpu_hours_est in the spec if --plan changes, and say why.
+
+
+  Change nothing gated (criteria, thresholds, bound, allocation) without saying so.'
+context_files:
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_run.py
+- tools/mfos/mfos/evaluate.py
+- research/o002_e007/f3_simulation.json
+- research/o002_e007/stats_sim.py
+- research/notes/e007-design.md
+deliverables:
+- experiments/drafts/E007.dev_rows.json
+touches:
+- experiments/drafts/E007.dev_rows.json
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_*.py
+- research/o002_e007/**
+- research/notes/e007-design.md
+definition_of_done:
+- cmd: null
+  exists: experiments/drafts/E007.dev_rows.json
+  timeout_s: 900
+- cmd: uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "from mfos.store import Store; from mfos import models as m; from mfos.evaluate
+    import load_rows, null_check; s = Store(); spec = s.read_yaml(s.spec_path('E007', draft=True), m.ExperimentSpec);
+    lines, bad = null_check(s, spec, load_rows(s.root / spec.dev_rows)); print(chr(10).join(lines)); assert
+    not ({'A1', 'A4'} & set(bad)), bad"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E007.dev_rows.json')); mt
+    = d['meta']; assert mt['smoke'] is False; f = mt['f2_nulls']; assert {'die_position', 'stratum_mean',
+    'isolated_die'} <= set(f), sorted(f); assert all(v['A1_point_K'] > 0.5 for v in f.values()), f; assert
+    all(v['A4_point'] > 0.5 for v in f.values() if 'A4_point' in v), f; cov = mt['f3_dev']['coverage'];
+    assert all(x >= 0.95 for by in cov.values() for x in by.values()), cov; assert mt['l1_eval_s_p50']
+    > 0"
+  exists: null
+  timeout_s: 120
+- cmd: uv run python experiments/runners/e007_run.py --selftest
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e007_run.py --verify-freeze
+  exists: null
+  timeout_s: 300
+- cmd: uv run ruff check experiments/runners
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+experiment: null
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F2 requires `mfos exp check E007 --rows <dev rows>` to show the nulls failing A1/A4 before
+  registration, and F3 requires coverage on development rows. Both are the last design gates before registration.
+history: []

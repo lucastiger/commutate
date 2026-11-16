@@ -1,0 +1,150 @@
+id: T0396
+objective: O002
+title: 'E007 statistics: F3 coverage and power simulation, bound selection and fixed allocation; protected
+  mfos.metrics additions drafted as a patch'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0392
+description: 'F3 and the protected tools/mfos additions listed in the objective notes. Draft them for
+  the founder to apply, as T0261 did for E008; do not edit tools/mfos yourself. Deliverables, all in research/o002_e007/:
+
+
+  (1) e007_metrics.py, in mfos.metrics conventions (rows as a list of dicts, params dict, compute() dispatch
+  names). It implements:
+
+  - quantile of absolute error, and quantile of relative error with scale = die-local rise (A2, A3);
+
+  - median (A5);
+
+  - ratio to a null (A4: A3''s statistic over the stratum-mean-spread null''s, per (stratum, switch),
+  leave-one-layout-out);
+
+  - max over load levels;
+
+  - layout-clustered same-stratum pairwise statistics, with self-pair exclusion and the hottest die chosen
+  by the reference''s die average (A1), plus the own-hottest-die variant reported beside A1;
+
+  - the step-floor rule for gci_capped: all steps below the floor count as converged, with estimate 3
+  max|d| (shared with O004);
+
+  - the bound selected in (3), as upper bounds for A1-A4 and lower bounds for K1-K3, with layouts as the
+  independent units.
+
+
+  (2) test_e007_metrics.py, with a hand-computed case for every function: self-pair excluded, hottest
+  die chosen by the reference, per-level max, ratio, the 0.01 K step floor (and unchanged gci_capped behaviour
+  otherwise), and the bound on small exact cases.
+
+
+  (3) stats_sim.py and f3_simulation.json:
+
+  - Coverage of candidate bounds (order-statistic or binomial over layouts, BCa, calibrated bootstrap;
+  not the plain layout-clustered percentile bootstrap, which under-covered in T0369) for every statistic
+  of A1-A4 (upper) and K1-K3 (lower).
+
+  - Per-layout errors drawn normal and Student t(3), clustered by layout, on the row structure E007 will
+  have: strata (family, dies), one die size each, 2 switches x dies, 2 loads. Use the exact functions
+  of (1). Take the error scales and the within-stratum reference variation from n1''s measurements (research/o002_l1/design_study.json)
+  and state them.
+
+  - Select a bound with coverage >= 0.95 under both error models for every statistic, and state the Monte
+  Carlo standard error.
+
+  - Find the smallest fixed allocation at which an L1 whose true p95 is 0.6 x each threshold passes A1-A4
+  jointly with power >= 0.8: every (family, band) cell drawn (bands 2-3 and 4-6), layouts per stratum
+  fixed in advance.
+
+  - Price that sample''s reference cost in CPU-hours and $: level-1 solves at both loads, a level-2 subset
+  of at least 2 layouts per cell, and the F7 layouts. Use n2''s figures where available, else E010''s
+  (about 155 s at level 1, 1,500 s and 15 GB at level 2 on 2R; generator layouts up to twice the size).
+
+
+  (4) e007_row_contract.md: every column each function reads (names, SI units, row kinds die / switch
+  / layout / pair), so the runner can conform.
+
+
+  (5) e007_metrics.patch: a unified diff adding (1) to tools/mfos/mfos/metrics.py (and the compute() dispatch)
+  and (2)''s tests to tests/mfos/test_metrics.py. It must apply cleanly to main.
+
+
+  JSON keys:
+
+  - coverage[A1..A4, K1..K3][normal|t3];
+
+  - bound;
+
+  - power_joint;
+
+  - layouts_per_stratum, keyed ''family/dies'';
+
+  - n_layouts, reference_cpu_hours, reference_usd, mc_se.
+
+
+  If no bound reaches 0.95 coverage, or the sample does not fit 100 CPU-hours, write that down. F3''s
+  response is a redesign before registration, not a change of threshold.'
+context_files:
+- project/objectives/O002/objective.yaml
+- tools/mfos/mfos/metrics.py
+- tests/mfos/test_metrics.py
+- tools/mfos/mfos/evaluate.py
+- research/o003/headroom_metrics.py
+- research/o002_l1/design_study.json
+- research/notes/o002-reference-convergence.md
+deliverables:
+- research/o002_e007/e007_metrics.py
+- research/o002_e007/test_e007_metrics.py
+- research/o002_e007/stats_sim.py
+- research/o002_e007/f3_simulation.json
+- research/o002_e007/e007_row_contract.md
+- research/o002_e007/e007_metrics.patch
+touches:
+- research/o002_e007/**
+definition_of_done:
+- cmd: null
+  exists: research/o002_e007/f3_simulation.json
+  timeout_s: 900
+- cmd: null
+  exists: research/o002_e007/e007_row_contract.md
+  timeout_s: 900
+- cmd: uv run pytest -q research/o002_e007/test_e007_metrics.py
+  exists: null
+  timeout_s: 900
+- cmd: git apply --check research/o002_e007/e007_metrics.patch
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('research/o002_e007/f3_simulation.json')); cov
+    = d['coverage']; assert {'A1', 'A2', 'A3', 'A4', 'K1', 'K2', 'K3'} <= set(cov), sorted(cov); assert
+    all({'normal', 't3'} <= set(by) for by in cov.values()); low = [(s, mdl, v) for s, by in cov.items()
+    for mdl, v in by.items() if v < 0.95]; assert not low, low; assert d['power_joint'] >= 0.8, d['power_joint'];
+    lps = d['layouts_per_stratum']; assert d['n_layouts'] == sum(lps.values()); cells = {(k.split('/')[0],
+    int(k.split('/')[1]) >= 4) for k in lps}; assert len(cells) == 6, cells; assert d['reference_cpu_hours']
+    <= 100.0, d['reference_cpu_hours']"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o002_e007
+  exists: null
+  timeout_s: 300
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F3 must select a bound with demonstrated coverage and a sample with power before registration.
+  The judging functions are protected (tools/mfos) and must exist before E007's recompute entries can
+  run.
+history: []

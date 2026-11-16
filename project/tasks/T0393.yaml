@@ -1,0 +1,142 @@
+id: T0393
+objective: O002
+title: 'F1 pre-registration check: three-level convergence of die averages, spreads and pair differences
+  on C004''s development layouts at P_ref and 0.5 P_ref'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: 'F1 requires this check before E007 is registered: on C004''s two generator development layouts
+  (side_by_side_6 and u_shaped_2; E009 dev_layouts, fingerprints 1f66b68a..., 6aaf383a...), the three-level
+  check at P_ref and 0.5 P_ref either confirms or refutes judging E007 at level 1. Deliverables:
+
+  - research/o002_f1/f1_dev_check.py, with --analyse to recompute the JSON from stored solves without
+  starting any solve;
+
+  - research/o002_f1/f1_dev_check.json;
+
+  - research/o002_f1/burst_level2.sh, with --dry-run;
+
+  - research/notes/o002-f1-dev-check.md.
+
+
+  Apply F1''s rules exactly:
+
+  - mfos.metrics.gci_capped estimates at the judged level and at each load;
+
+  - every absolute die average within 1 % of that die''s local rise (the level-1 error is |level1 - level2|
+  plus the level-2 estimate);
+
+  - every per-switch spread and every same-stratum pair difference within 0.1 K;
+
+  - the level-1 value of every pair difference and spread within 0.1 K of its level-2 value;
+
+  - a sequence whose steps are all below 0.01 K counts as converged, with estimate 3 max|d|;
+
+  - energy balance <= 1e-6 on every solve;
+
+  - Tj at P_ref <= 175 C.
+
+
+  P_ref is C004''s calibrated power per die (E009 dev_regression_guard: 32.232107 W for side_by_side_6,
+  47.141886 W for u_shaped_2). The frozen-rule solves in research/o007_dev3/cache/a_q1h4_graded_gs2__*__L{0,1,2}__kT.json
+  may serve P_ref only if the frozen thermal_fem bytes (sha256 a216d5fe...) reproduce their level-0 and
+  level-1 tj_mean and tj_max within 1e-6 K at the same power. Re-solve to check; otherwise re-solve everything.
+  For 0.5 P_ref, solve levels 0-1 locally.
+
+
+  Same-stratum pairs: the two development layouts are in different strata, so F1''s pair-difference gate
+  cannot be tested on them alone. Add one partner per development stratum with the same family, die count
+  and die size (from a recorded development seed, by rejection on die size or with n3''s option), at both
+  loads. Report the cross-stratum difference separately; it never counts as a same-stratum pair.
+
+
+  Level-2 solves beyond the local memory rule go in burst_level2.sh for the founder''s burst VM. Level
+  1 is already 1.24 M DOF on side_by_side_6, and E009 ran its level 2 on burst. The script follows the
+  repo''s burst conventions (scripts/burst.sh, E009''s memory figures) and its --dry-run prints the expected
+  VM-hours, memory and $. Agents never start a VM or run gcloud.
+
+
+  JSON keys:
+
+  - status: ''complete'' when every level-2 value is present, else ''awaiting_level2'' with missing_level2
+  listing the missing solves;
+
+  - level1: confirmed, refuted or pending;
+
+  - loads, thermal_fem_sha256;
+
+  - checks with abs_die_average, spread, pair_difference and level1_vs_level2, each per load with values
+  and pass flags;
+
+  - solves, each with energy_balance.
+
+  The note gives, per load and quantity, the outcome of each F1 rule on the data available.
+
+
+  Do not edit src/, tests/, tools/ or experiments/.'
+context_files:
+- project/objectives/O002/objective.yaml
+- research/notes/o002-reference-convergence.md
+- research/o002_refresh/convergence_from_e010.py
+- research/o007_dev3/frozen_config.json
+- experiments/specs/E009.yaml
+- experiments/runners/e009_run.py
+- tools/mfos/mfos/metrics.py
+- src/moduleforge/solvers/thermal_fem.py
+deliverables:
+- research/o002_f1/f1_dev_check.py
+- research/o002_f1/f1_dev_check.json
+- research/o002_f1/burst_level2.sh
+- research/notes/o002-f1-dev-check.md
+touches:
+- research/o002_f1/**
+- research/notes/o002-f1-dev-check.md
+definition_of_done:
+- cmd: null
+  exists: research/o002_f1/f1_dev_check.json
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o002-f1-dev-check.md
+  timeout_s: 900
+- cmd: uv run python research/o002_f1/f1_dev_check.py --analyse
+  exists: null
+  timeout_s: 600
+- cmd: bash -n research/o002_f1/burst_level2.sh && bash research/o002_f1/burst_level2.sh --dry-run
+  exists: null
+  timeout_s: 120
+- cmd: uv run python -c "import json; d = json.load(open('research/o002_f1/f1_dev_check.json')); assert
+    d['status'] in ('complete', 'awaiting_level2'), d['status']; assert d['level1'] in ('confirmed', 'refuted',
+    'pending'), d['level1']; assert d['thermal_fem_sha256'].startswith('a216d5fe'); assert set(d['loads'])
+    == {'P_ref', 'half_P_ref'}, d['loads']; assert {'abs_die_average', 'spread', 'pair_difference', 'level1_vs_level2'}
+    <= set(d['checks']), sorted(d['checks']); assert all(s['energy_balance'] <= 1e-6 for s in d['solves']);
+    assert d['status'] == 'complete' or d['missing_level2']"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o002_f1
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Under F1, a refuted level 1 means judging at level 2, roughly ten times the reference cost,
+  which needs a founder decision. Finding out before E007's design is fixed is the cheapest order.
+history: []

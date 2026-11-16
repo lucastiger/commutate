@@ -1,0 +1,126 @@
+id: T0395
+objective: O002
+title: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested against analytic limits,
+  symmetry and power scaling, with a speed benchmark
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0392
+description: 'This is build item (2) of the objective notes. Implement the method chosen in research/notes/o002-l1-design.md
+  (n1) as the package src/moduleforge/thermal/. After this task merges, the package is frozen as E007''s
+  code_under_test (F5).
+
+
+  API: `evaluate(layout, power_W, *, h, T_c, constant_k=False) -> L1Result`. L1Result is a dataclass with
+  per-die tj_mean [K] in layout.dies order, tj_max if the method has one (F6), wall_s and meta.
+
+  - k(T) comes from geometry.stack K_LAWS for every layer.
+
+  - constant_k=True holds each layer''s k fixed, as the design note defines (the F4 ablation).
+
+  - Steady state, uniform h at the baseplate bottom, uniform flux over each die''s top face, SI units,
+  float64.
+
+  - Cite every closed form used (skill mf-conventions).
+
+  - Do not modify src/moduleforge/solvers/thermal_fem.py. If L1 reuses solver code, import it; do not
+  copy it.
+
+
+  Unit tests (tests/unit/thermal/):
+
+  - analytic limits: at least the 1D series-resistance limit, T_c + P (sum t_i/(k_i A) + 1/(h A)), and
+  the single-source N-layer series of solvers.thermal_series at constant k, each within a tolerance the
+  method''s discretisation justifies (stated in the test);
+
+  - linearity in power at constant_k (2x power gives 2x rise, to 1e-9 relative);
+
+  - super-linear rise with k(T) on (every K_LAWS law falls above 300 K);
+
+  - mirror symmetry of per-die values on a mirrored layout;
+
+  - energy or flux consistency, where the method exposes it;
+
+  - determinism.
+
+
+  Regression test tests/regression/test_thermal_l1_dev.py:
+
+  - runs on n1''s development layouts against n1''s cached level-1 reference values, copied into tests/regression/data/;
+
+  - A1-type p95 <= 0.3 K and A2-type p95 <= 0.018 at P_ref and 0.5 P_ref. These are 0.6 x the A1/A2 thresholds,
+  F3''s power design point. These tolerances are fixed by this description and are never widened.
+
+
+  Benchmark benchmarks/thermal_l1_speed.py --check: median wall time per evaluation on one thread over
+  the development layouts at both loads must be <= 1.0 s (A5); otherwise exit 1. Print the per-layout
+  times.
+
+
+  Document the method, its citations and its limits in docs/thermal_l1.md.'
+context_files:
+- research/notes/o002-l1-design.md
+- research/o002_l1/design_study.json
+- research/o002_l1/design_study.py
+- src/moduleforge/solvers/thermal_series.py
+- src/moduleforge/solvers/thermal_fem.py
+- src/moduleforge/geometry/stack.py
+- src/moduleforge/geometry/layout.py
+- docs/thermal_model.md
+deliverables:
+- src/moduleforge/thermal/__init__.py
+- tests/unit/thermal/
+- tests/regression/test_thermal_l1_dev.py
+- benchmarks/thermal_l1_speed.py
+- docs/thermal_l1.md
+touches:
+- src/moduleforge/thermal/**
+- tests/unit/thermal/**
+- tests/regression/test_thermal_l1_dev.py
+- tests/regression/data/thermal_l1_*
+- benchmarks/thermal_l1_speed.py
+- docs/thermal_l1.md
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+  exists: null
+  timeout_s: 900
+- cmd: OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 uv run python benchmarks/thermal_l1_speed.py
+    --check
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import inspect; from moduleforge.thermal import L1Result, evaluate; p = inspect.signature(evaluate).parameters;
+    assert {'layout', 'power_W', 'h', 'T_c', 'constant_k'} <= set(p), list(p); assert 'tj_mean' in L1Result.__dataclass_fields__"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check src/moduleforge/thermal tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+    benchmarks/thermal_l1_speed.py
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0373
+created_at: '2026-11-16T01:46:31+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: This is the model under test for A1-A5 and F4/F6. E007's registration needs it frozen first
+  (F5).
+history: []

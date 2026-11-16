@@ -1,0 +1,23 @@
+id: I0212
+kind: external_action
+subject: '[O002] Burst VM run of n2''s level-2 development solves (F1 pre-registration check)'
+summary: 'F1 requires a three-level check (levels 0-2) on C004''s two generator development layouts at
+  P_ref and 0.5 P_ref before E007 is registered, to confirm or refute judging at level 1. P_ref may be
+  covered by the cached frozen-rule solves in research/o007_dev3/cache, if n2 shows the frozen bytes reproduce
+  them. The 0.5 P_ref level-2 solves, and those of the same-die partner layouts n2 adds to test same-stratum
+  pair differences, are beyond this Mac''s memory: level 1 is already 1.24 M DOF on side_by_side_6, and
+  E009 ran its level 2 on burst. n2 writes research/o002_f1/burst_level2.sh, whose --dry-run gives the
+  VM-hours, memory and $. Agents never start VMs.'
+refs:
+- O002
+- T0373
+options:
+- Run burst_level2.sh on the burst VM after n2 merges, if its dry-run cost fits the objective budget
+- Run it on another machine with enough memory (for example 64 GB or more)
+recommendation: Option 1, after n2 merges. It is a few level-2 solves, far cheaper than E007's own level-2
+  subset, and it settles the judged level before E007's design is fixed.
+status: open
+response: ''
+created_at: '2026-11-16T01:46:31+00:00'
+resolved_at: null
+resolved_by: null

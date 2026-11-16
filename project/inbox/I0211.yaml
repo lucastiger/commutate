@@ -1,0 +1,23 @@
+id: I0211
+kind: decision
+subject: '[O002] Protected tools/mfos additions for E007: drafted as a patch by n5, applied by the founder
+  before n7'
+summary: 'The objective notes need founder-approved additions to tools/mfos (protected): quantile-of-absolute
+  and quantile-of-relative error, median, ratio-to-null, a per-level max, self-pair exclusion in the layout-clustered
+  pairwise statistics, the confidence bound F3 selects, and the step-floor rule shared with O004. The
+  plan has n5 draft them as research/o002_e007/e007_metrics.patch with tests, as T0261/I0143 did for E008;
+  agents never edit tools/mfos. n7 (E007 dev rows, `mfos exp check E007 --rows`, the F2 null check) cannot
+  pass until the patch is on main.'
+refs:
+- O002
+- T0373
+options:
+- 'Approve the patch route: n5 drafts the patch, the founder reviews and applies it before n7 starts'
+- The founder writes the functions directly in tools/mfos from n5's research/o002_e007/e007_metrics.py
+recommendation: Approve the patch route (option 1). It is the same mechanism that worked for E008, and
+  the hand-computed tests come with it.
+status: open
+response: ''
+created_at: '2026-11-16T01:46:31+00:00'
+resolved_at: null
+resolved_by: null

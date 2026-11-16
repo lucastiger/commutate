@@ -26,7 +26,15 @@ description: "F7: E011 cannot be registered until mfos.metrics computes A1, A2, 
   - the median with an even count;\n- synthetic rows on which a null recovers W* on one layout and fails\
   \ on the other give A3 = 0 while A1 is met, i.e. INCONCLUSIVE under the objective's criteria; the test\
   \ evaluates the pass_all / fail_any logic as written in objective.yaml;\n- the seed null meeting A1\
-  \ is detectable (F1: INVALID)."
+  \ is detectable (F1: INVALID).\n\nFounder session, 2026-11-16 (re-scope, I0204): mfos.metrics now holds\
+  \ control_layout_pass_min, null_beaten_min and control_shortfall_median_max (branch session/metrics-2026-11-16,\
+  \ commit 2fea4a6e, for the founder to merge); A2 is the existing max_col over a column 1 - in_domain(W).\
+  \ Write your implementations independently first, without reading those, then add a test that runs yours\
+  \ and mfos.metrics' (via mfos.metrics.compute with the spec's column names) on the same synthetic rows\
+  \ and asserts they agree; report any disagreement in your report, do not edit tools/. The row schema\
+  \ must include a boolean column `capped` (null_beaten_min reads it; terminal_kind may stay beside it).\
+  \ The reported helpers (conservative A1 count, per-layout unresolved count, pooled Clopper-Pearson bound)\
+  \ stay in your module."
 context_files:
 - project/objectives/O008/objective.yaml
 - tools/mfos/mfos/metrics.py
