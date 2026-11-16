@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The schema's own no-candidate encoding (s = None) makes the mfos.metrics port raise, so the evaluator would mark the run INVALID; no test records this",
+      "detail": "The reference module documents `s` as `None` or NaN when a run returns no candidate, and says such a draw 'counts as failed ... it does not void the run'. O008 scope_in also says 'No single draw voids the run'. A JSON null loads as None through `load_rows`. The mfos.metrics functions (`_by_unit` and `null_beaten_min`) call `float(row[s])`, which raises TypeError on None. The evaluator's `_recompute` catches that as 'cannot recompute from the rows', which makes the verdict INVALID. The draft records three other divergences as xfail tests (NaN masking in K1, a null's s = inf counted as resolved, a dropped draw) but not this one. `test_no_candidate_draw_fails_without_voiding` runs only the reference implementation, never the port. The random agreement test draws only finite s, so 'agrees with mfos.metrics' holds only for rows where every draw returned a candidate. If a runner follows this schema as written, a single no-candidate draw voids E011 under the real evaluator.",
+      "evidence": "In-process run on `_two(search=_draws([None]+[0.005]*7, [None]+[0.004]*7))`: reference gives A1 = 0.875 and K1 = 0.005; `_theirs(rows)` raises `TypeError: float() argument must be a string or a real number, not 'NoneType'`. Same for a widen null with s = None on one draw: reference A3 = 1.0, port raises TypeError.",
+      "suggested_check": "Add an xfail (or a required port behaviour) test that feeds s = None through `ev.metric_value` for A1, A3 and K1, and state in the schema which non-finite encoding the runner must emit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The A3 resolved-failure boundary test does not exercise the boundary it describes",
+      "detail": "`test_a3_four_of_eight_resolved` builds its unresolved draws from s = 0.03 and b = 0.01. Its comment says 's - b = 0.02 exactly is not > tol'. In float64, 0.03 - 0.01 = 0.019999999999999997, which is below 0.02. So `>` and `>=` both give the same count, and the objective's strict '>' for a resolved failure is never tested. No passing test pins this comparator: the other A3 inputs are far from the line. Both implementations currently use `>`, so this is not a live defect. The xfail test has the same issue.",
+      "evidence": "In-process check: n_res = 4 gives count(>) = 4 and count(>=) = 4; n_res = 3 gives 3 and 3. `repr(0.03-0.01)` is '0.019999999999999997'.",
+      "suggested_check": "Use dyadic values where s - b equals tol exactly in float64, as `test_paired_margin_uses_both_bands` does, e.g. tol' = 2^-6 passed explicitly, or s = 0.02 + b with b = 2^-k checked for exactness.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The reference module's own non-finite handling is asserted only inside non-strict xfail tests",
+      "detail": "Four reference behaviours are asserted only inside xfail(strict=False) tests: a null with s = inf is not a resolved failure; a NaN search draw counts as +inf in K1; a counted layout with a dropped draw raises 'search draws'; K1 = 0.10 in the masking case. If any of these regressed in e011_metrics, the test would still report XFAIL. The passing `test_no_candidate_draw_fails_without_voiding` checks only `math.isfinite(K1)`, not its value. Because strict=False, fixing mfos.metrics later would show as XPASS without failing the suite, so nobody would be prompted to remove the xfail.",
+      "evidence": "Read of tests/acceptance_drafts/test_e011_metrics.py lines 679-704 against the passing tests; no passing test calls `null_beaten_table` on a non-finite null s.",
+      "suggested_check": "Split each xfail test so the reference-side assertions sit in a passing test, and set strict=True on the port-side remainder.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "A2 includes the uncounted gen2_0 layout; this matches the objective's wording, but the founder should confirm it",
+      "detail": "The draft computes A2 over all development layouts, counted or not, and tests it that way (`only_dev`). This follows the A2 description ('max over the development layouts') and scope_in, which lists gen2_0 as development geometry. Under this reading, if gen2_0's twin lies outside the domain, the verdict becomes INCONCLUSIVE even with both counted layouts in-domain. The hypothesis, though, is framed on designer-derived layouts. The draft chooses explicitly, so this is not a defect, but the choice decides the verdict.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "F6's 'fewer than two counted layouts' INVALID rule is not enforced",
+      "detail": "`_table` rejects zero counted layouts but accepts one. F6 makes E011 INVALID below two. This is a validity check rather than a metric, so it is outside this deliverable, but a reader may assume `validate_rows` covers it.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran both definition-of-done commands. pytest on tests/acceptance_drafts/test_e011_metrics.py: 39 passed, 3 xfailed. ruff check on both files: clean.",
+    "Compared every gated definition in e011_metrics (A1, A2, A3 parts i and ii with the capped exclusion and the two-band paired margin, K1 with the even-count median) line by line against project/objectives/O008/objective.yaml pass_all, fail_any and scope_in. All match, including the strictness of `<=` and `>`.",
+    "Read the port in tools/mfos/mfos/metrics.py (control_layout_pass_min, control_shortfall_median_max, null_beaten_min, METRICS wiring) and the evaluator in tools/mfos/mfos/evaluate.py (_where, metric_value, judge, _recompute, evaluate). Confirmed that the test's `_theirs` follows the real recompute path, and that a raised exception in recompute becomes INVALID.",
+    "Fed s = None (the schema's no-candidate encoding) through the reference and through the port's evaluator path, in-process. The reference returns A1 = 0.875 and K1 = 0.005; the port raises TypeError for both a search draw and a null draw.",
+    "Checked the float64 value at the A3 boundary: 0.03 - 0.01 = 0.019999999999999997, so the test's inputs cannot tell `>` from `>=`.",
+    "Recomputed by hand the O008 A1 operating-characteristic figures, P(Bin(8,p) >= 7) = p^8 + 8p^7(1-p): p = 0.95 gives 0.943 (0.889 for two layouts); 0.90 gives 0.813 (0.661); 0.85 gives 0.657 (0.432); 0.70 gives 0.255 (0.065). All match the objective's rounded figures.",
+    "Checked the Clopper-Pearson formulas: one-sided p_L = Beta^{-1}(alpha; k, n-k+1), with the k = n case equal to alpha^(1/n). The test's check of the defining equation goes through binom.sf, independently of beta.ppf, so it is a real test. The Bonferroni argument that (min lo, min hi) bounds the minimum over layouts of p_i holds.",
+    "Checked by hand that the dyadic paired-margin test discriminates both-band from one-band margins and `>` from `>=` (0.0625 > 0.03125 + 0.03125 is false), and that the K1 test's inputs separate the mean-of-two-middles median from the lower or upper middle value."
+  ],
+  "caveats": [
+    "Agreement between e011_metrics and mfos.metrics is shown only for rows where every s is finite. For the schema's no-candidate encodings (None, NaN, inf) the two disagree or the port raises, and the None case is not recorded anywhere in the draft.",
+    "The objective's strict '>' for a resolved failure (A3 part i) is not pinned by any passing test. Both implementations are correct today, but a regression to '>=' would not be caught.",
+    "Under this draft, A2 counts the uncounted gen2_0 layout. The founder should confirm this reading before E011's spec freezes it.",
+    "I could not run mutation testing: the sandbox denied both subprocess-based and in-memory mutation runs. Test strength was judged by analysing the test inputs, not by executing mutants."
+  ]
+}
