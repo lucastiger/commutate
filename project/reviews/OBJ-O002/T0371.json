@@ -1,0 +1,77 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The planned sample cannot meet F3's own power requirement, so whether the objective can be resolved within its budget is not shown",
+      "detail": "The notes cost E007 at 6 cells x 8 layouts (48 layouts). F3 asks for a bound with coverage of at least 0.95 under both normal and t3 layout-clustered errors, and joint power of at least 0.8 over A1-A4 when L1's true value is 0.6 x each threshold. Even a best-case bound fails this at 48 layouts. I used a scale-equivariant bound calibrated on exactly these two error models; any valid nonparametric bound is weaker. Its power at 48 layouts is 0.72 (t3) and 0.86 (normal) for A1 alone, and 0.65 and 0.75 for A4 alone, so joint power is about 0.5. The best-case bound needs about 96-120 layouts (16-20 per cell) for joint power near 0.8. A distribution-free order-statistic bound over layouts, one of F3's listed options, does not exist below 59 independent units, and under t3 it needs about 153 for power 0.8 on a single criterion. A1's units are layouts, because pairs share layouts. The notes' '15-30 CPU-hours' matches wall-hours of the E010 solves, which E010 ran with OMP_NUM_THREADS=2. At 2-2.5x the sample, billed vCPU-hours come to roughly 50-100 against the 60 cpu_hours budget. F3's pre-registration gate stops an under-powered run, so a false PASS is unlikely. But 'the sample can resolve the decision' rests entirely on F3 finding a design that fits the budget, and these numbers make that doubtful.",
+      "evidence": "Scratch simulations (seeded, 20,000 replicates). A1: 6 strata x m layouts, iid layout errors, p95 over within-stratum pairs. At m=8, power t3 0.723 / normal 0.855; m=12: 0.822; m=16: 0.890; m=20: 0.932. A4: n layouts x 2 switches, ICC 0.5, true ratio 0.3. At n=48, power t3 0.651 / normal 0.754; n=96: 0.878; n=120: 0.929. Order-statistic bound: n=59 gives power 0.46 under t3; minimum n is 153. E010 solve records: threads OMP_NUM_THREADS=2; level-1 wall median 155 s; level-2 wall median 1,499 s and 14-16 GB.",
+      "suggested_check": "Run F3's design simulation, or an equivalent like the one above, before approval, and set the budget for the sample it returns (likely 96-150 layouts); otherwise state the power alternative that the 48-layout sample can actually resolve.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1 scores L1 at the reference's hottest die, not at the die L1 itself ranks hottest, which is what a search would score",
+      "detail": "A1 takes L1's value at the die the reference ranks hottest. A search using L1 would score each layout by L1's own hottest die, the maximum of L1's die averages. The difference between those two values is a within-layout error between dies. It is at most the difference of two per-die errors, which A2 only bounds at 3% of die-local rise (about 1.1-1.4 K per die). No criterion gates it. A1 = 0.5 K therefore does not bound the pair error of the score the search would actually use, so the 'quarter of the +2 K budget' reading is narrower than stated.",
+      "evidence": "Bound: if L1 ranks die j hottest and the reference ranks die i hottest, max(L1) - L1_i = e_j - e_i - (ref_i - ref_j) <= e_j - e_i. It is zero only when the two rankings agree.",
+      "suggested_check": "Also compute A1 with each predictor's own hottest die (the maximum of L1's die averages against the maximum of the reference's), gated or at least reported next to A1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 is met by predictors that ignore the layout, even one that predicts zero spread, so 'no criterion would be met by a layout-ignorant predictor' is literally false",
+      "detail": "On E010's 2R solves, 36 spreads (level 1) average 0.25-0.46 K with a maximum of 1.05 K. The stratum-mean spread has a p95 error of 0.52 K, and a predictor of zero spread gets 0.875 K. Both are under A3's 1 K. The objective admits the stratum-mean case and leaves the spread test to A4 and F2, so the joint claim stays protected; A3 adds nothing. A5 (speed) is likewise met by any constant predictor.",
+      "evidence": "E010-20261114T202413-80c1 thermal1 records: zero-spread predictor A3 statistic 0.875 K; stratum-mean null 0.518 K at level 1 and 0.517 K at level 2.",
+      "suggested_check": "Reword the claim to 'the conjunction is not met by any F2 null', or drop A3 in favour of A4.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A2 separates L1 from the die-position null only by a thin margin, and F2 lets a null 'fail' merely because its upper bound is wide",
+      "detail": "On 2R, the leave-one-layout-out die-position lookup reaches a p95 absolute error of 1.67 K, which is 3.09% of the rise above the coolant. Die-local rise is smaller, so the null's error is at least 3.1% of die-local rise (about 3.7-4.5% if the baseplate rise is 8-16 K), against A2's 3%. F2 counts a null as failing when it does not meet pass_all, and pass_all is judged by upper 95% bounds. In a small development sample, a null whose true value is under a threshold can therefore 'fail' because its bound is wide. The F2 check is weaker than its wording suggests.",
+      "evidence": "Scratch computation on the 18 E010 2R layouts: die-position LOO p95 |error| 1.673 K (level 1) and 1.688 K (level 2); 3.09% of the coolant-referenced rise of about 53 K.",
+      "suggested_check": "In F2, require each null's point estimate (or lower bound) to exceed at least one threshold, not just its upper bound.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "F3's coverage demonstration covers p95 upper bounds only, not A4's ratio bound or the kill criteria's lower bounds",
+      "detail": "F3 asks for simulated coverage of 'a p95 upper bound'. A4 and K3 use a bound on a ratio of two p95s estimated from the same rows, and K1-K3 use lower bounds. An order-statistic or binomial bound does not carry over directly to a ratio. The text does not say the coverage requirement and the selected method apply to these bounds as well.",
+      "evidence": "F3 detection text; A4 and K1-K3 descriptions.",
+      "suggested_check": "Extend F3's coverage simulation to A4's ratio upper bound and to the lower bounds used by K1-K3.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Pooled p95 values give strata with more dies more weight",
+      "detail": "A2 pools dies across cells. A layout in the 4-6 band has 8-12 dies and one in the 2-3 band has 4-6, so one small-band cell supplies only about 11% of the pool. If about half of that cell is bad, it can sit under the pooled p95. Per-stratum values are reported but not gated. A1 pairs exist only within a single die count, and it is unspecified how a cell's layouts are split across die counts, which sets how many pairs each stratum has.",
+      "evidence": "Arithmetic: 5/(3x5 + 3x10) is about 0.11.",
+      "suggested_check": "Fix in E007 how many layouts each stratum gets, and give the per-stratum values a reporting rule that is decided before the run.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Checks that held up: A1 and A4 separate L1 from the nulls, the kill criteria can fire, the joint pass rule is valid, and level-1 reference error is small",
+      "detail": "On 2R, predicting zero layout difference gives an A1 statistic of 2.5 K, far above 0.5 K. The stratum-mean, per-switch-mean and die-position spread nulls give A4 ratios of 1.0, 0.95 and 1.17, all above 0.5. An L1 without inter-die coupling would trip K3 (ratio 1.69) and K1 (2.5 K > 1.5 K). Requiring every criterion's 95% upper bound to pass is a valid intersection-union test, and taking the larger of the two load levels' upper bounds keeps the coverage. Level-1 error on absolute die averages is about 0.13-0.18 K (monotone, step ratio about 0.3), roughly 0.3-0.5% of the rise, which is small against A2. Level-1-to-level-2 steps of pair differences are at most 0.036 K, as the research note states.",
+      "evidence": "Scratch recomputation from E010 thermal0/1/2 records; matches research/o002_refresh/convergence_from_e010.json (pair_abs_diff_l2 p95 2.518 K, pair_abs_d2 max 0.0356 K).",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed from E010's stored 2R thermal_fem solves (18 layouts, levels 0-2) how each null predictor scores on the criteria: zero-difference A1 p95 2.50-2.52 K; stratum-mean spread p95 error 0.52 K; per-switch-mean spread A4 ratio 0.95-1.01; die-position lookup spread ratio 1.17; die-position LOO die-average p95 error 1.67 K (3.09% of coolant rise); zero-spread predictor A3 0.875 K (passes) with A4 ratio 1.69 (K3 would fire).",
+    "Estimated the level-1 discretisation error of absolute die averages from the 0->1->2 steps: 0.13-0.18 K, monotone, ratio about 0.3. Within-layout range of the level-1-to-2 step is at most 0.039 K.",
+    "Computed the distribution-free order-statistic p95 upper bound: it does not exist for n < 59; at 0.6 x threshold, power is 0.94 (normal) and 0.46 (t3) at n=59, and n=153 is needed under t3.",
+    "Seeded Monte Carlo (20,000 replicates) of a best-case scale-calibrated bound valid under both of F3's error models, for A1 (6 strata x m layouts, pair p95) and A4 (ratio of p95s, 2 switches per layout, ICC 0.5): at 48 layouts power is 0.72/0.65 under t3, and joint power reaches about 0.8 only near 96-120 layouts.",
+    "Checked the cost basis: E010 solves ran with OMP_NUM_THREADS=2, level-1 at 155 s and level-2 at 1,499 s and 14-16 GB. The notes' 15-30 h matches wall-hours, so billed vCPU-hours at the sample F3 would need probably go near or past the 60 h budget.",
+    "Read mfos.metrics pairwise_diff_error_quantile and bootstrap_ci: the current cluster bootstrap would form zero-error pairs between resampled copies of the same layout, deflating the p95; the draft already lists excluding such self-pairs as a required protected change.",
+    "Confirmed that requiring every criterion's upper bound to pass is a valid intersection-union test, so the joint pass needs no multiplicity correction, and that taking the larger of two upper bounds over load levels keeps the coverage."
+  ],
+  "caveats": [
+    "Whether the objective can be resolved is not shown. It depends on F3 finding, before registration, a sample that meets coverage of at least 0.95 and joint power of at least 0.8 under t3 clustered errors within the 60 cpu_hours budget. Best-case simulations need about 96-120 layouts, not the 48 in the cost estimate; a nonparametric bound needs more.",
+    "A pass bounds L1's pair error at the reference's hottest die. It does not bound the error of L1's own hottest-die score that a search would use.",
+    "A3 does not discriminate (a zero-spread predictor meets it on 2R data); the spread claim rests on A4 alone.",
+    "All magnitudes here come from one PowerSynth geometry (2D_Case_2R: 4 dies, inductance-shortlisted layouts, not random generator layouts). Generator layouts with 2-6 dies per switch may show more or less layout-to-layout variation.",
+    "The die-local rise on 2R was estimated, not measured (baseplate temperature is not stored in the solve records). The die-position null's A2 margin is therefore given as a range."
+  ]
+}
