@@ -1,17 +1,10 @@
 # ModuleForge status
-_generated 2026-11-16T13:36:01+00:00 from repository state — do not edit_
+_generated 2026-11-16T14:30:48+00:00 from repository state — do not edit_
 
-## Founder inbox (10 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0212** [external_action] [O002] Burst VM run of n2's level-2 development solves (F1 pre-registration check)
-- **I0215** [protected_change] T0377: merge needs founder approval
-- **I0216** [protected_change] T0376: merge needs founder approval
-- **I0217** [decision] T0386 blocked: the agent reports the task impossible or mis-specified
-- **I0218** [decision] T0384: 2 review rounds rejected; your call
-- **I0219** [protected_change] T0392: merge needs founder approval
-- **I0220** [protected_change] T0394: merge needs founder approval
-- **I0221** [protected_change] T0393: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -32,37 +25,33 @@ _generated 2026-11-16T13:36:01+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 16 | $33.79 | 746698 | 435011 | 51 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 24 | $42.95 | 941817 | 611635 | 61 | 0 |
+| O004 | 25 | $42.95 | 941817 | 611635 | 61 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 19 | $38.15 | 846743 | 525848 | 68 | 0 |
+| O008 | 21 | $38.15 | 846743 | 525848 | 68 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 340, failed: 4, needs_founder: 7, todo: 16
+cancelled: 44, done: 345, failed: 4, running: 3, todo: 17
 
-- T0376 `needs_founder` scientist/investigate: Kill shot: do the probe's designer proxy and its null gap survive l2_layout? (attempt 1)
-- T0377 `needs_founder` builder/implement: Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate (attempt 1)
-- T0384 `needs_founder` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 2)
-- T0386 `needs_founder` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 2)
-- T0392 `needs_founder` scientist/investigate: L1 thermal design study on development layouts: speed and accuracy of candidate fast models against the level-1 reference, plus early F2 null check (attempt 1)
-- T0393 `needs_founder` scientist/investigate: F1 pre-registration check: three-level convergence of die averages, spreads and pair differences on C004's development layouts at P_ref and 0.5 P_ref (attempt 1)
-- T0394 `needs_founder` builder/implement: Generator option: one fixed die size per stratum (die_size_mm), random stream and default output unchanged (attempt 1)
+- T0378 `running` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 1)
+- T0384 `running` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 3)
+- T0413 `running` planner/plan: Plan O008 (founder approved I0204: Written in a founder session in mfos.metrics (commit 2fea4a6e); A2 uses max_col; T0381 cross-checks (no replan)) (attempt 1)
 
 ## Recent events
-- 2026-11-16T06:31:04+00:00 run_finished {"run": "T0392-scientist-20261115T210153-32f5", "status": "completed", "cost": 3.390652, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T06:39:32+00:00 verified {"task": "T0392"}
-- 2026-11-16T06:39:43+00:00 run_started {"run": "T0410-critic-20261115T223943-35d0", "task": "T0410", "role": "critic", "session": "c34daeee-9641-462f-b359-7dac05f0508a"}
-- 2026-11-16T06:40:19+00:00 sleep_detected {"gap_s": 556, "runs_extended": 3}
-- 2026-11-16T06:46:30+00:00 run_finished {"run": "T0410-critic-20261115T223943-35d0", "status": "completed", "cost": 2.134583, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T06:46:36+00:00 inbox_opened {"id": "I0219", "kind": "protected_change", "subject": "T0392: merge needs founder approval"}
-- 2026-11-16T06:48:08+00:00 run_finished {"run": "T0393-scientist-20261115T215858-56d2", "status": "completed", "cost": 4.016277, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T06:54:21+00:00 verified {"task": "T0393"}
-- 2026-11-16T06:54:21+00:00 run_finished {"run": "T0394-builder-20261115T221542-879d", "status": "completed", "cost": 0.337095, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T07:09:43+00:00 verified {"task": "T0394"}
-- 2026-11-16T07:09:48+00:00 inbox_opened {"id": "I0220", "kind": "protected_change", "subject": "T0394: merge needs founder approval"}
-- 2026-11-16T07:09:55+00:00 run_started {"run": "T0411-critic-20261115T230955-ace3", "task": "T0411", "role": "critic", "session": "20071fe9-29f4-4bb0-88d9-8c0558374fd4"}
-- 2026-11-16T07:10:29+00:00 sleep_detected {"gap_s": 1342, "runs_extended": 1}
-- 2026-11-16T07:15:58+00:00 run_finished {"run": "T0411-critic-20261115T230955-ace3", "status": "completed", "cost": 2.181931, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T07:16:03+00:00 inbox_opened {"id": "I0221", "kind": "protected_change", "subject": "T0393: merge needs founder approval"}
+- 2026-11-16T13:36:21+00:00 inbox_resolved {"id": "I0215", "status": "approved", "note": "T0377 merge approved (reviews T0402, T0403 accept with caveats; caveats carried into T0378 and T0379)", "by": "hu
+- 2026-11-16T13:36:24+00:00 inbox_resolved {"id": "I0216", "status": "approved", "note": "T0376 merge approved (review T0406 accept with caveats; the 2R null margin is settled by E011's dev burst at 0.25
+- 2026-11-16T13:36:26+00:00 inbox_resolved {"id": "I0219", "status": "approved", "note": "T0392 merge approved (review T0410 accept with caveats; A4 and F2 caveats carried into T0395 and T0398)", "by": "
+- 2026-11-16T13:36:29+00:00 inbox_resolved {"id": "I0220", "status": "approved", "note": "T0394 merge approved (generator option: one fixed die size per stratum; verified)", "by": "human"}
+- 2026-11-16T13:36:32+00:00 inbox_resolved {"id": "I0221", "status": "approved", "note": "T0393 merge approved (review T0411 accept with caveats)", "by": "human"}
+- 2026-11-16T13:36:32+00:00 inbox_resolved {"id": "I0217", "status": "answered", "note": "Allow compound re-layouts of two or three of the four frozen move types toward the span; single moves keep per-ty
+- 2026-11-16T13:36:33+00:00 inbox_resolved {"id": "I0218", "status": "answered", "note": "Retry once: split long .equiv lines to at most 900 characters, test line length at 0.25 mm on Case 4 and both ref
+- 2026-11-16T13:42:21+00:00 merged {"task": "T0376"}
+- 2026-11-16T14:11:20+00:00 merged {"task": "T0377"}
+- 2026-11-16T14:17:48+00:00 merged {"task": "T0392"}
+- 2026-11-16T14:24:10+00:00 merged {"task": "T0393"}
+- 2026-11-16T14:30:41+00:00 merged {"task": "T0394"}
+- 2026-11-16T14:30:47+00:00 run_started {"run": "T0413-planner-20261116T063047-98ff", "task": "T0413", "role": "planner", "session": "a91cab91-cf42-4072-8063-18f6ae26628f"}
+- 2026-11-16T14:30:48+00:00 run_started {"run": "T0378-builder-20261116T063048-cc86", "task": "T0378", "role": "builder", "session": "09c86f72-5b9d-4300-b748-a86c1ca85a30"}
+- 2026-11-16T14:30:48+00:00 run_started {"run": "T0384-builder-20261116T063048-5eee", "task": "T0384", "role": "builder", "session": "72b206c3-26b7-4871-9ef2-a405570784a6"}
