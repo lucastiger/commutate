@@ -8,7 +8,7 @@ design rules, a hard constraint):
     must be DRC-clean and satisfy ``in_domain(spec, ., reach=True)``; the lowest-score one that is strictly lower than the
     current score is taken, ties going to the first candidate in ``Params.NAMES`` order (then the reach jumps).  It stops at
     a local optimum (no valid neighbour is strictly lower) or after ``step_limit`` steps and returns the terminal kind
-    (``LOCAL_OPTIMUM`` / ``STEP_LIMIT``; at the limit the neighbourhood is not examined once more), the step count and the
+    (``LOCAL_OPTIMUM`` / ``STEP_LIMIT`` / ``BUDGET``; at the limit the neighbourhood is not examined once more), the step count and the
     trajectory.  The proxy rule and the nulls reuse it with other scores.
 
 ``local_search(spec, seed_layout, seed, solvers, cfg, workdir, score)``
@@ -23,11 +23,12 @@ design rules, a hard constraint):
     All randomness is ``numpy.random.default_rng(SeedSequence([seed, kind, counter]))``; there is no global state.  Every
     solve is appended to a JSONL ``Store`` (``search.Store``), so a rerun on the same workdir re-solves nothing.
 
-Movable parameters (``movable_indices``): the columns, slots, die rows and landing lines (``Params.NAMES[4:38]``, 0.5 mm
-steps, ``twin.WALK_FIRST:WALK_END``) and the power-wire landings (``foot_*_land_du`` / ``foot_*_land_dv``, steps of the
-0.125 mm foot grid).  ``dies_fixed`` removes the die rows (``row_*``).  The integer flags never move.  Besides the +-step
-changes the neighbourhood holds the reach jumps of ``twin._walk_candidates(reach=True)`` (a slot end to the column edge or
-the outline limit, a column edge to the limit or back to its pad).
+Movable parameters (``movable_indices``): the columns, slots, die rows and landing lines (``Params.NAMES[4:40]``, 0.5 mm
+steps, ``twin.WALK_FIRST:WALK_END``), the frozen objective's set.  The power-wire foot offsets (``foot_*_land_*``) do not
+move (founder decision 2026-11-16).  ``dies_fixed`` removes the die rows (``row_*``).  The integer flags never move.  Besides
+the +-step changes the neighbourhood holds the reach jumps of ``twin._walk_candidates(reach=True)`` (a slot end to the column
+edge or the outline limit, a column edge to the limit or back to its pad); a jump is offered only if every parameter it
+changes is movable.
 
 Domain.  Every layout the search moves to (every candidate of ``descend``) satisfies ``in_domain(spec, ., reach=True)``, so
 the search's moves are kept inside the domain: a candidate outside it is never evaluated, never counted in the budget and
@@ -62,15 +63,14 @@ from moduleforge.geometry.layout import Layout
 
 from .search import Store
 
-LOCAL_OPTIMUM, STEP_LIMIT = "local_optimum", "step_limit"  # terminal kinds of descend
+LOCAL_OPTIMUM, STEP_LIMIT, BUDGET = "local_optimum", "step_limit", "budget"  # terminal kinds of descend
 NAMES = D.Params.NAMES
-_FOOT_LAND = tuple(NAMES.index(f"foot_{s}_land_{c}") for s in ("HS", "LS") for c in ("du", "dv"))
 
 
 def movable_indices(dies_fixed: bool = False) -> tuple[int, ...]:
     """The parameters the hypothesis names, as indices into ``Params.NAMES`` in that order (die rows dropped if
     ``dies_fixed``)."""
-    idx = list(range(T.WALK_FIRST, T.WALK_END)) + list(_FOOT_LAND)
+    idx = range(T.WALK_FIRST, T.WALK_END)
     return tuple(i for i in idx if not (dies_fixed and NAMES[i].startswith("row_")))
 
 
@@ -85,7 +85,7 @@ def _norm_movable(movable: Iterable[int | str] | None, dies_fixed: bool) -> tupl
 
 
 def _step_of(i: int, step_mm: float) -> float:
-    return D.FOOT_GRID_MM if NAMES[i].startswith("foot_") else step_mm
+    return step_mm
 
 
 def _rects_ok(p: D.Params) -> bool:
@@ -95,9 +95,10 @@ def _rects_ok(p: D.Params) -> bool:
 class _Space:
     """DRC-valid, in-domain candidates of one spec: validity cache and yield counters."""
 
-    def __init__(self, spec: D.ReferenceSpec):
+    def __init__(self, spec: D.ReferenceSpec, reach: bool = True):
         self.spec = spec
-        self.ctx = D._Ctx(spec, reach=True)
+        self.reach = reach
+        self.ctx = D._Ctx(spec, reach=True) if reach else None
         self.cache: dict[bytes, Layout | None] = {}
         self.tally: dict[str, list[int]] = {}  # kind -> [proposed, valid]
 
@@ -109,8 +110,12 @@ class _Space:
             lay = None
             try:
                 p = D.Params.from_vector(vec)
-                if _rects_ok(p) and D.in_domain(self.spec, p, reach=True, ctx=self.ctx)[0]:
-                    lay = D.build(self.spec, p)
+                if self.reach:
+                    if _rects_ok(p) and D.in_domain(self.spec, p, reach=True, ctx=self.ctx)[0]:
+                        lay = D.build(self.spec, p)
+                elif _rects_ok(p):  # reach off: a layout that builds and is DRC-clean under spec.rules (the probe's rule)
+                    cand = D.build(self.spec, p)
+                    lay = cand if not _drc(cand, self.spec) else None
             except ValueError:
                 lay = None
             self.cache[key] = lay
@@ -127,15 +132,19 @@ class _Space:
                 v = vec.copy()
                 v[i] += d
                 yield "single", NAMES[i], v
-        names = set(NAMES)
+        if not self.reach:
+            return
+        names, movable = set(NAMES), set(idx)
         for tag, _, q in T._walk_candidates(p, self.spec, reach=True):
             if tag not in names:
-                yield "jump", tag, q.to_vector()
+                w = q.to_vector()
+                if all(j in movable for j in np.flatnonzero(np.abs(w - vec) > 1e-12)):
+                    yield "jump", tag, w
 
 
 @dataclass
 class DescentResult:
-    kind: str  # LOCAL_OPTIMUM or STEP_LIMIT
+    kind: str  # LOCAL_OPTIMUM, STEP_LIMIT or BUDGET
     steps: int
     trajectory: list[dict]  # step 0 is the start; each later entry: step, move, delta, score, fingerprint
     params: D.Params
@@ -145,44 +154,61 @@ class DescentResult:
 
 def descend(spec: D.ReferenceSpec, params: D.Params, score: Callable[[Layout], float],
             movable: Iterable[int | str] | None = None, step_mm: float = 0.5, step_limit: int = 200,
-            dies_fixed: bool = False) -> DescentResult:
+            dies_fixed: bool = False, reach: bool = True, max_evals: int | None = None,
+            min_gain: float = 0.0) -> DescentResult:
     """Steepest single-parameter descent of ``score`` (lower is better) from ``params`` (module docstring).  ``params``
     must build and be DRC-clean under ``spec.rules`` (ValueError otherwise); every candidate must also be in the reach domain.
-    ``movable``: parameter indices or names (None: ``movable_indices``); ``dies_fixed`` drops the die rows."""
+    ``movable``: parameter indices or names (None: ``movable_indices``); ``dies_fixed`` drops the die rows.  ``reach=False``
+    (the probe's rule, for regression anchors): no reach jumps and no domain test, only build + DRC under ``spec.rules``.
+    ``max_evals``: a budget of distinct score evaluations (the start counts); when the next evaluation would exceed it the
+    step in progress takes the best improving candidate evaluated so far and the descent ends with kind ``BUDGET``.  ``min_gain``: a candidate must be lower than the
+    current score by more than this (default 0: strictly lower)."""
     idx = _norm_movable(movable, dies_fixed)
-    sp = _Space(spec)
+    sp = _Space(spec, reach)
     lay = D.build(spec, params)
     if _drc(lay, spec):
         raise ValueError("the start layout is not DRC-clean under spec.rules")
     memo: dict[str, float] = {}
 
+    class _Out(Exception):
+        pass
+
     def sc(layout: Layout) -> float:
         fp = layout.fingerprint()
         if fp not in memo:
+            if max_evals is not None and len(memo) >= max_evals:
+                raise _Out
             memo[fp] = float(score(layout))
         return memo[fp]
 
     cur = sc(lay)
-    traj = [{"step": 0, "move": None, "delta": 0.0, "score": cur, "fingerprint": lay.fingerprint()}]
+    traj = [{"step": 0, "move": None, "delta": 0.0, "score": cur, "fingerprint": lay.fingerprint(),
+             "vec": params.to_vector().tolist()}]
     p = params
     steps = 0
     while steps < step_limit:
         vec = p.to_vector()
-        best = None
-        for kind, tag, v in sp.neighbours(vec, idx, step_mm, p):
-            cl = sp.valid(v, kind)
-            if cl is None:
-                continue
-            s = sc(cl)
-            if s < cur and (best is None or s < best[0]):
-                best = (s, tag, v, cl)
+        best, out_of_budget = None, False
+        try:
+            for kind, tag, v in sp.neighbours(vec, idx, step_mm, p):
+                cl = sp.valid(v, kind)
+                if cl is None:
+                    continue
+                s = sc(cl)
+                if s < cur - min_gain and (best is None or s < best[0]):
+                    best = (s, tag, v, cl)
+        except _Out:
+            out_of_budget = True  # the best improving candidate evaluated so far is still taken, then the descent ends
         if best is None:
-            return DescentResult(LOCAL_OPTIMUM, steps, traj, p, lay, cur)
+            return DescentResult(BUDGET if out_of_budget else LOCAL_OPTIMUM, steps, traj, p, lay, cur)
         cur, tag, v, lay = best
         delta = float(np.sum(v - vec))
         p = D.Params.from_vector(v)
         steps += 1
-        traj.append({"step": steps, "move": tag, "delta": delta, "score": cur, "fingerprint": lay.fingerprint()})
+        traj.append({"step": steps, "move": tag, "delta": delta, "score": cur, "fingerprint": lay.fingerprint(),
+                     "vec": v.tolist()})
+        if out_of_budget:
+            return DescentResult(BUDGET, steps, traj, p, lay, cur)
     return DescentResult(STEP_LIMIT, steps, traj, p, lay, cur)
 
 
@@ -206,6 +232,10 @@ class LocalConfig:
     max_iters: int = 100_000  # guard against an endless walk over already visited layouts
     dies_fixed: bool = False
 
+    def __post_init__(self):
+        if self.budget < 1 or self.shortlist < 1:
+            raise ValueError(f"budget and shortlist must be >= 1 (got budget={self.budget}, shortlist={self.shortlist})")
+
     def hash(self) -> str:
         """Stable hash of the config (sha256 of its sorted JSON, first 16 hex digits)."""
         s = json.dumps(dataclasses.asdict(self), sort_keys=True)
@@ -219,6 +249,7 @@ class LocalSolvers:
 
     l1: Callable[[Layout], float]
     l_sub: Callable[[Layout], float]
+    tag: str = ""  # identifies the solver configuration (e.g. "lsub0.25mm"); part of every checkpoint key
 
 
 def default_score(layout: Layout, out: dict[str, float]) -> float:
@@ -307,7 +338,7 @@ def local_search(spec: D.ReferenceSpec, seed_layout: Layout, seed: int, solvers:
             st["fresh"] += 1
             st["secs"] += time.perf_counter() - t
             return v
-        l1 = float(store.get(f"local:{fp}:l1", solve))
+        l1 = float(store.get(f"local:{solvers.tag}:{fp}:l1", solve))
         s = float(score(lay, {"l1": l1}))
         st["n"] += 1
         visited[fp] = {"score": s, "l1": l1, "vec": vec.tolist(), "order": st["n"]}
@@ -366,7 +397,7 @@ def local_search(spec: D.ReferenceSpec, seed_layout: Layout, seed: int, solvers:
     short = []
     for rank, (fp, rec) in enumerate(order):
         lay = D.build(spec, D.Params.from_vector(np.asarray(rec["vec"])))
-        ls = float(store.get(f"local:{fp}:lsub", lambda lay=lay: float(solvers.l_sub(lay))))
+        ls = float(store.get(f"local:{solvers.tag}:{fp}:lsub", lambda lay=lay: float(solvers.l_sub(lay))))
         short.append({"rank": rank, "fingerprint": fp, "score": rec["score"], "l1": rec["l1"], "l_sub": ls,
                       "vec": rec["vec"]})
     bi = min(range(len(short)), key=lambda i: (short[i]["l_sub"], i))
@@ -393,5 +424,5 @@ def local_search(spec: D.ReferenceSpec, seed_layout: Layout, seed: int, solvers:
                        [(fp, r["vec"]) for fp, r in visited.items()])
 
 
-__all__ = ["LOCAL_OPTIMUM", "STEP_LIMIT", "DescentResult", "LocalConfig", "LocalResult", "LocalSolvers",
+__all__ = ["BUDGET", "LOCAL_OPTIMUM", "STEP_LIMIT", "DescentResult", "LocalConfig", "LocalResult", "LocalSolvers",
                       "default_score", "descend", "local_search", "movable_indices", "spearman"]

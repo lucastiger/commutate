@@ -42,16 +42,18 @@ def world(spec):
     tv = pvec(tgt)
     idx = L.movable_indices()
     sp = L._Space(spec)
-    rng = np.random.default_rng(3)
-    v, n = tv.copy(), 0
-    for _ in range(300):
-        w = L._joint(rng, v, idx, 2, 3, 2, 0.5)
-        if sp.valid(w) is not None:
-            v, n = w, n + 1
-        if n >= 6:
-            break
-    assert n == 6
-    return tv, sp.valid(v)
+    for rseed in range(3, 60):  # the first rng seed whose six moves give a seed 8 mm (Manhattan) from the target
+        rng = np.random.default_rng(rseed)
+        v, n = tv.copy(), 0
+        for _ in range(300):
+            w = L._joint(rng, v, idx, 2, 3, 2, 0.5)
+            if sp.valid(w) is not None:
+                v, n = w, n + 1
+            if n >= 6:
+                break
+        if n == 6 and abs(np.abs(v - tv).sum() - 8.0) < 1e-9:
+            return tv, sp.valid(v)
+    raise AssertionError("no rng seed gives a seed layout 8 mm from the target")
 
 
 def dist(tv):
@@ -277,7 +279,8 @@ def test_descend_step_limit_and_tie_order(spec, world):
         w = pvec(layout)
         return (w[ia] - v[ia]) * np.sign(a_d) * -1.0 + (w[ib] - v[ib]) * np.sign(b[1]) * -1.0
 
-    r1 = descend(spec, p, f, movable=[ia, ib], step_limit=1)
+    r1 = descend(spec, p, f, movable=[ia, ib], step_limit=1, reach=False)  # single steps only: a reach jump of a
+    # movable parameter would win by its larger gain
     # moves ia by a_d and ib by b[1] each lower f by |step| (equal gains); the first (ia) wins the tie
     assert r1.trajectory[1]["move"] == a_name and r1.trajectory[1]["score"] == pytest.approx(-abs(a_d))
 
@@ -334,3 +337,74 @@ def test_moves_stay_inside_in_domain_on_the_2R_spec():
         assert ok, why
         assert not check(D.build(spec2, p), spec2.rules)
     assert r.stats["yield"]["single"]["proposed"] > 0
+
+
+# ------------------------------------------------------------------- T0379: scope and review T0414 fixes
+def test_movable_set_is_the_frozen_objectives_and_no_foot_offset_moves(spec, world):
+    assert L.movable_indices() == tuple(range(W.WALK_FIRST, W.WALK_END))
+    assert [NAMES[i] for i in L.movable_indices()] == list(NAMES[4:40])
+    assert not [i for i in L.movable_indices() if NAMES[i].startswith("foot_")]
+    tv, seed_lay = world
+    r = local_search(spec, seed_lay, 1, Solvers(tv).bundle(), LocalConfig(budget=400, shortlist=3))
+    foot = [i for i, n in enumerate(NAMES) if n.startswith(("foot_", "sig_"))]
+    v0 = pvec(seed_lay)
+    assert all(np.array_equal(np.asarray(v)[foot], v0[foot]) for _, v in r.visited)
+
+
+def test_descend_with_a_restricted_movable_set_changes_only_that_parameter(spec):
+    """Reach jumps used to move other coordinates (column and slot u) whatever ``movable`` said."""
+    lay = D.generate(spec, 1, 21, reach=True)[0]
+    p = D.params_of(lay)
+    v0 = p.to_vector()
+    for name in ("slot0_u0", "slot0_u2" if False else "slot0_u1", "col_PHASE_u0"):
+        i = NAMES.index(name)
+        res = descend(spec, p, lambda lay_, i=i: -float(pvec(lay_)[i]), movable=[i], step_limit=40)  # pushes u up
+        for t in res.trajectory:
+            assert np.flatnonzero(np.abs(np.asarray(t["vec"]) - v0) > 1e-12).tolist() in ([], [i])
+        res2 = descend(spec, p, lambda lay_, i=i: float(pvec(lay_)[i]), movable=[i], step_limit=40)  # pushes u down
+        for t in res2.trajectory:
+            assert set(np.flatnonzero(np.abs(np.asarray(t["vec"]) - v0) > 1e-12).tolist()) <= {i}
+    # with the whole set a jump is still offered: the neighbourhood of the full set holds jumps, the restricted one none
+    sp = L._Space(spec)
+    i0 = NAMES.index("slot0_u0")
+    only = list(sp.neighbours(v0, [i0], 0.5, p))
+    assert all(np.flatnonzero(np.abs(v - v0) > 1e-12).tolist() == [i0] for _, _, v in only)
+    full = list(sp.neighbours(v0, L.movable_indices(), 0.5, p))
+    assert any(len(np.flatnonzero(np.abs(v - v0) > 1e-12)) > 0 and np.flatnonzero(np.abs(v - v0) > 1e-12)[0] != i0
+               for _, _, v in full)  # the full set offers moves of other parameters (so the filter does something)
+
+
+def test_store_keys_carry_the_solver_tag(spec, world, tmp_path):
+    tv, seed_lay = world
+    cfg = LocalConfig(budget=60, shortlist=3)
+    wd = tmp_path / "w"
+    a = Solvers(tv)
+    local_search(spec, seed_lay, 1, LocalSolvers(a.l1, a.l_sub, tag="lsub0.5mm"), cfg, wd)
+    same = Solvers(tv)
+    local_search(spec, seed_lay, 1, LocalSolvers(same.l1, same.l_sub, tag="lsub0.5mm"), cfg, wd)
+    assert same.l1_calls == [] and same.lsub_calls == []
+    other = Solvers(tv)
+    local_search(spec, seed_lay, 1, LocalSolvers(other.l1, other.l_sub, tag="lsub0.25mm"), cfg, wd)
+    assert len(other.lsub_calls) == 3 and len(other.l1_calls) == 60  # a changed tag re-solves
+
+
+def test_local_config_validates_budget_and_shortlist():
+    for kw in ({"budget": 0}, {"budget": -3}, {"shortlist": 0}):
+        with pytest.raises(ValueError):
+            LocalConfig(**kw)
+    assert LocalConfig(budget=1, shortlist=1).budget == 1
+
+
+def test_descend_max_evals_and_min_gain(spec, world):
+    tv, seed_lay = world
+    n = []
+
+    def f(lay):
+        n.append(lay.fingerprint())
+        return dist(tv)(lay)
+
+    res = descend(spec, D.params_of(seed_lay), f, max_evals=30)
+    assert res.kind == L.BUDGET and len(set(n)) == 30 == len(n)
+    full = descend(spec, D.params_of(seed_lay), dist(tv), step_limit=100)
+    gated = descend(spec, D.params_of(seed_lay), dist(tv), step_limit=100, min_gain=1.4)
+    assert gated.steps < full.steps  # steps of 0.5 mm gain 0.5 < 1.4: only the larger jumps qualify
