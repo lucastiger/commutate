@@ -1,0 +1,52 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Out-of-domain degraded copy: nulls (b) and (d) return D_j unchanged and report `local_optimum`",
+      "detail": "`descend` only considers candidates that pass `in_domain(spec, ., reach=True)`. Suppose D_j is DRC-clean but outside the reach domain, and none of its single-step or jump neighbours is inside it. Then `null_widen` and `null_compact` take 0 steps and record terminal `local_optimum`. That label is false: D_j is not a local optimum of the blind score over the DRC-feasible neighbourhood, because 62-75 DRC-clean neighbours exist. The module's docstring accepts any D_j that \"builds and is DRC-clean\". Nothing records `seed_in_domain` or a `no_moves` condition, although `local_search` records both. Under A3's wording, such a run would count as a resolved failure of the null rather than a capped or degenerate run. The decision impact is limited, as measured: on the same starts `local_search` also stops with `stop_reason='no_moves'` after visiting one layout. The paired search-vs-null margin of A3 is therefore not inflated; such draws hurt A1 instead. The probe's nulls, which only applied a DRC filter, would have moved from these starts, so the calibration in the objective (blind nulls fail by 3-24 %) was not measured under this restriction. No test covers an out-of-domain start.",
+      "evidence": "On the 2R spec and twin from E010 ctx.pkl, I ran 20 development-seed walks of 12 DRC-clean joint moves (2-4 parameters, 0.5-2 mm), like the probe's degradation without the L1 acceptance. 18 of 20 ended outside the reach domain (col_DC\u00b1_outer/inner/v_edge). For those 18 starts, in-domain neighbours numbered 0 (1 for one start, and it did not improve), DRC-clean neighbours 62-75, and `null_compact` gave 0 steps with terminal `local_optimum`. `local_search` with budget 150 on two of these starts: seed_in_domain=False, stop=no_moves, visited=1.",
+      "suggested_check": "Record `seed_in_domain` and the number of valid neighbours at step 0 in `NullResult.stats`, and use a distinct terminal (e.g. `no_moves`) when the first neighbourhood is empty; add a test with an out-of-domain D_j.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Whether the 200-step limit is \"generous\" was checked on 2R only",
+      "detail": "On 2R, `NULL_STEP_LIMIT=200` is ample: from in-domain degradations of W, widen took 15-16 steps and compact 23. The probe's 2R-proxy nulls took 29-59 steps. On Case 4, however, the probe's proxy nulls hit its 60-step cap on 8 of 10 runs. Case 4's development context (research/o003/e008_dev/full_work/2D_Case_4/ctx.pkl) is not in this checkout, so I could not test whether 200 steps reaches a local optimum there. If it does not, A3 cannot count those runs as resolved failures. The code records `step_limit` correctly, so this is a design risk for E011 rather than a defect here.",
+      "evidence": "probe_Case4_proxy.json: compact steps=60 cap=True on 5 of 5 draws, widen on 3 of 5. My 2R runs: widen 15 and 16 steps, compact 23 and 23, all `local_optimum`.",
+      "suggested_check": "Before freezing E011, run both nulls on Case 4 development draws and report their step counts.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "\"Same budget\" for nulls (b) and (d) is a step limit, not the search's L1 budget",
+      "detail": "The objective's F1 says (b) and (d) run with the \"same budget\". A3 says each runs \"to its own local optimum within a generous frozen step limit\". The implementation follows A3: there is a step limit and no L1-evaluation budget. That is a reasonable reading, since the nulls make no L1 evaluations, but the objective text is ambiguous here. Ablation (c) counts its budget in draws rather than distinct L1 evaluations; duplicates would give it slightly fewer evaluations than the search (none occurred in my 300-draw run).",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Weaknesses in the tests",
+      "detail": "All tests use the synthetic 70x40 housing and an in-domain sampler layout as D_j, never a degraded copy of a development twin. `test_blind_nulls_never_call_an_inductance_solver` is weak: the nulls ignore `solvers` and only `T._l1` is patched. Reading the code confirms that no inductance model is reachable from (a), (b) or (d). The (c) test recomputes the shortlist with the same `candidate_stream` the implementation uses; my check against the separate D0008 `_screen` code covers that gap. `null_compact` rebuilds `_Space`/`_Ctx` every step (compact took 4 s against widen's 2.5 s on 2R, which is negligible). Ablation (c) keeps every drawn layout in memory, unlike D0008's `_screen`.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: `uv run pytest -q tests/unit/optimize/test_nulls.py` gave 11 passed in 106 s; `uv run ruff check src/moduleforge/optimize tests/unit/optimize` passed.",
+    "Recomputed power copper area with my own per-net polygon union and unit conversion on a 2R layout: 1126.75 mm^2, matching `power_copper_mm2`. Confirmed that `power_wire_mm` uses the 3-D wire polyline length (27.47 mm, against 26.0 mm in the plane), as the probe's `wire_mm` does.",
+    "Wrote my own steepest compact ascent (explicit DRC under spec.rules plus in_domain(reach=True) per candidate, constraint anchored at the current layout, first-wins ties) and ran it on an in-domain degraded 2R start. It took 23 steps and ended at the same layout fingerprint as `null_compact`.",
+    "Ran `null_widen` and `null_compact` on two in-domain DRC-clean degradations of 2R's twin (development seeds): widen took 15 and 16 steps (area 1126.75 to 1308 mm^2 and 1095 to 1308 mm^2), compact 23 and 23, all ending at `local_optimum`. Blind compaction reached L1 below the twin's (10.52 nH against 11.17 nH), consistent with the probe note.",
+    "Compared `ablation_random_screen` (budget 300, shortlist 8, real `T._l1`, synthetic `l_sub`) with the D0008 `search._screen` code on the same seed, sampler and chunking: the shortlist fingerprints and the selected best layout are identical, and the best is DRC-clean and in the reach domain.",
+    "Adversarial input: 20 DRC-only random degradation walks of 2R's twin. 18 left the reach domain; on all 18 the nulls took 0 steps and reported `local_optimum` although 62-75 DRC-clean neighbours existed. On two of these starts, `local_search` also stopped with `no_moves`, so A3's paired comparison is not biased.",
+    "Read the probe's per-draw null step counts (probe_2R_proxy.json: 29-59 steps, none capped; probe_Case4_proxy.json: 8 of 10 null runs at the 60-step cap)."
+  ],
+  "caveats": [
+    "The nulls are correct only for degraded copies D_j that lie inside `in_domain(spec, ., reach=True)`, or at least have an in-domain neighbour. For out-of-domain D_j they reduce to null (a) and report `local_optimum`. E011's degradation family must keep D_j in the reach domain, or the runner must flag these cases.",
+    "On 2R, 200 steps reaches a local optimum with a wide margin. On Case 4 this is untested here (the development context is not in this checkout), and the probe's nulls hit a 60-step cap there.",
+    "The nulls stay inside the search's reach domain, whereas the probe that calibrated the objective's expectations (blind nulls fail by 3-24 %) only filtered by DRC. The A3 margins measured in E011 may therefore differ from the probe's.",
+    "The nulls produce layouts only. s_j, b_j and the resolved-failure judgement belong to the E011 runner and mfos.metrics, which I did not review."
+  ]
+}
