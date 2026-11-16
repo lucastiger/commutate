@@ -1,0 +1,69 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The docstring calls `in_domain` 'also the domain of the local search', but the walk leaves it",
+      "detail": "The new derivative.py module docstring says: \"``in_domain`` is the predicate of this construction, and also the domain of the local search (``twin._walk_candidates``)\". That is false. The walk's only test is the DRC (`_try`). Its \u00b10.5 mm single-parameter steps reach DRC-clean states that `in_domain(reach=True)` rejects. twin.py's own docstring is accurate here: 'the walk's own test is the DRC'. This matters downstream. O008 requires one parameter set throughout and 'the target is an optimum of the search's own domain'. A proxy W* found by the walk can therefore lie outside `in_domain`. `in_domain` describes the sampler's domain, not the walk's. The predicate itself is not wrong.",
+      "evidence": "2R twin (E010 judged_reference + W.twin): W._walk_candidates(p, spec, True) gives 54 DRC-valid candidates (W._try). 8 of them are outside in_domain(reach=True): col_DC+_u0 +0.5 -> col_DC+_outer_edge, col_DC+_v0 +0.5 -> col_DC+_v_edge, col_DC+_u1 -0.5 -> col_DC+_inner_edge, col_DC+_v1 -0.5 -> col_DC+_v_edge, and the same four for DC-.",
+      "suggested_check": "Correct the sentence, or have E011's design state whether walk and proxy states must satisfy in_domain and filter for it.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "`in_domain` = True is a superset test, not proof of membership in the sampler's support",
+      "detail": "The replay deliberately over-accepts in a few places. Gaps between slots have no upper bound, although the sampler caps g_ext at 12 mm unless the two-window stretch applies. The die-window and stack-window upper limits each allow one extra 0.5 mm grid step. Free ends and die-row offsets are unbounded in reach mode except through the limit. The docstring admits this ('the converse is not claimed'). O008 A2, however, reads in_domain as 'true when params_of(W) lies ... in the random sampler's support'. For the two development twins I confirmed the result does not depend on these tolerances. Every die-slot centre is inside its window by at least 2 mm, every 2R slot is inside a band of its net, and Case 4's stack is exactly its window (30 to 80). The largest 2R gap, 14 mm, is reachable in split mode.",
+      "evidence": "2R: die slot centres 19.0 / 41.0 in windows (12.45, 37.05) / (18.45, 43.05). Case 4: 35.0 / 75.0 in windows (-7.2, 40.6) / (65.8, 112.6). 2R gaps 2 / 14 / 2 mm with g_min 2.",
+      "suggested_check": "Before using A2 on a new layout, report the slack of each over-accepting constraint, or make the window tolerances exact.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The twin's reach moves read a column's side from geometry, and straddling slots can make that reading wrong",
+      "detail": "`in_domain` tries all 8 side combinations. twin._net_side, which `_straddle`, `_outer_edge` and the reach `_walk_candidates` jumps use, takes only the primary reading (slot mid-u against column mid-u). With straddling slots that reading can be wrong, and the move then shifts the wrong end of a slot or column. The DRC filters such candidates, and none of the misread draws I found were DRC-clean, so no impact was observed.",
+      "evidence": "Case 4, reach mode, 30 000 raw `_sample` draws (seed 5): 4949 non-None. In 295 (6 %) the `_replay` with the `_net_side` sides fails while another side combination passes. 0 of those 295 are DRC-clean and in the domain.",
+      "suggested_check": "Have `_net_side` use the side combination that `in_domain` accepts, or assert that agreement in a test.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The reach v-extent branch wastes many draws on disconnected copper",
+      "detail": "In reach mode a column's v extent only needs to cover its pad, so it can miss its slots' v span. The copper then splits, and `build` fails with 'copper is not a single polygon'. This lowers the yield of reach-mode generation, but `build`, `_quick_ok` and the DRC filter these draws before they matter.",
+      "evidence": "2R reach, 150 000 raw draws (seed 99): 1765 non-None, of which 764 fail `build` (PHASE 700, DC- 43, DC+ 21) and 78 pass in_domain. Legacy mode on 2R (20 000 draws, seed 424242): 0 `build` failures.",
+      "suggested_check": "Require the reach v extent to overlap each of the net's slots.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The author's soundness and bit-identity tests skip the keepout-split path that 2R uses; I covered it independently",
+      "detail": "test_every_*_draw_is_in_its_own_domain and the reach-off fingerprint tests run on the housing and on Case 4. Both have split False in both orientations. 2R has split[0] True. I ran the missing checks on 2R and both passed. Also, test_hand_made_vectors_outside_the_support loops `for reach in (True,)`, so only reach mode is exercised there, apart from one reach-off assertion.",
+      "evidence": "See the independent checks: 2R raw-draw soundness in both modes, and bit-identity of the 2R reach-off stream against the reconstructed legacy module.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Case 4's twin is also outside the legacy domain",
+      "detail": "in_domain(case4 twin, reach=False) returns (False, 'col_DC+_outer_edge'). The docs and O008 frame only 2R's twin as outside the D0008 support. That is not a defect, but O008 A2's pre-registration framing may want to record it.",
+      "evidence": "Case 4 twin: reach (True, ''); legacy (False, 'col_DC+_outer_edge').",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. tests/unit/generate/test_reach.py: 21 passed (35 s). `-m 'not slow'` tests/unit/generate: 130 passed, 1 deselected (278 s). ruff check src/moduleforge/generate tests/unit/generate: clean.",
+    "Rebuilt the pre-change derivative.py by reverse-applying the packet's diff to a copy in $TMPDIR (patch -R applied cleanly). Recomputed every BASELINE fingerprint with that legacy module: housing k=1 raw 5c78aed0cb38aa2c/1522, k=3 c635c5417b23cc74/1482, Case 4 8d0ba74f920b707b/2640, plus all the `generate` layout fingerprints. All match the test's constants, so the baselines really do come from the unmodified sampler.",
+    "Bit-identity on the keepout-split path, which the author's tests do not cover: 2R spec, seed 20261110. 30 000 raw draws hash to 758407661217b003 with 29632 None in both the legacy and current reach-off modules, and the first 3 `generate` layout fingerprints (seed 7) are identical.",
+    "Soundness of the `in_domain` replay on raw `_sample` draws, before the DRC, with `in_domain` called unmodified and build/quick_ok/drc failures counted as a passed replay. 2R reach: 1765 non-None of 150 000 (seed 99) and 252 of 20 000 (seed 424242), 0 replay failures. 2R legacy: 260 non-None, 0 replay failures. Case 4 reach: 9901 non-None of 60 000, 0 replay failures.",
+    "Checked by hand that the reach intervals contain the legacy ones, comparing `_sample`'s draws with `_replay` constraint by constraint: outer room >= 1.5, v-extent bounds, attach interval, x0, free ends, landing margin min(0.5, landing margin + 0.05) on a finer grid, and the ldv window.",
+    "2R and Case 4 twins: in_domain(reach=True) is (True, ''). In legacy mode 2R fails at col_PHASE_outer_edge (47 > pad edge 44 + 1.5) and Case 4 at col_DC+_outer_edge. Building the twins from their parameter vectors reproduces their fingerprints. Measured each twin's slack against the replay's tolerances: the die windows, bands and stack window are not used at their limits.",
+    "Enumerated the DRC-valid walk candidates from the 2R twin: 8 of 54 are outside the reach `in_domain` (see the major finding).",
+    "Measured how often `_net_side`'s primary reading misreads a column's side on Case 4 reach draws: 295 of 4949, none of them DRC-clean."
+  ],
+  "caveats": [
+    "Soundness (every sampler draw satisfies `in_domain`) is shown by sampling about 12 000 non-None raw draws across 2R and Case 4 in both modes, plus the author's housing and Case 4 `generate` tests. It is not proved. The converse (that `in_domain` = True implies the sampler can draw the vector) is explicitly not claimed and is not tested.",
+    "`in_domain` is the domain of the reach sampler. It is not the domain of the walk or local search, which can reach DRC-clean states outside it, so A2 and the O008 'search's own domain' argument should not treat the two as the same.",
+    "The walk's reach jumps and the `straddle`/`outer` move families rely on a single geometric reading of each column's side, which straddling slots can get wrong. Their validity rests on the DRC, not on `in_domain`.",
+    "The packet's diff of test_reach.py was cut off. I reviewed the file as it is on disk at this commit."
+  ]
+}

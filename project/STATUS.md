@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T03:31:10+00:00 from repository state — do not edit_
+_generated 2026-11-16T03:31:53+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -18,7 +18,7 @@ _generated 2026-11-16T03:31:10+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $27.22/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $29.45/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -26,26 +26,23 @@ _generated 2026-11-16T03:31:10+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 11 | $21.73 | 540809 | 352965 | 40 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 15 | $25.93 | 602089 | 439606 | 35 | 0 |
+| O004 | 16 | $25.93 | 602089 | 439606 | 35 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 18 | $27.22 | 658244 | 431231 | 47 | 0 |
+| O008 | 18 | $29.45 | 699519 | 453745 | 54 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 329, failed: 4, needs_founder: 1, review: 1, running: 3, todo: 21
+cancelled: 44, done: 330, failed: 4, needs_founder: 1, review: 1, running: 3, todo: 20
 
 - T0376 `running` scientist/investigate: Kill shot: do the probe's designer proxy and its null gap survive l2_layout? (attempt 1)
 - T0377 `review` builder/implement: Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate (attempt 1)
 - T0381 `needs_founder` scientist/design_experiment: Draft E011's acceptance metric functions and analytic tests for the founder's mfos.metrics port (F7) (attempt 1)
-- T0402 `running` critic/review: Review T0377 (physics) (attempt 1)
+- T0384 `running` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 1)
 - T0403 `running` critic/review: Review T0377 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T01:52:07+00:00 run_started {"run": "T0377-builder-20261115T175207-24d7", "task": "T0377", "role": "builder", "session": "e8993f2b-1ff4-4a65-84b2-7d51ec15599c"}
-- 2026-11-16T01:52:08+00:00 run_started {"run": "T0381-scientist-20261115T175208-7f35", "task": "T0381", "role": "scientist", "session": "c77411e8-bdc9-465a-a3d7-4d32ed3d8bb8"}
-- 2026-11-16T02:31:32+00:00 run_finished {"run": "T0381-scientist-20261115T175208-7f35", "status": "completed", "cost": 1.904972, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T02:39:37+00:00 verified {"task": "T0381"}
 - 2026-11-16T02:39:50+00:00 run_started {"run": "T0400-critic-20261115T183950-b68f", "task": "T0400", "role": "critic", "session": "2a7400de-afe6-4dda-a592-63158f3f7498"}
 - 2026-11-16T02:40:26+00:00 sleep_detected {"gap_s": 535, "runs_extended": 3}
@@ -58,3 +55,6 @@ cancelled: 44, done: 329, failed: 4, needs_founder: 1, review: 1, running: 3, to
 - 2026-11-16T03:00:26+00:00 run_finished {"run": "T0401-critic-20261115T185509-05d8", "status": "completed", "cost": 1.473192, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T03:31:03+00:00 inbox_opened {"id": "I0214", "kind": "protected_change", "subject": "T0381: merge needs founder approval"}
 - 2026-11-16T03:31:10+00:00 run_started {"run": "T0403-critic-20261115T193110-6839", "task": "T0403", "role": "critic", "session": "432951c5-1efa-4fac-b2af-bd49618a370e"}
+- 2026-11-16T03:31:44+00:00 sleep_detected {"gap_s": 1879, "runs_extended": 3}
+- 2026-11-16T03:31:45+00:00 run_finished {"run": "T0402-critic-20261115T185559-039a", "status": "completed", "cost": 2.224593, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T03:31:53+00:00 run_started {"run": "T0384-builder-20261115T193153-c4a4", "task": "T0384", "role": "builder", "session": "9d6056c9-d8ab-4e20-b046-83578b47fa4d"}
