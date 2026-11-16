@@ -4,7 +4,7 @@ title: 'L1 thermal design study on development layouts: speed and accuracy of ca
   the level-1 reference, plus early F2 null check'
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: 'Cheap test that could falsify the hypothesis: A5 jointly with A1/A2, plus an early F2 warning.
   Use development geometry only. Deliverables: research/o002_l1/design_study.py (prototype code stays
@@ -163,4 +163,177 @@ trigger: null
 rationale: A5 (1 s) is likely to decide the outcome (objective notes, review T0372). F2's null failure
   on A1 depends on within-stratum variation that nobody has measured. This is the cheapest test of both,
   and n4 needs its design choice.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The candidate I chose, `fv_coarse_xcal`, meets the n4 targets on development rows: median
+    0.315 s per evaluation on one thread, A1-type error 0.189 K at P_ref and 0.088 K at half P_ref (target
+    0.3 K), A2-type 1.02 % and 1.01 % (target 1.8 %). It is a coarse finite-volume solve of the full layout
+    problem using the in-house FV solver, not the reference code. Its die-local rise is scaled by one
+    factor per die size, calibrated against the reference on the other stratum''s development layout.
+    So meets_targets = true and f2_warning = false.
+
+
+    It does not meet the 0.6x target on A4 (the spread criterion): the pooled ratio is 0.37 against 0.3,
+    and 0.81 in the 2-die stratum. A4 is most likely to decide E007. All definition-of-done commands and
+    `mfos gate --fast` pass.
+
+
+    **Data.** Two strata, one per d'
+  report:
+    status: completed
+    failure_class: none
+    summary: 'The candidate I chose, `fv_coarse_xcal`, meets the n4 targets on development rows: median
+      0.315 s per evaluation on one thread, A1-type error 0.189 K at P_ref and 0.088 K at half P_ref (target
+      0.3 K), A2-type 1.02 % and 1.01 % (target 1.8 %). It is a coarse finite-volume solve of the full
+      layout problem using the in-house FV solver, not the reference code. Its die-local rise is scaled
+      by one factor per die size, calibrated against the reference on the other stratum''s development
+      layout. So meets_targets = true and f2_warning = false.
+
+
+      It does not meet the 0.6x target on A4 (the spread criterion): the pooled ratio is 0.37 against
+      0.3, and 0.81 in the 2-die stratum. A4 is most likely to decide E007. All definition-of-done commands
+      and `mfos gate --fast` pass.
+
+
+      **Data.** Two strata, one per die-count band: u_shaped/2 and side_by_side/6, both with 5.0 mm dies.
+      Each holds C004''s development layout (seed 20261101) plus 5 new layouts from development seed 20261115,
+      drawn by rejection on die size. That is 12 layouts, 96 dies and 30 same-stratum pairs per load.
+      P_ref is C004''s calibrated value (47.14 and 32.23 W per die), re-checked here: hottest-node rise
+      59.95 and 60.16 K at level 0.
+
+
+      **Reference.** The frozen thermal_fem rule at level 1, file unchanged (sha256 a216d5fe…). 24 solves
+      plus 2 calibration checks, run one at a time:
+
+      - energy balance at most 4.3e-13 on every solve;
+
+      - peak memory 4.1 GB;
+
+      - 0.88 CPU-hours (budget 3);
+
+      - the mean baseplate-bottom temperature from the solve matches T_c + P/(hA) to 7e-12 K;
+
+      - my level-1 dev solve reproduces E009''s cached values to 8e-7 K.
+
+
+      **Candidates** (P_ref, then half P_ref):
+
+
+      | candidate | time per evaluation | A1-type | A2-type | A4-type ratio |
+
+      |---|---|---|---|---|
+
+      | fv_coarse (uncalibrated) | 0.315 s | 0.21 K | 3.6 % | 0.53 |
+
+      | fv_coarse_boxcal (analytic factor, no reference data) | 0.315 s | 0.20 K | 2.6 % | 0.40 |
+
+      | fv_coarse_xcal (chosen) | 0.315 s | 0.19 / 0.09 K | 1.0 % | 0.37 / 0.36 |
+
+      | fem_coarse (coarse thermal_fem) | 1.13 s | 0.23 K | 3.2 % | 0.81 |
+
+      | series_superposition | 0.037 s | 1.39 K | 6.6 % | 2.65 |
+
+
+      - The calibration factor is the same in both strata, 0.97387 and 0.97406. That is what lets the
+      factor from one stratum fix the other.
+
+      - The analytic box-stack factor (0.9906) removes only about a third of the bias, because the error
+      sits at the die edge, which a laterally uniform stack does not have.
+
+
+      **Nulls.** At P_ref the stratum-mean null''s A1-type error is 2.96 K and the die-position null''s
+      is 3.03 K, both about 6x the 0.5 K line. The die-position null''s A4 ratio is exactly 1. I checked
+      this: in every layout the hottest and coldest die of each switch sit at the same die index, which
+      makes its spread prediction identical to the stratum-mean spread.
+
+
+      **Constant-k check (F4).** With k held at its 300 K value the model exceeds A1 (0.55 K) and A2 (10
+      %) at P_ref, so k(T) is tested at this operating point.
+
+
+      **Hot-spot gap (F6).** On the reference, the hottest node sits 4.2–5.6 K above the die average at
+      P_ref, past F6''s 2 K line. The hottest node is not converged at level 1, so this is indicative
+      only.
+
+
+      The design note covers method with citations, why it should hold on unseen strata, the n4 API and
+      risks. Commands I ran:
+
+      - `uv run python research/o002_l1/design_study.py --smoke`: exit 0 (code paths only, coarse stand-in
+      reference; its output was deleted);
+
+      - `uv run python research/o002_l1/design_study.py`: exit 0, 56 min;
+
+      - the definition-of-done JSON assertion: exit 0;
+
+      - `uv run ruff check research/o002_l1`: exit 0;
+
+      - `test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee`:
+      exit 0;
+
+      - `uv run mfos gate --fast`: exit 0 ("all gates passed").
+
+
+      Nothing was committed.'
+    confidence: 0.75
+    evidence:
+    - 'research/o002_l1/design_study.json: chosen fv_coarse_xcal; meets_targets true; f2_warning false.
+      P_ref: median 0.315 s, a1 0.189 K, a2 0.0102, a3 0.150 K, a4 0.37. half_P_ref: a1 0.088 K, a2 0.0101,
+      a3 0.070 K, a4 0.36.'
+    - 'Calibration factor per stratum: 0.97387 for u_shaped/2 and 0.97406 for side_by_side/6. The box-stack
+      analytic factor is 0.9906; its series check gives n400 minus n800 = -6e-6 K.'
+    - 'Nulls at P_ref: stratum_mean a1 2.96 K, a2 24 %; die_position a1 3.03 K, a2 4.6 % (u_shaped/2 3.7
+      %). The die-position A4 is exactly 1 because the argmax and argmin die indices are the same in every
+      layout (checked from the cache).'
+    - 'Reference: 24 level-1 solves plus 2 level-0 checks. Energy balance at most 4.3e-13; peak RSS 4.12
+      GB; 3164 CPU-s. Bottom-mean difference between solve and analytic at most 6.8e-12 K. Dev solve matches
+      E009''s cached level-1 values to 8.2e-7 K at the same DOF count.'
+    - 'Constant-k preview at P_ref: a1 0.547 K, a2 0.100, a4 2.14.'
+    - 'Hottest node minus die average on the reference at P_ref: 4.2 K (side_by_side/6) and 5.6 K (u_shaped/2).'
+    - 'Ratio of the P_ref rise to the half-P_ref rise: 2.037 for the reference, the coarse FV and the
+      coarse FEM alike.'
+    - Definition-of-done assertion, ruff, sha check and mfos gate --fast all exited 0.
+    alternative_explanations:
+    - explanation: The calibration factor may agree across the two strata only because both have 5.0 mm
+        dies and both new-layout sets came from the same seed stream indices (shared random draws). It
+        might then not transfer to other die sizes or to the interleaved family.
+      how_to_discriminate: n4 measures c(s) at 4.0, 4.5, 5.0 and 5.5 mm on development layouts of at least
+        two families per size, using a fresh development seed per stratum. Refuted if the factor differs
+        by more than about 0.005 at one die size.
+    - explanation: Part of the chosen model's spread error in u_shaped/2 (0.16 K) may be level-1 discretisation
+        error in the reference itself, which E010 put at up to about 0.05 K. If so, A4 there is partly
+        limited by the reference.
+      how_to_discriminate: Compare L1 spread errors against level-2 reference spreads on two u_shaped/2
+        development layouts. If the error drops markedly at level 2, the reference contributes.
+    discriminating_tests:
+    - 'Cross-family and cross-die-size stability of c(s) on a fresh development seed: tests whether the
+      calibration transfers to unseen strata.'
+    - 'A finer FV edge rule (for example EDGE_FRAC 1, H0_MAX 2 mm) on a new development seed: does the
+      A4 ratio in 2-die strata drop below 0.5 while staying under 1 s?'
+    - 'Level-2 reference on a two-layout subset: is the L1 spread error in 2-die strata limited by the
+      reference''s own level-1 error?'
+    recommended_actions:
+    - 'n4: implement moduleforge.thermal.evaluate(layout, power_W, *, h, T_c, constant_k=False) -> L1Result
+      as the coarse FV (thermal_fv.solve_steady) with explicit grid parameters (H0_MAX 4 mm, LAT_FRAC
+      16, EDGE_FRAC 2, growth 1.5, Z_CELLS 2), not patched module constants. Use Picard to 1e-2 K and
+      T = T_bp + c(s)(T_FV - T_bp).'
+    - 'n4: build and freeze the c(s) table for all four generator die sizes from development-seed layouts
+      only (at least 2 families per size, level-1 reference at C004 P_ref) before E007 registration. Raise
+      on a die size not in the table.'
+    - Treat A4 as the deciding criterion. On a new development seed (never these rows), check whether
+      a finer edge rule brings the 2-die-stratum spread error to about 0.1 K, and size E007 (F3) with
+      A4's small denominator in mind.
+    - constant_k holds every layer at Layer.k = k_at(300 K), the reference's convention. Report the F4
+      ablation, which already exceeds A1 and A2 on development rows.
+    - 'E007: use a distinct seed per stratum. With a single (family, dies) combination, generate_layouts
+      consumes the stream identically, so strata drawn from one seed share parameter draws.'
+    - 'Founder: on development rows the hottest node sits 4-6 K above the die average at P_ref, past F6''s
+      2 K line. This is indicative only (hottest node not converged at level 1).'
+    files_written:
+    - research/o002_l1/design_study.py
+    - research/o002_l1/design_study.json
+    - research/o002_l1/run.log
+    - research/o002_l1/cache/ (26 per-solve JSON summaries)
+    - research/notes/o002-l1-design.md
+    affects_acceptance_criteria: false

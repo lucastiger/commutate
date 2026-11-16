@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T06:16:30+00:00 from repository state — do not edit_
+_generated 2026-11-16T06:39:43+00:00 from repository state — do not edit_
 
 ## Founder inbox (7 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -15,7 +15,7 @@ _generated 2026-11-16T06:16:30+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | active | - | 0/1 | $21.73/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | active | - | 0/1 | $25.12/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | active | - | 0/1 | $42.95/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
@@ -27,7 +27,7 @@ _generated 2026-11-16T06:16:30+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 14 | $21.73 | 540809 | 352965 | 40 | 0 |
+| O002 | 15 | $25.12 | 609944 | 382215 | 40 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 24 | $42.95 | 941817 | 611635 | 61 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -37,20 +37,18 @@ _generated 2026-11-16T06:16:30+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 338, failed: 4, needs_founder: 4, running: 3, todo: 16
+cancelled: 44, done: 338, failed: 4, needs_founder: 4, review: 1, running: 3, todo: 16
 
 - T0376 `needs_founder` scientist/investigate: Kill shot: do the probe's designer proxy and its null gap survive l2_layout? (attempt 1)
 - T0377 `needs_founder` builder/implement: Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate (attempt 1)
 - T0384 `needs_founder` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 2)
 - T0386 `needs_founder` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 2)
-- T0392 `running` scientist/investigate: L1 thermal design study on development layouts: speed and accuracy of candidate fast models against the level-1 reference, plus early F2 null check (attempt 1)
+- T0392 `review` scientist/investigate: L1 thermal design study on development layouts: speed and accuracy of candidate fast models against the level-1 reference, plus early F2 null check (attempt 1)
 - T0393 `running` scientist/investigate: F1 pre-registration check: three-level convergence of die averages, spreads and pair differences on C004's development layouts at P_ref and 0.5 P_ref (attempt 1)
 - T0394 `running` builder/implement: Generator option: one fixed die size per stratum (die_size_mm), random stream and default output unchanged (attempt 1)
+- T0410 `running` critic/review: Review T0392 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-16T05:09:30+00:00 run_started {"run": "T0386-builder-20261115T210930-574e", "task": "T0386", "role": "builder", "session": "7988fdfc-bc12-44d2-a173-5c4663dfe8e6"}
-- 2026-11-16T05:37:51+00:00 run_finished {"run": "T0384-builder-20261115T210237-57d0", "status": "completed", "cost": 1.790552, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T05:47:09+00:00 verified {"task": "T0384"}
 - 2026-11-16T05:47:09+00:00 run_finished {"run": "T0386-builder-20261115T210930-574e", "status": "completed", "cost": 2.824165, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T05:47:10+00:00 task_blocked {"task": "T0386"}
 - 2026-11-16T05:47:10+00:00 inbox_opened {"id": "I0217", "kind": "decision", "subject": "T0386 blocked: the agent reports the task impossible or mis-specified"}
@@ -63,3 +61,6 @@ cancelled: 44, done: 338, failed: 4, needs_founder: 4, running: 3, todo: 16
 - 2026-11-16T06:15:32+00:00 inbox_opened {"id": "I0218", "kind": "decision", "subject": "T0384: 2 review rounds rejected; your call"}
 - 2026-11-16T06:15:32+00:00 review_round_cap {"task": "T0384", "rounds": 2}
 - 2026-11-16T06:15:42+00:00 run_started {"run": "T0394-builder-20261115T221542-879d", "task": "T0394", "role": "builder", "session": "14222536-deed-4038-88a5-013298833475"}
+- 2026-11-16T06:31:04+00:00 run_finished {"run": "T0392-scientist-20261115T210153-32f5", "status": "completed", "cost": 3.390652, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T06:39:32+00:00 verified {"task": "T0392"}
+- 2026-11-16T06:39:43+00:00 run_started {"run": "T0410-critic-20261115T223943-35d0", "task": "T0410", "role": "critic", "session": "c34daeee-9641-462f-b359-7dac05f0508a"}
