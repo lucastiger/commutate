@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T07:09:55+00:00 from repository state — do not edit_
+_generated 2026-11-16T07:10:37+00:00 from repository state — do not edit_
 
 ## Founder inbox (9 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -51,7 +51,6 @@ cancelled: 44, done: 339, failed: 4, needs_founder: 6, review: 1, running: 1, to
 - T0411 `running` critic/review: Review T0393 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-16T06:15:32+00:00 inbox_opened {"id": "I0218", "kind": "decision", "subject": "T0384: 2 review rounds rejected; your call"}
 - 2026-11-16T06:15:32+00:00 review_round_cap {"task": "T0384", "rounds": 2}
 - 2026-11-16T06:15:42+00:00 run_started {"run": "T0394-builder-20261115T221542-879d", "task": "T0394", "role": "builder", "session": "14222536-deed-4038-88a5-013298833475"}
 - 2026-11-16T06:31:04+00:00 run_finished {"run": "T0392-scientist-20261115T210153-32f5", "status": "completed", "cost": 3.390652, "subtype": "success", "report": "structured_output"}
@@ -66,3 +65,4 @@ cancelled: 44, done: 339, failed: 4, needs_founder: 6, review: 1, running: 1, to
 - 2026-11-16T07:09:43+00:00 verified {"task": "T0394"}
 - 2026-11-16T07:09:48+00:00 inbox_opened {"id": "I0220", "kind": "protected_change", "subject": "T0394: merge needs founder approval"}
 - 2026-11-16T07:09:55+00:00 run_started {"run": "T0411-critic-20261115T230955-ace3", "task": "T0411", "role": "critic", "session": "20071fe9-29f4-4bb0-88d9-8c0558374fd4"}
+- 2026-11-16T07:10:29+00:00 sleep_detected {"gap_s": 1342, "runs_extended": 1}
