@@ -1,0 +1,67 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "die_model='distributed' decks are rejected by FastHenry (nodes used before they are defined)",
+      "detail": "In the distributed branch, the loop over sorted footprint cells writes node Nd..k, its column, and then the lateral segments Edx/Edy to the neighbour (k+1). The neighbour node is only written in a later loop iteration. FastHenry 3.0wr reads the deck in order, so every lateral die-top segment fails with 'No node read in yet named nd...', and it exits with code 1 without writing Zc.mat. The F6 die variant, half of the claimed 'F6 model variants', therefore cannot produce any result. The tab variant and the default models do run.",
+      "evidence": "Exported 2D_Case_2R with FHLevel() and die_model='distributed' (terminal 'point' and 'tab'), then ran ~/.local/bin/fasthenry deck.inp -s ludecomp -m direct. Both runs exited 1 with 152 'No node read in yet' errors (4 dies x 38 lateral segments). Example: deck line 3941 'Edx0i13y16 Nd0i13y16 Nd0i14y16 ...' comes before line 3962 'Nd0i14y16 x=...'. The short/point and short/tab decks from the same layout exited 0 with valid Zc.mat files.",
+      "suggested_check": "Write all die-top nodes of a group before its Ev/Ed segments, and add a test that every segment, .equiv and .external node is defined on an earlier line (or run FastHenry once on a small deck).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The F6 well-formedness test cannot catch an invalid deck",
+      "detail": "test_f6_variants_are_well_formed_together checks only that each node referenced by a segment, .equiv or .external exists somewhere in the parsed deck (a dict). It ignores the order in which FastHenry requires nodes to be defined. So it passes a distributed deck that FastHenry refuses. No test runs FastHenry or checks definition order, so the tests do not support the claim that the F6 variants are correctly implemented.",
+      "evidence": "The test passes (24 passed), yet the same kind of deck fails in FastHenry (finding 1).",
+      "suggested_check": "Assert that each referenced node's first definition comes before its first use.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Lateral die-block segments are centred on the die-top surface, so half the block lies above the die",
+      "detail": "The die-top nodes sit at z = DieShort.z_top, and the lateral Ed segments use h = z_top - z_bottom (0.23 mm). FastHenry centres a segment's cross-section on its node line, so the lateral conductor spans z_top \u00b1 0.115 mm. Half of it is above the die top, rather than inside the attach + die block the docstring describes. The docstring mentions the volume being counted twice but not this offset. The effect on the F6 ratio diagnostic is likely small against its 2 % threshold.",
+      "evidence": "2R deck: 'Nd0i13y16 ... z=0.002466', 'Edx0i13y16 ... h=0.00023'. The stack puts the block from 2.236 to 2.466 mm.",
+      "suggested_check": "Put the lateral die nodes at the block mid-height, or state the offset in the docstring.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "Contact ties short a few trace segments, while die-footprint segments are dropped for the same reason",
+      "detail": "When a wire foot or port lies on a cell edge or corner, the tied cells are merged by .equiv, but the lattice segments between them are kept. These become exactly the self-loops the docstring gives as the reason for dropping die-group segments. FastHenry tolerates them (P4 ran Case 4 at 0.5 mm with 8 of them), so the only cost is an inconsistency and a small spurious eddy current.",
+      "evidence": "Self-loop counts in short/point: Case 4 and 2R at 0.5 and 0.25 mm: 8 each; 2D_Case_6 at 0.5 mm: 16, at 0.25 mm: 40 (all 8 wire feet tie 4 ways); distributed/point at 0.25 mm: 72.",
+      "suggested_check": "Drop segments whose two ends are in the same .equiv class, or document that they are kept.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Plane-pitch test assertion is weakened by an 'or'",
+      "detail": "test_plane_pitch_is_separate_from_trace_pitch accepts (seg1, seg2) when abs(seg1 - 2*seg1_4mm) <= 1 regardless of seg2. Only the hard-coded 40 x 55 baseplate check constrains seg2.",
+      "evidence": "tests/unit/test_fasthenry.py, test_plane_pitch_is_separate_from_trace_pitch.",
+      "suggested_check": "Assert each of seg1 and seg2 separately against round(extent / pitch).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "With the default conductivity the distributed die is a solid copper block",
+      "detail": "die_sigma defaults to the top-Cu conductivity, giving a 0.23 mm copper block. That conducts sideways far better than a real die (vertical device with a thin source metallisation), so the F6 diagnostic may understate how far the ideal-short assumption is from reality. The docstring states this choice and die_sigma can be overridden.",
+      "evidence": "fasthenry.py: sig_d = sigma_top if die_sigma is None else die_sigma.",
+      "suggested_check": "Report F6 die results for at least one lower die_sigma as a sensitivity check.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran uv run pytest -q tests/unit/test_fasthenry.py (24 passed) and the ruff check on both files (clean).",
+    "Diffed the module against research/scripts/o006_p4/fh_export.py: the default-model code is unchanged apart from the origin, validation and the new variants.",
+    "Exported the judged references 2D_Case_2R and 2D_Case_6 (o003_powersynth_references.build) for every die_model x terminal_model combination at 1.0, 0.5 and 0.25 mm: all export without error, die groups have 24/96/384 cells, and tab footprints have 9/36/144 cells (9 mm^2 at every pitch).",
+    "Built the .equiv equivalence classes with a union-find and counted segments with both ends in one class (self-loops) per variant and level.",
+    "Ran the local FastHenry 3.0wr (direct LU) on 2R coarse decks: short/point gives Z = 0.00413 + 1.05152j at 10 MHz (16.735 nH, same L at 20 MHz); short/tab runs; both distributed decks exit 1 with 152 'No node read in yet' errors.",
+    "Physics check of the tab model by post height: 10 um -> 15.746 nH, 2 mm -> 16.731 nH, 10 mm -> 22.820 nH. L rises monotonically with height. The 10 mm posts add 7.07 nH against about 7.4 nH from the closed-form partial self-inductance of a 3x3 mm bar, L = (mu0 l / 2 pi)[ln(2l/(w+t)) + 1/2 + 0.2235 (w+t)/l] (Rosa/Grover), times two posts.",
+    "Checked the deck geometry by hand against the stack: plane mid-plane z values, trace mid-thickness nodes, column and post z-ranges, equal-GMD wire side 0.8711 d (0.7788 r / 0.44705), and the ndec value that gives exactly the 10 and 20 MHz points."
+  ],
+  "caveats": [
+    "FastHenry was run only at the coarse level (1 mm cell, 4 mm planes, nh=1) with the direct solver. Finer levels and the multipole solver were not run, and absolute L was not compared with l2_layout.",
+    "The FastHenry warning 'DivideSegs: tried to divide an indivisable segment' also appears in the default deck and was not investigated.",
+    "The tab variant and the default models are sound as far as checked. The reject rests on the distributed-die variant alone."
+  ]
+}
