@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "descend's `movable` restriction is not applied to the reach jumps",
+      "detail": "`_Space.neighbours` restricts the \u00b1step moves to `idx`, but it always appends every reach jump from `twin._walk_candidates(p, spec, reach=True)`, whatever `movable` is. So `descend(movable=[...])` can move column and slot u-coordinates that the caller did not list. The docstring says `movable` gives the 'parameter indices or names' that move, so this breaks the documented API. Only the `dies_fixed` path stays correct, and only because the jumps never touch die rows. The main use, the proxy rule and the nulls with `movable=None`, is unaffected. Any restricted-parameter caller is affected, for example an ablation, a null that moves only some parameters, or the existing test with `movable=[slot0_v0]`. The test escapes only because no jump changes slot0_v0.",
+      "evidence": "Scratch run on halfbridge_housing_spec(3,1), generate(...,21,reach=True)[0]. `descend(movable=[foot_HS_land_du])` with a score that also rewards moving column/slot u-coordinates took the steps slot0_free>limit (-35.5 mm), slot2_attach>col_outer, slot1_attach>limit, slot3_attach>limit and slot0_attach>col_inner. Parameters changed: slot0_u0, slot0_u1, slot1_u0, slot2_u1, slot3_u0, foot_HS_land_du.",
+      "suggested_check": "Drop jumps whose changed coordinate is not in `idx`, and add a test that `descend(movable=[i])` changes only parameter i.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The search's move set is the in_domain(reach) set, not the whole DRC-feasible domain; DRC-clean seeds just outside it stop after one evaluation",
+      "detail": "Every candidate must pass `in_domain(spec, ., reach=True)`. That test is stricter than DRC: it replays the sampler's construction, including bounded slot heights, row gaps, free ends and landing offsets. O008's scope_in says the search's 'move set ranges over the parameterisation's whole DRC-feasible domain'. Starting from a DRC-clean seed outside in_domain, the single move that would undo the violation is often still outside the domain. The joint moves and 200 random perturbations also fail to re-enter it, so the search ends with `no_moves` and the budget unspent. The module docstring states this behaviour, so the code does what it says. But E011's A1 depends on every D_j being inside in_domain. The existing `twin.degrade` walk checks DRC only, and the docstring itself says such a walk can leave the domain.",
+      "evidence": "One in-domain layout (seed 21) has 37 DRC-clean single-parameter variants within \u00b18 grid steps that fail in_domain. I seeded local_search(budget=150) at four of them with failure reasons slot2_free_end, row_HS_gap, row_LS_u0 and slot1_free_end. Three ended `stop_reason='no_moves'` after 1 L1 evaluation and 0 perturbations, best = seed score. Examples: row_HS_gap +1.0 mm and row_LS_u0 -4 mm, each one change away from the in-domain optimum. The fourth, slot1_u1 -0.5 mm, recovered the optimum.",
+      "suggested_check": "Before E011, either confine the degradation family (item 3) to in_domain(reach=True) and gate on seed_in_domain, or let out-of-domain seeds take DRC-only moves that reduce the domain violation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Checkpoint keys do not identify the solver, spec or resolution",
+      "detail": "Store keys are `local:{fingerprint}:l1` and `local:{fingerprint}:lsub`. If a workdir is reused with a different l1/l_sub (another frequency, l2_layout resolution or score model), the old values are returned silently and the budget is still counted. The fingerprint covers the geometry only.",
+      "evidence": "local.py: `store.get(f\"local:{fp}:l1\", solve)` and `store.get(f\"local:{fp}:lsub\", ...)`; nothing about the solver is in the key or the file.",
+      "suggested_check": "Add a solver/config tag to the key, or write a header record and refuse a mismatch on resume.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "budget=0 or shortlist=0 crashes with an unhelpful error",
+      "detail": "With an empty visited set or an empty shortlist, `min(range(len(short)), ...)` raises a bare ValueError. LocalConfig does not validate either field.",
+      "evidence": "local.py: `bi = min(range(len(short)), key=...)` with no guard; `evaluate` raises _Budget on the seed when budget=0.",
+      "suggested_check": "Validate budget>=1 and shortlist>=1 in LocalConfig.__post_init__.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The recovery test uses a separable score and passes without the domain constraint",
+      "detail": "test_reaches_known_feasible_optimum uses Manhattan distance to a target, which coordinate descent solves trivially. It still passes when the in_domain constraint is removed. The domain constraint is checked separately and properly by test_every_visited_layout_is_drc_clean_and_in_domain. No test uses a non-separable or inductance-like score, so the unit tests show the mechanics work, not that the search can recover headroom.",
+      "evidence": "Mutation (DRC-only `_Space.valid`): test_every_visited_layout... fails with 'slot2_attach'; test_reaches_known_feasible_optimum still passes.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/optimize/test_local_search.py`: 16 passed (77 s).",
+    "Ran `uv run pytest -q -m 'not slow' tests/unit/optimize`: 57 passed, 1 deselected.",
+    "Ran `uv run ruff check src/moduleforge/optimize tests/unit/optimize`: all checks passed.",
+    "Read derivative.Params/in_domain/build/params_of, twin._walk_candidates/_walk/degrade, Layout.fingerprint and search.Store. The fingerprint covers the family string, so distinct vectors give distinct fingerprints and the budget accounting is sound.",
+    "Adversarial input: `descend(movable=[foot_HS_land_du])` with a score rewarding u-coordinate moves. It took five reach jumps on slots, so the movable restriction is violated.",
+    "Adversarial input: enumerated DRC-clean but out-of-domain single-parameter variants of an in-domain layout (37 found) and seeded local_search at four. Three stopped with 'no_moves' after one evaluation.",
+    "Mutation test: replaced `_Space.valid` with a DRC-only version. The domain test catches it; the optimum-recovery test does not.",
+    "Checked spearman against the closed form 1 - 6\u03a3d\u00b2/(n(n\u00b2-1)) on the test's example (0.8). Checked the \u00b1step arithmetic: 0.5 and 0.125 mm steps are exact in binary, so the grid does not drift."
+  ],
+  "caveats": [
+    "Valid when the search runs over the default parameter set (`movable=None` / `dies_fixed`). Restricted `movable` sets in descend are not honoured for the reach jumps.",
+    "The search moves only inside in_domain(reach=True), which is stricter than DRC feasibility. E011's control is meaningful only if every degraded copy D_j is inside that domain. Gate on stats['seed_in_domain'], or build the degradation family inside the same domain.",
+    "The cost and yield figures in the module docstring (0.013-0.016 s per L1 evaluation; yields of 68 %, 52 % and 22 %) were not reproduced. They need the 2D_Case_4 runner.",
+    "The tests use synthetic separable scores. They show the mechanics (domain, budget, determinism, resume, shortlist), not that the search can recover inductance headroom. That is E011's job.",
+    "Not checked: whether the 2D_Case_2R twin is seed_in_domain=True. The 2R test only asserts that the field is a bool."
+  ]
+}
