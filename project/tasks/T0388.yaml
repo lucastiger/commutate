@@ -33,7 +33,14 @@ description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e
   with 1 mm steps (on the 1 mm lattice by construction), and its ratio is taken against the frozen 2R
   reconstruction, as O004 defines r. State it in E004''s spec as a declared scope note: this is not exactly
   O008''s 0.5 mm proxy rule. Expose the descent''s step size as a parameter rather than copying O008''s
-  code.'
+  code.
+
+
+  Founder decision 2026-11-16 on T0386''s partial result (recorded by the founder session): the span [0.75,
+  0.98] may be narrowed by the founder before registration, from T0387''s span_reach.json (Case 4''s floor
+  is 0.7616). Write the registration check with the span''s lower end as one named constant read from
+  the objective''s text in a single place, so a founder amendment changes one line; do not assume a value
+  other than the frozen 0.75.'
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/specs/E010.yaml

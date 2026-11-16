@@ -27,7 +27,24 @@ description: 'This tests the cheapest likely failure before any E004 design spen
   state the exclusion rate so far and whether F7''s response trigger already fires (any excluded development
   pair with r <= 0.90, or more than one in all), and report the chance of no exclusion among 13 judged
   pairs that this rate implies. Add research/o004_f7/pilot_l2.py with a `--check` mode that validates
-  the JSON outputs against each other without solving.'
+  the JSON outputs against each other without solving.
+
+
+  Founder decision 2026-11-16 on T0386''s partial result (recorded by the founder session): the frozen
+  rules, compounds included, reach no Case 4 pair with r <= 0.75 at L1; the lowest found is the three-move
+  compound at 0.7616 (20 MHz; 0.7613 at 10 MHz), pinned in T0386''s tests. (i) Wherever this brief or
+  O004''s F7(a)/(c) says ''the pair with r <= 0.75'', use that lowest compound, labelled everywhere as
+  ''lowest reachable, r = 0.7616, stands in for r <= 0.75''; do not search further for a lower one. (ii)
+  Add a span-reachability report for the founder''s span decision: on 2D_Case_2R and 2D_Case_6, draw the
+  frozen rules (single moves and compounds) on development seeds and report the lowest and highest L1
+  ratio reached at 10 and 20 MHz, per move kind, with the same structured search T0386 used for Case 4
+  (exhaustive single scans, then coordinate descent over the 2- and 3-type compounds). L1 only on these
+  two references: no l2_layout and no FastHenry on 2R, and on Case 6 only the F7(b) l2_layout solve already
+  in this brief. Write research/o004_f7/span_reach.json and a section of research/notes/o004-f7-l2-pilot.md
+  stating, per reference, whether [0.75, 0.98] with at least 3 pairs below 0.90 is reachable and, if not,
+  the lowest reachable lower end. Do not change O004 or its span; the founder decides from these numbers
+  before E004 registers. (iii) mfos.metrics.gci_step_floor is on main now (the ratio-step floor rule):
+  use it instead of a research copy.'
 context_files:
 - project/objectives/O004/objective.yaml
 - research/notes/o006-p3-em-convergence.md
@@ -44,6 +61,7 @@ deliverables:
 - research/o004_f7/f7c_local.json
 - research/o004_f7/vm_jobs_l2.json
 - research/notes/o004-f7-l2-pilot.md
+- research/o004_f7/span_reach.json
 touches:
 - research/o004_f7/**
 - research/notes/o004-f7-l2-pilot.md

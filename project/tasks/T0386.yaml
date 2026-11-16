@@ -4,7 +4,7 @@ title: 'Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trac
   copper, wire landing (generate/perturb.py)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'New module src/moduleforge/generate/perturb.py with O004''s four move types. They act directly
   on a reconstructed reference Layout, because 2D_Case_6 has no twin and so the 0.5 mm parameter space
@@ -379,3 +379,136 @@ history:
     parameters. This also caught a new bug: unions with copper already present added extra vertices, so
     a move that changed nothing passed as a change. Output polygons are now cleaned up, which fixes both.'
   at: '2026-11-16T05:47:10+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'Compound re-layouts are built, but no compound reaches r ≤ 0.75 on 2D_Case_4. The lowest DRC-clean
+    compound L1 ratio I found at 20 MHz is **0.7616**, so the packet''s r ≤ 0.75 requirement is still
+    unmet. As I0217 instructs, I left O004''s span [0.75, 0.98] unchanged; that decision stays with you.
+    The pytest and ruff definition-of-done commands and `mfos gate --fast` all exit 0. The work is committed
+    as 3d8b8ce0.
+
+
+    **The lowest compound** is a chain of three moves:
+
+    - LS die-row shift of (−3, +2) mm: LS wires go from 12 to 10 mm.
+
+    - PHASE T5 top edge widened by 7 mm (y 60 → 67): this is as far as the 3 mm DC+/PHASE spacing allows.
+
+    - HS landings moved by (+1, +9) mm onto the widened T5: HS wires go from 16 to 7 mm.
+
+
+    Each step of that chain is DRC-clean, it lies on all three lattices, and it gives'
+  report:
+    status: partial
+    summary: 'Compound re-layouts are built, but no compound reaches r ≤ 0.75 on 2D_Case_4. The lowest
+      DRC-clean compound L1 ratio I found at 20 MHz is **0.7616**, so the packet''s r ≤ 0.75 requirement
+      is still unmet. As I0217 instructs, I left O004''s span [0.75, 0.98] unchanged; that decision stays
+      with you. The pytest and ruff definition-of-done commands and `mfos gate --fast` all exit 0. The
+      work is committed as 3d8b8ce0.
+
+
+      **The lowest compound** is a chain of three moves:
+
+      - LS die-row shift of (−3, +2) mm: LS wires go from 12 to 10 mm.
+
+      - PHASE T5 top edge widened by 7 mm (y 60 → 67): this is as far as the 3 mm DC+/PHASE spacing allows.
+
+      - HS landings moved by (+1, +9) mm onto the widened T5: HS wires go from 16 to 7 mm.
+
+
+      Each step of that chain is DRC-clean, it lies on all three lattices, and it gives 0.7613 at 10 MHz.
+      The floor looks geometric: the HS wires can''t get shorter than 7 mm, because the 10 mm gap between
+      T5 and T6, minus the 3 mm spacing, limits the die shift plus the T5 widening whichever way it is
+      split. The best single move is still 0.873 (die-row shift).
+
+
+      **How the 0.7616 was found** (Case 4 and development seeds only, using its E008 dev rules):
+
+      1. Every single move scanned exhaustively.
+
+      2. Coordinate descent over all ten 2- and 3-type combinations, starting from the best single moves.
+
+      3. All 7672 clean (die shift, trace) chains, with a full landing scan on 112 of them. Two separate
+      runs both gave 0.7616.
+
+
+      **What compounds are:** two or three moves of different types, applied in the fixed type order.
+      Each move is drawn from its existing frozen range, on the layout the previous move left.
+
+      - **Stagewise rule (a design choice for you to accept or reject):** each move in a compound is redrawn
+      until the layout it produces is DRC-clean and actually changed. Judging only the final layout made
+      Case 6 too hard: its single-move acceptance rates are 1–15 %, and a test draw ran out of its 2000
+      redraws. With the stagewise rule, compound draws take about 1 s on 2D_Case_2R and 3 s on 2D_Case_6,
+      all on the lattice and DRC-clean, with no inductance computed on either. The rule still reaches
+      0.7616. The ranges and the redraw limit are unchanged.
+
+      - Compounds are their own pair kind, drawn after the single moves, so each seed''s single-move draws
+      are exactly as before.
+
+      - One duplicate-geometry check covers singles and compounds, and `rules_sha256()` now includes the
+      compound rule and the allowed sizes. Its value at this commit is 70307210174b4f0beb725238d7a000de55b6b378d821d99071fbf051b7fa33b2.
+
+
+      **Seed-1 draws on Case 4** (12 per kind, L1 at 20 MHz):
+
+
+      | Kind | Ratio range | Below 0.90 | \|1 − r\| ≥ 6 % |
+
+      |---|---|---|---|
+
+      | die-row shift | 0.888–1.007 | 1 | 4 |
+
+      | trace width | 0.950–1.055 | 0 | 0 |
+
+      | terminal copper | 0.990–1.073 | 0 | 1 |
+
+      | wire landing | 0.963–1.112 | 0 | 3 |
+
+      | compound | 0.864–1.029 | 1 | 3 |
+
+
+      **Tests:** 43 pass and the r ≤ 0.75 test stays a strict xfail whose reason now gives the compound
+      figure. The new tests cover:
+
+      - a compound giving the same result as its moves applied in sequence, with exact closed-form area
+      and landing checks;
+
+      - malformed compounds being rejected;
+
+      - drawn compounds being clean at every step, with every parameter inside its range;
+
+      - compounds included in the lattice, DRC, determinism, distinct-geometry and no-shared-state tests;
+
+      - compounds added to the geometry-only test on 2R and Case 6;
+
+      - the lowest compound pinned at 0.7616 ± 0.0005.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - 'The packet asks the rules to produce at least one pair with r <= 0.75 at L1 on Case 4 (F7(c), O004
+      span [0.75, 0.98]). It is not met: no single move gets below 0.873, and the lowest compound found
+      is 0.7616 (Case 4, L1 at 20 MHz). Per I0217 the span was not changed. Narrowing it to about 0.76,
+      or allowing a larger move vocabulary (e.g. four-move compounds or two shifts of the same type),
+      is a founder criteria decision. test_case4_low_ratio_pair stays a strict xfail.'
+    - 'Design choice for review: compounds are drawn stagewise, so every intermediate layout must be DRC-clean,
+      not only the final one. Without it, compound acceptance on 2D_Case_6 was about 0.1 % and a test
+      draw exhausted MAX_REDRAWS. On Case 4 the stagewise rule still reaches the lowest compound found
+      (0.7616).'
+    - The 0.7616 is the lowest found by structured search (exhaustive single scans, coordinate descent
+      over all ten 2- and 3-type combinations, and a full landing scan on 112 of the 7672 clean die-shift
+      + trace chains). It is not an exhaustive scan of the full compound space. Two independent runs agree,
+      and there is a geometric argument for the 7 mm HS wire floor.
+    - 'Seed-1 Case 4 coverage at L1: trace_width has no drawn pair with |1 - r| >= 6 % (its range is 0.950-1.055),
+      and only 2 of 60 pairs are below 0.90. The registration checks (6 % per type, at least 3 below 0.90)
+      will depend on E004''s allocation and sealed seed. In-range trace_width values that reach 6 % do
+      exist (0.915, tested).'
+    - The scan scripts lived in $TMPDIR, because research/ is outside this task's write scope. They are
+      not committed; the method and results are in the module docstring and the tests.
+    files_changed:
+    - src/moduleforge/generate/perturb.py
+    - tests/unit/test_perturb.py

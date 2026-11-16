@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "descend(movable=...) does not confine moves to the movable set: reach jumps move other slot and column coordinates",
+      "detail": "_Space.neighbours limits the \u00b1step singles to `idx`, but it always adds every reach jump from twin._walk_candidates(reach=True), whichever parameters are movable. Those jumps rewrite slot u-ends and column outer edges. So `descend(spec, p, score, movable=[...])` can change parameters the caller excluded. The author's own test `test_descend_stops_at_a_non_trivial_local_optimum` says 'One movable parameter', which the code does not guarantee. That test passes only because its score depends on slot0_v0, which no jump touches. The tie-order test (movable=[ia, ib]) has the same exposure. local_search itself is not affected, because its idx always holds every column and slot, and dies_fixed is still respected because no jump moves a die row. Planned uses that pass movable=None (the proxy rule, nulls over the search's parameters) are also unaffected. A caller who restricts `movable`, for example a null meant to move only some parameters, would silently get a larger move set.",
+      "evidence": "Scratch run on halfbridge_housing_spec(3, wires_per_die=1), generate(seed 21, reach=True): descend(movable=['land_HS'], score = -L1 distance of the col/slot coords from the start, step_limit=5) took moves ['slot0_free>limit', 'slot2_attach>col_outer', 'slot1_attach>limit', 'slot3_attach>limit', 'slot0_attach>col_inner'] and changed ['slot0_u0','slot0_u1','slot1_u0','slot2_u1','slot3_u0']. land_HS, the only movable parameter, did not move.",
+      "suggested_check": "Keep a jump only if the coordinate it changes is in idx, and add a test where the score rewards moving a non-movable column or slot coordinate.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "budget=0 or shortlist=0 fails with an opaque error",
+      "detail": "LocalConfig does not validate its fields. With budget=0, evaluate(seed) raises _Budget before anything is visited, the shortlist is empty, and `min(range(0))` raises a bare ValueError. shortlist=0 fails the same way. The default config is unaffected.",
+      "evidence": "Scratch run: local_search(..., LocalConfig(budget=0)) raised `ValueError min() iterable argument is empty`.",
+      "suggested_check": "Validate budget >= 1 and shortlist >= 1 in LocalConfig.__post_init__.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Best-improvement over the full neighbourhood costs about 80 L1 evaluations per accepted step",
+      "detail": "Each iteration evaluates every valid single move, every reach jump and 12 joint moves before taking one step. On the 70x40 housing with an unrelated seed, 400 evaluations bought 5 steps (80 evaluations per step), so the default budget of 2000 buys roughly 25 accepted moves. This is a design and configuration choice, not a bug. Whether it is enough to recover R_D of 1.25-1.60 degradations within E011's frozen budget is exactly what E011 will measure; F4's 'stopped at budget' report covers it.",
+      "evidence": "Scratch run: budget=400 gave steps=5, perturbations=0, last_improve_eval=371, stop_reason=budget; Manhattan distance to the target went from 216.125 to 209.625.",
+      "suggested_check": "Before freezing E011's budget, run development draws at the intended budget and report steps and improving_last10.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Checkpoint keys are not namespaced by solver or score",
+      "detail": "Store keys are `local:{fp}:l1` and `local:{fp}:lsub` in workdir/local_checkpoint.jsonl. If a workdir is reused with a different injected l1 (for example a blind null scorer passed as l1) or a different l_sub, the stored values are returned silently. This is safe only if every run with different solvers gets its own workdir. The docstring does not state that requirement.",
+      "evidence": "local.py lines 326 and 385: the key contains only the fingerprint and the kind.",
+      "suggested_check": "Document one workdir per solver pair, or add a solver tag to the key namespace.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Landing lines step by 0.5 mm although the reach domain puts them on the 0.125 mm grid",
+      "detail": "_step_of gives the 0.125 mm step only to foot_* parameters. land_HS and land_LS step by 0.5 mm, and the reach-mode in_domain accepts them on the 0.125 mm grid. The module docstring documents this. The effective landing point (land + foot land_dv, with land_dv on the 0.125 mm grid within \u00b10.375 mm) is still reachable on the fine grid, so the effect is small. It is a limit on the objective's phrase 'move set ranges over the whole DRC-feasible domain'.",
+      "evidence": "derivative.py line 1243: `_ong(ln, FOOT_GRID_MM if rch else DESIGN_GRID_MM)`; local.py _step_of.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the three definition-of-done commands: test_local_search.py gave 16 passed; tests/unit/optimize not-slow gave 57 passed and 1 deselected; ruff check passed.",
+    "Read derivative.in_domain, _ong, Params.NAMES and from_vector, twin._walk_candidates and Layout.fingerprint. Checked that \u00b10.5 and \u00b10.125 updates on grid values are exact in binary and that fingerprints quantize to 1 nm, so float drift does not split visited layouts or double-count the budget.",
+    "Adversarial scratch run: descend with movable=['land_HS'] and a score that rewards moving columns and slots. Confirmed that reach jumps move 5 slot coordinates that were not movable.",
+    "Edge case: local_search with LocalConfig(budget=0) raises an opaque ValueError.",
+    "Cost check: at budget 400 on the housing spec, 80 L1 evaluations per accepted step (5 steps).",
+    "Recomputed the Spearman closed form in the test by hand: d^2 sum = 2, so 1 - 12/60 = 0.8, which is correct. Checked that the tie-averaging rank implementation matches the standard definition.",
+    "Checked the budget accounting logic by hand: _Budget is raised before a new fingerprint is solved, store hits still count, and visited layouts cost nothing. This agrees with the exact-budget and resume tests, which recompute the shortlist independently from the visited vectors."
+  ],
+  "caveats": [
+    "The restricted `movable` argument of descend is unreliable: reach jumps always run and can move any slot end or column outer edge. Use descend only with movable=None (optionally dies_fixed=True), which is what the proxy rule and the full-parameter nulls need, until the jumps are filtered to idx.",
+    "local_search is checked only with synthetic injected solvers (parameter-space Manhattan distance, which separates by parameter and is easy for single-parameter descent) and a 2R stand-in. Nothing here shows that it recovers planted headroom with the real L1 or l2_layout; that is E011's job.",
+    "At the default budget of 2000 the search makes roughly 25 accepted moves (about 80 evaluations per step measured on the housing spec). Whether that suffices for R_D 1.25-1.60 degradations is untested here.",
+    "Each run that uses a different l1 or l_sub needs its own workdir, because checkpoint keys hold only the fingerprint and the kind.",
+    "I could not get the time-and-memory measurement of a full default-budget run (2000) to run in this session: the command was refused. Memory growth of the unbounded _Space.cache was therefore not measured."
+  ]
+}
