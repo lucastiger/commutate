@@ -44,7 +44,19 @@ description: 'This tests the cheapest likely failure before any E004 design spen
   stating, per reference, whether [0.75, 0.98] with at least 3 pairs below 0.90 is reachable and, if not,
   the lowest reachable lower end. Do not change O004 or its span; the founder decides from these numbers
   before E004 registers. (iii) mfos.metrics.gci_step_floor is on main now (the ratio-step floor rule):
-  use it instead of a research copy.'
+  use it instead of a research copy.
+
+
+  Correction, founder decision 2026-11-16 17:55 UTC (O004''s F2): this replaces part (ii) of the note
+  above. O004''s frozen F2 says development work uses 2D_Case_4, gen2_0 and development seeds only, so
+  draw NOTHING on 2D_Case_2R or 2D_Case_6 except the F7(b) l2_layout solve of Case 6''s reconstruction
+  that this brief already names: no L1 ratios, no draws, no reachability scan on the judged references.
+  Instead, research/o004_f7/span_reach.json reports the lowest and highest L1 ratio the frozen rules (single
+  moves and stagewise compounds) reach on 2D_Case_4 and on gen2_0, per move kind, at 10 and 20 MHz, by
+  the structured search T0386 used on Case 4. The note''s section states, per development layout, whether
+  [0.75, 0.98] with at least 3 pairs below 0.90 is reachable and, if not, the lowest reachable lower end.
+  The judged references are first checked by the registration-time L1 span check O004 already requires.
+  Parts (i) and (iii) of the note above stand.'
 context_files:
 - project/objectives/O004/objective.yaml
 - research/notes/o006-p3-em-convergence.md

@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "No solver-level check of the exporter on any layout other than Case 4; FastHenry and l2_layout differ by 24% on a generated layout at the thin level",
+      "detail": "The tests are structural: areas, counts, equivalence classes, read order, and a line-for-line match with the P4 research exporter, which comes from the same code. The only FastHenry-vs-l2_layout agreement on record is P4's, on Case 4. I solved the generated layout (seed 7, 2 dies per switch, lattice origin at -8 mm) both ways. FastHenry at cell 0.5 mm, plane 2 mm, one thickness filament (nh=1) gave L = 13.932 nH at 10 MHz; l2_layout at refinement 0 gave 11.220 nH, a gap of +24%. The same comparison on Case 4 is about +8% at nh=1 and about +3% at P4's k1 level (23.65 vs about 22.96 nH). The likely cause is the thickness model, not the deck. This stack has only 0.38 mm between the trace bottom and the backside-Cu top, against 0.835 mm in Case 4. At nh=1 the currents sit at mid-thickness, which stretches that gap to 0.68 mm (1.8x); in Case 4 the stretch is 1.24x. A confirming FastHenry run at the k1 knobs (nh=3) hit its 90-minute background limit and was stopped before writing Zc.mat. A generalisation error, for example in wire-foot contacts on corner-tied cells (all 14 contacts tie four cells at 0.5 mm here), is therefore not excluded at the solver level.",
+      "evidence": "$TMPDIR/fh/gen0_c0.5/Zc.mat: 1e7 -> 0.00306988 +0.875386j (13.932 nH); 2e7 -> 1.75076j (13.932 nH). l2_layout.loop_inductance(gen0, [1e7, 2e7], refinement=0): L_H = [1.12204e-08, 1.11150e-08], solver_tol_rel_L_max 1.8e-5. facts: n_shorted_segments = 56 = 14 contacts x 4. $TMPDIR/fh/gen0_k1: run killed at its time limit, no result.",
+      "suggested_check": "Solve the generated layout at the k1 knobs (cell 0.5, plane 2, nh 3, wire_sub 2) with a timeout of about 3 h and confirm the gap drops to Case 4's few percent before E004 relies on non-Case-4 decks.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "FHLevel() defaults to nh_trace = nh_plane = 1, which is strongly biased on thin-ceramic stacks",
+      "detail": "With one filament through the thickness, trace and plane currents sit at mid-thickness. On the generated stack (0.3 mm trace, 0.3 mm backside Cu, 0.38 mm gap) this inflates L far more than on Case 4, where nh 1 -> 3 changed L by 4.5%. The module says it freezes no level, so this is a usage hazard, not a defect.",
+      "evidence": "Generated-stack z from to_conductors(): backside_cu 3.1-3.4 mm, top Cu 3.78-4.08 mm. Case 4: backside_cu 1.001-1.201 mm, top Cu 2.036-2.236 mm.",
+      "suggested_check": "Document in the module that nh=1 is a smoke-test level only.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "facts['n_filaments'] and direct_mem_est_gb are pre-refinement counts; FastHenry adds filaments to distributed-die decks",
+      "detail": "On the Case 4 distributed deck, FastHenry reported 8816 filaments before its 'multipole refine' and 8912 after: it split filaments of the 96 short, wide die columns. The deck facts report 8816, so the memory estimate is slightly low. The short and tab decks matched FastHenry's counts exactly.",
+      "evidence": "distributed_point/log.txt: 'Total number of filaments before multipole refine: 8816', 'after multipole refine: 8912'. short_point 8416/8344, short_point_p2 14436/14364 and short_tab 14454/14382 (filaments/segments) match the facts exactly.",
+      "suggested_check": "Note in the facts that counts are before FastHenry's own refinement.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The equal-GMD square wire changes cross-section area and perimeter",
+      "detail": "a = 0.87104 d is correct for equal GMD (0.7788 r / 0.44705; Grover). Its area is 0.759 d^2 against 0.785 d^2 for the disc (DC resistance +3.5%), and its perimeter is 3.48 d against 3.14 d (lower skin-effect R). The equivalent HF radius, 0.59 a = 0.514 d against 0.5 d, keeps L within about 3% in the log term. This only matters if R is compared.",
+      "evidence": "Re-derived: 0.7788 / (2 x 0.44705) = 0.871043.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Tab posts are vertical and cannot couple to gplane eddy currents",
+      "detail": "In PEEC, perpendicular filaments have zero partial mutual inductance, so the posts' interaction with the horizontal planes is not modelled. The measured tab-minus-point change of +0.085 nH (both at plane 2 mm) is consistent with my hand estimate: each 3x3-filament post (9 columns of 1 x 1 mm, 2.1 mm long) adds about 0.30 nH of partial self-inductance, about +0.6 nH for both, offset by less spreading inductance at the wider injection footprint.",
+      "evidence": "short_point_p2 25.5659 nH; short_tab 25.6513 nH at 10 MHz.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: uv run pytest -q tests/unit/test_fasthenry.py gave 55 passed; ruff check on both files passed.",
+    "Ran the provisioned FastHenry 3.0wr (direct solver) on Case 4 decks for all variants. short/point (1/4 mm) exit 0, L = 25.796 nH at both frequencies. P4's multipole value for the identical deck is 25.787 nH (-3.3e-4, the same as P4's own direct-vs-multipole figure). distributed/point 27.192 nH (+5.4%). short/point at plane 2 mm 25.566 nH. short/tab at plane 2 mm 25.651 nH. Every Zc.mat holds exactly the 1e+07 and 2e+07 entries, and parse_zc parses them.",
+    "Compared the exporter's filament and segment facts with FastHenry's own counts: they match exactly for the short and tab decks, and gplane seg1/seg2 segment bookkeeping is confirmed. The distributed deck is refined by FastHenry from 8816 to 8912 filaments.",
+    "Hand estimate of the tab post inductance from rectangular-bar partial self and mutual formulas: about 0.30 nH per post. The sign and size of the measured tab-minus-point change are plausible.",
+    "Re-derived the equal-GMD square side: 0.7788 / (2 x 0.44705) = 0.87104 d.",
+    "Exported 8 generated layouts (2, 4 and 6 dies per switch, seeds 7, 11 and 3) at 0.5 mm: all export. At 1 mm all are refused as off-lattice, which is l2_layout's behaviour.",
+    "Generated layout (seed 7, non-zero origin): the FastHenry multipole solve at 0.5/2 mm, nh=1 gave 13.932 nH; l2_layout at refinement 0 gave 11.220 nH (10 MHz). The k1-level FastHenry run meant to separate thickness error from an exporter error was stopped at its 90-minute background time limit with no result.",
+    "Read l2_layout's end_contact, contact_at, _nearest_cell and die-short code and confirmed that the exporter's die-group, wire-end and nearest-cell rules match it."
+  ],
+  "caveats": [
+    "Verified scope: the decks are readable by FastHenry and solve for all four F6 variant combinations on Case 4 at cell 1 mm, and for the default model on one generated layout at 0.5 mm. The values are plausible, and the default deck reproduces P4's Case 4 result.",
+    "Not verified: agreement between FastHenry and l2_layout on any non-Case-4 layout at a converged thickness level. At nh=1 the gap is +24% on a generated layout, against about +8% for Case 4 at the same level. I attribute this to the thin-ceramic stack, but the nh=3 confirmation run was stopped at its 90-minute background time limit with no result. Re-running it needs a timeout of about 3 hours.",
+    "The tab and distributed variants were checked only for syntax and solvability and against a hand-estimate sanity check. Their physical validity as diagnostics rests on the documented modelling assumptions: metal die block, single-filament columns, no post-to-plane coupling.",
+    "The test suite is structural and proves nothing about impedance. Its FastHenry-reader emulator (read_errors) stands in for the real binary, and the faithful-port test compares against code of the same lineage."
+  ]
+}

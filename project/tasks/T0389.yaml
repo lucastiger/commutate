@@ -31,7 +31,20 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   development pairs with r <= 0.75 and on a trace-edge move with the refined wire section, run by this
   runner''s development mode, with memory, time and cost projections. These projections set E004''s cost
   plan. (6) `--smoke` runs the full pipeline at the coarsest levels only, on one Case 4 development pair
-  (development seed), through the metrics. No 2R or Case 6 FastHenry solve before registration (F2).'
+  (development seed), through the metrics. No 2R or Case 6 FastHenry solve before registration (F2).
+
+
+  Review T0417/T0418 of T0384 (founder session, 2026-11-16): the only FastHenry-vs-l2_layout agreement
+  on record is on 2D_Case_4. On a generated layout (thin-ceramic stack: 0.3 mm trace, 0.3 mm backside
+  Cu, 0.38 mm ceramic) FastHenry at one thickness filament gave 13.932 nH against l2_layout''s 11.220
+  nH (+24 %), against about +8 % on Case 4 at the same level and about +3 % at P4''s k1 level. Before
+  E004 relies on any non-Case-4 deck: (1) the F7(a) FastHenry job list (research/o004_f7/vm_jobs_fasthenry.json)
+  adds a thickness ladder (nh 1, 3, 5 at cell 0.5 mm, plane 2 mm, wire_sub 2) on gen2_0, development geometry
+  under F2, and states what result counts as the gap closing (it must fall to Case 4''s few percent with
+  the thickness term inside the 1 % ratio estimate); no FastHenry on 2D_Case_2R or 2D_Case_6 before registration
+  (F2). (2) E004''s frozen FastHenry level is a converged thickness level from that ladder, never nh =
+  1. (3) Write in the spec which stack each judged reference has, so a reader can tell whether the thin-stack
+  result applies to it.'
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/drafts/E004.yaml

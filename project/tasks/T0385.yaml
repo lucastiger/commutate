@@ -27,7 +27,18 @@ description: 'New module src/moduleforge/solvers/fasthenry_run.py, ported from r
   agreeing on a thin deck. Derive and cite every tolerance (closed-form accuracy; P4 section 3.1 found
   order-4 multipole within 3.3e-4 of direct). Never widen a tolerance to make a test pass. (6) The retry
   logic is tested with a fake binary that crashes a set number of times. Do not run any 2D_Case_2R or
-  2D_Case_6 geometry (F2).'
+  2D_Case_6 geometry (F2).
+
+
+  Review T0417/T0418 of T0384 (founder session, 2026-11-16): (1) the exporter''s facts[''n_filaments'']
+  and direct_mem_est_gb count filaments before FastHenry''s own ''multipole refine'' (8816 -> 8912 on
+  Case 4''s distributed-die deck), so the adapter''s memory check adds a margin (at least 5 %) and records
+  FastHenry''s reported post-refinement count in its result. (2) FHLevel() defaults to one filament through
+  the thickness (nh_trace = nh_plane = 1), which is strongly biased on thin-ceramic stacks (+24 % against
+  l2_layout on a generated layout, against about +8 % on Case 4): add a docstring line in src/moduleforge/solvers/fasthenry.py
+  that nh = 1 is a smoke-test level only, and have the adapter''s result record nh_trace/nh_plane beside
+  L. (3) `freqs` with more than two entries silently drops the middle ones (review T0418): make it raise
+  or keep them all.'
 context_files:
 - research/scripts/o006_p4/run_fh.py
 - research/notes/o006-p4-fasthenry-feasibility.md
@@ -42,6 +53,7 @@ deliverables:
 touches:
 - src/moduleforge/solvers/fasthenry_run.py
 - tests/unit/test_fasthenry_run.py
+- src/moduleforge/solvers/fasthenry.py
 definition_of_done:
 - cmd: uv run pytest -q tests/unit/test_fasthenry_run.py
   exists: null
