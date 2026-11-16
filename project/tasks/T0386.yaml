@@ -27,7 +27,17 @@ description: 'New module src/moduleforge/generate/perturb.py with O004''s four m
   the registration span [0.75, 0.98]). A geometry-only test on 2D_Case_2R and 2D_Case_6 (research/scripts/o003_powersynth_references.py)
   with a development seed: buildable, on the lattice, DRC-clean, and NO inductance computed (not even
   L1). The ranges must not be tuned on these two references. The O008 designer proxy is not part of this
-  task.'
+  task.
+
+
+  Founder guidance (I0217, 2026-11-16): add compound re-layouts, each applying two or three of the four
+  frozen move types together, with every parameter drawn from the sealed seed, DRC-clean under the reference''s
+  rules, on the 1 mm lattice; they count as their own pair kind toward O004''s span [0.75, 0.98] and its
+  ''at least 3 below 0.90''. Each move type keeps its single-move pairs for F4''s per-type coverage and
+  the 6 % rule. Include compound moves in rules_sha256 and in the duplicate-geometry check. Report the
+  lowest DRC-clean compound ratio on Case 4 at L1; if no compound move reaches r <= 0.75, say so plainly
+  with the lowest value found, and do not change the objective''s span (narrowing it is a criteria change
+  for the founder).'
 context_files:
 - project/objectives/O004/objective.yaml
 - src/moduleforge/generate/derivative.py

@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T05:47:24+00:00 from repository state — do not edit_
+_generated 2026-11-16T05:48:11+00:00 from repository state — do not edit_
 
 ## Founder inbox (6 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -47,7 +47,6 @@ cancelled: 44, done: 336, failed: 4, needs_founder: 3, review: 1, running: 3, to
 - T0409 `running` critic/review: Review T0384 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T05:01:53+00:00 run_started {"run": "T0392-scientist-20261115T210153-32f5", "task": "T0392", "role": "scientist", "session": "034e5346-a82e-4812-99c6-8cba1809fe5a"}
 - 2026-11-16T05:02:28+00:00 sleep_detected {"gap_s": 993, "runs_extended": 3}
 - 2026-11-16T05:02:29+00:00 run_finished {"run": "T0405-critic-20261115T203330-a271", "status": "completed", "cost": 1.730358, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T05:02:31+00:00 task_failed_attempt {"task": "T0384", "signal": "review_rejected", "action": "repair"}
@@ -62,3 +61,4 @@ cancelled: 44, done: 336, failed: 4, needs_founder: 3, review: 1, running: 3, to
 - 2026-11-16T05:47:10+00:00 inbox_opened {"id": "I0217", "kind": "decision", "subject": "T0386 blocked: the agent reports the task impossible or mis-specified"}
 - 2026-11-16T05:47:22+00:00 run_started {"run": "T0408-critic-20261115T214722-e0be", "task": "T0408", "role": "critic", "session": "fab4775f-1c41-4a57-b07b-712bc1fc407d"}
 - 2026-11-16T05:47:24+00:00 run_started {"run": "T0409-critic-20261115T214724-9459", "task": "T0409", "role": "critic", "session": "46d9a332-6089-4f16-9db9-2e45e2f77de1"}
+- 2026-11-16T05:48:00+00:00 sleep_detected {"gap_s": 611, "runs_extended": 3}
