@@ -102,6 +102,13 @@ actually applied, measured on the state it was applied to (``widths_by_move``; `
 none was applied); see ``degrade``.  A spread family that was applied up to step q-1 because step q >= 2 failed is listed
 under ``stopped``, not ``skipped`` (the two lists are disjoint by family name).
 
+Reach (T0377).  The twin construction above is unchanged: the 2R and Case 4 twins are inside ``derivative``'s reach domain
+(``in_domain(spec, params_of(W), reach=True)``, test_reach.py) without it.  ``degrade(..., reach=True)`` (default False; the frozen rule
+is unchanged) appends the reach move families ``straddle[i]`` (a slot's attached end across its column towards the outline
+limit) and ``outer[net]`` (a column's outer edge towards the limit) to ``_moves``, and ``_walk_candidates(p, spec, reach=True)`` adds
+jumps of one coordinate each (a slot's attached end to its column's outer edge / inner edge / the limit, a slot's free end to the
+limit, a column's outer edge to the limit / its pad's edge) after the +-0.5 mm single-parameter changes.
+
 DEGRADE_MARGIN = 0.11.  C002 / E002 found L1 biased low by 5-14 % relative to the converged L2 with family- and die-count
 dependent structure.  D and its twin share the family, housing, die count and wires, so the bias largely cancels in the
 ratio; what does not is bounded by the spread of the bias.  With L1 = L2 (1 - b), L2 ratio = L1 ratio (1 - b_W) / (1 - b_D), so
@@ -724,14 +731,69 @@ SPREAD_MAX_MM = 20.0
 LANDING_MOVES = ("narrow_landing", "centre_landing")
 
 
-def _moves():
+def _limits(spec: D.ReferenceSpec, o: int) -> tuple[float, float]:
+    """(lowest, highest) u (mm, local frame of orientation ``o``, on the 0.5 mm grid) that copper may reach: the outline less
+    the edge margin, rounded inwards exactly as the sampler's ``ulo`` / ``uhi`` (``derivative._sample``)."""
+    allowed = spec.outline.buffer(-(spec.rules.edge_margin - 1e-9), **D._MIT)
+    b = D._Frame(o).lrect(*(D._g_up(x) if i < 2 else D._g_dn(x) for i, x in enumerate(c * 1e3 for c in allowed.bounds)))
+    return b[0], b[2]
+
+
+def _net_side(p: D.Params, net_i: int) -> int:
+    """Side of net ``net_i``'s column (``Params.cols`` order): -1 if its slots run from the column towards +u (the column
+    is at the low-u end), +1 if towards -u.  Read off the slots' mid-u against the column's (the side is not a parameter)."""
+    net = D.NETS[net_i]
+    mine = [s for (n, _, _), s in zip(p.sequence(), p.slots, strict=True) if n == net]
+    c = p.cols[net_i]
+    return -1 if sum(0.5 * (s[0] + s[2]) for s in mine) / len(mine) >= 0.5 * (c[0] + c[2]) else 1
+
+
+def _attach_index(side: int) -> int:
+    """Index (0 / 2) of a slot's attached u coordinate for a column on ``side``: u0 for -1, u1 for +1."""
+    return 0 if side < 0 else 2
+
+
+def _straddle(p: D.Params, spec: D.ReferenceSpec, i: int, mm: float) -> D.Params:
+    """Reach move: slot ``i``'s attached end ``mm`` further out across its column (towards the column's outer side), clipped at
+    the outline limit (the attached end may lie anywhere between the column's inner edge and the limit, ``derivative``)."""
+    net_i = D.NETS.index(p.sequence()[i][0])
+    side = _net_side(p, net_i)
+    lo, hi = _limits(spec, p.orient)
+    k = _attach_index(side)
+    slots = [list(s) for s in p.slots]
+    slots[i][k] = max(lo, slots[i][k] + side * mm) if side < 0 else min(hi, slots[i][k] + side * mm)
+    return dataclasses.replace(p, slots=tuple(tuple(s) for s in slots))
+
+
+def _outer_edge(p: D.Params, spec: D.ReferenceSpec, net_i: int, mm: float) -> D.Params:
+    """Reach move: the outer edge (away from the slots) of column ``net_i`` ``mm`` further out, clipped at the outline limit."""
+    side = _net_side(p, net_i)
+    lo, hi = _limits(spec, p.orient)
+    cols = [list(c) for c in p.cols]
+    k = 0 if side < 0 else 2
+    cols[net_i][k] = max(lo, cols[net_i][k] + side * mm) if side < 0 else min(hi, cols[net_i][k] + side * mm)
+    return dataclasses.replace(p, cols=tuple(tuple(c) for c in cols))
+
+
+def _moves(reach: bool = False):
     """The ordered move families (name, strength steps, map (state, step) -> params).  A family with several steps is applied
-    with growing strength until the target is met or the next step is infeasible; the largest feasible step is kept."""
+    with growing strength until the target is met or the next step is infeasible; the largest feasible step is kept.
+
+    ``reach=True`` (T0377) appends the reach families, after the legacy ones (so the legacy order is unchanged): the
+    attached end of each slot across its column towards the outline limit (``straddle[i]``), then the outer edge of each
+    column towards the limit (``outer[net]``), in 0.5 mm steps up to ``SPREAD_MAX_MM``."""
     fam = [("narrow_landing", 1, lambda p, spec, q: _narrow_landing(p, spec, centre=False)[0]),
            ("centre_landing", 1, lambda p, spec, q: _narrow_landing(p, spec, centre=True)[0])]
     for j, down in SPREAD_ORDER:
         fam.append((f"spread[{j},{'down' if down else 'up'}]", int(SPREAD_MAX_MM / SPREAD_STEP_MM),
                     lambda p, spec, q, j=j, down=down: _shifted(p, j, q * SPREAD_STEP_MM, down)))
+    if reach:
+        for i in range(4):
+            fam.append((f"straddle[{i}]", int(SPREAD_MAX_MM / SPREAD_STEP_MM),
+                        lambda p, spec, q, i=i: _straddle(p, spec, i, q * SPREAD_STEP_MM)))
+        for ni, net in enumerate(NETS):
+            fam.append((f"outer[{net}]", int(SPREAD_MAX_MM / SPREAD_STEP_MM),
+                        lambda p, spec, q, ni=ni: _outer_edge(p, spec, ni, q * SPREAD_STEP_MM)))
     return fam
 
 
@@ -742,10 +804,17 @@ WALK_TARGET, WALK_LOCAL_MAX, WALK_STEP_LIMIT = "target_reached", "local_maximum"
 WALK_FIRST, WALK_END = 4, D.N_COPPER_PARAMS  # after the four ints: 12 column + 16 slot + 6 row + 2 landing entries
 
 
-def _walk_candidates(p: D.Params):
+def _walk_candidates(p: D.Params, spec: D.ReferenceSpec | None = None, reach: bool = False):
     """The single-parameter changes of the walk, in their fixed order: for every copper parameter of ``p`` in the order of
     ``Params.NAMES`` (columns, slots, die rows, landing lines), first -0.5 mm, then +0.5 mm (``WALK_STEP_MM``) ->
-    (name, delta, params).  Changes that make a rectangle empty or inverted are not offered."""
+    (name, delta, params).  Changes that make a rectangle empty or inverted are not offered.
+
+    ``reach=True`` (T0377; needs ``spec`` for the outline limit and the pads) adds, after those, the jumps the 0.5 mm steps
+    reach only slowly, still one coordinate each: a slot's attached end to its column's outer edge, to the column's inner
+    edge and to the outline limit (a slot straddling its column), a slot's free end to the outline limit, and a column's
+    outer edge to the outline limit and back to its pad's edge (``slot<i>_attach>col_outer`` ...); ``delta`` is the signed
+    change in mm.  A jump that changes nothing, is off the 0.5 mm grid or makes a rectangle empty is not offered.  Whether the
+    result is in the reach domain is ``derivative.in_domain(spec, q, reach=True)``; the walk's own test is the DRC."""
     vec = p.to_vector()
     for i in range(WALK_FIRST, WALK_END):
         for d in (-WALK_STEP_MM, WALK_STEP_MM):
@@ -755,9 +824,48 @@ def _walk_candidates(p: D.Params):
             if any(c[0] >= c[2] - 1e-9 or c[1] >= c[3] - 1e-9 for c in q.cols + q.slots):
                 continue
             yield D.Params.NAMES[i], d, q
+    if not reach:
+        return
+    if spec is None:
+        raise ValueError("reach moves need the spec (outline limit, pads)")
+    lo, hi = _limits(spec, p.orient)
+    fr = D._Frame(p.orient)
+    seq = p.sequence()
+    for i, (net, _, _) in enumerate(seq):
+        ni = NETS.index(net)
+        side, c = _net_side(p, ni), p.cols[ni]
+        ka, kf = _attach_index(side), 2 - _attach_index(side)
+        inner, outer = (c[2], c[0]) if side < 0 else (c[0], c[2])
+        limit = lo if side < 0 else hi
+        for tag, k, new in ((f"slot{i}_attach>col_outer", ka, outer), (f"slot{i}_attach>col_inner", ka, inner),
+                            (f"slot{i}_attach>limit", ka, limit), (f"slot{i}_free>limit", kf, hi if side < 0 else lo)):
+            old = p.slots[i][k]
+            if abs(new - old) < 1e-9 or abs(new / GRID - round(new / GRID)) > 1e-6:
+                continue
+            slots = [list(s) for s in p.slots]
+            slots[i][k] = new
+            q = dataclasses.replace(p, slots=tuple(tuple(s) for s in slots))
+            if any(r[0] >= r[2] - 1e-9 or r[1] >= r[3] - 1e-9 for r in q.slots):
+                continue
+            yield tag, new - old, q
+    for ni, net in enumerate(NETS):
+        side, c = _net_side(p, ni), p.cols[ni]
+        k = 0 if side < 0 else 2
+        pu0, _, pu1, _ = (x / MM for x in fr.lrect(*(lambda t: (t.cx - t.w / 2, t.cy - t.h / 2, t.cx + t.w / 2, t.cy + t.h / 2))(
+            spec.terminals[net])))
+        pad_edge = D._g_dn(pu0) if side < 0 else D._g_up(pu1)
+        for tag, new in ((f"col_{net}_outer>limit", lo if side < 0 else hi), (f"col_{net}_outer>pad", pad_edge)):
+            if abs(new - c[k]) < 1e-9 or abs(new / GRID - round(new / GRID)) > 1e-6:
+                continue
+            cols = [list(x) for x in p.cols]
+            cols[ni][k] = new
+            q = dataclasses.replace(p, cols=tuple(tuple(x) for x in cols))
+            if any(r[0] >= r[2] - 1e-9 or r[1] >= r[3] - 1e-9 for r in q.cols):
+                continue
+            yield tag, new - c[k], q
 
 
-def _walk(spec, p: D.Params, lay: Layout, l_tw: float, target: float):
+def _walk(spec, p: D.Params, lay: Layout, l_tw: float, target: float, reach: bool = False):
     """The fallback walk of ``degrade``: at each step apply, among the DRC-valid single-parameter changes of
     ``_walk_candidates`` that raise L1, the one with the highest L1 (ties: the first in the candidate order); stop when
     L1(D) / L1(W) >= ``target``, when no valid change raises L1 (terminal state), or after ``WALK_MAX_STEPS`` steps.
@@ -769,7 +877,7 @@ def _walk(spec, p: D.Params, lay: Layout, l_tw: float, target: float):
         if cur / l_tw >= target:
             return p, lay, cur / l_tw, steps, WALK_TARGET, "target reached"
         best, n_valid = None, 0
-        for name, d, q in _walk_candidates(p):
+        for name, d, q in _walk_candidates(p, spec, reach):
             cl, _ = _try(spec, q)
             if cl is None:
                 continue
@@ -788,7 +896,7 @@ def _walk(spec, p: D.Params, lay: Layout, l_tw: float, target: float):
     return p, lay, cur / l_tw, steps, WALK_STEP_LIMIT, f"stopped after {WALK_MAX_STEPS} steps at ratio {cur / l_tw:.4f}"
 
 
-def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) -> tuple[Layout, dict]:
+def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True, reach: bool = False) -> tuple[Layout, dict]:
     """The frozen degradation rule of F1(b) applied to a twin built by ``derivative.build`` -> (D, record).
 
     Moves 1-3, then (with L1 only, if the target is still missed) the walk, see the module docstring.  The record has
@@ -803,7 +911,9 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
     order 1, 2, 3 (each spread move at its first 0.5 mm step only); a move that raises ``DegradeError``, changes nothing,
     does not build or is not DRC-clean is listed in ``skipped`` and the next is tried; the first feasible one is applied
     and the rule ends there (one move).  If none is feasible, ``DegradeError``.  The result is then not known to meet any
-    ratio (``l1_checked`` False, no ``l1_ratio``)."""
+    ratio (``l1_checked`` False, no ``l1_ratio``).
+
+    ``reach=True`` (T0377) enumerates the reach moves too (``_moves``, ``_walk_candidates``); the default is the frozen rule."""
     target = DEGRADE_RATIO * (1.0 + DEGRADE_MARGIN)
     p0 = D.params_of(twin_layout)
     l_tw = _l1(twin_layout) if with_l1 else None
@@ -817,7 +927,7 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
         return err
 
     p, lay, ratio = p0, None, None
-    for name, steps, make in _moves():
+    for name, steps, make in _moves(reach):
         kept = None
         for q in range(1, steps + 1):
             try:
@@ -856,7 +966,8 @@ def degrade(twin_layout: Layout, spec: D.ReferenceSpec, with_l1: bool = True) ->
             if lay is None:
                 raise fail(f"the twin is not a DRC-clean start for the walk ({why})")
         start = _l1(lay) / l_tw
-        p, lay, ratio, steps, kind, terminal = _walk(spec, p, lay, l_tw, target)
+        # the legacy five-argument call when reach is off (research/scripts/o003_twin_coverage.py wraps _walk)
+        p, lay, ratio, steps, kind, terminal = _walk(spec, p, lay, l_tw, target, *((True,) if reach else ()))
         rec["walk"] = {"start_l1_ratio": start, "steps": steps, "terminal": kind, "terminal_state": terminal,
                        "l1_ratio": ratio}
         rec["moves"] += [f"walk[{x['parameter']}{x['delta_mm']:+g}mm]" for x in steps]

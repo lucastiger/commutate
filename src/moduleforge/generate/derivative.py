@@ -86,6 +86,25 @@ corners (1 of 525 DRC-clean Case 4 candidates under the measured rules was rejec
 the mitre join.  MEASURED (T0295, ``test_quick_ok_rejects_no_drc_clean_candidate_case4_measured``): Case 4, measured rules, k = 1, rng
 seed 12345, 20 000 ``_sample`` draws: 2266 built, 260 DRC-clean, 0 of them rejected by ``_quick_ok`` (mitre join: 1 in T0294's run).  ``drc.check`` still filters every candidate in ``generate``.  Not changed: the outline edge margin (``allowed``).
 
+Reach mode (T0377, O008; ``generate(..., reach=True)``, ``_Ctx(spec, reach=True)``, ``in_domain(spec, params, reach)``).  Opt-in; with
+reach off every stream is bit-identical to the legacy one (tests: fingerprints of the 70 x 40 housing, k = 1 and 3, default
+rules, and Case 4 under measured rules).  T0349 found that 2D_Case_2R's twin is outside the legacy support: its DC+ / DC- slots
+straddle their columns (u 7 to 47 / 7 to 33 around columns at u 9 to 12), its PHASE column's outer edge is at 47 mm (the legacy
+draw stops at pad edge + 1.5 mm), its slot free ends reach the outline limit, its columns only cover their pads, its landing
+lines are off the 0.5 mm grid.  In reach mode (each extension is drawn with probability 0.5, otherwise the legacy draw; the
+reach domain contains the legacy one):
+* a column's outer edge (the one away from its slots) anywhere from the pad edge out to the outline's edge-margin limit
+  (``ulo`` / ``uhi``, ``_outer_room``);
+* a column's v extent: any extent that covers its pad, down / up to the outline limit (legacy: the span of the pad and the net's
+  slots, plus at most 3 mm);
+* a slot's attached end anywhere from the column's inner edge across the column to the limit (straddling or overlapping slots);
+* the free end of every slot anywhere from the position its dies / wires need to the limit (legacy: at most 8 / 6 mm beyond);
+* the die row anywhere between the column's inner edge and the free limit (legacy: at most 6 mm from the edge);
+* the landing line on the 0.125 mm foot grid, inside its slot by the landing margin + 0.05 mm (``_reach_margin``, at most the
+  legacy 0.5 mm; legacy: 0.5 mm grid, 0.5 mm inside).
+``in_domain`` is the predicate of this construction, and also the domain of the local search (``twin._walk_candidates``).
+The twin construction (``twin.py``) is unchanged.
+
 Throughput, MEASURED on 2D_Case_4 (T0290; 2 dies per switch, gate + Kelvin wire per die, max power wire 18 mm, signal wires
 25 mm; M-series Mac, one process; DRC-valid candidates per wall second of ``generate`` with seed 1 / seed 2, one run each, so a
 single run has an unknown spread).  The machine was not idle: load average 3.3 / 3.6 / 3.9 (1 / 5 / 15 min) at the start and
@@ -487,8 +506,9 @@ def _signal_wires(spec, traces, dies, z_top_cu, p, fr):
 class _Ctx:
     """Per-spec data of the sampler (mm)."""
 
-    def __init__(self, spec: ReferenceSpec):
+    def __init__(self, spec: ReferenceSpec, reach: bool = False):
         r = spec.rules
+        self.reach_on = bool(reach)  # opt-in reach mode (module docstring); off: the draws are the legacy ones, bit for bit
         self.allowed = spec.outline.buffer(-(r.edge_margin - 1e-9), **_MIT)
         self.sp = {(a, b): _g_up(r.spacing_for(a, b) * 1e3) for a in NETS + tuple(SIGNAL_NETS) for b in NETS}
         self.dem = _g_up(r.die_edge_margin * 1e3)
@@ -669,6 +689,28 @@ def _gdiv(x: float) -> float:
     return x / FOOT_GRID_MM
 
 
+def _gceil(x: float) -> int:
+    """Index of the smallest 0.125 mm foot-grid point >= x (tolerance 1e-9 as the neighbours)."""
+    return math.ceil(x / FOOT_GRID_MM - 1e-9)
+
+
+def _gfloor(x: float) -> int:
+    return math.floor(x / FOOT_GRID_MM + 1e-9)
+
+
+def _reach_margin(spec: ReferenceSpec) -> float:
+    """Reach mode: distance (mm) of a wire landing point from its slot's v edges: the landing margin + 0.05 mm (the twin's own
+    measure, ``twin._narrow_landing``), at most the legacy 0.5 mm."""
+    return min(0.5, spec.rules.wire_landing_margin * 1e3 + 0.05)
+
+
+def _outer_room(side: int, base_lo: float, base_hi: float, ulo: float, uhi: float) -> float:
+    """Reach mode: how far (mm, >= 1.5) a column's outer edge may lie beyond the pad edge ``base_lo`` / ``base_hi`` before it
+    leaves the outline's edge-margin limit ``ulo`` / ``uhi``.  The outer edge is the one away from the slots: the low edge
+    for ``side`` -1 (slots attach at the high edge and run towards +u), the high edge for +1."""
+    return max(1.5, (base_lo - ulo) if side < 0 else (uhi - base_hi))
+
+
 def _pick_end(needed: float, limit: float, free_side: int, rng, extra_max: float):
     """Free end of a band: ``needed`` or further by a random grid amount, clipped at ``limit``; None if infeasible."""
     if (limit - needed) * free_side < -1e-9:
@@ -744,6 +786,31 @@ def _place_split(cx: _Ctx, orient: int, seq, h_min, h_ext, merge, g_min, g_ext, 
     return None
 
 
+def _die_windows(spec: ReferenceSpec, seq, sig, fr: _Frame) -> dict:
+    """Window of each die slot's centre (absolute v, mm) from the signal copper ``sig`` of its switch: the gate / Kelvin pad
+    centre (offset ``q`` from the die centre) within the wire-length limit, less 0.1 mm for the arc (sampling prior only;
+    the DRC enforces the real limits).  {slot index: (lo, hi)}."""
+    dwin = {}
+    qpad = {}
+    for pad in ("gate", "kelvin"):
+        if pad in spec.die.pads:
+            _, b0, _, b1 = (c * 1e3 for c in fr.lrect(*spec.die.pads[pad]))
+            qpad[pad] = (b0 + b1) / 2
+    lim_of = {"gate": spec.rules.max_gate_wire_length, "kelvin": spec.rules.max_kelvin_wire_length}
+    for i, (_, role, sw) in enumerate(seq):
+        if role != "die":
+            continue
+        lo_w, hi_w, any_ = -math.inf, math.inf, False
+        for kn, bb in sig.items():
+            pad = "gate" if kn.startswith("GATE") else "kelvin"
+            if kn.endswith("_" + sw) and pad in qpad and lim_of[pad] is not None:
+                reach = lim_of[pad] * 1e3 - 0.1
+                lo_w, hi_w, any_ = max(lo_w, bb[1] - reach - qpad[pad]), min(hi_w, bb[3] + reach - qpad[pad]), True
+        if any_:
+            dwin[i] = (lo_w, hi_w)
+    return dwin
+
+
 def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params | None:
     orient = int(rng.integers(2))
     hs_first, hs_die_first, ls_die_first = (int(rng.integers(2)) for _ in range(3))
@@ -770,6 +837,7 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
     seq = _sequence(hs_first, hs_die_first, ls_die_first)
     du, dv = (x * 1e3 for x in fr.size(spec.die.w, spec.die.h))
     dem, k = cx.dem, spec.wires_per_die
+    rch = cx.reach_on  # reach mode (not ``reach``: the signal-window code below uses that name)
     ulo, vlo, uhi, vhi = fr.lrect(*(_g_up(b) if i < 2 else _g_dn(b) for i, b in
                                     enumerate(c * 1e3 for c in cx.allowed.bounds)))
     # --- slot heights and v positions
@@ -778,27 +846,7 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
     merge = [seq[i][0] == seq[i + 1][0] and rng.random() < 0.5 for i in range(3)]
     g_min = [0.0 if merge[i] else cx.sp[(seq[i][0], seq[i + 1][0])] for i in range(3)]
     g_ext = [0.0 if merge[i] else rng.uniform(0.0, 12.0 if rng.random() < 0.6 else 2.5) for i in range(3)]
-    # window of each die slot's centre (absolute v) from the signal copper of its switch: the gate / Kelvin pad centre
-    # (offset ``q`` from the die centre) within the wire-length limit, less 0.1 mm for the arc (sampling prior only;
-    # the DRC enforces the real limits)
-    dwin = {}
-    qpad = {}
-    for pad in ("gate", "kelvin"):
-        if pad in spec.die.pads:
-            _, b0, _, b1 = (c * 1e3 for c in fr.lrect(*spec.die.pads[pad]))
-            qpad[pad] = (b0 + b1) / 2
-    lim_of = {"gate": spec.rules.max_gate_wire_length, "kelvin": spec.rules.max_kelvin_wire_length}
-    for i, (_, role, sw) in enumerate(seq):
-        if role != "die":
-            continue
-        lo_w, hi_w, any_ = -math.inf, math.inf, False
-        for kn, bb in sig.items():
-            pad = "gate" if kn.startswith("GATE") else "kelvin"
-            if kn.endswith("_" + sw) and pad in qpad and lim_of[pad] is not None:
-                reach = lim_of[pad] * 1e3 - 0.1
-                lo_w, hi_w, any_ = max(lo_w, bb[1] - reach - qpad[pad]), min(hi_w, bb[3] + reach - qpad[pad]), True
-        if any_:
-            dwin[i] = (lo_w, hi_w)
+    dwin = _die_windows(spec, seq, sig, fr)
     split = cx.split[orient]
     if split:  # D0021: no single window holds even the smallest stack; place the slots across the windows
         placed = _place_split(cx, orient, seq, h_min, h_ext, merge, g_min, g_ext, dwin, rng)
@@ -855,15 +903,23 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
         side[net] = near if rng.random() < 0.85 else -near
         c0 = _g_dn(pu0) - _snap(rng.uniform(0.0, 1.5))
         c1 = _g_up(pu1) + _snap(rng.uniform(0.0, 1.5))
+        if rch and rng.random() < 0.5:  # reach: the outer edge (the one away from the slots) up to the edge-margin limit
+            x = _snap(rng.uniform(0.0, _outer_room(side[net], _g_dn(pu0), _g_up(pu1), ulo, uhi)))
+            c0, c1 = (_g_dn(pu0) - x, c1) if side[net] < 0 else (c0, _g_up(pu1) + x)
         if rng.random() < 0.5:  # widen towards the inside of the housing
             w = _snap(rng.uniform(0.0, 6.0))
             c0, c1 = (c0, c1 + w) if side[net] < 0 else (c0 - w, c1)
         mine = [sv[i] for i, s in enumerate(seq) if s[0] == net]
         a = min([pv0] + [x[0] for x in mine])
         b = max([pv1] + [x[1] for x in mine])
+        a0, b0 = a, b
         if rng.random() < 0.3:
             a, b = a - _snap(rng.uniform(0.0, 3.0)), b + _snap(rng.uniform(0.0, 3.0))
         cols[net] = (c0, _g_dn(a), c1, _g_up(b))
+        if rch and rng.random() < 0.5:  # reach: any v extent that covers the pad (it may be shorter than the slots' span)
+            lo0, hi0 = min(_g_dn(a0) - 3.0, vlo), _g_dn(pv0)
+            lo1, hi1 = _g_up(pv1), max(_g_up(b0) + 3.0, vhi)
+            cols[net] = (c0, hi0 - _snap(rng.uniform(0.0, hi0 - lo0)), c1, lo1 + _snap(rng.uniform(0.0, hi1 - lo1)))
     edge = {n: cols[n][2] if side[n] < 0 else cols[n][0] for n in NETS}  # attached (inner) edge of the net's bands
 
     def limit(net, va, vb):
@@ -890,11 +946,18 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
         net = seq[i][0]
         gap = max(_g_up(spec.rules.die_spacing * 1e3), dem) + _snap(rng.uniform(0.0, 2.0))
         ld = spec.dies_per_switch * du + (spec.dies_per_switch - 1) * gap
-        x0 = dem + _snap(rng.uniform(0.0, 6.0))
+        xr = 6.0
+        if rch and rng.random() < 0.5:  # reach: the die row anywhere between the column's inner edge and the free limit
+            xr = max(xr, (limit(net, *sv[i]) - edge[net]) * (-side[net]) - ld - 2 * dem)
+        x0 = dem + _snap(rng.uniform(0.0, xr))
         ae = edge[net]
         u0 = ae + x0 if side[net] < 0 else ae - x0 - ld
         needed = (u0 + ld + dem) if side[net] < 0 else (u0 - dem)
-        end = _pick_end(needed, limit(net, *sv[i]), -side[net], rng, 8.0)
+        lim = limit(net, *sv[i])
+        em = 8.0
+        if rch and rng.random() < 0.5:  # reach: the free end up to the limit
+            em = max(em, (lim - needed) * (-side[net]))
+        end = _pick_end(needed, lim, -side[net], rng, em)
         if end is None:
             return None
         ends[i] = end
@@ -909,7 +972,11 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
         lo, hi = wu[sw]
         needed = (hi + 1.0) if side[net] < 0 else (lo - 1.0)  # 0.5 mm plus room for the landing shift along u
         needed = _g_up(needed) if side[net] < 0 else _g_dn(needed)
-        end = _pick_end(needed, limit(net, *sv[j]), -side[net], rng, 6.0)
+        lim = limit(net, *sv[j])
+        em = 6.0
+        if rch and rng.random() < 0.5:
+            em = max(em, (lim - needed) * (-side[net]))
+        end = _pick_end(needed, lim, -side[net], rng, em)
         if end is None or (end - edge[net]) * (-side[net]) < 1.0:
             return None
         ends[j] = end
@@ -923,17 +990,33 @@ def _sample(spec: ReferenceSpec, cx: _Ctx, rng: np.random.Generator) -> Params |
         foot = rows[sw][1] + dv / 2 + 1e3 * (sy0 + sy1) / 2 + fv
         wmin_, wmax_ = spec.rules.min_wire_length * 1e3 + 0.5, spec.rules.max_wire_length * 1e3 - 1.0
         lo_l, hi_l = (foot + wmin_, foot + wmax_) if sgn > 0 else (foot - wmax_, foot - wmin_)
-        lo_l, hi_l = _g_up(max(lo_l, sv[j][0] + 0.5)), _g_dn(min(hi_l, sv[j][1] - 0.5))
-        if hi_l < lo_l:
-            return None
-        land[sw] = lo_l + _snap(rng.uniform(0.0, hi_l - lo_l))
+        if rch:  # reach: the landing line on the 0.125 mm foot grid, inside the slot by the landing margin (+ 0.05 mm)
+            lm = _reach_margin(spec)
+            gl, gh = _gceil(max(lo_l, sv[j][0] + lm)), _gfloor(min(hi_l, sv[j][1] - lm))
+            if gh < gl:
+                return None
+            land[sw] = FOOT_GRID_MM * int(rng.integers(gl, gh + 1))
+        else:
+            lm = 0.5
+            lo_l, hi_l = _g_up(max(lo_l, sv[j][0] + 0.5)), _g_dn(min(hi_l, sv[j][1] - 0.5))
+            if hi_l < lo_l:
+                return None
+            land[sw] = lo_l + _snap(rng.uniform(0.0, hi_l - lo_l))
         ldv = 0.0 if rng.random() < 0.6 else FOOT_GRID_MM * int(rng.integers(-3, 4))
-        if not (sv[j][0] + 0.5 - 1e-9 <= land[sw] + ldv <= sv[j][1] - 0.5 + 1e-9):
+        if not (sv[j][0] + lm - 1e-9 <= land[sw] + ldv <= sv[j][1] - lm + 1e-9):
             ldv = 0.0
         ldu = 0.0 if rng.random() < 0.7 else FOOT_GRID_MM * int(rng.integers(-4, 5))
         feet[sw] = (fu0, fud, pit, fv, ldu, ldv)
-    slots = tuple((edge[seq[i][0]], sv[i][0], ends[i], sv[i][1]) if side[seq[i][0]] < 0
-                  else (ends[i], sv[i][0], edge[seq[i][0]], sv[i][1]) for i in range(4))
+    att = [edge[seq[i][0]] for i in range(4)]  # attached end of each slot: the column's inner edge ...
+    if rch:  # ... or, in reach mode, anywhere from there across the column to the outline limit
+        for i in range(4):
+            if rng.random() < 0.5:
+                sd = side[seq[i][0]]
+                back = (att[i] - ulo) if sd < 0 else (uhi - att[i])
+                if back > 0:
+                    att[i] = att[i] + sd * _snap(rng.uniform(0.0, back))
+    slots = tuple((att[i], sv[i][0], ends[i], sv[i][1]) if side[seq[i][0]] < 0
+                  else (ends[i], sv[i][0], att[i], sv[i][1]) for i in range(4))
     return Params(orient, hs_first, hs_die_first, ls_die_first, tuple(cols[n] for n in NETS), slots,
                   (rows["HS"], rows["LS"]), (land["HS"], land["LS"]), (feet["HS"], feet["LS"]),
                   (sigfeet["HS"], sigfeet["LS"]))
@@ -969,12 +1052,310 @@ def _quick_ok(spec: ReferenceSpec, cx: _Ctx, lay: Layout) -> bool:
     return True
 
 
-def generate(spec: ReferenceSpec, n: int, seed: int, max_failures: int = 20000) -> list[Layout]:
+# ------------------------------------------------------------------------------------------------------------- domain
+def _ong(x: float, g: float = DESIGN_GRID_MM) -> bool:
+    q = x / g
+    return abs(q - round(q)) < 1e-6
+
+
+def _between(x: float, lo: float, hi: float) -> bool:
+    return lo - 1e-9 <= x <= hi + 1e-9
+
+
+def _feet_reason(spec: ReferenceSpec, fr: _Frame, row: tuple, feet: tuple, sig: tuple, tag: str) -> str | None:
+    """Replay of ``_draw_feet`` on the feet ``(fu0, fud, pitch, fv)`` (``feet[:4]``) and gate / Kelvin feet ``sig`` of one die
+    row: name of the first constraint that fails, None if the sampler could have drawn them."""
+    r = spec.rules
+    du, dv = (x * 1e3 for x in fr.size(spec.die.w, spec.die.h))
+    k, n = spec.wires_per_die, spec.dies_per_switch
+    dm = spec.wire_diameter * 1e3
+    pu0, pv0, pu1, pv1 = (c * 1e3 for c in fr.lrect(*spec.die.pads["source"]))
+    m = max(r.wire_start_margin * 1e3, dm / 2) + 0.05
+    hu, hv = (pu1 - pu0) / 2 - m, (pv1 - pv0) / 2 - m
+    if hu < 0 or hv < 0:
+        return f"{tag}_source_pad_too_small"
+    fu0, fud, pit, fv = feet[:4]
+    for q, pad in enumerate(("gate", "kelvin")):
+        gx, gy = sig[2 * q], sig[2 * q + 1]
+        if pad not in spec.die.pads:
+            if gx != 0.0 or gy != 0.0:
+                return f"{tag}_{pad}_foot_without_pad"
+            continue
+        a0, b0, a1, b1 = (c * 1e3 for c in fr.lrect(*spec.die.pads[pad]))
+        ms = max(r.wire_start_margin * 1e3, spec.signal_wire_diameter * 1e3 / 2) + 0.05
+        nu = int(math.floor(((a1 - a0) / 2 - ms) / FOOT_GRID_MM + 1e-9)) if (a1 - a0) / 2 - ms > 0 else 0
+        nv = int(math.floor(((b1 - b0) / 2 - ms) / FOOT_GRID_MM + 1e-9)) if (b1 - b0) / 2 - ms > 0 else 0
+        if not (_ong(gx, FOOT_GRID_MM) and abs(gx) <= nu * FOOT_GRID_MM + 1e-9):
+            return f"{tag}_{pad}_foot_du"
+        if not (_ong(gy, FOOT_GRID_MM) and abs(gy) <= nv * FOOT_GRID_MM + 1e-9):
+            return f"{tag}_{pad}_foot_dv"
+    pp = max(r.min_wire_pitch * 1e3, r.wire_pitch_diameters * dm) + 0.025
+    pmin = math.ceil(pp / FOOT_GRID_MM - 1e-9) * FOOT_GRID_MM
+    if k > 1:
+        pmax = math.floor(2 * hu / (k - 1) / FOOT_GRID_MM + 1e-9) * FOOT_GRID_MM
+        if pmax < pmin - 1e-9 or not (_ong(pit, FOOT_GRID_MM) and _between(pit, pmin, min(pmax, pmin + 2.0))):
+            return f"{tag}_pitch"
+    elif pit != 0.0:
+        return f"{tag}_pitch"
+    span = (k - 1) * pit
+    if not (_ong(fud, FOOT_GRID_MM) and abs(fud) <= 8 * FOOT_GRID_MM + 1e-9):
+        return f"{tag}_fud"
+    lo = max(-hu - i * fud for i in range(n))
+    hi = min(hu - span - i * fud for i in range(n))
+    if hi < lo - 1e-9:
+        return f"{tag}_fud"  # the sampler resets an infeasible fud to 0
+    cu0 = row[0] + du / 2 + (pu0 + pu1) / 2
+    a_abs = cu0 + fu0 - span / 2
+    if not (_ong(a_abs, FOOT_GRID_MM) and _between(a_abs / FOOT_GRID_MM, math.ceil(_gdiv(cu0 + lo) - 1e-9),
+                                                    math.floor(_gdiv(cu0 + hi) + 1e-9))):
+        return f"{tag}_fu0"
+    pcv = row[1] + dv / 2 + (pv0 + pv1) / 2
+    f_abs = pcv + fv
+    if not (_ong(f_abs, FOOT_GRID_MM) and _between(f_abs / FOOT_GRID_MM, math.ceil((pcv - hv) / FOOT_GRID_MM - 1e-9),
+                                                    math.floor((pcv + hv) / FOOT_GRID_MM + 1e-9))):
+        return f"{tag}_fv"
+    return None
+
+
+def _replay(spec: ReferenceSpec, cx: _Ctx, p: Params, sides: tuple, seq, sv, hts, ends_ok: bool = True):
+    """The part of the replay that depends on the columns' sides (``sides`` per net in NETS order): (n constraints passed,
+    name of the failing one), None if the sampler could have drawn ``p`` with these sides."""
+    rch = cx.reach_on
+    fr = _Frame(p.orient)
+    du, dv = (x * 1e3 for x in fr.size(spec.die.w, spec.die.h))
+    dem, n_pass = cx.dem, 0
+    ulo, vlo, uhi, vhi = fr.lrect(*(_g_up(b) if i < 2 else _g_dn(b) for i, b in
+                                    enumerate(c * 1e3 for c in cx.allowed.bounds)))
+    side = dict(zip(NETS, sides, strict=True))
+    cols = dict(zip(NETS, p.cols, strict=True))
+
+    def fail(name):
+        return (n_pass, name)
+
+    # --- columns: the outer edge (away from the slots) and the inner edge
+    for net in NETS:
+        pu0, pv0, pu1, pv1 = (c * 1e3 for c in fr.lrect(*cx.pads[net]))
+        c0, v0, c1, v1 = cols[net]
+        b0, b1 = _g_dn(pu0), _g_up(pu1)
+        room = _outer_room(side[net], b0, b1, ulo, uhi) if rch else 1.5
+        out_lo, out_hi = (b0 - room, b0) if side[net] < 0 else (b1, b1 + room)
+        in_lo, in_hi = (b1, b1 + 7.5) if side[net] < 0 else (b0 - 7.5, b0)  # snap(<= 1.5) + a widening of <= 6 mm
+        outer, inner = (c0, c1) if side[net] < 0 else (c1, c0)
+        if not (_ong(outer) and _between(outer, out_lo, out_hi)):
+            return fail(f"col_{net}_outer_edge")
+        n_pass += 1
+        if not (_ong(inner) and _between(inner, in_lo, in_hi)):
+            return fail(f"col_{net}_inner_edge")
+        n_pass += 1
+    edge = {n: cols[n][2] if side[n] < 0 else cols[n][0] for n in NETS}
+
+    def limit(net, va, vb):
+        free_side = -side[net]
+        lim = uhi if free_side > 0 else ulo
+        if cx.split[p.orient]:
+            lim = cx.reach(net, p.orient, va, vb, edge[net], free_side, lim)
+        for m in NETS:
+            if m == net or side[m] != free_side:
+                continue
+            sp = cx.sp[(net, m)]
+            if cols[m][1] - sp < vb and cols[m][3] + sp > va:
+                lim = min(lim, cols[m][0] - sp) if free_side > 0 else max(lim, cols[m][2] + sp)
+        return lim
+
+    # --- slots: attached end (the column's inner edge; reach: anywhere from there across the column to the limit)
+    free = [None] * 4
+    for i, (net, _, _) in enumerate(seq):
+        s = p.slots[i]
+        a, f = (s[0], s[2]) if side[net] < 0 else (s[2], s[0])  # attached end, free end
+        if rch:
+            lo_a, hi_a = (min(ulo, edge[net]), edge[net]) if side[net] < 0 else (edge[net], max(uhi, edge[net]))
+        else:
+            lo_a, hi_a = edge[net], edge[net]
+        if not (_ong(a) and _between(a, lo_a, hi_a)):
+            return fail(f"slot{i}_attach")
+        n_pass += 1
+        free[i] = f
+    # --- the columns' v extents (they depend on the slots' v extents and the pads only, not on the u edges)
+    for net in NETS:
+        pu0, pv0, pu1, pv1 = (c * 1e3 for c in fr.lrect(*cx.pads[net]))
+        v0, v1 = cols[net][1], cols[net][3]
+        mine = [sv[i] for i, s in enumerate(seq) if s[0] == net]
+        a0 = min([pv0] + [x[0] for x in mine])
+        bb = max([pv1] + [x[1] for x in mine])
+        lo0, hi0 = (min(_g_dn(a0) - 3.0, vlo), _g_dn(pv0)) if rch else (_g_dn(a0) - 3.0, _g_dn(a0))
+        lo1, hi1 = (_g_up(pv1), max(_g_up(bb) + 3.0, vhi)) if rch else (_g_up(bb), _g_up(bb) + 3.0)
+        if not (_ong(v0) and _between(v0, lo0, hi0) and _ong(v1) and _between(v1, lo1, hi1)):
+            return fail(f"col_{net}_v_edge")
+        n_pass += 1
+    # --- die rows and the die slots' free ends
+    die_idx = {sw: next(i for i, s in enumerate(seq) if s[1] == "die" and s[2] == sw) for sw in ("HS", "LS")}
+    land_idx = {sw: next(i for i, s in enumerate(seq) if s[1] == "land" and s[2] == sw) for sw in ("HS", "LS")}
+    wu = {}
+    for q, sw in enumerate(("HS", "LS")):
+        i = die_idx[sw]
+        net = seq[i][0]
+        u0, dvs, gap = p.rows[q]
+        gmin = max(_g_up(spec.rules.die_spacing * 1e3), dem)
+        if not (_ong(gap) and _between(gap, gmin, gmin + 2.0)):
+            return fail(f"row_{sw}_gap")
+        n_pass += 1
+        ld = spec.dies_per_switch * du + (spec.dies_per_switch - 1) * gap
+        x0 = (u0 - edge[net]) if side[net] < 0 else (edge[net] - ld - u0)
+        if not (_ong(u0) and _between(x0, dem, math.inf if rch else dem + 6.0)):
+            return fail(f"row_{sw}_u0")
+        n_pass += 1
+        needed = (u0 + ld + dem) if side[net] < 0 else (u0 - dem)
+        lim = limit(net, *sv[i])
+        fs = -side[net]
+        if (lim - needed) * fs < -1e-9 or not _between((free[i] - needed) * fs, 0.0, math.inf if rch else 8.0) \
+                or (lim - free[i]) * fs < -1e-9 or not _ong(free[i]):
+            return fail(f"slot{i}_free_end")
+        n_pass += 1
+        if not (_ong(dvs) and _between(dvs, sv[i][0] + dem, sv[i][0] + hts[i] - dv - dem)):
+            return fail(f"row_{sw}_v0")
+        n_pass += 1
+        wu[sw] = (u0, u0 + ld)
+    # --- landing slots, feet, landing lines
+    for q, sw in enumerate(("HS", "LS")):
+        j = land_idx[sw]
+        net = seq[j][0]
+        lo, hi = wu[sw]
+        needed = (hi + 1.0) if side[net] < 0 else (lo - 1.0)
+        needed = _g_up(needed) if side[net] < 0 else _g_dn(needed)
+        lim = limit(net, *sv[j])
+        fs = -side[net]
+        if (lim - needed) * fs < -1e-9 or not _between((free[j] - needed) * fs, 0.0, math.inf if rch else 6.0) \
+                or (lim - free[j]) * fs < -1e-9 or not _ong(free[j]) or (free[j] - edge[net]) * fs < 1.0:
+            return fail(f"slot{j}_free_end")
+        n_pass += 1
+        why = _feet_reason(spec, fr, p.rows[q], p.feet[q], p.sigfeet[q], f"feet_{sw}")
+        if why:
+            return fail(why)
+        n_pass += 1
+        sgn = 1.0 if j > die_idx[sw] else -1.0
+        sx0, sy0, sx1, sy1 = fr.lrect(*spec.die.pads["source"])
+        foot = p.rows[q][1] + dv / 2 + 1e3 * (sy0 + sy1) / 2 + p.feet[q][3]
+        wmin_, wmax_ = spec.rules.min_wire_length * 1e3 + 0.5, spec.rules.max_wire_length * 1e3 - 1.0
+        lo_l, hi_l = (foot + wmin_, foot + wmax_) if sgn > 0 else (foot - wmax_, foot - wmin_)
+        lm = _reach_margin(spec) if rch else 0.5
+        lo_l, hi_l = max(lo_l, sv[j][0] + lm), min(hi_l, sv[j][1] - lm)
+        ln = p.land[q]
+        ok = _ong(ln, FOOT_GRID_MM if rch else DESIGN_GRID_MM)
+        ok = ok and (_between(ln / FOOT_GRID_MM, _gceil(lo_l), _gfloor(hi_l)) if rch else _between(ln, _g_up(lo_l), _g_dn(hi_l)))
+        if not ok:
+            return fail(f"land_{sw}")
+        n_pass += 1
+        ldu, ldv = p.feet[q][4], p.feet[q][5]
+        if not (_ong(ldv, FOOT_GRID_MM) and abs(ldv) <= 3 * FOOT_GRID_MM + 1e-9
+                and (ldv == 0.0 or _between(ln + ldv, sv[j][0] + lm, sv[j][1] - lm))):
+            return fail(f"land_dv_{sw}")
+        if not (_ong(ldu, FOOT_GRID_MM) and abs(ldu) <= 4 * FOOT_GRID_MM + 1e-9):
+            return fail(f"land_du_{sw}")
+        n_pass += 1
+    return None
+
+
+def in_domain(spec: ReferenceSpec, params: Params | np.ndarray, reach: bool = False, ctx: _Ctx | None = None) -> tuple[bool, str]:
+    """(True, "") if ``params`` lies in the domain of the sampler (``reach`` selects the mode: ``generate(..., reach=reach)``),
+    else (False, name of the first constraint that fails).
+
+    The predicate replays ``_sample``'s sequential construction on the vector: orientation and sequence flags; slot heights
+    (``h_min`` + a grid amount) and gaps (``g_min`` or a merged pair that touches); the stack inside one free window of the
+    housing (or, where the keepouts split it, each slot inside a window of its net, D0021), the die slots' centres inside the
+    gate / Kelvin wire-length windows; per net the column's outer edge, inner edge and v extent from the pad; each slot's
+    attached end against its column edge; the die rows (gap, start u, v) and the free ends (from the die row, the other
+    columns and the outline); the wire feet and gate / Kelvin feet on the 0.125 mm grid inside the source pad; the landing
+    lines.  Every coordinate must be on its grid and inside the interval the sampler would draw it from *given the earlier
+    coordinates* (joint, not marginal).  The side of each net's column (which edge the slots attach to) is not a parameter:
+    the replay tries both sides of every net and reports the failure of the reading the geometry shows (the slots run from
+    the column towards +u or towards -u).  Last, the layout must build, pass ``_quick_ok`` and be DRC-clean under ``spec.rules``, as every layout of
+    ``generate``.  ``reach=False``: the legacy domain (slots attached at the column's inner edge, outer edge <= pad edge +
+    1.5 mm, ...).  ``reach=True``: also straddling slots, column outer edges and slot free ends up to the edge-margin limit,
+    column v extents that only cover the pad, and landing lines on the 0.125 mm grid (module docstring, T0377).
+
+    The replay is a superset of the sampler's support where the sampler's draw has a shrink fallback (the stack's grid
+    rounding: the upper window limit carries one grid step of tolerance); soundness (every draw satisfies it) is tested, the
+    converse is not claimed."""
+    cx = ctx if ctx is not None else _Ctx(spec, reach=reach)
+    if cx.reach_on != bool(reach):
+        raise ValueError("ctx was built for the other reach mode")
+    try:
+        p = params if isinstance(params, Params) else Params.from_vector(params)
+    except (ValueError, TypeError) as e:
+        return False, f"vector: {e}"
+    if p.orient not in (0, 1) or any(f not in (0, 1) for f in (p.hs_first, p.hs_die_first, p.ls_die_first)):
+        return False, "flags"
+    orient = p.orient
+    fr = _Frame(orient)
+    seq = p.sequence()
+    du, dv = (x * 1e3 for x in fr.size(spec.die.w, spec.die.h))
+    dem = cx.dem
+    sv = [(s[1], s[3]) for s in p.slots]
+    # --- slot heights and gaps
+    hts = []
+    for i, (net, role, _) in enumerate(seq):
+        h = sv[i][1] - sv[i][0]
+        h_min = dv + 2 * dem if role == "die" else max(cx.wmin[net], 2.0)
+        if not (_ong(sv[i][0]) and _ong(sv[i][1]) and _between(h, h_min, h_min + (5.0 if role == "die" else 6.0))):
+            return False, f"slot{i}_height"
+        hts.append(h)
+    for i in range(3):
+        gap = sv[i + 1][0] - sv[i][1]
+        if seq[i][0] == seq[i + 1][0] and abs(gap) < 1e-9:
+            continue  # a merged pair touches
+        if gap < cx.sp[(seq[i][0], seq[i + 1][0])] - 1e-9:
+            return False, f"slot{i}_gap"
+    # --- the stack: one free window of the housing, or (split) one window of each slot's net; die-slot centres in their windows
+    sig = cx.sig[orient]
+    dwin = _die_windows(spec, seq, sig, fr)
+    for i, w in dwin.items():
+        c = 0.5 * (sv[i][0] + sv[i][1])
+        if not (w[0] - 1e-9 <= c <= w[1] + DESIGN_GRID_MM):
+            return False, f"slot{i}_die_window"
+    if cx.split[orient]:
+        for i, (net, _, _) in enumerate(seq):
+            if not any(a - 1e-9 <= sv[i][0] and sv[i][1] <= b + 1e-9 for a, b in cx.bands[orient][net]):
+                return False, f"slot{i}_window"
+    elif not any(a - 1e-9 <= sv[0][0] and sv[3][1] <= b + DESIGN_GRID_MM + 1e-9 for a, b in cx.vwin[orient]):
+        return False, "stack_window"
+    # --- the columns' sides, then everything that depends on them
+    # a net's side is not a parameter: the primary reading is the one the geometry shows (the slots run from the column towards
+    # +u: side -1), the other side is tried too; a failure is reported for the primary reading
+    prim = []
+    for q, net in enumerate(NETS):
+        mine = [s_ for (n, _, _), s_ in zip(seq, p.slots, strict=True) if n == net]
+        c = p.cols[q]
+        prim.append(-1 if sum(0.5 * (s_[0] + s_[2]) for s_ in mine) / len(mine) >= 0.5 * (c[0] + c[2]) else 1)
+    first = None
+    for combo in range(8):
+        sides = tuple(prim[q] if not (combo >> q & 1) else -prim[q] for q in range(3))
+        bad = _replay(spec, cx, p, sides, seq, sv, hts)
+        if bad is None:
+            first = None
+            break
+        if first is None:
+            first = bad
+    if first is not None:
+        return False, first[1]
+    try:
+        lay = build(spec, p)
+    except ValueError as e:
+        return False, f"build: {e}"
+    if not _quick_ok(spec, cx, lay):
+        return False, "quick_ok"
+    viol = check(lay, spec.rules)
+    if viol:
+        return False, f"drc: {viol[0]}"
+    return True, ""
+
+
+def generate(spec: ReferenceSpec, n: int, seed: int, max_failures: int = 20000, reach: bool = False) -> list[Layout]:
     """``n`` DRC-clean (under ``spec.rules``) layouts inside ``spec``, deterministic in ``seed``.
 
-    Seeded rejection sampling over ``Params``; RuntimeError after ``max_failures`` consecutive rejected candidates."""
+    Seeded rejection sampling over ``Params``; RuntimeError after ``max_failures`` consecutive rejected candidates.
+    ``reach=True`` draws from the reach domain (module docstring, T0377); the default draws the legacy streams unchanged."""
     rng = np.random.default_rng(seed)
-    cx = _Ctx(spec)
+    cx = _Ctx(spec, reach=reach)
     out: list[Layout] = []
     fails = 0
     while len(out) < n:
