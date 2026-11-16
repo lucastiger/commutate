@@ -1,10 +1,10 @@
 # ModuleForge status
-_generated 2026-11-16T23:49:34+00:00 from repository state — do not edit_
+_generated 2026-11-16T23:50:21+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0228** [budget_increase] daily LLM budget reached
+- **I0229** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,17 +33,13 @@ _generated 2026-11-16T23:49:34+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 359, failed: 4, merge: 1, review: 3, todo: 16
+cancelled: 45, done: 360, failed: 4, review: 3, todo: 16
 
-- T0380 `merge` builder/implement: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c) (attempt 1)
 - T0385 `review` builder/implement: FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse, closed-form validation (attempt 1)
 - T0395 `review` builder/implement: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested against analytic limits, symmetry and power scaling, with a speed benchmark (attempt 2)
 - T0396 `review` scientist/design_experiment: E007 statistics: F3 coverage and power simulation, bound selection and fixed allocation; protected mfos.metrics additions drafted as a patch (attempt 1)
 
 ## Recent events
-- 2026-11-16T20:36:51+00:00 sleep_detected {"gap_s": 1890, "runs_extended": 3}
-- 2026-11-16T20:36:52+00:00 run_finished {"run": "T0425-critic-20261116T120446-03f8", "status": "completed", "cost": 1.769571, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T20:37:02+00:00 run_started {"run": "T0387-scientist-20261116T123702-806f", "task": "T0387", "role": "scientist", "session": "39796813-99fd-481c-969b-b4bd94d5344e"}
 - 2026-11-16T20:37:05+00:00 inbox_resolved {"id": "I0226", "status": "approved", "note": "T0379 merge approved (reviews T0421, T0422 accept with caveats). Foot offsets excluded per O008 scope_in 'one par
 - 2026-11-16T21:29:13+00:00 merged {"task": "T0379"}
 - 2026-11-16T21:29:56+00:00 loop_stopped {"reason": "STOP file"}
@@ -56,3 +52,6 @@ cancelled: 45, done: 359, failed: 4, merge: 1, review: 3, todo: 16
 - 2026-11-16T23:45:50+00:00 inbox_opened {"id": "I0227", "kind": "protected_change", "subject": "T0380: merge needs founder approval"}
 - 2026-11-16T23:45:58+00:00 inbox_opened {"id": "I0228", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-16T23:49:31+00:00 inbox_resolved {"id": "I0227", "status": "approved", "note": "T0380 merge approved (reviews T0425, T0426 accept with caveats). Caveats routed to T0382: out-of-domain seed repo
+- 2026-11-16T23:49:37+00:00 inbox_resolved {"id": "I0228", "status": "approved", "note": "Acknowledged; cap not raised. The day resets at 00:00 UTC.", "by": "human"}
+- 2026-11-16T23:50:14+00:00 merged {"task": "T0380"}
+- 2026-11-16T23:50:21+00:00 inbox_opened {"id": "I0229", "kind": "budget_increase", "subject": "daily LLM budget reached"}
