@@ -1,0 +1,34 @@
+id: I0223
+kind: plan_approval
+subject: '[O002] approve initial plan (1 tasks)'
+summary: 'The I0211 trigger needs no change to the task graph. The founder already re-scoped T0396 to
+  the F3-selected bound only. The other metrics functions (quantile_abs_err, quantile_rel_err, quantile_abs_err_ratio,
+  median_col, max_over_groups, gci_step_floor, max_gci_step_floor) are on main in tools/mfos/mfos/metrics.py,
+  so T0396''s `git apply --check` can pass on main as it stands. No evaluation has run, and T0392 (L1
+  design study), T0393 (F1 development check) and T0394 (fixed die-size option) are merged. On 12 development
+  layouts the study''s chosen fv_coarse_xcal meets the A1, A2 and A5 design points (0.19/0.09 K, about
+  1.0 %, 0.315 s). But its A4 spread ratio is 0.37 pooled against the 0.3 design point and 0.81 in the
+  2-die stratum, so A4 is the most likely killer. T0395 already carries that risk (report A4 per band;
+  test a finer coarse grid or a per-switch correction within 1 s), and if L1 stays near 0.37, F3''s power
+  at 0.6 x threshold will overstate E007''s real power. F1 is the other open gate: 6 level-2 solves wait
+  on the burst VM (I0212, an open founder action). Review T0411 showed that `f1_dev_check.py --analyse`
+  sets its level-1 verdict without consulting its own sanity block or checking each stored record''s power,
+  fingerprint and solver hash: a level-2 record with a wrong solver hash still gives ''confirmed''. That
+  verdict decides whether E007 can judge at level 1 (about 35-70 CPU-hours) or needs a founder decision
+  under F1''s response. So the one addition is a small task that makes the verdict gate on those checks
+  before the burst output is analysed, as F1''s ''gated sanity checks'' require. Committed spend is about
+  $29.5 in open tasks, about $10 in reviews, about $4 for the F1 burst and $15-35 of E007 VM, against
+  $86.21 remaining. The $2 task fits, but the slack is small. Every required experiment (E007) has design
+  tasks (T0397, T0398) and an experiment task (T0399).'
+refs:
+- O002
+- T0419
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T16:16:26+00:00'
+resolved_at: null
+resolved_by: null

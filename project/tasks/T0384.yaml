@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -304,3 +304,138 @@ history:
   outcome: review_round_cap
   summary: 2 rejected rounds
   at: '2026-11-16T06:15:32+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'I fixed review T0408''s blocker and the four review minors the founder listed, and committed
+    the work as ec618fa2 on top of attempt 2''s c3c7df22. All four DoD checks exit 0: the tests (55 passed),
+    ruff on both files, the file-exists check, and `mfos gate --fast`, which I ran again after committing.
+
+
+    **Blocker: long `.equiv` lines.** A new `equiv_lines()` splits every `.equiv` group into lines of
+    at most `MAX_LINE` = 900 characters. Each line starts with the group''s first node, so the group stays
+    one equivalence. The exporter also refuses any other line over 900 characters (only a long `title`
+    can cause one) and a title that spans more than one line. P4''s k0 decks have no line over 900 characters,
+    so the faithful-port test still matches the research exporter line for line.
+
+
+    **Tests added or '
+  report:
+    status: completed
+    summary: 'I fixed review T0408''s blocker and the four review minors the founder listed, and committed
+      the work as ec618fa2 on top of attempt 2''s c3c7df22. All four DoD checks exit 0: the tests (55
+      passed), ruff on both files, the file-exists check, and `mfos gate --fast`, which I ran again after
+      committing.
+
+
+      **Blocker: long `.equiv` lines.** A new `equiv_lines()` splits every `.equiv` group into lines of
+      at most `MAX_LINE` = 900 characters. Each line starts with the group''s first node, so the group
+      stays one equivalence. The exporter also refuses any other line over 900 characters (only a long
+      `title` can cause one) and a title that spans more than one line. P4''s k0 decks have no line over
+      900 characters, so the faithful-port test still matches the research exporter line for line.
+
+
+      **Tests added or tightened:**
+
+      - `read_errors` now flags lines over 900 characters, with a negative control: a die group put back
+      on one line is caught.
+
+      - At cell_mm=0.25, decks with default dies and point or tab terminals have every line at or under
+      900 characters and read in one pass. This holds on Case 4, 2D_Case_2R, 2D_Case_6 and a generated
+      layout.
+
+      - In those decks the split groups still form one class each, holding every die footprint cell plus
+      its wire start, and 144 post-top nodes per tab. The test also confirms the decks really were split,
+      so it cannot pass trivially.
+
+      - The distributed-die decks also read in one pass at 0.25 mm.
+
+      - The die-group test now merges `.equiv` lines into classes before checking and also runs at 0.25
+      mm. It is stricter than before.
+
+
+      **Review minors:**
+
+      - `FHLevel` counts must be ints, rejecting bools and floats such as 3.0. The pitches and `rh` must
+      be finite positive numbers. numpy scalars are accepted and stored as plain int/float so the deck
+      text does not change.
+
+      - `die_sigma` must be finite and greater than 0.
+
+      - Die and tab footprints are now checked against the lattice. A die shifted half a cell now raises,
+      as it does in l2_layout.
+
+      - The default die model also adds the cell nearest the die centre, as l2_layout does. On every layout
+      tested the group is still exactly the footprint.
+
+      - Every distributed-die deck now carries a `solver_notes` entry: the multipole solver crashed on
+      it (review T0409), so use the direct solver at a level coarse enough for a dense solve.
+
+      - The docstring is updated for all of this.
+
+
+      **Checks with the provisioned binary (`~/.local/bin/fasthenry`):**
+
+      - The 0.25 mm decks (plane pitch 2 mm) for Case 4, 2D_Case_2R and 2D_Case_6, in default, tab and
+      distributed form, all read without error (`-f simple`, exit 0).
+
+      - The same Case 4 deck with each group put back on one 3852-character line is refused (exit 1).
+
+      - P4''s d0 deck with its groups split at 60 characters gives exactly the same Zc.mat as the unsplit
+      deck: Z = 0.0081921 + 1.60649j Ω at 10 MHz, which is 25.568 nH and matches P4''s d0 multipole value.
+
+      - A full multipole solve of the 2D_Case_6 0.25 mm default deck (about 34k filaments, 294 MB allocated)
+      got past reading and into the solve, but did not finish: it was stopped at its 45-minute limit without
+      producing an impedance. Full 0.25 mm solves are left to the next task (E004) or a burst VM.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/solvers/fasthenry.py tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: test -f src/moduleforge/solvers/fasthenry.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast (before final small edit)
+      exit_code: 0
+    - cmd: uv run mfos gate --fast (on committed ec618fa2)
+      exit_code: 0
+    - cmd: fasthenry deck.inp -f simple, for each of 9 decks at cell 0.25 / plane 2 mm (Case 4, 2D_Case_2R,
+        2D_Case_6 x short/point, short/tab, distributed/point) and for d0 split and unsplit (11 runs)
+      exit_code: 0
+    - cmd: fasthenry deck.inp -f simple on the Case 4 0.25 mm deck with groups put back on one line (negative
+        control)
+      exit_code: 1
+    - cmd: /usr/bin/time -l fasthenry deck.inp, d0 unsplit and d0 split60 (rc 1 from time's blocked sysctl;
+        Zc.mat written, identical)
+      exit_code: 1
+    - cmd: fasthenry deck.inp, d0_split60 plain rerun (D0002 intermittent segfault)
+      exit_code: 139
+    - cmd: fasthenry deck.inp, d0_unsplit run1 (D0002 intermittent segfault)
+      exit_code: 139
+    - cmd: fasthenry deck.inp, d0_split60 run1-3 and d0_unsplit run2-3 (identical Zc.mat)
+      exit_code: 0
+    - cmd: fasthenry deck.inp, full multipole solve of 2D_Case_6 0.25 mm default deck (stopped at its
+        45 min background limit, no Zc.mat)
+      exit_code: -1
+    concerns:
+    - 'The full multipole solve of a 0.25 mm deck did not finish locally: the 2D_Case_6 run was stopped
+      at its 45-minute limit without producing an impedance. On the real binary, only reading and parsing
+      of the 0.25 mm decks is shown, plus impedance being unchanged by splitting on the 1 mm d0 deck.
+      Solving at 0.25 mm is left to the next task or a burst VM.'
+    - The binary at ~/.local/bin/fasthenry has sha256 eaa6d6fc...2d14, not the 15bfbcd1...7365 recorded
+      in D0002. This is the rebuild already flagged in P4's note.
+    - 'D0002''s known intermittent segfault (rc 139) hit 2 of the 8 plain d0 runs: one split deck and
+      one unsplit deck. Every run that completed gave identical Z, so the crash is not caused by the split.'
+    - MAX_LINE = 900 rests on review T0408's probe (969 characters read, 1209 refused). I did not read
+      FastHenry's source buffer constant.
+    - The distributed-die solver note repeats review T0409's observation (multipole segfault at 1 mm /
+      4 mm, direct solver works). I did not reproduce the crash or test whether a finer plane pitch avoids
+      it.
+    - The default die model now also adds the cell nearest the die centre, as l2_layout does. This changes
+      nothing on any layout tested (the group equals the footprint), but it is a behaviour change beyond
+      the four review items. Lattice-check tolerance is 1e-6 cell, against l2_layout's 1e-9.
+    - As review T0408 noted, the F6 block, column and post segments carry no thickness filaments (nhinc),
+      so the F6 variants refine only through cell_mm. This is documented, not changed.
+    - The docstring now cites the binary checks from this attempt. They are agent-run checks, not experiment
+      evidence.
+    files_changed:
+    - src/moduleforge/solvers/fasthenry.py
+    - tests/unit/test_fasthenry.py

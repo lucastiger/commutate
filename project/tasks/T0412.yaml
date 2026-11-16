@@ -4,7 +4,7 @@ title: 'Plan O002 (founder approved I0211: Patch route approved, limited to the 
   other functions are in mfos.metrics (no replan))'
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -32,4 +32,16 @@ lens: null
 trigger: 'founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions
   are in mfos.metrics (no replan)'
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'The I0211 trigger needs no change to the task graph. The founder already re-scoped T0396 to
+    the F3-selected bound only. The other metrics functions (quantile_abs_err, quantile_rel_err, quantile_abs_err_ratio,
+    median_col, max_over_groups, gci_step_floor, max_gci_step_floor) are on main in tools/mfos/mfos/metrics.py,
+    so T0396''s `git apply --check` can pass on main as it stands. No evaluation has run, and T0392 (L1
+    design study), T0393 (F1 development check) and T0394 (fixed die-size option) are merged. On 12 development
+    layouts the study''s chosen fv_coarse_xcal meets the A1, A2 and A5 design points (0.19/0.09 K, about
+    1.0 %, 0.315 s). But its A4 spread ratio is 0.37 pooled against the 0.3 design point and 0.81 in the
+    2-die stratum, so A4 is the most likely killer. T0395 already carries that '
+  created:
+  - T0419
+  dropped_for_limits: 0

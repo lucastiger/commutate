@@ -1,0 +1,125 @@
+id: T0419
+objective: O002
+title: 'F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review
+  T0411 findings 1-2)'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 verdict the founder gets
+  from `--analyse`, after the burst level-2 solves (I0212) are copied back, cannot read ''confirmed''
+  or ''refuted'' when the experiment itself is broken. This addresses review T0411 (accept with caveats).
+  Finding 1: analyse() sets level1 from the pass_L1 flags plus energy balance and Tj only, and never consults
+  checks[''sanity''] or reproduction_check.passed. A synthetic level-2 set with thermal_fem_sha256 ''deadbeef...''
+  gave status complete, level1 confirmed. Finding 2: stored() accepts any status-ok JSON in cache/ or
+  burst_out/ without checking it against the expected power, fingerprint or frozen-config hash.
+
+
+  Changes, in research/o002_f1/f1_dev_check.py only:
+
+  - Add checks[''sanity''][''record_provenance'']. For every stored record (cache/, burst_out/ and the
+  o007_dev3 level-2 records at P_ref) assert: power_W equals p_ref(stratum) x the load factor (relative
+  1e-12); the fingerprint equals layouts()''s; level and load match the key; the die count matches; the
+  solver hash starts with a216d5fe3209bcee; and frozen_config_sha256 matches research/o007_dev3/frozen_config.json
+  where the record carries it. The o007_dev3 level-2 records carry no solver hash (T0411 finding 3), so
+  their provenance is dev_study.json''s recorded thermal_fem_sha256 together with reproduction_check.passed;
+  say so in the check''s output. List each failing record by key.
+
+  - Make own_solves_frozen_bytes cover burst_out records too, not only source == ''this task''.
+
+  - Verdict: if any sanity check, reproduction_check.passed, energy balance or Tj-at-P_ref check fails,
+  level1 = ''pending'', and a new top-level ''broken'' list names the failed checks (empty otherwise).
+  ''refuted'' and ''confirmed'' are allowed only when ''broken'' is empty. The existing rules are otherwise
+  unchanged.
+
+  - Do not change any F1 tolerance, the estimator (gci_step_floor with the 0.01 K floor), the judged level,
+  the hottest-die rule, the layouts, the burst plan or burst_level2.sh. Run no solve.
+
+
+  Tests in research/o002_f1/test_f1_dev_check.py, with synthetic level-2 records built in pytest''s tmp_path
+  (never written into the repo), for example L2 = L1 + 0.35 (L1 - L0) from the cached level-0/1 records
+  as T0411 did. Point the module''s CACHE/BURST_OUT (and anything else needed) at tmp copies via monkeypatch.
+  Cases:
+
+  - the clean synthetic set gives level1 ''confirmed'' and broken == [];
+
+  - a 0.3 K bump on one die''s level-2 tj_mean gives ''refuted'';
+
+  - a wrong thermal_fem_sha256 on one level-2 record gives ''pending'' with ''own_solves_frozen_bytes''
+  or ''record_provenance'' in broken;
+
+  - power_W off by 1 % on one record gives ''pending'';
+
+  - a fingerprint mismatch on one record gives ''pending'';
+
+  - a forced reproduction failure gives ''pending'';
+
+  - the current repository data, without burst output, give status ''awaiting_level2'', level1 ''pending''
+  and broken == [].
+
+
+  Then re-run `--analyse` to regenerate research/o002_f1/f1_dev_check.json, and add one paragraph to research/notes/o002-f1-dev-check.md
+  stating the new verdict rule.'
+context_files:
+- research/o002_f1/f1_dev_check.py
+- research/o002_f1/f1_dev_check.json
+- research/notes/o002-f1-dev-check.md
+- research/o002_f1/burst_level2.sh
+- research/o007_dev3/frozen_config.json
+- research/o007_dev3/dev_study.json
+- .mfos/runs/T0411-critic-20261115T230955-ace3/record.json
+- project/objectives/O002/objective.yaml
+deliverables:
+- research/o002_f1/f1_dev_check.py
+- research/o002_f1/test_f1_dev_check.py
+- research/o002_f1/f1_dev_check.json
+- research/notes/o002-f1-dev-check.md
+touches:
+- research/o002_f1/f1_dev_check.py
+- research/o002_f1/test_f1_dev_check.py
+- research/o002_f1/f1_dev_check.json
+- research/notes/o002-f1-dev-check.md
+definition_of_done:
+- cmd: uv run pytest -q research/o002_f1/test_f1_dev_check.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python research/o002_f1/f1_dev_check.py --analyse
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('research/o002_f1/f1_dev_check.json')); assert
+    d['status'] in ('awaiting_level2', 'complete'), d['status']; assert d['level1'] in ('pending', 'confirmed',
+    'refuted'), d['level1']; assert 'broken' in d, sorted(d); s = d['checks']['sanity']; assert 'record_provenance'
+    in s, sorted(s); bad = [k for k, v in s.items() if v.get('passed') is not True]; assert not bad, bad;
+    assert d['reproduction_check']['passed'] is True; assert d['broken'] == [], d['broken']; assert not
+    (d['level1'] in ('confirmed', 'refuted') and d['broken'])"
+  exists: null
+  timeout_s: 120
+- cmd: uv run ruff check research/o002_f1
+  exists: null
+  timeout_s: 300
+- cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+  exists: null
+  timeout_s: 60
+experiment: null
+risk: low
+model: null
+budget_usd: 2.0
+max_turns: 40
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0412
+created_at: '2026-11-16T16:16:26+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F1's detection requires gated sanity checks. The F1 development check's verdict decides whether
+  E007 can judge at level 1 or needs a founder decision under F1's response, and review T0411 showed that
+  a broken record (wrong solver hash) still yields 'confirmed'. The fix must land before the founder analyses
+  the burst output (I0212).
+history: []
