@@ -19,8 +19,10 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   side-by-side blocks) block no known commercial module; separate diode dies block 6 and multi-pad terminals 4.
 - **A hint, not evidence:** an L1-only development probe (`research/notes/o008-control-probe.md`) found that a local
   search seeded at the twin, under each reference's own measured rules, reaches layouts 10 % (2D_Case_2R) and 37 %
-  (2D_Case_4) below the twins at L1. L1 on these geometries is outside C002's scope and the references are development
-  geometry already seen, so this cannot count for A-T3; an l2_layout check of the two layouts is the cheap next test.
+  (2D_Case_4) below the twins at L1. O008's T0376 checked it with l2_layout at 0.5 mm (2026-11-16): the optimised
+  layouts sit 7 % (2R, L2 ratio 0.929) and 30 % (Case 4, 0.699) below the twins. The references are development
+  geometry already seen, the cells are coarser than a judged run's, and Tj was not checked, so this still cannot
+  count for A-T3; it is the strongest technical signal so far that headroom exists.
 - **Customers:** `project/customers/` holds only its README. No customer conversation is on record, and the charter
   counts customer evidence only when it is recorded there. Outreach drafts are ready
   (`research/notes/outreach-drafts.md`).
