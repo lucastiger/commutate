@@ -737,51 +737,75 @@ def max_gci_step_floor(f0: Sequence[float], f1: Sequence[float], f2: Sequence[fl
     return float(max(gci_step_floor(x, y, z, step_floor, relative) for x, y, z in zip(a, b, c, strict=True)))
 
 
-def _by_unit(rows: Rows, unit: str, col: str) -> dict[Any, np.ndarray]:
+def _shortfall(v: Any) -> float:
+    """A shortfall value; a missing or non-finite one (no candidate returned) is +inf, a failed draw (review T0381)."""
+    x = math.inf if v is None else float(v)
+    return math.inf if math.isnan(x) else x
+
+
+def _by_unit(rows: Rows, unit: str, col: str, n_draws: Optional[int] = None) -> dict[Any, np.ndarray]:
     out: dict[Any, list[float]] = {}
     for row in rows:
-        out.setdefault(row[unit], []).append(float(row[col]))
+        out.setdefault(row[unit], []).append(_shortfall(row[col]))
     if not out:
         raise ValueError("no rows")
+    if n_draws is not None:
+        short = {k: len(v) for k, v in out.items() if len(v) != n_draws}
+        if short:
+            raise ValueError(f"layouts without exactly {n_draws} draws: {short} (O008 F6 excludes such a layout first)")
     return {k: np.asarray(v, dtype=float) for k, v in out.items()}
 
 
-def control_layout_pass_min(rows: Rows, s: str = "s", layout: str = "layout", tol: float = 0.02) -> float:
+def control_layout_pass_min(rows: Rows, s: str = "s", layout: str = "layout", tol: float = 0.02,
+                            n_draws: Optional[int] = None) -> float:
     """O008 A1: min over layouts of the fraction of that layout's draws whose shortfall s = L_sub(best) / L_sub(W*) - 1
-    is at most ``tol``. Rows are the search's draws (select them with the spec's ``where``)."""
-    per = _by_unit(rows, layout, s)
+    is at most ``tol``. Rows are the search's draws (select them with the spec's ``where``). A missing or non-finite s
+    is a failed draw. ``n_draws``: every layout must have exactly that many draws, else this raises (a dropped draw
+    would otherwise shrink the denominator, review T0381)."""
+    per = _by_unit(rows, layout, s, n_draws)
     return float(min(np.mean(v <= tol) for v in per.values()))
 
 
-def control_shortfall_median_max(rows: Rows, s: str = "s", layout: str = "layout") -> float:
+def control_shortfall_median_max(rows: Rows, s: str = "s", layout: str = "layout",
+                                 n_draws: Optional[int] = None) -> float:
     """O008 K1: max over layouts of the median shortfall s of that layout's draws (per layout, so one layout cannot mask
-    another)."""
-    per = _by_unit(rows, layout, s)
+    another). A missing or non-finite s counts as +inf, so it can fire the kill but never hide another layout's
+    median (a NaN median made Python's max order-dependent, review T0381)."""
+    per = _by_unit(rows, layout, s, n_draws)
     return float(max(np.median(v) for v in per.values()))
 
 
 def null_beaten_min(rows: Rows, nulls: Sequence[str], role: str = "role", search: str = "search",
                     layout: str = "layout", draw: str = "draw", s: str = "s", b: str = "b",
-                    capped: Optional[str] = None, tol: float = 0.02, k_resolved: int = 4,
-                    k_paired: int = 7) -> float:
+                    capped: str = "capped", tol: float = 0.02, k_resolved: int = 4,
+                    k_paired: int = 7, n_draws: Optional[int] = None) -> float:
     """O008 A3: 1.0 if every gating null is beaten on every layout, else 0.0. A null is beaten on a layout when (i) it
     fails resolvably, s_null - b_null > ``tol``, on at least ``k_resolved`` of the layout's draws, a null run flagged in
-    ``capped`` (stopped at its step limit) never counting as a resolved failure; and (ii) the search's s is below the
-    null's by more than b_search + b_null on at least ``k_paired`` draws, paired on the same draw. Rows carry one record
-    per (layout, draw, role). A draw of a layout without exactly one search row and one row per null raises: nothing is
-    paired silently."""
+    the ``capped`` column (stopped at its step limit) never counting as a resolved failure; and (ii) the search's s is
+    below the null's by more than b_search + b_null on at least ``k_paired`` draws, paired on the same draw. A draw on
+    which the null or the search has no finite s or b (no candidate returned) counts as neither, so missing results
+    cannot make A3 easier to meet (review T0381). The ``capped`` column is required: leaving it out would count capped
+    runs as resolved failures (review T0381). Rows carry one record per (layout, draw, role). A draw of a layout
+    without exactly one search row and one row per null, or (``n_draws``) a layout without exactly that many draws,
+    raises: nothing is paired or averaged silently."""
     if not nulls:
         raise ValueError("null_beaten_min needs at least one null role")
+    if not capped:
+        raise ValueError("null_beaten_min needs the capped column (runs stopped at their step limit)")
     recs: dict[tuple[Any, Any, Any], dict[str, Any]] = {}
     for row in rows:
         key = (row[layout], row[draw], row[role])
         if key in recs:
             raise ValueError(f"duplicate row for layout {key[0]!r}, draw {key[1]!r}, role {key[2]!r}")
+        if row[role] != search and capped not in row:
+            raise ValueError(f"row for layout {key[0]!r}, draw {key[1]!r}, role {key[2]!r} has no {capped!r} column")
         recs[key] = row
     draws: dict[Any, set] = {}
     for lay, dr, _ in recs:
         draws.setdefault(lay, set()).add(dr)
     for lay, ds in draws.items():
+        if n_draws is not None and len(ds) != n_draws:
+            raise ValueError(f"layout {lay!r} has {len(ds)} draws, not {n_draws} (O008 F6 excludes such a layout first)")
         for dr in ds:
             for rl in (search, *nulls):
                 if (lay, dr, rl) not in recs:
@@ -791,10 +815,11 @@ def null_beaten_min(rows: Rows, nulls: Sequence[str], role: str = "role", search
             resolved = paired = 0
             for dr in ds:
                 sr, nr = recs[(lay, dr, search)], recs[(lay, dr, nl)]
-                s_n, b_n = float(nr[s]), float(nr[b])
-                if s_n - b_n > tol and not (capped and bool(nr[capped])):
+                s_n, b_n, s_s, b_s = (_shortfall(nr[s]), _shortfall(nr[b]), _shortfall(sr[s]), _shortfall(sr[b]))
+                null_ok = math.isfinite(s_n) and math.isfinite(b_n)
+                if null_ok and s_n - b_n > tol and not bool(nr[capped]):
                     resolved += 1
-                if s_n - float(sr[s]) > float(sr[b]) + b_n:
+                if null_ok and math.isfinite(s_s) and math.isfinite(b_s) and s_n - s_s > b_s + b_n:
                     paired += 1
             if resolved < k_resolved or paired < k_paired:
                 return 0.0
@@ -922,14 +947,16 @@ METRICS: dict[str, Callable[..., float]] = {
         *_levels(rows, params, "levels"), step_floor=float(_p(params)["step_floor"]),
         relative=bool(_p(params).get("relative", False))),
     "control_layout_pass_min": lambda rows, pred=None, group=None, params=None, **_: control_layout_pass_min(
-        rows, s=pred or "s", layout=group or "layout", tol=float(_p(params).get("tol", 0.02))),
-    "control_shortfall_median_max": lambda rows, pred=None, group=None, **_: control_shortfall_median_max(
-        rows, s=pred or "s", layout=group or "layout"),
+        rows, s=pred or "s", layout=group or "layout", tol=float(_p(params).get("tol", 0.02)),
+        n_draws=_p(params).get("n_draws")),
+    "control_shortfall_median_max": lambda rows, pred=None, group=None, params=None, **_: control_shortfall_median_max(
+        rows, s=pred or "s", layout=group or "layout", n_draws=_p(params).get("n_draws")),
     "null_beaten_min": lambda rows, pred=None, group=None, role=None, params=None, **_: null_beaten_min(
         rows, nulls=list(_p(params)["nulls"]), role=role or "role", search=_p(params).get("search", "search"),
         layout=group or "layout", draw=_p(params).get("draw", "draw"), s=pred or "s", b=_p(params).get("b", "b"),
-        capped=_p(params).get("capped"), tol=float(_p(params).get("tol", 0.02)),
-        k_resolved=int(_p(params).get("k_resolved", 4)), k_paired=int(_p(params).get("k_paired", 7))),
+        capped=_p(params).get("capped", "capped"), tol=float(_p(params).get("tol", 0.02)),
+        k_resolved=int(_p(params).get("k_resolved", 4)), k_paired=int(_p(params).get("k_paired", 7)),
+        n_draws=_p(params).get("n_draws")),
     "max_rel_err_or_inf": lambda rows, pred, ref, params=None, **_: max_rel_err_or_inf(
         _col(rows, pred), _col(rows, ref), [row[_p(params)["excluded"]] for row in rows]),
     "max_consistency_capped": lambda rows, pred, ref, params=None, **_: max_consistency_capped(

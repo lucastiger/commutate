@@ -74,7 +74,9 @@ def test_o008_a3_a_null_is_beaten_only_if_it_fails_resolvably_and_loses_the_pair
     assert mx.null_beaten_min(_o008_rows(0.023), nulls=nulls) == 0.0
     # a null that stopped at its step limit never counts as a resolved failure
     assert mx.null_beaten_min(_o008_rows(0.06, capped=True), nulls=nulls, capped="capped") == 0.0
-    assert mx.null_beaten_min(_o008_rows(0.06, capped=True), nulls=nulls) == 1.0  # flag ignored when not named
+    assert mx.null_beaten_min(_o008_rows(0.06, capped=True), nulls=nulls) == 0.0  # the capped column is read by default
+    with pytest.raises(ValueError, match="needs the capped column"):
+        mx.null_beaten_min(_o008_rows(0.06), nulls=nulls, capped=None)
     # the paired leg alone can fail: a null that fails resolvably but the search is no better by both bands
     rows = _draws("2R", [0.05] * 8, b=0.01) + _draws("2R", [0.06] * 8, role="compact", b=0.01) + \
         _draws("2R", [0.20] * 8, role="widen", b=0.004)
@@ -95,6 +97,32 @@ def test_o008_a3_takes_the_minimum_over_layouts_and_refuses_unpaired_rows():
         mx.null_beaten_min(good + good[:1], nulls=nulls)
     with pytest.raises(ValueError):
         mx.null_beaten_min(good, nulls=[])
+
+
+def test_o008_missing_results_are_failed_draws_and_never_help_the_search():
+    """Review T0381's edge cases: a NaN shortfall made K1's median NaN and Python's max order-dependent (a kill could not
+    fire); a null with no candidate (s = inf) counted as a resolved failure and a paired win; a dropped draw shrank A1's
+    denominator."""
+    a = _draws("A", [0.0] * 7 + [float("nan")])
+    b = _draws("B", [0.10] * 8)
+    assert mx.control_shortfall_median_max(a + b) == pytest.approx(0.10)
+    assert mx.control_shortfall_median_max(b + a) == pytest.approx(0.10)  # order no longer matters
+    assert mx.control_shortfall_median_max(_draws("A", [None] * 8)) == math.inf  # all missing: the kill can fire
+    assert mx.control_layout_pass_min(_draws("A", [0.0] * 7 + [None])) == pytest.approx(7 / 8)  # missing = failed
+    nulls = ["compact", "widen"]
+    no_candidate = _draws("2R", [0.0] * 8, b=0.005) + _draws("2R", [math.inf] * 8, role="compact", b=0.004) + \
+        _draws("2R", [0.20] * 8, role="widen", b=0.004)
+    assert mx.null_beaten_min(no_candidate, nulls=nulls) == 0.0  # a null that returned nothing is not beaten
+    dropped = [r for r in _o008_rows(0.06) if r["draw"] != 5]  # draw 5 missing from every role
+    assert mx.null_beaten_min(dropped, nulls=nulls) == 1.0  # without n_draws the remaining 7 draws are judged
+    with pytest.raises(ValueError, match="has 7 draws, not 8"):
+        mx.null_beaten_min(dropped, nulls=nulls, n_draws=8)
+    with pytest.raises(ValueError, match="without exactly 8 draws"):
+        mx.control_layout_pass_min(_draws("A", [0.0] * 7), n_draws=8)
+    with pytest.raises(ValueError, match="has no 'capped' column"):
+        mx.null_beaten_min([{k: v for k, v in r.items() if k != "capped"} for r in _o008_rows(0.06)], nulls=nulls)
+    assert mx.compute("control_layout_pass_min", _draws("A", [0.0] * 8), pred="s", group="layout",
+                      params={"n_draws": 8}) == 1.0
 
 
 # ------------------------------------------------------------------------------------------------ O004

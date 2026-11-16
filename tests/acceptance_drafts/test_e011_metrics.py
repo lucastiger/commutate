@@ -29,16 +29,16 @@ TOL = 0.02
 RECOMPUTE = {
     "control_layout_pass_min": m.RecomputeSpec(
         metric="control_layout_pass_min", fn="control_layout_pass_min", pred="s", group="layout",
-        where={"role": "search", "counted": True}, params={"tol": TOL}),
+        where={"role": "search", "counted": True}, params={"tol": TOL, "n_draws": 8}),
     "reach_outside_max": m.RecomputeSpec(metric="reach_outside_max", fn="max_col", pred="reach_outside"),
     "null_beaten_min": m.RecomputeSpec(
         metric="null_beaten_min", fn="null_beaten_min", pred="s", group="layout", role="role",
         where={"counted": True},
         params={"nulls": ["widen", "compact"], "search": "search", "draw": "draw", "b": "b", "capped": "capped",
-                "tol": TOL, "k_resolved": 4, "k_paired": 7}),
+                "tol": TOL, "k_resolved": 4, "k_paired": 7, "n_draws": 8}),
     "control_shortfall_median_max": m.RecomputeSpec(
         metric="control_shortfall_median_max", fn="control_shortfall_median_max", pred="s", group="layout",
-        where={"role": "search", "counted": True}),
+        where={"role": "search", "counted": True}, params={"n_draws": 8}),
 }
 
 
@@ -159,12 +159,16 @@ def test_capped_null_is_not_a_resolved_failure(n_capped, beaten):
     assert em.null_beaten_min(rows) == float(beaten) == _theirs(rows)["null_beaten_min"]
 
 
-def test_a3_capped_requires_the_capped_param():
-    """Without params.capped mfos.metrics counts capped runs as resolved failures, so E011's spec must set it."""
+def test_a3_capped_defaults_to_the_capped_column():
+    """mfos.metrics reads the capped column by default and refuses capped=None, so a spec that leaves out
+    params.capped can no longer count capped runs as resolved failures (fixed after this task's report)."""
     rows = _two(widen=_draws(0.10, 0.005, capped=[True] * 5 + [False] * 3))
     rc = RECOMPUTE["null_beaten_min"]
     no_cap = rc.model_copy(update={"params": {k: v for k, v in rc.params.items() if k != "capped"}})
-    assert ev.metric_value(no_cap, ev._where(rows, rc.where), rc.pred).value == 1.0  # wrong: capped counted
+    assert ev.metric_value(no_cap, ev._where(rows, rc.where), rc.pred).value == 0.0
+    none_cap = rc.model_copy(update={"params": {**rc.params, "capped": None}})
+    with pytest.raises(ValueError, match="capped column"):
+        ev.metric_value(none_cap, ev._where(rows, rc.where), rc.pred)
     assert _theirs(rows)["null_beaten_min"] == em.null_beaten_min(rows) == 0.0
 
 
@@ -325,7 +329,6 @@ def test_agrees_with_mfos_metrics_on_random_rows():
     assert len(seen["control_layout_pass_min"]) >= 5 and len(seen["control_shortfall_median_max"]) >= 100
 
 
-@pytest.mark.xfail(strict=False, reason="T0381 report: mfos.metrics K1 lets one NaN draw mask another layout")
 def test_k1_nan_draw_does_not_mask_another_layout():
     rows = _rows({"A": _layout(search=_draws([math.nan] + [0.005] * 7, [math.nan] + [0.004] * 7)),
                   "B": _layout(search=_draws(0.10))})
@@ -333,7 +336,6 @@ def test_k1_nan_draw_does_not_mask_another_layout():
     assert _theirs(rows)["control_shortfall_median_max"] == pytest.approx(0.10)
 
 
-@pytest.mark.xfail(strict=False, reason="T0381 report: mfos.metrics counts a null's s = inf as a resolved failure")
 def test_null_without_candidate_is_not_a_resolved_failure():
     # 5 draws with no candidate written as s = inf (finite b); 3 unresolved draws (0.03 - 0.01 < 0.02) that are paired
     # wins. As resolved failures the inf draws would make the null beaten (5 resolved, 8 paired)
@@ -343,11 +345,10 @@ def test_null_without_candidate_is_not_a_resolved_failure():
     assert _theirs(rows)["null_beaten_min"] == 0.0
 
 
-@pytest.mark.xfail(strict=False, reason="T0381 report: mfos.metrics averages over the draws present, not over 8")
 def test_counted_layout_with_a_dropped_draw_is_rejected():
     # draw 7 dropped from every role on a counted layout (F6 would exclude the layout instead)
     rows = [r for r in _two(search=_draws([0.005] * 7 + [0.10])) if not (r["layout"] == "2D_Case_4" and r["draw"] == 7)]
     with pytest.raises(ValueError, match="7 search draws"):
         em.control_layout_pass_min(rows)
     with pytest.raises(ValueError):
-        _theirs(rows)  # mfos.metrics returns A1 = 7/7 = 1.0 here
+        _theirs(rows)  # with params.n_draws: 8, mfos.metrics refuses the layout (it averaged 7/7 = 1.0 before the fix)
