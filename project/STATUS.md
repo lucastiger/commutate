@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T14:30:48+00:00 from repository state — do not edit_
+_generated 2026-11-16T14:31:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -40,7 +40,6 @@ cancelled: 44, done: 345, failed: 4, running: 3, todo: 17
 - T0413 `running` planner/plan: Plan O008 (founder approved I0204: Written in a founder session in mfos.metrics (commit 2fea4a6e); A2 uses max_col; T0381 cross-checks (no replan)) (attempt 1)
 
 ## Recent events
-- 2026-11-16T13:36:21+00:00 inbox_resolved {"id": "I0215", "status": "approved", "note": "T0377 merge approved (reviews T0402, T0403 accept with caveats; caveats carried into T0378 and T0379)", "by": "hu
 - 2026-11-16T13:36:24+00:00 inbox_resolved {"id": "I0216", "status": "approved", "note": "T0376 merge approved (review T0406 accept with caveats; the 2R null margin is settled by E011's dev burst at 0.25
 - 2026-11-16T13:36:26+00:00 inbox_resolved {"id": "I0219", "status": "approved", "note": "T0392 merge approved (review T0410 accept with caveats; A4 and F2 caveats carried into T0395 and T0398)", "by": "
 - 2026-11-16T13:36:29+00:00 inbox_resolved {"id": "I0220", "status": "approved", "note": "T0394 merge approved (generator option: one fixed die size per stratum; verified)", "by": "human"}
@@ -55,3 +54,4 @@ cancelled: 44, done: 345, failed: 4, running: 3, todo: 17
 - 2026-11-16T14:30:47+00:00 run_started {"run": "T0413-planner-20261116T063047-98ff", "task": "T0413", "role": "planner", "session": "a91cab91-cf42-4072-8063-18f6ae26628f"}
 - 2026-11-16T14:30:48+00:00 run_started {"run": "T0378-builder-20261116T063048-cc86", "task": "T0378", "role": "builder", "session": "09c86f72-5b9d-4300-b748-a86c1ca85a30"}
 - 2026-11-16T14:30:48+00:00 run_started {"run": "T0384-builder-20261116T063048-5eee", "task": "T0384", "role": "builder", "session": "72b206c3-26b7-4871-9ef2-a405570784a6"}
+- 2026-11-16T14:31:23+00:00 sleep_detected {"gap_s": 3289, "runs_extended": 3}
