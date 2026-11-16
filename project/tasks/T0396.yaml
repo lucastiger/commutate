@@ -83,7 +83,17 @@ description: 'F3 and the protected tools/mfos additions listed in the objective 
 
 
   If no bound reaches 0.95 coverage, or the sample does not fit 100 CPU-hours, write that down. F3''s
-  response is a redesign before registration, not a change of threshold.'
+  response is a redesign before registration, not a change of threshold.
+
+
+  Founder session, 2026-11-16 (re-scope, I0211): mfos.metrics on branch session/metrics-2026-11-16 (commit
+  2fea4a6e, for the founder to merge) already has quantile_abs_err, quantile_rel_err, quantile_abs_err_ratio,
+  median_col, max_over_groups (per-level max), self-pair exclusion in pairwise_diff_error_quantile (params.unit)
+  and gci_step_floor / max_gci_step_floor (the 0.01 K step floor). Use those, and draft as e007_metrics.patch
+  only what is still missing: the confidence bound your F3 simulation selects (a new bootstrap_ci scheme
+  or method in tools/mfos/mfos/metrics.py with its CISpec option in tools/mfos/mfos/models.py), with its
+  tests. Make the patch apply on main after that branch is merged; if it is not merged when you start,
+  say so in your report.'
 context_files:
 - project/objectives/O002/objective.yaml
 - tools/mfos/mfos/metrics.py
