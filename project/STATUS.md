@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T01:06:07+00:00 from repository state — do not edit_
+_generated 2026-11-16T01:18:21+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -9,7 +9,7 @@ _generated 2026-11-16T01:06:07+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | draft | - | 0/1 | $16.90/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | draft | - | 0/1 | $19.10/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | draft | - | 0/1 | $23.71/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
@@ -21,7 +21,7 @@ _generated 2026-11-16T01:06:07+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 10 | $16.90 | 420968 | 270474 | 37 | 0 |
+| O002 | 10 | $19.10 | 475972 | 309986 | 40 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 14 | $23.71 | 549278 | 404912 | 35 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -31,12 +31,10 @@ _generated 2026-11-16T01:06:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 323, failed: 4, running: 1
+cancelled: 44, done: 324, failed: 4
 
-- T0372 `running` critic/review: Review OBJ-O002 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T00:17:27+00:00 run_finished {"run": "T0365-critic-20261115T161036-2811", "status": "completed", "cost": 1.782424, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T00:20:34+00:00 objective_draft_review {"objective": "O004", "ref": "5ea0dd66fab4b0f07d13e29c0982e1c433563c35", "tasks": ["T0367", "T0368"]}
 - 2026-11-16T00:20:43+00:00 run_started {"run": "T0367-critic-20261115T162043-a8a7", "task": "T0367", "role": "critic", "session": "58181aef-1f80-45ce-b617-f737f4870951"}
 - 2026-11-16T00:20:45+00:00 run_started {"run": "T0368-critic-20261115T162045-b43a", "task": "T0368", "role": "critic", "session": "e141db0a-663f-4bf8-8197-998999236aca"}
@@ -51,3 +49,4 @@ cancelled: 44, done: 323, failed: 4, running: 1
 - 2026-11-16T00:57:52+00:00 run_started {"run": "T0371-critic-20261115T165752-eb6a", "task": "T0371", "role": "critic", "session": "f1e56f2f-cd4d-4700-aea1-76454c19fac6"}
 - 2026-11-16T00:57:54+00:00 run_started {"run": "T0372-critic-20261115T165754-852d", "task": "T0372", "role": "critic", "session": "1c9d58cf-4bd4-4e85-b933-fbe862a7c521"}
 - 2026-11-16T01:06:02+00:00 run_finished {"run": "T0371-critic-20261115T165752-eb6a", "status": "completed", "cost": 1.722098, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T01:18:16+00:00 run_finished {"run": "T0372-critic-20261115T165754-852d", "status": "completed", "cost": 2.19797, "subtype": "success", "report": "structured_output"}

@@ -1,0 +1,69 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "'No criterion is met by a layout-ignorant predictor' is false for A3 and, in 2-die strata, for A2; F2's check cannot show it",
+      "detail": "The claim says no criterion would be met by a predictor that ignores the layout. Only A1 and A4 actually separate L1 from the nulls. On generator layouts at level 0, at 30 W per die, 5 mm die and 8 random layouts per stratum: (1) The stratum-mean-spread null had p95 error 0.07-0.90 K in all 9 strata (3 families x 2, 3 and 6 dies), so it meets A3's 1 K everywhere. The draft concedes this. (2) The die-position lookup (leave-one-layout-out) reached 2.8 % (u_shaped, 2 dies), 3.5 % and 3.9 % of the die-local rise in the 2-die strata, so it meets or nearly meets A2's 3 %. The stratum constant reached 3.1 % in the u_shaped 2-die stratum. In 3- and 6-die strata the die-position null scored 5.0-7.2 %, so A2 discriminates only when pooled. (3) F2 asks each null to fail at least one of A1-A4. Null (d) fails A4 by construction (its ratio is 1), and the die-position null scored 0.86 on A4 in my check. So F2's development check passes automatically and says nothing about whether A1 or A2 discriminate. A1 does discriminate strongly: the zero-difference null had p95 1.3-4.0 K in all 9 strata (4.2 K with the frozen rule at level 1; 2.5 K on E010's 2R candidates), against a 0.5 K threshold. So the joint pass still excludes these nulls.",
+      "evidence": "scratch level-0 solves with solve_layout (default rule; frozen rule for side_by_side/3); E010 2R level-2 die averages: zero-difference p95 2.518 K, die-position null p95 1.69 K",
+      "suggested_check": "Make F2 report, per null, A1 and A2 individually and per stratum, and require each null to fail A1 (not merely some criterion).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "A4's stratum-mean-spread null is not defined per switch, and the choice changes its denominator by up to 2x",
+      "detail": "The draft keys the die-position null (c) on switch but does not say whether the stratum-mean spread (d) is taken per switch or pooled over HS and LS. The two give very different A4 denominators: side_by_side 6-die, pooled 0.90 K vs per switch 0.47 K; 2R, pooled 0.517 K vs per switch 0.371 / 0.573 K. Under the pooled definition, a predictor that knows only the switch scores about 0.52 on A4 in the side_by_side 6-die stratum, close to the 0.5 threshold. The null is also an in-sample mean over the roughly 3 layouts per (family, dies) stratum that 48 layouts over 15 strata give. That shrinks its error by about sqrt((n-1)/n), roughly 0.7-0.8. A4 becomes stricter than stated and K3 fires more easily on an L1 that truly equals the null.",
+      "evidence": "per-switch vs pooled null p95 from the scratch level-0 survey and from E010 2R level-2 spreads",
+      "suggested_check": "Define (d) per (stratum, switch) and leave-one-layout-out, matching (c), and include that choice in F3's simulation.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The costed 48-layout sample cannot give a finite distribution-free p95 bound; power 0.8 needs roughly 4x more layouts",
+      "detail": "F3 lists an order-statistic or binomial bound over layouts. With layouts as the independent units, a 95 % upper bound on a p95 is infinite below 59 units, so 6 cells x 8 = 48 layouts cannot pass any criterion with it. Under Student t3 errors, with true p95 at 0.6 x threshold, one criterion's power is 0.46 at 59 units, 0.62 at 100, 0.69 at 150 and 0.88 at 200. The joint power over A1-A4 at two load levels is lower. (With half-normal errors, 59 units suffice at 0.94.) The cost note (15-30 CPU-hours) therefore assumes a sample F3 is likely to reject. A frozen-rule level-1 solve takes about 82 s for a 3-die generator layout, and 6-die layouts and the level-2 subset (15-30 GB) cost more, so F3's sample may press against the 60 CPU-hour cap. F3's redesign response means this cannot cause a false pass. It only means 'the sample can resolve the decision' is not yet shown.",
+      "evidence": "binomial computation in a scratch script; frozen-rule timing on 6 side_by_side 3-die layouts (level 0 median 7.7 s, level 1 81.7 s, peak 2.5 GB)",
+      "suggested_check": "Run F3's simulation before approval with layouts as units and the per-cell stratum count, and re-cost the budget at the resulting n.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F1's 0.3 K gate on absolute die averages uses the wrong denominator and is not checked at the level A2 is judged at",
+      "detail": "The draft calls 0.3 K 'a sixth of A2's 3 % of a 60 K rise'. A2's denominator is the die-local rise, Tj,avg minus the mean baseplate-bottom temperature. That excludes Q/(hA), which is 7.8-16 K on the 86 x 56 mm generator baseplate (E009 powers), and the die average sits about 5 K below the hottest node. So the die-local rise is about 25-47 K at P_ref and half that at 0.5 P_ref. At P_ref, 0.3 K is a quarter to a third of A2's threshold. At 0.5 P_ref it is up to about two-thirds, if the same absolute gate applies at both loads. F1 also gates the level-2 estimate, while A2 is judged at level 1. On 2R the level-1 to level-2 step in absolute die averages was 0.09-0.125 K, all of one sign, so level-1 absolute error is about 0.2-0.28 K, and nothing gates it. Mostly this inflates the measured L1 error, which is conservative.",
+      "evidence": "E009 rows (power_w, layer means), baseplate 0.004816 m^2; E010 2R tj_mean at levels 0-2",
+      "suggested_check": "Gate the reference's absolute die-average error relative to the die-local rise, at the judged level and at each load.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "A1 gives L1 the reference's hottest die; a search would use L1's own hottest die",
+      "detail": "A1 compares L1 and the reference at the die the reference ranks hottest. A search scoring with L1 would use the maximum over L1's own die averages. The gap is bounded by L1's die-to-die error differences within a layout. For a coarse-grid L1 it was nil: 0.064 K both ways in my level-0 vs level-1 check. A superposition L1 could behave differently near ties, which are common (2R hottest-to-second gaps of 0.000-0.032 K in 6 of 18 layouts).",
+      "evidence": "scratch comparison of both definitions; E010 2R gaps between hottest and second-hottest die",
+      "suggested_check": "Also report A1 computed with each model's own maximum die average.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "A coarse grid of the reference itself would pass A1-A4 by wide margins; speed (A5) decides the outcome",
+      "detail": "With the frozen rule, level 0 vs level 1 on 6 side_by_side 3-die layouts gave A1 p95 0.021 K, A2 0.95 %, A3 0.053 K and A4 ratio 0.10, but took 7.7 s per solve, so it fails A5. With the solver's coarser default rule, level 0 runs in 0.7 s and its level-0 vs level-1 errors were A1 0.064 K, A2 1.7 % and A4 0.11. A 'calibrated coarse-grid solve' L1 is therefore very likely to pass, so the outcome is fairly predictable. The thresholds still follow from the +2 K decision rather than from ease of passing, and the reference is verified, so this does not weaken the claim.",
+      "evidence": "scratch solves with the frozen rule from research/o007_dev3/frozen_config.json and with the default GridRule",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed from E010's stored 2R solves (18 layouts, levels 0-2): zero-difference null pair p95 2.52 K; die-position leave-one-out null p95 1.69 K; per-switch and pooled stratum-mean-spread null p95 0.37 / 0.57 / 0.52 K; level-1 to level-2 step in absolute die averages 0.09-0.125 K, all of one sign; hottest-to-second die gaps",
+    "Estimated the die-local rise (A2's denominator) from E009 generator rows and the generator baseplate area: Q/(hA) 7.8-16 K, die-local rise about 25-47 K at P_ref",
+    "Level-0 survey of 9 generator strata (3 families x 2, 3, 6 dies; 5 mm die; 8 layouts each; 30 W per die): A1 zero-difference null 1.3-4.0 K; A2 die-position null 2.8-7.2 % and stratum constant 3.1-26 %; A3 spread null 0.07-0.90 K, pooled vs per switch",
+    "Frozen-rule level-0 vs level-1 on 6 side_by_side 3-die layouts: coarse-grid L1 errors (A1 0.021 K, A2 0.95 %, A4 0.10), nulls at level 1 (zero-difference 4.22 K, die-position 7.4 %), timing (7.7 s / 82 s) and memory (2.5 GB)",
+    "Compared the reference's hottest die with L1's own maximum for A1 on a coarse-grid L1 (0.064 K both ways)",
+    "Binomial order-statistic computation: smallest n with a finite distribution-free 95 % upper bound on a p95 (59), and power at 0.6 x threshold under half-normal and |t3| errors for n = 48-300",
+    "Checked the kill criteria can fire: the zero-difference null exceeds K1's 1.5 K, the stratum-constant null exceeds K2's 15 % in 3-6 die strata, and K3 is reachable by an L1 worse than the stratum-mean spread"
+  ],
+  "caveats": [
+    "The joint pass separates L1 from layout-ignorant predictors through A1 and A4 only. A3 is met by the stratum-mean spread in every stratum sampled, and A2 is met or nearly met by a die-position lookup in 2-die strata. A pass shows layout sensitivity for pair differences and spreads, not for per-die absolute values in 2-die strata.",
+    "Whether the sample can resolve the decision depends on F3 picking a bound and sample that fit the budget. The costed 48 layouts cannot support a distribution-free p95 bound, and the n F3 picks may be about 4x larger.",
+    "A4's null must be fixed before registration as per (stratum, switch), ideally leave-one-layout-out. Otherwise A4's threshold can mean up to 2x different things.",
+    "My survey used 30 W per die (not P_ref), one die size, 6-8 layouts per stratum on my own unsealed seeds, and mostly the solver's default grid rule at level 0. Only one stratum was solved with the frozen rule at level 1. The magnitudes are indicative, not E007 values.",
+    "The kill criteria can fire. No kill covers 'no better than a die-position predictor'; that case ends INCONCLUSIVE, which the draft treats the same as fail."
+  ]
+}
