@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -80,4 +80,71 @@ lens: null
 trigger: null
 rationale: Hypothesis (FastHenry on the identical exported geometry); build item (1) of the objective
   notes; F6 diagnostic variants; review T0362 (wire cross-section refined with the traces).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I added src/moduleforge/solvers/fasthenry.py and tests/unit/test_fasthenry.py and committed
+    them as 44b164bb. All 24 tests pass, ruff is clean and `mfos gate --fast` passes. I did not run FastHenry,
+    as the packet says.
+
+
+    - **Exporter:** `export(layout, FHLevel, *, die_model, terminal_model, tab, die_sigma)` is ported
+    from P4''s `fh_export.py` and works on any Layout through `to_conductors()`. The default deck has
+    `.units m` only, `.default sigma`, `.freq` at 1e7 and 2e7, and one `.external` between DC+ and DC-.
+
+    - **Knobs:** `FHLevel` has `cell_mm`, `plane_cell_mm`, `nh_trace`, `nh_plane`, `rh`, `nw_trace`, `wire_n`
+    and `wire_sub`. The 3 / 5 / 9 ladder is expressible, and no level is frozen.
+
+    - **Lattice:** the origin is l2_layout''s (`lattice_origin` copies `layout_lattice`, checked for Case
+    4'
+  report:
+    status: completed
+    summary: "I added src/moduleforge/solvers/fasthenry.py and tests/unit/test_fasthenry.py and committed\
+      \ them as 44b164bb. All 24 tests pass, ruff is clean and `mfos gate --fast` passes. I did not run\
+      \ FastHenry, as the packet says.\n\n- **Exporter:** `export(layout, FHLevel, *, die_model, terminal_model,\
+      \ tab, die_sigma)` is ported from P4's `fh_export.py` and works on any Layout through `to_conductors()`.\
+      \ The default deck has `.units m` only, `.default sigma`, `.freq` at 1e7 and 2e7, and one `.external`\
+      \ between DC+ and DC-.\n- **Knobs:** `FHLevel` has `cell_mm`, `plane_cell_mm`, `nh_trace`, `nh_plane`,\
+      \ `rh`, `nw_trace`, `wire_n` and `wire_sub`. The 3 / 5 / 9 ladder is expressible, and no level is\
+      \ frozen.\n- **Lattice:** the origin is l2_layout's (`lattice_origin` copies `layout_lattice`, checked\
+      \ for Case 4 and a generator layout). An off-lattice rectangle or a cell with two nets raises ValueError.\n\
+      - **Wires:** each wire is a square of side 0.8711 d with `wire_n²` filaments.\n- **F6 `die_model='distributed'`:**\
+      \ each footprint cell gets a vertical column of cell × cell cross-section from the trace node up\
+      \ to a die-top node. Lateral segments of thickness attach plus die join neighbouring die-top nodes,\
+      \ and wire starts join the nearest die-top node. The docstring states the model and cites Ruehli\
+      \ 1974 and Kamon 1994.\n- **F6 `terminal_model='tab'`:** each terminal gets one post column per\
+      \ footprint cell, merged at the top. The footprint comes from `Layout.terminals`; `TabSpec` overrides\
+      \ it and sets the height (default 2 mm).\n- **Docstring:** it lists every modelling difference from\
+      \ l2_layout for traces, planes, dies, wires, contacts, port, materials and not-modelled items.\n\
+      - **Tests:** they cover:\n  - header, units and port;\n  - trace area per net equal to the conductor\
+      \ model's, at 1.0 / 0.5 / 0.25 mm on Case 4 and 0.5 / 0.25 mm on a generator layout;\n  - segment\
+      \ counts against an independent shapely area and perimeter formula;\n  - the plane pitch being separate\
+      \ from the trace pitch, and the thickness ladder in the deck;\n  - the wire square side and filament\
+      \ counts;\n  - die `.equiv` groups holding every footprint cell;\n  - off-lattice and two-net refusals;\n\
+      \  - both F6 variants on Case 4.\n- **Faithful port:** for Case 4 base, die_shift and trace_width\
+      \ at three different knob sets, the deck equals the research exporter's line for line. Only the\
+      \ two `*` header comment lines differ. The defaults changed no behaviour."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/solvers/fasthenry.py tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/fasthenry.py
+    - tests/unit/test_fasthenry.py
+    concerns:
+    - The packet's a = 0.8711 d is rounded; the exact ratio is 0.78/0.894 = 0.87104. The code keeps the
+      exact ratio and the test allows 1e-4 against 0.8711.
+    - The 'distributed' die uses die_sigma, which defaults to the top-Cu sigma, because the stack's SiC
+      die has sigma 0. The F6 diagnostic therefore measures the geometric non-equipotential effect of
+      a metal block, not semiconductor resistivity.
+    - The distributed die and tab columns start at the trace mid-thickness node, so they overlap half
+      the trace thickness. The lateral die-top segments overlap the columns. Both are documented as coarse-mesh
+      caveats.
+    - FastHenry's handling of the explicit wx=1 wy=0 wz=0 hint on vertical segments is unverified here
+      because FastHenry was not run. The next task should check that the die and tab decks parse in the
+      pinned build.
+    - The faithful-port test imports the research script by path, so it breaks if research/scripts/o006_p4/fh_export.py
+      is moved or deleted.

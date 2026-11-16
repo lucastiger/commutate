@@ -35,7 +35,12 @@ description: "Build item (2) of the objective notes. Create src/moduleforge/opti
   \ seed, and different trajectories for different seeds;\n- every visited layout is DRC-clean and in_domain;\n\
   - the L1 budget is respected exactly, and l_sub is called exactly K times on distinct fingerprints;\n\
   - the signature exposes no W or W* input;\n- descend stops at a true local optimum: no single DRC-valid\
-  \ move improves the score;\n- a resumed run from its checkpoint gives an identical result."
+  \ move improves the score;\n- a resumed run from its checkpoint gives an identical result.\n\nFounder\
+  \ session, 2026-11-16 (from T0377's reviews T0402 and T0403, both accept with caveats): T0377's in_domain\
+  \ is a superset test (no upper bound on stack gaps), and its docstring calls it the local search's domain\
+  \ although the walk can leave it. Keep the search's moves inside in_domain, or state plainly in the\
+  \ docstring and the report that they are not kept inside; test it on the 2R spec, the only split-free-region\
+  \ spec. Reach mode yields 3-5x fewer DRC-clean draws per raw draw; report the yield of your moves."
 context_files:
 - src/moduleforge/optimize/search.py
 - src/moduleforge/generate/derivative.py

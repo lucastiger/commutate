@@ -3,7 +3,7 @@ objective: O008
 title: 'Kill shot: do the probe''s designer proxy and its null gap survive l2_layout?'
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "Cheap falsification test before the search, proxy and null modules are built (objective\
   \ why_it_matters; research/notes/o008-control-probe.md says this is 'the cheap next test'). Development\
@@ -82,4 +82,144 @@ trigger: null
 rationale: 'Front-loaded kill shot: if the proxy''s L1 headroom collapses at L2 on 2R, or blind compaction
   reaches W* at L2, A3 cannot be met as frozen and the build chain is wasted. Traces to A3, K1, F3 and
   F4.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The kill shot did not fire on either layout at 0.5 mm cells. On 2R, though, KILL-B is not
+    decided at E011''s resolution. This is indicative only (development geometry, development seeds, probe
+    domain without reach, 0.5 mm cells) and is not evidence for any O008 criterion.
+
+
+    Step 1: probe.py was re-run unchanged with die rows free. All 54 regenerated quantities per layout
+    equal probe_{2R,Case4}_proxy.json exactly (max rel 0). Case 4 was rebuilt with e010_run.dev_reference(''case4'',
+    E010 config) plus twin.twin and gives the same twin as E008''s ctx. All 34 layouts rebuild to their
+    fingerprints and are DRC-clean. Parameter vectors are saved in l2_work/regen_*.json.
+
+
+    Step 2: deviation. The packet''s rule picks 0.25 mm for 2R (em_cost 6.42 GB, under 8 GB). A 6.4 GB
+    process needs this machine''s excep'
+  report:
+    status: completed
+    failure_class: none
+    confidence: 0.75
+    affects_acceptance_criteria: false
+    summary: 'The kill shot did not fire on either layout at 0.5 mm cells. On 2R, though, KILL-B is not
+      decided at E011''s resolution. This is indicative only (development geometry, development seeds,
+      probe domain without reach, 0.5 mm cells) and is not evidence for any O008 criterion.
+
+
+      Step 1: probe.py was re-run unchanged with die rows free. All 54 regenerated quantities per layout
+      equal probe_{2R,Case4}_proxy.json exactly (max rel 0). Case 4 was rebuilt with e010_run.dev_reference(''case4'',
+      E010 config) plus twin.twin and gives the same twin as E008''s ctx. All 34 layouts rebuild to their
+      fingerprints and are DRC-clean. Parameter vectors are saved in l2_work/regen_*.json.
+
+
+      Step 2: deviation. The packet''s rule picks 0.25 mm for 2R (em_cost 6.42 GB, under 8 GB). A 6.4
+      GB process needs this machine''s exception: swap under 4 GB. The swapfile total, used as an upper
+      bound because sysctl vm.swapusage is denied in the sandbox, stayed at 6.4-8.6 GB all session. So
+      2R was solved at 0.5 mm, which the packet allows ("else 0.5 mm"). Case 4 is at 0.5 mm (15.8 GB at
+      0.25 mm). There were 28 solves, one at a time, 2 threads pinned, 4158 s of the 3 h budget. Every
+      endpoint of both layouts was solved. The swap watchdog stopped four attempts; those were re-run
+      or logged.
+
+
+      Step 3, KILL-A:
+
+      - 2R: L_sub(W*)/L_sub(W) = 0.9285 (L1 0.8979).
+
+      - Case 4: 0.6986 (L1 0.6280).
+
+
+      Step 3, KILL-B:
+
+      - Case 4: lowest null L2 s is +9.36 % (compact0, L1 +14.0 %).
+
+      - 2R: lowest null L2 s is +2.29 % (compact0, L1 +5.95 %). That is 0.29 points above the line, smaller
+      than the 0.35 % shift of a 2R layout ratio between 0.5 and 0.25 mm that E010 measured (its e_R median
+      is 0.42 %, max 1.18 %).
+
+      - The mandatory lowest-L1 compaction endpoint on 2R (compact1, L1 +3.07 %) comes out at +3.64 %
+      at L2. L1 misorders the nulls.
+
+
+      Guided stand-in at L2: within 2 % on 4 of 5 draws on 2R and 3 of 5 on Case 4.'
+    root_cause: 'Not a failure diagnosis. Kill shot result: the proxy''s gain over the twin survives l2_layout
+      on both layouts (7.2 % on 2R and 30.1 % on Case 4, against 10.2 % and 37.2 % at L1). The null gap
+      survives clearly on Case 4. On 2R it shrinks at L2 from 3.1-8.8 % to 2.3-6.2 %, and its closest
+      member sits within the discretisation scale of the 2 % line, so 0.5 mm cells cannot decide KILL-B
+      there.'
+    evidence:
+    - '[fact] Regeneration: 54 of 54 quantities per layout equal the probe JSON, max relative difference
+      0 on 2R and Case 4 (l2_check.json regen_match).'
+    - '[fact] 2R W at 0.5 mm here = 14.0997275 nH; E010''s committed VM solve of the same fingerprint
+      f95383 = 14.0997275 nH; rel 1.2e-14.'
+    - '[fact] All 28 solves have GMRES flag 0; max solver_tol 3.1e-5.'
+    - '[fact] 2R at 0.5 mm: L_sub W 14.0997 nH, W* 13.0909 nH, ratio 0.9285 (L1 0.8979).'
+    - '[fact] Case 4 at 0.5 mm: L_sub W 22.8528 nH, W* 15.9657 nH, ratio 0.6986 (L1 0.6280).'
+    - '[fact] 2R compaction endpoints at L2 (L1 in brackets): compact0 +2.29 % (+5.95 %), compact3 +2.97
+      % (+4.85 %), compact1 +3.64 % (+3.07 %), compact4 +5.44 % (+8.84 %), compact2 +6.19 % (+6.71 %).
+      Widen endpoints +7.4 % to +15.6 %.'
+    - '[fact] Case 4 null endpoints at L2: +9.36 % to +12.81 %; compact and widen stop at the same layout
+      on draws 0, 2 and 4.'
+    - '[fact] Guided endpoints at L2: 2R -1.01 % to +2.95 % (4 of 5 within 2 %); Case 4 +0.87 % to +2.83
+      % (3 of 5 within 2 %).'
+    - '[fact] L2/L1 ratio: 2R 1.23-1.34; Case 4 1.18-1.31. The ratio depends on the layout.'
+    - '[fact] E010 2R five-level band (6 layouts, 15 pairs): lateral ratio shift between 0.25 and 0.5
+      mm max 0.35 %, median 0.09 %; e_R max 1.18 %, median 0.42 %.'
+    - '[fact] Memory gate: the swapfile total was 7.5-8.6 GB from 18:22 to 18:48 and at least 6.4 GB afterwards
+      (solve_1.log, gate_log.jsonl), so the 6.4 GB 0.25 mm 2R solve never met the swap < 4 GB condition.'
+    - 'Commands and exit codes: `l2_check.py regen 2R` exit 0; `regen Case4` exit 0; `solve --case4-first
+      --max-wait-s 1200` exit 3 (memory gate); `solve --case4-first --level-2r lat0.5 --max-wait-s 2400
+      --override-reason ...` exit 0; `report` exit 0; `test -f research/notes/o008-l2-check.md` exit 0;
+      DoD JSON assertion exit 0; `uv run ruff check research/o008_probe/l2_check.py` exit 0; `uv run mfos
+      gate --fast` exit 0 (''all gates passed''). Committed as 79433bfa.'
+    alternative_explanations:
+    - explanation: 'H1: W*''s gain over W is an L1 artefact (the L1-guided descent exploits L1''s layout-dependent
+        bias).'
+      how_to_discriminate: 'L_sub(W*) vs L_sub(W) at l2_layout. Done: W* is lower by 7.2 % (2R) and 30.1
+        % (Case 4). Rejected at 0.5 mm.'
+    - explanation: 'H2: the probe''s null gap is an L1 artefact.'
+      how_to_discriminate: 'L2 s of every compaction and widen endpoint against 0.02. Done: rejected on
+        Case 4 (9.4 %). Partly supported on 2R: the gap shrinks and compact0 sits at 2.29 %.'
+    - explanation: 'H5 (experimental): 0.5 mm cells are too coarse to decide KILL-B on 2R.'
+      how_to_discriminate: 0.25 mm solves of 2R W*, compact0, compact3 and compact1. Not run because of
+        the memory rule. E010's 2R band says the 0.29-point margin is inside the 0.5-to-0.25 mm scale.
+    - explanation: 'H3/H4 (experimental): the regenerated layouts differ from the probe''s, or this machine''s
+        L2 differs from the VM''s.'
+      how_to_discriminate: Probe JSON match (max rel 0) and the 2R W cross-check against E010 (1.2e-14).
+        Both rejected.
+    discriminating_tests:
+    - 'Solve 2R at 0.25 mm: W*, compact0, compact3 and compact1 (plus W and guided1). KILL-B fires at
+      E011''s level if L_sub(compact0)/L_sub(W*) - 1 <= 0.02. About 6.4 GB and roughly 15 min per solve
+      (E010 VM: 815-955 s).'
+    - 'Optional: a Case 4 0.25 mm solve of W* and compact0 (15.8 GB, VM only) to measure Case 4''s own
+      lateral ratio shift instead of borrowing 2R''s.'
+    recommended_actions:
+    - Before building the search, proxy and null modules, run the 2R 0.25 mm solves (W*, compact0, compact3,
+      compact1; W and guided1 if room). Run them on the Mac only when swap is under 4 GB, otherwise on
+      an e2-highmem VM. Use `research/o008_probe/l2_check.py solve --level-2r lat0.25` with a fresh work
+      directory. If compact0 lands at or below 2 %, A3 fails on 2R, and the founder should see that before
+      E011 is designed further.
+    - Select and judge O008's inductance-blind nulls by L2, not L1. On 2R, the endpoint with the lowest
+      L1 s (compact1) was not the lowest at L2 (compact0).
+    - 'Size E011''s search budget for Case 4: every guided run there hit the 60-step cap, and only 3 of
+      5 reach 2 % at L2.'
+    - Treat 2R as the layout where A3 ('nulls beaten by a resolved margin') is at risk. The L2 gap between
+      the guided stand-in and the best compaction endpoint is about 1-3 points, against an E011 band of
+      e_R of roughly 0.4-1.2 %.
+    files_written:
+    - research/o008_probe/l2_check.py
+    - research/o008_probe/l2_check.json
+    - research/notes/o008-l2-check.md
+    - research/o008_probe/l2_work/regen_2R.json
+    - research/o008_probe/l2_work/regen_Case4.json
+    - research/o008_probe/l2_work/ctx_Case4.pkl
+    - research/o008_probe/l2_work/levels.json
+    - research/o008_probe/l2_work/solves/
+    - research/o008_probe/l2_work/gate_log.jsonl
+    - research/o008_probe/l2_work/failed_attempts.jsonl
+    - research/o008_probe/l2_work/tables.md
+    - research/o008_probe/l2_work/solve_1.log
+    - research/o008_probe/l2_work/solve_2.log
+    - project/memory/lessons.md
+    experiment_drafts: []

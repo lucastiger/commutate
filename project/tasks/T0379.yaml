@@ -26,7 +26,11 @@ description: "Build item (3a) of the objective notes. Create src/moduleforge/opt
   - dies_fixed leaves the row_* parameters bit-identical;\n- choose_proxy returns W when W_desc's L_sub\
   \ is not lower (F3);\n- regression anchor: with reach off and the probe's movable set, proxy_descent\
   \ on 2R's twin reproduces the probe's L1(W*)/L1(W) = 0.898 and 27 steps (research/o008_probe/probe_2R_proxy.json)\
-  \ to 1e-9. Mark it slow if it exceeds 60 s, and run it explicitly in the definition of done."
+  \ to 1e-9. Mark it slow if it exceeds 60 s, and run it explicitly in the definition of done.\n\nFounder\
+  \ session, 2026-11-16 (from T0377's reviews T0402 and T0403): twin._net_side can misread a column's\
+  \ side for straddling slots that the reach domain allows. Add a test that the proxy and the degradation\
+  \ build the intended column sides on 2R and Case 4 (Case 4's twin is also outside the legacy domain),\
+  \ and report any case where the reading is ambiguous."
 context_files:
 - src/moduleforge/optimize/local.py
 - research/o008_probe/probe.py
