@@ -1,0 +1,55 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "At the planned 0.25 mm trace pitch the exporter writes decks that FastHenry 3.0wr refuses to read",
+      "detail": "In the default `die_model='short'` model each die's group goes on one `.equiv` line: every footprint cell plus the wire starts. FastHenry 3.0wr's reader takes lines of about 1000 characters at most. Longer lines produce 'Warning: line may be too long' followed by 'What is the following line?', and the run exits with code 1. At cell_mm=0.25 the 4 x 6 mm dies give 384 cells per group, and the lines reach 3474 to 4026 characters. This holds on Case 4, on the generated layout, and on both judged references (2D_Case_2R and 2D_Case_6). With `terminal_model='tab'`, two more over-long post-top `.equiv` lines are added (6 in total). O004 plans FastHenry on three levels, and its third level is 0.25 mm traces: the P4 note says '0.25 mm traces, 413k filaments, ~10 GB, ~2.4 h' and O004 quotes that projection. So the exporter cannot produce a solvable deck at the finest level the objective needs, and the claim that it writes 'a FastHenry 3.0wr input deck' with a refinable trace pitch fails there. The failure is loud (exit code 1 within 0.2 s), not silent, but the finest-level solves would still be impossible. The tests do not catch this. Their oracle `read_errors` claims to model what FastHenry 3.0wr's reader would refuse, but it does not check line length. The tests also never export the default model at 0.25 mm and inspect it against a FastHenry limit. Remedy: split each long `.equiv` into several lines of at most ~60 names, each repeating the group's first node. I confirmed FastHenry accepts this and gives the same impedance.",
+      "evidence": "Synthetic deck with a single `.equiv` of n names. n = 2, 40, 60 and 80 (up to 969 characters) solve, all giving Z = 0.000344828 + 0.340947j. n = 100 (1209 characters), 400 and 1600 give exit code 1 with 'line may be too long' / 'What is the following line?'. The real `FH.export(case4 base, FHLevel(cell_mm=0.25, plane_cell_mm=2.0))` deck fails in FastHenry 3.0wr (`-s iterative -m multi`): exit code 1 after 0.2 s, warnings on the `.equiv Nw0p0 Nt112y128 ...` lines of all 4 dies. Longest line per level, Case 4: 204 / 876 / 3852 characters at 1.0 / 0.5 / 0.25 mm. 2D_Case_2R: 204 / 780 / 3852. 2D_Case_6: 210 / 786 / 3474. The same synthetic case with the n = 400 group split into 60-name `.equiv` lines solves: exit code 0, Z = 0.000344828 + 0.340947j.",
+      "suggested_check": "Add a test asserting every deck line is at most ~900 characters for the default and tab variants at cell_mm=0.25 on Case 4 and the references, and add that limit to `read_errors`.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Distributed-die block and tab-post segments are not refined by the thickness ladder",
+      "detail": "The `Ev`, `Ed` and `Eq` segments carry no nwinc, nhinc or rh, so FastHenry gives each one filament at every `nh_*` level. The F6 diagnostic therefore refines only laterally, through cell_mm. This is consistent with the docstring's 'coarse by construction', but a thickness term for the F6 variants would not include these conductors.",
+      "evidence": "Lines 353-363 and 393-394 of the diff: no nhinc on the block, column or post segments. At the d0 level (1 mm, nh = 1, direct solve), distributed dies give L = 27.17 nH against 25.77 nH for the short model (+5.4 %). Tabs give 25.86 nH (+0.34 %), with R falling from 8.130 to 8.099 m\u03a9.",
+      "suggested_check": "Report how the F6 deltas change with nh_* and cell_mm before attributing the +5.4 % to the ideal-short assumption.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "die_sigma is not validated",
+      "detail": "die_sigma <= 0 is written into the deck unchecked. The docstring itself notes that the stack's SiC die has sigma = 0. Such a deck would give FastHenry a zero or negative conductivity.",
+      "evidence": "Line 342 of the diff: `sig_d = sigma_top if die_sigma is None else die_sigma`, with no check.",
+      "suggested_check": "Raise ValueError for die_sigma <= 0.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Die-footprint handling differs slightly from l2_layout",
+      "detail": "l2_layout always adds the cell nearest the die centre to the merged group (`m[ci, cj] = True`) and requires the die footprint to lie on the lattice. The exporter raises ValueError when no cell centre lies strictly inside the footprint, and it does not check footprint alignment. This does not matter for the on-lattice references, but the docstring's 'SAME as l2_layout's node merge' is slightly stronger than the code.",
+      "evidence": "l2_layout.py lines 1786-1828, compared with `_footprint_cells` in the diff.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the author's tests (34 passed) and ruff (clean); I did not take either as evidence.",
+    "Solved the exporter's default Case 4 deck at d0 (cell 1 mm, plane 4 mm, nh = 1, wire_n = 1) with the local FastHenry 3.0wr direct solver. Z = 0.00813011 + 1.61919j at 10 MHz (L = 25.77 nH), bit-identical to P4's recorded d0 run, so the faithful port is confirmed with real FastHenry and not only by text comparison.",
+    "Solved the die_model='distributed' and terminal_model='tab' decks at the same level with the direct solver. Both read and solve (exit code 0). L = 27.17 nH (+5.4 %) and 25.86 nH (+0.34 %). The size and sign are plausible against hand estimates of trace spreading under the die and of the partial self-inductance of a 3 x 3 x 2 mm post (~0.3 nH each).",
+    "Probed FastHenry 3.0wr's input-line limit with synthetic decks of growing `.equiv` length: lines up to 969 characters pass, 1209 or more fail with exit code 1.",
+    "Measured the longest deck line for every variant at 1.0, 0.5 and 0.25 mm on Case 4, the generated layout (seed 7), 2D_Case_2R and 2D_Case_6. Lines over 1000 characters appear at 0.25 mm in every default and tab deck, and in no distributed deck.",
+    "Ran the real Case 4 0.25 mm default deck in FastHenry: it is refused at read time (exit code 1, 0.2 s).",
+    "Confirmed from the O004 objective and the P4 feasibility note that the planned third FastHenry level is 0.25 mm traces.",
+    "Verified the remedy: splitting a 400-name `.equiv` into 60-name lines is accepted and gives the reference impedance.",
+    "Compared the exporter's wire-end rule and die merge with l2_layout.build_layout_system (end_contact, contact_at, the shorts merge) and with Layout.to_conductors: DieShort z-range = Cu top to Cu top + attach + die, and the bottom-net mapping HS -> DC+, LS -> PHASE.",
+    "Re-derived the equal-GMD square side: 0.7788 / (2 x 0.44705) = 0.87104 d (Grover)."
+  ],
+  "caveats": [
+    "At cell_mm 1.0 and 0.5 the default, distributed and tab decks are well-formed, and all three solve in FastHenry at 1 mm. The blocker applies only where a short-die group or a tab post-top group exceeds ~1000 characters on one line, which is 0.25 mm for the 4 x 6 mm dies of every reference.",
+    "I solved FastHenry only at the coarsest level (1 mm, direct solver). Convergence of the F6 deltas under refinement was not checked.",
+    "No E004 spec or draft exists yet. The 0.25 mm FastHenry level is taken from O004's scope_in and the P4 note, not from a frozen spec.",
+    "Heredoc scripts and `cd` into the temp directory were refused by the permission mode, so I ran the checks as `uv run python -c` scripts that call FastHenry through subprocess with the temp directory as working directory. Scratch decks are in $TMPDIR/rv."
+  ]
+}
