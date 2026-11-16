@@ -26,7 +26,14 @@ description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e
   max_ratio_diff_vs_fasthenry_all, max_rel_diff_vs_fasthenry) and the sanity checks. The solve stage is
   a stub for the next task. Use the F7 findings in research/notes/o004-f7-l2-pilot.md. If they fire F7''s
   response trigger, stop and report blocked for a founder decision; do not redesign around it. `--smoke
-  --stage registration` runs the whole stage on a development seed with L1 only.'
+  --stage registration` runs the whole stage on a development seed with L1 only.
+
+
+  Founder decision I0207 (2026-11-16, answered): the 2D_Case_2R designer-proxy pair uses the proxy descent
+  with 1 mm steps (on the 1 mm lattice by construction), and its ratio is taken against the frozen 2R
+  reconstruction, as O004 defines r. State it in E004''s spec as a declared scope note: this is not exactly
+  O008''s 0.5 mm proxy rule. Expose the descent''s step size as a parameter rather than copying O008''s
+  code.'
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/specs/E010.yaml
