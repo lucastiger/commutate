@@ -3,7 +3,7 @@ objective: O008
 title: 'Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: "Build item (1) of the objective notes; A2 and F2.\n\n(a) generate/derivative.py: add an\
   \ explicit opt-in reach mode (a ReferenceSpec field or a generate/_sample argument) to the sampler (_sample,\
@@ -83,4 +83,84 @@ lens: null
 trigger: null
 rationale: A2 (reach_outside_max) and the F2 sanity checks need in_domain, which must be False for 2R
   under E010's generator. The search's move set (n2) ranges over this domain.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "I added an opt-in reach mode to the derivative sampler, an `in_domain` predicate, and reach\
+    \ moves in twin.py. All DoD commands pass and the work is committed as ec441ba2.\n\n**What changed**\n\
+    - **Reach mode:** `generate(..., reach=False)` and `_Ctx(spec, reach=False)` carry the flag, and `_sample`\
+    \ reads it from the context. With reach off, the raw `_sample` streams and the `generate` fingerprints\
+    \ are bit-identical to the unmodified code. The test constants were recorded before editing, and the\
+    \ check is repeated after moving the die-window code into `_die_windows`.\n- **What reach draws:**\
+    \ each extension is drawn with probability 0.5, otherwise the legacy draw. The reach domain contains\
+    \ the legacy one.\n  - Column outer edges go out to the outline edge-margin limit.\n  - Slot attached\
+    \ ends can li"
+  report:
+    status: completed
+    summary: "I added an opt-in reach mode to the derivative sampler, an `in_domain` predicate, and reach\
+      \ moves in twin.py. All DoD commands pass and the work is committed as ec441ba2.\n\n**What changed**\n\
+      - **Reach mode:** `generate(..., reach=False)` and `_Ctx(spec, reach=False)` carry the flag, and\
+      \ `_sample` reads it from the context. With reach off, the raw `_sample` streams and the `generate`\
+      \ fingerprints are bit-identical to the unmodified code. The test constants were recorded before\
+      \ editing, and the check is repeated after moving the die-window code into `_die_windows`.\n- **What\
+      \ reach draws:** each extension is drawn with probability 0.5, otherwise the legacy draw. The reach\
+      \ domain contains the legacy one.\n  - Column outer edges go out to the outline edge-margin limit.\n\
+      \  - Slot attached ends can lie anywhere from the column's inner edge across the column to that\
+      \ limit, so slots can straddle or overlap their column.\n- **`in_domain(spec, params, reach, ctx=None)`:**\
+      \ it replays `_sample`'s sequential construction and returns `(bool, reason)` with the first failing\
+      \ constraint. It also requires the layout to build, pass `_quick_ok`, and be DRC-clean. Soundness\
+      \ is tested, and the converse is not claimed.\n- **twin.py:** the twin construction is unchanged.\
+      \ `_moves(reach)`, `_walk_candidates(p, spec, reach)`, `_walk` and `degrade` take a `reach` flag,\
+      \ default False, so the legacy order is unchanged. The new moves are slot attached-end jumps (column\
+      \ outer edge, inner edge, outline limit), slot free end to the limit, and column outer edge to the\
+      \ limit or back to its pad edge. Both docstrings describe the change.\n\n**Results**\n- 2R twin:\
+      \ `in_domain(reach=True)` is True. With reach off it is False, first failing at `col_PHASE_outer_edge`,\
+      \ which matches T0349's PHASE edge at 47 mm.\n- Case 4 twin: `in_domain(reach=True)` is True. Both\
+      \ twins rebuild to their own fingerprint and are DRC-clean under their own rules.\n- Rate on 2R's\
+      \ spec, seed 3770001, 20000 raw draws: with reach off, 232 non-None draws, 0 straddling slots and\
+      \ 0 far outer edges. With reach on, 208 non-None draws, 188 with a straddling slot (0.94 %) and\
+      \ 93 with an outer edge beyond pad + 1.5 mm (0.47 %). Of 40 DRC-clean layouts from `generate(reach=True)`,\
+      \ 35 straddle and 13 have a far outer edge.\n- Soundness: a wider scratch run found no failure with\
+      \ reach on or off (600 draws each on the housing at k=1 and k=3, 40 on Case 4, 150 on 2R). The tests\
+      \ use 200, 20 and 40 draws.\n\n**Checks run**\n\n| command | exit |\n|---|---|\n| `uv run pytest\
+      \ -q tests/unit/generate/test_reach.py` | 0 (21 passed) |\n| `uv run pytest -q -m 'not slow' tests/unit/generate`\
+      \ | 0 (130 passed, 1 deselected) |\n| `uv run ruff check src/moduleforge/generate tests/unit/generate`\
+      \ | 0 |\n| `uv run mfos gate --fast` | 0 |"
+    concerns:
+    - 'Reach is wider than the packet text. Slot attachment and the column outer edge were not enough
+      for in_domain(W, reach=True) to hold on 2R and Case 4. I also had to widen: column v extents (only
+      need to cover the pad, within the outline limit), slot free ends (up to the limit), die row start
+      (anywhere up to the free limit), and the landing line (0.125 mm grid, margin = wire_landing_margin
+      + 0.05, at most 0.5). Each is drawn only with probability 0.5 and only in reach mode, and the legacy
+      domain remains a subset. Please confirm this is the intended meaning of ''reach''.'
+    - T0349's attached-form variant of 2R is outside the legacy domain for a second reason it did not
+      check. Even with the PHASE edge at 45.5 mm, the LS die row starts 11 mm from the PHASE column's
+      inner edge, and the legacy draw allows at most dem + 6 mm. in_domain reports row_LS_u0 for it with
+      reach off, and reach covers it. A test records this.
+    - 'The 2R reach-on DRC-valid yield is low: about 15 of 208 non-None raw draws pass _quick_ok, against
+      61 of 232 with reach off. Reach makes the 2R twin drawable, but search power on 2R has not been
+      measured here.'
+    - 'in_domain''s side handling: a net''s column side is not a parameter. The predicate tries both sides
+      and reports the failure of the reading the geometry shows. A reach-off or hand-made vector could
+      therefore get a different reason under the other reading, though the True/False verdict is unaffected.
+      The stack check allows one 0.5 mm grid step of slack on the upper window limit, so the predicate
+      can be slightly looser than the sampler''s exact support.'
+    - degrade() calls _walk with the legacy five-argument form when reach is off, because research/scripts/o003_twin_coverage.py
+      wraps _walk with that signature. I did not touch the script, since it is outside my write scope.
+    - The reach moves in _walk_candidates and _moves use the outline limit only. A free-end jump to the
+      limit can run past another net's column and is rejected by the DRC, not by the enumeration. The
+      test asserts that every reach move which builds, passes _quick_ok and is DRC-clean is in the reach
+      domain.
+    files_changed:
+    - src/moduleforge/generate/derivative.py
+    - src/moduleforge/generate/twin.py
+    - tests/unit/generate/test_reach.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate/test_reach.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m 'not slow' tests/unit/generate
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate tests/unit/generate
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
