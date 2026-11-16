@@ -260,10 +260,61 @@ def test_sleep_extends_running_deadlines(sandbox):
                     started="now", pid=999999, deadline=time.time() + 60)
     o.runner.save(rec)
     before = rec.deadline
-    o._last_tick_wall = time.time() - 3600  # the lid was closed for an hour
+    o._last_tick_clocks = (time.time() - 3600, time.monotonic())  # the lid was closed for an hour: only wall time moved
     o._account_for_sleep()
     after = [r for r in o.runner.active() if r.run_id == "T9999-a1"][0].deadline
     assert 3590 < after - before < 3610
+    assert [e["slept_s"] for e in s.events() if e["event"] == "sleep_detected"] == [3600]
+
+
+def test_a_long_tick_is_not_sleep(sandbox):
+    """A 40-min verify gate advances both clocks: no deadline moves and no sleep_detected event (2026-11-16)."""
+    from mfos.agents import RunRecord
+    s = Store()
+    o = Orchestrator(s)
+    rec = RunRecord(run_id="T9999-a1", task_id="T9999", role="builder", session_id="x", cwd=str(sandbox),
+                    started="now", pid=999999, deadline=time.time() + 60)
+    o.runner.save(rec)
+    o._last_tick_clocks = (time.time() - 2400, time.monotonic() - 2400)
+    o._account_for_sleep()
+    assert [r for r in o.runner.active() if r.run_id == "T9999-a1"][0].deadline == rec.deadline
+    assert not [e for e in s.events() if e["event"] == "sleep_detected"]
+    o._last_tick_clocks = (time.time() - 2400, time.monotonic())  # the same wall gap, asleep throughout
+    o._account_for_sleep()
+    assert 2390 < [r for r in o.runner.active() if r.run_id == "T9999-a1"][0].deadline - rec.deadline < 2410
+
+
+def test_heartbeat_beats_through_a_long_tick(sandbox, monkeypatch):
+    """The heartbeat thread keeps .mfos/heartbeat fresh while a tick blocks, and stops with the loop (2026-11-16)."""
+    import threading
+    pol = sandbox / ".mfos" / "policy.toml"
+    pol.write_text(pol.read_text().replace("heartbeat_seconds = 60 ", "heartbeat_seconds = 0.05 ", 1))
+    assert "heartbeat_seconds = 0.05" in pol.read_text()
+    o = Orchestrator(Store())
+    hb = sandbox / ".mfos" / "heartbeat"
+    seen = []
+
+    def long_tick():
+        hb.unlink(missing_ok=True)
+        time.sleep(0.5)  # a synchronous gate
+        seen.append(hb.exists())
+        return {"idle": True}
+
+    monkeypatch.setattr(o, "tick", long_tick)
+    monkeypatch.setattr(o, "unexpected_changes", lambda: [])  # the edited policy.toml is not a stray change here
+    o.run_forever(poll_s=0, max_cycles=1)
+    assert seen == [True]
+    deadline = time.time() + 2
+    while time.time() < deadline and any(t.name == "mfos-heartbeat" for t in threading.enumerate()):
+        time.sleep(0.02)
+    assert not any(t.name == "mfos-heartbeat" for t in threading.enumerate())
+
+
+def test_tick_records_its_start(sandbox):
+    o = Orchestrator(Store())
+    o.tick()
+    assert (sandbox / ".mfos" / "tick").read_text() <= (sandbox / ".mfos" / "heartbeat").read_text()  # ISO, UTC
+    assert not Orchestrator(Store()).unexpected_changes()  # .mfos/tick and the .tmp files are ignored
 
 
 def test_heavy_experiment_goes_to_burst_compute_and_results_flow_back(sandbox):
