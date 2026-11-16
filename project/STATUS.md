@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T04:33:30+00:00 from repository state — do not edit_
+_generated 2026-11-16T04:34:23+00:00 from repository state — do not edit_
 
 ## Founder inbox (4 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -44,7 +44,6 @@ cancelled: 44, done: 332, failed: 4, needs_founder: 1, review: 2, running: 3, to
 - T0405 `running` critic/review: Review T0384 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T03:31:44+00:00 sleep_detected {"gap_s": 1879, "runs_extended": 3}
 - 2026-11-16T03:31:45+00:00 run_finished {"run": "T0402-critic-20261115T185559-039a", "status": "completed", "cost": 2.224593, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T03:31:53+00:00 run_started {"run": "T0384-builder-20261115T193153-c4a4", "task": "T0384", "role": "builder", "session": "9d6056c9-d8ab-4e20-b046-83578b47fa4d"}
 - 2026-11-16T03:41:30+00:00 inbox_resolved {"id": "I0214", "status": "approved", "note": "T0381 merge approved (review T0400 accept with caveats); the session rebuilds the mfos.metrics fix on top", "by":
@@ -59,3 +58,4 @@ cancelled: 44, done: 332, failed: 4, needs_founder: 1, review: 2, running: 3, to
 - 2026-11-16T04:33:09+00:00 verified {"task": "T0376"}
 - 2026-11-16T04:33:27+00:00 run_started {"run": "T0404-critic-20261115T203327-bb2a", "task": "T0404", "role": "critic", "session": "5325d940-e7bc-49a6-8a67-7cfbd6255bfd"}
 - 2026-11-16T04:33:30+00:00 run_started {"run": "T0405-critic-20261115T203330-a271", "task": "T0405", "role": "critic", "session": "85aa27e1-1f4b-43c8-842a-44a2bad39309"}
+- 2026-11-16T04:34:06+00:00 sleep_detected {"gap_s": 1112, "runs_extended": 3}
