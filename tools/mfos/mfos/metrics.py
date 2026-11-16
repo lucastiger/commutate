@@ -27,6 +27,17 @@ Definitions (each function's docstring repeats its own):
   headroom_min_lo           O003 A1: min over counted references of h_lo = a (1 - r (1 + w)), twin rule first
   headroom_max_hi_ind       O003 K1: max over counted references of h_hi = a (1 - r_ind (1 - w_ind)), levelling
                             first (+inf if not levelled), then the twin rule, then near ties
+  max_gci_step_floor        max of gci_capped, a sequence with both steps below a floor counting as converged (3 max|d|)
+  control_layout_pass_min   O008 A1: min over layouts of the share of draws with shortfall at most tol
+  control_shortfall_median_max  O008 K1: max over layouts of the median shortfall
+  null_beaten_min           O008 A3: 1 if every gating null is beaten (resolved and paired) on every layout, else 0
+  max_rel_err_or_inf        O004 A1: max |pred / ref - 1|, +inf if any row is excluded
+  max_consistency_capped    O004 A2: max |pred - ref| / (e_pred + e_ref), +inf for an estimate above its cap
+  quantile_abs_err          q-quantile of |pred - ref|
+  quantile_rel_err          q-quantile of |pred - ref| / scale
+  quantile_abs_err_ratio    quantile_abs_err of pred over that of a null column
+  median_col                median of one column
+  max_over_groups           max over the values of one column of another metric computed per value
 """
 from __future__ import annotations
 
@@ -279,11 +290,14 @@ def stratum_mean_offset_spread(pred: Sequence[float], ref: Sequence[float], stra
 
 
 def pairwise_diff_error_quantile(pred: Sequence[float], ref: Sequence[float], strata: Sequence[Any],
-                                 q: float = 0.95) -> float:
-    """q-quantile, over all pairs inside each stratum, of |(pred_i - pred_j) - (ref_i - ref_j)|."""
+                                 q: float = 0.95, units: Optional[Sequence[Any]] = None) -> float:
+    """q-quantile, over all pairs inside each stratum, of |(pred_i - pred_j) - (ref_i - ref_j)|. ``units`` (one label per
+    row, e.g. the layout id): pairs of two rows of the same unit are skipped, so a cluster bootstrap that draws a layout
+    twice adds no zero-error self-pairs (O002 A1, self-pair exclusion)."""
     p, r = _arr(pred), _arr(ref)
+    u = list(units) if units is not None else None
     errs = [abs((p[i] - p[j]) - (r[i] - r[j])) for idx in _groups(strata).values()
-            for i, j in itertools.combinations(idx.tolist(), 2)]
+            for i, j in itertools.combinations(idx.tolist(), 2) if u is None or u[i] != u[j]]
     if not errs:
         raise ValueError("no within-stratum pairs")
     return float(np.quantile(errs, q))
@@ -697,6 +711,171 @@ def _levels(rows: Rows, params: Optional[dict[str, Any]], key: str) -> list[np.n
     return [_col(rows, n) for n in names]
 
 
+# ------------------------------------------------------------------------------------------------ O002, O004, O008
+def gci_step_floor(f0: float, f1: float, f2: float, step_floor: float, relative: bool = False) -> float:
+    """gci_capped of the finest value f2, except that a sequence whose two steps are both below ``step_floor`` counts as
+    converged and gets 3 max(|d1|, |d2|) (O004 scope_in, O002 F1). The ratio of two tiny steps is close to random, so
+    gci_capped returns +inf for converged ratio and difference sequences (reviews T0365 and T0366; 8 of 153 pair
+    differences of E010's 2R solves, research/notes/o002-reference-convergence.md). ``relative``: the floor is
+    ``step_floor * |f2|`` (O004: 0.1 % of a ratio). Unlike gci_capped's ``floor``, which sets sub-floor steps to zero
+    and can return 0, this never returns less than 3 max|d| for a converged sequence."""
+    if step_floor < 0.0:
+        raise ValueError("step_floor must be non-negative")
+    d1, d2 = float(f1) - float(f0), float(f2) - float(f1)
+    lim = step_floor * abs(float(f2)) if relative else step_floor
+    if abs(d1) < lim and abs(d2) < lim:
+        return 3.0 * max(abs(d1), abs(d2))
+    return gci_capped(f0, f1, f2)
+
+
+def max_gci_step_floor(f0: Sequence[float], f1: Sequence[float], f2: Sequence[float], step_floor: float,
+                       relative: bool = False) -> float:
+    """max over rows of gci_step_floor; +inf if any sequence diverges."""
+    a, b, c = _arr(f0), _arr(f1), _arr(f2)
+    if not (a.size == b.size == c.size) or a.size == 0:
+        raise ValueError("max_gci_step_floor needs three equal-length, non-empty level columns")
+    return float(max(gci_step_floor(x, y, z, step_floor, relative) for x, y, z in zip(a, b, c, strict=True)))
+
+
+def _by_unit(rows: Rows, unit: str, col: str) -> dict[Any, np.ndarray]:
+    out: dict[Any, list[float]] = {}
+    for row in rows:
+        out.setdefault(row[unit], []).append(float(row[col]))
+    if not out:
+        raise ValueError("no rows")
+    return {k: np.asarray(v, dtype=float) for k, v in out.items()}
+
+
+def control_layout_pass_min(rows: Rows, s: str = "s", layout: str = "layout", tol: float = 0.02) -> float:
+    """O008 A1: min over layouts of the fraction of that layout's draws whose shortfall s = L_sub(best) / L_sub(W*) - 1
+    is at most ``tol``. Rows are the search's draws (select them with the spec's ``where``)."""
+    per = _by_unit(rows, layout, s)
+    return float(min(np.mean(v <= tol) for v in per.values()))
+
+
+def control_shortfall_median_max(rows: Rows, s: str = "s", layout: str = "layout") -> float:
+    """O008 K1: max over layouts of the median shortfall s of that layout's draws (per layout, so one layout cannot mask
+    another)."""
+    per = _by_unit(rows, layout, s)
+    return float(max(np.median(v) for v in per.values()))
+
+
+def null_beaten_min(rows: Rows, nulls: Sequence[str], role: str = "role", search: str = "search",
+                    layout: str = "layout", draw: str = "draw", s: str = "s", b: str = "b",
+                    capped: Optional[str] = None, tol: float = 0.02, k_resolved: int = 4,
+                    k_paired: int = 7) -> float:
+    """O008 A3: 1.0 if every gating null is beaten on every layout, else 0.0. A null is beaten on a layout when (i) it
+    fails resolvably, s_null - b_null > ``tol``, on at least ``k_resolved`` of the layout's draws, a null run flagged in
+    ``capped`` (stopped at its step limit) never counting as a resolved failure; and (ii) the search's s is below the
+    null's by more than b_search + b_null on at least ``k_paired`` draws, paired on the same draw. Rows carry one record
+    per (layout, draw, role). A draw of a layout without exactly one search row and one row per null raises: nothing is
+    paired silently."""
+    if not nulls:
+        raise ValueError("null_beaten_min needs at least one null role")
+    recs: dict[tuple[Any, Any, Any], dict[str, Any]] = {}
+    for row in rows:
+        key = (row[layout], row[draw], row[role])
+        if key in recs:
+            raise ValueError(f"duplicate row for layout {key[0]!r}, draw {key[1]!r}, role {key[2]!r}")
+        recs[key] = row
+    draws: dict[Any, set] = {}
+    for lay, dr, _ in recs:
+        draws.setdefault(lay, set()).add(dr)
+    for lay, ds in draws.items():
+        for dr in ds:
+            for rl in (search, *nulls):
+                if (lay, dr, rl) not in recs:
+                    raise ValueError(f"layout {lay!r}, draw {dr!r} has no {rl!r} row")
+    for lay, ds in draws.items():
+        for nl in nulls:
+            resolved = paired = 0
+            for dr in ds:
+                sr, nr = recs[(lay, dr, search)], recs[(lay, dr, nl)]
+                s_n, b_n = float(nr[s]), float(nr[b])
+                if s_n - b_n > tol and not (capped and bool(nr[capped])):
+                    resolved += 1
+                if s_n - float(sr[s]) > float(sr[b]) + b_n:
+                    paired += 1
+            if resolved < k_resolved or paired < k_paired:
+                return 0.0
+    return 1.0
+
+
+def max_rel_err_or_inf(pred: Sequence[float], ref: Sequence[float], excluded: Sequence[Any]) -> float:
+    """O004 A1: max |pred / ref - 1|, or +inf if any row is excluded (an excluded pair counts as not met)."""
+    if any(bool(x) for x in excluded):
+        return math.inf
+    return max_rel_err(pred, ref)
+
+
+def max_consistency_capped(pred: Sequence[float], ref: Sequence[float], e_pred: Sequence[float],
+                           e_ref: Sequence[float], cap_rel: float) -> float:
+    """O004 A2: max over rows of |pred - ref| / (e_pred + e_ref). A row whose estimate is not finite or exceeds
+    ``cap_rel`` times its own value gives +inf (unresolved, never easier to meet); equal values with zero estimates
+    give 0, unequal ones +inf."""
+    p, r, ep, er = _arr(pred), _arr(ref), _arr(e_pred), _arr(e_ref)
+    if not (p.size == r.size == ep.size == er.size) or p.size == 0:
+        raise ValueError("max_consistency_capped needs four equal-length, non-empty columns")
+    out = 0.0
+    for x, y, a, c in zip(p, r, ep, er, strict=True):
+        if not (np.isfinite(a) and np.isfinite(c)) or a > cap_rel * abs(x) or c > cap_rel * abs(y):
+            return math.inf
+        d, e = abs(x - y), a + c
+        out = max(out, 0.0 if d == 0.0 else (math.inf if e == 0.0 else d / e))
+    return float(out)
+
+
+def quantile_abs_err(pred: Sequence[float], ref: Sequence[float], q: float = 0.95) -> float:
+    """q-quantile over rows of |pred - ref| (O002 A3: per-switch spread errors)."""
+    p, r = _arr(pred), _arr(ref)
+    _finite_rows(p, r)
+    return float(np.quantile(np.abs(p - r), q))
+
+
+def quantile_rel_err(pred: Sequence[float], ref: Sequence[float], scale: Sequence[float], q: float = 0.95) -> float:
+    """q-quantile over rows of |pred - ref| / scale (O002 A2: scale = the die-local rise)."""
+    p, r, sc = _arr(pred), _arr(ref), _arr(scale)
+    _finite_rows(p, r, sc)
+    if np.any(sc <= 0.0):
+        raise ValueError("quantile_rel_err needs a positive scale")
+    return float(np.quantile(np.abs(p - r) / sc, q))
+
+
+def quantile_abs_err_ratio(pred: Sequence[float], null: Sequence[float], ref: Sequence[float],
+                           q: float = 0.95) -> float:
+    """quantile_abs_err of ``pred`` divided by that of ``null`` against the same ``ref`` (O002 A4 and K3: L1's spread
+    error relative to the stratum-mean spread). +inf when the null is exact and ``pred`` is not; 0 when both are."""
+    num, den = quantile_abs_err(pred, ref, q), quantile_abs_err(null, ref, q)
+    if den == 0.0:
+        return 0.0 if num == 0.0 else math.inf
+    return float(num / den)
+
+
+def median_col(values: Sequence[float]) -> float:
+    """median of one column (O002 A5: L1 wall time per evaluation)."""
+    v = _arr(values)
+    _finite_rows(v)
+    return float(np.median(v))
+
+
+def max_over_groups(rows: Rows, fn: str, by: str, *, pred: Optional[str] = None, ref: Optional[str] = None,
+                    strata: Sequence[str] = (), group: Optional[str] = None, role: Optional[str] = None,
+                    inner: Optional[dict[str, Any]] = None) -> float:
+    """max over the values of column ``by`` (e.g. the load level) of metric ``fn`` computed on that value's rows with
+    ``inner`` as its params (O002: 'max over the two load levels of ...')."""
+    keys = sorted({row[by] for row in rows}, key=str)
+    if not keys:
+        raise ValueError("no rows")
+    if fn == "max_over_groups":
+        raise ValueError("max_over_groups cannot nest itself")
+    return float(max(compute(fn, [row for row in rows if row[by] == k], pred=pred, ref=ref, strata=strata,
+                             group=group, role=role, params=inner) for k in keys))
+
+
+def _p(params: Optional[dict[str, Any]]) -> dict[str, Any]:
+    return dict(params or {})
+
+
 # name -> f(rows, pred, ref, strata, group, role, params) -> float
 METRICS: dict[str, Callable[..., float]] = {
     "spearman": lambda rows, pred, ref, **_: spearman(_col(rows, pred), _col(rows, ref)),
@@ -728,7 +907,9 @@ METRICS: dict[str, Callable[..., float]] = {
     "stratum_mean_offset_spread": lambda rows, pred, ref, strata, **_: stratum_mean_offset_spread(
         _col(rows, pred), _col(rows, ref), strata_keys(rows, strata)),
     "pairwise_diff_error_quantile": lambda rows, pred, ref, strata, params=None, **_: pairwise_diff_error_quantile(
-        _col(rows, pred), _col(rows, ref), strata_keys(rows, strata), **(params or {})),
+        _col(rows, pred), _col(rows, ref), strata_keys(rows, strata),
+        **{k: v for k, v in _p(params).items() if k != "unit"},
+        units=[row[_p(params)["unit"]] for row in rows] if _p(params).get("unit") else None),
     "headroom_by_group": lambda rows, pred, ref, group, role, params=None, **_: headroom_by_group(
         rows, ref, group=group, role=role, **(params or {})),
     "optimism_ratio_by_group": lambda rows, pred, ref, group, role, params=None, **_: optimism_ratio_by_group(
@@ -736,6 +917,34 @@ METRICS: dict[str, Callable[..., float]] = {
     "headroom_min_lo": lambda rows, pred=None, params=None, **_: headroom_min_lo(rows, pred or "L_sub_H", params),
     "headroom_max_hi_ind": lambda rows, pred=None, params=None, **_: headroom_max_hi_ind(rows, pred or "L_sub_H",
                                                                                           params),
+    # O002, O004, O008 (2026-11-16)
+    "max_gci_step_floor": lambda rows, params=None, **_: max_gci_step_floor(
+        *_levels(rows, params, "levels"), step_floor=float(_p(params)["step_floor"]),
+        relative=bool(_p(params).get("relative", False))),
+    "control_layout_pass_min": lambda rows, pred=None, group=None, params=None, **_: control_layout_pass_min(
+        rows, s=pred or "s", layout=group or "layout", tol=float(_p(params).get("tol", 0.02))),
+    "control_shortfall_median_max": lambda rows, pred=None, group=None, **_: control_shortfall_median_max(
+        rows, s=pred or "s", layout=group or "layout"),
+    "null_beaten_min": lambda rows, pred=None, group=None, role=None, params=None, **_: null_beaten_min(
+        rows, nulls=list(_p(params)["nulls"]), role=role or "role", search=_p(params).get("search", "search"),
+        layout=group or "layout", draw=_p(params).get("draw", "draw"), s=pred or "s", b=_p(params).get("b", "b"),
+        capped=_p(params).get("capped"), tol=float(_p(params).get("tol", 0.02)),
+        k_resolved=int(_p(params).get("k_resolved", 4)), k_paired=int(_p(params).get("k_paired", 7))),
+    "max_rel_err_or_inf": lambda rows, pred, ref, params=None, **_: max_rel_err_or_inf(
+        _col(rows, pred), _col(rows, ref), [row[_p(params)["excluded"]] for row in rows]),
+    "max_consistency_capped": lambda rows, pred, ref, params=None, **_: max_consistency_capped(
+        _col(rows, pred), _col(rows, ref), _col(rows, _p(params)["e_pred"]), _col(rows, _p(params)["e_ref"]),
+        float(_p(params)["cap_rel"])),
+    "quantile_abs_err": lambda rows, pred, ref, params=None, **_: quantile_abs_err(
+        _col(rows, pred), _col(rows, ref), q=float(_p(params).get("q", 0.95))),
+    "quantile_rel_err": lambda rows, pred, ref, params=None, **_: quantile_rel_err(
+        _col(rows, pred), _col(rows, ref), _col(rows, _p(params)["scale"]), q=float(_p(params).get("q", 0.95))),
+    "quantile_abs_err_ratio": lambda rows, pred, ref, params=None, **_: quantile_abs_err_ratio(
+        _col(rows, pred), _col(rows, _p(params)["null"]), _col(rows, ref), q=float(_p(params).get("q", 0.95))),
+    "median_col": lambda rows, pred, **_: median_col(_col(rows, pred)),
+    "max_over_groups": lambda rows, pred=None, ref=None, strata=(), group=None, role=None, params=None, **_:
+        max_over_groups(rows, _p(params)["fn"], _p(params)["by"], pred=pred, ref=ref, strata=strata, group=group,
+                        role=role, inner=_p(params).get("inner")),
 }
 
 
