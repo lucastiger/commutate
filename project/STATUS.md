@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T15:00:16+00:00 from repository state — do not edit_
+_generated 2026-11-16T15:05:12+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -29,17 +29,17 @@ _generated 2026-11-16T15:00:16+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 21 | $40.34 | 901416 | 553192 | 68 | 0 |
+| O008 | 22 | $40.34 | 901416 | 553192 | 68 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 345, failed: 4, running: 2, todo: 17
+cancelled: 45, done: 345, failed: 4, running: 3, todo: 16
 
+- T0378 `running` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 1)
 - T0384 `running` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 3)
 - T0386 `running` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 3)
 
 ## Recent events
-- 2026-11-16T14:11:20+00:00 merged {"task": "T0377"}
 - 2026-11-16T14:17:48+00:00 merged {"task": "T0392"}
 - 2026-11-16T14:24:10+00:00 merged {"task": "T0393"}
 - 2026-11-16T14:30:41+00:00 merged {"task": "T0394"}
@@ -54,3 +54,4 @@ cancelled: 45, done: 345, failed: 4, running: 2, todo: 17
 - 2026-11-16T14:34:17+00:00 run_started {"run": "T0386-builder-20261116T063417-22a2", "task": "T0386", "role": "builder", "session": "6d2cb963-af9a-4c6b-9ef7-7aeedfedd369"}
 - 2026-11-16T15:00:08+00:00 run_finished {"run": "T0378-builder-20261116T063048-cc86", "status": "error", "cost": 0.975169, "subtype": "success", "report": "missing"}
 - 2026-11-16T15:00:08+00:00 capacity_backoff {"task": "T0378", "minutes": 5, "parsed_reset": false}
+- 2026-11-16T15:05:12+00:00 run_started {"run": "T0378-builder-20261116T070512-3f46", "task": "T0378", "role": "builder", "session": "09c86f72-5b9d-4300-b748-a86c1ca85a30"}
