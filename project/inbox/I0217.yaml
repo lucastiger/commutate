@@ -1,0 +1,38 @@
+id: I0217
+kind: decision
+subject: 'T0386 blocked: the agent reports the task impossible or mis-specified'
+summary: 'only, with every inductance entry point set to fail the test if called. The test that asserted
+  no shift was possible on Case 6 is gone.
+
+  - **Ranges:** they are now die shift ±12, trace ±10, terminal margin 0..10 with delta ±10, landing ±15,
+  and 2000 redraws. Each covers the whole span of clean values the Case 4 scans found; they were not tuned
+  on 2R or Case 6.
+
+  - **The 6 % effect:** each move type now reaches |1 - r| >= 6 % at L1 on Case 4 with an in-range, DRC-clean
+  value, checked in a test: die shift 0.873, trace width 0.915, terminal copper 1.091, wire landing 1.108.
+  A seed-1 draw of 12 per type gives ranges of 0.888–1.007 (die shift), 0.950–1.055 (trace width), 0.990–1.073
+  (terminal copper) and 0.963–1.112 (wire landing), with at least one r >= 0.98.
+
+  - **`rules_sha256()`:** it now hashes the whole perturb module (helpers and constants included), `moduleforge.drc`
+  and `drc.rules`, `arc_wire`, `Layout.fingerprint`, l2_layout''s lattice rule and the current ranges.
+  Value at this commit: 4dd955a0a714e3f578a5e5e6e0558cad2b81838a5e77a3f534254facbc7f5582.
+
+  - **No shared state:** every move deep-copies the reference, and a test checks that changing an output
+  leaves the reference untouched.
+
+  - **Duplicate geometry:** `draw` now rejects duplicates by comparing the actual geometry, not the parameters.
+  This also caught a new bug: unions with copper already present added extra vertices, so a move that
+  changed nothing passed as a change. Output polygons are now cleaned up, which fixes both.'
+refs:
+- T0386
+- O004
+options:
+- re-scope, then `mfos task retry T0386`
+- cancel
+- give guidance
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T05:47:10+00:00'
+resolved_at: null
+resolved_by: null

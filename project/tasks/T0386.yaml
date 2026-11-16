@@ -4,7 +4,7 @@ title: 'Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trac
   copper, wire landing (generate/perturb.py)'
 type: implement
 agent: builder
-status: running
+status: needs_founder
 depends_on: []
 description: 'New module src/moduleforge/generate/perturb.py with O004''s four move types. They act directly
   on a reconstructed reference Layout, because 2D_Case_6 has no twin and so the 0.5 mm parameter space
@@ -201,3 +201,170 @@ history:
     on the parameter JSON. Two terminal_copper moves (PHASE, S, margin 3, delta 4 and delta 5) produced
     identical geometry, which would duplicate a registered pair.'
   at: '2026-11-16T05:09:24+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I fixed everything the review raised, but one requirement can''t be met as written: no move
+    gives r <= 0.75 on 2D_Case_4. I scanned every whole-mm parameter value, DRC-checked each result and
+    computed L1 at 20 MHz on the clean ones. No single DRC-clean move of the four kinds goes below r =
+    0.873 under Case 4''s rules (its measured rules with the E008 dev overrides). The lowest ratios per
+    move type were:
+
+    - die-row shift: 0.873 (±20 mm scanned)
+
+    - trace width: 0.915 (±14 mm)
+
+    - wire landing: 0.963 (±14 mm)
+
+    - terminal copper: 0.981 (margin 0..12 mm, delta ±12 mm)
+
+
+    That test is a strict xfail; everything else passes. The pytest and ruff DoD commands exit 0 (33 passed,
+    1 xfailed), `mfos gate --fast` passed, and the work is committed as 630dbdd6.
+
+
+    **Question for the founder:** to get O004''s span [0.'
+  report:
+    status: blocked
+    summary: 'I fixed everything the review raised, but one requirement can''t be met as written: no move
+      gives r <= 0.75 on 2D_Case_4. I scanned every whole-mm parameter value, DRC-checked each result
+      and computed L1 at 20 MHz on the clean ones. No single DRC-clean move of the four kinds goes below
+      r = 0.873 under Case 4''s rules (its measured rules with the E008 dev overrides). The lowest ratios
+      per move type were:
+
+      - die-row shift: 0.873 (±20 mm scanned)
+
+      - trace width: 0.915 (±14 mm)
+
+      - wire landing: 0.963 (±14 mm)
+
+      - terminal copper: 0.981 (margin 0..12 mm, delta ±12 mm)
+
+
+      That test is a strict xfail; everything else passes. The pytest and ruff DoD commands exit 0 (33
+      passed, 1 xfailed), `mfos gate --fast` passed, and the work is committed as 630dbdd6.
+
+
+      **Question for the founder:** to get O004''s span [0.75, 0.98] and F7(c)''s r <= 0.75 pair, should
+      a pair be allowed to combine several moves (for example an HS row shift plus a PHASE trace-width
+      change)? Or should the span be narrowed, or the move vocabulary changed? I did not add compound
+      moves, because that would go beyond the four move types the task names.
+
+
+      What changed since attempt 1:
+
+      - **Die-row shift (the review''s blocker):** the wires now keep their direction. A shift along the
+      row moves the power and signal wires with the dies, landings included. A shift across the row moves
+      only the wire starts, which matches O006''s die_shift. With a development seed, 2D_Case_6 and 2D_Case_2R
+      now each get 3 DRC-clean row shifts; this check used geometry only, with every inductance entry
+      point set to fail the test if called. The test that asserted no shift was possible on Case 6 is
+      gone.
+
+      - **Ranges:** they are now die shift ±12, trace ±10, terminal margin 0..10 with delta ±10, landing
+      ±15, and 2000 redraws. Each covers the whole span of clean values the Case 4 scans found; they were
+      not tuned on 2R or Case 6.
+
+      - **The 6 % effect:** each move type now reaches |1 - r| >= 6 % at L1 on Case 4 with an in-range,
+      DRC-clean value, checked in a test: die shift 0.873, trace width 0.915, terminal copper 1.091, wire
+      landing 1.108. A seed-1 draw of 12 per type gives ranges of 0.888–1.007 (die shift), 0.950–1.055
+      (trace width), 0.990–1.073 (terminal copper) and 0.963–1.112 (wire landing), with at least one r
+      >= 0.98.
+
+      - **`rules_sha256()`:** it now hashes the whole perturb module (helpers and constants included),
+      `moduleforge.drc` and `drc.rules`, `arc_wire`, `Layout.fingerprint`, l2_layout''s lattice rule and
+      the current ranges. Value at this commit: 4dd955a0a714e3f578a5e5e6e0558cad2b81838a5e77a3f534254facbc7f5582.
+
+      - **No shared state:** every move deep-copies the reference, and a test checks that changing an
+      output leaves the reference untouched.
+
+      - **Duplicate geometry:** `draw` now rejects duplicates by comparing the actual geometry, not the
+      parameters. This also caught a new bug: unions with copper already present added extra vertices,
+      so a move that changed nothing passed as a change. Output polygons are now cleaned up, which fixes
+      both.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run python $TMPDIR/t0386/scan.py die_row_shift 20  (Case 4 exhaustive scan, L1 20 MHz)
+      exit_code: 0
+    - cmd: uv run python $TMPDIR/t0386/scan.py wire_landing|trace_width 14; terminal_copper 8 and 12  (Case
+        4 scans)
+      exit_code: 0
+    - cmd: uv run python $TMPDIR/t0386/geo.py  (2R / Case 6 geometry-only draws, no inductance)
+      exit_code: 0
+    - cmd: uv run python $TMPDIR/t0386/dist.py  (Case 4 seed-1 ratio spread, rules_sha256)
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/generate/perturb.py
+    - tests/unit/test_perturb.py
+    concerns:
+    - 'Requirement not met: the frozen rules cannot produce a Case 4 pair with r <= 0.75 at L1. The best
+      single DRC-clean move is r = 0.873, so O004''s [0.75, 0.98] span and F7(c)''s low-ratio pilot pair
+      need a founder decision. The test is a strict xfail that fails as soon as the requirement is met.'
+    - Whether the judged references can reach the 6 % effect or the span was not measured. Computing inductance
+      on 2R or Case 6 is forbidden (F2), so that will only show at registration.
+    - 'Clean draws are rare for some moves on Case 4: under 1 % of terminal-copper draws reach |1 - r|
+      >= 6 %, and none of the 12 seed-1 trace-width draws did. Per-type coverage on a sealed seed is therefore
+      not guaranteed.'
+    - on_lattice swaps l2_layout.CELL for the duration of the call (there is no other hook) and restores
+      it in a finally block. It is not safe to call from several threads at once.
+    - The die-row shift's wire rule assumes the wires run across their die row, which holds on all three
+      references. For a die row that is not straight, row_axis raises ValueError.
+- attempt: 2
+  outcome: blocked
+  summary: agent reported blocked
+  failure_output: 'I fixed everything the review raised, but one requirement can''t be met as written:
+    no move gives r <= 0.75 on 2D_Case_4. I scanned every whole-mm parameter value, DRC-checked each result
+    and computed L1 at 20 MHz on the clean ones. No single DRC-clean move of the four kinds goes below
+    r = 0.873 under Case 4''s rules (its measured rules with the E008 dev overrides). The lowest ratios
+    per move type were:
+
+    - die-row shift: 0.873 (±20 mm scanned)
+
+    - trace width: 0.915 (±14 mm)
+
+    - wire landing: 0.963 (±14 mm)
+
+    - terminal copper: 0.981 (margin 0..12 mm, delta ±12 mm)
+
+
+    That test is a strict xfail; everything else passes. The pytest and ruff DoD commands exit 0 (33 passed,
+    1 xfailed), `mfos gate --fast` passed, and the work is committed as 630dbdd6.
+
+
+    **Question for the founder:** to get O004''s span [0.75, 0.98] and F7(c)''s r <= 0.75 pair, should
+    a pair be allowed to combine several moves (for example an HS row shift plus a PHASE trace-width change)?
+    Or should the span be narrowed, or the move vocabulary changed? I did not add compound moves, because
+    that would go beyond the four move types the task names.
+
+
+    What changed since attempt 1:
+
+    - **Die-row shift (the review''s blocker):** the wires now keep their direction. A shift along the
+    row moves the power and signal wires with the dies, landings included. A shift across the row moves
+    only the wire starts, which matches O006''s die_shift. With a development seed, 2D_Case_6 and 2D_Case_2R
+    now each get 3 DRC-clean row shifts; this check used geometry only, with every inductance entry point
+    set to fail the test if called. The test that asserted no shift was possible on Case 6 is gone.
+
+    - **Ranges:** they are now die shift ±12, trace ±10, terminal margin 0..10 with delta ±10, landing
+    ±15, and 2000 redraws. Each covers the whole span of clean values the Case 4 scans found; they were
+    not tuned on 2R or Case 6.
+
+    - **The 6 % effect:** each move type now reaches |1 - r| >= 6 % at L1 on Case 4 with an in-range,
+    DRC-clean value, checked in a test: die shift 0.873, trace width 0.915, terminal copper 1.091, wire
+    landing 1.108. A seed-1 draw of 12 per type gives ranges of 0.888–1.007 (die shift), 0.950–1.055 (trace
+    width), 0.990–1.073 (terminal copper) and 0.963–1.112 (wire landing), with at least one r >= 0.98.
+
+    - **`rules_sha256()`:** it now hashes the whole perturb module (helpers and constants included), `moduleforge.drc`
+    and `drc.rules`, `arc_wire`, `Layout.fingerprint`, l2_layout''s lattice rule and the current ranges.
+    Value at this commit: 4dd955a0a714e3f578a5e5e6e0558cad2b81838a5e77a3f534254facbc7f5582.
+
+    - **No shared state:** every move deep-copies the reference, and a test checks that changing an output
+    leaves the reference untouched.
+
+    - **Duplicate geometry:** `draw` now rejects duplicates by comparing the actual geometry, not the
+    parameters. This also caught a new bug: unions with copper already present added extra vertices, so
+    a move that changed nothing passed as a change. Output polygons are now cleaned up, which fixes both.'
+  at: '2026-11-16T05:47:10+00:00'

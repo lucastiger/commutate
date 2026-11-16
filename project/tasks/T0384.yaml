@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -201,3 +201,89 @@ history:
 
     ...[truncated; full reviews: project/reviews/T0384/]'
   at: '2026-11-16T05:02:31+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I fixed what reviews T0404 and T0405 rejected in attempt 1 and committed the work as c3c7df22,
+    on top of 44b164bb. All DoD commands exit 0: the tests (34 passed), ruff on both files, the file-exists
+    check, and `mfos gate --fast`. I did not run FastHenry, as the packet says. So the claim that FastHenry
+    now accepts the decks rests on an order check written in the test file, not on the real binary.
+
+
+    **The blocker (FastHenry refused the distributed-die decks).** In `die_model=''distributed''`, every
+    node of a die''s block is now written before any of its segments. Before, each lateral segment named
+    its +x or +y neighbour node before that node''s line, and FastHenry reads the deck in one pass, so
+    it refused both distributed decks.
+
+
+    **The test that missed it.** `read_errors()` in the test file reads'
+  report:
+    status: completed
+    summary: 'I fixed what reviews T0404 and T0405 rejected in attempt 1 and committed the work as c3c7df22,
+      on top of 44b164bb. All DoD commands exit 0: the tests (34 passed), ruff on both files, the file-exists
+      check, and `mfos gate --fast`. I did not run FastHenry, as the packet says. So the claim that FastHenry
+      now accepts the decks rests on an order check written in the test file, not on the real binary.
+
+
+      **The blocker (FastHenry refused the distributed-die decks).** In `die_model=''distributed''`, every
+      node of a die''s block is now written before any of its segments. Before, each lateral segment named
+      its +x or +y neighbour node before that node''s line, and FastHenry reads the deck in one pass,
+      so it refused both distributed decks.
+
+
+      **The test that missed it.** `read_errors()` in the test file reads the deck in order, ignoring
+      case as FastHenry does. It reports any segment, `.equiv` or `.external` that names a node not defined
+      on an earlier line, and any name defined twice. It runs on all four die/terminal combinations, at
+      two levels on Case 4 and once on a generated layout. A negative control moves one block node line
+      to after its use and confirms the check catches it.
+
+
+      **Block height.** The die-block nodes now sit at the block''s mid-plane, `(z_bottom + z_top) / 2`.
+      The lateral segments therefore fill exactly the die and attach height instead of sticking up by
+      half a block above the die. The tests check this geometry. The docstring states the model, its sources
+      (Ruehli 1974; Kamon, Tsuk and White 1994) and its approximations.
+
+
+      **Wire ends now follow l2_layout''s rule (a deliberate behaviour change).** A wire end that lands
+      on a die joins that die, as in `l2_layout.end_contact`. A wire start that is not on a die now connects
+      to the nearest cell of the wire''s net. P4''s script raised an error instead, and I removed that
+      error. Case 4''s decks do not change, and the port regression test still matches P4''s research
+      exporter line for line. The behaviour changes are listed in the module docstring and in that test.
+
+
+      **Smaller items:**
+
+      - **Tied-contact segments:** where a wire foot or port ties several cells, the segments between
+      those cells are kept. This is documented and counted in `facts[''n_shorted_segments'']`, which a
+      test checks against a count worked out from the contact coordinates (0 at 1 mm, 8 at 0.5 and 0.25
+      mm on Case 4).
+
+      - **Tab plus 4 mm planes:** `facts[''solver_notes'']` warns when a tab-terminal deck uses planes
+      coarser than 2 mm, which crashed FastHenry''s multipole solver in review.
+
+      - **Plane-pitch test:** I removed the `or` that weakened it. Each plane''s segment count in x and
+      y is now checked against its extent divided by the pitch.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/solvers/fasthenry.py tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: test -f src/moduleforge/solvers/fasthenry.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/fasthenry.py
+    - tests/unit/test_fasthenry.py
+    concerns:
+    - The fix for the blocker is checked by a node-order check in the test file, not by FastHenry itself,
+      because the packet says not to run FastHenry here. The next task should run one coarse distributed
+      deck and one tab deck through the pinned binary.
+    - 'Deliberate change: a wire start that is not on a die now connects to the nearest cell of its net,
+      as l2_layout does, where P4''s script raised ValueError. This could hide a malformed layout that
+      P4 would have refused. Both solvers now treat such a layout the same way.'
+    - With the default conductivity the die block is solid copper, so the F6 die diagnostic probably understates
+      how far the ideal-short assumption is from a real die. A lower `die_sigma` should be reported as
+      a sensitivity check.
+    - On the generated layout the segments kept between tied contact cells number 56 at 0.5 and 0.25 mm,
+      against 8 on Case 4. FastHenry solves decks with such segments, but the refinement study should
+      report them.
