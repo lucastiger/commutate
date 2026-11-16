@@ -50,7 +50,16 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ checks that the 2D_Case_2R and 2D_Case_4 twins are in the domain (A2). The l_sub checkpoint key carries\
   \ the resolution (T0379), so development (0.5 mm) and judged (0.25 mm) solves never share a cached value.\
   \ The unit tests use separable scores, so E011's development rows are the first evidence the search\
-  \ recovers inductance headroom."
+  \ recovers inductance headroom.\n\nT0379's report (founder session, 2026-11-16): (1) twin._net_side\
+  \ reads the DC- column as side tuple (-1,-1,1), but the replay certifies both (-1,-1,1) and (-1,1,1)\
+  \ in all 18 tested states on 2D_Case_2R and in 6 of 17 on 2D_Case_4, and nothing in the repository says\
+  \ which is intended. In development mode, run the proxy descent and one search draw per layout under\
+  \ both DC- readings and report whether W*, L1(W*)/L1(W) and the search's best differ; if they differ,\
+  \ the spec states which reading is frozen and why. (2) The proxy descent's minimum gain per step (control.MIN_GAIN_H\
+  \ = 1e-12 H, which reproduces the probe's 27 steps and L1 ratio 0.8979 on 2R; without it the descent\
+  \ walks noise-level gains to 0.875 in 43 steps) is a frozen-rule choice the founder confirms at T0379's\
+  \ merge. Whatever is frozen, E011's development rows report the descent without the threshold as a sensitivity\
+  \ row (steps, L1 ratio, and L_sub at the development resolution) beside the frozen proxy."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py

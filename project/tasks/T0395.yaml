@@ -4,7 +4,7 @@ title: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested
   symmetry and power scaling, with a speed benchmark
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0392
 description: 'This is build item (2) of the objective notes. Implement the method chosen in research/notes/o002-l1-design.md
@@ -224,3 +224,103 @@ history:
     \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
     \ the active environment instead\n"
   at: '2026-11-16T17:17:05+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: '`moduleforge.thermal` (n1''s `fv_coarse_xcal` method) now passes every definition-of-done
+    command and the fast gate. I changed one design constant, the lateral grid cap, so please review that
+    choice.
+
+
+    **Attempt 1''s failure.** One of its own tests compared two separate iterative solves at 1e-12 relative.
+    The solves legitimately differ by about 6e-11 K, so the test failed in the full suite. `evaluate`
+    now also returns the uncalibrated values of the same solve (`meta[''tj_mean_fv'']`), so the calibration
+    relation is checked exactly within one solve. Comparisons across separate solves use the existing
+    1e-9 K determinism tolerance.
+
+
+    **Calibration table now covers every die size.** Attempt 1 calibrated only 5.0 mm, so `evaluate` raised
+    for 4.0, 4.5 and 5.5 mm dies, which E007''s strata will draw. I '
+  report:
+    status: completed
+    summary: "`moduleforge.thermal` (n1's `fv_coarse_xcal` method) now passes every definition-of-done\
+      \ command and the fast gate. I changed one design constant, the lateral grid cap, so please review\
+      \ that choice.\n\n**Attempt 1's failure.** One of its own tests compared two separate iterative\
+      \ solves at 1e-12 relative. The solves legitimately differ by about 6e-11 K, so the test failed\
+      \ in the full suite. `evaluate` now also returns the uncalibrated values of the same solve (`meta['tj_mean_fv']`),\
+      \ so the calibration relation is checked exactly within one solve. Comparisons across separate solves\
+      \ use the existing 1e-9 K determinism tolerance.\n\n**Calibration table now covers every die size.**\
+      \ Attempt 1 calibrated only 5.0 mm, so `evaluate` raised for 4.0, 4.5 and 5.5 mm dies, which E007's\
+      \ strata will draw. I ran 6 new reference solves at level 1, one at a time (peak 4.2 GB, energy\
+      \ balance at most 2.1e-13). They use E009's development seed with the die size fixed, and the power\
+      \ is set by C004's 60 K rule. The table now has all four sizes: c = 0.98544, 0.98284, 0.98298 and\
+      \ 0.98402. `benchmarks/thermal_l1_calibration.py` derives it and a regression test re-derives it.\n\
+      \n**Your A4 question.**\n- **Per die-count band, development rows at P_ref, n1's 4 mm rule:** the\
+      \ 2-die band (u_shaped/2) scores 0.81 and the 6-die band (side_by_side/6) 0.26.\n- **Finer grid,\
+      \ tested fairly:** I ran 18 new reference solves on a fresh development seed (20261395), three 2-die\
+      \ families with 6 layouts each. I wrote the decision rule before scoring.\n  - Pooled 2-die A4 falls\
+      \ from 0.69 with n1's 4 mm cap to 0.21 with 1.5 mm and 0.22 with 1 mm.\n  - On the development rows,\
+      \ u_shaped/2 falls from 0.81 to 0.23.\n- **Per-switch correction:** it does not help. The fitted\
+      \ spread scale is d = 1.009, and applying it makes A4 slightly worse in every stratum.\n- **Adopted:**\
+      \ 1.5 mm, as the rule required.\n  - Development rows: A1 is 0.200 K at P_ref and 0.093 K at half\
+      \ load; A2 is 0.67 % and 0.64 %.\n  - Speed: the median evaluation is 0.41 s and the maximum 0.65\
+      \ s against the 1 s limit (A5).\n\n**Tests.**\n- The series-limit test now uses a thin die, so the\
+      \ finite-volume solve and the Fourier series solve the same problem. The error is +0.34 % on the\
+      \ adopted grid and −0.05 % on a fine grid, which shows convergence.\n- A regression test guards\
+      \ the fresh-seed 2-die rows (A4 ≤ 0.3).\n- Method, citations, limits and the full results tables\
+      \ are in `docs/thermal_l1.md`."
+    checks_run:
+    - cmd: uv run python benchmarks/thermal_l1_calibration.py solve cal && uv run python benchmarks/thermal_l1_calibration.py
+        solve val
+      exit_code: 0
+    - cmd: OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 uv run python benchmarks/thermal_l1_calibration.py
+        report --json benchmarks/results/thermal_l1_calibration.json
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+      exit_code: 0
+    - cmd: OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 uv run python benchmarks/thermal_l1_speed.py
+        --check
+      exit_code: 0
+    - cmd: uv run python -c "import inspect; from moduleforge.thermal import L1Result, evaluate; p = inspect.signature(evaluate).parameters;
+        assert {'layout', 'power_W', 'h', 'T_c', 'constant_k'} <= set(p), list(p); assert 'tj_mean' in
+        L1Result.__dataclass_fields__"
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/thermal tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+        benchmarks/thermal_l1_speed.py
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q -x -m 'not slow' tests/unit
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/thermal/__init__.py
+    - tests/unit/thermal/test_l1.py
+    - tests/regression/test_thermal_l1_dev.py
+    - tests/regression/data/o002_l1_cal/ (38 cached reference-solve summaries)
+    - benchmarks/thermal_l1_calibration.py
+    - benchmarks/results/thermal_l1_calibration.json
+    - docs/thermal_l1.md
+    - (from attempt 1, unchanged here) src/moduleforge/solvers/thermal_layout.py, benchmarks/thermal_l1_speed.py,
+      tests/regression/data/o002_l1_dev/
+    concerns:
+    - 'Design change: the lateral grid cap went from n1''s 4 mm to 1.5 mm. The design note told this task
+      to try a finer rule on a new development seed, and I followed a rule fixed before scoring, but it
+      is no longer exactly n1''s design. Please review before E007 registration.'
+    - At 4.0 mm on the adopted grid, the calibration factor differs between the two families by 0.0059.
+      That is above the design note's line of about 0.005 for refuting the transfer; n1's 4 mm grid stayed
+      at 0.0032 or below. The estimated effect is at most 0.3 % of the die-local rise, about a tenth of
+      A2's 3 % budget.
+    - The regression test's family-spread guard is 0.01, and I set it after seeing the data. The test
+      docstring and docs/thermal_l1.md both say so.
+    - 'The fresh-seed rows chose the grid, so they are no longer out of sample. Only 2-die strata with
+      5.0 mm dies were validated: the 3-5-die strata and the other die sizes have no A4 check. Each stratum
+      has 6 layouts, so its p95 is close to the maximum of 12 values.'
+    - The calibration uses only the side_by_side and u_shaped families. The interleaved family is checked
+      only through the 5.0 mm validation rows (A2 within target there).
+    - Repeated solves agree to 1e-9 K, not bit-for-bit (about 6e-11 K run-to-run, from threaded math-library
+      reductions).
+    - 'Speed: the median evaluation is 0.41 s and the maximum 0.65 s on 12-die layouts. Medians moved
+      by about 15 % with machine load across runs.'

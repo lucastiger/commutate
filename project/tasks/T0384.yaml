@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -87,8 +87,8 @@ runs:
 - T0384-builder-20261116T063048-5eee
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0225
 target: null
 lens: null
 trigger: null
@@ -442,3 +442,7 @@ history:
 - outcome: full_gate_passed
   summary: 7be211bba64f6299abe12a274ce3f67929e106fb
   at: '2026-11-16T18:51:33+00:00'
+- outcome: merge_approved
+  summary: I0225
+  replan: false
+  at: '2026-11-16T19:20:53+00:00'

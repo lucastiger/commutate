@@ -3,7 +3,7 @@ objective: O008
 title: Designer proxy rule, randomised degradation family and ablation (e)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0378
 description: "Build item (3a) of the objective notes. Create src/moduleforge/optimize/control.py, built\
@@ -101,4 +101,85 @@ lens: null
 trigger: null
 rationale: The control target W* (A1, K1, F3), the D_j family with the R_D window and redraw limit (F6),
   the die-fixed Tj fallback (scope_in), and ablation (e) (F1).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Built optimize/control.py (proxy_descent, choose_proxy, degrade_draw, draw_degradations, proxy_alone,
+    plus read_sides and feasible_sides helpers) and tests/unit/optimize/test_control.py. I also made the
+    requested optimize/local.py changes. The DoD commands and `mfos gate --fast` all exit 0. The regression
+    anchor reproduces the probe exactly on 2R''s twin: 27 steps and L1(W*)/L1(W) = 0.8978635046113315
+    (abs tol 1e-9), with reach off and the probe''s movable set. It takes about 23 s and is marked slow.
+
+
+    **local.py changes**
+
+    - The four foot offsets no longer move. `movable_indices()` is now `range(twin.WALK_FIRST, twin.WALK_END)`,
+    i.e. indices 4-39.
+
+    - `descend(movable=...)` now drops any reach jump that changes a parameter outside the movable set.
+    A test checks that `descend(movable=[i])` chang'
+  report:
+    status: completed
+    summary: "Built optimize/control.py (proxy_descent, choose_proxy, degrade_draw, draw_degradations,\
+      \ proxy_alone, plus read_sides and feasible_sides helpers) and tests/unit/optimize/test_control.py.\
+      \ I also made the requested optimize/local.py changes. The DoD commands and `mfos gate --fast` all\
+      \ exit 0. The regression anchor reproduces the probe exactly on 2R's twin: 27 steps and L1(W*)/L1(W)\
+      \ = 0.8978635046113315 (abs tol 1e-9), with reach off and the probe's movable set. It takes about\
+      \ 23 s and is marked slow.\n\n**local.py changes**\n- The four foot offsets no longer move. `movable_indices()`\
+      \ is now `range(twin.WALK_FIRST, twin.WALK_END)`, i.e. indices 4-39.\n- `descend(movable=...)` now\
+      \ drops any reach jump that changes a parameter outside the movable set. A test checks that `descend(movable=[i])`\
+      \ changes only parameter i.\n- Store keys now carry a solver tag: `local:{tag}:{fp}:l1` and `:lsub`.\
+      \ `LocalSolvers` has a new `tag` field, and a test checks that a changed tag re-solves.\n- `LocalConfig`\
+      \ now rejects budget < 1 and shortlist < 1.\n- New `descend` options:\n  - `reach=False` is the\
+      \ probe's rule: build plus DRC only, no jumps, no domain test.\n  - `max_evals` is an L1 budget\
+      \ with a new terminal kind `BUDGET`.\n  - `min_gain` sets a minimum improvement per step.\n  - Trajectory\
+      \ entries now carry the parameter vector.\n\n**Test changes in test_local_search.py**\n- I added\
+      \ tests for the movable set, jump restriction, store tag, config validation and `max_evals`/`min_gain`.\n\
+      - The `world` fixture now searches rng seeds for the first one that puts the seed layout 8 mm from\
+      \ the target. The foot removal changed the fixture's random draw to 6 mm, and several existing tests\
+      \ hard-code 8 mm.\n- The tie-order test now passes `reach=False`. With jumps allowed, a reach jump\
+      \ of a movable parameter legitimately beats a plain 0.5 mm step.\n- No assertion or tolerance was\
+      \ loosened.\n\n**Degradation family**\n- It keeps every accepted D_j DRC-clean and inside `in_domain(reach=True)`.\n\
+      - It takes no L2 callable. `draw_degradations` calls `r_d_at_l2` once per attempt, to accept or\
+      \ reject a whole draw."
+    concerns:
+    - 'The probe''s descent has an absolute step tolerance: a step must raise -L1 (in H) by more than
+      1e-12, about 0.001 nH or 1e-4 relative. Without it, reach-off descent on 2R takes 43 steps to 0.875,
+      not the probe''s 27 steps and 0.898. I added `min_gain` and set `proxy_descent`''s default to 1e-12
+      H (`control.MIN_GAIN_H`) to match the probe. This is a frozen-rule choice for the founder to confirm.
+      The tolerance is in H, so it assumes `l1` returns henries.'
+    - 'Column-side finding on twin._net_side (founder session, T0402/T0403). `_net_side` agrees with a
+      feasible side tuple in every state I tested: 18 states on 2R and 17 on Case 4, covering the proxy
+      trajectories and degradation paths. No misreading was found. The reading is ambiguous on the DC-
+      column, though. The replay certifies both (-1,-1,1) and (-1,1,1) in all 18 states on 2R and in 6
+      of 17 on Case 4. `_net_side` always reads the first of these. If the intended DC- side were +1,
+      the reach jumps built from `_net_side` would be wrong for that column. Nothing in the repo says
+      which side is intended. The tests assert that the reading is certified, and they print the ambiguity.'
+    - 'Case 4''s ctx.pkl is not in the repo. The tests build Case 4 through `e010_run.dev_reference(''case4'')`,
+      as test_reach.py does, not from the probe''s pickle. Only the 2R anchor uses the saved ctx.pkl.
+      Test timings:
+
+      - test_control.py: 70 s in the fast run and 23 s for the slow anchor.
+
+      - With test_local_search.py: about 103 s.'
+    - A descent that runs out of its `max_evals` budget mid-step takes the best improving candidate found
+      so far and then ends with kind BUDGET. This is the more favourable reading for ablation (e). It
+      spends the whole L1 budget, and it is conservative for the A3 null.
+    - The degradation can start from a W* that is itself outside `in_domain(reach=True)`. Only accepted
+      states are checked against the domain, so a D_j is always inside it even then.
+    files_changed:
+    - src/moduleforge/optimize/control.py
+    - src/moduleforge/optimize/local.py
+    - tests/unit/optimize/test_control.py
+    - tests/unit/optimize/test_local_search.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize/test_control.py
+      exit_code: 0
+    - cmd: uv run pytest -q -m slow tests/unit/optimize/test_control.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/optimize tests/unit/optimize
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/optimize/test_control.py tests/unit/optimize/test_local_search.py
+      exit_code: 0

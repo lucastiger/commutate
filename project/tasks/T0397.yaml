@@ -105,7 +105,14 @@ description: 'Draft experiments/drafts/E007.yaml and experiments/runners/e007_ru
   before registration'' heading in the spec instead of deciding them.
 
 
-  Do not edit src/, tools/ or tests/acceptance. Never start a VM.'
+  Do not edit src/, tools/ or tests/acceptance. Never start a VM.
+
+
+  T0395''s report (founder session, 2026-11-16): E007 freezes moduleforge.thermal at T0395''s merged design
+  (lateral grid cap 1.5 mm, the four-size calibration table c = 0.98544/0.98284/0.98298/0.98402 from benchmarks/thermal_l1_calibration.py)
+  by code hash. The spec states that T0395''s fresh-seed rows (seed 20261395) chose the grid and are development
+  rows, never judged evidence, and that sealed seeds must differ from every development seed used so far
+  (E009''s, 20261395, and T0398''s).'
 context_files:
 - project/objectives/O002/objective.yaml
 - experiments/specs/E009.yaml

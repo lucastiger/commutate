@@ -46,7 +46,16 @@ description: 'Prerequisite: the founder has applied research/o002_e007/e007_metr
 
   Founder session, 2026-11-16 (from review T0410 of T0392): T0392''s F2 check was partial. Include null
   (a), the isolated-die spreading model, and compute the stratum-mean A1 null per (stratum, switch), as
-  O002''s F2 says.'
+  O002''s F2 says.
+
+
+  T0395''s report (founder session, 2026-11-16): T0395 changed n1''s design: lateral grid cap 1.5 mm instead
+  of 4 mm, chosen on the fresh development seed 20261395 by a rule fixed before scoring. Those 18 rows
+  chose the grid, so they are no longer out of sample, and A4 was validated only on 2-die strata with
+  5.0 mm dies. The development run therefore reports A1, A2, A4 and A5 per stratum (every die count and
+  every die size E007 draws: 4.0, 4.5, 5.0, 5.5 mm) on a development seed not used by T0392 or T0395,
+  and states per stratum whether A4 <= 0.3 holds. The calibration factor''s family spread at 4.0 mm (0.0059,
+  above the design note''s 0.005 line) is re-measured on these rows and reported, with its effect on A2.'
 context_files:
 - experiments/drafts/E007.yaml
 - experiments/runners/e007_run.py
