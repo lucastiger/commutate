@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The schema allows `s = None` for a no-candidate draw, but the port crashes on it and nothing flags this",
+      "detail": "The module docstring says `s` is \"None or NaN when the run returned no candidate\", and says the runner (n5) emits exactly these columns. The port in `mfos.metrics` calls `float(row[s])` in `_by_unit` and `null_beaten_min`, so a JSON null raises TypeError for A1, A3 and K1. In the evaluator, `_recompute` catches this and records \"cannot recompute from the rows\", so the evaluation comes out INVALID. The random agreement test never produces None. `test_no_candidate_draw_fails_without_voiding` uses None but checks only the reference implementation. Unlike the three NaN/inf/dropped-draw divergences, this one is not raised as an xfail for the founder. It fails safe (INVALID, not a wrong PASS/FAIL), but a runner that follows the drafted schema would make E011 unevaluable. The claim that both implementations \"give the same numbers\" holds only for rows without None.",
+      "evidence": "In-process probe: rows from `_two(search=_draws([None]+[0.005]*7, [None]+[0.004]*7))`. Reference: A1 0.875, A3 1.0, K1 0.005. Port via `ev.metric_value`: control_layout_pass_min, null_beaten_min and control_shortfall_median_max each raise TypeError \"float() argument must be a string or a real number, not 'NoneType'\". `evidence.ExperimentRun.rows` writes with `json.dumps` (allow_nan default), so NaN round-trips but None stays null.",
+      "suggested_check": "Either restrict the schema to NaN (JSON NaN round-trips through ExperimentRun.rows), or add a fourth port-divergence xfail for None and put None into the agreement generator.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Non-strict xfail tests also hide regressions in the reference implementation",
+      "detail": "Each of the three `xfail(strict=False)` tests asserts the reference implementation's behaviour first and the port's second. Any AssertionError produces XFAIL. So if the reference started counting an inf null draw as a resolved failure or paired win, lost its NaN-as-inf K1 rule, or lost its 8-draw check, the suite would still be green. The inf-null rule is pinned by no other test, because the random agreement rows contain no inf, NaN or None. I ran the three with `--runxfail` and confirmed that today each fails at the port assertion, not the reference's.",
+      "evidence": "`--runxfail` output: failures at test_e011_metrics.py:333 (port K1 = nan), :343 (port A3 = 1.0) and :352 (port DID NOT RAISE). The reference assertions on the preceding lines passed.",
+      "suggested_check": "Move the reference-side assertions of each xfail into ordinary tests, and keep only the port assertion under xfail.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "No test pins the strict `>` in the resolved-failure test; one test comment is wrong",
+      "detail": "`test_a3_four_of_eight_resolved` says \"s - b = 0.02 exactly is not > tol\". In float64, 0.03 - 0.01 = 0.019999999999999997, so that test passes under both `>` and `>=` and does not discriminate them. No other analytic test puts a null at s_j - b_j == tol. The paired margin (dyadic test) and the A1 `<=` (nextafter test) are pinned properly. Likewise, `seed_null_check`'s `v < 7/8` is never tested at v = 0.875.",
+      "evidence": "Computed `0.03-0.01` -> 0.019999999999999997: both `> 0.02` and `>= 0.02` are False.",
+      "suggested_check": "Add a null draw with s = TOL and b = 0.0 (exact), which must not be resolved, and a seed null at exactly 7/8, which must report not-passed.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Treating a null's no-candidate draw as neither a resolved failure nor a paired win is a new rule",
+      "detail": "O008's A3 text does not cover a null that returns no candidate. The reference chooses to make the null harder to beat, which is defensible, and the xfail labels the port's opposite behaviour a defect. But the module docstring says a no-candidate draw \"counts as failed (shortfall +inf)\", and A3 does not apply that to nulls. This is a definitional choice that needs the founder to confirm it, not a settled port bug.",
+      "evidence": "`null_beaten_table` requires `math.isfinite(s)` for both counts; the module docstring for `s` says no-candidate draws count as failed with shortfall +inf.",
+      "suggested_check": "Founder confirms the rule; state the A3 exception in the schema docstring.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Schema checks are loose in places, and F6's two-layout floor is not enforced",
+      "detail": "From reading the code (my scripted probe of these was denied by the sandbox):\n- `terminal_kind` is not cross-checked against `s`: `no_candidate` with a finite s, or `local_optimum` with s = None, passes validation.\n- `_table` requires at least one counted layout, while F6 makes E011 INVALID below two.\n- The port's A1 and K1 silently drop a counted layout that has no search rows. A3 then raises in the port, so the overall result still fails safe.",
+      "evidence": "Reading `_table` in e011_metrics.py and `_by_unit` in mfos/metrics.py.",
+      "suggested_check": "Optionally add the terminal_kind/s consistency check and a two-counted-layout check, or leave them to the runner's sanity checks.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done: `uv run pytest -q tests/acceptance_drafts/test_e011_metrics.py` gives 39 passed, 3 xfailed; `uv run ruff check` on both files: all checks passed.",
+    "Compared A1, A2, A3 and K1 clause by clause with project/objectives/O008/objective.yaml. Checked: <= for a pass, > for resolved failure and paired win, the null's own band in the resolved test, b_search + b_null in the paired margin, capped nulls excluded only from the resolved count, 4 of 8 and 7 of 8, A2 over counted and uncounted layouts, K1 as max over layouts of the even-count median. All match.",
+    "Read the port (`mfos.metrics.control_layout_pass_min`, `control_shortfall_median_max`, `null_beaten_min`, METRICS bindings) and the evaluator path (`_where`, `metric_value`, `judge`, `evaluate`) to confirm the test's `_theirs` follows the evaluator's own path and that a recompute exception becomes INVALID.",
+    "Ran the three xfail tests with `--runxfail`: each fails at the port assertion (nan, 1.0, DID NOT RAISE), not at the reference's.",
+    "Adversarial input: a None shortfall through both implementations. The reference handles it; the port raises TypeError for A1, A3 and K1.",
+    "Checked that `ExperimentRun.rows` serialises with `json.dumps` (allow_nan default): NaN and Infinity round-trip, None stays null.",
+    "Float64 boundary check: 0.03 - 0.01 = 0.019999999999999997, so the A3 test that claims 'exactly 0.02' does not pin the strict comparison.",
+    "Re-derived by hand that the Clopper-Pearson lower bound is Beta^-1(alpha; k, n-k+1), giving alpha^(1/n) at k = n, and the two-sided upper bound is Beta^-1(1-alpha/2; k+1, n-k). Checked the citations (Biometrika 26:404-413; Stat. Sci. 16:101-133).",
+    "Recomputed the A1 operating characteristic P(Bin(8,p) >= 7) by hand: 0.943/0.889, 0.813/0.661, 0.657/0.432, 0.255/0.065 for p = 0.95, 0.90, 0.85, 0.70. These match the objective's 0.94/0.89, 0.81/0.66, 0.66/0.43, 0.26/0.07.",
+    "Checked the Bonferroni argument: if every [lo_i, hi_i] holds p_i jointly, then min_i p_i lies in [min lo_i, min hi_i]. The interval is valid and conservative.",
+    "Confirmed that neither deliverable is under a protected path in .mfos/policy.toml (`tests/acceptance_drafts` is not `tests/acceptance/**`)."
+  ],
+  "caveats": [
+    "The reference and the port agree only on rows where no-candidate draws are written as NaN, not None, and where every counted layout has all 8 draws. Outside that, the three flagged divergences (NaN in K1, inf in a null, dropped draws) plus the unflagged None crash apply.",
+    "Treating a null's no-candidate draw as neither a resolved failure nor a paired win is a rule the objective does not state. It needs the founder to confirm it before the port is changed to match.",
+    "The analytic tests do not pin the strictness of the resolved-failure comparison (s_j - b_j > tol) or the seed-null check at exactly 7/8. The three non-strict xfails would also hide regressions in the reference implementation.",
+    "My planned mutation run (writing mutated copies of the module to TMPDIR and re-running the tests) and two later in-memory probes were denied by the sandbox's permission mode. The test-adequacy points above therefore come from reading the code, the float probe and the `--runxfail` run, not from executed mutants."
+  ]
+}
