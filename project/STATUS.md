@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-16T23:45:58+00:00 from repository state — do not edit_
+_generated 2026-11-16T23:49:34+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0227** [protected_change] T0380: merge needs founder approval
 - **I0228** [budget_increase] daily LLM budget reached
 
 ## Objectives
@@ -34,15 +33,14 @@ _generated 2026-11-16T23:45:58+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 359, failed: 4, needs_founder: 1, review: 3, todo: 16
+cancelled: 45, done: 359, failed: 4, merge: 1, review: 3, todo: 16
 
-- T0380 `needs_founder` builder/implement: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c) (attempt 1)
+- T0380 `merge` builder/implement: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c) (attempt 1)
 - T0385 `review` builder/implement: FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse, closed-form validation (attempt 1)
 - T0395 `review` builder/implement: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested against analytic limits, symmetry and power scaling, with a speed benchmark (attempt 2)
 - T0396 `review` scientist/design_experiment: E007 statistics: F3 coverage and power simulation, bound selection and fixed allocation; protected mfos.metrics additions drafted as a patch (attempt 1)
 
 ## Recent events
-- 2026-11-16T20:36:16+00:00 run_started {"run": "T0385-builder-20261116T123616-1b28", "task": "T0385", "role": "builder", "session": "df0595ff-a821-4488-ada5-22683aa520b5"}
 - 2026-11-16T20:36:51+00:00 sleep_detected {"gap_s": 1890, "runs_extended": 3}
 - 2026-11-16T20:36:52+00:00 run_finished {"run": "T0425-critic-20261116T120446-03f8", "status": "completed", "cost": 1.769571, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T20:37:02+00:00 run_started {"run": "T0387-scientist-20261116T123702-806f", "task": "T0387", "role": "scientist", "session": "39796813-99fd-481c-969b-b4bd94d5344e"}
@@ -57,3 +55,4 @@ cancelled: 45, done: 359, failed: 4, needs_founder: 1, review: 3, todo: 16
 - 2026-11-16T23:12:24+00:00 run_finished {"run": "T0426-critic-20261116T123615-a06e", "status": "completed", "cost": 1.979046, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T23:45:50+00:00 inbox_opened {"id": "I0227", "kind": "protected_change", "subject": "T0380: merge needs founder approval"}
 - 2026-11-16T23:45:58+00:00 inbox_opened {"id": "I0228", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-16T23:49:31+00:00 inbox_resolved {"id": "I0227", "status": "approved", "note": "T0380 merge approved (reviews T0425, T0426 accept with caveats). Caveats routed to T0382: out-of-domain seed repo

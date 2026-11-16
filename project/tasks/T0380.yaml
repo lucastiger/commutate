@@ -3,7 +3,7 @@ objective: O008
 title: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c)
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on:
 - T0378
 description: "Build item (3b) of the objective notes. Create src/moduleforge/optimize/nulls.py, built\
@@ -64,8 +64,8 @@ runs:
 - T0380-builder-20261116T105143-b482
 created_by: planner:T0375
 created_at: '2026-11-16T01:43:45+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0227
 target: null
 lens: null
 trigger: null
@@ -110,3 +110,7 @@ history:
 - outcome: full_gate_passed
   summary: f08062b1a4e463eea2cf8a1b89012933873f7bcc
   at: '2026-11-16T23:45:47+00:00'
+- outcome: merge_approved
+  summary: I0227
+  replan: false
+  at: '2026-11-16T23:49:31+00:00'
