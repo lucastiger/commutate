@@ -150,9 +150,11 @@ generates the PyAEDT decks.
    Python 3.12 first on each agent's PATH (tested); the launchd plist sets PATH explicitly; bootstrap
    refuses to continue without Homebrew's `python3` for interactive sessions.
 2. **Laptop sleep.** A closed lid suspends everything; after waking, wall-clock deadlines would have
-   timed out every running agent. **Fixed:** the loop detects the gap and extends run deadlines
-   (tested). `caffeinate -is` in the launchd job prevents idle sleep and, on power, system sleep; lid
-   close still sleeps the machine — work simply pauses and resumes.
+   timed out every running agent. **Fixed:** the loop measures the slept time (wall-clock gap minus
+   monotonic gap, since the monotonic clock stops while the machine sleeps) and extends run deadlines
+   by it; a long tick, such as a merge gate, is not sleep (tested). `caffeinate -is` in the launchd job
+   prevents idle sleep and, on power, system sleep; lid close still sleeps the machine — work simply
+   pauses and resumes.
 3. **QoS.** macOS runs `Background` launchd jobs on efficiency cores only. The plist uses
    `ProcessType = Standard`.
 4. **Fanless thermals.** Short benchmarks show almost no penalty versus the actively cooled MacBook

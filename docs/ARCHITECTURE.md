@@ -691,7 +691,8 @@ tick():
   poll experiments              result.json appeared → done; crashed/timeout → failure routing
   per objective                 blocked? needs plan? all required results admissible? → evaluate → route
   dispatch                      ready tasks by priority within concurrency, touches locks, budgets, level
-  write STATUS.md; commit state (skip timestamp-only changes); heartbeat
+  write STATUS.md; commit state (skip timestamp-only changes)
+  (a thread rewrites .mfos/heartbeat every minute while the loop lives; .mfos/tick holds the current tick's start)
 ```
 The loop refuses to start if the orchestrator checkout has non-state changes (e.g. an interrupted merge),
 survives exceptions inside a tick, and halts cleanly with an inbox item after three consecutive tick
@@ -1561,7 +1562,9 @@ identity_email = "mfos-bot@users.noreply.github.com"
 [limits]
 run_wall_minutes = 90
 backoff_minutes = 30             # pause dispatch after a rate/usage-limit error (does not count as an attempt)
-sleep_gap_seconds = 300          # a longer gap between ticks means the machine slept: extend run deadlines
+sleep_gap_seconds = 300          # more slept time between ticks (wall-clock gap minus monotonic gap) means the machine
+                                 # slept: extend run deadlines by it; a long tick (a gate) is not sleep
+heartbeat_seconds = 60           # the loop process rewrites .mfos/heartbeat this often, also during long gates
 ````
 
 

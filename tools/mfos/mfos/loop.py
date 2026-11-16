@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
@@ -28,7 +29,7 @@ from typing import Any, Optional
 from . import diagnose, evaluate, experiments, gates, models as m, packets, report
 from .agents import AgentRunner, RunRecord
 from .gitops import GitOps
-from .store import Store, now
+from .store import Store, _atomic_write, now
 
 TERMINAL = {"done", "cancelled", "failed", "needs_founder"}
 OBJ_IDLE = {"draft", "passed", "failed", "abandoned", "superseded", "needs_founder"}
@@ -92,6 +93,7 @@ class Orchestrator:
         # 3 = autonomous within policy. See docs/ARCHITECTURE.md §22.
         self.level = int(self.pol.get("autonomy", {}).get("level", 3))
         self._deferred = ""  # why the last state commit waited (one event per reason, not one per tick)
+        self._beat_lock = threading.Lock()  # the tick and the heartbeat thread share .mfos/heartbeat.tmp
 
     # ================================================================== loop
     def run_forever(self, poll_s: int = 30, max_cycles: Optional[int] = None) -> None:
@@ -106,6 +108,13 @@ class Orchestrator:
             self.s.event("loop_refused", reason=msg)
             return
         self.s.event("loop_started", pid=os.getpid())
+        stop_beating = self._start_heartbeat()
+        try:
+            self._ticks(poll_s, max_cycles)
+        finally:
+            stop_beating.set()
+
+    def _ticks(self, poll_s: int, max_cycles: Optional[int]) -> None:
         n, errors = 0, 0
         while max_cycles is None or n < max_cycles:
             try:
@@ -133,11 +142,34 @@ class Orchestrator:
                 break
             time.sleep(poll_s)
 
+    def _beat(self) -> None:
+        """The heartbeat: when this loop process was last seen alive."""
+        with self._beat_lock:
+            _atomic_write(self.s.mfos / "heartbeat", now())
+
+    def _start_heartbeat(self) -> threading.Event:
+        """Beat from a daemon thread for as long as the loop runs. A tick beats only when it starts, so a synchronous
+        verify or merge gate of 10-40 min left the heartbeat stale and the loop looking dead (2026-11-16). When the
+        current tick started is in .mfos/tick, so a hung tick still shows."""
+        stop = threading.Event()
+        every = float(self.pol.get("limits", {}).get("heartbeat_seconds", 60))
+
+        def beat() -> None:
+            while not stop.wait(every):
+                try:
+                    self._beat()
+                except OSError:  # a full disk or a vanished .mfos/ must not end the thread for good
+                    pass
+
+        threading.Thread(target=beat, name="mfos-heartbeat", daemon=True).start()
+        return stop
+
     def tick(self) -> dict[str, Any]:
         if self.s.stop_requested():
             return {"stopped": True}
         self._account_for_sleep()
-        (self.s.mfos / "heartbeat").write_text(now())
+        _atomic_write(self.s.mfos / "tick", now())
+        self._beat()
         self.git.sync_main()
         self._poll_runs()
         self._poll_experiments()
@@ -163,16 +195,21 @@ class Orchestrator:
         return [p for p in paths if not p.startswith(self.STATE_PATHS)]
 
     def _account_for_sleep(self) -> None:
-        """A laptop that slept shows a wall-clock gap between ticks. Extend running deadlines by it."""
-        wall = time.time()
-        last = getattr(self, "_last_tick_wall", None)
-        self._last_tick_wall = wall
+        """A laptop that slept shows a wall-clock gap between ticks that the monotonic clock did not see: on macOS
+        time.monotonic() is mach_absolute_time() and on Linux CLOCK_MONOTONIC, and neither advances while the machine
+        is suspended. Extend running deadlines by the slept time only. A long tick (a synchronous verify or merge gate)
+        advances both clocks alike and is not sleep: 2026-11-16, gates of 10-40 min were logged as sleep ten times and
+        each extended every running deadline by the whole gap, though the agents ran throughout."""
+        wall, mono = time.time(), time.monotonic()
+        last = getattr(self, "_last_tick_clocks", None)
+        self._last_tick_clocks = (wall, mono)
         if last is None:
             return
-        gap = wall - last
-        if gap > float(self.pol.get("limits", {}).get("sleep_gap_seconds", 300)):
-            n = self.runner.extend_deadlines(gap)
-            self.s.event("sleep_detected", gap_s=round(gap), runs_extended=n)
+        gap = wall - last[0]
+        slept = gap - (mono - last[1])
+        if slept > float(self.pol.get("limits", {}).get("sleep_gap_seconds", 300)):
+            n = self.runner.extend_deadlines(slept)
+            self.s.event("sleep_detected", gap_s=round(gap), slept_s=round(slept), runs_extended=n)
 
     def _needs_burst(self, t: m.Task) -> Optional[float]:
         """CPU-hours estimate if this experiment should run on burst compute instead of this machine."""
