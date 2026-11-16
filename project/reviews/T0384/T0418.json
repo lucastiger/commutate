@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "`freqs` with more than two entries silently drops the middle frequencies",
+      "detail": "export() writes only fmin, fmax and an ndec fitted to those two. With freqs=(1e7, 1.5e7, 2e7) the deck is byte-identical in its .freq line to the two-frequency deck, and a log sweep of it gives only 10 MHz and 19.99999999 MHz. The 15 MHz point is lost with no error. The default FREQS_HZ (10, 20 MHz) and single-frequency input both behave correctly, so E004's intended use is not affected.",
+      "evidence": "In-memory check: freqs=(1e7,1.5e7,2e7) -> '.freq fmin=10000000 fmax=20000000 ndec=3.321928098'; emulated sweep [1e7, 1.9999999987e7].",
+      "suggested_check": "Raise ValueError when len(set(freqs)) > 2, or when the frequencies are not on one log grid.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "'Hits exactly 10 and 20 MHz' is true only to about 6.5e-10",
+      "detail": "ndec*(1+1e-9) makes the second sweep point 19.99999998701 MHz, not exactly 20 MHz. This is numerically harmless, and P4's Zc.mat prints it as '2e+07'. But parse_zc keys its results on the printed frequency, so a consumer that compares with == 2e7 depends on FastHenry's %g formatting.",
+      "evidence": "Emulated sweep from the deck's own .freq line: [10000000.0, 19999999.98701046].",
+      "suggested_check": "Look up Zc.mat entries by nearest frequency, not by exact key.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Equal-GMD square wire is a DC equivalence, but the solve is at 10-20 MHz",
+      "detail": "a = 0.8711 d matches a round wire's GMD for uniform current. At HF (skin depth about 27 um in Al, against d = 300 um) the square's equivalent radius is 0.59017 a, so as wire_n grows the wire converges to a round wire 2.8 % thicker than the real one: about -5.5 pH per mm of wire. O004's F-list already records this as about 0.6 % of the wire partial self-inductance, so it is a known modelling bias, not a deck error. Wire filaments are uniform (no rw/rh), so wire_n convergence will be slow.",
+      "evidence": "2*0.59017*0.87104 = 1.0281; (mu0/2pi)*ln(1.0281) = 5.55 pH/mm.",
+      "suggested_check": "Report the wire_n ladder separately in E004's convergence table.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F6 blocks and posts do not refine through the thickness",
+      "detail": "The distributed-die lateral segments (h = tb = 0.18 mm at Case 4) and the tab-post columns are one filament each at every level. Cu skin depth at 10 MHz is 21 um, much less than 180 um, so their HF current distribution is never resolved, and the F6 deltas carry an unconverged component that the refinement ladder will not show. The docstring states this ('refines only laterally'), so it limits the diagnostic's validity rather than contradicting the claim.",
+      "evidence": "Deck lines Ed*/Ev*/Eq* carry no nhinc/nwinc (fasthenry.py:420-428, 460-461).",
+      "suggested_check": "When F6 is reported, state that the block and post terms are not thickness-converged.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: `uv run pytest -q tests/unit/test_fasthenry.py` gave 55 passed; `uv run ruff check` on both files gave 'All checks passed'.",
+    "Sweep beyond the author's fixtures: 9 generated half-bridge layouts (dies_per_switch 2, 4, 6; seeds 13, 15, 17) x cell 0.5 and 0.25 mm x all four die/terminal variants, 72 decks. My own one-pass reader, written independently of the test file's `read_errors`, found every line <= 900 characters, no forward references, no duplicate nodes or elements, and no isolated nodes. No ValueError was raised.",
+    "Read l2_layout.build_layout_system: the wire-end rules (end_contact: die footprint and z >= z_top; else contact_at on the wire's own net) and the die nearest-cell rule (argmin, first in (i, j) order) match the exporter's `_on_die` and sorted(_nearest)[0]. Bilinear injection versus nearest-cell snapping is a documented difference.",
+    "Checked the stack and conductor-model z values against the deck convention. Planes sit at mid-thickness with thick = layer thickness (baseplate 0-1 mm, backside Cu 1.001-1.201 mm); trace nodes are at top-Cu mid-thickness 2.136 mm. DieShort spans the Cu surface to attach + die top (layout.py:241-269), so the distributed block fills exactly the region the wire start sits on.",
+    "Checked that no Case 4 or generated wire piece is vertical (minimum horizontal fraction 0.97 and 0.88), so FastHenry's default width direction is defined for every wire segment. Vertical columns and posts set wx=1 explicitly.",
+    "Recomputed the equal-GMD constant (0.7788/(2*0.44705) = 0.87104) and its HF bias with the square's equivalent radius of 0.59017 a.",
+    "Emulated the FastHenry log sweep from the emitted .freq line for (10, 20) MHz, for (10, 15, 20) MHz, and for 20 MHz alone.",
+    "Cross-referenced P4's recorded FastHenry runs (research/o006_p4/runs.jsonl). Case 4 at d0 solved at 10 and 20 MHz, L = 25.77 nH, in a plausible range in SI metres. test_faithful_port shows the default decks match P4's line for line, and the exporter's direct_mem_est_gb (0.84 GB) agrees with P4's measured peak (0.94 GB)."
+  ],
+  "caveats": [
+    "I could not run FastHenry myself: the sandbox refused to execute ~/.local/bin/fasthenry. Wrote Case 4 d0 decks for the default, distributed and tab variants (8344 / 8744 / 8362 filaments) but could not solve them. That the F6 variant decks and the split .equiv groups are accepted and solved by FastHenry 3.0wr rests on the module's T0384/T0405/T0409 statements and on my reader emulation, not on a run of my own.",
+    "The claim covers deck generation only. Nothing here shows that the knobs converge to a common limit, or that FastHenry agrees with l2_layout. P4 found U3 (FastHenry's estimate <= l2_layout's estimate) false at its levels, and that remains E004's question.",
+    "The F6 variants are coarse by construction: one filament per block, column or post segment, and the volume counted twice where columns and lateral block segments overlap. Read their deltas as diagnostics of the ideal-short and point-contact assumptions with an unconverged thickness component, not as converged physics.",
+    "Non-default `freqs` with more than two frequencies are silently reduced to fmin and fmax."
+  ]
+}
