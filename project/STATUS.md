@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T01:18:21+00:00 from repository state — do not edit_
+_generated 2026-11-16T01:35:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -9,38 +9,35 @@ _generated 2026-11-16T01:18:21+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | draft | - | 0/1 | $19.10/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | active | - | 0/1 | $19.10/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
-| O004 | draft | - | 0/1 | $23.71/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
+| O004 | active | - | 0/1 | $23.71/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | draft | - | 0/2 | $17.60/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $17.60/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 10 | $19.10 | 475972 | 309986 | 40 | 0 |
+| O002 | 11 | $19.10 | 475972 | 309986 | 40 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 14 | $23.71 | 549278 | 404912 | 35 | 0 |
+| O004 | 15 | $23.71 | 549278 | 404912 | 35 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 10 | $17.60 | 411688 | 300390 | 33 | 0 |
+| O008 | 11 | $17.60 | 411688 | 300390 | 33 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 324, failed: 4
+cancelled: 44, done: 324, failed: 4, running: 3
 
+- T0373 `running` planner/plan: Plan O002 (periodic) (attempt 1)
+- T0374 `running` planner/plan: Plan O004 (periodic) (attempt 1)
+- T0375 `running` planner/plan: Plan O008 (periodic) (attempt 1)
 
 ## Recent events
-- 2026-11-16T00:20:34+00:00 objective_draft_review {"objective": "O004", "ref": "5ea0dd66fab4b0f07d13e29c0982e1c433563c35", "tasks": ["T0367", "T0368"]}
-- 2026-11-16T00:20:43+00:00 run_started {"run": "T0367-critic-20261115T162043-a8a7", "task": "T0367", "role": "critic", "session": "58181aef-1f80-45ce-b617-f737f4870951"}
-- 2026-11-16T00:20:45+00:00 run_started {"run": "T0368-critic-20261115T162045-b43a", "task": "T0368", "role": "critic", "session": "e141db0a-663f-4bf8-8197-998999236aca"}
-- 2026-11-16T00:28:50+00:00 run_finished {"run": "T0368-critic-20261115T162045-b43a", "status": "completed", "cost": 1.848675, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T00:28:50+00:00 run_finished {"run": "T0367-critic-20261115T162043-a8a7", "status": "completed", "cost": 1.801183, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T00:34:11+00:00 objective_draft_review {"objective": "O002", "ref": "7d9b7eb6657342c2fd3ce4e9950c02fab350472f", "tasks": ["T0369", "T0370"]}
 - 2026-11-16T00:34:35+00:00 run_started {"run": "T0369-critic-20261115T163435-cb66", "task": "T0369", "role": "critic", "session": "537c3b7d-89b2-40af-93ad-6e00bdeb45e4"}
 - 2026-11-16T00:34:36+00:00 run_started {"run": "T0370-critic-20261115T163436-82b8", "task": "T0370", "role": "critic", "session": "3e0168ba-3eca-477c-aeb4-c32d4cc099c4"}
 - 2026-11-16T00:42:04+00:00 run_finished {"run": "T0370-critic-20261115T163436-82b8", "status": "completed", "cost": 1.819915, "subtype": "success", "report": "structured_output"}
@@ -50,3 +47,9 @@ cancelled: 44, done: 324, failed: 4
 - 2026-11-16T00:57:54+00:00 run_started {"run": "T0372-critic-20261115T165754-852d", "task": "T0372", "role": "critic", "session": "1c9d58cf-4bd4-4e85-b933-fbe862a7c521"}
 - 2026-11-16T01:06:02+00:00 run_finished {"run": "T0371-critic-20261115T165752-eb6a", "status": "completed", "cost": 1.722098, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T01:18:16+00:00 run_finished {"run": "T0372-critic-20261115T165754-852d", "status": "completed", "cost": 2.19797, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T01:35:41+00:00 objective_approved {"objective": "O008", "criteria_hash": "sha256:f5465b3f2159a7dba199cc1257facd0e8da00a1cf06c6e756a9800685195d7d9"}
+- 2026-11-16T01:35:44+00:00 objective_approved {"objective": "O004", "criteria_hash": "sha256:83e2a8e049b57bbbc15c019385a2e10a751c68b32f1516116f222b0fed1f253a"}
+- 2026-11-16T01:35:45+00:00 objective_approved {"objective": "O002", "criteria_hash": "sha256:f7b92774c2cc4842f17ebdb0caa9d0fbe7d36d691df0b5320c830fc140ca332a"}
+- 2026-11-16T01:35:54+00:00 run_started {"run": "T0374-planner-20261115T173554-610a", "task": "T0374", "role": "planner", "session": "cef995a5-7e7a-431a-ac20-3c0fb045bd73"}
+- 2026-11-16T01:35:55+00:00 run_started {"run": "T0375-planner-20261115T173555-edb4", "task": "T0375", "role": "planner", "session": "f337f383-819a-438f-b7de-d40fe1483404"}
+- 2026-11-16T01:35:56+00:00 run_started {"run": "T0373-planner-20261115T173556-8805", "task": "T0373", "role": "planner", "session": "9f84d004-acbb-453c-b014-82b3d666bb2f"}
