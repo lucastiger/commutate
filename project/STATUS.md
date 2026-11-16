@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T02:39:50+00:00 from repository state — do not edit_
+_generated 2026-11-16T02:40:38+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -41,7 +41,6 @@ cancelled: 44, done: 327, failed: 4, review: 1, running: 3, todo: 22
 - T0400 `running` critic/review: Review T0381 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T01:46:31+00:00 inbox_opened {"id": "I0213", "kind": "plan_approval", "subject": "[O002] approve initial plan (8 tasks)"}
 - 2026-11-16T01:46:31+00:00 plan_applied {"objective": "O002", "created": ["T0392", "T0393", "T0394", "T0395", "T0396", "T0397", "T0398", "T0399"], "dropped": 0}
 - 2026-11-16T01:51:48+00:00 inbox_resolved {"id": "I0206", "status": "approved", "note": "O008 plan approved; T0381 re-scoped by the session as a cross-check of mfos.metrics", "by": "human"}
 - 2026-11-16T01:51:48+00:00 inbox_resolved {"id": "I0210", "status": "approved", "note": "O004 plan approved", "by": "human"}
@@ -56,3 +55,4 @@ cancelled: 44, done: 327, failed: 4, review: 1, running: 3, todo: 22
 - 2026-11-16T02:31:32+00:00 run_finished {"run": "T0381-scientist-20261115T175208-7f35", "status": "completed", "cost": 1.904972, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T02:39:37+00:00 verified {"task": "T0381"}
 - 2026-11-16T02:39:50+00:00 run_started {"run": "T0400-critic-20261115T183950-b68f", "task": "T0400", "role": "critic", "session": "2a7400de-afe6-4dda-a592-63158f3f7498"}
+- 2026-11-16T02:40:26+00:00 sleep_detected {"gap_s": 535, "runs_extended": 3}
