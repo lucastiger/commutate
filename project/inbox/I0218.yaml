@@ -1,0 +1,81 @@
+id: I0218
+kind: decision
+subject: 'T0384: 2 review rounds rejected; your call'
+summary: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness
+  and plane knobs, F6 model variants
+
+  Findings of every round (project/reviews/T0384/):
+
+  -height, or state the offset in the docstring.)
+
+  - T0404 [minor, impact evidence] Plane-pitch test assertion is weakened by an ''or'' (check: Assert
+  each of seg1 and seg2 separately against round(extent / pitch).)
+
+  - T0404 [note, impact maintainability] Contact ties short a few trace segments, while die-footprint
+  segments are dropped for the same reason (check: Drop segments whose two ends are in the same .equiv
+  class, or document that they are kept.)
+
+  - T0404 [note, impact scope] With the default conductivity the distributed die is a solid copper block
+  (check: Report F6 die results for at least one lower die_sigma as a sensitivity check.)
+
+  - T0405 [blocker, impact correctness] die_model=''distributed'' decks are rejected by FastHenry (segments
+  use nodes defined later in the file) (check: Add a test that walks the deck in order and fails if any
+  `E…` segment, `.equiv` or `.external` names a node not yet defined; ideally also run FastHenry on one
+  coarse distributed deck when the binary is present.)
+
+  - T0405 [minor, impact correctness] Lateral die-block segments are centred on the die top surface, so
+  half of the block sits above the die (check: Place the lateral die-block nodes at (z_bottom+z_top)/2,
+  or state the offset in the docstring.)
+
+  - T0405 [minor, impact scope] Tab-terminal deck at plane_cell_mm=4 crashes FastHenry''s multipole solver
+  (check: Document that tab decks need plane_cell_mm ≤ 2 mm (or the direct solver) under multipole, or
+  run the tab variant in a smoke test.)
+
+  - T0405 [minor, impact scope] Wire ends on a die are snapped to a trace cell, unlike l2_layout (check:
+  Raise ValueError (or route to the die node) when a wire end lies on a die footprint.)
+
+  - T0405 [note, impact none] Default models and parse_zc verified against the real binary
+
+  - T0408 [blocker, impact correctness] At the planned 0.25 mm trace pitch the exporter writes decks that
+  FastHenry 3.0wr refuses to read (check: Add a test asserting every deck line is at most ~900 characters
+  for the default and tab variants at cell_mm=0.25 on Case 4 and the references, and add that limit to
+  `read_errors`.)
+
+  - T0408 [minor, impact scope] Distributed-die block and tab-post segments are not refined by the thickness
+  ladder (check: Report how the F6 deltas change with nh_* and cell_mm before attributing the +5.4 % to
+  the ideal-short assumption.)
+
+  - T0408 [minor, impact maintainability] die_sigma is not validated (check: Raise ValueError for die_sigma
+  <= 0.)
+
+  - T0408 [note, impact none] Die-footprint handling differs slightly from l2_layout
+
+  - T0409 [minor, impact scope] Default distributed-die deck crashes FastHenry''s multipole solver, and
+  solver_notes does not say so (check: Add a solver_notes entry for die_model=''distributed'' with multipole,
+  or confirm at plane_cell_mm <= 2 that it is the same DivideSegs limit.)
+
+  - T0409 [minor, impact scope] Die and tab footprints are not checked against the lattice, unlike l2_layout
+  (check: Reuse an on-lattice check (as l2_layout''s check_on_lattice does) for die and tab footprints
+  in export().)
+
+  - T0409 [minor, impact maintainability] FHLevel accepts float or bool counts that then break or leak
+  into the deck (check: Require isinstance(v, int) and not isinstance(v, bool).)
+
+  - T0409 [note, impact none] A near-perfect distributed die does not reproduce the ideal-short inductance;
+  this is physically correct and worth stating when F6 is read
+
+  - T0409 [note, impact none] The equal-GMD square wire keeps low-frequency self-inductance but not the
+  wire''s area or perimeter'
+refs:
+- T0384
+- O004
+options:
+- merge as is
+- give guidance and retry
+- cancel
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T06:15:32+00:00'
+resolved_at: null
+resolved_by: null

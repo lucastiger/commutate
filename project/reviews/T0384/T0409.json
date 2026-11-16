@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Default distributed-die deck crashes FastHenry's multipole solver, and solver_notes does not say so",
+      "detail": "With die_model='distributed', the default die_sigma (top-Cu) and the default FHLevel (cell 1 mm, plane 4 mm), FastHenry 3.0wr in multipole mode (-s iterative -m multi -t 1e-4) segfaulted on the Case 4 base deck (rc -11, right after 'Forming sparse matrix preconditioner'). The same deck solves with the direct solver, and the same variant with die_sigma=1e11 solves in multipole mode. So the deck is valid and this is a solver limit. But solver_notes only flags the tab with plane_cell_mm > 2 combination, so the next task (running FastHenry) will hit an undocumented crash on one of the F6 variants. The D0002 rule of never parsing a crashed run prevents a silently wrong number.",
+      "evidence": "dist/point sigCu, multipole: rc -11, about 1 s, no Zc.mat. Same deck, direct: rc 0, L = 27.1921 nH, R = 8.278 mOhm at 10 MHz. dist/point die_sigma=1e11, multipole: rc 0, 26.9742 nH.",
+      "suggested_check": "Add a solver_notes entry for die_model='distributed' with multipole, or confirm at plane_cell_mm <= 2 that it is the same DivideSegs limit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Die and tab footprints are not checked against the lattice, unlike l2_layout",
+      "detail": "l2_layout.build_layout_system refuses a die footprint off the cell boundaries (check_on_lattice), and it always adds the nearest cell to the die group. The exporter checks only the trace rectangles. It picks footprint cells by a strict '<' test on cell centres, so a die shifted half a cell is accepted silently, and which edge column gets included is decided by floating-point rounding at an exact tie. The docstring's 'SAME as l2_layout's node merge' therefore holds only for dies on the lattice. All present layouts are aligned (checked), so current decks are unaffected.",
+      "evidence": "Case 4 with die 0 shifted +0.5 mm at cell 1 mm: exporter returns die_groups [24, 24, 24, 24] with no error. l2_layout code lines 1786-1788 raise for the same input. Case 4, die_shift and the generated layout at 0.5 and 0.25 mm: every group equals footprint area / cell^2 exactly.",
+      "suggested_check": "Reuse an on-lattice check (as l2_layout's check_on_lattice does) for die and tab footprints in export().",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "FHLevel accepts float or bool counts that then break or leak into the deck",
+      "detail": "The check int(v) != v lets 3.0 or True through. nh_trace=3.0 would be written as 'nhinc=3.0', and wire_sub=2.0 raises TypeError in range(). This is a robustness issue, not a physics error.",
+      "evidence": "Code reading of FHLevel.__post_init__ and the wire_sub loop.",
+      "suggested_check": "Require isinstance(v, int) and not isinstance(v, bool).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "A near-perfect distributed die does not reproduce the ideal-short inductance; this is physically correct and worth stating when F6 is read",
+      "detail": "At DC the distributed variant converges to the short model, which confirms its connectivity. At 10 MHz, die_sigma=1e11 still gives 26.97 nH against 25.78 nH for the short model: a perfect PEEC block keeps the partial inductance of the path across the footprint, which an ideal node merge removes. So most of the F6 difference (+1.41 nH at Cu sigma) does not depend on sigma: only about 0.22 nH comes from finite conductivity. The diagnostic measures 'ideal merge versus a metal block', mostly through inductance, not through die resistivity.",
+      "evidence": "L at 10 MHz: short 25.7799 nH, distributed sigma=1e11 26.9742 nH, distributed sigma=Cu 27.1921 nH (direct solver).",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The equal-GMD square wire keeps low-frequency self-inductance but not the wire's area or perimeter",
+      "detail": "Side a = 0.8711 d matches the disc's GMD (Grover). Its cross-section is 3.4 % smaller than the disc's, so wire DC resistance is about 3.5 % high, and its perimeter is 3.48 d against 3.14 d. At 10-20 MHz the skin depth in Al (about 27 um) is much smaller than d. The effect on wire inductance is under about 1 % (thin-wall square GMD 0.590 a = 0.514 d against 0.5 d for a round tube). The approximation is disclosed and acceptable for L.",
+      "evidence": "Hand derivation of the GMD and skin-depth values above.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: uv run pytest -q tests/unit/test_fasthenry.py (34 passed) and ruff check on both files (clean).",
+    "Ran the real FastHenry 3.0wr binary on the default Case 4 deck (k0, multipole -t 1e-4): L = 25.7799 nH at 10 MHz and 25.7798 nH at 20 MHz. This reproduces the earlier pilot (P4) values of 25.7616 nH (multipole) and 25.7702 nH (direct). Zc.mat returns exactly the 1e7 and 2e7 frequency keys, so the ndec arithmetic works.",
+    "DC limit check (Rayleigh monotonicity) on the distributed-die variant at 1 Hz: R_short = 7.20700 mOhm, R_dist(die_sigma=1e11) = 7.20705 mOhm (relative difference 7e-6), R_dist(Cu) = 7.2403 mOhm, which is at least R_short. The block, the columns and the nearest-node wire joins are therefore connected correctly.",
+    "Solved the distributed default deck with the direct solver (27.1921 nH, 8.278 mOhm at 10 MHz) after multipole segfaulted (rc -11).",
+    "Tab variant, direct solver: 25.8834 nH with 2 mm posts against 24.9765 nH with 1 um posts (point model 25.78 nH). The posts add about 0.9 nH, plausible for two 3x3 mm, 2 mm posts.",
+    "Checked die-footprint alignment and group sizes for Case 4 base, die_shift and a generated layout (non-zero origin -8 mm) at 1.0, 0.5 and 0.25 mm: groups equal footprint/cell^2 exactly. The generated layout is correctly refused at 1 mm (off-lattice rectangle).",
+    "Adversarial input: a die shifted half a cell off the lattice is accepted silently, while l2_layout refuses it.",
+    "Re-derived SQUARE_PER_DIAMETER = 0.7788/(2*0.44705) = 0.87104 from Grover's GMD values (disc e^-1/4 r, square 0.44705 a). Checked the plane segment-count formula (s1+1)s2 + s1(s2+1), the vertical column lengths (t/2 + tb/2, t/2 + post height) and the lateral block fill [z_bottom, z_top]."
+  ],
+  "caveats": [
+    "The unit tests never run FastHenry. Solver acceptance of the F6 variants rests on my runs, which cover Case 4 at the coarsest level only (cell 1 mm, plane 4 mm, nh = 1).",
+    "I could not get the generated-layout decks (non-zero lattice origin, 56-60 shorted contact segments at 0.5 mm) through FastHenry within a 280 s limit, in either multipole or direct mode. For that layout, only the in-test emulation of FastHenry's one-pass reader covers solver acceptance.",
+    "Convergence under the refinement knobs is not demonstrated here; the exporter only writes decks and E004 is meant to show convergence.",
+    "The distributed-die variant should be run with the direct solver (or a smaller plane pitch, still to be confirmed) until its multipole segfault is understood.",
+    "I did not check n_filaments and direct_mem_est_gb against FastHenry's own reported counts; treat them as estimates.",
+    "The 'same as l2_layout' statements for dies and tabs hold only for footprints on the lattice."
+  ]
+}

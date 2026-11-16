@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: review
+status: needs_founder
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -287,3 +287,7 @@ history:
     - On the generated layout the segments kept between tied contact cells number 56 at 0.5 and 0.25 mm,
       against 8 on Case 4. FastHenry solves decks with such segments, but the refinement study should
       report them.
+- attempt: 2
+  outcome: review_round_cap
+  summary: 2 rejected rounds
+  at: '2026-11-16T06:15:32+00:00'
