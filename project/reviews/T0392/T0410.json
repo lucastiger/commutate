@@ -1,0 +1,74 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Chosen model misses the study's own 0.6x A4 target and A4 itself in the 2-die stratum; meets_targets leaves out A3/A4",
+      "detail": "meets_targets is defined as median <= 1 s, a1 <= 0.3 K and a2 <= 0.018 at both loads. It does not include A3 or A4. The chosen fv_coarse_xcal scores 1.22 under the pre-written choice rule (a4/0.3 = 0.37/0.3), so it misses the 0.6x margin on A4. Its A4 ratio in u_shaped/2 is 0.81, above A4's 0.5. The indicative pooled upper bound is 0.55. The note discloses all of this. Still, the headline 'meets_targets = true' holds only for A1, A2 and speed, not for the spread criterion that separates L1 from the nulls.",
+      "evidence": "My re-run of fv_coarse plus my own statistics code gives xcal at P_ref: pooled a4 0.37; side_by_side/6 0.26; u_shaped/2 0.81. JSON scores: fv_coarse_xcal 1.22. bootstrap a4 [0.262, 0.549].",
+      "suggested_check": "Recompute meets_targets with an A4 <= 0.3 term (pooled and per band) and report it beside the current flag.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F2 null check is partial: the isolated-die spreading null (a) is absent, and the stratum-mean A1 pools both switches",
+      "detail": "O002 F2 lists three nulls: (c) die position, (d) stratum mean per (stratum, switch), and (a) an isolated-die spreading model. The study computes only (c) and a pooled-over-switches version of (d). I recomputed (d) per (stratum, switch) and A1 stays at 2.96 K, so f2_warning = false is unaffected. An isolated-die model at equal power and one die size predicts a near-constant Tj, so it would almost certainly fail A1 as well. The conclusion holds, but 'F2 null check' covers 2 of the 3 nulls.",
+      "evidence": "Per-(stratum, switch) stratum-mean null A1 p95: 2.961 K at P_ref and 1.424 K at half P_ref. JSON pooled values: 2.963 and 1.397 K.",
+      "suggested_check": "Add the isolated-die null and the per-switch stratum mean before E007's development-row F2 check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "series_superposition energy balance is hard-coded to 0.0, yet reported as measured",
+      "detail": "series_eval returns 'energy_balance': 0.0 unconditionally. candidate_info.energy_balance_max.series_superposition = 0.0 then feeds the note's 'Energy balance of every candidate solve is at most 4e-14'. For that candidate the check can never fail. The candidate was not chosen, so no decision depends on it.",
+      "evidence": "design_study.py line 320: return {..., \"energy_balance\": 0.0, ...}",
+      "suggested_check": "Report None or 'not computed' for the series model instead of 0.0.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Calibration factors attributed to the wrong strata in note section 3 item 1",
+      "detail": "The note says the factor fitted on u_shaped/2 is 0.97387 and the one fitted on side_by_side/6 is 0.97406. Fitting each dev layout directly gives the reverse: side_by_side_6 gives 0.973872 and u_shaped_2 gives 0.974056. JSON xcal_factor_by_stratum is keyed by the stratum the factor is applied to, which explains the swap. The 2e-4 agreement claim is unaffected.",
+      "evidence": "Independent fit: {'side_by_side/6': 0.97387207, 'u_shaped/2': 0.97405635}. JSON (keyed by applied stratum): {'side_by_side/6': 0.97405635, 'u_shaped/2': 0.97387207}.",
+      "suggested_check": "Swap the two labels in the note.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Docstring says the choice rule uses '0.6 x every A1-A5 threshold', but the speed term divides by 1.0 s",
+      "detail": "TARGETS['t'] = 1.0, not 0.6 s. The choice is unchanged: fv 0.315 s / 0.6 = 0.53, while A4 at 1.22 still dominates.",
+      "evidence": "design_study.py lines 46-47 and 100.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The 0.315 s median falls between two clusters of times",
+      "detail": "The 24 fv_coarse times split into u_shaped/2 at 0.18-0.25 s and side_by_side/6 at 0.38-0.47 s. The median of 24 is the midpoint of the 12th and 13th values, so no evaluation took 0.315 s. E007's A5 median will depend on its stratum mix. All values sit well under 1 s: my cold single-call re-run had median 0.37 s and max 0.62 s under machine load. I found no memoization in thermal_layout, thermal_fv or thermal_fem, so the warm-up does not inflate the timings.",
+      "evidence": "candidate_info.eval_times_s.fv_coarse; grep for lru_cache/_cache in the solvers returned nothing.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done JSON assertions, `ruff check research/o002_l1` and the thermal_fem.py sha256 (a216d5fe3209bcee...): all pass. frozen_config sha matches the JSON.",
+    "Recomputed both nulls (stratum_mean, die_position) from the 24 cached level-1 reference summaries with my own code. A1, A2, A3 and A4 match the JSON to 4 decimals at both loads (A1 2.963/3.027 K at P_ref; n = 30 pairs, 96 dies, 24 switches).",
+    "Checked the argmax/argmin die-index claim behind die_position's A4 = 1. side_by_side: HS (3,0), LS (9,6). u_shaped: HS (0,1), LS (2,3). Same in every layout, as the note states.",
+    "Regenerated all 12 layouts (fingerprints equal to the JSON) and re-ran fv_coarse on all 24 cases. Recomputed fv_coarse and fv_coarse_xcal A1-A4 pooled and per stratum with independent code; everything matches the JSON.",
+    "Recomputed the cross-calibration factors from the dev layouts: 0.973872 (side_by_side_6) and 0.974056 (u_shaped_2). Found the label swap in the note.",
+    "Compared the new L1 cache with E009's cached L1 and L2 solves of both dev layouts. L1 agrees to 8.2e-7 / 5.3e-7 K with the same DOF counts; the residual comes from rounding P_ref. L2/L1 die-local rise ratio is 1.002 and spread L1-to-L2 steps are <= 0.011 K, so level 1 is adequate for these targets on the dev layouts.",
+    "Computed A1 with each model's own hottest die, which the objective wants reported: 0.189 / 0.088 K, with 0 / 1 hottest-die flips out of 12.",
+    "Recomputed the F6 hottest-node minus die-average gap from the caches: 4.22 K and 5.64 K at P_ref, matching the JSON.",
+    "Recomputed the stratum-mean null per (stratum, switch), as the objective defines it: A1 2.961 K, so f2_warning = false is robust.",
+    "Checked that patching the FV module constants takes effect: thermal_layout reads H0_MAX, LAT_FRAC, EDGE_FRAC and Z_CELLS at call time. Found no memoization in the solvers, so the timings are not cache hits.",
+    "Checked that generate_layouts returns DRC-checked layouts, and that thermal_fem imports only gci_three_grid from thermal_layout, so the discretisations are independent."
+  ],
+  "caveats": [
+    "Design input on development geometry only: 2 of the 6 (family, band) cells, 6 layouts per stratum, a single die size (5.0 mm), and both strata drawn at the same stream indices. Nothing here resolves a p95 bound or speaks to interleaved or 3-5-die strata.",
+    "meets_targets = true covers A1, A2 and speed only. The chosen model misses the 0.6x A4 margin (score 1.22), and its A4 ratio in u_shaped/2 is 0.81, so A4 is likely to decide E007.",
+    "The cross-stratum calibration is a transfer test with one calibration layout per direction, the same die size and the same stack. Agreement to 2e-4 does not show transfer across die sizes or the interleaved family.",
+    "The claim that the choice rule was fixed before scoring cannot be checked: the repository holds a single snapshot commit with no history.",
+    "The F2 check covers the die-position and stratum-mean nulls, not the isolated-die spreading null (a) that O002 F2 also lists.",
+    "I did not re-run the fem_coarse, series or box-calibration candidates, the bootstrap, or the F4 constant-k ablation. Those numbers are taken from the JSON; only the chosen candidate and the nulls were reproduced."
+  ]
+}
