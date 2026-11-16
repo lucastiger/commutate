@@ -4,7 +4,7 @@ title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable w
   and plane knobs, F6 model variants'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on: []
 description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
   that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
@@ -65,12 +65,13 @@ model: null
 budget_usd: 5.0
 max_turns: 100
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0384-fasthenry-deck-exporter-in-src-layout-si
 pr: null
 runs:
 - T0384-builder-20261115T193153-c4a4
+- T0384-builder-20261115T210237-57d0
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
 protected_approved: false
@@ -148,3 +149,55 @@ history:
       pinned build.
     - The faithful-port test imports the research script by path, so it breaks if research/scripts/o006_p4/fh_export.py
       is moved or deleted.
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] die_model=''distributed'' decks are rejected by FastHenry (nodes used before
+    they are defined): In the distributed branch, the loop over sorted footprint cells writes node Nd..k,
+    its column, and then the lateral segments Edx/Edy to the neighbour (k+1). The neighbour node is only
+    written in a later loop iteration. FastHenry 3.0wr reads the deck in order, so every lateral die-top
+    segment fails with ''No node read in yet named nd...'', and it exits with code 1 without writing Zc.mat.
+    The F6 die variant, half of the claimed ''F6 model variants'', therefore cannot produce any result.
+    The tab variant and the default models do run.
+
+    - [blocker] die_model=''distributed'' decks are rejected by FastHenry (segments use nodes defined
+    later in the file): In the distributed branch, each footprint cell''s die-top node `Nd…`, its column
+    `Ev…` and its lateral segments `Edx/Edy…` are written together, in sorted cell order. Each lateral
+    segment therefore names the +x or +y neighbour node before that node''s line appears. FastHenry 3.0wr
+    reads decks in a single pass and refuses any segment whose node it has not read yet. So both F6 die-model
+    decks (point and tab terminals) cannot be read at all, and the F6 die variant in the claim does not
+    work. The test `test_f6_variants_are_well_formed_together` only checks that every referenced node
+    exists somewhere in the deck, not that it was defined first, so it passes on a broken deck. The fix
+    is to emit all `Nd` node lines for a die before its `Ev`/`Ed` segments.
+
+    - [major] The F6 well-formedness test cannot catch an invalid deck: test_f6_variants_are_well_formed_together
+    checks only that each node referenced by a segment, .equiv or .external exists somewhere in the parsed
+    deck (a dict). It ignores the order in which FastHenry requires nodes to be defined. So it passes
+    a distributed deck that FastHenry refuses. No test runs FastHenry or checks definition order, so the
+    tests do not support the claim that the F6 variants are correctly implemented.
+
+    - [minor] Lateral die-block segments are centred on the die-top surface, so half the block lies above
+    the die: The die-top nodes sit at z = DieShort.z_top, and the lateral Ed segments use h = z_top -
+    z_bottom (0.23 mm). FastHenry centres a segment''s cross-section on its node line, so the lateral
+    conductor spans z_top ± 0.115 mm. Half of it is above the die top, rather than inside the attach +
+    die block the docstring describes. The docstring mentions the volume being counted twice but not this
+    offset. The effect on the F6 ratio diagnostic is likely small against its 2 % threshold.
+
+    - [minor] Plane-pitch test assertion is weakened by an ''or'': test_plane_pitch_is_separate_from_trace_pitch
+    accepts (seg1, seg2) when abs(seg1 - 2*seg1_4mm) <= 1 regardless of seg2. Only the hard-coded 40 x
+    55 baseplate check constrains seg2.
+
+    - [minor] Lateral die-block segments are centred on the die top surface, so half of the block sits
+    above the die: The `Ed` segments run between die-top nodes at z = DieShort.z_top with h = z_top -
+    z_bottom. FastHenry centres a segment''s cross-section on its node line, so the lateral block occupies
+    [z_top - tb/2, z_top + tb/2]. The die itself occupies [z_bottom, z_top]. The module docstring lists
+    the mesh''s coarseness caveats (column overlaps, double-counted volume) but not this tb/2 vertical
+    offset. The size of the effect is small but unmeasured. It affects only the non-verdict F6 diagnostic.
+
+    - [minor] Tab-terminal deck at plane_cell_mm=4 crashes FastHenry''s multipole solver: The tab deck
+    is valid FastHenry input: the direct solver solves it, and multipole solves it at plane_cell_mm=2.
+    At plane_cell_mm=4, though, the 2 mm posts enlarge the z-extent of the multipole partition. FastHenry
+    then warns ''DivideSegs: tried to divide an indivisable segment'' (a 4.1
+
+    ...[truncated; full reviews: project/reviews/T0384/]'
+  at: '2026-11-16T05:02:31+00:00'

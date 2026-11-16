@@ -1,0 +1,58 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "die_model='distributed' decks are rejected by FastHenry (segments use nodes defined later in the file)",
+      "detail": "In the distributed branch, each footprint cell's die-top node `Nd\u2026`, its column `Ev\u2026` and its lateral segments `Edx/Edy\u2026` are written together, in sorted cell order. Each lateral segment therefore names the +x or +y neighbour node before that node's line appears. FastHenry 3.0wr reads decks in a single pass and refuses any segment whose node it has not read yet. So both F6 die-model decks (point and tab terminals) cannot be read at all, and the F6 die variant in the claim does not work. The test `test_f6_variants_are_well_formed_together` only checks that every referenced node exists somewhere in the deck, not that it was defined first, so it passes on a broken deck. The fix is to emit all `Nd` node lines for a die before its `Ev`/`Ed` segments.",
+      "evidence": "I generated Case 4 base decks at FHLevel(cell_mm=1, plane_cell_mm=4, nh=1, wire_n=1) and ran the provisioned FastHenry (`-s iterative -m multi`). distributed_point and distributed_tab both exit with rc=1 and print 'No node read in yet named nd0i29y32 \u2026'. In the deck, line 9917 `Edx0i28y32 Nd0i28y32 Nd0i29y32` comes before line 9938 `Nd0i29y32 x=\u2026`. An order-aware scan counts 152 forward references for each distributed deck, i.e. every lateral die-top segment (4 dies \u00d7 38), and 0 for the short-die decks. Moving all node lines first in a scratch copy makes the distributed_point deck solve: rc=0, L=26.92 nH vs 25.57 nH for the short model. So ordering is the only defect, and it is real.",
+      "suggested_check": "Add a test that walks the deck in order and fails if any `E\u2026` segment, `.equiv` or `.external` names a node not yet defined; ideally also run FastHenry on one coarse distributed deck when the binary is present.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Lateral die-block segments are centred on the die top surface, so half of the block sits above the die",
+      "detail": "The `Ed` segments run between die-top nodes at z = DieShort.z_top with h = z_top - z_bottom. FastHenry centres a segment's cross-section on its node line, so the lateral block occupies [z_top - tb/2, z_top + tb/2]. The die itself occupies [z_bottom, z_top]. The module docstring lists the mesh's coarseness caveats (column overlaps, double-counted volume) but not this tb/2 vertical offset. The size of the effect is small but unmeasured. It affects only the non-verdict F6 diagnostic.",
+      "evidence": "Case 4: top-Cu top 2.236 mm, die z_bottom/z_top 2.236/2.416 mm, tb = 0.18 mm. The deck puts the Ed segments at z = 2.416 mm with h = 0.18 mm, so they span 2.326\u20132.506 mm, 0.09 mm of it above the die top.",
+      "suggested_check": "Place the lateral die-block nodes at (z_bottom+z_top)/2, or state the offset in the docstring.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Tab-terminal deck at plane_cell_mm=4 crashes FastHenry's multipole solver",
+      "detail": "The tab deck is valid FastHenry input: the direct solver solves it, and multipole solves it at plane_cell_mm=2. At plane_cell_mm=4, though, the 2 mm posts enlarge the z-extent of the multipole partition. FastHenry then warns 'DivideSegs: tried to divide an indivisable segment' (a 4.1 mm plane segment against a 3.47 mm allowed length) and segfaults while building the preconditioner. This is a FastHenry robustness limit, not a deck error. Still, combining terminal_model='tab' with a 4 mm plane pitch under multipole is not usable, and the facts dict gives no warning.",
+      "evidence": "short_tab, plane 4 mm, multipole: rc=-11 after the DivideSegs warning. Direct solver: rc=0, 25.858 nH. Plane 2 mm, multipole: rc=0, Z=0.00817+1.60943j at 10 MHz (25.61 nH), vs short_point at the same level 25.53 nH.",
+      "suggested_check": "Document that tab decks need plane_cell_mm \u2264 2 mm (or the direct solver) under multipole, or run the tab variant in a smoke test.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Wire ends on a die are snapped to a trace cell, unlike l2_layout",
+      "detail": "l2_layout's end_contact sends a wire end that lands on a die top to that die's merged node. The exporter always joins wire ends to the nearest trace cell of the wire's net. A layout with die-to-die stitching wires would silently get a different topology. The exporter does raise ValueError for wires that do not start on a die pad, but there is no matching guard for ends on a die. This is latent: none of 20 generated layouts (seeds 0\u20134, 2\u20133 dies per switch, 270 wires) has such a wire.",
+      "evidence": "Scan of `generate_layouts` output: 0 wire ends inside a die footprint, 0 exactly vertical wire segments.",
+      "suggested_check": "Raise ValueError (or route to the die node) when a wire end lies on a die footprint.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Default models and parse_zc verified against the real binary",
+      "detail": "The default deck (short dies, point terminals) is read and solved by FastHenry 3.0wr. Both frequencies, 1e7 and 2e7, appear in Zc.mat, which confirms the ndec trick. parse_zc reads the real Zc.mat format correctly. The filament count FastHenry reports for the tab deck (8362) equals facts['n_filaments']. The equal-GMD square side 0.7788/(2\u00b70.44705) = 0.87104 d checks out against Grover's g.m.d. values.",
+      "evidence": "short_point (plane 4 mm, multipole): rc=0, R=8.19 m\u03a9, L=25.568 nH at 10 and 20 MHz. short_point (plane 2 mm): Z = 0.00820323+1.60409j at 1e7, parsed correctly.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/test_fasthenry.py` (24 passed) and `uv run ruff check` on both deliverables (clean).",
+    "Exported Case 4 base decks for all four combinations of die_model and terminal_model and ran the provisioned FastHenry 3.0wr binary on each (multipole), plus the direct solver on the tab deck and multipole at plane_cell_mm=2.",
+    "Order-aware scan of each deck for segment node references made before the node is defined: 152 in each distributed deck, 0 in each short-die deck.",
+    "Rebuilt the distributed deck with node lines first and solved it (26.92 nH vs 25.57 nH for the short model), showing ordering is the only defect.",
+    "Checked the Case 4 stack z-values (top Cu, die z_bottom/z_top) against the z-placement of the die-block segments.",
+    "Compared the die footprint, wire-end and contact rules with l2_layout.build_layout_system; scanned 20 generated layouts for wire ends on dies and vertical wire segments (none).",
+    "Parsed a real FastHenry Zc.mat with parse_zc and cross-checked facts['n_filaments'] against the filament count FastHenry reports."
+  ],
+  "caveats": [
+    "FastHenry was run only on Case 4 base at a thin, coarse level (nh=1, wire_n=1, cell 1 mm). A run on a generated layout at cell 0.5 mm hit the background time limit and was stopped before finishing, so I cannot say whether default decks for generated layouts solve. I did not restart it because it does not affect the blocker.",
+    "I did not compare refinement convergence or FastHenry against l2_layout (no refinement level is frozen in this deliverable). The blocker concerns whether the decks are valid input, not the physics of the variants."
+  ]
+}
