@@ -1,0 +1,57 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Final level-1 verdict ignores the sanity block",
+      "detail": "analyse() sets level1 from the pass_L1 flags plus energy balance and Tj only. checks['sanity'] (own_solves_frozen_bytes, picard_converged, cg_not_capped, bottom_mean_two_ways, dof_growth_8x, half_load_scaling) is never consulted. The note says that after the copy-back '--analyse gives the final confirmed or refuted', and frames the sanity checks as separating 'experiment broken' from 'level 1 insufficient'. Mitigation: solve_level2 refuses non-frozen thermal_fem bytes at solve time, and burst_level2.sh checks the ref's sha before launching.",
+      "evidence": "Synthetic burst_out in $TMPDIR, built from the cached L0/L1 records with L2 = L1 + 0.35 (L1 - L0) and thermal_fem_sha256 set to 'deadbeef...', gives status complete, level1 confirmed, while sanity reports own_solves_frozen_bytes: False. The clean synthetic set gives confirmed; a 0.3 K bump on one die gives refuted.",
+      "suggested_check": "Make level1 'pending' (experiment broken) when any sanity check, including reproduction_check.passed, is False.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Stored records are not checked against the expected power, fingerprint or frozen-config hash",
+      "detail": "stored() accepts any status-ok JSON in cache/ or burst_out/ by key. Nothing in analyse() or sanity() compares power_W with p_ref \u00d7 load factor, the fingerprint with layouts(), or frozen_config_sha256 with the file. The note's rejection of H3 ('wrong power or a stale cache') therefore rests on the reproduction check, which covers only the dev layouts at P_ref, levels 0-1.",
+      "evidence": "I checked all 16 cache files independently: power_W equals p_ref \u00d7 factor exactly, fingerprints match layouts(), the thermal_fem and frozen-config hashes match, and the die count matches. 0 bad.",
+      "suggested_check": "Assert the expected power, fingerprint and config hash per record inside stored() or sanity(), and gate the verdict on it.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Cached level-2 solves from o007_dev3 carry no solver hash themselves",
+      "detail": "The two P_ref dev L2 records (Linux burst, T0243) have no thermal_fem_sha256 field. Their provenance rests on dev_study.json recording a216d5fe and on the bitwise L0/L1 reproduction. Their power_W equals P_ref exactly.",
+      "evidence": "The L2 record keys contain no sha field; research/o007_dev3/dev_study.json has thermal_fem_sha256 a216d5fe...; repro max|dT| = 0.0 K at L0 and L1.",
+      "suggested_check": "",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Burst wall-time estimate assumes no slowdown for concurrent jobs",
+      "detail": "Two u_shaped jobs (22.6 GB each) are scheduled at the same time on the 8-vCPU VM, but their wall time uses the single-job measured rate of 585 \u00b5s/DOF. The cost and time estimate could be modestly low; this does not affect correctness.",
+      "evidence": "The --plan output gives both u_shaped_2_p jobs start 4.56 h and 0.64 h each.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD JSON assertion command, the shasum check of thermal_fem.py (a216d5fe3209bcee), ruff check research/o002_f1 and bash -n on burst_level2.sh: all pass.",
+    "Recomputed analyse() in memory, without writing to the repo: the result is identical to the committed f1_dev_check.json.",
+    "Re-derived the gci_capped/step-floor estimator with my own code and recomputed every P_ref dev die-average rel_error_L1 from the raw o007 L0/L1/L2 and cache files: max diff vs JSON 0.0, worst 0.717 % (side_by_side_6) and 0.587 % (u_shaped_2) of the local rise.",
+    "Verified that the mean baseplate-bottom temperature T_c + Q_out/(hA) equals the trapezoid integral of the field at z = 0 (max diff 5.7e-14 K) and that the rises fall in O002's stated 25-47 K range.",
+    "Verified that all 16 cache records have the expected power (p_ref \u00d7 factor, exact), fingerprint, solver hash, frozen-config hash, level/load and die count.",
+    "Re-solved u_shaped_2_p at 0.5 P_ref, level 0, directly with thermal_fem: tj_mean and tj_max match the cache bitwise (0.0 K), same DOF count, energy balance 1.7e-14.",
+    "Checked the dev layouts, seed, fingerprints and calibrated P_ref against experiments/specs/E009.yaml, and the cached o007 L2 power against P_ref. The research rule_from_frozen is key-for-key identical to e009_run.rule_from.",
+    "Ran f1_dev_check.py --plan: 6 jobs, 54.1/53.0/53.0/22.6\u00d73 GB, 6.35 VM-h, $3.88, fits 66.3 GB usable. Matches the note, and the side_by_side L2 DOF estimate equals the measured 9,483,501.",
+    "Adversarial verdict test with synthetic level-2 data in $TMPDIR: the good set gives confirmed, a 0.3 K bump gives refuted, and a wrong solver hash still gives confirmed (finding 1).",
+    "Spot-checked note figures (cross-stratum 2.082/1.957/1.911 K with level-1 error 0.103 K, pair steps, spread errors, DOF growth 7.33-7.67, half-load ratio 0.489-0.493, Tj max 126.16 \u00b0C) against the JSON: all agree.",
+    "Confirmed git status is clean after all checks."
+  ],
+  "caveats": [
+    "The F1 verdict itself is not delivered: status awaiting_level2, level1 pending, 6 of 8 level-2 solves missing. No pair-difference gate and no 0.5 P_ref gate has been evaluated. The tested set passing is P_ref on the development layouts only: 16/16 die averages, 4/4 spreads, 4/4 level-1-vs-level-2.",
+    "The note's 0.8 confidence that the burst confirms level 1 is the author's inference from level-0-to-1 steps, not evidence.",
+    "I statically reviewed burst_level2.sh --dry-run because the sandbox denied executing it. I ran its read-only --plan step, and the burst_gcp.sh interface (--check, --cmd, MF_REF, MF_GCP_PROVISION, MF_GCP_MAX_HOURS, MF_GCP_SPOT, MF_GCP_RESUME) matches.",
+    "Scope: two strata (side_by_side 6, u_shaped 2), one partner each, one die size (5.0 mm). Interleaved families and other die counts are untested.",
+    "On u_shaped_2_p the hottest die is a near-tie (0.0002 K at 0.5 P_ref) and swaps rank between levels. The gated pair sequence fixes the level-1 hottest die. E007's own-hottest A1 reference could differ by about 0.03 K; the note discloses this."
+  ]
+}
