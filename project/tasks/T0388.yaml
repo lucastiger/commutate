@@ -40,7 +40,28 @@ description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e
   0.98] may be narrowed by the founder before registration, from T0387''s span_reach.json (Case 4''s floor
   is 0.7616). Write the registration check with the span''s lower end as one named constant read from
   the objective''s text in a single place, so a founder amendment changes one line; do not assume a value
-  other than the frozen 0.75.'
+  other than the frozen 0.75.
+
+
+  Review T0416 of T0386 (founder session, 2026-11-16): before E004''s spec freezes the perturbation-rules
+  hash, fix these in src/moduleforge/generate/perturb.py, each with a test in tests/unit/test_perturb.py:
+
+  1. rules_sha256() must cover every input that decides which layouts a seed yields: add NETS (its order
+  is indexed by the rng), SIGNAL_NET, SIGNAL_PADS, and the sources of Die.box, BondWire.length and SignalWire.length;
+  E004''s spec also pins the commit and the shapely/numpy versions.
+
+  2. long_sides depends on the polygon''s vertex list (collinear splits), so a compound that canonicalises
+  a net changes the trace_width edge set for the same geometry: compute it on _canonical(poly), or state
+  the representation dependence in the frozen rule text.
+
+  3. The whole-mm construction rounds absolute coordinates: draw/measured_rules assert that the reference
+  coordinates are whole mm (all three references are), or reject draws that fail on_lattice.
+
+  4. test_terminal_copper_declared_changes_closed_form''s positive case is vacuous (its slab lies inside
+  the PHASE column): add a positive-delta case whose slab adds copper, with the closed-form area gain.
+
+  Compound pairs are authorised by the founder''s I0217 answer (project/inbox/I0217.yaml); every step
+  of a compound is DRC-clean (the stagewise rule, founder to confirm at the T0386 merge).'
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/specs/E010.yaml
@@ -56,6 +77,8 @@ deliverables:
 touches:
 - experiments/drafts/E004.yaml
 - experiments/runners/e004_run.py
+- src/moduleforge/generate/perturb.py
+- tests/unit/test_perturb.py
 definition_of_done:
 - cmd: uv run mfos exp check E004
   exists: null

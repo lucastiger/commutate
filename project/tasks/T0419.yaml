@@ -59,7 +59,17 @@ description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 ver
 
 
   Then re-run `--analyse` to regenerate research/o002_f1/f1_dev_check.json, and add one paragraph to research/notes/o002-f1-dev-check.md
-  stating the new verdict rule.'
+  stating the new verdict rule.
+
+
+  Founder session, 2026-11-16 17:50 UTC: the I0212 burst finished (6 level-2 solves, exit 0) and its records
+  are committed in research/o002_f1/burst_out/. The founder session checked them by hand (key, layout,
+  level, load, fingerprint, power equal to the level-1 record''s, frozen_config_sha256, thermal_fem a216d5fe...,
+  energy balance, CG not capped, Picard converged): all six pass, and --analyse gave status complete,
+  level1 confirmed. After the hardening, rerun `uv run python research/o002_f1/f1_dev_check.py --analyse`
+  (no solve) on the committed records, commit the regenerated f1_dev_check.json, and state in research/notes/o002-f1-dev-check.md
+  the verdict, the ''broken'' list (expected empty) and the worst level-1 error over tolerance per quantity
+  and load.'
 context_files:
 - research/o002_f1/f1_dev_check.py
 - research/o002_f1/f1_dev_check.json
