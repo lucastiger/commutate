@@ -4,7 +4,7 @@ title: 'Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trac
   copper, wire landing (generate/perturb.py)'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'New module src/moduleforge/generate/perturb.py with O004''s four move types. They act directly
   on a reconstructed reference Layout, because 2D_Case_6 has no twin and so the 0.5 mm parameter space
@@ -73,4 +73,91 @@ lens: null
 trigger: null
 rationale: scope_in re-layouts (four move types, 1 mm lattice, sealed-seed draw, pre-registered allocation);
   F2 (frozen, hashed rules); F4 (lattice and type coverage); build item (3) of the objective notes.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I built generate/perturb.py and tests/unit/test_perturb.py, and every DoD command exits 0.
+    The development requirement of at least one pair with r <= 0.75 on 2D_Case_4 is not met. The ranges
+    do not reach it, so that test is recorded as a strict xfail rather than a pass.
+
+
+    What is in place:
+
+    - **Moves:** die_row_shift, trace_width, terminal_copper and wire_landing, each a deterministic `apply(reference,
+    move_type, params)` with whole-mm parameters.
+
+    - **Draw:** `draw(reference, allocation, seed, rules=None)` uses one numpy Generator and the frozen
+    ranges as module constants. It redraws up to MAX_REDRAWS=400 times, then raises RuntimeError. Each
+    accepted move is DRC-clean and changes the layout.
+
+    - **Rules:** `measured_rules()` follows e010''s e008_rules and raises ValueError if the reference
+    is '
+  report:
+    status: partial
+    summary: 'I built generate/perturb.py and tests/unit/test_perturb.py, and every DoD command exits
+      0. The development requirement of at least one pair with r <= 0.75 on 2D_Case_4 is not met. The
+      ranges do not reach it, so that test is recorded as a strict xfail rather than a pass.
+
+
+      What is in place:
+
+      - **Moves:** die_row_shift, trace_width, terminal_copper and wire_landing, each a deterministic
+      `apply(reference, move_type, params)` with whole-mm parameters.
+
+      - **Draw:** `draw(reference, allocation, seed, rules=None)` uses one numpy Generator and the frozen
+      ranges as module constants. It redraws up to MAX_REDRAWS=400 times, then raises RuntimeError. Each
+      accepted move is DRC-clean and changes the layout.
+
+      - **Rules:** `measured_rules()` follows e010''s e008_rules and raises ValueError if the reference
+      is not DRC-clean under its own measured rules.
+
+      - **Lattice and hash:** `on_lattice(layout, cell_m)` uses l2_layout''s layout_lattice, cell_fill
+      and check_on_lattice. `rules_sha256()` hashes the rule source and the ranges.
+
+      - **Tests:** 23 pass, 2 skip and 1 xfail. They cover determinism, lattice alignment at 1.0, 0.5
+      and 0.25 mm, DRC-clean draws, and what each move changes (checked against closed-form areas and
+      the O006 die_shift and trace_width variants). A geometry-only test on 2D_Case_2R and 2D_Case_6 patches
+      the inductance solvers to fail the test if they are called.
+
+
+      Open findings, all from development geometry (2D_Case_4):
+
+      1. **No single move reaches r <= 0.75.** I drew 30 per type in one scan and scanned a ±20 mm die-shift/edge-offset
+      grid in another. The lowest DRC-clean ratio was 0.897. Ratios down to 0.57 appear only for LS-row
+      shifts of 16 mm or more, which break min_spacing. Widening the ranges to ±20 mm did not help. The
+      span check at r >= 0.98 and "each move type at least once" pass. F7(c) needs either a pair of two
+      moves, which the packet does not allow, or founder guidance on the span or rules.
+
+      2. **Die-row shift has no DRC-clean integer shift on 2D_Case_6.** All 544 shifts in ±8 mm fail.
+      Every rule of that reference sits at its measured minimum, and shifting the dies tilts the 0.5 mm
+      wire pairs, which breaks the pitch rule. I did not tune on this reference, so die_row_shift will
+      always raise RuntimeError there. The geometry-only test uses the other three move types for 2D_Case_6
+      and records the infeasibility. 2D_Case_2R is fine for all four.
+
+      3. **2D_Case_4 needs E008''s dev rule overrides.** Raw measured rules are not DRC-clean on the reference
+      itself because of the 16.15 mm wires. The Case 4 tests pass the E008.yaml dev overrides: wire pitch
+      at the DesignRules defaults and max_wire_length 18 mm. 2D_Case_2R and 2D_Case_6 use the plain measured
+      rules.'
+    concerns:
+    - 'F7(c) is not met on 2D_Case_4: the lowest DRC-clean single-move ratio is r = 0.897 at L1, 20 MHz.
+      A strict xfail test (test_case4_low_ratio_pair) records this; if the ranges ever reach 0.75 it XPASSes
+      and fails the run.'
+    - die_row_shift is infeasible on 2D_Case_6 under measured rules (0 of 544 integer shifts in ±8 mm
+      are DRC-clean), so draw raises RuntimeError for that move type there and it is excluded from the
+      geometry-only test for that reference.
+    - Case 4 depends on dev-only rule overrides copied from E008.yaml dev.case4 (min_wire_pitch, wire_pitch_diameters,
+      max_wire_length). The judged references must not get such overrides.
+    - 'Design choice to check: die_row_shift also grows the host copper to the reference''s own die enclosure
+      (whole mm, at least 1). It only adds copper, and this is documented as a declared side effect.'
+    - The rule source hash covers the apply and draw functions plus the ranges. Edits to those functions
+      change rules_sha256.
+    files_changed:
+    - src/moduleforge/generate/perturb.py
+    - tests/unit/test_perturb.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0

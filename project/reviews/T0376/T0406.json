@@ -1,0 +1,55 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "2R KILL-B was read at 0.5 mm, not the packet's 0.25 mm, and the margin (0.29 pp) is inside the lateral discretisation scale",
+      "detail": "The level rule (finest cell whose estimate fits 8 GB) selects 0.25 mm for 2R (6.42 GB). The machine's memory rule (swap < 4 GB for a process over 5 GB) kept that solve from starting. The gate was tried for 1,260 s, after which 2R fell back to 0.5 mm. At 0.5 mm, compact0 sits at L2 s = +2.289 %, 0.29 pp above the 2 % KILL-B line. E010's largest 0.25-vs-0.5 mm ratio shift on 2R is 0.35 %, so the 2R KILL-B reading is not decided at E011's resolution. The note says this plainly in its summary, \u00a74 and \u00a75 (H5 'not run'). l2_check.json, however, records verdict 'kill shot did not fire' and kill.B=false for 2R with no per-layout 'unresolved' flag. Only the top-level 'not_evidence' string mentions the coarse cells, so anything that reads the JSON mechanically will treat 2R as settled. My own solves show the margin holds along the other two band axes at 0.5 mm: +2.345 % at thk_c and +2.283 % at fil_f, against +2.289 % at lat0.5. The lateral 0.5\u21920.25 mm axis is the one still untested, and E010 shows it is the largest.",
+      "evidence": "levels.json override_reason; solve_1.log 18:27\u201318:48, swap bound 7.5\u20138.6 GB, gate closed; my solves of 2R W* and compact0 at thk_c (13.2233 / 13.5334 nH) and fil_f (13.1230 / 13.4225 nH), all GMRES flag 0",
+      "suggested_check": "Solve 2R W* and compact0 (then compact3 and compact1) at lat0.25 when swap < 4 GB or on a VM; add a per-layout 'kill_B_resolved_at_E011_level' flag to the JSON.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'killed attempts included' total solve wall is wrong",
+      "detail": "Note \u00a73 says 'total solve wall 4,158 s of the 3 h budget, killed attempts included'. report() adds up job_wall_s over status=='ok' records only. The four killed attempts are left out: Case4 W* 286 s, compact0 and guided0 about 0 s, compact2 160 s, about 446 s in total. The true total is about 4,604 s, still far below 10,800 s, so the budget conclusion stands. Separately, solve()'s budget gate (spent_s) does include the failed records.",
+      "evidence": "l2_check.py lines 491-494 (total_wall over sol, ok only); failed_attempts.jsonl plus solves/Case4__compact2.json (status failed, job_wall_s 160.4)",
+      "suggested_check": "Add the failed and killed job_wall_s to sanity.total_solve_wall_s, or reword the note.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Layout count in the rebuild/DRC sanity check is misstated",
+      "detail": "Note \u00a71 says 'All 17 layouts per reference were checked: W, W*, D_0..4, and the 15 endpoints', and \u00a72.2 says '34 layouts'. That list adds up to 22 per reference, 44 in all, and regen_*.json holds 22. The code checks all 22, so the check is stronger than the note says. Only the count in the text is wrong.",
+      "evidence": "regen_2R.json layouts keys: W, Wstar, D0\u2013D4 and guided/compact/widen 0\u20134 (22)",
+      "suggested_check": "Correct the count to 22 per reference (44).",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Three Case 4 null values come from fingerprint-identical solves",
+      "detail": "Case 4 reports '10 / 0' null endpoints solved, but only 7 distinct null layouts were solved. widen0 = compact0, widen4 = compact4 and compact2 = widen2 take their values from solves of the same layout. compact2's own attempt was stopped by the watchdog. I confirmed the fingerprints are identical, so the values are correct. The table marks these rows '(= \u2026)'.",
+      "evidence": "regen_Case4.json fingerprints: compact2/widen2 872438cf\u2026, compact0/widen0 f08aa62b\u2026, compact4/widen4 14429e6f\u2026",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three definition-of-done commands (test -f note; JSON schema assertion; ruff check). All pass.",
+    "Recomputed regeneration fidelity myself from regen_{2R,Case4}.json against probe_{2R,Case4}_proxy.json. L1(W) and L1(W*) are bit-identical, and every guided/compact/widen s (both the stored value and s recomputed from L1_H) matches to 0.0 abs, with step counts equal. Case 4 guided runs are all at the 60-step cap (True). 2R guided runs are not.",
+    "Recomputed L2 s, KILL-A and KILL-B from the raw per-solve files, bypassing report(). Every ok solve's fingerprint equals the regenerated layout's fingerprint. All solves are lat0.5, GMRES flags all 0, max solver_tol 3.1e-5, one source_sha256. 2R: L_sub(W*)/L_sub(W)=0.92845, A false, min null compact0 +2.2894 %, B false. Case 4: ratio 0.69863, A false, min null compact0 +9.359 %, B false. Every L2_s in l2_check.json matches.",
+    "Checked that Case 4 compact2/widen2, compact0/widen0 and compact4/widen4 share fingerprints, so the inherited values are legitimate. Confirmed Case4__compact2.json is a watchdog-stopped attempt (returncode -9).",
+    "Confirmed the 2R W L_sub at 0.5 mm reproduces E010's committed value (rel 1.2e-14, sanity block).",
+    "Ran four extra l2_layout solves of 2R W* and compact0 through e010_run.child_em, one at a time, with 2 threads and a peak of 2.0 GB or less: compact0 gap +2.345 % at thk_c and +2.283 % at fil_f, against +2.289 % at lat0.5. The 2R KILL-B margin holds along the thickness and filament axes. Only the lateral 0.25 mm axis is untested.",
+    "Checked the sandbox facts behind the lessons.md entry and the level deviation. `sysctl vm.swapusage` and `ps` are both denied ('Operation not permitted'), and the swapfile total is about 5.4 GB now, still above 4 GB, so the 0.25 mm gate would still be closed.",
+    "Read the l2_check.py logic for KILL-A/B, mandatory endpoint selection (lowest L1 s compaction plus the same-draw guided run; matches compact1 on 2R and compact0 on Case 4), the proc_taskinfo struct size (96 bytes, correct), the watchdog and the budget accounting.",
+    "Checked numeric statements in the note (margin multiples 6\u201325x and 20x, L1-vs-L2 gain differences of 3.0 and 7.1 pts, guided-within-2 % counts) against the JSON. All consistent.",
+    "Checked the write scope: changes are limited to research/** and project/memory/**, both inside the scientist role's scope, with no protected path touched."
+  ],
+  "caveats": [
+    "The 2R KILL-B reading ('did not fire') holds only at 0.5 mm lateral cells. At E011's 0.25 mm it is unresolved: the margin is 0.29 pp and the measured lateral ratio shift on 2R reaches 0.35 %. KILL-A on both layouts and KILL-B on Case 4 have margins (7.2 %, 30.1 % and 7.4 pp) far larger than any measured discretisation shift.",
+    "Case 4's 0.5\u21920.25 mm shift was never measured. Its robustness rests on 2R's E010 band, which is borrowed, and on margin size.",
+    "As the note itself says, this is indicative only: development geometry and seeds, the probe's parameter domain without reach, unsealed. It is not evidence for any O008 criterion.",
+    "My independent L2 re-solves covered only the decisive 2R pair (W*, compact0) at thk_c and fil_f. I did not re-solve at lat0.5 or lat0.25, or any Case 4 layout."
+  ]
+}
