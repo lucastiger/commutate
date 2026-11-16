@@ -1,0 +1,23 @@
+id: I0204
+kind: decision
+subject: '[O008] F7: E011''s acceptance metrics in mfos.metrics (tools/ is protected)'
+summary: 'E011 cannot be registered until mfos.metrics computes control_layout_pass_min, reach_outside_max,
+  null_beaten_min and control_shortfall_median_max from per-draw rows. Each needs analytic tests, including
+  synthetic rows where a null recovers W* on one layout and fails on the other, which must give INCONCLUSIVE
+  (objective F7: founder session). Agents cannot write tools/. This plan''s task n7 drafts the reference
+  functions in experiments/runners/e011_metrics.py with tests in tests/acceptance_drafts/, and fixes the
+  per-draw row schema for the runner.'
+refs:
+- O008
+- T0375
+options:
+- Port n7's reviewed drafts into mfos.metrics in a founder session, keeping their analytic tests
+- Write the functions independently in a founder session and use n7's drafts only as a cross-check
+recommendation: Port n7's drafts after its review, and keep the synthetic INCONCLUSIVE and capped-null
+  tests verbatim. Do it before E011's dev L2 analysis, so the dev rows can go through `mfos exp check
+  E011`.
+status: open
+response: ''
+created_at: '2026-11-16T01:43:45+00:00'
+resolved_at: null
+resolved_by: null

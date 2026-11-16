@@ -1,0 +1,27 @@
+id: I0205
+kind: external_action
+subject: '[O008] Burst VM for E011''s development L2 draws (band bound, joint operating characteristic,
+  dev rows)'
+summary: 'Before registration, E011''s design must measure b_j on development draws on 2R and Case 4,
+  freeze the band bound (median <= 0.01, max <= 0.02), state the joint operating characteristic, and show
+  A3 met on dev rows. The 0.25 mm l2_layout solves need about 20 GB each (Case 4), beyond this Mac, and
+  agents have no network. After n5 merges, experiments/drafts/E011.dev_jobs.json will list the jobs with
+  a cost estimate. Rough size: about 4 dev draws per layout, each with R_D, a search shortlist and band
+  solves for the search and nulls (b) and (d), plus the W and W* band solves. That is about $25-45 of
+  VM at ~$0.24 per 0.25 mm solve (lessons 2026-11-09). This is separate from the registered run''s estimated
+  $50-100.'
+refs:
+- O008
+- T0375
+options:
+- Approve the dev burst once n5 merges, capped at the manifest's estimate + 25 %
+- Approve a smaller dev burst (2 draws per layout) first, then decide
+- Defer until k1's kill shot has been read
+recommendation: Defer until k1 (the local L2 kill shot) has reported, then approve the full dev burst
+  capped at the manifest estimate + 25 %. If k1 fires, the burst is not needed and the objective goes
+  to its INCONCLUSIVE/redesign path.
+status: open
+response: ''
+created_at: '2026-11-16T01:43:45+00:00'
+resolved_at: null
+resolved_by: null

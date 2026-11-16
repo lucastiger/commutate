@@ -1,0 +1,85 @@
+id: T0377
+objective: O008
+title: 'Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: "Build item (1) of the objective notes; A2 and F2.\n\n(a) generate/derivative.py: add an\
+  \ explicit opt-in reach mode (a ReferenceSpec field or a generate/_sample argument) to the sampler (_sample,\
+  \ _Ctx). In reach mode:\n   - a slot may straddle or overlap its column; today it only attaches to the\
+  \ column's inner edge (T0349 section 2.2: 2R's DC+ and DC- slots straddle their columns at u 7 to 47);\n\
+  \   - a column's outer edge may extend up to the outline edge-margin limit; today c1 = pad edge + U(0,\
+  \ 1.5), so the PHASE edge of 2R's twin at 47 mm cannot be drawn.\n   With reach off, every existing\
+  \ stream must stay bit-identical.\n(b) Add in_domain(spec, params, reach) -> (bool, reason) to derivative.py.\n\
+  \   - Build it from the sampler's own construction. Replay _sample's sequential construction on the\
+  \ given vector: each coordinate must be on its grid and inside the interval the sampler would draw it\
+  \ from, given the earlier coordinates. These are joint constraints, not marginal ranges.\n   - The layout\
+  \ must also build and be DRC-clean and pass _quick_ok, so the predicate covers the random sampler's\
+  \ support and the local search's domain at once.\n   - Return the name of the first constraint that\
+  \ fails.\n(c) twin.py: extend the move enumeration (_moves / _walk_candidates) to the reach domain,\
+  \ so that moves of slot extents across columns and of column outer edges exist. Change the twin construction\
+  \ only if needed, and declare any change in the module docstring.\n\nTests, in tests/unit/generate/test_reach.py:\n\
+  1. Before editing, record fingerprints of fixed streams from the unmodified code as constants: the 70x40\
+  \ housing with k=1 and k=3 under default rules, and Case 4's development spec under measured rules,\
+  \ on development seeds. Assert they are unchanged with reach off.\n2. Soundness: every layout generate()\
+  \ draws satisfies in_domain under its own mode, with reach on and off: at least 200 draws on the housing\
+  \ and at least 20 on Case 4.\n3. Build 2D_Case_2R's twin as E010's prepare does: research/scripts/o003_powersynth_references.py\
+  \ plus e010_run's e008_rules and spec construction, both imported by path. Build 2D_Case_4's twin the\
+  \ same way. For both twins W:\n   - build(spec, params_of(W)) reproduces W's fingerprint and is DRC-clean\
+  \ under the reference's own rules;\n   - in_domain(reach=True) is True;\n   - for 2R, in_domain(reach=False)\
+  \ is False, and the reason names a slot-attachment or column-edge constraint, consistent with T0349's\
+  \ attached-form test.\n4. With reach on, the sampler emits straddling slots and column outer edges beyond\
+  \ pad + 1.5 mm on 2R's spec at a nonzero rate in a fixed number of raw draws. Assert the rate is nonzero\
+  \ and record it.\n5. A hand-made out-of-support vector returns False with the expected reason.\n\nDo\
+  \ not relax any design rule. No judged reference (2R is development geometry under D0023)."
+context_files:
+- src/moduleforge/generate/derivative.py
+- src/moduleforge/generate/twin.py
+- research/diagnoses/T0349.md
+- research/diagnoses/T0349/sampler_support.py
+- research/diagnoses/T0349/attached_twin.py
+- experiments/runners/e010_run.py
+- research/scripts/o003_powersynth_references.py
+- tests/unit/generate/test_twin.py
+- tests/unit/generate/test_derivative.py
+- experiments/specs/E010.yaml
+deliverables:
+- src/moduleforge/generate/derivative.py
+- src/moduleforge/generate/twin.py
+- tests/unit/generate/test_reach.py
+touches:
+- src/moduleforge/generate/derivative.py
+- src/moduleforge/generate/twin.py
+- tests/unit/generate/test_reach.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/generate/test_reach.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m 'not slow' tests/unit/generate
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/generate tests/unit/generate
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 7.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: A2 (reach_outside_max) and the F2 sanity checks need in_domain, which must be False for 2R
+  under E010's generator. The search's move set (n2) ranges over this domain.
+history: []

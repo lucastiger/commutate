@@ -1,0 +1,40 @@
+id: I0206
+kind: plan_approval
+subject: '[O008] approve initial plan (8 tasks)'
+summary: 'O008 is active, but none of its build work has been planned yet: no reach, no seeded search,
+  no proxy, degradation or nulls, no E011 draft, and zero evaluations (spent $17.60 of $140; $122.40 left).
+  The only evidence so far is the L1-only development probe, which is outside C002''s scope. The probe
+  showed a designer proxy W* 10 % (2R) and 37 % (Case 4) below the twin, blind nulls failing by 3-24 %,
+  and a guided descent within 2 % on 2R. The most likely kill is that this gap is an L1 artefact. If L_sub(W*)
+  is not below L_sub(W) on 2R, the proxy rule returns W, which blind compaction already recovers on every
+  2R draw. A3 would then be unmeetable and the hypothesis cannot PASS as frozen. If compaction gets within
+  2 % of W* at L2, the same thing happens. So this plan starts with a cheap local l2_layout kill shot
+  on the probe''s W, W* and best-compaction endpoints, run in parallel with the reach work and the F7
+  metric drafts. The search, proxy and null modules wait on that kill shot, so a fired kill shot can stop
+  them before they are built. Reach comes first because A2/F2 need in_domain, and it must be shown false
+  for 2R under E010''s code with every D0008 stream unchanged. The search goes next, with a shared descent
+  primitive that the proxy rule and the nulls reuse. Then come E011''s draft and runner (selftest, smoke,
+  and a dev mode that writes the L2 job manifest), and finally the orchestrator''s E011 run. Two items
+  are outside agent authority and go to the founder: the mfos.metrics port (F7, protected tools/), and
+  burst compute for E011''s development L2 draws (band bound, joint operating characteristic, dev rows).
+  A follow-up scientist task will analyse the dev L2 results and finish the band bound and dev rows; it
+  will be planned once the burst has run, because its checks depend on that external step.'
+refs:
+- O008
+- T0376
+- T0377
+- T0378
+- T0379
+- T0380
+- T0381
+- T0382
+- T0383
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T01:43:45+00:00'
+resolved_at: null
+resolved_by: null

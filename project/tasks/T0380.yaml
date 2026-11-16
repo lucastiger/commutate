@@ -1,0 +1,63 @@
+id: T0380
+objective: O008
+title: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c)
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0378
+description: "Build item (3b) of the objective notes. Create src/moduleforge/optimize/nulls.py, built\
+  \ on local.descend and moving the search's own parameters (F1).\n\n(a) null_seed: returns D_j unchanged.\n\
+  (b) null_widen: widen every power band toward its DRC limit. The blind score is power copper area only,\
+  \ as in the probe's widen mode. No inductance model.\n(d) null_compact: more power copper and shorter\
+  \ power wires (probe.py's compact score: power copper area in mm^2 minus power-wire length in mm, keeping\
+  \ only moves that do not reduce copper or lengthen wires), review T0354. No inductance model.\n    (b)\
+  \ and (d) each run to their own local optimum within a generous frozen step limit. They record the terminal\
+  \ kind (local_optimum or step_limit), because a run capped at the limit is not a resolved failure (A3,\
+  \ review T0359).\n(c) ablation_random_screen: the D0008 random screen alone over the reach sampler (n1),\
+  \ with the search's L1 budget and shortlist, reusing search.candidate_stream.\n\nEvery null records\
+  \ its step count, changed-parameter count and Manhattan distance from D_j.\n\nTests, in tests/unit/optimize/test_nulls.py:\n\
+  - (a), (b) and (d) never call any inductance solver: inject l1 and l_sub that raise;\n- outputs are\
+  \ DRC-clean and in_domain;\n- (b) ends where no single widening move is DRC-feasible, or at the step\
+  \ limit with that terminal kind;\n- (d)'s blind score is monotone non-decreasing along its trajectory;\n\
+  - determinism;\n- (c) respects the L1 budget and calls l_sub exactly shortlist times;\n- on the 70x40\
+  \ housing, a capped run reports step_limit."
+context_files:
+- src/moduleforge/optimize/local.py
+- src/moduleforge/optimize/search.py
+- research/o008_probe/probe.py
+- research/notes/o008-control-probe.md
+- src/moduleforge/generate/derivative.py
+deliverables:
+- src/moduleforge/optimize/nulls.py
+- tests/unit/optimize/test_nulls.py
+touches:
+- src/moduleforge/optimize/nulls.py
+- tests/unit/optimize/test_nulls.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize/test_nulls.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/optimize tests/unit/optimize
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 4.0
+max_turns: 70
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Gating nulls (b) and (d) for A3, the sanity null (a) of F1, and the reported ablation (c).
+history: []

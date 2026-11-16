@@ -1,0 +1,84 @@
+id: T0376
+objective: O008
+title: 'Kill shot: do the probe''s designer proxy and its null gap survive l2_layout?'
+type: investigate
+agent: scientist
+status: proposed
+depends_on: []
+description: "Cheap falsification test before the search, proxy and null modules are built (objective\
+  \ why_it_matters; research/notes/o008-control-probe.md says this is 'the cheap next test'). Development\
+  \ geometry and development seeds only. No sealed seed, no judged reference, no production code changes.\n\
+  \n1. Regenerate the probe's die-rows-free proxy run deterministically with research/o008_probe/probe.py\
+  \ (development seeds 20261115+j).\n   - 2R: E010's committed ctx.pkl under experiments/results/E010/E010-20261114T202413-80c1/work/2D_Case_2R/.\n\
+  \   - Case 4: its ctx is not in the repository. Rebuild it with experiments/runners/e010_run.py dev_reference('case4',\
+  \ cfg) from E010's spec config.\n   - Check that the regenerated L1(W), L1(W*) and per-draw s values\
+  \ match research/o008_probe/probe_{2R,Case4}_proxy.json to 1e-9 relative. Stop and report any mismatch.\n\
+  \   - Save the parameter vectors of W, W*, every D_j and every guided / compact / widen endpoint.\n\
+  2. Solve L_sub with solvers.l2_layout, one solve at a time. Pin threads per project/memory/lessons.md\
+  \ (OPENBLAS/OMP/MKL_NUM_THREADS, MF_L2_FFT_WORKERS). Use the finest cell size whose memory estimate\
+  \ (e010_run.em_unknowns / em_cost) fits 8 GB on this machine: 0.25 mm where it fits, else 0.5 mm. Record\
+  \ the level, wall_s, cpu_s and peak RSS per solve.\n   - Mandatory per layout: W, W*, the compaction\
+  \ endpoint with the lowest L1 s, and the guided endpoint of the same draw.\n   - Further compaction,\
+  \ widen and guided endpoints, nearest to the 2 % line first, only within a total solve budget of 3 h\
+  \ wall.\n3. Report per layout:\n   - L_sub(W*)/L_sub(W) and L1(W*)/L1(W);\n   - the L2/L1 ratio of every\
+  \ solved layout;\n   - L2 s = L_sub(x)/L_sub(W*) - 1 for every solved endpoint, beside its L1 s.\n4.\
+  \ Pre-declared readings, stated at the top of the note:\n   - KILL-A fires on a layout if L_sub(W*)\
+  \ >= L_sub(W) there: the proxy rule returns W, and on 2R blind compaction recovered W at L1.\n   - KILL-B\
+  \ fires on a layout if a compaction or widen endpoint has L2 s <= 0.02.\n   - Otherwise 'kill shot did\
+  \ not fire'.\n   - The note says plainly that this is indicative (probe domain without reach, coarser\
+  \ cells than E011's 0.25 mm) and is not evidence for any criterion.\n\nWrite outputs to research/o008_probe/l2_check.py,\
+  \ research/o008_probe/l2_check.json and research/notes/o008-l2-check.md. JSON schema: top-level 'layouts'\
+  \ keyed '2D_Case_2R' and '2D_Case_4'. Each entry holds L_sub_W, L_sub_Wstar, level_mm, compact_best\
+  \ {L1_s, L2_s} and kill {A, B}."
+context_files:
+- research/notes/o008-control-probe.md
+- research/o008_probe/probe.py
+- research/o008_probe/probe_2R_proxy.json
+- research/o008_probe/probe_Case4_proxy.json
+- experiments/runners/e010_run.py
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/generate/twin.py
+- project/memory/lessons.md
+- research/diagnoses/T0349.md
+deliverables:
+- research/o008_probe/l2_check.py
+- research/o008_probe/l2_check.json
+- research/notes/o008-l2-check.md
+touches:
+- research/o008_probe/l2_check*
+- research/notes/o008-l2-check.md
+definition_of_done:
+- cmd: test -f research/notes/o008-l2-check.md
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d=json.load(open('research/o008_probe/l2_check.json')); L=d['layouts'];
+    assert set(L)=={'2D_Case_2R','2D_Case_4'}, set(L); assert all(v['L_sub_W']>0 and v['L_sub_Wstar']>0
+    and v['level_mm'] in (0.25,0.5) and 'L2_s' in v['compact_best'] and set(v['kill'])=={'A','B'} for
+    v in L.values())"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check research/o008_probe/l2_check.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Front-loaded kill shot: if the proxy''s L1 headroom collapses at L2 on 2R, or blind compaction
+  reaches W* at L2, A3 cannot be met as frozen and the build chain is wasted. Traces to A3, K1, F3 and
+  F4.'
+history: []

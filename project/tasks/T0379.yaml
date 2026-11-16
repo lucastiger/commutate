@@ -1,0 +1,73 @@
+id: T0379
+objective: O008
+title: Designer proxy rule, randomised degradation family and ablation (e)
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0378
+description: "Build item (3a) of the objective notes. Create src/moduleforge/optimize/control.py, built\
+  \ on local.descend.\n\n(a) proxy_descent(spec, W_params, l1, step_limit, dies_fixed=False):\n   - the\
+  \ steepest single-parameter L1 descent from W in 0.5 mm steps, DRC-clean, to a local optimum or the\
+  \ step limit, over the same parameters the search moves, die rows included;\n   - dies_fixed=True is\
+  \ the Tj fallback (scope_in, review T0359);\n   - choose_proxy(W, W_desc, l_sub) returns W* as the one\
+  \ of W and W_desc with the lower L_sub, and records L1(W*)/L1(W), L_sub(W*)/L_sub(W), the steps and\
+  \ the terminal kind.\n(b) The randomised degradation family, degrade_draw(spec, Wstar_layout, rng, l1,\
+  \ cfg):\n   - stochastic L1 ascent by joint moves of several parameters over the search's parameter\
+  \ set, as in the probe;\n   - each accepted state is DRC-clean and in_domain;\n   - it stops at a frozen\
+  \ L1 target;\n   - it takes no L2 callable, so it cannot use l2_layout (scope_in);\n   - draw_degradations(spec,\
+  \ Wstar, sealed_seed, layout_index, n_draws, r_d_at_l2, redraw_limit) derives sub-seeds as SeedSequence([seed,\
+  \ layout_index, draw, attempt]), calls the injected r_d_at_l2 only to accept or reject a whole draw\
+  \ against [1.25, 1.60], redraws up to the limit, and records the attempts and the achieved R_D (F6).\n\
+  (c) Ablation (e), proxy_alone(spec, D_layout, l1, budget): the proxy rule run from D_j with the search's\
+  \ L1 budget and no L2 shortlist.\n\nTests, in tests/unit/optimize/test_control.py:\n- degradation and\
+  \ proxy never call L2: inject an l_sub that raises;\n- determinism per seed;\n- outputs are DRC-clean\
+  \ and in_domain;\n- the redraw logic respects the limit and the [1.25, 1.60] window with a fake r_d;\n\
+  - dies_fixed leaves the row_* parameters bit-identical;\n- choose_proxy returns W when W_desc's L_sub\
+  \ is not lower (F3);\n- regression anchor: with reach off and the probe's movable set, proxy_descent\
+  \ on 2R's twin reproduces the probe's L1(W*)/L1(W) = 0.898 and 27 steps (research/o008_probe/probe_2R_proxy.json)\
+  \ to 1e-9. Mark it slow if it exceeds 60 s, and run it explicitly in the definition of done."
+context_files:
+- src/moduleforge/optimize/local.py
+- research/o008_probe/probe.py
+- research/o008_probe/probe_2R_proxy.json
+- research/notes/o008-control-probe.md
+- src/moduleforge/generate/twin.py
+- experiments/runners/e010_run.py
+deliverables:
+- src/moduleforge/optimize/control.py
+- tests/unit/optimize/test_control.py
+touches:
+- src/moduleforge/optimize/control.py
+- tests/unit/optimize/test_control.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize/test_control.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run pytest -q -m slow tests/unit/optimize/test_control.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/optimize tests/unit/optimize
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: The control target W* (A1, K1, F3), the D_j family with the R_D window and redraw limit (F6),
+  the die-fixed Tj fallback (scope_in), and ablation (e) (F1).
+history: []

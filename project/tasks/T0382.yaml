@@ -1,0 +1,103 @@
+id: T0382
+objective: O008
+title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0377
+- T0378
+- T0379
+- T0380
+- T0381
+description: "Build item (4) of the objective notes. E011 is O008's id (E012 is O009's); experiments/specs\
+  \ and drafts hold no E011.\n\n(a) experiments/drafts/E011.yaml, pre-registered and development-only.\n\
+  \   - Counted layouts: 2D_Case_2R and 2D_Case_4; gen2_0 reported, not counted. Rules: each layout's\
+  \ e008_rules, with no relaxed floor.\n   - Frozen and hashed (F5): the search config (move set, L1 budget,\
+  \ shortlist K), the proxy rule and its step limit, the degradation family with its bounds, L1 target\
+  \ and redraw limit, the null step limits, 8 draws per layout, sub-seed derivation from the sealed seed,\
+  \ the band rule (D0008 ratio_band_estimate) and the band bound (median b_j <= 0.01 and max b_j <= 0.02,\
+  \ value to be filled from the dev L2 run).\n   - code_under_test hashes: derivative.py, twin.py, optimize/local.py,\
+  \ control.py, nulls.py.\n   - Metrics: control_layout_pass_min, reach_outside_max, null_beaten_min,\
+  \ control_shortfall_median_max, with recompute entries naming n7's function names as placeholders for\
+  \ the founder's mfos.metrics port.\n   - Sanity checks: F1(a) seed null fails A1; F2 per layout (W rebuilt\
+  \ from params_of(W) DRC-clean with its fingerprint reproduced; in_domain(W) True under reach and False\
+  \ for 2R under E010's generator; the twin-versus-reconstruction symmetric difference; T0349's coordinate-range\
+  \ and attached-form tests; the L1 lower tail of the random screen's pool relative to W per D0023); F6\
+  \ (at least 2 counted layouts); W*'s DRC.\n   - Reported: W, W* and best_j hottest-die Tj at the thermal\
+  \ reference's coarsest level, with the 2 K fallback to the die-fixed proxy; ablations (c) and (e) with\
+  \ their A1 and A3 values; F4's rank correlations.\n   - A section that states how the joint operating\
+  \ characteristic of A1, A3 and not-K1 is computed from the development draws' s_j and b_j at L2, including\
+  \ the common-mode error of the single L_sub(W*) solve per layout. The numbers are filled after the dev\
+  \ L2 run.\n   - The cost estimate and an expected-outcome block.\n(b) experiments/runners/e011_run.py.\
+  \ Reuse e010_run by import for references, rules, cost model, scheduler, phase split and thread pinning\
+  \ rather than copying it. Modes:\n   - --selftest: fake solvers and planted outcomes, through the full\
+  \ row and recompute path with e011_metrics. A passing search gives PASS. A null recovering W* on one\
+  \ layout gives INCONCLUSIVE. A seed null meeting A1 gives INVALID. Fewer than 2 layouts gives INVALID.\
+  \ Every registered artifact must resolve exactly as tools/mfos/mfos/evaluate.py resolves it: fix T0349's\
+  \ defect by registering run-dir-relative names.\n   - --smoke: real code on gen2_0 locally, with a reduced\
+  \ budget and coarse L2 cells.\n   - --dev: development seeds only. Runs the L1 stages locally, then\
+  \ writes experiments/drafts/E011.dev_jobs.json, the L2 job manifest for a burst VM with a cost estimate\
+  \ per job.\n   Rows follow n7's schema.\n\nThe dev L2 analysis (band bound, joint operating characteristic,\
+  \ dev_rows) is a later task, after the founder's burst run."
+context_files:
+- project/objectives/O008/objective.yaml
+- experiments/runners/e010_run.py
+- experiments/specs/E010.yaml
+- experiments/runners/e011_metrics.py
+- src/moduleforge/optimize/local.py
+- src/moduleforge/optimize/control.py
+- src/moduleforge/optimize/nulls.py
+- src/moduleforge/optimize/search.py
+- research/diagnoses/T0349.md
+- research/notes/o008-l2-check.md
+- tools/mfos/mfos/models.py
+- tools/mfos/mfos/evaluate.py
+- .claude/skills/mf-evidence/SKILL.md
+deliverables:
+- experiments/drafts/E011.yaml
+- experiments/runners/e011_run.py
+- experiments/drafts/E011.dev_jobs.json
+touches:
+- experiments/drafts/E011*
+- experiments/runners/e011_run.py
+definition_of_done:
+- cmd: uv run python experiments/runners/e011_run.py --selftest
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python experiments/runners/e011_run.py --smoke
+  exists: null
+  timeout_s: 2700
+- cmd: uv run python -c "import yaml; from mfos.models import ExperimentSpec; s=ExperimentSpec.model_validate(yaml.safe_load(open('experiments/drafts/E011.yaml')));
+    n={m.name for m in s.metrics}; assert s.id=='E011' and s.objective=='O008' and s.sealed_seed, s.id;
+    assert {'control_layout_pass_min','reach_outside_max','null_beaten_min','control_shortfall_median_max'}<=n,
+    n"
+  exists: null
+  timeout_s: 900
+- cmd: test -f experiments/drafts/E011.dev_jobs.json
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e011_run.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: critical
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: E011 is the only required experiment. Its design task drafts the spec and runner that produce
+  every per-draw column A1, A2, A3 and K1 need, and the F1, F2, F5 and F6 checks.
+history: []

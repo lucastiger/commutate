@@ -1,0 +1,69 @@
+id: T0381
+objective: O008
+title: Draft E011's acceptance metric functions and analytic tests for the founder's mfos.metrics port
+  (F7)
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on: []
+description: "F7: E011 cannot be registered until mfos.metrics computes A1, A2, A3 and K1 from per-draw\
+  \ rows. tools/ is protected, so this task writes reference implementations and tests for the founder\
+  \ session to port. It also fixes the per-draw row schema that the runner (n5) must emit.\n\nWrite experiments/runners/e011_metrics.py\
+  \ with pure functions over a list of row dicts, matching the existing mfos.metrics conventions (see\
+  \ compute() and METRICS in tools/mfos/mfos/metrics.py):\n- control_layout_pass_min (A1): the min over\
+  \ counted layouts of the fraction of the layout's 8 draws with s_j <= 0.02;\n- reach_outside_max (A2):\
+  \ the max over development layouts of 1 - in_domain(W);\n- null_beaten_min (A3): the min over counted\
+  \ layouts and the gating nulls widen and compact of the beaten indicator. A null is beaten on a layout\
+  \ when both hold:\n  - it fails resolvably (s - b > 0.02) on at least 4 of 8 draws, and a run that stopped\
+  \ at its step limit is never a resolved failure;\n  - on at least 7 of 8 draws paired on D_j, the search's\
+  \ s_j is below the null's by more than b_j(search) + b_j(null).\n- control_shortfall_median_max (K1):\
+  \ the max over counted layouts of the median s_j.\nAlso write reported helpers: the conservative A1\
+  \ count (s_j + b_j <= 0.02), the per-layout count with |s_j - 0.02| < b_j, and the pooled one-sided\
+  \ 95 % Clopper-Pearson bound.\nThe module docstring defines the row columns: layout, counted, draw,\
+  \ role in {search, seed, widen, compact, random_screen, proxy_alone}, s, b, terminal_kind, in_domain_W.\n\
+  \nWrite analytic tests in tests/acceptance_drafts/test_e011_metrics.py:\n- 7 of 8 and 6 of 8 boundaries;\n\
+  - s exactly at 0.02;\n- a capped null not counted as resolved;\n- the paired margin using both bands;\n\
+  - the median with an even count;\n- synthetic rows on which a null recovers W* on one layout and fails\
+  \ on the other give A3 = 0 while A1 is met, i.e. INCONCLUSIVE under the objective's criteria; the test\
+  \ evaluates the pass_all / fail_any logic as written in objective.yaml;\n- the seed null meeting A1\
+  \ is detectable (F1: INVALID)."
+context_files:
+- project/objectives/O008/objective.yaml
+- tools/mfos/mfos/metrics.py
+- tools/mfos/mfos/evaluate.py
+- tools/mfos/mfos/models.py
+- experiments/specs/E010.yaml
+deliverables:
+- experiments/runners/e011_metrics.py
+- tests/acceptance_drafts/test_e011_metrics.py
+touches:
+- experiments/runners/e011_metrics.py
+- tests/acceptance_drafts/test_e011_metrics.py
+definition_of_done:
+- cmd: uv run pytest -q tests/acceptance_drafts/test_e011_metrics.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e011_metrics.py tests/acceptance_drafts/test_e011_metrics.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 4.0
+max_turns: 60
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0375
+created_at: '2026-11-16T01:43:45+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F7 blocks registration. Drafting the functions and the row schema now lets the founder port
+  them while the build proceeds, and gives the runner a fixed contract.
+history: []

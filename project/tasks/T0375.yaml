@@ -3,7 +3,7 @@ objective: O008
 title: Plan O008 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,24 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: 'O008 is active, but none of its build work has been planned yet: no reach, no seeded search,
+    no proxy, degradation or nulls, no E011 draft, and zero evaluations (spent $17.60 of $140; $122.40
+    left). The only evidence so far is the L1-only development probe, which is outside C002''s scope.
+    The probe showed a designer proxy W* 10 % (2R) and 37 % (Case 4) below the twin, blind nulls failing
+    by 3-24 %, and a guided descent within 2 % on 2R. The most likely kill is that this gap is an L1 artefact.
+    If L_sub(W*) is not below L_sub(W) on 2R, the proxy rule returns W, which blind compaction already
+    recovers on every 2R draw. A3 would then be unmeetable and the hypothesis cannot PASS as frozen. If
+    compaction gets within 2 % of W* at L2, the same thing happens. So this plan starts with a cheap local
+    l'
+  created:
+  - T0376
+  - T0377
+  - T0378
+  - T0379
+  - T0380
+  - T0381
+  - T0382
+  - T0383
+  dropped_for_limits: 0
