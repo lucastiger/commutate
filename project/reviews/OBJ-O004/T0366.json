@@ -1,0 +1,69 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's exclusion rule on ratio sequences makes A1 nearly impossible to meet, whether or not the solvers agree",
+      "detail": "A1 cannot be met if any pair is excluded. F1 excludes a pair if gci_capped of either solver's three-level ratio sequence is +inf, above 0.5 % (l2_layout) or above 1 % (FastHenry). No floor is specified. A ratio sequence is the partial cancellation of two discretisation errors. D0013's alternatives section already records that T0181 found such difference sequences unreliable. When the steps are tiny, rho is close to random, so gci_capped gives +inf (|rho| >= 1) or the 3\u00b7max|d| branch for sequences that are in fact converged to around 1e-4. Recomputing on the repository's only data for this ladder:\n(1) l2_layout's trace_width pair on 1.0/0.5/0.25 mm has steps of +7e-5 then +2.5e-4. Both are about 20x below the 0.5 % threshold, yet gci_capped returns +inf at 10 and 20 MHz, so the pair is excluded.\n(2) FastHenry's die_shift ratio has k0->k1 step d1 = -2.0e-4. The third-level step it would need to move toward l2_layout's 0.25 mm ratio is about -1.3e-3, which gives +inf. Even d2 = -2e-4 gives 1.18 % (> 1 %). Only |d2| < about 1.7e-4 passes.\n(3) If E004 keeps P4's 4 mm plane pitch at k0, FastHenry's trace_width ratio has d1 = +6.6e-3, a plane artefact (P4 \u00a73.4). Any small downward k2 step toward l2_layout (0.96939 vs 0.96956) is then treated as oscillatory and gives 3\u00b76.6e-3 = 1.97 % > 1 %, so the pair is excluded.\nSo on the two Case 4 development pairs, agreement between the solvers leads to both pairs being excluded. Suppose the per-pair exclusion probability is anywhere near the 1-in-2 seen here, or even 5-20 % per solver. Then the chance that all ~13 pairs survive at both frequencies is about 0.003-0.26. The F7 pilots check one pair per solver (and (c) only an r <= 0.75 pair, which is the kind likely to converge monotonically, like die_shift). The dev-seed ratio distribution is reported only at L1 and 0.5 mm, not on the ladder. So nothing before registration measures this exclusion rate. With max_evaluations 1, the single evaluation would very likely come out INCONCLUSIVE whatever the truth. That contradicts the claim that 'the thresholds and the sample can resolve the decision', at least in the pass direction. (K1 and K2 can still fire, so the fail direction is resolvable.)",
+      "evidence": "mfos.metrics.gci_capped (tools/mfos/mfos/metrics.py:128) on P3 ratios (research/notes/o006-p3-em-convergence.md \u00a74 and addendum): die_shift 0.986943/0.986447/0.986168 -> 4.4e-4; trace_width 0.969066/0.969139/0.969391 -> inf (20 MHz: 0.968975/0.969041/0.969293 -> inf). P4 FastHenry k0/k1 ratios (o006-p4 \u00a73.2): die_shift 0.98772/0.98752 -> k2 step -1.3e-3: inf, -2e-4: 0.0118, +1e-4: 6.1e-4; trace_width 0.96299/0.96956 -> k2 step -2e-4: 0.0197, +1e-4: 0.0021.",
+      "suggested_check": "Before registration, run l2_layout's full 1.0/0.5/0.25 mm ladder, and FastHenry's ladder as affordable, on all Case 4 development-seed pairs from the frozen rules, and report the F1 exclusion rate. If the rate is not near zero, define the ratio-sequence estimator for tiny, cancelled steps on cases with a known error, before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "FastHenry's estimate leaves out its through-thickness filament error, so '2 % plus FastHenry's ratio estimate' and A2's 'conservative' estimates are not bounding",
+      "detail": "The single estimator is gci_capped of each solver's three-level sequence. Only l2_layout gets thickness and filament terms, and only for L. The FastHenry cost basis (about 10 GB and 2.4 h at the third level) is P4's k2 with nh_trace = nh_plane = 3 held fixed, so the planned ladder does not refine thickness, and nothing adds a thickness term for FastHenry. P4 measured that term as first-order: at k0, nh 3->9 lowers base L by 1.28 % (24.6308 -> 24.3155 nH) and moves the trace_width ratio by +0.0062. That is comparable to F1's whole 1 % FastHenry ratio allowance. Copper 0.2-0.3 mm thick with nh = 3 cannot resolve a skin depth of 15-21 \u00b5m at 10-20 MHz. So the bound cited in decision_if_pass may understate FastHenry's ratio error by up to about 0.6 points. FastHenry's E_FH in A2 is then not the 'conservative discretisation estimate' that hypothesis (b) names. For A2 this makes the check harder to pass rather than easier, but the stated meaning of a pass is still wrong.",
+      "evidence": "research/notes/o006-p4-fasthenry-feasibility.md \u00a72 (fixed nh = 3 ladder) and \u00a73.2 (k0_nh9 values); \u00a74 (the ratio thickness correction 'may not separate'). Objective scope_in: estimator text adds thickness/filament terms 'for L' for l2_layout only.",
+      "suggested_check": "Either refine nh with FastHenry's lateral levels (and cost it in F7(a)), or add a measured FastHenry thickness term to both its L and ratio estimates, as l2_layout gets.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A1's absolute 2 % band cannot test move types whose effect is under 2 %, yet a pass certifies 'the move types the counted pairs cover'",
+      "detail": "A1 bounds |r_L2/r_FH - 1| <= 0.02 whatever the size of the pair's effect 1 - r. Registration constrains only the pooled span: at least one pair at or below 0.75, one at or above 0.98, and 3 below 0.90. Each move type has about 1-2 pairs per reference. Wire landings are the move type where the two solvers' wire models differ most. If their pairs sit at |1 - r| < 2 %, a predictor that ignores the wire move entirely (r = 1) meets A1 on them. For scale, P3's 1 mm die shift with about 1 mm wire shortening had 1 - r = 1.36 %. decision_if_pass would still extend l2_layout's judgement to that move type. The constant-ratio null fails on the pooled span (I recompute its best case as 13.3 %), but that does not hold per move type.",
+      "evidence": "Best constant c = 2/(1/0.75 + 1/0.98) = 0.8497, max error 13.3 % (recomputed). P3 die_shift 1 - r = 1.36 % (o006-p3 \u00a74).",
+      "suggested_check": "At registration, require each move type that decision_if_pass will cover to have at least one counted pair with |1 - r_L1| well above the 2 % band (e.g. >= 6 %), or limit the decision to the move types that have one.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 can never decide the verdict",
+      "detail": "An excluded pair makes A1 not met. So whenever A1 is met there are no exclusions, and A3 reduces to the registration coverage check (F4), which already passed, so A3 = 1. When A1 is not met the verdict is not PASS anyway. A3's 'at least 4 counted pairs per reference' is never operative. It is harmless, but it suggests a tolerance for exclusions that the criteria do not actually allow.",
+      "evidence": "A1 description: 'A pair excluded by F1 counts as not met, so A1 cannot be met with any pair excluded'; A3 description.",
+      "suggested_check": "State A3 as informational, or decide whether exclusions should be tolerated, before registration.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Perturbation rules must stay on the 1.0 mm lattice; this is not stated",
+      "detail": "l2_layout's 1.0 mm level raises ValueError for geometry off its lattice: check_on_lattice for die footprints, ALIGN_TOL on cell fill, and whole-cell bounding boxes in layout_lattice. Both frozen references are on the 1.0, 0.5 and 0.25 mm lattices (verified). But the 'wide frozen ranges' drawn from a sealed seed for die-row shifts, trace-width and terminal-near copper changes must be quantised to 1 mm. Otherwise the coarsest level cannot run, or snapping changes the geometry between levels and corrupts the ratio sequences.",
+      "evidence": "src/moduleforge/solvers/l2_layout.py:754 check_on_lattice, :1750 layout_lattice, ALIGN_TOL; my run of research/scripts/o003_powersynth_references._on_lattice at 1.0/0.5/0.25 mm: both references on lattice (area error about 1e-15).",
+      "suggested_check": "Freeze the rules with parameters drawn on a 1 mm grid, and assert lattice alignment at all three levels as a registration sanity check.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "K2's rationale cites the 0.5 mm estimate; the judged level is 0.25 mm",
+      "detail": "K2 (15 %) is justified as about twice l2_layout's 0.5 mm estimate on Case 4. At the judged 0.25 mm level, gci_capped on P3's base sequence gives a lateral term of about 1.0 % (1.25 x 0.79 %), so 15 % is several times the combined estimate. K2 can fire, but only for gross defects. Mid-sized absolute discrepancies are left to A2, which yields INCONCLUSIVE rather than FAIL. The design is consistent; only the stated rationale is stale.",
+      "evidence": "gci_capped(23.4659, 22.9609, 22.7807) / 22.7807 = 0.99 % (10 MHz), 1.00 % (20 MHz).",
+      "suggested_check": "Restate K2's rationale against the 0.25 mm combined estimate.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed mfos.metrics.gci_capped on P3's l2_layout 1.0/0.5/0.25 mm ratio sequences: die_shift 4.4e-4 at 10 and 20 MHz; trace_width +inf at both frequencies (excluded under F1 although its steps are 7e-5 and 2.5e-4).",
+    "Recomputed gci_capped on P3's base L sequence: lateral estimate 0.99 % (10 MHz) and 1.00 % (20 MHz) of L at 0.25 mm.",
+    "Scenario scan of FastHenry third-level ratio steps on P4's k0/k1 ratios: die_shift finite below 1 % only for |d2| < about 1.7e-4, and +inf for the step needed to approach l2_layout's value; trace_width with a downward step gives the oscillatory branch at 1.97 % (> 1 %).",
+    "Ran the T0263 reconstruction builder (research/scripts/o003_powersynth_references.py) and checked that 2D_Case_2R and 2D_Case_6 lie on l2_layout's 1.0, 0.5 and 0.25 mm lattices (area error about 1e-15): no alignment defect in the references themselves.",
+    "Read l2_layout's lattice code (check_on_lattice, layout_lattice, ALIGN_TOL): off-lattice perturbations fail at the 1.0 mm level.",
+    "Recomputed the constant-ratio predictor's best case on [0.75, 0.98]: c = 0.8497, max error 13.3 % (the objective's 13 % is confirmed).",
+    "Hand checks: Al skin depth at 20 MHz is 19 \u00b5m; the HF difference between an equal-GMD square and a round wire (perimeter GMD 0.514 d vs 0.5 d) is about 0.6 % of a 15 mm wire's partial self-inductance, consistent with F3's statement and immaterial to A1.",
+    "Checked that K1 and K2 use raw finest values over all pairs, excluded ones included, so both kills can fire independently of F1 exclusions."
+  ],
+  "caveats": [
+    "No solver was run. FastHenry's third-level values are unknown, so the FastHenry exclusion routes are conditional on the plausible k2 steps shown, not measured.",
+    "The per-pair exclusion probability is extrapolated from only two Case 4 development pairs. Larger perturbations may converge more monotonically, as die_shift did for l2_layout.",
+    "E004's FastHenry ladder (plane pitch per level, whether nh is refined) is not fixed in the objective. Two findings depend on reading the stated cost basis as P4's fixed nh = 3 ladder.",
+    "Physics lens only. The clustered-bound statistics (30-78 %) were not re-derived."
+  ]
+}

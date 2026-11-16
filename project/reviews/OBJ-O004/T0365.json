@@ -1,0 +1,69 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's exclusion rule makes a PASS improbable even if l2_layout is accurate, so the design cannot resolve the decision",
+      "detail": "Claim restated: if every pass criterion is met, O004's hypothesis is established against its null for the stated scope, and (among other things) the thresholds and the sample can resolve the decision. Resolution fails on the only development data there is. F1 excludes any pair whose three-level ratio sequence gets a +inf estimate or exceeds the cap. An excluded pair makes A1 'not met', so a PASS needs every one of about 13 pairs to survive on both solvers. No floor and no size test is given for ratio sequences, so +inf is decided by the sign and ratio of steps, not by their size. Recomputed from O006 P3 (research/o006_p3/tables.md): the 2D_Case_4 trace_width pair on l2_layout's 1.0/0.5/0.25 mm ladder is 0.969067 -> 0.969138 -> 0.969390 (d1 = 7.1e-5, d2 = 2.5e-4, rho = 3.5), and mfos.metrics.gci_capped gives +inf at both 10 and 20 MHz. The whole sequence moves 0.03 %, far below F1's 0.5 % and A1's 2 %, yet the pair would be excluded. It stays +inf with a floor of 1e-4. On the FastHenry side, P4's ladder (research/o006_p4/results.json) gives a trace_width ratio of 0.96299 at k0 and 0.96956 at k1; the k0 value is an artefact of the 4 mm plane cell (P4 note \u00a73.4). With that k0, gci_capped gives 0.21 % if the k1->k2 step is +1e-4 and 1.97 % (above F1's 1 % cap, so excluded) if it is -1e-4. The oscillatory branch multiplies the artefact step by 3. Exclusion is thus decided by noise-sized steps on either solver. Observed rate: 1 of 2 development pairs excluded. Posterior predictive probability that all 13 l2_layout sequences are finite: 2.5 % (uniform prior), 4 % (Jeffreys), 19 % (optimistic prior with mean 0.25). Even at a 5 % per-pair exclusion rate it is only 51 %, before counting FastHenry. A3 also forces pairs at or above 0.98 to be counted, where pair ratios cancel the per-level change in L about 300-fold (P3 \u00a75.4), so steps are noise-like. The F7(c) pilot runs one pair with r <= 0.75, which is not the regime that diverged. Its founder options ('2 % plus l2_layout's own ratio estimate' or 'a narrower span') do nothing for a +inf estimate. With max_evaluations 1, the likely outcome is an INCONCLUSIVE that spends the single evaluation and about $25-70 of VM time while O008/O009 stay blocked.",
+      "evidence": "research/o006_p3/tables.md pair-ratio rows; research/o006_p4/results.json ratio_diff.trace_width R_fh_per_level; research/notes/o006-p4-fasthenry-feasibility.md \u00a73.4; gci_capped(0.969067,0.969138,0.969390)=inf, also with floor 1e-4; gci_capped(0.96299,0.96956,k2): 0.0197 for k2 <= 0.9695, 0.0021 for k2 >= 0.9696; objective F1, F7(c), A1 and A3 text",
+      "suggested_check": "Before registration, run both ladders on several development pairs (each move type, including one with r >= 0.98) and register a rule that decides exclusion by step size rather than sign (e.g. a sequence whose steps all lie below a stated size gets 3 max|d|, and a coarsest level known to be pre-asymptotic is not used).",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A missing finest-level solve is unhandled, so K1 could silently skip a pair",
+      "detail": "K1 is defined 'over every pre-registered pair, excluded ones included, on raw values'. The objective does not say what happens when a pair has no raw finest value. FastHenry crashed in 8 of 32 order-4 multipole attempts in P4 (25 %, Wilson 95 % CI 13-42 %). Its third level (about 413k filaments, about 9.7 GB, about 2.4 h projected) has never completed on module-scale geometry. If a crashed or out-of-memory finest run leaves a pair without a raw value, K1 either skips that pair (a kill hidden by missing data) or silently uses a coarser 'finest' level. The objective says only that no value-dependent check makes the run INVALID. That does not cover missing solves.",
+      "evidence": "research/notes/o006-p4-fasthenry-feasibility.md \u00a73.2-3.3 (k2 not run; 8/32 crashes); objective K1 and F1 text; D0002 known-issues section",
+      "suggested_check": "State a retry rule, and that a pair lacking either solver's finest value counts as not met in A1 and is reported as a K1-unevaluable pair that makes the run INVALID, not dropped.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "FastHenry's 'own ratio estimate' leaves out its thickness discretisation, which P4 measured to be of decision-relevant size",
+      "detail": "A pass is said to establish agreement 'within 2 % plus FastHenry's ratio estimate (at most 1 % by F1)'. P4's ladder, the stated starting point, keeps nh_trace = nh_plane = 3 fixed across k0/k1/k2. The objective refines only lateral cells and wire cross-section for FastHenry, and adds thickness and filament terms for l2_layout only. In P4, nh 3 -> 5 -> 9 moved base L by -1.28 % (monotone, about 0.45 % more remaining at order 1). The trace_width ratio moved by +0.0062 at k0, the same size as its lateral change; P4 itself notes it may not separate. So E_FH, and FastHenry's ratio estimate, may not bound FastHenry's error: up to about 1.7 % of L for A2, and possibly about 0.6 % on a ratio, against A1's 2 %.",
+      "evidence": "research/notes/o006-p4-fasthenry-feasibility.md lines 83-86, 138-139, 178-179; results.json k0/k0_nh5/k0_nh9 L values",
+      "suggested_check": "Refine nh in FastHenry's ladder, or add a measured FastHenry thickness term to E_FH and to its ratio estimate, as is done for l2_layout.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The 'independent' bound in decision_if_pass is stale (n = 10)",
+      "detail": "For 0 failures in n, the one-sided 95 % upper bound is 1 - 0.05^(1/n): 25.9 % at n = 10, 22.1 % at n = 12, 20.6 % at n = 13 (12 pairs plus the 2R proxy). The quoted 26 % matches the earlier 5-per-reference design. The 78 % end matches n_eff = 2 (fully correlated within a reference), as stated. The error understates the strength of a pass, so the decision is unaffected. The 'about 12 pairs' and 'about 14 layouts' counts also differ from 6 + 6 + proxy (13 pairs, 15 layouts).",
+      "evidence": "Computed: n=2 0.776, n=10 0.259, n=12 0.221, n=13 0.206",
+      "suggested_check": "Recompute the bound for the registered pair count.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 can never change a verdict",
+      "detail": "Any F1 exclusion already makes A1 'not met'. Whenever A1 is met, no pair was excluded, and F4's registration check (6 per reference, span [0.75, 0.98], at least 3 below 0.90) guarantees A3 = 1. A3 is therefore met by construction whenever it matters. It only labels the kind of INCONCLUSIVE. It is not a defect, but it adds nothing to the 'no criterion met by an uninformed predictor' claim.",
+      "evidence": "Objective A1, A3 and F4 text",
+      "suggested_check": "Keep A3 as a reported diagnostic or merge it into decision_if_inconclusive.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Move-type coverage in decision_if_pass is not quantified",
+      "detail": "With 6 pairs per reference over 4 move types (plus the proxy), and no allocation rule, a move type may be covered by 1-3 clustered pairs. The per-type 0-failure bound is then 63-95 %. Wire-landing moves, where the solvers' wire models differ most, probably fall only near r \u2248 1. Yet a pass is stated 'for the move types ... the counted pairs cover'.",
+      "evidence": "Objective scope_in item 2 and decision_if_pass",
+      "suggested_check": "Pre-register the number of pairs per move type, and state the per-type count when reporting a pass.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Read mfos.metrics.gci_capped (tools/mfos/mfos/metrics.py) and confirmed it defaults to floor 0 and returns +inf for |rho| >= 1 regardless of step size; O004 sets no floor.",
+    "Recomputed gci_capped on P3's l2_layout 1.0/0.5/0.25 mm pair-ratio ladders: die_shift 4.4e-4 and 4.5e-4 (converged); trace_width +inf at 10 and 20 MHz (rho 3.5 and 3.8), still +inf with floor 1e-4.",
+    "Recomputed gci_capped on P3's absolute L ladders: about 1.0 % of L (lateral only) for base, die_shift and trace_width.",
+    "Ran gci_capped on P4's FastHenry trace_width ratios (k0 0.96299, k1 0.96956) over hypothetical k2 values: 1.97 % (above F1's 1 % cap) for k2 <= 0.9695, 0.21 % for k2 >= 0.9696, so a \u00b11e-4 step decides exclusion.",
+    "Computed the probability that no pair is excluded: posterior predictive 2.5 % / 4 % / 19 % across three priors given 1 of 2 observed; (1-p)^13 for p = 0.05-0.5.",
+    "Recomputed the zero-failure binomial bounds: n = 2 77.6 %, n = 10 25.9 %, n = 12 22.1 %, n = 13 20.6 %, against the quoted 26 % and 78 %.",
+    "Recomputed the constant-ratio best case on the span [0.75, 0.98]: 13.3 %, matching F8.",
+    "Read P4's results and note for ladder definition (nh fixed at 3), thickness-study deltas, crash rate (8/32) and the k2 'not run' status."
+  ],
+  "caveats": [
+    "The 'constant-ratio predictor cannot meet A1' argument (best case 13.3 %, which I confirmed) holds on L1 ratios. It holds for FastHenry ratios only if L1 does not compress the true spread; F7(d) reports this but does not gate on it.",
+    "A2 is a consistency check: with estimates up to the 5 % caps it tolerates |\u0394L| up to about 10 % of L, and larger (coarser) estimates make it easier to meet. The objective says so; absolute agreement is not established beyond that.",
+    "The development evidence for the main finding is two pairs on one geometry (2D_Case_4). The exclusion rate on the judged pairs could be lower, but the objective has no pre-registration measurement of it.",
+    "K1 on raw values can fire from FastHenry's own non-convergence. decision_if_fail sends that to diagnosis, so it is not a false kill of the thesis, but the attribution needs care."
+  ]
+}

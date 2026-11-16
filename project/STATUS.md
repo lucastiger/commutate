@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T00:10:37+00:00 from repository state — do not edit_
+_generated 2026-11-16T00:17:31+00:00 from repository state — do not edit_
 
 ## Founder inbox (0 open)
 - nothing needs you
@@ -11,7 +11,7 @@ _generated 2026-11-16T00:10:37+00:00 from repository state — do not edit_
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | draft | - | 0/1 | $11.44/$120 | A fast L1 thermal model predicts per-die Tj max, spread and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
-| O004 | draft | - | 0/1 | $16.57/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
+| O004 | draft | - | 0/1 | $20.06/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
@@ -23,7 +23,7 @@ _generated 2026-11-16T00:10:37+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 6 | $11.44 | 293351 | 180601 | 28 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 12 | $16.57 | 387027 | 279091 | 27 | 0 |
+| O004 | 12 | $20.06 | 461222 | 334148 | 32 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -31,14 +31,10 @@ _generated 2026-11-16T00:10:37+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 316, failed: 4, running: 2
+cancelled: 44, done: 318, failed: 4
 
-- T0365 `running` critic/review: Review OBJ-O004 (statistics) (attempt 1)
-- T0366 `running` critic/review: Review OBJ-O004 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-15T23:35:13+00:00 run_finished {"run": "T0359-critic-20261115T152629-08ec", "status": "completed", "cost": 1.688795, "subtype": "success", "report": "structured_output"}
-- 2026-11-15T23:37:46+00:00 run_finished {"run": "T0360-critic-20261115T152631-b179", "status": "completed", "cost": 2.255259, "subtype": "success", "report": "structured_output"}
 - 2026-11-15T23:45:47+00:00 objective_draft_review {"objective": "O004", "ref": "e8d8166e5b74b81e6dc4244ca4e00e6004bc1be1", "tasks": ["T0361", "T0362"]}
 - 2026-11-15T23:46:00+00:00 run_started {"run": "T0361-critic-20261115T154600-b36b", "task": "T0361", "role": "critic", "session": "5520eee3-70f0-4023-9e2d-5086209827d3"}
 - 2026-11-15T23:46:02+00:00 run_started {"run": "T0362-critic-20261115T154602-37db", "task": "T0362", "role": "critic", "session": "ab758341-35f4-47eb-846f-33a4f7f99e3a"}
@@ -52,3 +48,5 @@ cancelled: 44, done: 316, failed: 4, running: 2
 - 2026-11-16T00:09:58+00:00 objective_draft_review {"objective": "O004", "ref": "a6fb177fef8ccf715f5b8d42c388109944d7f5ae", "tasks": ["T0365", "T0366"]}
 - 2026-11-16T00:10:36+00:00 run_started {"run": "T0365-critic-20261115T161036-2811", "task": "T0365", "role": "critic", "session": "ff921fcd-1399-4288-88ef-7196a6a05f88"}
 - 2026-11-16T00:10:37+00:00 run_started {"run": "T0366-critic-20261115T161037-9e05", "task": "T0366", "role": "critic", "session": "10d5e30e-584f-4dab-b2dc-d7a2f162b601"}
+- 2026-11-16T00:17:26+00:00 run_finished {"run": "T0366-critic-20261115T161037-9e05", "status": "completed", "cost": 1.700482, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T00:17:27+00:00 run_finished {"run": "T0365-critic-20261115T161036-2811", "status": "completed", "cost": 1.782424, "subtype": "success", "report": "structured_output"}
