@@ -1,0 +1,72 @@
+id: T0388
+objective: O004
+title: 'E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs,
+  F2/F4 checks on L1)'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0386
+- T0387
+description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e004_run.py with the registration
+  stage. Follow skill mf-evidence (ExperimentRun) and E010''s spec and runner as the pattern. Contents:
+  (1) Load the frozen T0263 reconstructions of 2D_Case_2R and 2D_Case_6, checking their fingerprints and
+  the reconstruction script''s sha256 before anything else (F2, a sanity check that does not depend on
+  any solve), under D0007 (no GPL file read or committed). (2) Freeze hashes in the spec: perturb.rules_sha256(),
+  the exporter and run adapter sources, l2_layout''s source_sha256, and the proxy rule source once it
+  exists. (3) Draw 6 pairs per reference from E004''s sealed seed with a pre-registered allocation over
+  the four move types (at least one per type per reference). Draw nothing from the sealed seed in smoke
+  or dev modes. (4) The 2D_Case_2R designer-proxy pair uses O008''s proxy rule implementation. It is built
+  by O008, not here, and is not yet on main. Registered mode refuses to run without it. Smoke mode records
+  it as pending, with the reason. Its lattice compatibility and denominator are with the founder (founder
+  request). (5) Registration checks, before any solve: at least two references; at least 6 pairs per reference;
+  each move type on each reference; every layout on the lattice at 1.0, 0.5 and 0.25 mm; L1 ratios spanning
+  [0.75, 0.98] with at least 3 below 0.90. Report, per move type, whether a pair has |1 - r| >= 6 % at
+  L1 (coverage rule). (6) Declare the metric names the criteria use (max_ratio_diff_vs_fasthenry, max_abs_consistency,
+  max_ratio_diff_vs_fasthenry_all, max_rel_diff_vs_fasthenry) and the sanity checks. The solve stage is
+  a stub for the next task. Use the F7 findings in research/notes/o004-f7-l2-pilot.md. If they fire F7''s
+  response trigger, stop and report blocked for a founder decision; do not redesign around it. `--smoke
+  --stage registration` runs the whole stage on a development seed with L1 only.'
+context_files:
+- project/objectives/O004/objective.yaml
+- experiments/specs/E010.yaml
+- experiments/runners/e010_run.py
+- research/scripts/o003_powersynth_references.py
+- src/moduleforge/generate/perturb.py
+- research/notes/o004-f7-l2-pilot.md
+- research/o004_f7/dev_pairs.json
+- .claude/skills/mf-evidence/SKILL.md
+deliverables:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+touches:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+definition_of_done:
+- cmd: uv run mfos exp check E004
+  exists: null
+  timeout_s: 600
+- cmd: uv run python experiments/runners/e004_run.py --smoke --stage registration
+  exists: null
+  timeout_s: 1800
+experiment: E004
+risk: high
+model: null
+budget_usd: 5.0
+max_turns: 110
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Required experiment E004 (design); F2 (frozen inputs, sealed seed); F4 (registration refusals);
+  scope_in registration span on L1.
+history: []

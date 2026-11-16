@@ -1,0 +1,86 @@
+id: T0387
+objective: O004
+title: 'F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio estimates, F1 exclusion rate,
+  VM job list'
+type: investigate
+agent: scientist
+status: proposed
+depends_on:
+- T0386
+description: 'This tests the cheapest likely failure before any E004 design spend: P3''s l2_layout ratio
+  estimates are 12.6 % (die shift) and 3.5 % (trace width) of the effect, so large-effect pairs may exceed
+  F1''s 0.5 % cap. Research only, not evidence; development geometry (2D_Case_4) and development seeds
+  only (F2). Steps: (1) With moduleforge.generate.perturb on Case 4, draw the F7(c) set on development
+  seeds: every move type, at least one pair with r <= 0.75 and one with r >= 0.98 at L1. Write research/o004_f7/dev_pairs.json
+  (seeds, parameters, layout fingerprints, L1 ratios at 10 and 20 MHz). (2) Run l2_layout at 1.0 and 0.5
+  mm on every development layout locally. Reach 1.0 mm by E010''s mesh-constant pattern (CELL[0] set at
+  refinement 0, experiments/runners/e010_run.py); 0.25 mm is the unpatched refinement 1. Report the ratio
+  distribution at L1 and at 0.5 mm (scope_in). (3) Run the full 1.0 / 0.5 / 0.25 mm ladder, with the thickness
+  and filament terms as O006 P3 defines them, on the base and on the largest-effect pair with r <= 0.75.
+  Run the 0.25 mm solves locally and one at a time (about 8 GB each). Compute the pair''s ratio estimate
+  with mfos.metrics.gci_capped plus the ratio-step rule (steps all below 0.1 % -> 3 max|d|, scope_in).
+  The mfos.metrics version is not on main yet, so use a clearly labelled research copy of that rule. Write
+  research/o004_f7/f7c_local.json. (4) Write research/o004_f7/vm_jobs_l2.json, a manifest of the remaining
+  0.25 mm ladder solves on every development pair (F7(c)) and the l2_layout 0.25 mm solve of the 2D_Case_6
+  reconstruction (F7(b); l2_layout only, no FastHenry, no 2R). Give per-job memory and time projections
+  and the exact command for the founder''s burst VM. Agents never start VMs. (5) In research/notes/o004-f7-l2-pilot.md,
+  state the exclusion rate so far and whether F7''s response trigger already fires (any excluded development
+  pair with r <= 0.90, or more than one in all), and report the chance of no exclusion among 13 judged
+  pairs that this rate implies. Add research/o004_f7/pilot_l2.py with a `--check` mode that validates
+  the JSON outputs against each other without solving.'
+context_files:
+- project/objectives/O004/objective.yaml
+- research/notes/o006-p3-em-convergence.md
+- experiments/runners/e010_run.py
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/generate/perturb.py
+- research/scripts/o006_case4_layout.py
+- research/scripts/o003_powersynth_references.py
+- tools/mfos/mfos/metrics.py
+- project/memory/lessons.md
+deliverables:
+- research/o004_f7/pilot_l2.py
+- research/o004_f7/dev_pairs.json
+- research/o004_f7/f7c_local.json
+- research/o004_f7/vm_jobs_l2.json
+- research/notes/o004-f7-l2-pilot.md
+touches:
+- research/o004_f7/**
+- research/notes/o004-f7-l2-pilot.md
+definition_of_done:
+- cmd: null
+  exists: research/o004_f7/dev_pairs.json
+  timeout_s: 900
+- cmd: null
+  exists: research/o004_f7/f7c_local.json
+  timeout_s: 900
+- cmd: null
+  exists: research/o004_f7/vm_jobs_l2.json
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/o004-f7-l2-pilot.md
+  timeout_s: 900
+- cmd: uv run python research/o004_f7/pilot_l2.py --check
+  exists: null
+  timeout_s: 600
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: F7(b), (c) and (d) (before registration); F1 exclusion risk, the likeliest INCONCLUSIVE path;
+  tested first because it needs only l2_layout and Case 4.
+history: []

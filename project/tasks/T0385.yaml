@@ -1,0 +1,75 @@
+id: T0385
+objective: O004
+title: 'FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse,
+  closed-form validation'
+type: implement
+agent: builder
+status: proposed
+depends_on:
+- T0384
+description: 'New module src/moduleforge/solvers/fasthenry_run.py, ported from research/scripts/o006_p4/run_fh.py,
+  that runs the decks of moduleforge.solvers.fasthenry. Requirements: (1) Find the provisioned binary
+  through MF_FASTHENRY_BIN, then PATH, then ~/.local/bin (D0002). Record its path and sha256 in every
+  result. Add `self_test()`, which runs D0002''s self-test bar and checks it against D0002''s stated values
+  (5.704 nH against the 5.695 nH closed form) within D0002''s tolerance, and raises otherwise. (2) Run
+  each solve in a fresh temporary directory. A run counts only if the process exits 0 and Zc.mat parses
+  with both frequencies; never parse Zc.mat of a crashed run (D0002). (3) Multipole mode (`-s iterative
+  -m multi`, with expansion order and tolerance as arguments; P4 used order 4, tol 1e-4) retries a crashed
+  run up to 10 times, as O004 F1 requires, and records every attempt. There is no direct-solver fallback
+  for large decks. A direct mode exists only as a solver check on thin decks. (4) Add a peak-memory watchdog
+  and a timeout, as P4. (5) Return R and L = Im(Z) / (2 pi f) at 10 and 20 MHz with the attempt log. Validate
+  the reference against closed forms before any comparison. tests/unit/test_fasthenry_run.py runs the
+  locally provisioned binary and covers: (i) self_test; (ii) a straight rectangular bar''s partial self-inductance
+  against the closed form (Hoer & Love, J. Res. NBS 69C, 1965, or Ruehli, IBM J. Res. Dev. 16, 1972),
+  converging as its filaments are refined at low frequency; (iii) a rectangular loop of square-section
+  conductors against Grover''s (1946) closed form; (iv) an end-to-end run of a small lattice-aligned Layout
+  through fasthenry.export, giving finite positive L and R at both frequencies, with multipole and direct
+  agreeing on a thin deck. Derive and cite every tolerance (closed-form accuracy; P4 section 3.1 found
+  order-4 multipole within 3.3e-4 of direct). Never widen a tolerance to make a test pass. (6) The retry
+  logic is tested with a fake binary that crashes a set number of times. Do not run any 2D_Case_2R or
+  2D_Case_6 geometry (F2).'
+context_files:
+- research/scripts/o006_p4/run_fh.py
+- research/notes/o006-p4-fasthenry-feasibility.md
+- project/decisions/D0002-l2-reference-fasthenry-license.md
+- project/decisions/D0004-l2-iterative-solve-fasthenry-optional.md
+- scripts/provision_compute.sh
+- benchmarks/infra/fh_gen.py
+- src/moduleforge/solvers/fasthenry.py
+deliverables:
+- src/moduleforge/solvers/fasthenry_run.py
+- tests/unit/test_fasthenry_run.py
+touches:
+- src/moduleforge/solvers/fasthenry_run.py
+- tests/unit/test_fasthenry_run.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_fasthenry_run.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python -c "from moduleforge.solvers import fasthenry_run as r; print(r.self_test())"
+  exists: null
+  timeout_s: 600
+- cmd: uv run ruff check src/moduleforge/solvers/fasthenry_run.py tests/unit/test_fasthenry_run.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 4.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Hypothesis (pinned FastHenry build, sha256 recorded, D0002 self-test on each VM); F1's retry
+  rule; reference validation before comparison.
+history: []

@@ -1,0 +1,62 @@
+id: T0390
+objective: O004
+title: 'E004 design, part 3: reported diagnostics F3 (per conductor group, round vs square wire), F6 (die
+  contact, terminal tabs), F8 (L1 beside l2_layout)'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0389
+description: 'Add the reported, non-gating diagnostics to experiments/runners/e004_run.py and declare
+  them in experiments/drafts/E004.yaml. None may change A1, A2, K1 or K2, which are judged on raw values.
+  F3: attribute the solver difference per conductor group (traces, wires, terminals) by a method stated
+  in the spec. Include the round-versus-square wire cross-section term: an equal-GMD square tends to a
+  high-frequency limit about 0.6 % below a round wire''s partial self-inductance (review T0364). A model
+  choice that changes L by more than 1 % is flagged for a founder decision. F6: on both judged references,
+  rerun with the exporter''s die_model=''distributed'' and terminal_model=''tab'' variants, at a level
+  the spec fixes, and report the change in L and in each pair ratio. A shared choice that moves a pair
+  ratio by more than 2 % is flagged for a founder decision before O009 relies on l2_layout. F8: report
+  the L1 ratio''s agreement with FastHenry beside l2_layout''s on the same pairs, and record whether L1
+  alone would meet A1. Put the extra solves'' cost in the spec''s cost plan. `--smoke --diagnostics` runs
+  the three diagnostics at the coarsest level on one Case 4 development pair.'
+context_files:
+- project/objectives/O004/objective.yaml
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+- src/moduleforge/solvers/fasthenry.py
+- src/moduleforge/physics/peec/model.py
+- project/reviews/OBJ-O004/T0364.json
+deliverables:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+touches:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+definition_of_done:
+- cmd: uv run mfos exp check E004
+  exists: null
+  timeout_s: 600
+- cmd: uv run python experiments/runners/e004_run.py --smoke --diagnostics
+  exists: null
+  timeout_s: 3600
+experiment: E004
+risk: high
+model: null
+budget_usd: 4.0
+max_turns: 90
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Failure modes F3, F6 and F8 (detection is part of the frozen objective); kept out of the criteria
+  path so they cannot hide a kill.
+history: []

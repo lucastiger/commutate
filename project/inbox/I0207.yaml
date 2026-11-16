@@ -1,0 +1,28 @@
+id: I0207
+kind: question
+subject: '[O004] O004: the 2D_Case_2R designer-proxy pair (owner, 1 mm lattice, denominator)'
+summary: O004 counts a 2R designer-proxy pair built by O008's proxy rule. O008's build (its item 3) owns
+  that rule, so this plan does not duplicate it, and E004's registered mode will wait for O008's implementation
+  to merge. The objective leaves two points open. (1) O008's descent takes 0.5 mm steps from the twin
+  W, so W* may land off the 1 mm lattice. O004 F4 checks the lattice at registration at all three levels,
+  so registration would then refuse the design. (2) The objective does not say whether the pair's denominator
+  is the twin W or the frozen 2R reconstruction, and the two differ (T0349). Either choice is a scope
+  or criteria matter.
+refs:
+- O004
+- T0374
+options:
+- (a) pair = (W*, W) with O008's rule unchanged; the lattice check runs at registration, and if W* is
+  off the 1 mm lattice the founder decides then
+- (b) O004 runs O008's descent with 1 mm steps (on the lattice by construction; a scope note that it is
+  not exactly O008's rule)
+- (c) pair = (W*, the frozen 2R reconstruction)
+- (d) drop the proxy pair (12 pairs; changes decision_if_pass's bound)
+recommendation: '(a), deciding before E004 design part 1 starts: (W*, W) is the pair O008 and O009 judge.
+  Ask O008''s build to expose the descent step size, so (b) stays cheap if W* turns out to be off the
+  lattice.'
+status: open
+response: ''
+created_at: '2026-11-16T01:45:09+00:00'
+resolved_at: null
+resolved_by: null

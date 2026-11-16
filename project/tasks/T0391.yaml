@@ -1,0 +1,36 @@
+id: T0391
+objective: O004
+title: Run E004 (registered) on the burst VM
+type: experiment
+agent: none
+status: proposed
+depends_on:
+- T0390
+description: The orchestrator runs the registered E004 and the evaluator decides. This happens only after
+  the F7 pilots have been analysed (a later replan adds that task once the founder's VM results exist),
+  after critic review, and after the founder has registered E004. The proxy pair needs O008's proxy rule
+  on main and the ratio-step function in mfos.metrics. One evaluation only (max_evaluations 1).
+context_files: []
+deliverables: []
+touches: []
+definition_of_done: []
+experiment: E004
+risk: critical
+model: null
+budget_usd: 0.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'acceptance.required_experiments: E004 (A1, A2, K1, K2).'
+history: []

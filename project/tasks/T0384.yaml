@@ -1,0 +1,82 @@
+id: T0384
+objective: O004
+title: 'FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness
+  and plane knobs, F6 model variants'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/moduleforge/solvers/fasthenry.py
+  that takes any Layout (via Layout.to_conductors(), the conductor model l2_layout reads), not only P4''s
+  Case 4 script. Keep and update the docstring that lists every modelling difference from l2_layout (traces,
+  planes, dies, wires, contacts, port, materials, not-modelled items). Requirements: (1) `.units m` only,
+  never `.units mm` (D0002: it scales impedance by 1000); `.default sigma`; `.freq` at 1e7 and 2e7 Hz;
+  one `.external` between the DC+ and DC- terminal nodes, PHASE open. (2) An `FHLevel` with trace lattice
+  pitch `cell_mm` on the same absolute lattice origin as l2_layout.layout_lattice; a separate plane pitch
+  `plane_cell_mm` (E004''s coarsest level must allow <= 2 mm, F7(a)); thickness filaments `nh_trace`/`nh_plane`
+  with grading `rh` (the 3 / 5 / 9 thickness ladder must be expressible); `nw_trace`; `wire_n` (filaments
+  per side of the equal-GMD square, a = 0.8711 d, Grover 1946) and `wire_sub`, so the wire cross-section
+  refines with the traces (review T0362). Do not freeze levels here; E004 freezes them. (3) Refuse a rectangle
+  off the lattice and a cell holding two nets (ValueError), as l2_layout does. (4) Dies are ideal shorts
+  by `.equiv` by default. Add a `die_model=''distributed''` variant for O004''s F6 diagnostic: the footprint
+  is no longer one node, and the die and attach are a conductor block of the footprint and the stack thicknesses
+  joining the drain cells to the source-pad wire feet. State the model and cite it in the docstring. (5)
+  Terminals are point contacts by default (nearest cell, ties merged, as P4). Add a `terminal_model=''tab''`
+  variant for F6: the port at the top of a physical post with the terminal footprint and post height,
+  whose foot joins every cell under the footprint. Take the footprint and height as arguments if the Layout
+  does not carry them (T0263''s facts: power_lead.part 3 x 3 mm, post 2 mm). (6) Deterministic deck text.
+  Tests in tests/unit/test_fasthenry.py: header and units checks; the exported trace area per net equals
+  the conductor model''s copper area (relative 1e-12) at 1.0 / 0.5 / 0.25 mm on the Case 4 reconstruction
+  (research/scripts/o006_case4_layout.py) and on one generator layout; segment counts scale as expected
+  per halving; the wire square side is 0.8711 d with wire_n^2 filaments; die `.equiv` groups hold every
+  footprint cell of the bottom net; off-lattice input raises; and a faithful-port regression: for Case
+  4 base at P4''s k0 knobs, the deck equals research fh_export.py''s deck node for node and segment for
+  segment (differences only where this task changed behaviour on purpose, each listed in the test). Both
+  F6 variants produce a well-formed deck on Case 4. Do not run FastHenry here (that is the next task)
+  and do not touch 2D_Case_2R or 2D_Case_6 (F2).'
+context_files:
+- research/scripts/o006_p4/fh_export.py
+- research/notes/o006-p4-fasthenry-feasibility.md
+- project/decisions/D0002-l2-reference-fasthenry-license.md
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/geometry/conductors.py
+- research/scripts/o006_case4_layout.py
+- project/objectives/O004/objective.yaml
+deliverables:
+- src/moduleforge/solvers/fasthenry.py
+- tests/unit/test_fasthenry.py
+touches:
+- src/moduleforge/solvers/fasthenry.py
+- tests/unit/test_fasthenry.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_fasthenry.py
+  exists: null
+  timeout_s: 1200
+- cmd: uv run ruff check src/moduleforge/solvers/fasthenry.py tests/unit/test_fasthenry.py
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: src/moduleforge/solvers/fasthenry.py
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Hypothesis (FastHenry on the identical exported geometry); build item (1) of the objective
+  notes; F6 diagnostic variants; review T0362 (wire cross-section refined with the traces).
+history: []

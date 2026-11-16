@@ -1,0 +1,41 @@
+id: I0210
+kind: plan_approval
+subject: '[O004] approve initial plan (8 tasks)'
+summary: 'O004 is approved and active, with no build tasks, no E004 draft and $76.29 left. Nothing has
+  been built yet. src/ has no FastHenry exporter or adapter (only the P4 research scripts), no perturbation
+  rules on the 1 mm lattice, and l2_layout has no 1.0 mm level (E010''s runner reached other cell sizes
+  by overriding its mesh constants). The likeliest way the objective fails is not a disagreement between
+  the solvers but F1 exclusions. P3 put l2_layout''s ratio estimate at 12.6 % of the effect for a die
+  shift, so a pair with r near 0.75 could carry an estimate near 3 %, far above the 0.5 % cap. Every large-effect
+  pair would then be excluded and A1 could not be met (INCONCLUSIVE). The second risk is FastHenry''s
+  own ratio estimate above 1 % (F7(a)). The plan therefore tests the first risk first, with l2_layout
+  only: a scientist pilot (n4) draws the frozen rules on Case 4 development seeds and runs the full ladder
+  locally on the largest-effect pair. The remaining 0.25 mm solves and the Case 6 solve go into an l2-only
+  VM job list for the founder. This happens before any E004 design spend. FastHenry work (n1, n2: a faithful
+  port of P4 with the wire cross-section refined and closed-form validation of the pinned binary) runs
+  in parallel, because the E004 solve stage needs it whatever the pilot finds. E004 is designed in three
+  serial steps on one runner file (registration, solves and criteria, diagnostics), followed by the experiment
+  task. The F7 analysis task is left to the next replan, because its inputs come from VM bursts the founder
+  launches. Three items are outside my authority and go to the founder: the 2R proxy pair (owned by O008''s
+  build, possibly off the 1 mm lattice, and its denominator not settled), the ratio-step function in tools/,
+  and the VM bursts. The bursts carry a budget warning: about $33 of planned agent spend leaves about
+  $43 against the objective''s own $30-85 VM estimate.'
+refs:
+- O004
+- T0384
+- T0385
+- T0386
+- T0387
+- T0388
+- T0389
+- T0390
+- T0391
+options:
+- approve
+- reject (with note for the planner)
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-16T01:45:09+00:00'
+resolved_at: null
+resolved_by: null

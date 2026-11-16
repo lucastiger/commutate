@@ -1,0 +1,75 @@
+id: T0386
+objective: O004
+title: 'Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near
+  copper, wire landing (generate/perturb.py)'
+type: implement
+agent: builder
+status: proposed
+depends_on: []
+description: 'New module src/moduleforge/generate/perturb.py with O004''s four move types. They act directly
+  on a reconstructed reference Layout, because 2D_Case_6 has no twin and so the 0.5 mm parameter space
+  of generate.derivative cannot be used: (a) die-row shift, (b) power-trace width change, (c) terminal-near
+  copper change, (d) wire-landing move (moves the power-wire landing points on their landing copper).
+  Requirements: each move is a deterministic `apply(reference, move_type, params) -> Layout`. `draw(reference,
+  allocation, seed)` draws the parameters of the requested number of pairs per move type with one numpy
+  Generator (no global state) over frozen, wide ranges kept as module constants. A rejection redraw with
+  a frozen limit raises when exhausted. Every lateral copper and die parameter is a multiple of 1 mm on
+  l2_layout''s lattice origin. Every output must lie on the lattice at 1.0, 0.5 and 0.25 mm; provide `on_lattice(layout,
+  cell_m)` that applies l2_layout''s own alignment rule (layout_lattice, check_on_lattice) for any cell
+  size. Outputs must be DRC-clean (`drc.check`) under the reference''s measured rules as E010 builds them
+  (`derivative.spec_from_layout` / measure rules; see `e008_rules` in experiments/runners/e010_run.py).
+  If measured rules cannot be derived for a reference, stop and report; do not substitute rules. Add `rules_sha256()`
+  over the rule source and ranges so E004''s spec can freeze them (F2). Develop the ranges only on 2D_Case_4
+  (research/scripts/o006_case4_layout.py) and development seeds (F2). Tests in tests/unit/test_perturb.py:
+  determinism in the seed; lattice alignment at all three levels; DRC-clean; each move changes only what
+  it declares. A development test on Case 4: the rules can produce, at L1 (physics.peec, 20 MHz), at least
+  one pair with r <= 0.75 and one with r >= 0.98, and each move type at least once (needed by F7(c) and
+  the registration span [0.75, 0.98]). A geometry-only test on 2D_Case_2R and 2D_Case_6 (research/scripts/o003_powersynth_references.py)
+  with a development seed: buildable, on the lattice, DRC-clean, and NO inductance computed (not even
+  L1). The ranges must not be tuned on these two references. The O008 designer proxy is not part of this
+  task.'
+context_files:
+- project/objectives/O004/objective.yaml
+- src/moduleforge/generate/derivative.py
+- src/moduleforge/generate/twin.py
+- src/moduleforge/drc/rules.py
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/physics/peec/model.py
+- experiments/runners/e010_run.py
+- research/scripts/o006_case4_layout.py
+- research/scripts/o003_powersynth_references.py
+deliverables:
+- src/moduleforge/generate/perturb.py
+- tests/unit/test_perturb.py
+touches:
+- src/moduleforge/generate/perturb.py
+- tests/unit/test_perturb.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_perturb.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 100
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: scope_in re-layouts (four move types, 1 mm lattice, sealed-seed draw, pre-registered allocation);
+  F2 (frozen, hashed rules); F4 (lattice and type coverage); build item (3) of the objective notes.
+history: []

@@ -3,7 +3,7 @@ objective: O004
 title: Plan O004 (periodic)
 type: plan
 agent: planner
-status: running
+status: done
 depends_on: []
 description: ''
 context_files: []
@@ -30,4 +30,23 @@ target: null
 lens: null
 trigger: periodic
 rationale: ''
-history: []
+history:
+- outcome: planned
+  summary: O004 is approved and active, with no build tasks, no E004 draft and $76.29 left. Nothing has
+    been built yet. src/ has no FastHenry exporter or adapter (only the P4 research scripts), no perturbation
+    rules on the 1 mm lattice, and l2_layout has no 1.0 mm level (E010's runner reached other cell sizes
+    by overriding its mesh constants). The likeliest way the objective fails is not a disagreement between
+    the solvers but F1 exclusions. P3 put l2_layout's ratio estimate at 12.6 % of the effect for a die
+    shift, so a pair with r near 0.75 could carry an estimate near 3 %, far above the 0.5 % cap. Every
+    large-effect pair would then be excluded and A1 could not be met (INCONCLUSIVE). The second risk is
+    FastHenry's own ratio estimate above 1 % (F7(a)). The plan therefore tests the first risk first, wi
+  created:
+  - T0384
+  - T0385
+  - T0386
+  - T0387
+  - T0388
+  - T0389
+  - T0390
+  - T0391
+  dropped_for_limits: 0

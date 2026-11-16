@@ -1,10 +1,14 @@
 # ModuleForge status
-_generated 2026-11-16T01:43:52+00:00 from repository state — do not edit_
+_generated 2026-11-16T01:45:15+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (7 open)
 - **I0204** [decision] [O008] F7: E011's acceptance metrics in mfos.metrics (tools/ is protected)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0206** [plan_approval] [O008] approve initial plan (8 tasks)
+- **I0207** [question] [O004] O004: the 2D_Case_2R designer-proxy pair (owner, 1 mm lattice, denominator)
+- **I0208** [external_action] [O004] O004: add the ratio-step rule to mfos.metrics (tools/ is protected)
+- **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
+- **I0210** [plan_approval] [O004] approve initial plan (8 tasks)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -13,7 +17,7 @@ _generated 2026-11-16T01:43:52+00:00 from repository state — do not edit_
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
 | O002 | active | - | 0/1 | $19.10/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
-| O004 | active | - | 0/1 | $23.71/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
+| O004 | active | - | 0/1 | $25.93/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
@@ -25,7 +29,7 @@ _generated 2026-11-16T01:43:52+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 11 | $19.10 | 475972 | 309986 | 40 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 15 | $23.71 | 549278 | 404912 | 35 | 0 |
+| O004 | 15 | $25.93 | 602089 | 439606 | 35 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -33,10 +37,9 @@ _generated 2026-11-16T01:43:52+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 44, done: 325, failed: 4, proposed: 8, running: 2
+cancelled: 44, done: 326, failed: 4, proposed: 16, running: 1
 
 - T0373 `running` planner/plan: Plan O002 (periodic) (attempt 1)
-- T0374 `running` planner/plan: Plan O004 (periodic) (attempt 1)
 - T0376 `proposed` scientist/investigate: Kill shot: do the probe's designer proxy and its null gap survive l2_layout? (attempt 0)
 - T0377 `proposed` builder/implement: Reach: straddling slots, column outer edges to the edge margin, and the in_domain predicate (attempt 0)
 - T0378 `proposed` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 0)
@@ -45,14 +48,16 @@ cancelled: 44, done: 325, failed: 4, proposed: 8, running: 2
 - T0381 `proposed` scientist/design_experiment: Draft E011's acceptance metric functions and analytic tests for the founder's mfos.metrics port (F7) (attempt 0)
 - T0382 `proposed` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 0)
 - T0383 `proposed` none/experiment: Run E011 (attempt 0)
+- T0384 `proposed` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 0)
+- T0385 `proposed` builder/implement: FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse, closed-form validation (attempt 0)
+- T0386 `proposed` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 0)
+- T0387 `proposed` scientist/investigate: F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio estimates, F1 exclusion rate, VM job list (attempt 0)
+- T0388 `proposed` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 0)
+- T0389 `proposed` scientist/design_experiment: E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVALID rules, and the FastHenry F7(a) job list (attempt 0)
+- T0390 `proposed` scientist/design_experiment: E004 design, part 3: reported diagnostics F3 (per conductor group, round vs square wire), F6 (die contact, terminal tabs), F8 (L1 beside l2_layout) (attempt 0)
+- T0391 `proposed` none/experiment: Run E004 (registered) on the burst VM (attempt 0)
 
 ## Recent events
-- 2026-11-16T00:57:52+00:00 run_started {"run": "T0371-critic-20261115T165752-eb6a", "task": "T0371", "role": "critic", "session": "f1e56f2f-cd4d-4700-aea1-76454c19fac6"}
-- 2026-11-16T00:57:54+00:00 run_started {"run": "T0372-critic-20261115T165754-852d", "task": "T0372", "role": "critic", "session": "1c9d58cf-4bd4-4e85-b933-fbe862a7c521"}
-- 2026-11-16T01:06:02+00:00 run_finished {"run": "T0371-critic-20261115T165752-eb6a", "status": "completed", "cost": 1.722098, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T01:18:16+00:00 run_finished {"run": "T0372-critic-20261115T165754-852d", "status": "completed", "cost": 2.19797, "subtype": "success", "report": "structured_output"}
-- 2026-11-16T01:35:41+00:00 objective_approved {"objective": "O008", "criteria_hash": "sha256:f5465b3f2159a7dba199cc1257facd0e8da00a1cf06c6e756a9800685195d7d9"}
-- 2026-11-16T01:35:44+00:00 objective_approved {"objective": "O004", "criteria_hash": "sha256:83e2a8e049b57bbbc15c019385a2e10a751c68b32f1516116f222b0fed1f253a"}
 - 2026-11-16T01:35:45+00:00 objective_approved {"objective": "O002", "criteria_hash": "sha256:f7b92774c2cc4842f17ebdb0caa9d0fbe7d36d691df0b5320c830fc140ca332a"}
 - 2026-11-16T01:35:54+00:00 run_started {"run": "T0374-planner-20261115T173554-610a", "task": "T0374", "role": "planner", "session": "cef995a5-7e7a-431a-ac20-3c0fb045bd73"}
 - 2026-11-16T01:35:55+00:00 run_started {"run": "T0375-planner-20261115T173555-edb4", "task": "T0375", "role": "planner", "session": "f337f383-819a-438f-b7de-d40fe1483404"}
@@ -62,3 +67,9 @@ cancelled: 44, done: 325, failed: 4, proposed: 8, running: 2
 - 2026-11-16T01:43:45+00:00 inbox_opened {"id": "I0205", "kind": "external_action", "subject": "[O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)"}
 - 2026-11-16T01:43:45+00:00 inbox_opened {"id": "I0206", "kind": "plan_approval", "subject": "[O008] approve initial plan (8 tasks)"}
 - 2026-11-16T01:43:45+00:00 plan_applied {"objective": "O008", "created": ["T0376", "T0377", "T0378", "T0379", "T0380", "T0381", "T0382", "T0383"], "dropped": 0}
+- 2026-11-16T01:45:08+00:00 run_finished {"run": "T0374-planner-20261115T173554-610a", "status": "completed", "cost": 2.226232, "subtype": "success", "report": "structured_output"}
+- 2026-11-16T01:45:09+00:00 inbox_opened {"id": "I0207", "kind": "question", "subject": "[O004] O004: the 2D_Case_2R designer-proxy pair (owner, 1 mm lattice, denominator)"}
+- 2026-11-16T01:45:09+00:00 inbox_opened {"id": "I0208", "kind": "external_action", "subject": "[O004] O004: add the ratio-step rule to mfos.metrics (tools/ is protected)"}
+- 2026-11-16T01:45:09+00:00 inbox_opened {"id": "I0209", "kind": "external_action", "subject": "[O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning"}
+- 2026-11-16T01:45:09+00:00 inbox_opened {"id": "I0210", "kind": "plan_approval", "subject": "[O004] approve initial plan (8 tasks)"}
+- 2026-11-16T01:45:09+00:00 plan_applied {"objective": "O004", "created": ["T0384", "T0385", "T0386", "T0387", "T0388", "T0389", "T0390", "T0391"], "dropped": 0}

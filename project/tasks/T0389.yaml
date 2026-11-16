@@ -1,0 +1,85 @@
+id: T0389
+objective: O004
+title: 'E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVALID rules, and the FastHenry
+  F7(a) job list'
+type: design_experiment
+agent: scientist
+status: proposed
+depends_on:
+- T0384
+- T0385
+- T0388
+description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004.yaml with: (1) the l2_layout
+  ladder 1.0 / 0.5 / 0.25 mm on every layout at 10 and 20 MHz, using E010''s mesh-constant pattern for
+  1.0 and 0.5 mm and the unpatched refinement 1 for the judged 0.25 mm value; l2_layout''s thickness and
+  filament terms as O006 P3. (2) FastHenry through moduleforge.solvers.fasthenry and fasthenry_run: three
+  lateral levels at ratio 2, the coarsest plane pitch at most 2 mm, the wire cross-section refined with
+  the traces; the thickness ladder (3 / 5 / 9 filaments) at the middle lateral level on every layout;
+  binary sha256 and self_test recorded on each VM; up to 10 multipole retries; no direct fallback. (3)
+  Estimators: gci_capped for every L and ratio sequence of both solvers, the finest value''s estimate,
+  with thickness terms added to L and to ratios. Ratio sequences whose steps are all below 0.1 % get 3
+  max|d| through the mfos.metrics function the founder is adding. Registered mode refuses to run without
+  it; smoke mode may use a labelled runner-local copy tested on P3''s 0.007 % / 0.025 % example. (4) The
+  criteria exactly as frozen. A1: max |r_L2 / r_FH - 1| over pairs and both frequencies, raw values; an
+  F1-excluded pair (l2 estimate > 0.5 %, FastHenry estimate > 1 %, or +inf) counts as not met. A2: |L_L2
+  - L_FH| / (E_L2 + E_FH) with each E/L capped at 0.05; over the cap or +inf means unresolved, not met.
+  K1: on all completed pairs, excluded ones included. K2: absolute L over 15 %. A missing coarser-level
+  or thickness solve makes that estimate +inf. The run is INVALID only if some pair lacks a finest value
+  and no completed pair fires K1; no check that depends on solver values may make it INVALID. Report coverage
+  after exclusion, per-move-type counts and one-sided zero-failure bounds. (5) Write research/o004_f7/vm_jobs_fasthenry.json,
+  the F7(a) job list for the founder''s burst VM: FastHenry ladder and thickness ladder on the Case 4
+  development pairs with r <= 0.75 and on a trace-edge move with the refined wire section, run by this
+  runner''s development mode, with memory, time and cost projections. These projections set E004''s cost
+  plan. (6) `--smoke` runs the full pipeline at the coarsest levels only, on one Case 4 development pair
+  (development seed), through the metrics. No 2R or Case 6 FastHenry solve before registration (F2).'
+context_files:
+- project/objectives/O004/objective.yaml
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+- experiments/runners/e010_run.py
+- src/moduleforge/solvers/fasthenry.py
+- src/moduleforge/solvers/fasthenry_run.py
+- src/moduleforge/solvers/l2_layout.py
+- tools/mfos/mfos/metrics.py
+- research/notes/o006-p3-em-convergence.md
+- research/notes/o006-p4-fasthenry-feasibility.md
+- research/notes/o004-f7-l2-pilot.md
+deliverables:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+- research/o004_f7/vm_jobs_fasthenry.json
+touches:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+- research/o004_f7/vm_jobs_fasthenry.json
+definition_of_done:
+- cmd: uv run mfos exp check E004
+  exists: null
+  timeout_s: 600
+- cmd: uv run python experiments/runners/e004_run.py --smoke
+  exists: null
+  timeout_s: 3600
+- cmd: null
+  exists: research/o004_f7/vm_jobs_fasthenry.json
+  timeout_s: 900
+experiment: E004
+risk: critical
+model: null
+budget_usd: 6.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: planner:T0374
+created_at: '2026-11-16T01:45:09+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: Required experiment E004 (design); A1, A2, K1, K2 as frozen; F1 (estimators, exclusions, retries,
+  INVALID rule); F7(a) pilot plan.
+history: []
