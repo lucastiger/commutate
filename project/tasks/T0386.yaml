@@ -4,7 +4,7 @@ title: 'Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trac
   copper, wire landing (generate/perturb.py)'
 type: implement
 agent: builder
-status: review
+status: running
 depends_on: []
 description: 'New module src/moduleforge/generate/perturb.py with O004''s four move types. They act directly
   on a reconstructed reference Layout, because 2D_Case_6 has no twin and so the 0.5 mm parameter space
@@ -58,12 +58,13 @@ model: null
 budget_usd: 5.0
 max_turns: 100
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0386-frozen-perturbation-rules-on-the-1-mm-la
 pr: null
 runs:
 - T0386-builder-20261115T201459-c16e
+- T0386-builder-20261115T210930-574e
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
 protected_approved: false
@@ -161,3 +162,42 @@ history:
       exit_code: 0
     - cmd: uv run mfos gate --fast
       exit_code: 0
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] die_row_shift yields no pair on judged reference 2D_Case_6; the test misattributes
+    the cause to the reference: O004 scope_in and F4 require at least one pair of each move type on each
+    judged reference, and registration refuses a design without one. As frozen, die_row_shift moves the
+    wire starts and keeps the landings fixed, and this gives zero DRC-clean integer shifts on 2D_Case_6.
+    test_case6_die_row_shift_has_no_drc_clean_integer_shift calls this ''evidence for a limit, not a tuned
+    range'' because ''every reference rule of 2D_Case_6 sits at its measured minimum''. My independent
+    check shows the limit comes from the rule''s fixed-landing design. On the author''s rule, the along-row
+    shifts (HS -2/0, LS +1/0, LS -1/0) fail only wire_pitch, because the tilted 0.5 mm wire pairs shear
+    when their starts move. A rigid variant (power and signal wires moved with the die, same copper growth,
+    same measured rules) gives 19 DRC-clean shifts on 2D_Case_6. The test also asserts the negative outcome,
+    so it would fail on a fix and locks the defect in before the rules are hashed and frozen into E004.
+
+    - [major] Frozen ranges cannot reach O004''s registration span or 6 % coverage on the development
+    reference: On Case 4 (seed 1, 12 moves per type), the L1 ratios at 20 MHz are: die_row_shift 0.897
+    to 1.013, trace_width 0.961 to 1.030, terminal_copper 0.998 to 1.003, wire_landing 0.964 to 1.069.
+    Only one die_row_shift pair and one wire_landing pair reach |1 - r| >= 6 %. terminal_copper is effectively
+    inert (at most 0.33 %) and trace_width tops out near 4 %. The strict xfail already acknowledges that
+    r <= 0.75 (F7(c) and the scope_in span [0.75, 0.98]) is unreachable. It does not mention that two
+    move types cannot meet the 6 % coverage threshold on the development reference. The docstring calls
+    the ranges ''wide'', but in practice they do not support O004''s pre-registration checks.
+
+    - [major] rules_sha256 does not cover all rule-relevant code: The hash covers 15 named functions and
+    the ranges. It leaves out _mm (the rounding of die bounds and terminal windows), _box_mm, _polygon
+    (the rejection of split copper), _net_poly, _replace_trace, _int, the MM constant, and the DRC source
+    (check, measure_rules) that decides which draws a sealed seed accepts. Any of these could change the
+    drawn pairs without changing the hash, which weakens the F2 freeze.
+
+    - [minor] trace_width and terminal_copper results alias the reference''s wires, signal wires and terminals:
+    These two moves return layouts that share the wires list, the BondWire objects, the signal_wires list
+    and the terminals dict with the reference. die_row_shift and wire_landing copy them. The test that
+    apply does not modify the reference only compares fingerprints, so it cannot catch aliasing.
+
+    - [minor] draw can return moves with different parameters but identical layouts: draw only deduplicates
+    on the parameter JSON. Two terminal_copper moves (PHASE, S, margin 3, delta 4 and delta 5) produced
+    identical geometry, which would duplicate a registered pair.'
+  at: '2026-11-16T05:09:24+00:00'

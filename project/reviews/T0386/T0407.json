@@ -1,0 +1,61 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "die_row_shift yields no pair on judged reference 2D_Case_6; the test misattributes the cause to the reference",
+      "detail": "O004 scope_in and F4 require at least one pair of each move type on each judged reference, and registration refuses a design without one. As frozen, die_row_shift moves the wire starts and keeps the landings fixed, and this gives zero DRC-clean integer shifts on 2D_Case_6. test_case6_die_row_shift_has_no_drc_clean_integer_shift calls this 'evidence for a limit, not a tuned range' because 'every reference rule of 2D_Case_6 sits at its measured minimum'. My independent check shows the limit comes from the rule's fixed-landing design. On the author's rule, the along-row shifts (HS -2/0, LS +1/0, LS -1/0) fail only wire_pitch, because the tilted 0.5 mm wire pairs shear when their starts move. A rigid variant (power and signal wires moved with the die, same copper growth, same measured rules) gives 19 DRC-clean shifts on 2D_Case_6. The test also asserts the negative outcome, so it would fail on a fix and locks the defect in before the rules are hashed and frozen into E004.",
+      "evidence": "Author rule, 2D_Case_6: 0 of 576 shifts clean (wire_pitch 549, min_spacing 548, signal_wire_length 297, ...). Rigid-wire variant: 19 clean, e.g. HS dx -5..6 with dy 0, LS dx -4..4 with dy 0; without copper growth, 17 clean. 2D_Case_2R: author rule 13 clean, rigid variant 22.",
+      "suggested_check": "Redefine die_row_shift so the bond wires (and signal wires) move with the die, or fall back to a rigid shift when the fixed-landing shift fails DRC. Then rerun the Case 6 scan and drop or reword the infeasibility test.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "Frozen ranges cannot reach O004's registration span or 6 % coverage on the development reference",
+      "detail": "On Case 4 (seed 1, 12 moves per type), the L1 ratios at 20 MHz are: die_row_shift 0.897 to 1.013, trace_width 0.961 to 1.030, terminal_copper 0.998 to 1.003, wire_landing 0.964 to 1.069. Only one die_row_shift pair and one wire_landing pair reach |1 - r| >= 6 %. terminal_copper is effectively inert (at most 0.33 %) and trace_width tops out near 4 %. The strict xfail already acknowledges that r <= 0.75 (F7(c) and the scope_in span [0.75, 0.98]) is unreachable. It does not mention that two move types cannot meet the 6 % coverage threshold on the development reference. The docstring calls the ranges 'wide', but in practice they do not support O004's pre-registration checks.",
+      "evidence": "My L1 run: min r per type 0.8973 / 0.9605 / 0.9978 / 0.9644; pairs with |1 - r| >= 6 %: 1 / 0 / 0 / 1.",
+      "suggested_check": "Report the per-type |1 - r| distribution to the founder before freezing, and decide whether to change the move definitions or the objective.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "rules_sha256 does not cover all rule-relevant code",
+      "detail": "The hash covers 15 named functions and the ranges. It leaves out _mm (the rounding of die bounds and terminal windows), _box_mm, _polygon (the rejection of split copper), _net_poly, _replace_trace, _int, the MM constant, and the DRC source (check, measure_rules) that decides which draws a sealed seed accepts. Any of these could change the drawn pairs without changing the hash, which weakens the F2 freeze.",
+      "evidence": "Module functions missing from the hashed tuple: _box_mm, _int, _mm, _net_poly, _polygon, _replace_trace, _tag.",
+      "suggested_check": "Hash the full source of generate/perturb.py and drc/rules.py, or record their sha256 in E004's spec.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "trace_width and terminal_copper results alias the reference's wires, signal wires and terminals",
+      "detail": "These two moves return layouts that share the wires list, the BondWire objects, the signal_wires list and the terminals dict with the reference. die_row_shift and wire_landing copy them. The test that apply does not modify the reference only compares fingerprints, so it cannot catch aliasing.",
+      "evidence": "Mutating new.wires[0].points on a trace_width result changed ref.fingerprint() (True); new.terminals is ref.terminals (True).",
+      "suggested_check": "Deep-copy the wires, signal wires and terminals in every move.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "draw can return moves with different parameters but identical layouts",
+      "detail": "draw only deduplicates on the parameter JSON. Two terminal_copper moves (PHASE, S, margin 3, delta 4 and delta 5) produced identical geometry, which would duplicate a registered pair.",
+      "evidence": "Case 4, seed 101, 25 per type: 99 distinct layouts out of 100. Small allocations (3 per type, 60 seeds): 0 duplicates.",
+      "suggested_check": "Also deduplicate on the layout fingerprint with the family tag excluded.",
+      "impact": "correctness"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition of done: pytest tests/unit/test_perturb.py (23 passed, 2 skipped, 1 xfailed) and ruff (clean).",
+    "Case 4 draw of 25 moves per type (seed 101): DRC rechecked on all 100, on_lattice at 1.0, 0.5 and 0.25 mm, duplicate layouts by fingerprint with the family tag excluded. All clean and on lattice; 1 duplicate pair found.",
+    "Scanned all 576 integer die_row_shift parameters on 2D_Case_2R and 2D_Case_6 under measured rules and counted violation types (2R: 13 clean; Case 6: 0 clean).",
+    "Built a rigid-wire die-row-shift variant outside the repository and scanned it on both references (Case 6: 19 clean; 2R: 22 clean), which shows the Case 6 infeasibility comes from the rule's design.",
+    "Confirmed that along-row shifts under the author's rule on Case 6 fail only wire_pitch.",
+    "Case 4 L1 ratio distribution at 20 MHz per move type for 48 drawn pairs (seed 1).",
+    "Checked aliasing between the reference and moved layouts by mutating a result and comparing fingerprints.",
+    "Compared rules_sha256 coverage with the full list of module functions.",
+    "Duplicate-layout rate over 60 development seeds with 3 moves per type (0 found)."
+  ],
+  "caveats": [
+    "Task file T0386 is not in the snapshot, so I judged against the packet claim and O004 objective.yaml only.",
+    "I computed no inductance on 2D_Case_2R or 2D_Case_6 (F2). The rigid-variant feasibility on those references is a geometry and DRC result only; whether those shifts reach |1 - r| >= 6 % is untested.",
+    "Inline scripts had to avoid braces and '<' / '>' characters because the permission matcher blocks them; no checks were lost."
+  ]
+}
