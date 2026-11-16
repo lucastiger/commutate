@@ -33,7 +33,19 @@ description: 'Port research/scripts/o006_p4/fh_export.py into a new module src/m
   4 base at P4''s k0 knobs, the deck equals research fh_export.py''s deck node for node and segment for
   segment (differences only where this task changed behaviour on purpose, each listed in the test). Both
   F6 variants produce a well-formed deck on Case 4. Do not run FastHenry here (that is the next task)
-  and do not touch 2D_Case_2R or 2D_Case_6 (F2).'
+  and do not touch 2D_Case_2R or 2D_Case_6 (F2).
+
+
+  Founder guidance (I0218, 2026-11-16, attempt 3, the last): fix review T0408''s blocker. FastHenry 3.0wr
+  reads lines of about 1000 characters at most; at cell_mm=0.25 the default model''s per-die .equiv lines
+  reach 3474-4026 characters (and tab_terminal adds post-top lines). Split every long .equiv into several
+  lines of at most 900 characters, each starting with the group''s first node so the group stays one equivalence.
+  Add the line-length limit to read_errors, and a test that every deck line is at most 900 characters
+  for the default and tab variants at cell_mm=0.25 on Case 4, 2D_Case_2R and 2D_Case_6; run one such deck
+  through the pinned binary if it fits. Also: validate die_sigma and FHLevel''s counts (positive ints,
+  no bools); check die and tab footprints against the lattice as l2_layout does; state in solver_notes
+  that the distributed-die deck crashes the multipole solver and must use the direct solver or a coarser
+  level (reviews T0408, T0409).'
 context_files:
 - research/scripts/o006_p4/fh_export.py
 - research/notes/o006-p4-fasthenry-feasibility.md
