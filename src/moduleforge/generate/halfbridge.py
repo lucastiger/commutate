@@ -16,6 +16,13 @@ each layout exactly with cells that divide 0.5 mm.  Wire positions (die centre +
 wire diameter are not lateral copper features and stay as drawn.  The random stream is unchanged (one draw per parameter as
 before; only the values are rounded), and so are the families, the die counts and the DRC check.  Before T0075 s, g, dg
 and e were rounded to 0.1 mm and xs was continuous.
+
+Fixed die size (T0394): ``generate_layouts(..., die_size_mm=s)`` gives every die of every layout the size ``s`` (a multiple
+of DESIGN_GRID_MM within the generator's own draw range S_MIN_MM..S_MAX_MM = 4.0..5.5 mm), the derivative regime in which
+the die is fixed.  The size is still drawn and then replaced, so for a given seed every other parameter draw is identical
+to the unfixed run until the first DRC-driven divergence (the DRC outcome depends on the size).  ``die_size_mm=None`` (the
+default) is byte-identical to the unfixed generator.  ``draw_die_size_mm(rng)`` draws one size from the same snapped
+distribution as the generator's own, so a runner can draw one size per (family, dies) stratum.
 """
 from __future__ import annotations
 
@@ -51,11 +58,30 @@ PADS = {  # housing-fixed terminal pads (x0, y0, x1, y1) in mm
 WIRE_PITCH_MM = 1.0
 X_DIE_MIN, X_DIE_MAX = 10.0, 60.0
 DESIGN_GRID_MM = 0.5  # every free lateral parameter is a multiple of this (see the module docstring)
+S_MIN_MM, S_MAX_MM = 4.0, 5.5  # range of the die-size draw
 
 
 def _snap(v: float) -> float:
     """``v`` (mm) rounded to the nearest multiple of DESIGN_GRID_MM (exact in binary floating point)."""
     return round(float(v) / DESIGN_GRID_MM) * DESIGN_GRID_MM
+
+
+def draw_die_size_mm(rng: np.random.Generator) -> float:
+    """One die size [mm] drawn exactly as ``_build`` draws s: uniform(4.0, 5.5) snapped to DESIGN_GRID_MM.
+
+    Support: {4.0, 4.5, 5.0, 5.5} (the end values have half the probability of the middle ones).
+    """
+    return _snap(rng.uniform(S_MIN_MM, S_MAX_MM))
+
+
+def _check_die_size(die_size_mm: float | None) -> None:
+    if die_size_mm is None:
+        return
+    v = float(die_size_mm)
+    if not (S_MIN_MM <= v <= S_MAX_MM):
+        raise ValueError(f"die_size_mm must be within {S_MIN_MM}..{S_MAX_MM} mm, got {die_size_mm!r}")
+    if _snap(v) != v:
+        raise ValueError(f"die_size_mm must be a multiple of DESIGN_GRID_MM = {DESIGN_GRID_MM} mm, got {die_size_mm!r}")
 
 
 def _rows(family, s, g, e, rng):
@@ -105,9 +131,11 @@ def _rows(family, s, g, e, rng):
     return R, hs_y0, ptop - 1.0, ls_y0, q0 + 1.0
 
 
-def _build(family: str, n: int, rng: np.random.Generator) -> Layout:
+def _build(family: str, n: int, rng: np.random.Generator, die_size_mm: float | None = None) -> Layout:
     stack = default_dbc_stack()
-    s = _snap(rng.uniform(4.0, 5.5))
+    s = draw_die_size_mm(rng)  # always drawn, so the stream is unchanged when the size is fixed
+    if die_size_mm is not None:
+        s = float(die_size_mm)
     dg = _snap(rng.uniform(1.5, 2.5))
     g = _snap(rng.uniform(1.5, 2.5))
     emax = 1.5 if family == "u_shaped" else 2.0
@@ -164,13 +192,17 @@ def _build(family: str, n: int, rng: np.random.Generator) -> Layout:
 
 
 def generate_layouts(n: int, seed: int, family: str | None = None, dies_per_switch: int | None = None,
-                     max_tries: int = 200) -> list[Layout]:
+                     max_tries: int = 200, die_size_mm: float | None = None) -> list[Layout]:
     """Return ``n`` DRC-valid layouts, deterministic in ``seed`` (numpy Generator, no global state).
 
     (family, dies_per_switch) combinations are cycled in seeded random permutations so that all families
     and die counts 2..6 are covered evenly; ``family`` / ``dies_per_switch`` restrict the set. Each layout
     is drawn by bounded reject-and-resample (``max_tries``); RuntimeError if exhausted.
+
+    ``die_size_mm`` (default None: drawn per layout) fixes the size of every die; it must be a multiple of
+    DESIGN_GRID_MM within 4.0..5.5 mm, else ValueError (see the module docstring).
     """
+    _check_die_size(die_size_mm)
     if family is not None and family not in FAMILIES:
         raise ValueError(f"unknown family {family!r}; choose from {FAMILIES}")
     if dies_per_switch is not None and dies_per_switch not in DIE_COUNTS:
@@ -186,7 +218,7 @@ def generate_layouts(n: int, seed: int, family: str | None = None, dies_per_swit
         f, k = combos[order.pop()]
         for _ in range(max_tries):
             try:
-                lay = _build(f, k, rng)
+                lay = _build(f, k, rng, die_size_mm)
             except ValueError:
                 continue
             if not check(lay):

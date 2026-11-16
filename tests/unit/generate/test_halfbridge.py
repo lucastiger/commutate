@@ -109,3 +109,88 @@ def test_every_trace_edge_and_die_footprint_on_the_design_grid(sixty):
             assert 4e-3 - 1e-12 <= d.w <= 5.5e-3 + 1e-12 and d.w == d.h
         starts.add(round(min(d.cx - d.w / 2 for d in lay.dies) * 1e3, 6))
     assert len(starts) > 5, starts
+
+
+# ---- T0394: fixed die size per stratum ----------------------------------------------------------------------------
+
+# Fingerprints captured from the generator BEFORE die_size_mm existed: die_size_mm=None must reproduce them.
+_PINNED = {
+    ("side_by_side", 2): ["adce19664901edce46a97f475ee52862fe3d65cdf99fe23ec389a804225edbec",
+                          "a593fda0dfb21e44c14ac772620396e9a698f52df0d3978fdc9b1fddd5764f7d"],
+    ("side_by_side", 4): ["18ad2efd7c6dd2adccfb89e91705f3e633f2e2b141d42374520c417aede8223b",
+                          "32c972f7db0b28158b24baf09d5a29cfa2b4e908c7d15e6835140761ca676967"],
+    ("side_by_side", 6): ["0056a5e17d6f3b7793e112d582abc9cddc3050c9315786fb5d6df0a34d7277f7",
+                          "bf40adeb881ccd1ffe86a0cae15e4a2672fc372883cc0e71a22adc2e361ad50d"],
+    ("interleaved", 2): ["286ec5c01228672c3ff0602651758afe85a606f28725934125052006f0f8a24d",
+                         "d596d1eebe46996440383bc056ecccd3038a019c2af0ac470cca669b814ee35d"],
+    ("interleaved", 4): ["6c6534f3c2a4c66856991f3fab28b00c795d8412319d1da581dba0fad2f15619",
+                         "37c59e59c255dadcbf055ce6e359e368cfef41e8f3618f2c8f6ad1fc18929adf"],
+    ("interleaved", 6): ["e30b62c8626c27d0b0393c4caca63a3b74cb6d2183f27091e9a276e6fa546ddd",
+                         "2126333817dea35774b8f989fd830b37fe52c27b5a4432ea1b8a7f921a300ceb"],
+    ("u_shaped", 2): ["23377391669d9c95cd1eb035c935d5cb988fceb4a921b26cfe49d0cdea2f6a5b",
+                      "b9d4564df41d09998b93bbdd15283622c08209ba55250a9f365510f5ff445b7d"],
+    ("u_shaped", 4): ["d8e20ebffdf7e466c0e28ff192e7af5dc98250b451c53101aa54045195a9333a",
+                      "13a154d2d9ed482e0cf4c3350414cc0c278c7b6b54dd6dbb5728d0efd4c10ba3"],
+    ("u_shaped", 6): ["f9c22e03d70d60b3eea5b164fa286f1b00001f55e31dddf61b956826e40efac7",
+                      "da50c75dc7f64640eca52f8cb886961c7d63455fe73aefbd3b6410745d9a8a8b"],
+}
+_PINNED_MIXED_SEED5 = ["4db5cf7e1edd404c9cd6367a985e46729502baca70fb6a39e56dbc8c2a65b495",
+                       "c480b556d0072e79a98bc30d07bac9be7582e2c46b7f766cccb989866de39b76",
+                       "04d8b7f4d5af8191f788ba19a55153f3bf72c896000c12dd7a77e5af79734cde",
+                       "f3632b0106fadd8f022e5d6b4efed12838a95a8b3dc6f7e53d6ebc7268be7591"]
+
+
+@pytest.mark.parametrize("fam,n", sorted(_PINNED))
+def test_die_size_none_is_byte_identical_to_before(fam, n):
+    got = [x.fingerprint() for x in generate_layouts(2, seed=11, family=fam, dies_per_switch=n)]
+    assert got == _PINNED[(fam, n)]
+    got = [x.fingerprint() for x in generate_layouts(2, seed=11, family=fam, dies_per_switch=n, die_size_mm=None)]
+    assert got == _PINNED[(fam, n)]
+
+
+def test_die_size_none_mixed_strata_pinned():
+    assert [x.fingerprint() for x in generate_layouts(4, seed=5)] == _PINNED_MIXED_SEED5
+
+
+@pytest.mark.parametrize("size", [4.0, 5.0, 5.5])
+@pytest.mark.parametrize("fam", FAMILIES)
+@pytest.mark.parametrize("n", [2, 3, 4, 5, 6])
+def test_fixed_die_size_on_every_die(fam, n, size):
+    lays = generate_layouts(3, seed=7, family=fam, dies_per_switch=n, die_size_mm=size)
+    assert len(lays) == 3
+    for lay in lays:
+        assert check(lay) == []
+        assert len(lay.dies) == 2 * n
+        assert all(abs(d.w - size * 1e-3) < 1e-12 and abs(d.h - size * 1e-3) < 1e-12 for d in lay.dies)
+
+
+def test_fixed_die_size_leaves_other_layouts_varying():
+    lays = generate_layouts(6, seed=3, family="interleaved", dies_per_switch=3, die_size_mm=4.5)
+    assert len({x.fingerprint() for x in lays}) == 6
+
+
+@pytest.mark.parametrize("bad", [3.5, 3.9999, 5.6, 6.0, 0.0, -4.5, 4.25, 4.1, 5.4, float("nan"), float("inf")])
+def test_die_size_validation_errors(bad):
+    with pytest.raises(ValueError):
+        generate_layouts(1, seed=0, die_size_mm=bad)
+
+
+def test_die_size_determinism_in_seed():
+    a = generate_layouts(5, seed=9, family="u_shaped", dies_per_switch=5, die_size_mm=5.0)
+    b = generate_layouts(5, seed=9, family="u_shaped", dies_per_switch=5, die_size_mm=5.0)
+    c = generate_layouts(5, seed=10, family="u_shaped", dies_per_switch=5, die_size_mm=5.0)
+    assert [x.fingerprint() for x in a] == [x.fingerprint() for x in b]
+    assert [x.fingerprint() for x in a] != [x.fingerprint() for x in c]
+
+
+def test_draw_die_size_support_and_distribution():
+    rng = np.random.default_rng(0)
+    draws = np.array([halfbridge.draw_die_size_mm(rng) for _ in range(4000)])
+    assert set(np.unique(draws)) == {4.0, 4.5, 5.0, 5.5}
+    # uniform(4, 5.5) snapped to 0.5: the end bins have probability 1/6, the middle ones 1/3
+    frac = {v: float(np.mean(draws == v)) for v in (4.0, 4.5, 5.0, 5.5)}
+    assert frac[4.0] == pytest.approx(1 / 6, abs=0.03) and frac[5.5] == pytest.approx(1 / 6, abs=0.03)
+    assert frac[4.5] == pytest.approx(1 / 3, abs=0.04) and frac[5.0] == pytest.approx(1 / 3, abs=0.04)
+    # same stream as _build's own draw: the first draw of a Generator equals the size _build uses unfixed
+    lay = halfbridge._build("side_by_side", 2, np.random.default_rng(42))
+    assert lay.dies[0].w == pytest.approx(halfbridge.draw_die_size_mm(np.random.default_rng(42)) * 1e-3, abs=1e-15)
