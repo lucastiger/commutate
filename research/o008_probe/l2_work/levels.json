@@ -1,0 +1,44 @@
+{
+ "levels": {
+  "2R": {
+   "level": "lat0.5",
+   "level_mm": 0.5,
+   "estimates": {
+    "lat0.25": {
+     "unknowns": 1540717,
+     "mem_GB": 6.42361705,
+     "vm_wall_s_model": 1405.337501976064
+    },
+    "lat0.5": {
+     "unknowns": 385179,
+     "mem_GB": 2.20590335,
+     "vm_wall_s_model": 190.90347870236522
+    }
+   },
+   "fit_GB": 8.0,
+   "override": "--level-2r",
+   "override_reason": "0.25 mm (em_cost 6.42 GB <= 8 GB) needs the single-process exception (>= 50 % free and swap < 4 GB); swapfile total 7.5-8.6 GB from 18:22 to 18:48 on 2026-11-15 (solve_1.log, gate checks every 180 s for 1260 s), so it could not start; 0.5 mm (2.21 GB) is within the 5 GB budget"
+  },
+  "Case4": {
+   "level": "lat0.5",
+   "level_mm": 0.5,
+   "estimates": {
+    "lat0.25": {
+     "unknowns": 4108580,
+     "mem_GB": 15.796317,
+     "vm_wall_s_model": 5770.0
+    },
+    "lat0.5": {
+     "unknowns": 1027145,
+     "mem_GB": 4.54907925,
+     "vm_wall_s_model": 783.8075195969195
+    }
+   },
+   "fit_GB": 8.0
+  }
+ },
+ "threads": [
+  2,
+  "two threads: mean wall 5751 s vs pinned 6364 s"
+ ]
+}
