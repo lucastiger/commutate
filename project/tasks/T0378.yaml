@@ -3,7 +3,7 @@ objective: O008
 title: Seeded local search over the derivative parameterisation (optimize/local.py)
 type: implement
 agent: builder
-status: running
+status: todo
 depends_on:
 - T0377
 - T0376
@@ -70,7 +70,7 @@ model: null
 budget_usd: 6.0
 max_turns: 90
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0378-seeded-local-search-over-the-derivative-
 pr: null
@@ -86,4 +86,9 @@ trigger: null
 rationale: The search under test for A1 and K1, with the F4 reporting. The shared descent primitive keeps
   the proxy, the search and the nulls on one parameter set, as scope_in requires. Waits for k1 so that
   a fired kill shot can stop the chain.
-history: []
+history:
+- outcome: capacity_backoff
+  summary: 'API Error: Can''t reach the API server — check your internet or DNS (ENOTFOUND)'
+  at: '2026-11-16T15:00:08+00:00'
+  until: '2026-11-16T15:05:08.933357+00:00'
+  session: 09c86f72-5b9d-4300-b748-a86c1ca85a30

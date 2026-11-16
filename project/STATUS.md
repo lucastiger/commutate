@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T14:34:17+00:00 from repository state — do not edit_
+_generated 2026-11-16T15:00:16+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -17,7 +17,7 @@ _generated 2026-11-16T14:34:17+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $39.36/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $40.34/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -29,19 +29,16 @@ _generated 2026-11-16T14:34:17+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 21 | $39.36 | 865195 | 539842 | 68 | 0 |
+| O008 | 21 | $40.34 | 901416 | 553192 | 68 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 345, failed: 4, running: 3, todo: 16
+cancelled: 45, done: 345, failed: 4, running: 2, todo: 17
 
-- T0378 `running` builder/implement: Seeded local search over the derivative parameterisation (optimize/local.py) (attempt 1)
 - T0384 `running` builder/implement: FastHenry deck exporter in src: Layout -> SI-metre deck with refinable wire section, thickness and plane knobs, F6 model variants (attempt 3)
 - T0386 `running` builder/implement: Frozen perturbation rules on the 1 mm lattice: die-row shift, power-trace width, terminal-near copper, wire landing (generate/perturb.py) (attempt 3)
 
 ## Recent events
-- 2026-11-16T13:36:33+00:00 inbox_resolved {"id": "I0218", "status": "answered", "note": "Retry once: split long .equiv lines to at most 900 characters, test line length at 0.25 mm on Case 4 and both ref
-- 2026-11-16T13:42:21+00:00 merged {"task": "T0376"}
 - 2026-11-16T14:11:20+00:00 merged {"task": "T0377"}
 - 2026-11-16T14:17:48+00:00 merged {"task": "T0392"}
 - 2026-11-16T14:24:10+00:00 merged {"task": "T0393"}
@@ -55,3 +52,5 @@ cancelled: 45, done: 345, failed: 4, running: 3, todo: 16
 - 2026-11-16T14:34:11+00:00 run_finished {"run": "T0413-planner-20261116T063047-98ff", "status": "error", "cost": 1.211135, "subtype": "error_during_execution", "report": "missing"}
 - 2026-11-16T14:34:11+00:00 founder_stopped {"task": "T0413", "run": "T0413-planner-20261116T063047-98ff", "run_status": "error", "task_status": "cancelled"}
 - 2026-11-16T14:34:17+00:00 run_started {"run": "T0386-builder-20261116T063417-22a2", "task": "T0386", "role": "builder", "session": "6d2cb963-af9a-4c6b-9ef7-7aeedfedd369"}
+- 2026-11-16T15:00:08+00:00 run_finished {"run": "T0378-builder-20261116T063048-cc86", "status": "error", "cost": 0.975169, "subtype": "success", "report": "missing"}
+- 2026-11-16T15:00:08+00:00 capacity_backoff {"task": "T0378", "minutes": 5, "parsed_reset": false}
