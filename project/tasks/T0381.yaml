@@ -4,7 +4,7 @@ title: Draft E011's acceptance metric functions and analytic tests for the found
   (F7)
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "F7: E011 cannot be registered until mfos.metrics computes A1, A2, A3 and K1 from per-draw\
   \ rows. tools/ is protected, so this task writes reference implementations and tests for the founder\
@@ -75,4 +75,136 @@ lens: null
 trigger: null
 rationale: F7 blocks registration. Drafting the functions and the row schema now lets the founder port
   them while the build proceeds, and gives the runner a fixed contract.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I wrote my own versions of E011''s four acceptance metrics, A1, A2, A3 and K1, in experiments/runners/e011_metrics.py
+    before reading the founder''s versions. The module also has the reported helpers, the per-draw row
+    schema and the recompute entries E011''s spec should declare. On well-formed rows, mfos.metrics (commit
+    2fea4a6e, already merged into this checkout''s HEAD cf4827c7) gives exactly the same values as mine.
+    I ran 400 random row sets, seeded with 20261116, through the evaluator''s own `metric_value` and `_where`
+    path, plus every analytic case, and all matched. They disagree in three edge cases. Each is recorded
+    as a non-strict xfail test, so it is documented without failing the suite, and each xfail fails on
+    the mfos.metrics assertion, not on mine.
+
+    (1) K1 with a NaN shortfall: np.medi'
+  report:
+    summary: 'I wrote my own versions of E011''s four acceptance metrics, A1, A2, A3 and K1, in experiments/runners/e011_metrics.py
+      before reading the founder''s versions. The module also has the reported helpers, the per-draw row
+      schema and the recompute entries E011''s spec should declare. On well-formed rows, mfos.metrics
+      (commit 2fea4a6e, already merged into this checkout''s HEAD cf4827c7) gives exactly the same values
+      as mine. I ran 400 random row sets, seeded with 20261116, through the evaluator''s own `metric_value`
+      and `_where` path, plus every analytic case, and all matched. They disagree in three edge cases.
+      Each is recorded as a non-strict xfail test, so it is documented without failing the suite, and
+      each xfail fails on the mfos.metrics assertion, not on mine.
+
+      (1) K1 with a NaN shortfall: np.median gives NaN for that layout, and Python''s max over a list
+      containing NaN depends on order. One NaN draw on layout A hid layout B''s median of 0.10, so K1
+      returned NaN; with B first it returned 0.10. Since NaN > 0.05 is False, a kill would not fire. I
+      treat NaN or None as +inf, a failed draw.
+
+      (2) A3 with a null shortfall of inf and a finite band: mfos.metrics counts it as a resolved failure
+      and as a paired win (my test case gave 1.0 there against my 0.0). I count a draw where the null
+      returned no candidate as neither, so A3 cannot be met through missing results.
+
+      (3) A counted layout with a draw dropped from every role: mfos.metrics averages over the draws present
+      (7/7 = 1.0). Mine raises an error, because a counted layout must have 8 draws and F6 says to exclude
+      a layout that cannot supply them.
+
+      There is also a configuration risk. In mfos.metrics, `null_beaten_min`''s `capped` parameter defaults
+      to None. If E011''s spec leaves out `params.capped: capped`, runs that stopped at their step limit
+      count as resolved failures; a test shows A3 = 1.0 instead of 0.0 in that case.
+
+      The verdict tests use the objective''s pass_all and fail_any criteria, loaded from O008/objective.yaml
+      and judged with `mfos.evaluate.judge`. The founder''s case, a null that recovers W* on one layout
+      and fails on the other, gives A1 = 1, A2 = 0, A3 = 0, K1 = 0.005 and so INCONCLUSIVE. A case with
+      every criterion met gives PASS, so the INCONCLUSIVE result is not automatic. A seed null meeting
+      A1 is detected (F1: INVALID). The A1 operating-characteristic figures quoted in the objective are
+      reproduced exactly.
+
+      I did not commit; the files are untracked in the worktree.
+
+      Commands and exit codes: `uv run pytest -q tests/acceptance_drafts/test_e011_metrics.py` exit 0
+      (39 passed, 3 xfailed); `uv run ruff check experiments/runners/e011_metrics.py tests/acceptance_drafts/test_e011_metrics.py`
+      exit 0 (it failed once on an unused import, which I fixed); `uv run mfos gate --fast` exit 0 ("all
+      gates passed"); `uv run pytest ... --runxfail -k <the three xfails>` failed 3, as expected, each
+      on the mfos.metrics line.'
+    status: completed
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    files_written:
+    - experiments/runners/e011_metrics.py
+    - tests/acceptance_drafts/test_e011_metrics.py
+    experiment_drafts: []
+    evidence:
+    - 'FACT: the agreement test compares my values with the evaluator''s (`ev.metric_value(rc, ev._where(rows,
+      rc.where), rc.pred)`) on 400 seeded random row sets with 1-3 layouts, all 6 roles, random capped
+      flags and s values at 0.02, just above and just below it. All four metrics were exactly equal. The
+      sample covers both A2 and A3 outcomes, at least 5 distinct A1 levels and at least 100 distinct K1
+      values.'
+    - 'FACT: my probe printed: K1 with one NaN draw on layout A and median 0.10 on layout B gives mine
+      0.1, mfos.metrics nan; with B first, mfos.metrics gives 0.1 (depends on order).'
+    - 'FACT: my probe printed: A3 with widen s = inf, b = 0.004 on 5 draws and s = 0.03, b = 0.01 on 3
+      draws gives mine 0.0 (0 resolved, 3 paired), mfos.metrics 1.0.'
+    - 'FACT: a counted layout with draw 7 removed from all roles gives mfos.metrics A1 = 7/7 = 1.0 with
+      no error; mine raises ''counted layout 2D_Case_4: 7 search draws, expected 8''.'
+    - 'FACT: with `params.capped` left out of the A3 recompute entry, mfos.metrics returns 1.0 where it
+      returns 0.0 with it set, for widen capped on 5 of 8 draws (test_a3_capped_requires_the_capped_param).'
+    - 'FACT: the INCONCLUSIVE case (compaction at s = 0.012, b = 0.004 on Case 4, at 0.08 on 2R) gives
+      {A1: 1.0, A2: 0.0, A3: 0.0, K1: 0.005} from both implementations. Judged with mfos.evaluate.judge
+      against O008''s criteria, that is INCONCLUSIVE; the all-met case gives PASS.'
+    - 'FACT: the boundary tests pass. 7/8 = 0.875 meets A1 and 6/8 does not. s = 0.02 passes and the next
+      float above it fails. 4 resolved failures beat a null and 3 do not. A null capped on 4 draws is
+      beaten and on 5 is not. In the paired margin, each band alone is smaller than the difference but
+      their sum equals it, which is not a win (dyadic values, exact in float64). For the even-count median,
+      the middle pairs (0.04, 0.07) and (0.03, 0.06) give results that tell the mean of the two middle
+      values apart from the lower or upper middle value alone.'
+    - 'FACT: Clopper-Pearson checks: for k = n the bound equals 0.05^(1/n); P(X >= k | p_L) = 0.05 to
+      relative error 1e-9; the two-sided ends satisfy their 0.025 tail equations. Sources: Clopper & Pearson
+      1934, Biometrika 26:404-413; Brown, Cai & DasGupta 2001, Stat. Sci. 16:101-133.'
+    - 'FACT: the objective''s A1 operating-characteristic figures (0.94/0.81/0.66/0.26 per layout, 0.89/0.66/0.43/0.07
+      for two layouts) equal P(Bin(8, p) >= 7) and its square, rounded to 2 decimal places.'
+    - 'INFERENCE: on finite, complete rows the two implementations define the same quantities, using <=
+      for a pass and strict > for a resolved failure and for a paired win. They differ only in validation
+      and in how missing or non-finite values are handled.'
+    alternative_explanations:
+    - explanation: 'Divergence (2) may be intended: the founder could mean that a null with no candidate
+        (s = inf) has failed by definition, so it counts as a resolved failure.'
+      how_to_discriminate: Founder decision. Every null starts at D_j, so it always has a candidate, and
+        s = inf means the null's computation is broken. Counting broken draws as resolved failures makes
+        A3 easier to meet, which is anti-conservative. Rejecting non-finite s for null roles (INVALID)
+        would also be defensible.
+    - explanation: 'Divergence (3) may be harmless in practice: if the runner always emits a row for every
+        draw, with s = None for failures, the missing-row case never arises.'
+      how_to_discriminate: Check n5's runner. If it writes every draw, the issue is latent; it still lets
+        a malformed rows artifact pass silently instead of being rejected.
+    discriminating_tests:
+    - tests/acceptance_drafts/test_e011_metrics.py::test_agrees_with_mfos_metrics_on_random_rows (agreement
+      on well-formed rows)
+    - 'test_k1_nan_draw_does_not_mask_another_layout (xfail: mfos.metrics returns nan)'
+    - 'test_null_without_candidate_is_not_a_resolved_failure (xfail: mfos.metrics returns 1.0)'
+    - 'test_counted_layout_with_a_dropped_draw_is_rejected (xfail: mfos.metrics does not raise)'
+    - test_a3_capped_requires_the_capped_param (the configuration risk)
+    recommended_actions:
+    - 'Founder session: in E011''s spec, declare the four recompute entries exactly as in the RECOMPUTE
+      constant of the test file. A1 and K1 use where {role: search, counted: true}. A2 is max_col over
+      pred reach_outside with no where filter, so it covers every development layout. A3 uses where {counted:
+      true} with params {nulls: [widen, compact], capped: capped, tol: 0.02, k_resolved: 4, k_paired:
+      7}. Declare none of them with ci: a row-level bootstrap is meaningless for these 8-draw counts,
+      and my validation would reject resampled rows.'
+    - 'Founder (tools/ is protected): make mfos.metrics robust to non-finite s. Either raise on a non-finite
+      s, which makes the evidence INVALID, or map NaN and None to +inf as e011_metrics does, so one NaN
+      can no longer hide a K1 kill depending on row order.'
+    - 'Founder: decide whether a null with s = inf counts as a resolved failure (mfos.metrics: yes; mine:
+      no). I recommend no, or rejecting it as INVALID. Then remove the matching xfail test.'
+    - 'Founder: consider making null_beaten_min require the capped column (no None default), and having
+      control_layout_pass_min enforce 8 draws per counted layout or take n_draws as its denominator.'
+    - 'Founder: decide whether a capped null draw may count as a paired win. As written in the objective
+      it may, because only resolved failures exclude capped runs; both implementations do this. It is
+      weaker evidence than a win over a converged null.'
+    - 'n5 (runner): emit exactly the columns in e011_metrics.COLUMNS, one row per layout, role and draw,
+      including failed draws (s = None, terminal_kind no_candidate). Call e011_metrics.validate_rows before
+      writing the rows artifact, and report seed_null_check as F1''s gated sanity check, plus the conservative
+      count, unresolved_counts, pooled_pass_lower_bound and layout_pass_intervals.'
+    root_cause: ''
