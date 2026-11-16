@@ -4,7 +4,7 @@ title: 'Generator option: one fixed die size per stratum (die_size_mm), random s
   unchanged'
 type: implement
 agent: builder
-status: running
+status: merge
 depends_on: []
 description: 'This is build item (3) of the objective notes (scope_in: one die size per (family, dies)
   stratum).
@@ -86,4 +86,38 @@ lens: null
 trigger: null
 rationale: E007 samples one die size per stratum (derivative regime). n6 and n7 need this to generate
   their sealed and development layouts.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: Added die_size_mm to generate_layouts and _build, plus draw_die_size_mm(rng) and validation,
+    in halfbridge.py. s is still drawn through draw_die_size_mm and then replaced, so the random stream
+    is unchanged. Validation raises ValueError unless die_size_mm is a multiple of 0.5 mm within 4.0-5.5
+    mm (NaN and inf are rejected). The module docstring is updated. Unit tests pin pre-change fingerprints
+    for None (9 family/die-count combos plus a mixed seed). They also cover the fixed size across 3 families,
+    2-6 dies and sizes 4.0, 5.0 and 5.5 (6 dies at 5.5 included), the validation errors, seed determinism
+    and draw_die_size_mm's support and distribution. The fingerprints were captured from the unmodified
+    code first. All DoD commands pass.
+  report:
+    status: completed
+    summary: Added die_size_mm to generate_layouts and _build, plus draw_die_size_mm(rng) and validation,
+      in halfbridge.py. s is still drawn through draw_die_size_mm and then replaced, so the random stream
+      is unchanged. Validation raises ValueError unless die_size_mm is a multiple of 0.5 mm within 4.0-5.5
+      mm (NaN and inf are rejected). The module docstring is updated. Unit tests pin pre-change fingerprints
+      for None (9 family/die-count combos plus a mixed seed). They also cover the fixed size across 3
+      families, 2-6 dies and sizes 4.0, 5.0 and 5.5 (6 dies at 5.5 included), the validation errors, seed
+      determinism and draw_die_size_mm's support and distribution. The fingerprints were captured from
+      the unmodified code first. All DoD commands pass.
+    files_changed:
+    - src/moduleforge/generate/halfbridge.py
+    - tests/unit/generate/test_halfbridge.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/generate
+      exit_code: 0
+    - cmd: uv run python -c "from moduleforge.generate.halfbridge import generate_layouts; L = generate_layouts(6,
+        seed=7, family='u_shaped', dies_per_switch=4, die_size_mm=5.0); assert all(abs(d.w - 5e-3) < 1e-12
+        and abs(d.h - 5e-3) < 1e-12 for lay in L for d in lay.dies)"
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate tests/unit/generate
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
