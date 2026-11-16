@@ -15,9 +15,9 @@ hypothesis:
     pre-registered pair agrees within 2 %, beyond FastHenry's own ratio estimate; and (b) the absolute loop inductance
     of every layout agrees within the two solvers' combined conservative discretisation estimates, each capped.
   null_hypothesis: >-
-    On these modules' geometry, l2_layout's inductance ratios differ from an independent field solver's by more than the
-    2 % that a headroom verdict at O009's 10 % and 20 % lines tolerates; no headroom figure judged by l2_layout can be
-    stated as more than provisional.
+    On these modules' geometry, l2_layout's inductance ratios differ from an independent field solver's by more than 2 %
+    beyond FastHenry's ratio estimate, more than a headroom verdict at O009's 10 % and 20 % lines tolerates; no headroom
+    figure judged by l2_layout can be stated as more than provisional.
   why_it_matters: >-
     Every headroom figure is a ratio judged by l2_layout. Until an independent solver agrees on real module geometry, a
     pass elsewhere stays provisional (D0009), and customers will check our numbers in their own Q3D flow (A-T4). A
@@ -27,47 +27,50 @@ hypothesis:
     and FastHenry agreed with it within 0.8-2.5 % at two levels there (O006 P4).
   decision_if_pass: >-
     l2_layout at 0.25 mm (code_must_match on this evaluation's files) is the inductance judge of O008 and O009 on
-    single-substrate wire-bonded half-bridges of the construction validated here, with the same loop definition and at
-    10 or 20 MHz; claims cite this objective's ratio agreement as 2 % plus FastHenry's ratio estimate, and absolute
-    inductances are stated with their combined estimate. The result rests on two references from one public source and
-    about 10 pairs: a clean result bounds the share of failing pairs of this kind only at about 26 % (one-sided 95 %).
-    It does not cover a winner chosen by l2_layout itself, which carries l2_layout's own error (selection bias,
-    review T0361), so O009 re-checks the ratio of each winning re-layout to its reference with FastHenry before any
-    headroom statement. The capability brief may then say the inductance reference agrees with FastHenry on public
-    sample designs.
+    single-substrate wire-bonded half-bridges of the construction validated here, for the move types and the ratio range
+    the counted pairs cover, with the same loop definition and at 10 or 20 MHz; claims cite this objective's ratio
+    agreement as 2 % plus FastHenry's ratio estimate, and absolute inductances are stated with their combined estimate.
+    The result rests on two references from one public source and about 12 pairs that share their references: a clean
+    result bounds the share of failing pairs of this kind only at about 30-78 % (one-sided 95 %, depending on how
+    strongly pairs of one reference are correlated; 26 % only if all were independent). It does not cover a winner
+    chosen by l2_layout itself, which carries l2_layout's own error (selection bias, review T0361), so O009 re-checks the
+    ratio of each winning re-layout to its reference with FastHenry before any headroom statement. The capability brief
+    may then say the inductance reference agrees with FastHenry on public sample designs.
   decision_if_fail: >-
     Diagnose solver versus exporter model (mf-diagnosis); fix under a new experiment id with freshly drawn perturbations
     (a pair whose FastHenry ratio is known is never re-used for judgement). No validation run (O009) and no sprint uses
     l2_layout as judge until the discrepancy is diagnosed and fixed (plan, risks table). The reference set is never
     narrowed after the outcome is known.
   decision_if_inconclusive: >-
-    If A1 holds and only A2 is unresolved (an estimate above its cap, or +inf), record the ratio agreement as the result
-    and state absolute values as provisional; founder decision on a finer run. If A1 is not met only because pairs were
-    excluded (F1), a diagnosis of the convergence before any redesign. Otherwise same as fail.
+    If A1 and A3 hold and only A2 is unresolved (an estimate above its cap, or +inf), record the ratio agreement as the
+    result and state absolute values as provisional; founder decision on a finer run. If A1 or A3 is not met because
+    pairs were excluded (F1), a diagnosis of the convergence before any redesign. Otherwise same as fail.
 scope_in:
   - >-
     judged references: the frozen T0263 reconstructions of PowerSynth 2D_Case_2R and 2D_Case_6, public references
     already loaded (plan section 5), development geometry under D0023. 2D_Case_4 is development geometry only: O006 F4
     excludes the EM pilot module from O004's judged set, and O006 P3/P4 already solved and compared it; the exporter,
-    FastHenry's mesh and the F7 pilot are developed on it. One public source: the result is stated for these samples'
+    FastHenry's mesh and the F7 pilots are developed on it. One public source: the result is stated for these samples'
     construction (single DBC substrate, one die row per switch, no separate diode dies)
   - >-
-    re-layouts, at least 5 per judged reference, from frozen rules with parameters drawn from E004's sealed seed: die-row
-    shifts, power-trace width changes and terminal-near copper changes over wide frozen ranges, and on 2D_Case_2R a
-    designer-proxy re-layout (O008's proxy rule: a frozen L1 descent from the twin under the reference's own rules;
-    2D_Case_6 has no twin). Counted pairs must span ratios of at least [0.75, 0.98] at l2_layout 0.5 mm, with at least
-    3 below 0.90; before registration the frozen rules are drawn on development seeds on 2D_Case_4 and the ratio
-    distribution at L1 and at 0.5 mm is reported
+    re-layouts, at least 6 per judged reference, from frozen rules with parameters drawn from E004's sealed seed over
+    wide frozen ranges: die-row shifts, power-trace width changes, terminal-near copper changes and wire-landing moves
+    (where the two solvers' wire models differ most, review T0364); and on 2D_Case_2R a designer-proxy re-layout (O008's
+    proxy rule, a frozen L1 descent from the twin; 2D_Case_6 has no twin). At registration, before any solve, the pairs'
+    L1 ratios must span at least [0.75, 0.98] with at least 3 below 0.90 (a registration check on L1, which is not the
+    tool under test); before registration the frozen rules are also drawn on development seeds on 2D_Case_4 and the
+    ratio distribution at L1 and at l2_layout 0.5 mm is reported
   - >-
     the module-internal commutation loop, DC+ terminal to DC- terminal with dies as ideal shorts, at 10 and 20 MHz; the
     stack of the reconstructions (as T0263 froze it)
   - >-
-    discretisation and levels: l2_layout on a 1.0 / 0.5 / 0.25 mm ladder (ratio 2; a 0.125 mm level did not finish on
-    Case 4, O006 P3 addendum), the judged value being the finest (0.25 mm) and its estimate the conservative estimate
-    of that finest value (lateral, thickness and filament terms, as O006 P3). FastHenry on three refinement levels on a
+    discretisation, levels and estimator: l2_layout on a 1.0 / 0.5 / 0.25 mm ladder (ratio 2; 0.125 mm did not finish on
+    Case 4, O006 P3 addendum), the judged value being the finest (0.25 mm); FastHenry on three refinement levels on a
     burst VM (the founder launches it; P4 projected about 10 GB and 2.4 h per run at the third level), refining the
-    bond-wire cross-section with the traces (review T0362: a fixed 2 x 2 wire bundle keeps about 2 % of low-frequency
-    internal inductance), the judged value being its finest level and its estimate that of the finest value
+    bond-wire cross-section with the traces (review T0362), the judged value being its finest. One estimator for every
+    L and every ratio sequence of both solvers: mfos.metrics.gci_capped (D0012, D0013: order capped at 1; +inf for a
+    divergent or stagnant sequence, 3 max|d| for an oscillating one), the estimate being that of the finest value,
+    with l2_layout's thickness and filament terms (O006 P3) added for L
 scope_out:
   - gate loops, current sharing, thermal; full-wave effects; measured double-pulse waveforms
   - agreement with published measurements or published simulations (the UTK, CPES and Aalborg reconstructions an
@@ -81,32 +84,34 @@ acceptance:
   required_experiments: [E004]
   pass_all:
     - {id: A1, metric: E004.max_ratio_diff_vs_fasthenry, comparator: "<=", threshold: 0.02, uncertainty: {use: point},
-       description: "max over the pre-registered pairs and both frequencies of |r_L2 / r_FastHenry - 1|, l2_layout at 0.25 mm and FastHenry at its finest level, raw values whatever a diagnosis attributes a difference to. A pair excluded by F1 counts as not met, so A1 cannot be met with any pair excluded. What a pass establishes is agreement within 2 % plus FastHenry's ratio estimate (at most 1 % by F1). A 2 % ratio error moves headroom by under 2 points near r = 0.8-0.9. Declared nulls, gated (F8): a constant ratio (the median registered ratio) and the L1 model's own ratio"}
+       description: "max over the pre-registered pairs and both frequencies of |r_L2 / r_FastHenry - 1|, l2_layout at 0.25 mm and FastHenry at its finest level, raw values whatever a diagnosis attributes a difference to. A pair excluded by F1 counts as not met, so A1 cannot be met with any pair excluded. What a pass establishes is agreement within 2 % plus FastHenry's ratio estimate (at most 1 % by F1). A 2 % ratio error moves headroom by under 2 points near r = 0.8-0.9. Founder-set (2026-11-15)"}
     - {id: A2, metric: E004.max_abs_consistency, comparator: "<=", threshold: 1.0, uncertainty: {use: point},
-       description: "a consistency check: max over layouts and both frequencies of |L_L2 - L_FH| / (E_L2 + E_FH), L_L2 the 0.25 mm value and E_L2 its estimate, L_FH and E_FH FastHenry's finest value and its estimate. Each estimate is capped (PROPOSED: E/L <= 0.05); a layout whose estimate exceeds its cap, or is +inf, makes A2 unresolved (not met), never easier to meet"}
+       description: "a consistency check, not an accuracy bound: max over layouts and both frequencies of |L_L2 - L_FH| / (E_L2 + E_FH), L_L2 the 0.25 mm value and E_L2 its estimate, L_FH and E_FH FastHenry's finest value and its estimate. Each estimate is capped (E/L <= 0.05, founder-set 2026-11-15); a layout whose estimate exceeds its cap, or is +inf, makes A2 unresolved (not met), never easier to meet"}
+    - {id: A3, metric: E004.counted_coverage_ok, comparator: ">=", threshold: 1.0, uncertainty: {use: point},
+       description: "1 when the pairs left after F1 exclusion still cover the registered span by their registered L1 ratios (at least one pair at or below 0.75 and one at or above 0.98, at least 3 below 0.90) with at least 4 counted pairs per judged reference, else 0. A shortfall makes the verdict at most INCONCLUSIVE, never INVALID, so K1 and K2 are always evaluated (review T0364 blocker)"}
   fail_any:
     - {id: K1, metric: E004.max_ratio_diff_vs_fasthenry_all, comparator: ">", threshold: 0.05, uncertainty: {use: point},
-       description: "over every pre-registered pair, excluded ones included, on raw values: some pair's ratio differs by more than 5 % between the solvers, so a headroom figure judged by l2_layout could be off by 4-5 points at r = 0.8-0.9, which O009's 10-point gap between its lines cannot absorb"}
+       description: "over every pre-registered pair, excluded ones included, on raw values: some pair's ratio differs by more than 5 % between the solvers, so a headroom figure judged by l2_layout could be off by 4-5 points at r = 0.8-0.9, which O009's 10-point gap between its lines cannot absorb. Founder-set (2026-11-15)"}
     - {id: K2, metric: E004.max_rel_diff_vs_fasthenry, comparator: ">", threshold: 0.15, uncertainty: {use: point},
-       description: "some layout's absolute L (l2_layout at 0.25 mm against FastHenry's finest) differs by more than 15 %, about twice l2_layout's own 0.5 mm estimate on Case 4: a model or exporter defect, not discretisation"}
+       description: "some layout's absolute L (l2_layout at 0.25 mm against FastHenry's finest) differs by more than 15 %, about twice l2_layout's own 0.5 mm estimate on Case 4: a model or exporter defect, not discretisation. Founder-set (2026-11-15)"}
   max_evaluations: 1
 failure_modes:
   - id: F1
     description: "Discretisation error mistaken for agreement or disagreement"
-    detection: "gated sanity checks per layout: both three-level sequences are monotone or their estimate is +inf; each counted pair's ratio estimate for the judged values (the 0.25 mm value for l2_layout, FastHenry's finest) is at most 0.5 % for l2_layout and 1 % for FastHenry. A pair failing this is excluded and reported, and counts as not met in A1 (and stays in K1 on its raw value). The 0.5 % is checked before registration against a development proxy pair on 2D_Case_4, because P3's 0.1-0.2 % is for small perturbations only (review T0362)"
-    response: "an excluded pair: A1 not met (INCONCLUSIVE, diagnosis first); every pair of a reference excluded: INVALID"
+    detection: "per counted pair, the ratio estimate of the judged values (gci_capped of each solver's three-level ratio sequence: l2_layout's 0.25 mm value, FastHenry's finest) must be at most 0.5 % for l2_layout and 1 % for FastHenry; a pair failing this, or with a +inf estimate, is excluded and reported. An excluded pair counts as not met in A1, is not counted in A3 and stays in K1 on its raw value. No check that depends on the two solvers' values makes the run INVALID (review T0364 blocker). Before registration the 0.5 % is checked on a Case 4 development pair with r <= 0.75 (F7), because P3's ratio estimates are 3-5 % of the effect size and one of P3's two pairs diverges on this ladder"
+    response: "an excluded pair: A1 not met (INCONCLUSIVE, diagnosis first)"
   - id: F2
     description: "Perturbations or reconstructions tuned toward agreement (leakage)"
-    detection: "the reconstructions are the frozen T0263 ones (fingerprints checked); the perturbation rules, their parameter ranges and the proxy rule are frozen and hashed in E004's spec, and each judged pair's parameters are drawn from E004's sealed seed, so no judged pair is seen before its solves; development work (exporter, FastHenry mesh, pilot, rule ranges) uses 2D_Case_4, gen2_0 and development seeds only, and no FastHenry solve is made on 2R or Case 6 before registration"
+    detection: "the reconstructions are the frozen T0263 ones (fingerprints checked, a gated sanity check that does not depend on any solve); the perturbation rules, their parameter ranges and the proxy rule are frozen and hashed in E004's spec, and each judged perturbation's parameters are drawn from E004's sealed seed, so no perturbation pair is seen before its solves. The 2D_Case_2R proxy pair is deterministic and is shared with O008, so its l2_layout ratio may be known before registration (review T0363); no FastHenry solve is made on 2R or Case 6 before registration, so no agreement can be seen. Development work (exporter, FastHenry mesh, pilots, rule ranges) uses 2D_Case_4, gen2_0 and development seeds only"
     response: "a change after registration voids the run: new experiment id, freshly drawn pairs"
   - id: F3
     description: "Model mismatch between the tools rather than error"
-    detection: "differences are attributed per conductor group (traces, wires, terminals) in a diagnostic; A1, A2, K1 and K2 are judged on the raw values regardless"
+    detection: "differences are attributed per conductor group (traces, wires, terminals) in a diagnostic, including the round-versus-square wire cross-section term (review T0364: an equal-GMD square tends to a high-frequency limit about 0.6 % below a round wire's partial self-inductance); A1, A2, K1 and K2 are judged on the raw values regardless"
     response: "diagnose; a model choice that changes L by more than 1 % needs a founder decision"
   - id: F4
     description: "Sample too small or too clustered"
-    detection: "two judged references, at least 5 pairs each (at least 10), and after any F1 exclusion the counted pairs span ratios of at least [0.75, 0.98] at 0.5 mm with at least 3 below 0.90; fewer is a sanity failure (INVALID). The result is stated for one public source"
-    response: "add pairs under a new experiment id"
+    detection: "registration refuses a design with fewer than two judged references, fewer than 6 pairs per reference, or registered L1 ratios not spanning [0.75, 0.98] with at least 3 below 0.90; coverage after exclusion is criterion A3, not a sanity check. The result is stated for one public source and its clustered bound (decision_if_pass)"
+    response: "change the design before registration"
   - id: F5
     description: "Licence breach in using GPL sample designs"
     detection: "D0007 rules: geometry re-modelled in ModuleForge's own format; GPL files never committed; commit and sha256 of every file read recorded"
@@ -116,40 +121,45 @@ failure_modes:
     detection: "diagnostic on both judged references: die modelled as a distributed contact instead of an ideal short, and terminal tabs modelled physically instead of as point contacts; the change in L and in each pair ratio is reported"
     response: "if a shared choice moves a pair ratio by more than 2 %, founder decision before O009 relies on l2_layout"
   - id: F7
-    description: "The solvers cannot reach the levels the criteria need at an affordable cost"
-    detection: "before registration, founder-run burst pilots on 2D_Case_4 (development): FastHenry's third level on one development pair with the refined wire cross-section, showing its ratio estimate at most 1 % and the trace-and-wire difference to l2_layout shrinking with the wire refinement; l2_layout's 0.25 mm level on 2D_Case_6's reconstruction completing (an l2_layout-only solve, no FastHenry); the run times set E004's cost plan, inside the budget"
-    response: "if a pilot fails, founder decision before registration (a finer plane mesh, a cropped domain, or the ratio test at the estimate the affordable level gives)"
+    description: "The solvers cannot reach the levels the criteria need at an affordable cost or resolution"
+    detection: "before registration, on 2D_Case_4 (development): (a) a founder-run burst of FastHenry's third level on one development pair with the refined wire cross-section, showing its ratio estimate at most 1 % and the wire-group difference to l2_layout shrinking with the wire refinement; (b) an l2_layout 0.25 mm solve of 2D_Case_6's reconstruction completing (l2_layout only, no FastHenry); (c) a development pair with r <= 0.75 from the frozen rules on a development seed, on l2_layout's 1.0/0.5/0.25 mm ladder, with its gci_capped ratio estimate reported against F1's 0.5 %; (d) the L1 ratios of the Case 4 development pairs against their l2_layout ratios. The run times set E004's cost plan, inside the budget"
+    response: "if (a) or (b) fails, founder decision before registration (a finer plane mesh, a cropped domain); if (c) exceeds 0.5 %, the founder decides before registration between A1 at 2 % plus l2_layout's own ratio estimate and a narrower span with decision_if_pass limited to it"
   - id: F8
-    description: "The criterion would be met by a predictor that ignores the geometry change"
-    detection: "gated sanity checks: the constant-ratio null and the L1-ratio null must each fail A1 on the counted pairs"
-    response: "a null meeting A1 makes the run INVALID (design error: the pairs do not discriminate), as O006 F3 did for its constant-k null"
+    description: "The L1 model would agree as well, so the test cannot show what l2_layout adds"
+    detection: "the L1 ratio's agreement with FastHenry is reported beside l2_layout's on the same pairs. If L1 also meets A1, that is recorded (L1 suffices on these pairs); l2_layout's agreement and the verdict stand. A constant-ratio predictor cannot meet A1 on the registered span (its best case is 13 %), so it is not declared"
+    response: "report"
 budget: {usd: 100, cpu_hours: 260, wall_days: 21}
 require_plan_approval: true
 notes: >-
   Refreshed by the founder session of 2026-11-15 (handoff step 5, plan section 5) from the draft of 2026-10-31, and
-  revised the same day after draft reviews T0361 (statistics) and T0362 (physics), both reject.
+  revised twice the same day: after draft reviews T0361 (statistics, reject) and T0362 (physics, reject), then after
+  T0363 (statistics, accept with caveats) and T0364 (physics, reject).
   First refresh, against the old draft and its reviews T0133/T0134: the references are the PowerSynth reconstructions
   already loaded, because the UTK, CPES and Aalborg reconstructions were never built (D0019); the ratio test is primary
   and absolute L is a capped consistency check, because l2_layout's absolute estimate is about 7.7 % at 0.5 mm (P3);
   pairs are drawn from a sealed seed; published comparators and the diode-die loop question are dropped.
-  This revision, by finding: 2D_Case_4 is development only, because O006's frozen F4 excludes the EM pilot module from
-  O004's judged set and P3/P4 already compared the solvers on it (T0361 blocker); l2_layout's ladder is 1.0/0.5/0.25 mm,
-  because 0.125 mm did not finish on Case 4 (T0362 blocker), so the judged 0.25 mm value is the finest with its own
-  estimate, and every criterion names its level (T0362); FastHenry refines the wire cross-section (T0362: a 2 x 2
-  bundle biases L by about 2 %); an excluded pair counts as not met and stays in K1, and the span is checked after
-  exclusion (T0361, T0362); A2's estimates are capped (T0361, T0362); A1's established tolerance includes FastHenry's
-  ratio estimate (T0361); O009 re-checks its winners with FastHenry (T0361: selection bias); the nulls are gated (F8);
-  the title and scope say PowerSynth sample designs. O003 no longer depends on this objective (D0023); the judge it
+  Second revision (T0361, T0362): 2D_Case_4 is development only, because O006's frozen F4 excludes the EM pilot module
+  from O004's judged set; l2_layout's ladder is 1.0/0.5/0.25 mm, because 0.125 mm did not finish on Case 4; FastHenry
+  refines the wire cross-section; an excluded pair counts as not met; A2's estimates are capped; O009 re-checks its
+  winners with FastHenry; the title and scope say PowerSynth sample designs.
+  This revision (T0363, T0364): coverage after exclusion is criterion A3 instead of an INVALID sanity check, and the
+  registered span is checked on L1 at registration, so no check that depends on the solvers' values can hide a kill
+  (T0364 blocker, T0363); one estimator, gci_capped, for every L and ratio sequence (T0364, T0363); a pre-registration
+  check on a Case 4 development pair with r <= 0.75 and a stated action if its ratio estimate is too wide (T0364,
+  T0363); a wire-landing rule among the perturbations, and the pass limited to the move types and ratio range covered
+  (T0364); the L1 comparison is reported, not a gating null, and the constant-ratio null is dropped (T0363, T0364); the
+  clustered bound (T0363, T0364); the null restated beyond FastHenry's estimate (T0363); the proxy pair's determinism
+  stated (T0363); the round-versus-square wire term reported (T0364). Pairs per reference rose from 5 to 6 for the new
+  rule, which the founder may change at approval. O003 no longer depends on this objective (D0023); the judge it
   validates serves O008 and O009.
-  Cost: $9.51 spent of $100 (about $3 more for these reviews). VM: P4 projected about 2.4 h per FastHenry third-level
-  run; with about 12 layouts, one run each covering both frequencies, that is about 30 VM-hours, about $20-65 depending
-  on the machine (e2-highmem-16 at $0.73/h to n2-highmem-32 at $2.10/h, project/memory/lessons.md), plus the
-  l2_layout ladders at about $0.24 per 0.25 mm solve, plus the two F7 pilots. The plan estimated $15-30; the pilots set
-  the figure.
-  For the founder to set at approval (PROPOSED): A1's 2 %, K1's 5 %, K2's 15 %, A2's caps (E/L <= 0.05), the pair count
-  (5 per reference) and the span ([0.75, 0.98] at 0.5 mm, 3 below 0.90). Build work (planner, after approval): (1) the
-  Layout -> FastHenry exporter in src/ with a refinable wire cross-section (P4's research exporter
-  research/scripts/o006_p4/fh_export.py as the starting point, SI metres per D0002); (2) l2_layout on the
-  reconstructions' stacks and outlines at 1.0/0.5/0.25 mm if not already covered; (3) the perturbation rules and the
-  proxy rule (shared with O008's build); (4) E004 design (scientist), the F7 pilots (founder), review, registration,
-  run, evaluation.
+  Cost: $16.57 spent of $100 (these reviews included). VM: P4 projected about 2.4 h per FastHenry third-level run;
+  with about 14 layouts, one run each covering both frequencies, that is about 34 VM-hours, about $25-70 depending on
+  the machine (e2-highmem-16 at $0.73/h to n2-highmem-32 at $2.10/h, project/memory/lessons.md), plus the l2_layout
+  ladders at about $0.24 per 0.25 mm solve, plus the F7 pilots. The plan estimated $15-30; the pilots set the figure.
+  Founder-set on 2026-11-15 (the proposed defaults accepted): A1's 2 %, K1's 5 %, K2's 15 %, A2's caps (E/L <= 0.05)
+  and the span ([0.75, 0.98], 3 below 0.90); the pair count, accepted at 5, is now 6 per reference (see above). Build
+  work (planner, after approval): (1) the Layout -> FastHenry exporter in src/ with a refinable wire cross-section
+  (P4's research exporter research/scripts/o006_p4/fh_export.py as the starting point, SI metres per D0002); (2)
+  l2_layout on the reconstructions' stacks and outlines at 1.0/0.5/0.25 mm if not already covered; (3) the perturbation
+  rules, including the wire-landing rule, and the proxy rule (shared with O008's build); (4) E004 design (scientist),
+  the F7 pilots (founder), review, registration, run, evaluation.
