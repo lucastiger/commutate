@@ -3,7 +3,7 @@ objective: O008
 title: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c)
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on:
 - T0378
 description: "Build item (3b) of the objective notes. Create src/moduleforge/optimize/nulls.py, built\
@@ -107,3 +107,6 @@ history:
       \ the 70x40 housing dominate. I did not mark any test slow.\n\nUntil T0379 lands, `movable_indices()`\
       \ still includes the `foot_*_land_*` parameters, so (b) and (d) move them. They pick that up automatically\
       \ once it does.\n\n"
+- outcome: full_gate_passed
+  summary: f08062b1a4e463eea2cf8a1b89012933873f7bcc
+  at: '2026-11-16T23:45:47+00:00'

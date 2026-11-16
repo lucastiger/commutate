@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "A run that reaches its local optimum on exactly the last allowed step is labelled step_limit",
+      "detail": "null_compact checks `steps >= step_limit` before looking at the neighbourhood again. null_widen inherits the same rule from descend, which documents that it does not re-examine the neighbourhood at the limit. So a run that reaches its local optimum on exactly step `step_limit` is reported as STEP_LIMIT. Under A3, a capped run 'does not count as a resolved failure', so this error is conservative: it pushes toward INCONCLUSIVE, not a false PASS. It is a real mislabel of the terminal kind the objective gates on. It happens on the test's own fixture at the frozen NULL_STEP_LIMIT.",
+      "evidence": "70x40 housing, d = generate(spec,1,5,reach=True)[0] (the test fixture): null_compact(step_limit=400) returns steps=200, terminal=local_optimum. null_compact(step_limit=200) (the default NULL_STEP_LIMIT) returns steps=200, terminal=step_limit, with the identical layout.",
+      "suggested_check": "When the limit is hit, examine the neighbourhood once more (or run to step_limit+1) and label the run local_optimum if no move improves; add a test with step_limit equal to the known optimum step count.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "'Generous' NULL_STEP_LIMIT=200 is not shown for the registered degraded copies",
+      "detail": "A3 counts a capped null as unresolved, so on a layout where the nulls cap out A3 cannot be met. I measured step counts. On 2R: 12\u201338 steps, from the twin, a generated layout and an L1-ascent degraded copy (R_D at L1 = 1.37). On Case 4: 36/64 steps from the twin and 59\u2013107 from two degraded copies at R_D(L1) of about 1.14\u20131.15. All of these are within 200. On the 70x40 test housing, however, compact needs exactly 200 steps and widen 178. Registered D_j will be degraded to R_D in [1.25, 1.60] at L2, deeper than my Case 4 copies, so the margin on Case 4 is not established.",
+      "evidence": "See independent checks: Case 4 degraded copies seeds 101/202: widen 74/59 steps, compact 107/95 steps; 70x40 seed 5: compact 200, widen 178.",
+      "suggested_check": "E011's design should report the terminal kind and step count of both nulls on development draws at the registered R_D range before freezing the limit.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The compaction constraint (do not reduce copper, do not lengthen wires) is never exercised by the tests",
+      "detail": "On the test fixture, an unconstrained steepest ascent of A\u2212W reaches the same layout as null_compact after 60 steps; the constraint binds on 0 of those steps. On a 2R generated layout the full runs are identical too (31 steps, 0 binding steps). A scan of the first-step neighbourhoods of four Case 4 generated layouts found no move that improves the score but breaks the constraint. So a mutant that drops or inverts the constraint check in `score` would pass every test, including test_compact_local_optimum_has_no_feasible_improving_move. Behaviour is unaffected today, because the constraint is practically inert for single-parameter moves.",
+      "evidence": "70x40 seed5 limit 60: constrained vs unconstrained final fingerprint equal, 0 binding steps; 2R gen: same final layout, 31 vs 31 steps; Case 4 4 layouts: 0 improving-but-infeasible first-step moves.",
+      "suggested_check": "Add a unit test with a synthetic score/geometry, or a hand-picked candidate pair, where the steepest A\u2212W move reduces copper, and assert null_compact rejects it.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Distance is measured from D_j rather than W*, and the nulls cannot hold die rows fixed",
+      "detail": "F1 asks for 'the parameter-space distance from W*' per draw. The nulls record manhattan_mm and changed_params from D_j, as the docstring states, so the runner must compute the distance from W* itself from NullResult.params. Also, null_widen and null_compact always move descend's default parameters (die rows included). Unlike local_search (LocalConfig.dies_fixed) they have no dies_fixed or movable argument. If the Tj fallback ever made the search run with die rows fixed, the nulls could not follow the rule that every null moves the search's parameters.",
+      "evidence": "",
+      "suggested_check": "Give the nulls an optional movable/dies_fixed argument passed through to descend, or state in E011 that die rows stay free for every arm.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Slow unit tests are not marked slow; the ablation keeps every distinct layout in memory",
+      "detail": "test_nulls.py takes about 125 s and is not marked slow, so it runs in the fast suite (`-m 'not slow'`). ablation_random_screen keeps every distinct layout in `first`, whereas search._screen keeps only the shortlist. It also has no Store checkpoint, unlike local_search and run_control. This is fine at budget 2000, but it differs from the D0008 driver's memory and resume design.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/optimize/test_nulls.py`: 11 passed in 124.5 s. Ran `uv run ruff check src/moduleforge/optimize tests/unit/optimize`: all checks passed.",
+    "Wrote my own steepest-ascent loop (own feasibility filter and strict-improvement/first-tie selection over the _Space neighbourhood) for widen and compact, and asserted DRC-clean on every valid candidate. Compared it with null_widen/null_compact on 70x40 seeds 5 and 11, the 2R twin and a 2R generated layout. Final fingerprint, step count, terminal kind and score trajectory were identical in all 8 runs, and every visited candidate passed DRC.",
+    "Cross-checked ablation_random_screen against the existing D0008 driver search.run_control (SearchConfig with n_candidates=budget, shortlist=K, the same chunk and the reach generator), using stub solvers with non-trivial L1/L_sub. Seeds 7 (B=60, K=6) and 13 (B=45, K=4) gave an identical ordered shortlist and an identical best layout.",
+    "Ran both nulls with the default limit on the real development geometry. 2R (E010 ctx): twin 12/15 steps; generated layout 17/31; L1-ascent degraded copy (R_D_L1 = 1.37) 21/38; all local_optimum. Case 4 (E008_dev ctx): twin 36/64; degraded copies seed 101 (R_D_L1 1.15) 74/107 and seed 202 (1.14) 59/95; all local_optimum within 200.",
+    "Measured compact on the test fixture with limit 400: local optimum at exactly 200 steps. With limit 200 the same run is labelled step_limit (the boundary mislabel).",
+    "Mutation check of the tests: compared constrained vs unconstrained compaction on the fixture (60 steps) and on 2R (full run), and scanned the first-step neighbourhoods of four Case 4 generated layouts for improving-but-infeasible moves. The constraint never bound, so the tests do not exercise it.",
+    "Numerics: the smallest score increment per step over 6 runs (70x40, Case 4 twin, 2R) was \u2265 2.6e-3 (compact) and \u2265 2 mm\u00b2 (widen). No float-noise steps are taken, even though descend has no acceptance tolerance.",
+    "Read twin._walk_candidates, derivative.in_domain and local.descend: no inductance solver is reachable from the blind nulls. in_domain includes the build, _quick_ok and a DRC check under spec.rules."
+  ],
+  "caveats": [
+    "Terminal labelling is exact only when the step count is below step_limit. A run that reaches its optimum on exactly the last allowed step is reported as step_limit. This is conservative for A3.",
+    "Whether NULL_STEP_LIMIT=200 is 'generous' was measured only on 2R and Case 4 twins, generated layouts and L1-ascent copies up to R_D_L1 of about 1.37 (2R) and 1.15 (Case 4). It was not measured at the registered R_D range [1.25, 1.60] at L2, because the randomised degradation family does not exist yet.",
+    "The compaction constraint is correct by reading and inert on every layout I tried. Its correctness is not protected by any test.",
+    "Nulls (b) and (d) always move descend's default parameter set, die rows included, and record distances from D_j, not from W*.",
+    "Ablation (c) counts its budget in draws; L1 evaluations are at most the budget when the sampler repeats layouts. On the layouts tested, l1_evals equalled n_draws."
+  ]
+}

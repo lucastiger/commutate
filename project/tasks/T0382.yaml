@@ -101,7 +101,24 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ (it cannot happen with T0379's family, which keeps every D_j in the domain; the runner asserts it).\
   \ Development mode reports the step counts of nulls (b) and (d) on 2D_Case_4 draws, where the probe's\
   \ nulls hit a 60-step cap on 8 of 10 runs, to show whether NULL_STEP_LIMIT = 200 reaches a local optimum\
-  \ there; the A3 margins are re-measured in-domain (the probe filtered by DRC only)."
+  \ there; the A3 margins are re-measured in-domain (the probe filtered by DRC only).\n\nReview T0426\
+  \ of T0380 (numerics, accept with caveats; founder session, 2026-11-16). In src/moduleforge/optimize/nulls.py\
+  \ and tests/unit/optimize/test_nulls.py:\n1. A null that reaches its local optimum on exactly step NULL_STEP_LIMIT\
+  \ is labelled step_limit (on the test's own 70x40 fixture, seed 5, compact reaches its optimum at exactly\
+  \ step 200). When the limit is hit, examine the neighbourhood once more and label the run local_optimum\
+  \ if no feasible move improves; add a test whose step_limit equals the known optimum step count. The\
+  \ returned layout does not change, only the label.\n2. The compaction constraint (no copper lost, no\
+  \ wire lengthened) bound on no step of any layout T0426 tried, so no test protects it: add a unit test\
+  \ with a hand-picked or synthetic candidate where the steepest A-W move reduces copper, and assert null_compact\
+  \ rejects it.\n3. Nulls (b) and (d) move descend's default set, movable_indices(): the frozen set, die\
+  \ rows included. Give both an optional dies_fixed argument (default False) passed through to descend,\
+  \ so that a dies-fixed arm, if E011 has one, moves the same set for the search and every null; E011's\
+  \ spec states which arms keep die rows free.\n4. test_nulls.py takes about 125 s and runs in the fast\
+  \ suite: mark the long tests slow and keep a fast smoke test.\n5. Development mode reports, for each\
+  \ null, layout and draw from T0379's family at the registered R_D range [1.25, 1.60], the step count\
+  \ and terminal kind. T0426 measured only up to R_D(L1) of about 1.15 on 2D_Case_4, where compact took\
+  \ 107 of the 200 steps; if any development run is capped, say so before the limit is frozen in the spec.\n\
+  6. Ablation (c) counts its budget in draws: report l1_evals beside n_draws.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py

@@ -4,7 +4,7 @@ title: 'F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio est
   VM job list'
 type: investigate
 agent: scientist
-status: running
+status: todo
 depends_on:
 - T0386
 description: 'This tests the cheapest likely failure before any E004 design spend: P3''s l2_layout ratio
@@ -99,7 +99,7 @@ model: null
 budget_usd: 5.0
 max_turns: 120
 wall_minutes: null
-attempts: 1
+attempts: 0
 max_attempts: 3
 branch: task/T0387-f7-b-d-l2-layout-check-on-case-4-develop
 pr: null
@@ -114,4 +114,9 @@ lens: null
 trigger: null
 rationale: F7(b), (c) and (d) (before registration); F1 exclusion risk, the likeliest INCONCLUSIVE path;
   tested first because it needs only l2_layout and Case 4.
-history: []
+history:
+- outcome: capacity_backoff
+  summary: 'API Error: Can''t reach the API server — check your internet or DNS (ENOTFOUND)'
+  at: '2026-11-16T23:12:24+00:00'
+  until: '2026-11-16T23:17:24.584526+00:00'
+  session: 39796813-99fd-481c-969b-b4bd94d5344e

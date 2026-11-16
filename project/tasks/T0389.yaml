@@ -44,7 +44,21 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   the thickness term inside the 1 % ratio estimate); no FastHenry on 2D_Case_2R or 2D_Case_6 before registration
   (F2). (2) E004''s frozen FastHenry level is a converged thickness level from that ladder, never nh =
   1. (3) Write in the spec which stack each judged reference has, so a reader can tell whether the thin-stack
-  result applies to it.'
+  result applies to it.
+
+
+  T0385''s report (FastHenry adapter, founder session, 2026-11-16): (1) FastHenry returned NaN impedance
+  with exit code 0 on a small layout at wire_n = 1 with wire_sub = 1; wire_n = 2, or wire_n = 1 with wire_sub
+  = 2, solved normally. The adapter reports NaN as parse_error, so a ladder level with wire_n = 1 and
+  wire_sub = 1 could leave a pair without a value: no E004 level and no job in vm_jobs_fasthenry.json
+  uses that combination, and the job list records each job''s wire_n and wire_sub. (2) solve_layout()
+  refuses multipole on die_model=''distributed'' decks (the T0409 segfault): say which die model each
+  job uses, and project memory and time for direct solves wherever it is distributed. (3) FastHenry reports
+  its post-refinement filament count only once a run has started, so multipole memory is limited by the
+  adapter''s watchdog alone: the memory projections in the job list carry a stated margin, and the runner
+  records each attempt''s peak RSS.
+
+  '
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/drafts/E004.yaml
