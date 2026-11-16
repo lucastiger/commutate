@@ -59,7 +59,14 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ = 1e-12 H, which reproduces the probe's 27 steps and L1 ratio 0.8979 on 2R; without it the descent\
   \ walks noise-level gains to 0.875 in 43 steps) is a frozen-rule choice the founder confirms at T0379's\
   \ merge. Whatever is frozen, E011's development rows report the descent without the threshold as a sensitivity\
-  \ row (steps, L1 ratio, and L_sub at the development resolution) beside the frozen proxy."
+  \ row (steps, L1 ratio, and L_sub at the development resolution) beside the frozen proxy.\n\nT0380's\
+  \ report (founder session, 2026-11-16): optimize.nulls records each null's changed-parameter count and\
+  \ Manhattan distance from D_j, because a null must not see W*. O008 (F-nulls detection) reports, per\
+  \ draw, the parameter-space distance from W* for the search and for every null: the runner computes\
+  \ it after each run from the returned layout and W*'s parameters, over movable_indices(). Nulls (b)\
+  \ and (d) stop at their own local optimum or at nulls.NULL_STEP_LIMIT = 200 steps; a capped null is\
+  \ recorded as capped (the A3 metric's capped column) and is never a resolved failure; development mode\
+  \ reports how many null runs hit the cap."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py

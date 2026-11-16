@@ -3,7 +3,7 @@ objective: O008
 title: Inductance-blind nulls (a), (b), (d) and the random-screen ablation (c)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0378
 description: "Build item (3b) of the objective notes. Create src/moduleforge/optimize/nulls.py, built\
@@ -70,4 +70,40 @@ target: null
 lens: null
 trigger: null
 rationale: Gating nulls (b) and (d) for A3, the sanity null (a) of F1, and the reported ablation (c).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: "I added src/moduleforge/optimize/nulls.py with nulls (a), (b), (d) and the random-screen ablation\
+    \ (c), plus 11 tests in tests/unit/optimize/test_nulls.py. All three DoD commands exit 0, and the\
+    \ work is committed as ce9a1f6f.\n\n- **(a) null_seed:** returns D_j unchanged.\n- **(b) null_widen:**\
+    \ runs `local.descend` on −(power copper area, mm²), with `movable=None` and a frozen limit `NULL_STEP_LIMIT`\
+    \ = 200.\n- **(d) null_compact:** maximises the probe's compact score (copper area in mm² minus power-wire\
+    \ length in mm), keeping only moves that neither reduce copper nor lengthen wires.\n  - `descend`\
+    \ has no constraint hook, so the constraint is anchored at the current layout and `descend` is called\
+    \ one step at a time.\n  - Moves that break the constraint score +inf, so they are never taken.\n\
+    - **Term"
+  report:
+    status: completed
+    summary: "I added src/moduleforge/optimize/nulls.py with nulls (a), (b), (d) and the random-screen\
+      \ ablation (c), plus 11 tests in tests/unit/optimize/test_nulls.py. All three DoD commands exit\
+      \ 0, and the work is committed as ce9a1f6f.\n\n- **(a) null_seed:** returns D_j unchanged.\n- **(b)\
+      \ null_widen:** runs `local.descend` on −(power copper area, mm²), with `movable=None` and a frozen\
+      \ limit `NULL_STEP_LIMIT` = 200.\n- **(d) null_compact:** maximises the probe's compact score (copper\
+      \ area in mm² minus power-wire length in mm), keeping only moves that neither reduce copper nor\
+      \ lengthen wires.\n  - `descend` has no constraint hook, so the constraint is anchored at the current\
+      \ layout and `descend` is called one step at a time.\n  - Moves that break the constraint score\
+      \ +inf, so they are never taken.\n- **Terminal kind:** (b) and (d) each record `local_optimum` or\
+      \ `step_limit`.\n- **Records:** every null records steps, changed-parameter count and Manhattan\
+      \ distance from D_j, taken over the whole parameter vector.\n- **(c) ablation_random_screen:** `candidate_stream`\
+      \ over `generate(reach=True)` draws `cfg.budget` candidates.\n  - L1 is solved once per distinct\
+      \ fingerprint, the `cfg.shortlist` lowest-L1 layouts go to `l_sub`, and the lowest `l_sub` wins.\n\
+      \  - D_j is used only for the recorded distance.\n\nThe tests cover each item in the packet's list;\
+      \ (b) and (d) are checked at `local_optimum` by enumerating the neighbourhood for any feasible improving\
+      \ move. They don't touch `foot_*` moves.\n\nTwo of my choices go beyond the packet:\n- (a), (b)\
+      \ and (d) take an optional `solvers` argument that is never called. I added it so the \"inject raising\
+      \ l1 and l_sub\" test can pass solvers in, and the test also monkeypatches `twin._l1` to raise.\n\
+      - (c) takes `d` and `chunk` arguments (chunk defaults to 250). `d` is only for the recorded distance.\n\
+      \nThe unit test file takes about 2 minutes to run, because the two 400-step local-optimum runs on\
+      \ the 70x40 housing dominate. I did not mark any test slow.\n\nUntil T0379 lands, `movable_indices()`\
+      \ still includes the `foot_*_land_*` parameters, so (b) and (d) move them. They pick that up automatically\
+      \ once it does.\n\n"
