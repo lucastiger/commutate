@@ -22,7 +22,10 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   (2D_Case_4) below the twins at L1. O008's T0376 checked it with l2_layout at 0.5 mm (2026-11-16): the optimised
   layouts sit 7 % (2R, L2 ratio 0.929) and 30 % (Case 4, 0.699) below the twins. The references are development
   geometry already seen, the cells are coarser than a judged run's, and Tj was not checked, so this still cannot
-  count for A-T3; it is the strongest technical signal so far that headroom exists.
+  count for A-T3; it is the strongest technical signal so far that headroom exists. One limit since (2026-11-16,
+  reviews T0421/T0422): the probe's 2R optimum widens the low-side die-row gap past the search domain's cap (minimum
+  gap + 2 mm), so the search cannot reach it. O008's proxy, frozen inside the search's domain, is shallower: L1 ratio
+  0.914 on 2R (probe 0.898) and 0.653 on Case 4 (probe 0.628). Headroom the search can find is bounded by that domain.
 - **Customers:** `project/customers/` holds only its README. No customer conversation is on record, and the charter
   counts customer evidence only when it is recorded there. Outreach drafts are ready
   (`research/notes/outreach-drafts.md`).
