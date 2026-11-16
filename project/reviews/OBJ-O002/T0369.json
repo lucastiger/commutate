@@ -1,0 +1,75 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "F1's 0.05 K die-average estimate cannot be met at any affordable level of the frozen grid rule, and the cost estimate assumes the middle grid",
+      "detail": "The claim says the thresholds and the sample can resolve the decision. F1 requires gci_capped \u2264 0.05 K for every die-average Tj, at the grid level whose three-level estimate meets that bound. The only die-average sequence in the repository is T0325's level 0\u20132 run on 2D_Case_4. Its steps are 0.50\u20130.54 K (level 0\u21921) and 0.14\u20130.15 K (level 1\u21922), a step ratio of about 0.28. gci_capped caps the order at 1, so its estimate is 1.25\u00b7|d2|, which gives 0.174\u20130.190 K at level 2, 3.5\u20133.8 times F1's bound. Projecting with the same step ratio gives 0.049\u20130.054 K at level 3 (3 of 4 dies still fail) and about 0.015 K only at level 4. The cost side does not fit either. On the 2.8 M-node case a level-2 solve already takes about 21 min and an estimated 11.8 GB. Generator layouts have 4.0\u20139.5 M DOFs at level 2 (E009), so level 3 would be roughly 30\u201376 M DOFs, far beyond the memory rule and the 120 CPU-hour budget for 100\u2013150 solves. On generator layouts at level 2, E009's die-centre node estimate is already 0.03\u20130.10 K, above 0.05 K on 31 of 40 dies, and in T0325 the die-top mean converged more slowly than the centre node. The notes' 25\u201340 CPU-hour figure rests on the middle grid (level 1), where no three-level estimate meeting 0.05 K exists: the level-1 value differs from level 2 by about 0.15 K on the measured case. As drafted, the experiment is therefore predicted to be unregistrable, INVALID under F1, or over budget.",
+      "evidence": "research/o003/e008_dev/tj_osc/vm_level2/summary.txt (mean steps, e.g. [0.5364, 0.1523]); summary.json wall_s at level 2 is 561\u20131252 s; run.log 'est 11.8 GB'; research/notes/e008-design.md:815 (die-top mean GCI 0.174\u20130.193 K); experiments/results/E009/.../rows.json (fem_dofs_lv2 3.95e6\u20139.48e6, centroid_node_gci 0.030\u20130.099); tools/mfos/mfos/metrics.py:128 gci_capped (order cap 1)",
+      "suggested_check": "Before approval, solve one or two generator development layouts at levels 0\u20132 with tj_mean and compute gci_capped of the die-average. Then either set F1's die-average and pair bounds to what the frozen rule delivers at a solvable level, or re-price the budget for the level that meets F1.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The layout-clustered percentile bootstrap upper bound of a p95 undercovers, so F3's coverage \u2265 0.95 and power \u2265 0.8 are unlikely at the sample the budget allows",
+      "detail": "I simulated A1's statistic: the p95 of |e_a \u2212 e_b| over same-stratum pairs, true p95 = 0.3 K (F3's 0.6 \u00d7 threshold), with a layout-clustered bootstrap resampled within strata, self- and duplicate-pairs excluded, B = 400 and 200 replications. Coverage of the 95 % upper bound came out at 0.885 (normal) and 0.83 (t3) at 6 strata \u00d7 8 layouts, 0.92 and 0.895 at 10 \u00d7 20, and 0.935 and 0.865 at 20 \u00d7 10. F3 requires at least 0.95 under both error models, and none of these sizes reaches it. Power under t3 errors at 6 \u00d7 8 was 0.76 for A1. In a separate run, using P2's per-stratum spread statistics, A4 power was 0.615. The draft's illustrative 6 \u00d7 8 sample would therefore fail F3, and coverage does not reach 0.95 even at 4 times that size. If F3 is applied as written it will fire, forcing a redesign. If it is relaxed, the upper bounds behind A1\u2013A4 are anti-conservative, so a pass would be declared too often when the true p95 sits at the threshold.",
+      "evidence": "Scratch simulations run with uv run python (seeds 20261115 and 7); inputs are the per-stratum spread mean and null p95 from research/notes/o006-p2-thermal-nulls.md table, 45 W",
+      "suggested_check": "Run F3's own simulation now with the exact mfos bootstrap. If coverage falls short, specify a bound that holds its coverage (an order-statistic/binomial bound on layouts, BCa, or a calibrated bootstrap) as part of the protected metrics additions.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "A3 alone is met by a layout-ignorant predictor, and F2 read literally contradicts the design",
+      "detail": "The claim says no criterion would be met by a predictor that ignores the decision-relevant information. In the P2 pilot (hottest node, level 0), the stratum-mean-spread predictor has a pooled p95 spread error of 0.50 K at 25 W and 1.02 K at 45 W. It is below 1 K in 11 of 15 strata at 45 W and in every stratum at 25 W. P_ref, per E009's calibration of 32\u201347 W per die, falls in or near that range, so null (d) is expected to meet A3's 1 K. The draft concedes this: A4 exists 'so A3 cannot pass on a uniform stratum alone'. Only the conjunction A3\u2227A4 is protected, and A5 is met by every null trivially. F2 nonetheless requires 'each null failing A1-A4 at its point estimate'. Read literally, that check is predicted to fire as a design error on A3.",
+      "evidence": "research/notes/o006-p2-thermal-nulls.md lines 83-84 and 97-100; E009 rows power_w 32.2\u201347.1 W",
+      "suggested_check": "Rewrite F2 as 'each null fails pass_all (at least one of A1-A4), with A4 expected to carry the spread test', and restate the claim for the conjunction rather than for each criterion.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Pooled p95s and a minimal strata sample do not cover the claimed scope",
+      "detail": "The scope is all generator families \u00d7 2\u20136 dies, 15 cells, with one die size drawn per stratum. F3 selects 'the smallest sample', and the notes illustrate 6 strata, so most cells and die sizes go unsampled and die size is confounded with stratum. A3 and A4 are pooled across strata whose spread variation differs by about 5 times (null p95 0.24 K in interleaved/2 versus 1.34 K in side_by_side/6 at 45 W). The pooled p95 is therefore set by the high-die-count strata, and an L1 whose spread errors in 2-die strata exceed those strata's whole spread variation can still pass. Per-stratum results are reported only.",
+      "evidence": "research/notes/o006-p2-thermal-nulls.md table; O002 draft F3 'smallest sample'",
+      "suggested_check": "Require that every (family, die-count band) be sampled, or narrow the claim's scope to the strata actually drawn; report the A4 ratio per die-count band.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Accuracy on random generator pairs does not establish the +2 K budget on L1-selected candidates",
+      "detail": "decision_if_pass puts L1 into the search score or screen. Candidates chosen by optimising against L1 preferentially land where L1 under-predicts Tj (the optimiser's curse) and can lie outside the random-layout distribution that A1\u2013A4 sample. The reference audit of the shortlist mitigates this, but the stated null ('too inaccurate to enforce a +2 K budget during search') is tested only on unselected layouts.",
+      "evidence": "O002 draft hypothesis and decision_if_pass; A1 is defined on random same-stratum pairs",
+      "suggested_check": "Report, or gate, A1 on a small set of L1-optimised layouts per stratum, audited by the reference.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The kill criteria cover only the 'too inaccurate' half of the null; multiplicity across levels is not stated",
+      "detail": "K1 and K2 can fire: a stratum-mean-like L1 has pair p95 errors of 1.6\u20138.8 K, well above 1.5 K. However, nothing kills on 'no better than a lookup on die position' (the A2 or A4 failure modes) or on speed. K2's 15 % sits far above the die-position lookup's roughly 5.6 %, so an L1 as poor as the lookup gives INCONCLUSIVE, not FAIL. That is acceptable only because decision_if_inconclusive equals fail. The kill rule takes lower bounds over 2 criteria \u00d7 2 load levels, so at the boundary the false-kill rate is up to about 10\u201320 % rather than 5 %.",
+      "evidence": "O002 draft fail_any; P2 note DP relative error median 5.6-5.7 %",
+      "suggested_check": "Either add a kill on A4's ratio lower bound > 1 (L1 no better than the stratum-mean spread), or state that null part 2 can only yield INCONCLUSIVE; state the false-kill rate.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Metric definitions that cannot yet be recomputed unambiguously",
+      "detail": "Three definitions are open. First, A1's 'hottest die' does not say whether L1's and the reference's hottest die are each chosen by their own model or fixed by the reference. Second, null (d) does not say whether it is in-sample (on the evaluation rows, as P2 assumed) or development-trained. Third, nulls (b) and (c) are keyed on a die size that is drawn fresh for judged strata, so they exist only on development rows. Each choice changes A1/A4 values at the 0.1 K level that matters here.",
+      "evidence": "O002 draft A1, F2(b)-(d); o006-p2 note line 24-29",
+      "suggested_check": "Fix each definition in the objective text before approval.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed die-average gci_capped with tools/mfos/mfos/metrics.py on T0325's level 0-2 die-mean steps (0.174\u20130.190 K). Projected levels 1-3 (0.049\u20130.054 K) and 2-4 (0.015 K) using the observed step ratio of about 0.28 and the order-1 cap.",
+    "Read level-2 wall time (561\u20131252 s) and memory estimates (9.4\u201311.8 GB at 2.2\u20132.8 M nodes) from T0325's VM summary and run log, and compared them with E009's generator level-2 DOFs (3.95\u20139.48 M).",
+    "Tabulated E009's per-die hottest-node and die-centre-node estimates on 5 generator layouts at level 2: the die-centre estimate is 0.030\u20130.099 K, above 0.05 K on 31 of 40 dies.",
+    "Simulated A4 and A1 power at 0.6 \u00d7 threshold with a layout-clustered bootstrap (normal and t3 errors, 6x8, 6x12, 10x10): at 6x8, A4 power 0.875 normal / 0.615 t3 and A1 power 0.785 t3.",
+    "Simulated coverage of A1's bootstrap upper bound at 6x8, 10x20 and 20x10: 0.83\u20130.935, below F3's required 0.95 under both error models.",
+    "Checked the P2 thermal-nulls pilot against each criterion: A1 null p95 1.6\u20138.8 K (discriminates); die-position lookup on A2 3.2\u20138.8 % (narrow in 3 strata); stratum-mean-spread null pooled 0.50 and 1.02 K (meets A3's 1 K, so only A4 protects)."
+  ],
+  "caveats": [
+    "The F1 infeasibility rests on one measured die-average sequence (2D_Case_4, a 4 x 6 mm reconstruction die), plus generator die-centre estimates from E009. Generator layouts with 4\u20135.5 mm dies might converge faster for the die-average; this was not measured because no generator tj_mean three-level data exist in the repository.",
+    "The power and coverage simulations use my own implementation of the layout-clustered pairwise bootstrap, resampled within strata, not the future mfos function. They model A1 and A4 only, and use the P2 pilot statistics (hottest node, level 0, 45 W) as a proxy for die-average values at P_ref. The Monte Carlo standard error is about \u00b10.03.",
+    "A1 does discriminate against layout-ignorant nulls: the stratum-mean pair null's p95 is 1.6\u20134.5 K at 25 W, 3\u201318 times the threshold. A2 discriminates pooled (die-position lookup median about 5.6 %), though only narrowly in three strata on hottest-node data, and it has not been re-measured for the die-average.",
+    "F1 and F3 are pre-registration gates, so the defects above are predicted to block or invalidate the experiment rather than to produce a false PASS, provided F3 is run faithfully with the exact bootstrap used for evaluation."
+  ]
+}
