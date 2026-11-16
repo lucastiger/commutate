@@ -1,0 +1,45 @@
+{
+  "summary": "The F1 check can't give a verdict yet: status 'awaiting_level2', level1 'pending'. Every rule that the available data can test passes for level 1, and none fails. Six level-2 solves are still missing (both development layouts at 0.5 P_ref, and both partners at both loads). They exceed the local memory rule, so they are in research/o002_f1/burst_level2.sh for your burst VM. Once they are copied back, `--analyse` gives the final verdict without any new solve.\n\nWhat was done:\n- **Reproduction check.** I re-solved levels 0 and 1 at P_ref on side_by_side_6 and u_shaped_2 with the frozen thermal_fem bytes (a216d5fe...). They reproduce the cached tj_mean and tj_max in research/o007_dev3/cache exactly (0.0 K difference; tolerance 1e-6 K). So the cached level-2 solves count for P_ref on the development layouts.\n- **Partners.** I added one partner per stratum, chosen by a rule fixed before any solve: the first later layout from E009's dev seed 20261101 with the same family, die count and die size (5.0 mm). That is stream index 2 in both strata: side_by_side_6_p (bbbac5e8...) and u_shaped_2_p (2207858e...). The generator option for a fixed die size (T0394) does not exist yet, so this was done by rejection.\n- **Local solves.** 16 solves at levels 0-1 (4 layouts x 2 loads), run one at a time, peak memory at most 3.7 GB.\n\nOutcome on the data available:\n- **Absolute die averages at P_ref (development layouts):** 16/16 pass. The worst level-1 error is 0.72 % of the die's local rise (limit 1 %); level-2 estimates are 0.07-0.15 K.\n- **Spreads at P_ref (development layouts):** 4/4 pass, worst 0.026 K (limit 0.1 K).\n- **Level 1 against level 2:** 4/4 testable values pass, worst 0.011 K; 6 are pending.\n- **Same-stratum pair differences:** both pending at both loads. The level-0\u21921 steps are 0.017-0.055 K.\n- **Energy balance:** at most 3.4e-13 on all 18 solves.\n- **Tj at P_ref:** at most 126.2 \u00b0C on every layout (limit 175 \u00b0C).\n- **Sanity checks:** all pass. These cover fingerprints, Picard and CG convergence, the frozen bytes, the baseplate-bottom mean computed two ways, the 8x growth in DOF between levels, and the half-load scaling.\n\nTwo findings matter for E007's design:\n- **Cross-stratum difference (reported only, never gated):** its level-1 error at P_ref is 0.103 K, just above the 0.1 K used for same-stratum pairs.\n- **Hottest die swaps between levels:** on u_shaped_2_p, dies 0 and 2 trade rank between levels 0 and 1, with a level-1 gap of 0.0002 K at 0.5 P_ref. The gated fixed-die sequence is unaffected, but which die is 'hottest' is not settled by the grid.\n\nMy confidence that the burst will confirm level 1 is about 0.8. This is an inference from the error-to-step ratios on the complete sequences; it is not evidence.\n\nCommands run, all exit 0:\n- `--solve-one u_shaped_2__P_ref__L0`\n- `--solve-local`, twice; the first pass skipped the side_by_side level-1 jobs on an over-conservative memory estimate\n- `--analyse`\n- `bash -n` and `--dry-run` on burst_level2.sh\n- the JSON assertion command from the definition of done\n- `uv run ruff check research/o002_f1`\n- the thermal_fem sha256 test\n- `uv run mfos gate --fast` ('all gates passed')\n\nNothing is committed. The VM step needs research/o002_f1 on main.",
+  "status": "partial",
+  "failure_class": "none",
+  "confidence": 0.8,
+  "root_cause": "No failure. The verdict is open because 6 level-2 solves are missing. They need 22.6-54.1 GB each by E009's memory figures (DOF x 4964 B x 1.15), above the local 5-10 GB rule, so they go to the burst VM as the task specified.",
+  "evidence": [
+    "Reproduction check: own level-0 and level-1 re-solves at P_ref on both development layouts match the research/o007_dev3/cache tj_mean and tj_max with a maximum difference of 0.0 K (tolerance 1e-6 K), with thermal_fem sha256 a216d5fe3209bcee... and the same power. The cached level-2 solves at P_ref are therefore admissible.",
+    "Absolute die averages at P_ref, development layouts: 16/16 pass. The worst level-1 error (|L1-L2| + gci_step_floor estimate) is 0.72 % of the local rise (0.212 K on a 29.6 K rise; largest error 0.274 K).",
+    "Spreads at P_ref, development layouts: 4/4 pass, worst level-1 error 0.026 K (u_shaped_2 LS). Level 1 against level 2: 4/4 testable pass, worst 0.011 K.",
+    "Pending sequences, level-0\u21921 steps only: absolute die averages at most 0.86 % (P_ref) and 0.83 % (0.5 P_ref) of the local rise; spreads at most 0.037 K; same-stratum pair differences 0.055 and 0.038 K at P_ref, 0.025 and 0.017 K at 0.5 P_ref.",
+    "Energy balance at most 3.4e-13 on 18 stored solves. Tj max at P_ref at most 126.2 \u00b0C. The 0.01 K step floor fired on none of the 20 complete sequences.",
+    "Sanity checks: the baseplate-bottom mean from the exact integral of the Q1 field agrees with T_c + Q_out/(hA) to 6e-14 K; DOF growth between levels is 7.33-7.67x; the rise at 0.5 P_ref is 0.489-0.493 of the rise at P_ref, below 0.5 as expected for k falling with T.",
+    "Cross-stratum difference (reported only): 2.082 / 1.957 / 1.911 K at levels 0-2 at P_ref; level-2 estimate 0.057 K; level-1 error 0.103 K.",
+    "u_shaped_2_p: dies 0 and 2 swap hottest rank between levels 0 and 1 at both loads; the level-1 gap is 0.032 K at P_ref and 0.0002 K at 0.5 P_ref."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "H2: level 1 fails on data not yet solved: absolute averages on the partners or at 0.5 P_ref, or a pair difference whose hottest die changes again at level 2.",
+      "how_to_discriminate": "The 6 level-2 solves in burst_level2.sh, then --analyse. Any level-1 error above 1 % of the local rise, or above 0.1 K for a spread or pair, refutes level 1."
+    },
+    {
+      "explanation": "H3: the check itself is broken (stale cache, a different solver, a wrong power).",
+      "how_to_discriminate": "Bit-exact reproduction of the cached level-0 and level-1 solves, the frozen sha256 in every own solve record, the baseplate mean computed two ways, and the DOF growth. All pass, so H3 is rejected for the data in hand."
+    }
+  ],
+  "discriminating_tests": [
+    "Level-2 solves on the burst VM: side_by_side_6 at 0.5 P_ref; side_by_side_6_p and u_shaped_2_p at both loads; u_shaped_2 at 0.5 P_ref. Then `uv run python research/o002_f1/f1_dev_check.py --analyse`, which reports level1 confirmed or refuted."
+  ],
+  "recommended_actions": [
+    "Founder: once research/o002_f1 is committed on main, run `bash research/o002_f1/burst_level2.sh` (n2d-custom-8-81920-ext, 6 jobs, largest 54.1 GB of 66.3 GB usable, about 6.35 VM-hours, about $3.88 on-demand). It copies the results to research/o002_f1/burst_out and runs --analyse.",
+    "Do not register E007 until f1_dev_check.json reports level1 'confirmed'. If it reports 'refuted', F1's response applies: judge at level 2, or lower the load, under a new experiment id (founder decision).",
+    "E007 design (T0396 / planner): expect near-tied hottest dies in 2-die u_shaped layouts. Ranking the hottest die at the judged level is well defined but not grid-independent; report the own-hottest (max) variant beside A1 as already planned.",
+    "Never use the reference at level 1 for cross-stratum comparisons: their level-1 error is already 0.103 K at P_ref."
+  ],
+  "files_written": [
+    "research/o002_f1/f1_dev_check.py",
+    "research/o002_f1/f1_dev_check.json",
+    "research/o002_f1/burst_level2.sh",
+    "research/o002_f1/cache/ (16 level-0/1 solve records)",
+    "research/o002_f1/solve_local.log",
+    "research/notes/o002-f1-dev-check.md"
+  ],
+  "affects_acceptance_criteria": false
+}
