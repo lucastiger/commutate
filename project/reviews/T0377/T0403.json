@@ -1,0 +1,59 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "in_domain puts no upper bound on stack gaps, an undisclosed superset of the sampler",
+      "detail": "in_domain checks only gap >= spacing (`if gap < cx.sp[...] - 1e-9`). In the non-split sampler each gap is g_min + _snap(alpha * g_ext) with g_ext <= 12 mm (only the gaps between two die slots can be stretched to meet die windows). So in a housing without signal copper the predicate accepts gaps the sampler cannot draw. The docstring says every coordinate must be 'inside the interval the sampler would draw it from given the earlier coordinates' and names only the grid-rounding shrink fallback as a superset. Objective A2 reads in_domain as membership of the sampler's support, so a looser predicate could pass A2 for a layout that is in fact outside it. For the two counted twins this does not happen: 2R is placed in split mode (orient 0, cx.split True), where gaps are unbounded because the start jumps an obstruction, and Case 4's gaps are 5, 5 and 10 mm against a 15 mm cap (sp 3 + 12). I did not build an end-to-end accepted counterexample: all 240 block-shifted housing vectors failed `stack_window` first.",
+      "evidence": "derivative.py in_domain slot-gap loop vs _sample lines 846-848 and 857-897. Twin inspection script: 2R gaps (2, 14, 2) with sp 2 in split mode; Case 4 gaps (5, 5, 10) with sp 3 in non-split mode, stack exactly fills vwin (30, 80).",
+      "suggested_check": "Bound non-split gaps by g_min + 12 (or by the die-window stretch) in in_domain, or name the omission in the docstring next to the shrink-fallback caveat.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Reach mode cuts the DRC-clean yield per raw draw by about 3-5x, and many reach draws fail in build",
+      "detail": "Raw draws, in_domain reasons counted (stub-free run). 2R: legacy 118 DRC-clean of 475 non-None (40000 draws); reach 24 of 464 (40000 draws, other seed). Case 4: legacy 56 of 474, reach 13 of 650 (243 fail in build). Housing k=1: legacy 207 of 946, reach 62 of 1007 (413 fail in build). Throughput in reach mode is not measured or documented, although O008 runs the search under a fixed budget per run.",
+      "evidence": "My raw-draw scripts, seeds 424242 and 5150/5151.",
+      "suggested_check": "Measure DRC-valid candidates per wall second with reach on for 2R and Case 4, as the module docstring does for the legacy mode (T0290).",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "twin._net_side can misread a column's side for slots the reach domain allows",
+      "detail": "_net_side infers the side from the slots' mean mid-u against the column's mid-u. The reach domain lets a slot's attached end go past the column's outer edge to the limit while its free end is only about 1 mm beyond the inner edge. Example: column u 5-12, slot u 2-13 has mid 7.5 < 8.5, so it reads side +1 when the true side is -1. in_domain is not affected because it tries all 8 side combinations. But _straddle, _outer_edge and the reach _walk_candidates rely on _net_side and would then move the wrong end. This is not reached on the 2R or Case 4 twins.",
+      "evidence": "twin.py _net_side, _straddle, _outer_edge; derivative.py _sample attached-end draw (att in [ulo, edge]) and the landing-slot free-end rule (end - edge)*fs >= 1.",
+      "suggested_check": "A unit test with a straddling slot that reaches past the outer edge, asserting the side and the moved coordinate.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Case 4's twin is also outside the legacy domain; tests assert only the reach side",
+      "detail": "in_domain(case4 twin, reach=False) = (False, 'col_DC+_outer_edge'). This doesn't contradict the claim, but the module docstring presents only 2R as outside the legacy support (T0349). Since legacy in_domain is sound on 474 Case 4 legacy draws, this is a real property of the twin, not a predicate artefact.",
+      "evidence": "Twin inspection script output.",
+      "suggested_check": "Record it next to the 2R finding.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The author's soundness tests do not sample the 2R spec, the only split-mode spec",
+      "detail": "test_every_*_draw_is_in_its_own_domain cover the housing and Case 4, both non-split in both orientations. 2R is split in orient 0, so the D0021 _place_split path of the replay is untested. I covered it independently: 464 (reach) and 475 (legacy) raw 2R draws gave zero replay rejections.",
+      "evidence": "cx.split for 2R = {0: True, 1: False}; housing and Case 4 = {0: False, 1: False}.",
+      "suggested_check": "Add a 2R soundness test over generate(reach=True) and over raw draws.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three definition-of-done commands: test_reach.py 21 passed; fast tests in tests/unit/generate 130 passed; ruff clean.",
+    "Rebuilt the pre-change derivative.py by reverse-applying the packet's diff (git apply -R, clean) in TMPDIR. The legacy and new reach-off raw-stream hashes match the BASELINE values (5c78aed0cb38aa2c/1522, c635c5417b23cc74/1482), and match on a fresh seed (77, 3000 draws, k=1 and 3). The legacy and new generate fingerprints are identical. So the baseline values really come from the unmodified sampler.",
+    "Soundness of the in_domain replay on raw _sample draws (failures from build, quick_ok or DRC excluded): 2R reach 464, 2R legacy 475, Case 4 reach 650, Case 4 legacy 474, housing k=1 reach 1007 and legacy 946 non-None draws. Zero replay rejections, including 2R's split placement path, which the author's tests do not cover.",
+    "Inspected both twins' parameters against the sampler's own bounds (slot heights, gaps vs sp + 12, the split flag, vwin/bands, die windows). Neither relies on the predicate's missing gap upper bound. in_domain(reach=True) = (True, ''). Legacy results: 2R col_PHASE_outer_edge, Case 4 col_DC+_outer_edge.",
+    "Read the sampler and the replay side by side: outer-edge room, inner edge, attached-end interval, reach v extents, die-row x0, free ends, landing on the 0.125 mm grid, ldv, and _feet_reason vs _draw_feet. Every reach-on branch matches its interval. Every reach-off branch consumes no extra rng, which is why the legacy stream is bit-identical.",
+    "Tried to build in_domain-accepted vectors with gaps above sp + 12 on non-split housing layouts by block-shifting slots, rows and landing lines. All 240 attempts failed stack_window first, so the gap superset is shown by code reading only."
+  ],
+  "caveats": [
+    "Soundness (every draw satisfies in_domain) is shown by sampling only: a few hundred to about 1000 raw draws per spec and mode, and only the 2R, Case 4 and 70 x 40 housing specs.",
+    "in_domain is a superset of the sampler's support in more places than the docstring states (no upper bound on non-split gaps, plus the documented one-grid-step window tolerance). A2 = true certifies support membership only where those loose parts are not used. For the 2R and Case 4 twins I checked that they are not used.",
+    "Reach mode lowers the DRC-clean yield per raw draw by about 3-5x, and its throughput is unmeasured. Any fixed-budget use in E011 should take this into account.",
+    "The twin.py reach moves (degrade(reach=True), _walk_candidates(reach=True)) are opt-in and tested only on the 2R twin. The side inference they rely on can misread straddling slots that reach past the column's outer edge."
+  ]
+}

@@ -4,7 +4,7 @@ title: Draft E011's acceptance metric functions and analytic tests for the found
   (F7)
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on: []
 description: "F7: E011 cannot be registered until mfos.metrics computes A1, A2, A3 and K1 from per-draw\
   \ rows. tools/ is protected, so this task writes reference implementations and tests for the founder\
@@ -68,8 +68,8 @@ runs:
 - T0381-scientist-20261115T175208-7f35
 created_by: planner:T0375
 created_at: '2026-11-16T01:43:45+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0214
 target: null
 lens: null
 trigger: null
@@ -211,3 +211,7 @@ history:
 - outcome: full_gate_passed
   summary: 52e92ba52514b53a64676828aee3f6e22e0aba9b
   at: '2026-11-16T03:31:00+00:00'
+- outcome: merge_approved
+  summary: I0214
+  replan: true
+  at: '2026-11-16T03:41:30+00:00'
