@@ -3,7 +3,7 @@ objective: O008
 title: 'Kill shot: do the probe''s designer proxy and its null gap survive l2_layout?'
 type: investigate
 agent: scientist
-status: proposed
+status: running
 depends_on: []
 description: "Cheap falsification test before the search, proxy and null modules are built (objective\
   \ why_it_matters; research/notes/o008-control-probe.md says this is 'the cheap next test'). Development\
@@ -66,11 +66,12 @@ model: null
 budget_usd: 5.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0376-kill-shot-do-the-probe-s-designer-proxy-
 pr: null
-runs: []
+runs:
+- T0376-scientist-20261115T175207-16b0
 created_by: planner:T0375
 created_at: '2026-11-16T01:43:45+00:00'
 protected_approved: false

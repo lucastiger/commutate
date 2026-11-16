@@ -4,7 +4,7 @@ title: Draft E011's acceptance metric functions and analytic tests for the found
   (F7)
 type: design_experiment
 agent: scientist
-status: proposed
+status: running
 depends_on: []
 description: "F7: E011 cannot be registered until mfos.metrics computes A1, A2, A3 and K1 from per-draw\
   \ rows. tools/ is protected, so this task writes reference implementations and tests for the founder\
@@ -60,11 +60,12 @@ model: null
 budget_usd: 4.0
 max_turns: 60
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0381-draft-e011-s-acceptance-metric-functions
 pr: null
-runs: []
+runs:
+- T0381-scientist-20261115T175208-7f35
 created_by: planner:T0375
 created_at: '2026-11-16T01:43:45+00:00'
 protected_approved: false
