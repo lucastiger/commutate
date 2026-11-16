@@ -2610,3 +2610,8 @@
 {"ts": "2026-11-16T14:30:48+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0378-builder-20261116T063048-cc86", "task": "T0378", "role": "builder", "session": "09c86f72-5b9d-4300-b748-a86c1ca85a30"}
 {"ts": "2026-11-16T14:30:48+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0384-builder-20261116T063048-5eee", "task": "T0384", "role": "builder", "session": "72b206c3-26b7-4871-9ef2-a405570784a6"}
 {"ts": "2026-11-16T14:31:23+00:00", "event": "sleep_detected", "actor": "orchestrator", "gap_s": 3289, "runs_extended": 3}
+{"ts": "2026-11-16T14:33:50+00:00", "event": "replan_declined", "actor": "session", "objective": "O008", "reason": "T0376 kill shot did not fire; approved plan stands; T0413 stopped"}
+{"ts": "2026-11-16T14:34:11+00:00", "event": "run_stopped_for_founder", "actor": "orchestrator", "run": "T0413-planner-20261116T063047-98ff", "task": "T0413", "task_status": "cancelled"}
+{"ts": "2026-11-16T14:34:11+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0413-planner-20261116T063047-98ff", "status": "error", "cost": 1.211135, "subtype": "error_during_execution", "report": "missing"}
+{"ts": "2026-11-16T14:34:11+00:00", "event": "founder_stopped", "actor": "orchestrator", "task": "T0413", "run": "T0413-planner-20261116T063047-98ff", "run_status": "error", "task_status": "cancelled"}
+{"ts": "2026-11-16T14:34:17+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0386-builder-20261116T063417-22a2", "task": "T0386", "role": "builder", "session": "6d2cb963-af9a-4c6b-9ef7-7aeedfedd369"}
