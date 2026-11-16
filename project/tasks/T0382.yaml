@@ -93,7 +93,15 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ L2 redraw rate (F6), and cost the r_d_at_l2 calls made for draws that missed the L1 target.\n6. State\
   \ ablation (e)'s step limit (proxy_alone defaults to 100000, so only the L1 budget ends it).\n7. In\
   \ tests/unit/optimize/test_control.py, replace the vacuous no-L2 assertion with an import check (ast\
-  \ or inspect) that moduleforge.solvers.l2_layout is not imported by control."
+  \ or inspect) that moduleforge.solvers.l2_layout is not imported by control.\n\nReview T0425 of T0380\
+  \ (founder session, 2026-11-16): in src/moduleforge/optimize/nulls.py, record seed_in_domain and the\
+  \ number of valid neighbours at step 0 in NullResult.stats, and give nulls (b) and (d) a distinct terminal\
+  \ 'no_moves' when the first neighbourhood is empty (today they return D_j unchanged labelled 'local_optimum');\
+  \ add a test with an out-of-domain D_j. E011 never scores a null run whose D_j is outside in_domain(reach=True)\
+  \ (it cannot happen with T0379's family, which keeps every D_j in the domain; the runner asserts it).\
+  \ Development mode reports the step counts of nulls (b) and (d) on 2D_Case_4 draws, where the probe's\
+  \ nulls hit a 60-step cap on 8 of 10 runs, to show whether NULL_STEP_LIMIT = 200 reaches a local optimum\
+  \ there; the A3 margins are re-measured in-domain (the probe filtered by DRC only)."
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
@@ -117,6 +125,8 @@ touches:
 - experiments/runners/e011_run.py
 - src/moduleforge/optimize/control.py
 - tests/unit/optimize/test_control.py
+- src/moduleforge/optimize/nulls.py
+- tests/unit/optimize/test_nulls.py
 definition_of_done:
 - cmd: uv run python experiments/runners/e011_run.py --selftest
   exists: null
