@@ -1,0 +1,78 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "An exclusion that breaks the span makes the run INVALID, which hides K1 on excluded pairs",
+      "detail": "K1 says it is judged over every pair, excluded ones included, and F1 says one excluded pair gives INCONCLUSIVE with a diagnosis first. But F4 rechecks the span [0.75, 0.98] and the 'at least 3 below 0.90' rule after exclusion, and calls any shortfall a sanity failure (INVALID). The evaluator puts INVALID ahead of FAIL, and INVALID runs are not counted. So excluding the pair at the bottom of the span, the top of the span, or one of only three pairs below 0.90 turns a K1 or K2 kill into INVALID, whose response is 'add pairs under a new experiment id'. Read 'at least 5 pairs each' as counted after exclusion, and with exactly 5 per reference every exclusion does this. The largest changes are both the pairs most likely to be excluded (finding 2) and the pairs most likely to show a large difference. No false PASS follows, and K1 still fires on counted pairs. The cost is a kill turned into an uncounted redraw. Remedy: make F4's after-exclusion span or count shortfall INCONCLUSIVE (not a gated sanity check), or state that K1 and K2 are judged whatever F4's result.",
+      "evidence": "tools/mfos/mfos/evaluate.py lines 487-491 (INVALID before FAIL) and 507-514 (INVALID not recorded as an evaluation). D0023: 'Read E010 as a kill because K1 is satisfied: rejected. F1(b) is a gated sanity check and failed.' O004 F4 detection; F1 response.",
+      "suggested_check": "Walk the evaluator through a case where the r<=0.75 pair is excluded with a raw ratio difference of 6 %: today it returns INVALID, not FAIL.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The 0.5 % ratio-estimate gate may exclude the pairs the span needs; the pre-registration checks are not pinned to large changes",
+      "detail": "Using P3's own three-level ratio data (1.0/0.5/0.25 mm, 10 MHz), l2_layout's ratio estimate is 3.3-5.3 % of the effect 1-r. die_shift: monotone, p=0.84, estimate 4.6-6.7e-4 on an effect of 0.0138. trace_width: not monotone (|e21| > |e32|), estimate 1.3-1.6e-3 on an effect of 0.0306. If the estimate grows in proportion to the change, which P3 itself warns of ('ratio errors may grow with the size of the change'), a pair at r=0.90 sits at about 0.33-0.53 %, right at the 0.5 % gate, and a pair at r=0.75 at about 0.8-1.3 %, above it. FastHenry's ratio moved 0.66 % from k0 to k1 on a 3 % change (P4). The span-defining pairs would then be excluded, ending in INVALID through F4 or INCONCLUSIVE through F1, with no resolved verdict. The draft checks the 0.5 % against 'a development proxy pair' and pilots FastHenry's 1 % on 'one development pair' (F7), but neither is required to be at the span's lower end, and the 0.5 % check states no response if it fails. Remedy: run both pre-registration checks on a 2D_Case_4 development pair at r<=0.75, with the F7-style founder-decision response if they fail.",
+      "evidence": "research/o006_p3/tables.md pair-ratio rows: die_shift 0.986943/0.986445/0.986166, trace_width 0.969067/0.969138/0.969390, thickness and filament terms. research/notes/o006-p4-fasthenry-feasibility.md section 3.4. Hand computation recorded in the checks.",
+      "suggested_check": "Before registration, apply the frozen rules on a development seed to get a pair with r<=0.75 on 2D_Case_4, run the 1.0/0.5/0.25 ladder, and report its ratio estimate against 0.5 %.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "The 26 % bound treats about 10 pairs as independent, but pairs share their reference's L and come from only 2 references",
+      "detail": "1-0.05^(1/10) = 0.259 is right for 0 failures in 10 independent pairs. Here every pair of a reference uses the same L(reference) in its denominator. With independent per-layout errors that alone gives a within-reference correlation of 0.5. A Monte Carlo of this structure (2 x (1+5) layouts, 2e5 draws) gives a one-sided 95 % upper bound on the share of failing pairs of 0.32. Adding a between-reference effect with SD 1-2x the layout SD gives 0.37-0.46. The limit with n_eff=2 is 0.78. Extending the result to 'pairs of this kind' on other modules of this construction rests on 2 clusters from one source. O009's FastHenry re-check of its winners protects the main decision, but the stated 26 % overstates what a clean result supports. Remedy: state the bound under clustering (or as 'between 32 % and 78 % depending on between-module correlation') or drop the number.",
+      "evidence": "Scratch simulations (seeded 20261115 and 7). Clopper-Pearson with 0 failures: n=2 0.776, 3 0.632, 5 0.451, 10 0.259, 20 0.139.",
+      "suggested_check": "Recompute the bound with a cluster bootstrap or a random-effects binomial on the registered design.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "major",
+      "title": "F8's L1 null is not a predictor that ignores the geometry change; letting it make the run INVALID can void a decision-sufficient pass and hide a kill",
+      "detail": "F8 describes its nulls as predictors that 'ignore the geometry change', but L1 uses the full geometry. If L1 also agrees with FastHenry within 2 % on every counted pair, l2_layout's agreement is still true and still enough for the decision. Calling that INVALID throws away the single evaluation and the $20-65 VM run, and through the INVALID-before-FAIL ordering it also hides any K1 or K2 hit. On E002's generator pairs with L2 ratio in [0.75, 0.98] (183 ordered pairs), L1's ratio error against L2 has a median of 1.5 %, and 64 % of pairs are within 2 %. For one reference with 5 or more partners, L1's maximum error is within 2 % in 1 of 8 clusters. The perturbation pairs here share most of their geometry and probably carry smaller L1 errors. So the chance is low but not negligible, and it is close to the threshold. The constant-ratio null cannot meet A1 once the span holds: the best constant misses by at least 13.3 %, about 6.6 times the 2 % threshold. It is redundant rather than a check that could fail. Remedy: report the L1 ratio null as a diagnostic, or make it non_discriminating (INCONCLUSIVE) under evidence rules v2, not INVALID.",
+      "evidence": "experiments/results/E002/E002-20261016T054426-b69a/e002_rows.json recomputation (L2 at k2, or k1 where k2 is missing; L1 at 20 MHz). Error by ratio bin: [0.75, 0.85) median 2.7 %; [0.95, 0.98) median 1.0 %. evaluate.py lines 28-29 (null_baselines give non_discriminating, not INVALID).",
+      "suggested_check": "Compute L1 ratios on the 2D_Case_4 development pairs against the P3 l2_layout ratios.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The null is stated at 2 %, but a pass establishes 2 % plus FastHenry's ratio estimate (up to 3 %)",
+      "detail": "null_hypothesis: ratios differ 'by more than the 2 %'. A1 with point values allows a true difference up to 2 % + e_FH, up to 3 % under F1's cap. decision_if_pass states this correctly, but the null as written is not rejected by a pass at, say, 1.9 % with e_FH = 1 %. This does not change the decision: 3 % moves headroom by at most 2.7 points at r=0.9. Remedy: restate the null as 'more than 2 % beyond FastHenry's ratio estimate'.",
+      "evidence": "O004 null_hypothesis vs A1 description; headroom change r*d = 0.9*0.03 = 0.027.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Rule for a non-monotone ratio sequence not stated; one of P3's two development pairs is already non-monotone",
+      "detail": "F1 says 'both three-level sequences are monotone or their estimate is +inf' per layout, and the ratio estimate is 'as O006 P3' (3 max|e| when not monotone). On P3's data the trace_width ratio sequence has |e21| > |e32| at both frequencies. If +inf were read as applying to ratio sequences, that pair would be excluded. If not, it counts at 0.16 %. With 10+ pairs and 2 solvers this choice can decide whether A1 is reachable. Remedy: state the ratio-sequence rule explicitly in the spec.",
+      "evidence": "tables.md: trace_width 10 MHz e21=-2.52e-4, e32=-7.1e-5; 20 MHz e21=-2.54e-4, e32=-6.6e-5.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The 2D_Case_2R designer-proxy pair is deterministic, so the sealed seed does not cover it",
+      "detail": "F2 says each judged pair's parameters come from E004's sealed seed, so no judged pair is seen before its solves. The proxy re-layout is a frozen L1 descent from the twin with no seed. It is shared with O008's build, and 2R is development geometry under D0023, so its l2_layout ratio can be known before registration. Leakage toward agreement is limited because no FastHenry solve on 2R is allowed, but F2's statement is inaccurate for this pair. Remedy: say so in F2, and forbid l2_layout solves of the exact proxy pair before registration.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the binomial bound: 1-0.05^(1/10) = 0.259, which matches the stated 26 %. Also n=2 0.776, 5 0.451, 20 0.139.",
+    "Monte Carlo of the shared-denominator pair structure (2 references x 1+5 layouts, 2e5 draws): the 95 % upper bound on the failing-pair share is 0.32 with no between-reference effect and 0.37-0.46 with one.",
+    "Recomputed L1-vs-L2 ratio errors on 183 E002 generator pairs with r_L2 in [0.75, 0.98]: median 1.5 %, 64 % within 2 %, L1 maximum error within 2 % in 1 of 8 reference clusters with 5 or more partners.",
+    "Hand-computed P3's three-level (1.0/0.5/0.25 mm) ratio estimates: die_shift monotone, p=0.84, 4.6-6.7e-4, 3.3-4.8 % of 1-r. trace_width not monotone, 1.3-1.6e-3, 4.3-5.3 % of 1-r. Scaled to r=0.90 (about 0.33-0.53 %) and r=0.75 (about 0.8-1.3 %) against the 0.5 % gate.",
+    "Read tools/mfos/mfos/evaluate.py verdict logic: INVALID takes precedence over FAIL (lines 487-491), INVALID evaluations are not counted (507-514), and null_baselines give non_discriminating, which yields INCONCLUSIVE.",
+    "Checked that the best constant ratio over the span [0.75, 0.98] misses by at least 13.3 %, so the constant-ratio null cannot meet A1 while the span holds.",
+    "Checked the headroom arithmetic (r*d: 1.8 points at r=0.9, d=2 %; 4-4.5 points at 5 %), K2's 15 % \u2248 2 x 7.7 %, and the P3/P4 figures quoted in why_it_matters (7.6-7.9 %, 0.106-0.162 %, 0.8-2.5 %, 2.44 h and about 9.7 GB)."
+  ],
+  "caveats": [
+    "Within scope: a PASS would show that l2_layout at 0.25 mm matches FastHenry's finest-level pair ratios within 2 % plus FastHenry's ratio estimate (at most 3 %). That holds on drawn perturbations of the two frozen PowerSynth reconstructions (2D_Case_2R and 2D_Case_6), at 10 and 20 MHz, for the ideal-short commutation loop. It is not a failure-rate bound for other modules of this construction: with 2 references the defensible one-sided 95 % bound is about 32-78 %, not 26 %.",
+    "No criterion is met by a predictor that ignores the geometry; the span already guarantees the constant-ratio null fails. The L1 null is not such a predictor and should not be able to make the run INVALID.",
+    "K1 and K2 can fire on counted pairs. They do not fire when an exclusion breaks F4's after-exclusion span or count rule, because INVALID takes precedence.",
+    "Whether a resolved verdict is reachable at all depends on the r<=0.75 pairs meeting the 0.5 % and 1 % ratio-estimate gates. Project data suggest they may not; check this on a development pair before registration.",
+    "The proportional-scaling argument in finding 2 is an inference from two small development pairs, and the L1-error figures come from generator pairs against the older L2 at k1/k2, not from PowerSynth perturbation pairs against FastHenry.",
+    "Numerics, outside this lens: a three-level observed-order estimate on Case 4 (p\u22481.5) may be pre-asymptotic. Earlier generator ladders fell to p\u22480.72. If so, the estimates in A2 and the F1 gates are understated."
+  ]
+}
