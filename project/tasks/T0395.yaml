@@ -116,12 +116,13 @@ model: null
 budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
-attempts: 1
+attempts: 2
 max_attempts: 3
 branch: task/T0395-l1-thermal-model-in-src-moduleforge-ther
 pr: null
 runs:
 - T0395-builder-20261116T082437-92ea
+- T0395-builder-20261116T091713-10cb
 created_by: planner:T0373
 created_at: '2026-11-16T01:46:31+00:00'
 protected_approved: false
@@ -131,4 +132,95 @@ lens: null
 trigger: null
 rationale: This is the model under test for A1-A5 and F4/F6. E007's registration needs it frozen first
   (F5).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Built moduleforge.thermal as n1''s fv_coarse_xcal. It is a coarse conforming FV solve of the
+    full layout, with k(T) by Picard iteration and a frozen per-die-size calibration of the die-local
+    rise. All DoD commands exit 0. On the development rows A1-type p95 is 0.189 K at P_ref and 0.088 K
+    at 0.5 P_ref, and A2-type is 1.02 % at both loads. The median evaluation is 0.29 s (max 0.45 s). The
+    calibration table has only 5.0 mm (c = 0.97396), so evaluate() raises for the generator''s other die
+    sizes (4.0, 4.5, 5.5 mm). A4 per die-count band on development rows at P_ref: 2-die u_shaped 0.81,
+    6-die side_by_side 0.26, pooled 0.37. A finer coarse grid does improve the 2-die band: lowering the
+    lateral bulk cap h0_max from 4 mm to 1-1.5 mm gives about 0.23-0.25 at 0.30-0.35 s median (max 0.5
+    s). I did no'
+  report:
+    status: completed
+    summary: 'Built moduleforge.thermal as n1''s fv_coarse_xcal. It is a coarse conforming FV solve of
+      the full layout, with k(T) by Picard iteration and a frozen per-die-size calibration of the die-local
+      rise. All DoD commands exit 0. On the development rows A1-type p95 is 0.189 K at P_ref and 0.088
+      K at 0.5 P_ref, and A2-type is 1.02 % at both loads. The median evaluation is 0.29 s (max 0.45 s).
+      The calibration table has only 5.0 mm (c = 0.97396), so evaluate() raises for the generator''s other
+      die sizes (4.0, 4.5, 5.5 mm). A4 per die-count band on development rows at P_ref: 2-die u_shaped
+      0.81, 6-die side_by_side 0.26, pooled 0.37. A finer coarse grid does improve the 2-die band: lowering
+      the lateral bulk cap h0_max from 4 mm to 1-1.5 mm gives about 0.23-0.25 at 0.30-0.35 s median (max
+      0.5 s). I did not adopt it. The packet fixes n1''s design, and the gain was read on the same 12
+      rows that set c, with 6 layouts per band. It needs c refitted and a fresh development seed with
+      new level-1 references first. I did not try a per-switch correction, because there is no reference
+      data beyond these rows to fit one without overfitting.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+      exit_code: 0
+    - cmd: OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 uv run python benchmarks/thermal_l1_speed.py
+        --check
+      exit_code: 0
+    - cmd: uv run python -c "import inspect; from moduleforge.thermal import L1Result, evaluate; ... assert
+        'tj_mean' in L1Result.__dataclass_fields__"
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/thermal tests/unit/thermal tests/regression/test_thermal_l1_dev.py
+        benchmarks/thermal_l1_speed.py
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run ruff check .
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/solvers/test_thermal_layout.py tests/unit/solvers/test_thermal_gci_matches_evaluator.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/thermal/__init__.py
+    - src/moduleforge/solvers/thermal_layout.py
+    - tests/unit/thermal/test_l1.py
+    - tests/regression/test_thermal_l1_dev.py
+    - tests/regression/data/o002_l1_dev/ (24 cached level-1 reference JSONs copied from research/o002_l1/cache)
+    - benchmarks/thermal_l1_speed.py
+    - docs/thermal_l1.md
+    concerns:
+    - Only the 5.0 mm die size is calibrated (c = 0.97396, mean of the two development layouts). Calibrating
+      4.0, 4.5 and 5.5 mm needs new level-1 reference solves on development layouts, at least two families
+      per size. That is not done and must precede E007 registration for any stratum with another die size.
+    - A4 on development rows is 0.81 in the 2-die band, above A4's 0.5, and 0.37 pooled. A4 is likely
+      to decide E007. The finer-grid exploration was exploratory and ran on the same development rows,
+      so its size is uncertain. The 2 mm + edge_frac 1 combination gave 0.75, so the gain is not monotone
+      across combinations.
+    - I edited src/moduleforge/solvers/thermal_layout.py, which is inside the write scope. build_layout_grid,
+      level0_cell and z_counts gained optional keyword overrides with unchanged defaults, so the coarse
+      rule is passed explicitly instead of patching module globals. The 37 existing thermal_layout and
+      GCI tests still pass. thermal_fem.py is untouched (sha verified).
+    - The determinism test uses a 1e-9 K tolerance, not bitwise equality. Repeat evaluations differed
+      by about 3e-13 K, from floating-point summation order in the solver.
+    - The 24 regression reference files are copies of n1's cached level-1 summaries, as the packet asked.
+      The test regenerates the 12 layouts from seeds 20261101 and 20261115 and checks that fingerprints
+      and powers match.
+    - tj_max is the uncalibrated coarse surface maximum and is not converged. It is reported only (F6).
+- attempt: 1
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: "FAIL uv run pytest -q -x -m 'not slow' tests/unit\nnergy_balance < 1e-8\n        assert\
+    \ o.T_bp == pytest.approx(T_C + p * len(lay.dies) / (H * lay.baseplate_outline.area), rel=1e-14)\n\
+    \        np.testing.assert_allclose(o.tj_mean, o.T_bp + o.die_local_rise, rtol=0, atol=1e-12)\n  \
+    \      raw = evaluate(lay, p, h=H, T_c=T_C, calibrate=False)\n>       np.testing.assert_allclose(o.die_local_rise,\
+    \ o.calibration[\"c\"] * (raw.tj_mean - raw.T_bp), rtol=1e-12)\nE       AssertionError: \nE      \
+    \ Not equal to tolerance rtol=1e-12, atol=0\nE       \nE       Mismatched elements: 2 / 4 (50%)\n\
+    E       Mismatch at indices:\nE        [0]: 34.271412470114434 (ACTUAL), 34.27141247007967 (DESIRED)\n\
+    E        [2]: 34.623968906873344 (ACTUAL), 34.62396890681571 (DESIRED)\nE       Max absolute difference\
+    \ among violations: 5.76321213e-11\nE       Max relative difference among violations: 1.66451516e-12\n\
+    E        ACTUAL: array([34.271412, 33.707752, 34.623969, 34.239682])\nE        DESIRED: array([34.271412,\
+    \ 33.707752, 34.623969, 34.239682])\n\ntests/unit/thermal/test_l1.py:132: AssertionError\n===========================\
+    \ short test summary info ============================\nFAILED tests/unit/thermal/test_l1.py::test_energy_balance_and_flux_consistency\n\
+    !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 959 passed,\
+    \ 39 deselected in 536.67s (0:08:56)\n\nwarning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv`\
+    \ does not match the project environment path `.venv` and will be ignored; use `--active` to target\
+    \ the active environment instead\n"
+  at: '2026-11-16T17:17:05+00:00'
