@@ -663,3 +663,20 @@ def test_registration_waits_for_the_last_design_task_of_its_experiment(sandbox):
     assert len(registrations()) == 1  # the last part asks once
     Orchestrator(Store())._post_merge(part3)
     assert len(registrations()) == 1  # and a repeat does not ask again
+
+
+def test_only_spec_ids_count_as_experiment_drafts(sandbox):
+    """2026-11-17: T0398 and T0382 listed their development data files (E007.dev_rows.json, E011.dev_jobs.json) under
+    experiment_drafts; verification read them as experiments 'E007.dev_rows' and 'E011.dev_jobs' and failed."""
+    from mfos.loop import draft_ids
+    assert draft_ids(["experiments/drafts/E011.yaml", "experiments/drafts/E011.dev_jobs.json", "E011"]) == ["E011"]
+    assert draft_ids(["experiments/drafts/E007.dev_rows.json"], "E007") == ["E007"]
+    assert draft_ids(["research/notes/x.md"]) == []
+    s = Store()
+    report = {"experiment_drafts": ["experiments/drafts/E778.yaml", "experiments/drafts/E778.dev_jobs.json"]}
+    t = m.Task(id="T9741", objective="O000", title="design", type="design_experiment", agent="scientist",
+               status="done", history=[{"outcome": "agent_finished", "report": report}])
+    s.save_task(t)
+    Orchestrator(Store())._post_merge(t)
+    regs = [i for i in Store().inbox() if i.kind == "experiment_registration"]
+    assert [i.refs[0] for i in regs] == ["E778"]

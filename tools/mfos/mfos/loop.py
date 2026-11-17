@@ -46,6 +46,22 @@ CAPACITY_SIGNS = ("rate limit", "usage limit", "session limit", "weekly limit", 
                   "429", "529", "quota") + NETWORK_SIGNS
 
 
+DRAFT_ID = re.compile(r"E\d+")
+
+
+def draft_ids(entries: list[str], fallback: Optional[str] = None) -> list[str]:
+    """The experiment ids among a report's experiment_drafts: bare ids (E011) or draft spec paths
+    (experiments/drafts/E011.yaml), each once; ``fallback`` (the task's experiment) if there are none. Other files an
+    agent lists there are not specs: 2026-11-17, T0398 and T0382 failed verification on their last attempts because
+    E007.dev_rows.json and E011.dev_jobs.json were read as experiments 'E007.dev_rows' and 'E011.dev_jobs'."""
+    out: list[str] = []
+    for x in entries:
+        p = Path(x)
+        if DRAFT_ID.fullmatch(p.stem) and p.suffix in ("", ".yaml", ".yml") and p.stem not in out:
+            out.append(p.stem)
+    return out or ([fallback] if fallback else [])
+
+
 def acquire_loop_lock(store: Store) -> Optional[Any]:
     """Take the single-orchestrator lock; None if a loop already holds it. Keep the handle open while running.
 
@@ -478,8 +494,7 @@ class Orchestrator:
             return
         results = gates.run_dod(self.s, t, path)
         if t.type == "design_experiment":
-            for eid in out.get("experiment_drafts", []) or ([t.experiment] if t.experiment else []):
-                eid = Path(eid).stem
+            for eid in draft_ids(out.get("experiment_drafts", []), t.experiment):
                 sub = Store(path)
                 for prob in experiments.validate_draft(sub, eid):
                     results.append(gates.CheckResult(f"draft:{eid}", False, prob))
@@ -713,8 +728,7 @@ class Orchestrator:
     def _post_merge(self, t: m.Task) -> None:
         if t.type == "design_experiment":
             last = next((h for h in reversed(t.history) if h.get("outcome") == "agent_finished"), {})
-            drafts = [Path(x).stem for x in (last.get("report") or {}).get("experiment_drafts", [])] or \
-                     ([t.experiment] if t.experiment else [])
+            drafts = draft_ids((last.get("report") or {}).get("experiment_drafts", []), t.experiment)
             for eid in drafts:
                 why = self._registration_premature(t, eid)
                 if why:
