@@ -1,0 +1,1701 @@
+{
+ "label": "RESEARCH ONLY, NOT EVIDENCE (T0387, O004 F7(c)/(d)); development geometry 2D_Case_4",
+ "estimator": "(O004 scope_in and F1; O006 P3 for the thickness and filament terms):\n  E_R = gci_step_floor(R_1.0, R_0.5, R_0.25, 0.001, relative=True)       (mfos.metrics, on main, packet note (iii))\n        + ratio_middle_term(R_thk_c, R_0.5, R_thk_f)                       (mfos.metrics; P3 thickness term)\n        + 3 |R_fil_f - R_0.5|                                              (P3 filament term)\nA missing level makes E_R = +inf (O004 F1).  F1 excludes a pair with E_R > 0.005.",
+ "F1_cap": 0.005,
+ "levels": {
+  "lat1.0": {
+   "cell_mm": 1.0,
+   "refinement": 0,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "lat0.5": {
+   "cell_mm": null,
+   "refinement": 0,
+   "layers": null,
+   "edges": null
+  },
+  "lat0.25": {
+   "cell_mm": null,
+   "refinement": 1,
+   "layers": null,
+   "edges": null
+  },
+  "thk_c": {
+   "cell_mm": 0.5,
+   "refinement": 0,
+   "layers": [
+    5,
+    3,
+    3
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "thk_f": {
+   "cell_mm": 0.5,
+   "refinement": 0,
+   "layers": [
+    20,
+    12,
+    12
+   ],
+   "edges": [
+    0,
+    0.35,
+    0.6,
+    0.8,
+    0.93,
+    1
+   ]
+  },
+  "fil_f": {
+   "cell_mm": 0.5,
+   "refinement": 0,
+   "layers": [
+    10,
+    6,
+    6
+   ],
+   "edges": [
+    0,
+    0.175,
+    0.35,
+    0.475,
+    0.6,
+    0.7,
+    0.8,
+    0.865,
+    0.93,
+    0.965,
+    1
+   ]
+  }
+ },
+ "p3_reuse_check": {
+  "ok": true,
+  "rows": {
+   "case4_base|lat1.0": {
+    "max_rel_diff": 1.432187701766452e-14,
+    "fingerprint_now": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+    "fingerprint_p3": "98a9d52a245ba5499b7540f7bab3ce0fcbc00b6c5d28b6e2237bf5dddf5d17f1"
+   },
+   "case4_base|lat0.5": {
+    "max_rel_diff": 9.547918011776346e-15,
+    "fingerprint_now": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+    "fingerprint_p3": "98a9d52a245ba5499b7540f7bab3ce0fcbc00b6c5d28b6e2237bf5dddf5d17f1"
+   },
+   "case4_die_shift|lat1.0": {
+    "max_rel_diff": 7.771561172376096e-15,
+    "fingerprint_now": "47bd793cb132bc40c0f4da884baa92a481bf777056436c1094e0a9f1c65c15af",
+    "fingerprint_p3": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf"
+   },
+   "case4_trace_width|lat1.0": {
+    "max_rel_diff": 9.325873406851315e-15,
+    "fingerprint_now": "4515924b6acc716d959a11780e6d6011a54836698a49707ec12b2c253ffc66e2",
+    "fingerprint_p3": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64"
+   }
+  },
+  "p3_lat0p25_fingerprint_is_current": {
+   "case4_base": true,
+   "case4_die_shift": true,
+   "case4_trace_width": true
+  },
+  "fingerprint_note": "P3's Mac solves (lat1.0, lat0.5, thk_*, fil_f) carry an older Layout.fingerprint than its VM lat0.25 solves and the current code; the geometry is the same, shown by this task's lat1.0 / lat0.5 solves of the current layouts reproducing P3's L to < 1e-9 (rows)",
+  "rule": "P3 solves (research/o006_p3/solves) are reused for a level this task did not run only if this task's lat1.0 (and, for the base, lat0.5) solves of the same geometry agree with P3's to < 1e-9"
+ },
+ "base": {
+  "ladder": {
+   "lat1.0": {
+    "L_H": {
+     "10MHz": 2.346588444782091e-08,
+     "20MHz": 2.332343198788029e-08
+    },
+    "source": "research/o004_f7/solves/case4_base__lat1.0.json",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f"
+   },
+   "lat0.5": {
+    "L_H": {
+     "10MHz": 2.2960929122967667e-08,
+     "20MHz": 2.2817411510945058e-08
+    },
+    "source": "research/o004_f7/solves/case4_base__lat0.5.json",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f"
+   },
+   "lat0.25": {
+    "L_H": {
+     "10MHz": 2.2780714701936427e-08,
+     "20MHz": 2.2636490802703685e-08
+    },
+    "source": "research/o006_p3/solves/case4_base__lat0.25.json",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f"
+   },
+   "thk_c": {
+    "L_H": {
+     "10MHz": 2.3234602197907175e-08,
+     "20MHz": 2.3010796184027713e-08
+    },
+    "source": "research/o004_f7/solves/case4_base__thk_c.json",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f"
+   },
+   "thk_f": {
+    "L_H": {
+     "10MHz": 2.2944383868330886e-08,
+     "20MHz": 2.2802017735521675e-08
+    },
+    "source": "research/o006_p3/solves/case4_base__thk_f.json",
+    "fingerprint": "98a9d52a245ba5499b7540f7bab3ce0fcbc00b6c5d28b6e2237bf5dddf5d17f1"
+   },
+   "fil_f": {
+    "L_H": {
+     "10MHz": 2.3033567455746975e-08,
+     "20MHz": 2.2906486668633677e-08
+    },
+    "source": "research/o004_f7/solves/case4_base__fil_f.json",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f"
+   }
+  }
+ },
+ "standin": {
+  "ladder": {
+   "lat1.0": {
+    "L_H": {
+     "10MHz": 1.8956976255507434e-08,
+     "20MHz": 1.8849997403913212e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__lat1.0.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   },
+   "lat0.5": {
+    "L_H": {
+     "10MHz": 1.852938195961802e-08,
+     "20MHz": 1.84217588454499e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__lat0.5.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   },
+   "lat0.25": null,
+   "thk_c": {
+    "L_H": {
+     "10MHz": 1.8774783947491496e-08,
+     "20MHz": 1.8596174676808107e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__thk_c.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   },
+   "thk_f": null,
+   "fil_f": {
+    "L_H": {
+     "10MHz": 1.857420492544082e-08,
+     "20MHz": 1.8476267682745413e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__fil_f.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   }
+  },
+  "ratio_per_level": {
+   "lat1.0": {
+    "10MHz": 0.8078526210107464,
+    "20MHz": 0.8081999859072353
+   },
+   "lat0.5": {
+    "10MHz": 0.8069961742568684,
+    "20MHz": 0.8073553319846709
+   },
+   "lat0.25": null,
+   "thk_c": {
+    "10MHz": 0.8080527390816533,
+    "20MHz": 0.8081499887307728
+   },
+   "thk_f": null,
+   "fil_f": {
+    "10MHz": 0.8063972270524892,
+    "20MHz": 0.8065954395374542
+   }
+  },
+  "estimate": {
+   "10MHz": {
+    "E_lateral_step_floor": "inf",
+    "E_lateral_gci_capped": "inf",
+    "E_thickness": "inf",
+    "E_filament": 0.0017968416131377563,
+    "E_R": "inf",
+    "E_R_over_r": "inf",
+    "rel_steps": [
+     -0.0010612773408332939,
+     null
+    ],
+    "E_lateral_two_level_provisional": 0.0025693402616339123,
+    "F1": "pending"
+   },
+   "20MHz": {
+    "E_lateral_step_floor": "inf",
+    "E_lateral_gci_capped": "inf",
+    "E_thickness": "inf",
+    "E_filament": 0.0022796773416502436,
+    "E_R": "inf",
+    "E_R_over_r": "inf",
+    "rel_steps": [
+     -0.0010461984817614657,
+     null
+    ],
+    "E_lateral_two_level_provisional": 0.0025339617676931603,
+    "F1": "pending"
+   }
+  },
+  "move_type": "compound",
+  "r_L1": {
+   "10MHz": 0.7612746626084027,
+   "20MHz": 0.7616064055244518
+  },
+  "label": "lowest reachable, r = 0.7616, stands in for r <= 0.75"
+ },
+ "pairs": {
+  "dev00_die_row_shift": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.116017058234831e-08,
+      "20MHz": 2.1035277430769552e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__lat1.0.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.068197791663964e-08,
+      "20MHz": 2.055629335734769e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__lat0.5.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.901741872521378,
+     "20MHz": 0.9018946028912148
+    },
+    "lat0.5": {
+     "10MHz": 0.9007465597701615,
+     "20MHz": 0.9009038272148988
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0011049864586444025,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.002985938253649678,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0010997574284692942,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0029723270289480075,
+     "F1": "pending"
+    }
+   },
+   "move_type": "die_row_shift",
+   "r_L1": {
+    "10MHz": 0.8879387214808303,
+    "20MHz": 0.888209664350648
+   },
+   "label": null
+  },
+  "dev01_die_row_shift": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.1803324962730826e-08,
+      "20MHz": 2.1673389044048575e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__lat1.0.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.1294568952295897e-08,
+      "20MHz": 2.1163794045253527e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__lat0.5.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9291499330107512,
+     "20MHz": 0.9292538531769622
+    },
+    "lat0.5": {
+     "10MHz": 0.9274262743572985,
+     "20MHz": 0.9275282621388353
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0018585398118542457,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.005170975960358093,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0018604188234089298,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.005176773114380584,
+     "F1": "pending"
+    }
+   },
+   "move_type": "die_row_shift",
+   "r_L1": {
+    "10MHz": 0.9277780870777873,
+    "20MHz": 0.9281143422662337
+   },
+   "label": null
+  },
+  "dev02_trace_width": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.350305398308853e-08,
+      "20MHz": 2.336039649854587e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__lat1.0.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2997958901148835e-08,
+      "20MHz": 2.2854234496216738e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__lat0.5.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 1.0015839818588672,
+     "20MHz": 1.0015848658415618
+    },
+    "lat0.5": {
+     "10MHz": 1.0016127299545612,
+     "20MHz": 1.0016138108064545
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      2.8701807429384212e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 8.624428708192688e-05,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      2.889832845794259e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 8.683489467808947e-05,
+     "F1": "pending"
+    }
+   },
+   "move_type": "trace_width",
+   "r_L1": {
+    "10MHz": 0.9998531617422152,
+    "20MHz": 0.999863250273977
+   },
+   "label": null
+  },
+  "dev03_trace_width": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.4895367422226452e-08,
+      "20MHz": 2.4744613356721818e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__lat1.0.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.435869660071466e-08,
+      "20MHz": 2.4206940258632673e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__lat0.5.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 1.0609174982338365,
+     "20MHz": 1.0609336297325378
+    },
+    "lat0.5": {
+     "10MHz": 1.0608759109991248,
+     "20MHz": 1.0608977379849194
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -3.9200847413471355e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.00012476170413511234,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -3.383148661113644e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0001076752428552652,
+     "F1": "pending"
+    }
+   },
+   "move_type": "trace_width",
+   "r_L1": {
+    "10MHz": 1.0773788931156743,
+    "20MHz": 1.0776393696931004
+   },
+   "label": null
+  },
+  "dev04_terminal_copper": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.3148060646641108e-08,
+      "20MHz": 2.300738943739888e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__lat1.0.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.264677715056416e-08,
+      "20MHz": 2.2505046823539294e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__lat0.5.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9864559206414522,
+     "20MHz": 0.9864495692295355
+    },
+    "lat0.5": {
+     "10MHz": 0.9863179764755572,
+     "20MHz": 0.9863102487652498
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.00013985770226746335,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.00041383249768489616,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.00014125419913276627,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0004179613928573245,
+     "F1": "pending"
+    }
+   },
+   "move_type": "terminal_copper",
+   "r_L1": {
+    "10MHz": 0.9811679911372109,
+    "20MHz": 0.9811152374592386
+   },
+   "label": null
+  },
+  "dev05_terminal_copper": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.3496795738317753e-08,
+      "20MHz": 2.3354159860778012e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__lat1.0.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2990182382814616e-08,
+      "20MHz": 2.2846486302856674e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__lat0.5.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 1.0013172864021205,
+     "20MHz": 1.0013174678972498
+    },
+    "lat0.5": {
+     "10MHz": 1.0012740451264095,
+     "20MHz": 1.0012742370841525
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -4.318625447394084e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.00012972382713294373,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -4.317579689577448e-05,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.00012969243929195073,
+     "F1": "pending"
+    }
+   },
+   "move_type": "terminal_copper",
+   "r_L1": {
+    "10MHz": 0.9989669406454743,
+    "20MHz": 0.9989861569104772
+   },
+   "label": null
+  },
+  "dev06_wire_landing": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.297503814306361e-08,
+      "20MHz": 2.2836368648331252e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__lat1.0.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2486652561651258e-08,
+      "20MHz": 2.2347163737372575e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__lat0.5.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9790825568135414,
+     "20MHz": 0.9791169953117477
+    },
+    "lat0.5": {
+     "10MHz": 0.9793441912225584,
+     "20MHz": 0.9793908361013293
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.00026715266334550195,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0007849032270511591,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.0002796031772889286,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0008215223687447759,
+     "F1": "pending"
+    }
+   },
+   "move_type": "wire_landing",
+   "r_L1": {
+    "10MHz": 0.9757146065225548,
+    "20MHz": 0.9756367380560207
+   },
+   "label": null
+  },
+  "dev07_wire_landing": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.4226119665103687e-08,
+      "20MHz": 2.4075092373351783e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__lat1.0.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.37233946211049e-08,
+      "20MHz": 2.3571352175899632e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__lat0.5.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 1.0323974670110239,
+     "20MHz": 1.032227692127903
+    },
+    "lat0.5": {
+     "10MHz": 1.0332070838272196,
+     "20MHz": 1.0330423398198751
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.0007835958820537134,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0024288504485872053,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.0007885908065628682,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0024439430759164438,
+     "F1": "pending"
+    }
+   },
+   "move_type": "wire_landing",
+   "r_L1": {
+    "10MHz": 1.043796043215936,
+    "20MHz": 1.0437488765796696
+   },
+   "label": null
+  },
+  "dev08_compound": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.3190561112068442e-08,
+      "20MHz": 2.3049854361620257e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__lat1.0.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2698083237831015e-08,
+      "20MHz": 2.2556307759898733e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__lat0.5.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9882670803921889,
+     "20MHz": 0.9882702671544139
+    },
+    "lat0.5": {
+     "10MHz": 0.9885524717345289,
+     "20MHz": 0.9885568198250236
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.0002886962002524823,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0008561740270198737,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      0.0002898697018350956,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0008596580118291897,
+     "F1": "pending"
+    }
+   },
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.9830861005636665,
+    "20MHz": 0.982999849585034
+   },
+   "label": null
+  },
+  "dev09_compound": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.241630804939617e-08,
+      "20MHz": 2.2281817812158167e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__lat1.0.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.191098043562869e-08,
+      "20MHz": 2.177556489436069e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__lat0.5.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9552722421028454,
+     "20MHz": 0.9553404414811943
+    },
+    "lat0.5": {
+     "10MHz": 0.9542723780158914,
+     "20MHz": 0.9543398419192022
+    },
+    "lat0.25": null,
+    "thk_c": null,
+    "thk_f": null,
+    "fil_f": null
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0010477764105809855,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.002999592260862216,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": "inf",
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0010484730051508006,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.003001798685976498,
+     "F1": "pending"
+    }
+   },
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.9493192485045083,
+    "20MHz": 0.9494855420624982
+   },
+   "label": null
+  },
+  "standin_compound": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 1.8956976255507434e-08,
+      "20MHz": 1.8849997403913212e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__lat1.0.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 1.852938195961802e-08,
+      "20MHz": 1.84217588454499e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__lat0.5.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    },
+    "lat0.25": null,
+    "thk_c": {
+     "L_H": {
+      "10MHz": 1.8774783947491496e-08,
+      "20MHz": 1.8596174676808107e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__thk_c.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    },
+    "thk_f": null,
+    "fil_f": {
+     "L_H": {
+      "10MHz": 1.857420492544082e-08,
+      "20MHz": 1.8476267682745413e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__fil_f.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    }
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.8078526210107464,
+     "20MHz": 0.8081999859072353
+    },
+    "lat0.5": {
+     "10MHz": 0.8069961742568684,
+     "20MHz": 0.8073553319846709
+    },
+    "lat0.25": null,
+    "thk_c": {
+     "10MHz": 0.8080527390816533,
+     "20MHz": 0.8081499887307728
+    },
+    "thk_f": null,
+    "fil_f": {
+     "10MHz": 0.8063972270524892,
+     "20MHz": 0.8065954395374542
+    }
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": 0.0017968416131377563,
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0010612773408332939,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0025693402616339123,
+     "F1": "pending"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": "inf",
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": "inf",
+     "E_filament": 0.0022796773416502436,
+     "E_R": "inf",
+     "E_R_over_r": "inf",
+     "rel_steps": [
+      -0.0010461984817614657,
+      null
+     ],
+     "E_lateral_two_level_provisional": 0.0025339617676931603,
+     "F1": "pending"
+    }
+   },
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.7612746626084027,
+    "20MHz": 0.7616064055244518
+   },
+   "label": "lowest reachable, r = 0.7616, stands in for r <= 0.75"
+  }
+ },
+ "p3_precedent_pairs": {
+  "case4_die_shift": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.3159495962932573e-08,
+      "20MHz": 2.302013221275047e-08
+     },
+     "source": "research/o004_f7/solves/case4_die_shift__lat1.0.json",
+     "fingerprint": "47bd793cb132bc40c0f4da884baa92a481bf777056436c1094e0a9f1c65c15af"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2649692348685257e-08,
+      "20MHz": 2.2509327986896356e-08
+     },
+     "source": "research/o006_p3/solves/case4_die_shift__lat0.5.json",
+     "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf"
+    },
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2465568902335466e-08,
+      "20MHz": 2.232450183683285e-08
+     },
+     "source": "research/o006_p3/solves/case4_die_shift__lat0.25.json",
+     "fingerprint": "47bd793cb132bc40c0f4da884baa92a481bf777056436c1094e0a9f1c65c15af"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.2922328103849552e-08,
+      "20MHz": 2.2701981359187515e-08
+     },
+     "source": "research/o006_p3/solves/case4_die_shift__thk_c.json",
+     "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2633095975736985e-08,
+      "20MHz": 2.2493867071781093e-08
+     },
+     "source": "research/o006_p3/solves/case4_die_shift__thk_f.json",
+     "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.2719760133969292e-08,
+      "20MHz": 2.259519959478975e-08
+     },
+     "source": "research/o006_p3/solves/case4_die_shift__fil_f.json",
+     "fingerprint": "a536faaa5d86691ab0142fd86202a580180f94d13d0bce808818f063d0accfdf"
+    }
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9869432372954181,
+     "20MHz": 0.9869959200135114
+    },
+    "lat0.5": {
+     "10MHz": 0.9864449398970061,
+     "20MHz": 0.9864978758041454
+    },
+    "lat0.25": {
+     "10MHz": 0.9861661144646101,
+     "20MHz": 0.9862174323489411
+    },
+    "thk_c": {
+     "10MHz": 0.9865599552168898,
+     "20MHz": 0.9865795680266574
+    },
+    "thk_f": {
+     "10MHz": 0.9864329373854507,
+     "20MHz": 0.9864858159784458
+    },
+    "fil_f": {
+     "10MHz": 0.9863760868836067,
+     "20MHz": 0.9864105273607856
+    }
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": 0.0014948921952360195,
+     "E_lateral_gci_capped": 0.00044278788290173744,
+     "E_thickness": 1.675122647801251e-05,
+     "E_filament": 0.0002065590401982842,
+     "E_R": 0.0017182024619123162,
+     "E_R_over_r": 0.0017423053141966136,
+     "rel_steps": [
+      -0.0005051446647027591,
+      -0.0002827367806562334
+     ],
+     "E_lateral_two_level_provisional": 0.0014948921952360195,
+     "F1": "counted"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": 0.001494132628098166,
+     "E_lateral_gci_capped": 0.00045179376715559207,
+     "E_thickness": 1.7685624967870557e-05,
+     "E_filament": 0.0002620453300793413,
+     "E_R": 0.0017738635831453778,
+     "E_R_over_r": 0.0017986536487399603,
+     "rel_steps": [
+      -0.0005048609039934057,
+      -0.00028436270340134935
+     ],
+     "E_lateral_two_level_provisional": 0.001494132628098166,
+     "F1": "counted"
+    }
+   },
+   "frozen_rule_equivalent": {
+    "move_type": "die_row_shift",
+    "params": {
+     "switch": "HS",
+     "dx_mm": 0,
+     "dy_mm": -1
+    },
+    "same_geometry": false
+   },
+   "r_L1": {
+    "10MHz": 0.9840928885203828,
+    "20MHz": 0.9841522746757401
+   }
+  },
+  "case4_trace_width": {
+   "ladder": {
+    "lat1.0": {
+     "L_H": {
+      "10MHz": 2.2740003108574653e-08,
+      "20MHz": 2.2599790705302812e-08
+     },
+     "source": "research/o004_f7/solves/case4_trace_width__lat1.0.json",
+     "fingerprint": "4515924b6acc716d959a11780e6d6011a54836698a49707ec12b2c253ffc66e2"
+    },
+    "lat0.5": {
+     "L_H": {
+      "10MHz": 2.2252308756529467e-08,
+      "20MHz": 2.2110992732714485e-08
+     },
+     "source": "research/o006_p3/solves/case4_trace_width__lat0.5.json",
+     "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64"
+    },
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2083399594867386e-08,
+      "20MHz": 2.194140939305165e-08
+     },
+     "source": "research/o006_p3/solves/case4_trace_width__lat0.25.json",
+     "fingerprint": "4515924b6acc716d959a11780e6d6011a54836698a49707ec12b2c253ffc66e2"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.2513161232184158e-08,
+      "20MHz": 2.2295969393458378e-08
+     },
+     "source": "research/o006_p3/solves/case4_trace_width__thk_c.json",
+     "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2235664085482105e-08,
+      "20MHz": 2.209547836739584e-08
+     },
+     "source": "research/o006_p3/solves/case4_trace_width__thk_f.json",
+     "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.232496742800964e-08,
+      "20MHz": 2.2200116366739026e-08
+     },
+     "source": "research/o006_p3/solves/case4_trace_width__fil_f.json",
+     "fingerprint": "5bf9d09faaf373a8c82712f11404005927e37c16377a229f32d2cc8ffe59ee64"
+    }
+   },
+   "ratio_per_level": {
+    "lat1.0": {
+     "10MHz": 0.9690665254548434,
+     "20MHz": 0.9689736363433344
+    },
+    "lat0.5": {
+     "10MHz": 0.969137992515757,
+     "20MHz": 0.9690403629749273
+    },
+    "lat0.25": {
+     "10MHz": 0.9693901128128448,
+     "20MHz": 0.9692937648458737
+    },
+    "thk_c": {
+     "10MHz": 0.9689497173406308,
+     "20MHz": 0.9689351561392078
+    },
+    "thk_f": {
+     "10MHz": 0.9691114049121626,
+     "20MHz": 0.969014173380579
+    },
+    "fil_f": {
+     "10MHz": 0.9692362015090051,
+     "20MHz": 0.9691628702335265
+    }
+   },
+   "estimate": {
+    "10MHz": {
+     "E_lateral_step_floor": 0.0007563608912632969,
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": 0.0005648255253786205,
+     "E_filament": 0.00029462697974425023,
+     "E_R": 0.0016158133963861676,
+     "E_R_over_r": 0.0016668350285703032,
+     "rel_steps": [
+      7.374291531811221e-05,
+      0.00026008135811927887
+     ],
+     "E_lateral_two_level_provisional": 0.0002144011827409642,
+     "F1": "counted"
+    },
+    "20MHz": {
+     "E_lateral_step_floor": 0.0007602056128390711,
+     "E_lateral_gci_capped": "inf",
+     "E_thickness": 0.00031562050715872036,
+     "E_filament": 0.0003675217757975746,
+     "E_R": 0.001443347895795366,
+     "E_R_over_r": 0.0014890716809932963,
+     "rel_steps": [
+      6.885846466503945e-05,
+      0.0002614293830587574
+     ],
+     "E_lateral_two_level_provisional": 0.00020017989477871811,
+     "F1": "counted"
+    }
+   },
+   "frozen_rule_equivalent": {
+    "move_type": "trace_width",
+    "params": {
+     "net": "DC-",
+     "edge": 0,
+     "delta_mm": 2
+    },
+    "same_geometry": true
+   },
+   "r_L1": {
+    "10MHz": 0.9655028990557504,
+    "20MHz": 0.9654004898482498
+   }
+  }
+ },
+ "distribution_L1_vs_0p5mm": [
+  {
+   "name": "dev00_die_row_shift",
+   "move_type": "die_row_shift",
+   "r_L1": {
+    "10MHz": 0.8879387214808303,
+    "20MHz": 0.888209664350648
+   },
+   "r_lat1p0": {
+    "10MHz": 0.901741872521378,
+    "20MHz": 0.9018946028912148
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9007465597701615,
+    "20MHz": 0.9009038272148988
+   },
+   "d_l2_minus_l1_20MHz": 0.012694162864250846
+  },
+  {
+   "name": "dev01_die_row_shift",
+   "move_type": "die_row_shift",
+   "r_L1": {
+    "10MHz": 0.9277780870777873,
+    "20MHz": 0.9281143422662337
+   },
+   "r_lat1p0": {
+    "10MHz": 0.9291499330107512,
+    "20MHz": 0.9292538531769622
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9274262743572985,
+    "20MHz": 0.9275282621388353
+   },
+   "d_l2_minus_l1_20MHz": -0.0005860801273983585
+  },
+  {
+   "name": "dev02_trace_width",
+   "move_type": "trace_width",
+   "r_L1": {
+    "10MHz": 0.9998531617422152,
+    "20MHz": 0.999863250273977
+   },
+   "r_lat1p0": {
+    "10MHz": 1.0015839818588672,
+    "20MHz": 1.0015848658415618
+   },
+   "r_lat0p5": {
+    "10MHz": 1.0016127299545612,
+    "20MHz": 1.0016138108064545
+   },
+   "d_l2_minus_l1_20MHz": 0.0017505605324774631
+  },
+  {
+   "name": "dev03_trace_width",
+   "move_type": "trace_width",
+   "r_L1": {
+    "10MHz": 1.0773788931156743,
+    "20MHz": 1.0776393696931004
+   },
+   "r_lat1p0": {
+    "10MHz": 1.0609174982338365,
+    "20MHz": 1.0609336297325378
+   },
+   "r_lat0p5": {
+    "10MHz": 1.0608759109991248,
+    "20MHz": 1.0608977379849194
+   },
+   "d_l2_minus_l1_20MHz": -0.016741631708180993
+  },
+  {
+   "name": "dev04_terminal_copper",
+   "move_type": "terminal_copper",
+   "r_L1": {
+    "10MHz": 0.9811679911372109,
+    "20MHz": 0.9811152374592386
+   },
+   "r_lat1p0": {
+    "10MHz": 0.9864559206414522,
+    "20MHz": 0.9864495692295355
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9863179764755572,
+    "20MHz": 0.9863102487652498
+   },
+   "d_l2_minus_l1_20MHz": 0.005195011306011188
+  },
+  {
+   "name": "dev05_terminal_copper",
+   "move_type": "terminal_copper",
+   "r_L1": {
+    "10MHz": 0.9989669406454743,
+    "20MHz": 0.9989861569104772
+   },
+   "r_lat1p0": {
+    "10MHz": 1.0013172864021205,
+    "20MHz": 1.0013174678972498
+   },
+   "r_lat0p5": {
+    "10MHz": 1.0012740451264095,
+    "20MHz": 1.0012742370841525
+   },
+   "d_l2_minus_l1_20MHz": 0.002288080173675322
+  },
+  {
+   "name": "dev06_wire_landing",
+   "move_type": "wire_landing",
+   "r_L1": {
+    "10MHz": 0.9757146065225548,
+    "20MHz": 0.9756367380560207
+   },
+   "r_lat1p0": {
+    "10MHz": 0.9790825568135414,
+    "20MHz": 0.9791169953117477
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9793441912225584,
+    "20MHz": 0.9793908361013293
+   },
+   "d_l2_minus_l1_20MHz": 0.0037540980453085737
+  },
+  {
+   "name": "dev07_wire_landing",
+   "move_type": "wire_landing",
+   "r_L1": {
+    "10MHz": 1.043796043215936,
+    "20MHz": 1.0437488765796696
+   },
+   "r_lat1p0": {
+    "10MHz": 1.0323974670110239,
+    "20MHz": 1.032227692127903
+   },
+   "r_lat0p5": {
+    "10MHz": 1.0332070838272196,
+    "20MHz": 1.0330423398198751
+   },
+   "d_l2_minus_l1_20MHz": -0.010706536759794494
+  },
+  {
+   "name": "dev08_compound",
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.9830861005636665,
+    "20MHz": 0.982999849585034
+   },
+   "r_lat1p0": {
+    "10MHz": 0.9882670803921889,
+    "20MHz": 0.9882702671544139
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9885524717345289,
+    "20MHz": 0.9885568198250236
+   },
+   "d_l2_minus_l1_20MHz": 0.005556970239989689
+  },
+  {
+   "name": "dev09_compound",
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.9493192485045083,
+    "20MHz": 0.9494855420624982
+   },
+   "r_lat1p0": {
+    "10MHz": 0.9552722421028454,
+    "20MHz": 0.9553404414811943
+   },
+   "r_lat0p5": {
+    "10MHz": 0.9542723780158914,
+    "20MHz": 0.9543398419192022
+   },
+   "d_l2_minus_l1_20MHz": 0.004854299856703936
+  },
+  {
+   "name": "standin_compound",
+   "move_type": "compound",
+   "r_L1": {
+    "10MHz": 0.7612746626084027,
+    "20MHz": 0.7616064055244518
+   },
+   "r_lat1p0": {
+    "10MHz": 0.8078526210107464,
+    "20MHz": 0.8081999859072353
+   },
+   "r_lat0p5": {
+    "10MHz": 0.8069961742568684,
+    "20MHz": 0.8073553319846709
+   },
+   "d_l2_minus_l1_20MHz": 0.04574892646021911
+  }
+ ],
+ "exclusion": {
+  "n_complete": 2,
+  "n_excluded": 0,
+  "n_pending": 11,
+  "per_pair": {
+   "dev00_die_row_shift": "pending",
+   "dev01_die_row_shift": "pending",
+   "dev02_trace_width": "pending",
+   "dev03_trace_width": "pending",
+   "dev04_terminal_copper": "pending",
+   "dev05_terminal_copper": "pending",
+   "dev06_wire_landing": "pending",
+   "dev07_wire_landing": "pending",
+   "dev08_compound": "pending",
+   "dev09_compound": "pending",
+   "standin_compound": "pending",
+   "case4_die_shift": "counted",
+   "case4_trace_width": "counted"
+  },
+  "rate": 0.0,
+  "p_no_exclusion_13_at_rate": 1.0,
+  "upper95_rate_if_zero": 0.7763932022500211,
+  "p_no_exclusion_13_at_upper95": 3.49385621484342e-09,
+  "note": "complete = every level of the F1 estimate present; pending pairs lack the 0.25 mm level (VM)"
+ },
+ "f7_trigger": {
+  "excluded_with_r_le_0p90": [],
+  "n_excluded": 0,
+  "fires": false,
+  "undecided_pending": [
+   "dev00_die_row_shift",
+   "dev01_die_row_shift",
+   "dev02_trace_width",
+   "dev03_trace_width",
+   "dev04_terminal_copper",
+   "dev05_terminal_copper",
+   "dev06_wire_landing",
+   "dev07_wire_landing",
+   "dev08_compound",
+   "dev09_compound",
+   "standin_compound"
+  ]
+ },
+ "projection_inference": {
+  "label": "INFERENCE, not F1's rule and not a result (docstring of pilot_l2.projection)",
+  "rows": {
+   "dev00_die_row_shift": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0015767331783568487,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.004671251004867569,
+     "excluded": false
+    }
+   },
+   "dev01_die_row_shift": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0022273447430583375,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.007592364152506782,
+     "excluded": true
+    }
+   },
+   "dev02_trace_width": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0007768348946780895,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.0007768348946780895,
+     "excluded": false
+    }
+   },
+   "dev03_trace_width": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0008147617041351124,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.0008147617041351124,
+     "excluded": false
+    }
+   },
+   "dev04_terminal_copper": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0011079613928573246,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.0011079613928573246,
+     "excluded": false
+    }
+   },
+   "dev05_terminal_copper": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0008197238271329438,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.0008197238271329438,
+     "excluded": false
+    }
+   },
+   "dev06_wire_landing": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.001511522368744776,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.001511522368744776,
+     "excluded": false
+    }
+   },
+   "dev07_wire_landing": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.003133943075916444,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.003133943075916444,
+     "excluded": false
+    }
+   },
+   "dev08_compound": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0015496580118291897,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.0015496580118291897,
+     "excluded": false
+    }
+   },
+   "dev09_compound": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0015814432461383598,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.004692398247968663,
+     "excluded": false
+    }
+   },
+   "standin_compound": {
+    "rho=0.56": {
+     "E_R_max_over_f": 0.0033521871999347866,
+     "excluded": false
+    },
+    "rho=0.8": {
+     "E_R_max_over_f": 0.005978293031908457,
+     "excluded": true
+    }
+   }
+  }
+ },
+ "local_0p25mm": {
+  "run": false,
+  "reason": "a Case 4 0.25 mm solve peaks at 15.8-15.9 GB per process (measured, research/notes/l2-thread-calibration.md and research/o006_p3/solves/*__lat0.25.json), above this Mac's 10 GB single-process cap; the packet's 'about 8 GB each' is not what was measured. No memory knob exists in l2_layout without editing src/. Listed in vm_jobs_l2.json"
+ }
+}

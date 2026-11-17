@@ -1,0 +1,518 @@
+{
+ "label": "RESEARCH ONLY, NOT EVIDENCE (T0387): L1 span reachable by the frozen rules on the development layouts only (founder correction 2026-11-16 17:55 UTC, O004 F2); nothing drawn on 2D_Case_2R or 2D_Case_6",
+ "method": "T0386's structured search: exhaustive integer scans of each single move's frozen range (DRC-clean, changed); then for each of the ten 2- and 3-type compounds (MOVE_TYPES order, stagewise: every intermediate DRC-clean and changed) coordinate descent at 20 MHz from the best clean singles, each coordinate a full scan of one component's frozen range, up to 3 sweeps for the minimum and 1 for the maximum. Counts below 0.90 are distinct geometries seen (a lower bound on what the rules reach).",
+ "l1_model": "moduleforge.physics.peec loop_inductance",
+ "rules_sha256": "70307210174b4f0beb725238d7a000de55b6b378d821d99071fbf051b7fa33b2",
+ "references": {
+  "case4": {
+   "reference": {
+    "name": "case4",
+    "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+    "L1_H": {
+     "10MHz": 1.9409586121170872e-08,
+     "20MHz": 1.9325240803329187e-08
+    },
+    "on_lattice": {
+     "1mm": true,
+     "0.5mm": true,
+     "0.25mm": true
+    },
+    "rules": "measured_rules(case4, CASE4_OVERRIDES)"
+   },
+   "per_kind": {
+    "die_row_shift": {
+     "min": {
+      "10MHz": 0.8728668119394875,
+      "20MHz": 0.8732056197976894
+     },
+     "max": {
+      "10MHz": 1.032969611366553,
+      "20MHz": 1.0331274181363002
+     },
+     "n_clean": 139,
+     "n_grid": 1248,
+     "n_below_0p90": 14,
+     "argmin_20": {
+      "params": {
+       "switch": "HS",
+       "dx_mm": 8,
+       "dy_mm": -7
+      },
+      "r": [
+       0.8728668119394875,
+       0.8732056197976894
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "switch": "LS",
+       "dx_mm": 11,
+       "dy_mm": 0
+      },
+      "r": [
+       1.032969611366553,
+       1.0331274181363002
+      ]
+     }
+    },
+    "trace_width": {
+     "min": {
+      "10MHz": 0.9149327440555204,
+      "20MHz": 0.914695924157965
+     },
+     "max": {
+      "10MHz": 1.102097022587776,
+      "20MHz": 1.1024575768020966
+     },
+     "n_clean": 55,
+     "n_grid": 300,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "net": "PHASE",
+       "edge": 3,
+       "delta_mm": 7
+      },
+      "r": [
+       0.9149327440555204,
+       0.914695924157965
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "net": "PHASE",
+       "edge": 4,
+       "delta_mm": -5
+      },
+      "r": [
+       1.102097022587776,
+       1.1024575768020966
+      ]
+     }
+    },
+    "terminal_copper": {
+     "min": {
+      "10MHz": 0.9811679911372109,
+      "20MHz": 0.9811152374592386
+     },
+     "max": {
+      "10MHz": 1.1127474167095526,
+      "20MHz": 1.1131589782106737
+     },
+     "n_clean": 199,
+     "n_grid": 2640,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "net": "PHASE",
+       "side": "S",
+       "margin_mm": 8,
+       "delta_mm": 6
+      },
+      "r": [
+       0.9811679911372109,
+       0.9811152374592386
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "net": "DC+",
+       "side": "E",
+       "margin_mm": 9,
+       "delta_mm": -9
+      },
+      "r": [
+       1.1127474167095526,
+       1.1131589782106737
+      ]
+     }
+    },
+    "wire_landing": {
+     "min": {
+      "10MHz": 0.9629541478592815,
+      "20MHz": 0.9628465199305342
+     },
+     "max": {
+      "10MHz": 1.1244422288491616,
+      "20MHz": 1.1243490380816343
+     },
+     "n_clean": 144,
+     "n_grid": 1920,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "switch": "HS",
+       "dx_mm": 6,
+       "dy_mm": 2
+      },
+      "r": [
+       0.9629541478592815,
+       0.9628465199305342
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "switch": "LS",
+       "dx_mm": 11,
+       "dy_mm": 2
+      },
+      "r": [
+       1.1244422288491616,
+       1.1243490380816343
+      ]
+     }
+    },
+    "compound": {
+     "min": {
+      "10MHz": 0.7612746626084027,
+      "20MHz": 0.7616064055244518
+     },
+     "max": {
+      "10MHz": 1.3400339917334374,
+      "20MHz": 1.3407129838258116
+     },
+     "argmin_20": {
+      "status": "ok",
+      "sense": "min",
+      "r": {
+       "10MHz": 0.7612746626084027,
+       "20MHz": 0.7616064055244518
+      },
+      "moves": [
+       {
+        "move_type": "die_row_shift",
+        "params": {
+         "switch": "LS",
+         "dx_mm": -3,
+         "dy_mm": 2
+        }
+       },
+       {
+        "move_type": "trace_width",
+        "params": {
+         "net": "PHASE",
+         "edge": 3,
+         "delta_mm": 7
+        }
+       },
+       {
+        "move_type": "wire_landing",
+        "params": {
+         "switch": "HS",
+         "dx_mm": 1,
+         "dy_mm": 9
+        }
+       }
+      ],
+      "n_heads": 100,
+      "n_distinct_below_0p90_seen": 1388,
+      "stage": "joint"
+     },
+     "argmax_20": {
+      "status": "ok",
+      "sense": "max",
+      "r": {
+       "10MHz": 1.3400339917334374,
+       "20MHz": 1.3407129838258116
+      },
+      "moves": [
+       {
+        "move_type": "trace_width",
+        "params": {
+         "net": "PHASE",
+         "edge": 4,
+         "delta_mm": -5
+        }
+       },
+       {
+        "move_type": "terminal_copper",
+        "params": {
+         "net": "DC+",
+         "side": "E",
+         "margin_mm": 9,
+         "delta_mm": -9
+        }
+       },
+       {
+        "move_type": "wire_landing",
+        "params": {
+         "switch": "LS",
+         "dx_mm": 11,
+         "dy_mm": 2
+        }
+       }
+      ],
+      "sweeps": 1,
+      "n_distinct_below_0p90_seen": 0
+     },
+     "n_combos_searched": 24,
+     "complete": true
+    }
+   },
+   "lowest_20MHz": 0.7616064055244518,
+   "highest_20MHz": 1.3407129838258116,
+   "lowest_10MHz": 0.7612746626084027,
+   "highest_10MHz": 1.3400339917334374,
+   "n_distinct_below_0p90_found_lower_bound": 7605,
+   "span_0p75_0p98_with_3_below_0p90": false,
+   "lowest_reachable_lower_end": 0.7616064055244518,
+   "n_l1_evals": 8292,
+   "search_complete": true
+  },
+  "gen2_0": {
+   "reference": {
+    "name": "gen2_0",
+    "fingerprint": "aade6489835d7e940d122c73e43983faf4cde67af73536782d106a6024e9b666",
+    "L1_H": {
+     "10MHz": 1.4375408162503935e-08,
+     "20MHz": 1.4323966713260533e-08
+    },
+    "on_lattice": {
+     "1mm": false,
+     "0.5mm": true,
+     "0.25mm": true
+    },
+    "rules": "perturb.measured_rules(gen2_0) (plain measured rules)"
+   },
+   "per_kind": {
+    "die_row_shift": {
+     "min": {
+      "10MHz": 0.984688845213263,
+      "20MHz": 0.9846970231181651
+     },
+     "max": {
+      "10MHz": 1.0136253092835172,
+      "20MHz": 1.013642239228029
+     },
+     "n_clean": 14,
+     "n_grid": 1248,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "switch": "LS",
+       "dx_mm": 1,
+       "dy_mm": 1
+      },
+      "r": [
+       0.984688845213263,
+       0.9846970231181651
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "switch": "LS",
+       "dx_mm": -3,
+       "dy_mm": 0
+      },
+      "r": [
+       1.0136253092835172,
+       1.013642239228029
+      ]
+     }
+    },
+    "trace_width": {
+     "min": {
+      "10MHz": 0.9295681886535271,
+      "20MHz": 0.9295127908976577
+     },
+     "max": {
+      "10MHz": 1.0122309658939292,
+      "20MHz": 1.0122513278200511
+     },
+     "n_clean": 11,
+     "n_grid": 100,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "net": "DC-",
+       "edge": 3,
+       "delta_mm": 10
+      },
+      "r": [
+       0.9295681886535271,
+       0.9295127908976577
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "net": "DC-",
+       "edge": 3,
+       "delta_mm": -1
+      },
+      "r": [
+       1.0122309658939292,
+       1.0122513278200511
+      ]
+     }
+    },
+    "terminal_copper": {
+     "min": {
+      "10MHz": 0.9745254258230132,
+      "20MHz": 0.9745270796202583
+     },
+     "max": {
+      "10MHz": 1.1065649656189724,
+      "20MHz": 1.1066539547237626
+     },
+     "n_clean": 133,
+     "n_grid": 2640,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "net": "PHASE",
+       "side": "E",
+       "margin_mm": 4,
+       "delta_mm": 10
+      },
+      "r": [
+       0.9745254258230132,
+       0.9745270796202583
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "net": "PHASE",
+       "side": "E",
+       "margin_mm": 5,
+       "delta_mm": -5
+      },
+      "r": [
+       1.1065649656189724,
+       1.1066539547237626
+      ]
+     }
+    },
+    "wire_landing": {
+     "min": {
+      "10MHz": 0.985652617968411,
+      "20MHz": 0.9856003104911518
+     },
+     "max": {
+      "10MHz": 1.0402072234804909,
+      "20MHz": 1.040208679182927
+     },
+     "n_clean": 31,
+     "n_grid": 1920,
+     "n_below_0p90": 0,
+     "argmin_20": {
+      "params": {
+       "switch": "HS",
+       "dx_mm": -5,
+       "dy_mm": 0
+      },
+      "r": [
+       0.985652617968411,
+       0.9856003104911518
+      ]
+     },
+     "argmax_20": {
+      "params": {
+       "switch": "HS",
+       "dx_mm": 3,
+       "dy_mm": -2
+      },
+      "r": [
+       1.0402072234804909,
+       1.040208679182927
+      ]
+     }
+    },
+    "compound": {
+     "min": {
+      "10MHz": 0.8879964730113055,
+      "20MHz": 0.8879516645734545
+     },
+     "max": {
+      "10MHz": 1.1589302417816585,
+      "20MHz": 1.1590440020382284
+     },
+     "argmin_20": {
+      "status": "ok",
+      "sense": "min",
+      "r": {
+       "10MHz": 0.8879964730113055,
+       "20MHz": 0.8879516645734545
+      },
+      "moves": [
+       {
+        "move_type": "die_row_shift",
+        "params": {
+         "switch": "LS",
+         "dx_mm": 1,
+         "dy_mm": 1
+        }
+       },
+       {
+        "move_type": "trace_width",
+        "params": {
+         "net": "DC-",
+         "edge": 3,
+         "delta_mm": 10
+        }
+       },
+       {
+        "move_type": "terminal_copper",
+        "params": {
+         "net": "PHASE",
+         "side": "E",
+         "margin_mm": 4,
+         "delta_mm": 10
+        }
+       }
+      ],
+      "sweeps": 1,
+      "n_distinct_below_0p90_seen": 24
+     },
+     "argmax_20": {
+      "status": "ok",
+      "sense": "max",
+      "r": {
+       "10MHz": 1.1589302417816585,
+       "20MHz": 1.1590440020382284
+      },
+      "moves": [
+       {
+        "move_type": "trace_width",
+        "params": {
+         "net": "DC-",
+         "edge": 3,
+         "delta_mm": -1
+        }
+       },
+       {
+        "move_type": "terminal_copper",
+        "params": {
+         "net": "PHASE",
+         "side": "E",
+         "margin_mm": 5,
+         "delta_mm": -5
+        }
+       },
+       {
+        "move_type": "wire_landing",
+        "params": {
+         "switch": "HS",
+         "dx_mm": 3,
+         "dy_mm": -2
+        }
+       }
+      ],
+      "sweeps": 1,
+      "n_distinct_below_0p90_seen": 0
+     },
+     "n_combos_searched": 24,
+     "complete": true
+    }
+   },
+   "lowest_20MHz": 0.8879516645734545,
+   "highest_20MHz": 1.1590440020382284,
+   "lowest_10MHz": 0.8879964730113055,
+   "highest_10MHz": 1.1589302417816585,
+   "n_distinct_below_0p90_found_lower_bound": 140,
+   "span_0p75_0p98_with_3_below_0p90": false,
+   "lowest_reachable_lower_end": 0.8879516645734545,
+   "n_l1_evals": 4531,
+   "search_complete": true
+  }
+ }
+}

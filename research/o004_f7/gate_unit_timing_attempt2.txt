@@ -1,0 +1,46 @@
+# uv run pytest -q -x -m 'not slow' tests/unit --durations=40 -p no:cacheprovider
+# HEAD d2cb5b20 (merge of main 70f426fc), T0387 worktree, 2026-11-16 ~17:46-18:03 PST; load averages at end: 5.64 5.92 5.82
+============================= slowest 40 durations =============================
+129.04s call     tests/unit/solvers/test_thermal_fem.py::test_benchmark_smoke_run_with_new_options
+59.73s call     tests/unit/generate/test_twin.py::test_degrade_error_when_no_move_reaches_the_target
+57.53s call     tests/unit/optimize/test_nulls.py::test_compact_local_optimum_has_no_feasible_improving_move
+48.09s call     tests/unit/optimize/test_nulls.py::test_widen_ends_where_no_single_widening_move_is_feasible
+46.16s call     tests/unit/solvers/test_thermal_fem_assembly.py::test_o006_manufactured_case_q2_coarse_levels
+42.62s call     tests/unit/generate/test_twin.py::test_degrade_is_deterministic_and_raises_when_the_ratio_is_missed
+36.91s call     tests/unit/optimize/test_nulls.py::test_determinism
+29.35s call     tests/unit/generate/test_twin.py::test_degrade_error_carries_the_walk_terminal_state
+27.45s call     tests/unit/solvers/test_thermal_fem_assembly.py::test_kirchhoff_column_convergence_orders
+26.75s setup    tests/unit/optimize/test_nulls.py::test_outputs_drc_clean_in_domain_and_record_distance[widen]
+18.27s call     tests/unit/solvers/test_thermal_fem_rule.py::test_tj_max_xyz_on_die_top_face_and_is_the_max_node[2]
+14.31s call     tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box[2]
+12.36s call     tests/unit/drc/test_drc_net_rules.py::test_synthetic_signal_layouts_on_generator_geometry
+12.20s call     tests/unit/solvers/test_thermal_fem_rule.py::test_mandatory_lines_node_value_at_every_level_box[2]
+11.85s call     tests/unit/optimize/test_control.py::test_column_sides_case4
+11.42s call     tests/unit/generate/test_derivative.py::test_quick_ok_rejects_no_drc_clean_candidate_case4_measured
+10.94s call     tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_layout
+10.88s call     tests/unit/optimize/test_local_search.py::test_reaches_known_feasible_optimum
+9.03s call     tests/unit/solvers/test_thermal_fem_rule.py::test_centred_single_source_box_stack_mirror_symmetric[2]
+8.89s call     tests/unit/optimize/test_control.py::test_proxy_descent_is_clean_in_domain_and_monotone
+8.46s call     tests/unit/solvers/test_thermal_fem_rule.py::test_results_unchanged_without_near_coincident_lines[layout-2]
+8.42s call     tests/unit/optimize/test_local_search.py::test_determinism_and_different_seeds
+7.31s call     tests/unit/generate/test_derivative.py::test_case4_topology_diversity_under_measured_rules
+7.20s call     tests/unit/solvers/test_thermal_fem_rule.py::test_kept_line_just_outside_snap_distance_solves_above_level_0_box[1]
+7.08s call     tests/unit/solvers/test_thermal_fem_rule.py::test_meta_records_dofs_lines_and_order[2]
+6.84s call     tests/unit/solvers/test_thermal_fem_assembly.py::test_o006_manufactured_case_q1_coarse_levels
+6.74s call     tests/unit/generate/test_derivative.py::test_case4_2mm_pitch_bound_scope_ls_dies
+6.17s call     tests/unit/optimize/test_control.py::test_proxy_alone_spends_at_most_the_l1_budget
+6.08s call     tests/unit/optimize/test_local_search.py::test_resume_from_checkpoint_gives_identical_result
+5.94s call     tests/unit/solvers/test_thermal_fem_rule.py::test_mandatory_lines_node_value_at_every_level_box[1]
+5.88s call     tests/unit/generate/test_twin.py::test_rectangular_merged_bands_keep_each_slots_contents
+5.80s call     tests/unit/optimize/test_control.py::test_degradation_and_proxy_never_call_l2
+5.78s call     tests/unit/optimize/test_local_search.py::test_every_visited_layout_is_drc_clean_and_in_domain
+5.55s call     tests/unit/optimize/test_control.py::test_column_sides_2R
+4.89s call     tests/unit/optimize/test_control.py::test_draw_degradations_is_deterministic_and_seed_sensitive
+4.60s call     tests/unit/generate/test_twin.py::test_degradation_reaches_its_target_on_the_population_and_is_deterministic
+4.49s call     tests/unit/generate/test_reach.py::test_every_housing_draw_is_in_its_own_domain[3-True]
+4.42s call     tests/unit/test_fasthenry.py::test_die_equiv_groups_hold_every_footprint_cell
+4.41s call     tests/unit/generate/test_twin.py::test_walk_steps_are_on_the_grid_valid_and_listed
+4.33s call     tests/unit/optimize/test_control.py::test_degradations_stay_in_the_reach_domain_on_the_development_layouts
+1091 passed, 40 deselected, 1 xfailed in 984.08s (0:16:24)
+uv run pytest -q -x -m 'not slow' tests/unit --durations=40 -p   963.78s user 11.71s system 99% cpu 16:24.53 total
+exit=0

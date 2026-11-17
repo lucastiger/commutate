@@ -1,0 +1,398 @@
+{
+ "label": "RESEARCH ONLY, NOT EVIDENCE (T0387, O004 F7(c)/(d)); development geometry 2D_Case_4, development seed",
+ "reference": {
+  "name": "case4_base",
+  "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+  "geometry_key": "e17caef8946ab984bf7269967b49b1765b12b66faf37a2a09ff55fc04d02bafc",
+  "L1_H": {
+   "10MHz": 1.9409586121170872e-08,
+   "20MHz": 1.9325240803329187e-08
+  },
+  "rules": "perturb.measured_rules(case4, CASE4_OVERRIDES)",
+  "rule_overrides": {
+   "min_wire_pitch": 0.0006,
+   "wire_pitch_diameters": 2.0,
+   "max_wire_length": 0.018
+  }
+ },
+ "dev_seed": 20261116,
+ "allocation": {
+  "die_row_shift": 2,
+  "trace_width": 2,
+  "terminal_copper": 2,
+  "wire_landing": 2,
+  "compound": 2
+ },
+ "rules_sha256": "70307210174b4f0beb725238d7a000de55b6b378d821d99071fbf051b7fa33b2",
+ "l1_model": "moduleforge.physics.peec loop_inductance",
+ "pairs": [
+  {
+   "name": "dev00_die_row_shift",
+   "move_type": "die_row_shift",
+   "params": {
+    "switch": "HS",
+    "dx_mm": 8,
+    "dy_mm": -6
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 0",
+   "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a",
+   "geometry_key": "cadef74c3249259488be440e61725a966e462d320c58d8cbe5e98c5346c5dd65",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.7234523084904533e-08,
+    "20MHz": 1.7164865647420463e-08
+   },
+   "r_L1": {
+    "10MHz": 0.8879387214808303,
+    "20MHz": 0.888209664350648
+   }
+  },
+  {
+   "name": "dev01_die_row_shift",
+   "move_type": "die_row_shift",
+   "params": {
+    "switch": "HS",
+    "dx_mm": -1,
+    "dy_mm": -5
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 1",
+   "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14",
+   "geometry_key": "5660982235f8685716c1a846eb5729eef553e86fc3816335a96eda8946d60c0a",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.8007788682471482e-08,
+    "20MHz": 1.793603315731845e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9277780870777873,
+    "20MHz": 0.9281143422662337
+   }
+  },
+  {
+   "name": "dev02_trace_width",
+   "move_type": "trace_width",
+   "params": {
+    "net": "PHASE",
+    "edge": 5,
+    "delta_mm": -2
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 2",
+   "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292",
+   "geometry_key": "8fe59a45f6fa8731f5aa79ced24e63a5393dddaf4e83c8b417324f618eebbb1c",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.9406736051360516e-08,
+    "20MHz": 1.9322598081944003e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9998531617422152,
+    "20MHz": 0.999863250273977
+   }
+  },
+  {
+   "name": "dev03_trace_width",
+   "move_type": "trace_width",
+   "params": {
+    "net": "PHASE",
+    "edge": 4,
+    "delta_mm": -4
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 3",
+   "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2",
+   "geometry_key": "ba83d6ee951982ccd4c4a06779d4e2abd0882ce58e4ff3928f5b0b19c458fabd",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 2.091147841106043e-08,
+    "20MHz": 2.082564031846705e-08
+   },
+   "r_L1": {
+    "10MHz": 1.0773788931156743,
+    "20MHz": 1.0776393696931004
+   }
+  },
+  {
+   "name": "dev04_terminal_copper",
+   "move_type": "terminal_copper",
+   "params": {
+    "net": "PHASE",
+    "side": "S",
+    "margin_mm": 8,
+    "delta_mm": 6
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 4",
+   "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b",
+   "geometry_key": "2019c7b21d460216c3f3bde21474276e330aa682c6e8d13366983973c3398689",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.9044064623313913e-08,
+    "20MHz": 1.8960288219715282e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9811679911372109,
+    "20MHz": 0.9811152374592386
+   }
+  },
+  {
+   "name": "dev05_terminal_copper",
+   "move_type": "terminal_copper",
+   "params": {
+    "net": "PHASE",
+    "side": "E",
+    "margin_mm": 8,
+    "delta_mm": -7
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 5",
+   "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083",
+   "geometry_key": "52e91a02d87ea2ee630f8bbc30dbee2f57db9cee67b916e08d75411395f04901",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.9389534866660925e-08,
+    "20MHz": 1.9305648041487367e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9989669406454743,
+    "20MHz": 0.9989861569104772
+   }
+  },
+  {
+   "name": "dev06_wire_landing",
+   "move_type": "wire_landing",
+   "params": {
+    "switch": "HS",
+    "dx_mm": 4,
+    "dy_mm": 1
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 6",
+   "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622",
+   "geometry_key": "66e18b50711c882eda752b4360358405e37972ad1c4df8adab28d9a86eac35af",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.8938216684983878e-08,
+    "20MHz": 1.8854414899507202e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9757146065225548,
+    "20MHz": 0.9756367380560207
+   }
+  },
+  {
+   "name": "dev07_wire_landing",
+   "move_type": "wire_landing",
+   "params": {
+    "switch": "LS",
+    "dx_mm": 3,
+    "dy_mm": 2
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 7",
+   "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2",
+   "geometry_key": "b59df189ed506c6f06079547e3476392d0badc935d6f4e61f209d10f632cb66d",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 2.0259649193737106e-08,
+    "20MHz": 2.017069837810643e-08
+   },
+   "r_L1": {
+    "10MHz": 1.043796043215936,
+    "20MHz": 1.0437488765796696
+   }
+  },
+  {
+   "name": "dev08_compound",
+   "move_type": "compound",
+   "params": {
+    "moves": [
+     {
+      "move_type": "die_row_shift",
+      "params": {
+       "switch": "HS",
+       "dx_mm": 6,
+       "dy_mm": 0
+      }
+     },
+     {
+      "move_type": "terminal_copper",
+      "params": {
+       "net": "DC+",
+       "side": "S",
+       "margin_mm": 8,
+       "delta_mm": -7
+      }
+     }
+    ]
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 8",
+   "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248",
+   "geometry_key": "a40e21ddb5138c47d9d47ba82015853ee91b98d97063a9693a85fa42c511fe1d",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.9081294333416535e-08,
+    "20MHz": 1.899670880286715e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9830861005636665,
+    "20MHz": 0.982999849585034
+   }
+  },
+  {
+   "name": "dev09_compound",
+   "move_type": "compound",
+   "params": {
+    "moves": [
+     {
+      "move_type": "die_row_shift",
+      "params": {
+       "switch": "HS",
+       "dx_mm": 3,
+       "dy_mm": -3
+      }
+     },
+     {
+      "move_type": "trace_width",
+      "params": {
+       "net": "DC+",
+       "edge": 1,
+       "delta_mm": -2
+      }
+     },
+     {
+      "move_type": "terminal_copper",
+      "params": {
+       "net": "PHASE",
+       "side": "E",
+       "margin_mm": 6,
+       "delta_mm": -6
+      }
+     }
+    ]
+   },
+   "seed": 20261116,
+   "origin": "perturb.draw(case4, {'die_row_shift': 2, 'trace_width': 2, 'terminal_copper': 2, 'wire_landing': 2, 'compound': 2}, seed=20261116) item 9",
+   "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198",
+   "geometry_key": "8bfa29ac75b8cfe8c39dcb2fd81d6a4b9dbf27f121d797f472919c3301d49e6a",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.8425893710333468e-08,
+    "20MHz": 1.834903673963732e-08
+   },
+   "r_L1": {
+    "10MHz": 0.9493192485045083,
+    "20MHz": 0.9494855420624982
+   }
+  },
+  {
+   "name": "standin_compound",
+   "move_type": "compound",
+   "params": {
+    "moves": [
+     {
+      "move_type": "die_row_shift",
+      "params": {
+       "switch": "LS",
+       "dx_mm": -3,
+       "dy_mm": 2
+      }
+     },
+     {
+      "move_type": "trace_width",
+      "params": {
+       "net": "PHASE",
+       "edge": 3,
+       "delta_mm": 7
+      }
+     },
+     {
+      "move_type": "wire_landing",
+      "params": {
+       "switch": "HS",
+       "dx_mm": 1,
+       "dy_mm": 9
+      }
+     }
+    ]
+   },
+   "seed": null,
+   "label": "lowest reachable, r = 0.7616, stands in for r <= 0.75",
+   "origin": "tests/unit/test_perturb.py LOWEST_COMPOUND (T0386 structured search); founder decision (i)",
+   "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53",
+   "geometry_key": "2b3873b9fdeedf5f756dd175da3d462d1375e172fd0472bbe2d405fa81457622",
+   "on_lattice": {
+    "1mm": true,
+    "0.5mm": true,
+    "0.25mm": true
+   },
+   "L1_H": {
+    "10MHz": 1.4776026125763092e-08,
+    "20MHz": 1.4718227184118011e-08
+   },
+   "r_L1": {
+    "10MHz": 0.7612746626084027,
+    "20MHz": 0.7616064055244518
+   }
+  }
+ ],
+ "summary": {
+  "n_pairs": 11,
+  "kinds": [
+   "compound",
+   "die_row_shift",
+   "terminal_copper",
+   "trace_width",
+   "wire_landing"
+  ],
+  "min_r20": 0.7616064055244518,
+  "max_r20": 1.0776393696931004,
+  "n_below_0p90": 2,
+  "has_r_ge_0p98": true,
+  "standin_r20": 0.7616064055244518,
+  "standin_r10": 0.7612746626084027
+ }
+}
