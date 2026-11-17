@@ -65,7 +65,7 @@ from shapely.ops import unary_union
 
 from moduleforge.drc import check
 from moduleforge.drc.rules import DesignRules, measure_rules
-from moduleforge.geometry import DC_PLUS, NETS, PHASE, Layout, SignalWire, Trace, arc_wire
+from moduleforge.geometry import DC_PLUS, NETS, PHASE, SIGNAL_NET, SIGNAL_PADS, Layout, SignalWire, Trace, arc_wire
 
 MM = 1e-3
 MOVE_TYPES = ("die_row_shift", "trace_width", "terminal_copper", "wire_landing")
@@ -130,11 +130,29 @@ def on_lattice(layout: Layout, cell_m: float) -> bool:
 
 
 # ------------------------------------------------------------------------------------------------------------------ rules
+def require_whole_mm(layout: Layout) -> None:
+    """ValueError unless every coordinate the moves round to whole mm (``_mm``) is already a whole number of mm: the trace
+    vertices, the die boxes and the terminal boxes.  The moves work on integer-mm copies of these, so a reference off the 1 mm
+    lattice would have its absolute coordinates rounded (and e.g. a long side at y = 20.5 mm read as y = 20 mm)."""
+    bad = []
+    for t in layout.traces:
+        bad += [(f"trace {t.net}", c) for ring in (t.polygon.exterior, *t.polygon.interiors) for xy in ring.coords for c in xy]
+    for k, d in enumerate(layout.dies):
+        bad += [(f"die {k}", c) for c in d.bounds]
+    for n, t in layout.terminals.items():
+        bad += [(f"terminal {n}", c) for c in (t.cx - t.w / 2, t.cy - t.h / 2, t.cx + t.w / 2, t.cy + t.h / 2)]
+    off = [(what, c / MM) for what, c in bad if abs(c / MM - round(c / MM)) > 1e-6]
+    if off:
+        raise ValueError(f"the reference is not on the whole-mm lattice the perturbation rules need: {off[0][0]} has a "
+                         f"coordinate {off[0][1]!r} mm ({len(off)} such coordinates)")
+
+
 def measured_rules(reference: Layout, overrides: Mapping | None = None) -> DesignRules:
     """The reference's measured design rules as E010 builds them (``e010_run.e008_rules``): ``measure_rules`` with the
     ``min_signal_wire_length`` lower bound dropped, then ``overrides`` (development references only; never for the judged
     ones).  ValueError if the reference itself is not DRC-clean under them (the rules cannot be derived: stop, do not
     substitute rules)."""
+    require_whole_mm(reference)
     ov = dict(overrides or {})
     if set(ov) & set(DROPPED_MEASURED_RULES):
         raise ValueError(f"an override sets a dropped rule: {sorted(set(ov) & set(DROPPED_MEASURED_RULES))}")
@@ -265,6 +283,7 @@ def long_sides(poly: Polygon) -> list[tuple[str, int, int, int]]:
     (distance to the opposite boundary along the inward normal at the edge midpoint), as (axis, c, a0, a1) in whole mm:
     'h' = horizontal edge at y = c from x = a0 to a1, 'v' = vertical at x = c from y = a0 to a1.  Sorted."""
     out = []
+    poly = _canonical(poly)  # the edge set must not depend on collinear splits in the vertex list
     xy = [(_mm(x), _mm(y)) for x, y in poly.exterior.coords]
     for (x0, y0), (x1, y1) in zip(xy[:-1], xy[1:], strict=True):
         if (x0 != x1) == (y0 != y1):
@@ -413,11 +432,13 @@ def _draw_params(reference: Layout, move_type: str, rng: np.random.Generator) ->
             if dx or dy:
                 return {"switch": sw, "dx_mm": dx, "dy_mm": dy}
     if move_type == "trace_width":
-        nets = [(n, len(long_sides(_net_poly(reference, n)))) for n in NETS]
-        nets = [(n, k) for n, k in nets if k]
-        if not nets:
-            raise ValueError("no power net has a long side")
-        net, n = nets[int(rng.integers(len(nets)))]
+        # the net is drawn first and only its long sides are evaluated: a net whose long sides cannot be read (an edge with
+        # copper on both sides) or that has none makes this draw invalid (ValueError, redrawn by ``_draw_single``) instead
+        # of making every trace_width draw on the layout fail
+        net = NETS[int(rng.integers(len(NETS)))]
+        n = len(long_sides(_net_poly(reference, net)))
+        if not n:
+            raise ValueError(f"net {net} has no long side")
         return {"net": net, "edge": int(rng.integers(n)), "delta_mm": _nonzero(rng, *TRACE_DELTA_MM)}
     net = NETS[int(rng.integers(len(NETS)))]
     if move_type == "terminal_copper":
@@ -438,8 +459,8 @@ def _draw_single(reference: Layout, kind: str, rng: np.random.Generator, rules: 
     """One single move of ``kind`` on ``reference``: parameters redrawn until the move applies, changes the geometry, is
     DRC-clean under ``rules`` and gives a geometry not in ``seen``; RuntimeError after MAX_REDRAWS consecutive rejections."""
     for _try in range(MAX_REDRAWS):
-        params = _draw_params(reference, kind, rng)
         try:
+            params = _draw_params(reference, kind, rng)
             new = apply(reference, kind, params)
         except ValueError:
             continue
@@ -477,6 +498,7 @@ def draw(reference: Layout, allocation: Mapping[str, int], seed: int, rules: Des
     unknown = set(allocation) - set(PAIR_KINDS)
     if unknown:
         raise ValueError(f"unknown pair kinds {sorted(unknown)}; expected {PAIR_KINDS}")
+    require_whole_mm(reference)
     rules = measured_rules(reference) if rules is None else rules
     rng = np.random.default_rng(seed)
     seen = {geometry_key(reference)}
@@ -509,6 +531,14 @@ def _rule_sources() -> list[tuple[str, str]]:
     fns += [(f"solvers.l2_layout.{f.__name__}", inspect.getsource(f)) for f in
             (L2.layout_lattice, L2.check_on_lattice, L2.cell_fill, L2._snap_aligned, L2.rect_cover, L2._overlap_1d)]
     fns.append(("solvers.l2_layout.ALIGN_TOL", repr(L2.ALIGN_TOL)))
+    # inputs the rng indexes or the DRC / draw read through the geometry package: NETS is indexed by the rng (its order
+    # decides which net a draw picks), SIGNAL_NET / SIGNAL_PADS decide the signal wires' nets, and the Die.box,
+    # BondWire.length and SignalWire.length properties are what the DRC measures
+    fns += [("geometry.layout.NETS", repr(tuple(NETS))), ("geometry.layout.SIGNAL_PADS", repr(tuple(SIGNAL_PADS))),
+            ("geometry.layout.SIGNAL_NET", json.dumps({f"{p}|{s}": n for (p, s), n in SIGNAL_NET.items()}, sort_keys=True)),
+            ("geometry.layout.Die.box", inspect.getsource(geo.Die.box.fget)),
+            ("geometry.layout.BondWire.length", inspect.getsource(geo.BondWire.length.fget)),
+            ("geometry.layout.SignalWire.length", inspect.getsource(geo.SignalWire.length.fget))]
     return mods + fns
 
 

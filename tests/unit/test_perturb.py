@@ -17,7 +17,7 @@ from shapely.geometry import box
 
 from moduleforge.drc import check
 from moduleforge.generate import perturb as P
-from moduleforge.geometry import DC_MINUS, DC_PLUS, PHASE, Trace
+from moduleforge.geometry import DC_MINUS, DC_PLUS, NETS, PHASE, SIGNAL_NET, Trace
 
 ROOT = Path(__file__).resolve().parents[2]
 CELLS = (1.0e-3, 0.5e-3, 0.25e-3)
@@ -332,7 +332,9 @@ def test_long_sides_exclude_end_caps(case4):
     sides = P.long_sides(_nets(ref)[DC_MINUS])
     # DC- is T9 (x 10..20, y 10..50) + T4 (x 20..52, y 45..50): the 10 mm cap at y = 10 is far shorter than the 40 mm band it
     # closes and the 5 mm end at x = 52 shorter than the 32 mm band: neither is a long side; the four band sides are
-    assert sides == [("h", 45, 20, 52), ("h", 50, 20, 52), ("v", 10, 10, 50), ("v", 20, 10, 45)]
+    # (T0438: the top side y = 50 is one edge x 10..52 once collinear vertices are removed; it used to be read as 20..52
+    # because T9 and T4 meet there, a split of the vertex list and not of the geometry)
+    assert sides == [("h", 45, 20, 52), ("h", 50, 10, 52), ("v", 10, 10, 50), ("v", 20, 10, 45)]
     assert all(a1 - a0 >= P.LONG_SIDE_MIN_MM for _, _, a0, a1 in sides)
 
 
@@ -542,3 +544,123 @@ def test_case4_lowest_compound_found_is_a_clean_chain_below_every_single_move(ca
                    "found does either (lowest 0.7616, LOWEST_COMPOUND)")
 def test_case4_low_ratio_pair(case4_ratios):
     assert min(r for _, r in case4_ratios) <= 0.75
+
+
+# ------------------------------------------------------------------------------------------------------------- T0438 fixes
+def test_rules_sha256_covers_nets_signal_nets_and_the_geometry_properties(monkeypatch):
+    """Review T0416 item 1: NETS (indexed by the rng), SIGNAL_NET, SIGNAL_PADS and the Die.box / BondWire.length /
+    SignalWire.length sources are hashed."""
+    names = dict(P._rule_sources())
+    for need in ("geometry.layout.NETS", "geometry.layout.SIGNAL_NET", "geometry.layout.SIGNAL_PADS",
+                 "geometry.layout.Die.box", "geometry.layout.BondWire.length", "geometry.layout.SignalWire.length"):
+        assert need in names, need
+    assert "box(" in names["geometry.layout.Die.box"] and "norm" in names["geometry.layout.BondWire.length"]
+    h = P.rules_sha256()
+    for attr, val in (("NETS", tuple(reversed(NETS))), ("SIGNAL_NET", {**SIGNAL_NET, ("gate", "HS"): "X"}),
+                      ("SIGNAL_PADS", ("kelvin", "gate"))):
+        with monkeypatch.context() as m:
+            m.setattr(P, attr, val)
+            assert P.rules_sha256() != h, attr
+
+
+def test_long_sides_do_not_depend_on_collinear_splits(case4):
+    ref, _ = case4
+    for net, poly in _nets(ref).items():
+        base = P.long_sides(poly)
+        assert base == P.long_sides(P._canonical(poly))
+        # split every edge at its midpoint (a collinear vertex, same geometry): the same edge set
+        xy = list(poly.exterior.coords)
+        split = []
+        for a, b in zip(xy[:-1], xy[1:], strict=True):
+            split += [a, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)]
+        poly2 = type(poly)(split)
+        assert poly2.equals(poly) and len(poly2.exterior.coords) > len(xy)
+        assert P.long_sides(poly2) == base, net
+
+
+def test_whole_mm_assertion_in_draw_and_measured_rules(case4):
+    ref, rules = case4
+    P.require_whole_mm(ref)  # Case 4 is on the 1 mm lattice
+    tr = [Trace(t.net, t.polygon.union(box(65e-3, 60e-3, 67e-3, 63.5e-3))) if t.net == PHASE else t for t in ref.traces]
+    off = dataclasses.replace(ref, traces=tr)
+    with pytest.raises(ValueError, match="whole-mm"):
+        P.require_whole_mm(off)
+    with pytest.raises(ValueError, match="whole-mm"):
+        P.measured_rules(off, CASE4_OVERRIDES)
+    with pytest.raises(ValueError, match="whole-mm"):
+        P.draw(off, {"wire_landing": 1}, 1, rules)
+    d = ref.dies[0]  # a die box half a mm off, and a terminal
+    dies = [dataclasses.replace(d, cx=d.cx + 0.5e-3)] + list(ref.dies[1:])
+    with pytest.raises(ValueError, match="die 0"):
+        P.require_whole_mm(dataclasses.replace(ref, dies=dies))
+    t = ref.terminals[DC_PLUS]
+    terms = {**ref.terminals, DC_PLUS: dataclasses.replace(t, cx=t.cx + 0.5e-3)}
+    with pytest.raises(ValueError, match="terminal DC"):
+        P.require_whole_mm(dataclasses.replace(ref, terminals=terms))
+
+
+def test_geo_references_are_whole_mm(geo_ref):
+    P.require_whole_mm(geo_ref[1])
+
+
+def test_terminal_copper_positive_delta_adds_copper_closed_form(case4):
+    ref, rules = case4
+    t = ref.terminals[DC_PLUS]  # lead x 12..15, y 63..66 in T10 (x 10..20, y 55..80); window margin 1: x 11..16, y 62..67
+    # side W, delta +3: slab x 8..11, y 62..67; T10 starts at x = 10, so x 8..10 (2 mm wide, 5 mm tall) is new copper
+    new = P.apply(ref, "terminal_copper", {"net": DC_PLUS, "side": "W", "margin_mm": 1, "delta_mm": 3})
+    _same_but(ref, new, traces=(DC_PLUS,))
+    gain = _nets(new)[DC_PLUS].area - _nets(ref)[DC_PLUS].area
+    assert gain == pytest.approx(2e-3 * 5e-3, rel=1e-9) and gain > 0
+    assert _nets(new)[DC_PLUS].contains(box(8.1e-3, 62.1e-3, 9.9e-3, 66.9e-3))
+    assert not _nets(ref)[DC_PLUS].intersects(box(8.1e-3, 62.1e-3, 9.9e-3, 66.9e-3))
+    assert t.cx - t.w / 2 == pytest.approx(12e-3)
+
+
+def _gen2_0():
+    return _load("e008_run_for_perturb_test", "experiments/runners/e008_run.py")
+
+
+def test_long_sides_on_a_both_sided_edge_and_draw_params_avoid_it(case4):
+    """T0387: a net whose long side has copper on both sides must not make every trace_width draw fail.  Synthetic: Case 4
+    with DC- widened by 0.5 mm along T9 (its new side x = 20.5 mm is read as x = 20 mm, inside the copper on both sides)."""
+    ref, _ = case4
+    tr = [Trace(t.net, t.polygon.union(box(10e-3, 10e-3, 20.5e-3, 50e-3))) if t.net == DC_MINUS else t for t in ref.traces]
+    syn = dataclasses.replace(ref, traces=tr)
+    with pytest.raises(ValueError, match="both sides"):
+        P.long_sides(_nets(syn)[DC_MINUS])
+    assert P.long_sides(_nets(syn)[DC_PLUS]) and P.long_sides(_nets(syn)[PHASE])  # the other nets are readable
+    rng = np.random.default_rng(5)
+    got, failed = set(), 0
+    for _ in range(300):
+        try:
+            p = P._draw_params(syn, "trace_width", rng)
+        except ValueError:
+            failed += 1
+            continue
+        got.add(p["net"])
+        assert p["net"] != DC_MINUS and 0 <= p["edge"] < len(P.long_sides(_nets(syn)[p["net"]]))
+    assert got == {DC_PLUS, PHASE} and 0 < failed < 300  # only the unreadable net's draws are lost, and they are redrawn
+
+
+@pytest.mark.slow
+def test_gen2_0_long_sides_and_draw_params():
+    """T0387 on gen2_0 (development geometry; off the 1 mm lattice, so ``draw`` refuses it by item 3 -- tested at the
+    long_sides / _draw_params level only)."""
+    R = _gen2_0()
+    ref = R.dev_reference("gen2_0", R.load_spec()["config"]).reference
+    polys = _nets(ref)
+    with pytest.raises(ValueError, match="both sides"):
+        P.long_sides(polys[DC_PLUS])
+    with pytest.raises(ValueError, match="both sides"):
+        P.long_sides(polys[PHASE])
+    assert P.long_sides(polys[DC_MINUS])
+    with pytest.raises(ValueError, match="whole-mm"):
+        P.draw(ref, {"trace_width": 1}, 1)
+    rng = np.random.default_rng(3)
+    nets = set()
+    for _ in range(200):
+        try:
+            nets.add(P._draw_params(ref, "trace_width", rng)["net"])
+        except ValueError:
+            pass
+    assert nets == {DC_MINUS}
