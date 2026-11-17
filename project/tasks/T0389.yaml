@@ -213,6 +213,31 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   when no pair is drawn: record it as a failed draw; (4) seed_provenance: see item 3 of the T0440/T0441
   note.
 
+
+
+  Founder decision 2026-11-17T15:58:20+00:00 (span and allocation; recorded by the founder session, O004
+  state log; D0024''s open item, decided in principle): implement a frozen banded-acceptance rule in E004''s
+  registration stage.
+
+  - Pairs are drawn from E004''s sealed seed exactly as now. A frozen rule accepts or redraws each slot
+  so that the pooled registered pairs fill L1-ratio bands: at least 3 below 0.90 and at least 1 at or
+  above 0.98, at both frequencies. Every move type keeps at least one pair per reference.
+
+  - Redraws stay within a frozen limit, and registration refuses if a band cannot be filled within it.
+  Record every redraw and its reason (the band, or T0438''s both-sided-edge redraw).
+
+  - L1 is the only quantity consulted. No pair is seen at l2_layout or FastHenry before its solves (F2).
+
+  - Simulate the rule on 2D_Case_4 with at least 200 development seeds under the current rules, after
+  T0438 and T0451. Report the fraction of draws that pass the registration check for lower ends 0.76,
+  0.78, 0.80, 0.82 and 0.85, the distribution of each draw''s lowest r_L1, the mean and maximum redraws
+  per slot, and per-type coverage under the 6 % rule.
+
+  - The founder then picks the lower end and amends O004''s span text, which is frozen and re-approved;
+  keep 0.75 in the code until then.
+
+  - Burst 1''s F7(c) result for context: 0 of 13 development pairs excluded, largest E_R/r 0.349 % (research/notes/o004-f7-l2-pilot.md).
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
