@@ -624,3 +624,42 @@ def test_a_state_tick_waits_for_a_merge_in_progress_and_for_staged_founder_files
     o._commit_state("tick")
     assert s.git("rev-parse", "HEAD") == head  # a founder-owned file staged by the founder is not the bot's to commit
     assert any("project/charter.md" in e.get("reason", "") for e in s.events() if e.get("event") == "state_commit_deferred")
+
+
+def test_registration_waits_for_the_last_design_task_of_its_experiment(sandbox):
+    """2026-11-17: E004's design part 1 (T0388) merged and opened I0242 while parts 2 and 3 were still to run; the founder
+    rejected it as premature. The request now waits for the experiment's last unfinished design task, named by the drafts
+    it touches or by its experiment field, and is not opened twice."""
+    s = Store()
+    drafted = [{"outcome": "agent_finished", "report": {"experiment_drafts": ["experiments/drafts/E777.yaml"]}}]
+
+    def design(tid, status, **kw):
+        t = m.Task(id=tid, objective="O000", title="design", type="design_experiment", agent="scientist",
+                   status=status, history=drafted, **kw)
+        s.save_task(t)
+        return t
+
+    def registrations():
+        return [i for i in Store().inbox() if i.kind == "experiment_registration" and "E777" in i.refs]
+
+    part1 = design("T9731", "done")
+    part2 = design("T9732", "todo", touches=["experiments/drafts/E777.yaml", "experiments/runners/e777_run.py"])
+    part3 = design("T9733", "needs_founder", experiment="E777")
+    design("T9734", "todo", touches=["experiments/drafts/E7770.yaml"])  # another experiment, not a part of E777
+    Orchestrator(Store())._post_merge(part1)
+    assert registrations() == []
+    deferred = [e for e in Store().events(limit=10) if e["event"] == "registration_deferred"]
+    assert deferred[-1]["experiment"] == "E777" and "T9732" in deferred[-1]["reason"]
+
+    part2.status = "done"
+    s.save_task(part2)
+    Orchestrator(Store())._post_merge(part2)
+    assert registrations() == []  # part 3 is held for the founder: still unfinished
+    assert "T9733" in Store().events(limit=10)[-1]["reason"]
+
+    part3.status = "done"
+    s.save_task(part3)
+    Orchestrator(Store())._post_merge(part3)
+    assert len(registrations()) == 1  # the last part asks once
+    Orchestrator(Store())._post_merge(part3)
+    assert len(registrations()) == 1  # and a repeat does not ask again

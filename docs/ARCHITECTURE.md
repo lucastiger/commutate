@@ -371,6 +371,9 @@ summaries that become the "previous attempts" section of the next packet).
 scientist task ──► experiments/drafts/E002.yaml + experiments/runners/e002_ranking.py
                    (mfos exp check + runner --smoke must pass: definition of done)
       │ critic (always at least one lens) reviews the design, blinded
+      │ the "register E002" inbox item opens when the experiment's last unfinished design task merges
+      │ (a design split over several tasks asks once, not once per part; a deferral is logged as
+      │ registration_deferred)
       ▼
 founder registers (inbox approval or `mfos exp register E002`)
       │ spec moved to experiments/specs/, spec_hash frozen with the sha256 of every runner file the
