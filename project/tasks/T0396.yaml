@@ -4,7 +4,7 @@ title: 'E007 statistics: F3 coverage and power simulation, bound selection and f
   mfos.metrics additions drafted as a patch'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0392
 description: 'F3 and the protected tools/mfos additions listed in the objective notes. Draft them for
@@ -321,3 +321,146 @@ history:
 
     TIMEOUT after 900s'
   at: '2026-11-17T02:05:15+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Attempt 2 of T0396 failed on a timeout in the test infrastructure. Nothing was wrong in the
+    branch, and I changed no files and made no commits.
+
+
+    What I checked:
+
+    - **Branch contents:** the only files the branch adds are the 13 under `research/o002_e007/`.
+
+    - **Branch vs current main:** apart from state files, they differ in one line of `.mfos/policy.toml`.
+    Main''s commit c2d0a9e0 raises `fast_timeout_s` from 900 to 1800 s, and its comment names T0396 and
+    T0387 as timing out "beside agents running the same suite".
+
+    - **Unit suite timing:** the suite that timed out (`pytest -q -x -m ''not slow'' tests/unit`) passes
+    on this branch: 1116 passed, 40 deselected, 1 xfailed, in 720 s. That is 80 % of the old 900 s limit,
+    so a second agent running the same suite can push it over.
+
+    - **Where the time goes:'
+  report:
+    summary: 'Attempt 2 of T0396 failed on a timeout in the test infrastructure. Nothing was wrong in
+      the branch, and I changed no files and made no commits.
+
+
+      What I checked:
+
+      - **Branch contents:** the only files the branch adds are the 13 under `research/o002_e007/`.
+
+      - **Branch vs current main:** apart from state files, they differ in one line of `.mfos/policy.toml`.
+      Main''s commit c2d0a9e0 raises `fast_timeout_s` from 900 to 1800 s, and its comment names T0396
+      and T0387 as timing out "beside agents running the same suite".
+
+      - **Unit suite timing:** the suite that timed out (`pytest -q -x -m ''not slow'' tests/unit`) passes
+      on this branch: 1116 passed, 40 deselected, 1 xfailed, in 720 s. That is 80 % of the old 900 s limit,
+      so a second agent running the same suite can push it over.
+
+      - **Where the time goes:** none of the slow tests touch this branch''s files. The slowest are a
+      thermal FEM smoke run (85 s), `generate/test_twin` (55, 37 and 25 s) and `optimize/test_nulls` (39
+      and 29 s).
+
+      - **Gate:** `uv run mfos gate --fast` passed in 675 s under this worktree''s 900 s limit. Once main
+      is merged in, the limit is 1800 s.
+
+
+      I cannot merge main into the branch myself (agents never merge). The orchestrator''s merge will
+      bring in the 1800 s policy, and it will merge cleanly because the branch touches no file that main
+      changed.
+
+
+      Every deliverable check passes on the current HEAD (f2c65ff5):
+
+      - The F3 JSON assertion passes. Coverage is at least 0.965 for A1–A4 and K1–K3 under both the normal
+      and t(3) error models. Joint power is 0.898 with 20 layouts in each of the 15 strata (300 layouts).
+      Reference cost is 51.96 CPU-hours and $14.79. Monte Carlo standard error is 0.0058 for coverage
+      and 0.0096 for power.
+
+      - The 11 tests pass, ruff is clean, and `git apply --check` succeeds.
+
+
+      I also checked the patch more strictly than attempt 1 did, by applying it to a full scratch copy
+      of the repository (excluding `data/`):
+
+      - The metrics, metrics_o002_o004_o008 and evaluate test files all pass: 153 tests.
+
+      - In the whole `tests/mfos` folder, 346 pass and 4 fail. The same 4 (failure_handling ×2, hooks,
+      sandbox) fail without the patch too, so they come from the agent sandbox, not the patch.
+
+      - Attempt 1''s own scratch checker (`check_patch.py`) shows 134 passed with the patch against 128
+      without: the 6 new tests pass. The 3 tests that fail there fail with and without the patch, because
+      they read repository files by path.
+
+
+      Two things from attempt 1''s approved design, so a reviewer is not surprised:
+
+      - **Bound level:** the selected bound is nominally a one-sided 97 % bound (`level: 0.94`), stricter
+      than the objective''s "upper 95 % bound". At a nominal 95 % the bound covered right at 0.95 (round
+      1 gave 0.944–0.972), too close to certify 0.95 in every case.
+
+      - **Selection after seeing results:** this variant and an amendment to the selection rule were introduced
+      after round-1 results had been seen. Round 2 re-ran the comparison on fresh seeds, and both points
+      are written up in `f3_simulation.json`.
+
+
+      Merge was already approved (I0231), so I did not redo or change any of the science.'
+    status: completed
+    failure_class: infrastructure
+    root_cause: The fast gate's 900 s limit per command left no room for the unit suite when other agents
+      were running the same suite at the same time. The suite takes 720 s here and is no slower because
+      of this branch, which changes no file the suite imports or collects. Main has since raised the limit
+      to 1800 s (c2d0a9e0).
+    confidence: 0.9
+    evidence:
+    - '`git diff --stat HEAD main -- . '':!project''`: apart from the research/o002_e007 files that main
+      does not have yet, the only difference is .mfos/policy.toml (fast_timeout_s 900 -> 1800, with a
+      comment naming T0396).'
+    - '`git diff --stat main...HEAD`: the branch adds only 13 files under research/o002_e007/ and nothing
+      in src/, tests/ or tools/.'
+    - '`/usr/bin/time -l uv run pytest -q -x -m ''not slow'' tests/unit --durations=30`: 1116 passed,
+      40 deselected, 1 xfailed in 719.71 s. The wrapper exited 1 only because the sandbox blocks the sysctl
+      that `time -l` needs, so peak memory could not be read.'
+    - '`uv run mfos gate --fast`: exit 0, ''all gates passed'', 675 s elapsed under this worktree''s 900
+      s limit.'
+    - '`uv run ruff check src tests experiments/runners`: exit 0.'
+    - '`uv run pytest -q research/o002_e007/test_e007_metrics.py`: exit 0 (11 passed).'
+    - '`git apply --check research/o002_e007/e007_metrics.patch`: exit 0.'
+    - '`uv run ruff check research/o002_e007`: exit 0.'
+    - 'F3 JSON definition-of-done assertion: exit 0. Minimum coverage 0.965 (A1, t3); power_joint 0.898;
+      20 layouts in each of 15 strata, n_layouts 300; reference_cpu_hours 51.96.'
+    - 'Patch applied to a full scratch copy (`git archive HEAD -- . '':!data''`): test_metrics.py, test_metrics_o002_o004_o008.py
+      and test_evaluate.py give 153 passed. Whole tests/mfos with the patch: 346 passed, 4 failed. The
+      same 4 fail without the patch (4 failed, 73 passed on those three files), so they come from the
+      sandbox.'
+    - '`uv run python research/o002_e007/check_patch.py`: 134 passed with the patch against 128 with `--baseline`.
+      The same 3 tests that read files by path fail in both runs.'
+    alternative_explanations:
+    - explanation: Something in the branch, for example the research/o002_e007 files or the earlier merge
+        of main, slowed down or hung tests/unit.
+      how_to_discriminate: 'Run tests/unit on the branch alone and compare its diff against main. Done:
+        the branch changes nothing that the suite collects or imports, and the suite passes in 720 s with
+        no hang.'
+    - explanation: A test that main added (T0385's test_fasthenry_run.py, which uses a real FastHenry
+        binary with retries) hangs or runs for a long time under some conditions.
+      how_to_discriminate: Check pytest --durations for the FastHenry tests. None is among the 30 slowest
+        (the slowest of those took 4.7 s), so it did not cause this run's time. A hang that only happens
+        under load cannot be ruled out from one run.
+    discriminating_tests:
+    - 'Run tests/unit on the branch with --durations=30 and look for a hang or a test from this branch
+      among the slow ones: none found, 720 s in total.'
+    - 'Compare the branch''s code with main''s: they differ only in the policy line that sets the timeout.'
+    - 'Run `mfos gate --fast` in the worktree: it passed in 675 s.'
+    recommended_actions:
+    - 'Orchestrator: merge current main (with c2d0a9e0, fast_timeout_s 1800) into the T0396 branch and
+      re-verify. No change to the branch is needed, and the merge is clean because the branch touches
+      no file main changed.'
+    - 'Founder: the fast unit suite takes about 720 s on its own, 80 % of the old 900 s limit, and nearly
+      all of that is a few thermal FEM, test_twin and test_nulls tests (about 300 s together). Marking
+      the longest of them `slow`, or limiting how many gate runs execute at once, would leave more margin
+      than 1800 s does once several agents are running.'
+    - 'Founder: when you apply e007_metrics.patch, expect 4 failures in tests/mfos (failure_handling ×2,
+      hooks, sandbox) if you run it inside an agent sandbox. They fail without the patch too.'
+    files_written: []
+    experiment_drafts: []
+    affects_acceptance_criteria: false
