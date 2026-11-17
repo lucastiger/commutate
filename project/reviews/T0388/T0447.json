@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "seed_provenance can only catch non-determinism, not a wrong seed source or drift from the recorded pairs",
+      "detail": "In registered mode `seed`, `run.seed` and `source_seed` all come from the same environment variable, MFOS_SEED (ExperimentRun sets `self.seed = int(MFOS_SEED)`). So `seed == run.seed == source_seed` holds by construction and cannot show that the value is the sealed seed. That proof rests on mfos alone. The geometry clause of `replay_mismatches` is also weak: it runs only after the replayed params have been found equal, and it re-applies those params. It never compares against the fingerprints stored in `pair_records`, so it can fail only if `perturb.apply` is non-deterministic. The check is real but narrower than its description ('reproduces every move and geometry').",
+      "evidence": "tools/mfos/mfos/evidence.py:56-57; e004_run.py seed_ok / replay_mismatches; smoke seed_provenance = true",
+      "suggested_check": "Compare the replayed geometry_key against the fingerprints recorded in pair_records, and state in the description that sealing is mfos's guarantee.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The registered path is not exercised on the judged references; only its geometry gates were verified",
+      "detail": "The smoke run uses 2D_Case_4 for both slots, so the draw, long_sides and L1 code never runs on 2D_Case_2R or 2D_Case_6 (this is required by F2). I independently confirmed that the gates which need no draw pass on both judged references: frozen fingerprints, whole-mm coordinates, the 1.0/0.5/0.25 mm lattices, and `measured_rules` without overrides. Whether `perturb.draw` raises on them ('edge has copper on both sides', T0387) is still unknown, and the open T0438 item covers it. The runner's refusal path for that case exists and names the nets.",
+      "evidence": "Independent run: both judged references gave fingerprint failures [], whole_mm_failures [], on_lattice True at 1/0.5/0.25 mm, and measured_rules ok",
+      "suggested_check": "After T0438 lands, confirm that the registered path's draws do not raise. This is only possible at registration, under F2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "code_under_test omits geometry/layout.py and stack.py, which build the conductor model both solvers read",
+      "detail": "`Layout.to_conductors` (geometry/layout.py) and the stack produce the input that both l2_layout and the FastHenry exporter read. Both files are hashed in config.freeze.files, so the registration stage refuses if they change. However, they are not in code_under_test, so the result's provenance.code and any later code_must_match on this evaluation's files would not cover them.",
+      "evidence": "src/moduleforge/geometry/layout.py:244 to_conductors; E004.yaml code_under_test lists conductors.py but not layout.py or stack.py",
+      "suggested_check": "Add geometry/layout.py and geometry/stack.py to code_under_test before registration.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Pinned freeze commit cannot be verified in this review snapshot",
+      "detail": "The snapshot has a single commit. 42db7eb5\u2026 is not present (`git cat-file` fails), so in the smoke run freeze_hashes_match is false: 'not an ancestor of HEAD' plus one 'blob \u2026 does not have the frozen sha256' failure for each frozen file. Every live-tree value matches the frozen value: all file hashes, perturb_rules_sha256, the supplement hash, l2_layout source_sha256 and the package versions. Smoke records failures without raising, so the DoD command still exits 0.",
+      "evidence": "registration.json freeze.failures: only ancestor and pinned-blob failures; no 'sha256 X != frozen' failures for current files",
+      "suggested_check": "Run `e004_run.py --print-freeze` on main, or the smoke on a branch that contains 42db7eb, and confirm freeze_hashes_match is true there.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "As drafted, the L1 span gate fails; the design says so itself",
+      "detail": "In the smoke run on the 2D_Case_4 stand-in, the pooled L1 ratios run from 0.945 to 1.108 at both frequencies, with 0 below 0.90. The span check therefore fails (reaches_lower false, enough_below false), and proxy_pair_built is false. design_status already says the draft is not registrable: F4 is expected to refuse a sealed draw almost surely, the span and allocation are open (D0024), and the proxy is pending (T0437). This is consistent with a part-1 draft, not a defect.",
+      "evidence": "smoke checks: l1_span false (min 0.9454, n_below 0), proxy_pair_built false; L1 mesh shift max 0.0047 between 4 mm and 2 mm, 2 flagged entries",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: it passes.",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke --stage registration`: exit 0 after 5.3 s of stage wall time. I inspected registration.json: all 15 checks are recorded. The freeze failure is limited to the pinned commit, and the L1 span and proxy-pair failures are expected for this draft.",
+    "Confirmed that `git hash-object` of both deliverables equals the diff's blob ids (165c9061, 9b3c2dbf), and that `ruff check` on the runner passes.",
+    "Rebuilt 2D_Case_2R and 2D_Case_6 with the frozen T0263 script (geometry only). Fingerprints match the frozen values, whole_mm_failures is empty, on_lattice is True at 1.0, 0.5 and 0.25 mm, and perturb.measured_rules derives without overrides on both. I checked the die and terminal coordinates by hand: all whole mm.",
+    "Adversarial whole-mm and lattice input: shifting a Case 4 die by 0.5 mm makes whole_mm_failures return ['die 0'] and on_lattice fail at 1 mm, as it should.",
+    "span_check boundaries: [0.75, 0.98, 3 below 0.90] passes; a lower end of 0.7501 fails; an upper end of 0.9799 fails; ratio comparisons are inclusive at the ends and strict at 'below', matching O004's text.",
+    "Freeze checks fail when they should: a wrong hash for units.py is reported; dropping kernels.py from freeze.files triggers unfrozen_sources; config.span lower_end 0.78 triggers the mismatch against O004's text; a wrong reconstruction-script hash returns early with a single failure.",
+    "DRC and distinctness checks fail when they should: a non-DRC-clean terminal_copper move (min_trace_width), passed twice through pair_records and registration_checks, is recorded with drc_violations and distinct [True, False], and layouts_drc_clean_distinct fails.",
+    "Read perturb.py (whole-mm rounding sites `_mm` in long_sides, die_row_shift and terminal_copper; compound stagewise application; the draw rejection loop). Confirmed that whole_mm_failures covers every coordinate `_mm` rounds on the reference.",
+    "Confirmed that the ratio direction r = L(re-layout)/L(reference) is consistent in pair_records, that config.l1.hmax_m equals L1's DEFAULT_HMAX (4 mm), and that ExperimentRun.seed is int(MFOS_SEED).",
+    "Checked the reconstruction script's imports: snapped() loads only moduleforge geometry and stack, which are frozen. Its E008 import is only in twin_report, which the stage does not call."
+  ],
+  "caveats": [
+    "This is a part-1 draft, and by its own design_status it is not registrable: the proxy pair is pending (T0437), the span lower end and allocation await the founder (D0024), the T0438 perturb fixes are pending a refreeze, and the solve stage is a stub (T0389). The claim holds as 'draft spec and registration stage' only, not as a registrable design.",
+    "The pinned freeze commit 42db7eb5 is absent from this review snapshot, so the ancestor and pinned-blob checks could not be verified here. All live-tree frozen values do match.",
+    "The smoke run exercises the registration logic on 2D_Case_4 only (F2). Draws and L1 on the judged references are untested until registration. Only their geometry gates (fingerprints, whole mm, lattices, measured rules) were verified independently.",
+    "seed_provenance shows determinism and internal consistency, not that the seed is sealed; the sealing guarantee comes from mfos."
+  ]
+}
