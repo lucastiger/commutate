@@ -1,0 +1,54 @@
+{
+  "status": "partial",
+  "failure_class": "infrastructure",
+  "confidence": 0.85,
+  "summary": "The branch now passes every definition-of-done check. On the merged commit d2cb5b20 the fast gate (`uv run mfos gate --fast`) exited 0 in 746 s and `pilot_l2.py --check` exits 0. All six deliverables exist. The new work is committed as 9ed84c12.\n\nAttempt 1 did not fail because of this branch. The fast gate's unit-test step has a 900 s limit, and that step now takes 740 to 984 s on this Mac depending on machine load. On the same commit it took 984 s in one run and passed in 746 s twenty minutes later. A repeat timeout would be bad luck with load, not a defect; the durable fix needs you or a builder (below).\n\nThe O004 F7 results are as complete as this Mac allows and did not change:\n- **Exclusion rate so far:** 0 of 2 pairs with a full ladder. All 11 development pairs are still pending their 0.25 mm solve.\n- **F7 trigger:** has not fired, but it cannot be decided until the VM solves come back.\n- **Chance of no exclusion among 13 judged pairs:** 1.0 at the observed 0/2 rate. That figure says little: with only 2 pairs, the 95 % upper bound on the rate is 77.6 %, which would put the chance as low as 3.5e-9.\n- **Span:** [0.75, 0.98] is not reachable on Case 4; the lowest reachable lower end is 0.7616. On gen2_0 it is 0.8880 (by `apply`), or 0.9445 by what `perturb.draw` can draw.\n- **F7(b):** the Case 6 0.25 mm solve completed locally (4.75 GB).\n- **Why this is partial:** each Case 4 0.25 mm solve needs about 15.8 GB, not the 8 GB the brief assumed, so those solves are listed in `vm_jobs_l2.json` for your burst VM. Agents do not start VMs.\n\nNo new solves ran in this attempt. The 8.1 GB thk_f level would need the 10 GB exception, and swap below 4 GB cannot be confirmed (five 1.07 GB swapfiles, and `sysctl` is blocked).\n\nCommands I ran and their exit codes:\n- My first timing command used `timeout`, which does not exist on this Mac (exit 127).\n- `uv run pytest -q -x -m 'not slow' tests/unit --durations=40 -p no:cacheprovider`: exit 0. 1091 passed, 40 deselected, 1 xfailed, in 984.08 s.\n- `uv run pytest --collect-only -q -m 'not slow' tests/unit`: collected 1092 tests.\n- `uv run python research/o004_f7/pilot_l2.py --check`: exit 0, run twice.\n- `uv run ruff check src tests experiments/runners`: exit 0.\n- `uv run ruff check research/o004_f7/pilot_l2.py`: exit 0.\n- `uv run mfos gate --fast`: exit 0, \"all gates passed\", 746 s.\n- `git commit`: exit 0, 9ed84c12.",
+  "root_cause": "The definition-of-done failure was the fast gate timing out, not this branch. Its `pytest -q -x -m 'not slow' tests/unit` step has a 900 s limit per command (`.mfos/policy.toml`, `fast_timeout_s`). Since main merged T0380 and T0396, that step takes 740 to 984 s on this Mac under normal load from the other agents. The ten slowest test phases take about 500 s. Among them are the thermal_fem benchmark smoke run (129 s), the test_twin degrade tests (132 s) and T0380's test_nulls (169 s). The branch changes nothing under src/ or tests/, and T0396 failed the same way after its merge.",
+  "evidence": [
+    "Fact: `uv run pytest -q -x -m 'not slow' tests/unit --durations=40` on HEAD d2cb5b20 gave exit 0 (1091 passed) in 984.08 s, with 963.8 s of user CPU at 99 % CPU and load averages 5.64 / 5.92 / 5.82 (research/o004_f7/gate_unit_timing_attempt2.txt).",
+    "Fact: `uv run mfos gate --fast` on the same HEAD, 20 minutes later, gave exit 0 'all gates passed' in 746 s, with 739.5 s of user CPU and load averages of about 4.2 to 5.6 (research/o004_f7/gate_fast_attempt2.txt). So the same work cost 30 % more CPU time in one run than in the other, which points to load.",
+    "Fact: compared with main, the branch's only files outside project/, research/o004_f7/ and the note are main-only T0385 files the branch has not received yet. Nothing in src/, tests/, research/scripts/, pyproject.toml or uv.lock differs, and grep finds no reference to o004_f7 in tests/, src/ or tools/.",
+    "Fact: main's project/tasks/T0396.yaml records the same failure after its merge (2026-11-17T02:05:15Z): 'FAIL uv run pytest -q -x -m not slow tests/unit, TIMEOUT after 900s'.",
+    "Fact: the suite finished with no test longer than 129 s, which rules out a hang.",
+    "Fact: `pilot_l2.py --check` exits 0 on the merged HEAD. That check rebuilds every layout to its recorded fingerprint, checks that the perturbation rules are unchanged, and recomputes every ratio estimate with mfos.metrics' gci_step_floor and gci_capped. Main's merge did not touch perturb, geometry, drc, peec, l2_layout or mfos/metrics.py.",
+    "Fact: P3's research/o006_p3/solves/case4_base__lat0.25.json records peak_mem_mb 15801 for 4.11 M unknowns, so the Case 4 0.25 mm solve cannot run under the 10 GB single-process cap.",
+    "Fact: /System/Volumes/VM holds five 1.07 GB swapfiles, so swap in use could be up to 5.4 GB. The 'under 4 GB swap' condition for the 10 GB exception cannot be confirmed, so thk_f (8.1 GB) stays on the VM list."
+  ],
+  "alternative_explanations": [
+    {
+      "explanation": "E2, implementation caused by the branch: research files the branch adds or changes slow down or hang a unit test.",
+      "how_to_discriminate": "Diff the branch against main for src/, tests/ and research/scripts/, and grep tests for o004_f7. Done: there are no such changes or references, so E2 is ruled out."
+    },
+    {
+      "explanation": "E3, a test hangs until the timeout kills it.",
+      "how_to_discriminate": "Run the suite to completion with --durations. Done: it completes, with a longest test of 129 s, so E3 is ruled out."
+    },
+    {
+      "explanation": "E4, purely transient load: on an idle Mac the suite runs well under 900 s, so the timeout is only a scheduling problem.",
+      "how_to_discriminate": "Time the same command on an idle Mac. This was not possible: two other agents share the machine, and ps and sysctl are blocked. The two loaded runs (740 s and 984 s, at similar load averages) show the result swings either way under normal load, so the gate is unreliable in practice."
+    }
+  ],
+  "discriminating_tests": [
+    "Run `uv run pytest -q -x -m 'not slow' tests/unit --durations=40` on HEAD: done, exit 0 in 984 s.",
+    "Run `git diff main --name-only` outside the task's research files: done, no changes under src/ or tests/.",
+    "Read main's T0396 attempt-1 failure: done, same TIMEOUT after its merge.",
+    "Run `uv run mfos gate --fast` on the same HEAD: done, exit 0 in 746 s.",
+    "Not run: time the same command on an idle Mac, to separate a suite that is too big from a load problem."
+  ],
+  "recommended_actions": [
+    "Founder: raise `[gates] fast_timeout_s` in `.mfos/policy.toml` (protected), for example to 1800 s, because the fast unit suite now takes 740 to 984 s under normal load.",
+    "Builder task: mark the slowest fast-suite tests `@pytest.mark.slow`, about 500 s in all. They are test_thermal_fem::test_benchmark_smoke_run_with_new_options, the test_twin degrade tests, the test_nulls compact/widen/determinism tests, and the test_thermal_fem_assembly coarse-level and convergence tests. They still run in the full gate, and no assertion is weakened.",
+    "Orchestrator: re-run T0387's definition of done as it stands. It passed on d2cb5b20 in this attempt.",
+    "Founder: launch the 42 jobs in research/o004_f7/vm_jobs_l2.json with the command recorded there: `MF_REF=task/T0387-f7-b-d-l2-layout-check-on-case-4-develop MF_GCP_PROVISION=0 MF_GCP_SPOT=auto scripts/burst_gcp.sh --cmd \"uv sync --all-groups && uv run python research/o004_f7/pilot_l2.py --run-vm --parallel 4 --threads 2\" research/o004_f7/solves n2d-custom-8-81920-ext us-central1-a`. That is about 7.7 h for about $3.4. Then run `pilot_l2.py --assemble` and `--check` locally to turn the exclusion rate and the F7 trigger into facts.",
+    "Founder: decide O004's span. Case 4 reaches 0.7616 at best, not 0.75; gen2_0 reaches 0.8880 by `apply` or 0.9445 by `perturb.draw`. Also decide whether the frozen filament term, which P3 found about 40x too large, should be able to push large-effect pairs out under F1."
+  ],
+  "affects_acceptance_criteria": true,
+  "files_written": [
+    "research/diagnoses/T0387.md",
+    "research/o004_f7/gate_unit_timing_attempt2.txt",
+    "research/o004_f7/gate_fast_attempt2.txt",
+    "research/notes/o004-f7-l2-pilot.md",
+    "project/memory/lessons.md"
+  ],
+  "experiment_drafts": []
+}

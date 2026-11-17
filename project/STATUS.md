@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T04:32:07+00:00 from repository state — do not edit_
+_generated 2026-11-17T04:45:46+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -32,15 +32,13 @@ _generated 2026-11-17T04:32:07+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 374, failed: 4, merge: 1, running: 3, todo: 7
+cancelled: 45, done: 375, failed: 4, running: 3, todo: 7
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 2)
-- T0387 `merge` scientist/investigate: F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio estimates, F1 exclusion rate, VM job list (attempt 2)
 - T0397 `running` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 1)
 - T0419 `running` builder/implement: F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review T0411 findings 1-2) (attempt 1)
 
 ## Recent events
-- 2026-11-17T04:02:25+00:00 run_finished {"run": "T0430-critic-20261116T194324-4b9d", "status": "completed", "cost": 2.02031, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T04:02:25+00:00 run_finished {"run": "T0431-critic-20261116T194326-6d60", "status": "completed", "cost": 2.477181, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T04:02:36+00:00 run_started {"run": "T0433-critic-20261116T200236-ec02", "task": "T0433", "role": "critic", "session": "84e1a787-6341-434a-9f01-571ea8386414"}
 - 2026-11-17T04:02:38+00:00 run_started {"run": "T0434-critic-20261116T200238-d529", "task": "T0434", "role": "critic", "session": "728f8554-83c9-4960-9819-d4ae3daca948"}
@@ -55,3 +53,4 @@ cancelled: 45, done: 374, failed: 4, merge: 1, running: 3, todo: 7
 - 2026-11-17T04:31:59+00:00 merged {"task": "T0396"}
 - 2026-11-17T04:32:06+00:00 run_started {"run": "T0382-scientist-20261116T203206-7d22", "task": "T0382", "role": "scientist", "session": "73706935-ec37-4464-be34-f830d2b13e2b"}
 - 2026-11-17T04:32:07+00:00 run_started {"run": "T0397-scientist-20261116T203207-5b71", "task": "T0397", "role": "scientist", "session": "5072e1f5-521e-4316-9c8d-f94880d2ed87"}
+- 2026-11-17T04:45:37+00:00 merged {"task": "T0387"}
