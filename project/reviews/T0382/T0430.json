@@ -1,0 +1,51 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "--dev-solve drops 144 of the 328 manifest jobs, including every 0.25 mm solve, and still exits 0",
+      "detail": "dev_solve() builds its job table as `lays[j[\"fingerprint\"]] = (lay, j)`, keyed by fingerprint alone. Every band set (W, W*, seeds, widen, compact, proxy-alone) has one fingerprint at five levels, so only the last entry, fil_f, survives and only one level per fingerprint is submitted. Wave 1 on the burst VM would therefore solve 184 of the 328 listed jobs. It would solve nothing at lat0.25 (the production L_sub level), thk_c or thk_f, and none of the 36 lat0.5 band entries. Without L_sub(W*) and the bands at 0.25 mm, no development row gets s_j or b_j. That leaves band_bound.development_value, the joint operating characteristic and the registration check (A3 on development draws) all uncomputable, even though wave 2 adds the shortlist bests. The run still returns 0, so this failure would surface only after the VM run (about $7-11, roughly 11 h makespan) had been paid for. This breaks the deliverable 'development mode with the burst job manifest', whose how_to_run says 'wave 1 = these jobs'.",
+      "evidence": "I ran e011_run.dev_solve('experiments/drafts/E011.dev_jobs.json') with only make_ctx stubbed: a stub ops that rebuilds layouts from the manifest's params and fingerprints, and an SV that records em_job submissions. Result: rc 0; wave 1 submitted 184 of 328 unique (fingerprint, level) jobs; missing by level {lat0.5: 36, lat0.25: 36, thk_c: 36, thk_f: 36}; lat0.25 jobs submitted in wave 1: 0. Wave 2 submitted 85. A plain dict simulation on the manifest gives the same counts: 184 unique fingerprints, kept levels {lat0.5: 148, fil_f: 36}.",
+      "suggested_check": "Key the job table by (fingerprint, level), or keep the job list and a separate fingerprint-to-layout map, then assert that the number of submitted jobs equals totals.jobs_wave1.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The committed burst manifest is a mid-run snapshot that omits 2D_Case_4's development draws",
+      "detail": "E011.dev_jobs.json has status 'partial: L1 stages running', and its `layouts` array holds only 2D_Case_2R. For 2D_Case_4 it lists only the W and descent bands, the four proxy-sensitivity solves and 8 D_R_D screens. It has no Case 4 search or random-screen shortlists, no null or proxy-alone end points, no seed bands and no wave-2 entries. The spec's dev.layouts names both counted layouts. The spec's cost section cites 'the manifest's own totals' as the development run's cost, but those totals ($6.91 wave 1 + $4.17 wave 2) leave out the Case 4 work that matters most: its 0.25 mm solves are estimated at 25.3 GB each. Even with the dict bug fixed, a burst run of this manifest could not show A3 on Case 4's development draws, which the registration check requires.",
+      "evidence": "Counting purposes per layout in the manifest: Case 4 has W_band x5, descent_band x4 (its lat0.5 entry is deduplicated against proxy_dcm_alt_reading), proxy_* x4 and D_R_D x8, and nothing else. The status string is the one write_manifest's _HOOK writes mid-run.",
+      "suggested_check": "Finish `--dev` for both layouts, so the status reads 'complete: L1 stages done', before treating the manifest as the burst job list.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Wave 2 picks the DC- alt-reading best among 5 of its 8 shortlist members",
+      "detail": "Solves.run stores each job once per output path, under the purpose of whoever asked first (setdefault). Three of alt_short_d0's members coincide with search_short_d0 and are stored under that purpose. dev_solve groups shortlists by purpose, so the alt reading's best is chosen among the 5 remaining members. If its true best is one of the shared three, the frozen-versus-alt DC- comparison this sensitivity row exists for is biased.",
+      "evidence": "Manifest counts: alt_short_d0 has 5 jobs at lat0.5; every search_short_dX and rs_short_dX has 8.",
+      "suggested_check": "Record the shortlist membership per role in the manifest, independently of which job deduplication kept.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Selftest and smoke never exercise --dev or --dev-solve",
+      "detail": "Both pass, but neither calls write_manifest or dev_solve, so the defect in the first finding passes every definition-of-done command. The manifest's git_commit (a522db8) cannot be resolved in this snapshot, and its workdir points into another worktree (wt/T0382), so I could not tie the manifest's provenance to this code.",
+      "evidence": "In e011_run.py, dev_solve is referenced only by main(). selftest() runs SCENARIOS through run_all/finish with FakeOps, and smoke() runs gen2_0 through run_all/finish. `git log a522db8` returns 'bad object'.",
+      "suggested_check": "Add a selftest case that runs dev_solve against FakeOps on a small manifest and asserts that every (fingerprint, level) job is submitted.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e011_run.py --selftest`: 6 scenarios (PASS, INCONCLUSIVE x2, INVALID x2, FAIL), hand checks and unit checks all OK; SELFTEST PASS.",
+    "Ran `e011_run.py --smoke` (gen2_0, thk_c): exit 0 after 705 s, 6 rows. Its preview verdict is INVALID only through F1a and the 2R-only F2 checks, which the smoke window [0, 1e9] and its gen2_0-only scope trip as expected; metrics_agree, recompute_agrees, l2_converged and artifacts_resolve were not among the failed checks.",
+    "Ran the spec-validation DoD command (ExperimentSpec validates; id, objective, sealed_seed and the four metric names present), `test -f` on the manifest, and `ruff check` on the runner: all pass.",
+    "Ran `--freeze-report`: frozen_sha256, all five code_sha256 values and search_cfg_hash match what the draft records.",
+    "Executed dev_solve itself against the manifest with only make_ctx stubbed (fingerprint-checked rebuild from params, submissions recorded): 184 of 328 jobs submitted in wave 1, none at lat0.25, rc 0.",
+    "Counted the manifest's jobs by (layout, purpose, level): only 2R has search, null, screen and proxy-alone jobs; Case 4 is partial; alt_short_d0 has 5 members.",
+    "Read run_layout: s = L_sub(best)/L_sub(W*) - 1 at the production level, b = 2*ratio_band_estimate over the five band levels, R_D at the screen level (the production level in a full run), and the seed null as D_j unchanged. All match O008 A1/A3/K1 and the spec; the selftest's hand check recomputes s and b independently from the fake levels."
+  ],
+  "caveats": [
+    "The draft spec, the full and smoke runner paths and the freeze hashes look consistent with O008 within what I checked. The reject rests on the development-mode burst path (dev_solve plus the partial manifest), which the claim explicitly includes.",
+    "Smoke only runs gen2_0 at thk_c. The real 2D_Case_2R and 2D_Case_4 paths and the 0.25 mm level were not exercised locally.",
+    "I could not verify the manifest's provenance (commit a522db8 and the T0382 worktree) from this single-commit review snapshot."
+  ]
+}

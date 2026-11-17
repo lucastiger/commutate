@@ -1,0 +1,62 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "--dev-solve keys manifest jobs by fingerprint and drops 144 of 328 wave-1 jobs, including every 0.25 mm solve",
+      "detail": "dev_solve builds `lays[j['fingerprint']] = (lay, j)` (e011_run.py ~L1238-1245) and then submits one em_job per dict entry. Each band layout (W, W*, every null or ablation end point, every D_j) has the same fingerprint at all five band levels, so the last job in manifest order (fil_f) overwrites the others. When the burst VM runs the manifest as its how_to_run says, it would solve no lat0.25, thk_c or thk_f job for W, W*, the nulls, the ablations or the D_j, and it would not solve the lat0.5 D_R_D jobs either, because each D_j shares its fingerprint with its seed_dj_band jobs. Without these solves the dev L2 analysis cannot compute L_sub(W*) at the production level, s_j for any non-best role, R_D for the provisionally accepted draws, or the W* band behind every b_j. Those are exactly the values the dev run exists to produce: choose_proxy, the R_D window check, band_bound development_value and the joint operating characteristic. The selftest never runs --dev, write_manifest or --dev-solve, so nothing catches this.",
+      "evidence": "I simulated dev_solve's dict over experiments/drafts/E011.dev_jobs.json. The manifest has 328 jobs, 184 unique fingerprints and 328 unique (fingerprint, level) pairs. dev_solve would submit 184 jobs: 148 at lat0.5, 36 at fil_f, and 0 at lat0.25, thk_c or thk_f. The dropped jobs include ('lat0.25','W_band'), ('lat0.25','descent_band') and 8 ('lat0.5','D_R_D').",
+      "suggested_check": "Key `lays` by job id or by (fingerprint, level), and add a selftest case that runs dev_solve on a fake manifest and asserts every manifest job is submitted.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The committed burst manifest is a partial snapshot: 2D_Case_4 has no search, null or shortlist jobs, and the totals undercount",
+      "detail": "E011.dev_jobs.json has status 'partial: L1 stages running'. Its layouts[] lists only 2D_Case_2R, and wave2 covers only 2D_Case_2R. Of the 328 jobs, 307 are for 2R. The 21 Case 4 jobs are only its proxy, W and descent band, and D_R_D jobs: no search_short, rs_short, null or ablation jobs. The spec's dev section names both 2D_Case_2R and 2D_Case_4, and its cost_estimate points to 'the manifest's own totals' for the development run. Those totals ($6.91 wave 1 plus $4.17 wave 2, 43.5 VM-h) leave out Case 4's shortlists and end points. Case 4 is where the spec says A1 is 'the open question', and its 0.25 mm solves are about 2.8x larger (4.11 M vs 1.49 M unknowns).",
+      "evidence": "Counter of job layouts: {'2D_Case_2R': 307, '2D_Case_4': 21}. Case 4 purposes are D_R_D (8), proxy* (4), W_band (5) and descent_band (4). wave2 layouts are {'2D_Case_2R'}.",
+      "suggested_check": "Finish `--dev` for both layouts so the status reads 'complete: L1 stages done', then regenerate the totals.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Manifest dedup assigns a shared layout to its first purpose only, so --dev-solve's shortlist groups lose members",
+      "detail": "Solves.wanted is keyed by output path (level and fingerprint), and setdefault keeps the first purpose. A layout that appears in two shortlists, or in a shortlist and as another role's end point, therefore carries only the earlier purpose tag. dev_solve groups shortlists by purpose prefix, so the later group silently loses those members, and wave 2 can band the wrong 'best'. In this manifest alt_short_d0 has 5 jobs where the shortlist size is 8. The spec's frozen dc_minus_reading entry depends on the L2 comparison of the two bests, which is the selection this affects. Ties in the best selection fall back to dict order, not L1 rank as the docstring says.",
+      "evidence": "Per-purpose shortlist job counts: search_short_d0..d7 = 8 each, rs_short_d0..d7 = 8 each, alt_short_d0 = 5.",
+      "suggested_check": "Record a list of purposes per job (or rebuild the groups from the layout records' shortlist fingerprints), and select by (L, L1 rank).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "l2_converged in E011 is weaker than E010's: missing gmres_flags counts as converged and L_H is never checked for finiteness",
+      "detail": "Solves.em_ok uses `r.get('gmres_flags', [0])`, so a result with no convergence record passes. E010's equivalent check treats a missing record as not converged and also requires a finite L_H. A non-finite band value would also make MX.ratio_band_estimate raise inside run_layout, so the run would crash instead of being marked INVALID.",
+      "evidence": "e011_run.py Solves.em_ok compared with the e010_run.py check at L238-247.",
+      "suggested_check": "Reuse E010's convergence predicate in em_ok.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The dev selection level differs from the production level, so dev s_j are slightly conservative",
+      "detail": "In dev, shortlists are ranked at lat0.5 and only the lat0.5-best is banded at lat0.25. The registered run ranks at lat0.25. Dev s_j (and the operating characteristic built from them) can therefore be biased upward if the ranking changes between 0.5 mm and 0.25 mm. The spec documents this choice (T0379), and it errs on the conservative side.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. The spec validates against ExperimentSpec (id E011, objective O008, sealed_seed, all four metrics), the manifest file exists, and ruff passes.",
+    "Ran `e011_run.py --selftest`: exit 0. All 6 planted scenarios (PASS, INCONCLUSIVE x2, INVALID x2, FAIL) gave the expected verdicts, and the hand and unit checks passed.",
+    "Ran `e011_run.py --smoke` to completion: exit 0, 6 rows, 705 s wall time. metrics_agree, recompute_agrees, l2_converged and artifacts_resolve all pass.",
+    "Ran `e011_run.py --freeze-report`: frozen_sha256, code_sha256 for all 5 files and LocalConfig.hash all match the spec.",
+    "Simulated dev_solve's fingerprint-keyed dict over the committed manifest: 184 of 328 jobs submitted, 0 lat0.25/thk_c/thk_f jobs, 144 dropped.",
+    "Counted manifest jobs by layout, purpose and level: Case 4 has 21 jobs and no search, null or shortlist jobs; wave2 covers 2R only; status is 'partial'.",
+    "Rebuilt 14 sampled 2D_Case_2R manifest layouts from their params with derivative.build: all 14 fingerprints match. Every parameter vector maps to exactly one fingerprint.",
+    "Checked the band order (lat0.25, lat0.5, thk_c=5/3/3, thk_f=20/12/12, fil_f=wire) against mfos.metrics.ratio_band_estimate's argument order: consistent.",
+    "Checked how missing values are handled: n7 _shortfall maps s=None or NaN to +inf (a draw failure). Scheduler.done raises on non-ok results. em_ok defaults missing gmres_flags to converged."
+  ],
+  "caveats": [
+    "The diff in the packet was truncated, so I reviewed the files at the review commit directly. There is no git history to compare against the base.",
+    "I did not check the numerics of l2_layout itself (convergence, conditioning). This change does not modify it, and the spec's band_bound check is how resolution would be judged at run time.",
+    "The runner's selftest covers only the registered-run path (rows, metrics, recompute, artifacts, verdicts). It does not cover --dev, write_manifest or --dev-solve.",
+    "The smoke's verdict preview is INVALID because the 2R-only and multi-draw sanity checks cannot hold on gen2_0 with one draw. That is expected for the smoke, which checks only that the path runs end to end."
+  ]
+}
