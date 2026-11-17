@@ -6,8 +6,8 @@ executable (D0002: built by ``scripts/provision_compute.sh``, never fetched or b
 * finds it through ``MF_FASTHENRY_BIN``, then ``PATH``, then ``~/.local/bin`` and records its path and sha256 in every
   result (``binary_info``);
 * ``self_test()`` runs D0002's self-test bar (10 x 1 x 1 mm Cu bar at 1 kHz) and raises ``SelfTestError`` unless the
-  result is D0002's recorded 5.704 nH (within ``SELF_TEST_TOL_NH``) and within ``SELF_TEST_CLOSED_FORM_TOL`` of the
-  5.695 nH closed form;
+  result is D0002's recorded 5.704 nH (within ``SELF_TEST_TOL_NH``) and the exact uniform-current 5.704254 nH (Hoer-Love,
+  within ``SELF_TEST_HOER_LOVE_TOL_NH``), and the log carries the pinned build's version banner;
 * runs every solve in a fresh temporary directory.  A run counts only if the process exits 0 and Zc.mat parses with
   every expected frequency; a crashed run's Zc.mat is never read (D0002: the pinned build segfaults intermittently);
 * multipole mode (``-s iterative -m multi -t TOL -o ORDER``) retries a crash up to ``MAX_RETRIES`` = 10 times (O004 F1)
@@ -47,7 +47,11 @@ from pathlib import Path
 from moduleforge.solvers.fasthenry import FREQS_HZ, FHLevel, export, parse_zc
 
 MAX_RETRIES = 10  # O004 F1: a crashed multipole run is re-run up to 10 times
-MEM_MARGIN = 1.10  # review T0417: the exporter's filament count is before 'multipole refine' (8816 -> 8912 = +1.1 %)
+# Dense-memory screen margin on the exporter's ``direct_mem_est_gb``.  Fit: review T0428 measured peak_mem_mb /
+# (direct_mem_est_gb * 1024) = 1.24-1.26 on direct runs above 5k filaments (T0417's +1.1 % refine growth alone gave the
+# old 1.10, an effective 1.18 after rounding, too small).  T0389's own ratios were not in research/o004_f7/ when this was
+# set, so the margin is T0428's worst 1.26 plus about 3 % headroom, rounded: 1.30.  Re-fit when T0389's ratios exist.
+MEM_MARGIN = 1.30
 MULTIPOLE_ORDER = 4  # P4 section 3.1: order 4 read within 3.3e-4 of direct LU (FastHenry's default order 2: 7.8e-3)
 MULTIPOLE_TOL = 1e-4  # P4's GMRES tolerance
 MODES = ("multipole", "direct")
@@ -60,10 +64,20 @@ SELF_TEST_DECK = (".units m\n.default sigma=5.8e7\nN1 x=0 y=0 z=0\nN2 x=0.010 y=
                   ".freq fmin=1e3 fmax=2e3 ndec=3.3219280982\n.end\n")
 SELF_TEST_FREQS_HZ = (1.0e3, 2.0e3)
 SELF_TEST_L_NH = 5.704  # D0002, pinned build (printed to 4 significant digits)
+# Exact uniform-current partial self inductance of the bar (Hoer & Love, J. Res. NBS 69C (1965) 127), 5.704254 nH.
+SELF_TEST_HOER_LOVE_NH = 5.704254
+# Tolerance: Zc.mat prints 6 significant digits (5e-6 relative = 3e-5 nH) and FastHenry's 1 x 1 filament at 1 kHz carries
+# a uniform current (skin depth 2.1 mm > 1 mm side, and nwinc = nhinc = 1 is uniform by construction), so the build
+# should reproduce the exact value to the print resolution; 3e-4 nH (10 x that, 5e-5 relative) leaves room for libm
+# differences and still fails a wrong build, whose L moves in the third digit (D0002: 5.695 vs 5.704).
+SELF_TEST_HOER_LOVE_TOL_NH = 3e-4
+# FastHenry's version banner (first log line, e.g. 'Running FastHenry 3.0wr (29Sep96, mod 031424)'): the pinned build
+# only.  FastHenry2 (rejected by D0002 on licence grounds) prints a different banner.
+SELF_TEST_BANNER_PARTS = ("FastHenry 3.0wr", "mod 031424")
 SELF_TEST_CLOSED_FORM_NH = 5.695  # D0002
 # The recorded value is printed to 3 decimals (rounding 5e-4 nH) and Zc.mat to 6 significant digits; P4's check allowed
-# 1.5e-3 nH.  The closed form is an approximation (D0002: the build is +0.16 % from it); 0.3 % (about twice that) keeps
-# the check from passing a build that is wrong in the first digit.
+# 1.5e-3 nH.  The closed form is an approximation (D0002: the build is +0.16 % from it); it is kept as a record only: a
+# 0.3 % check against it is implied by the 1.5e-3 nH check (0.3 % of 5.695 = 0.017 nH) and could never fire (T0427).
 SELF_TEST_TOL_NH = 1.5e-3
 SELF_TEST_CLOSED_FORM_TOL = 3e-3
 
@@ -128,6 +142,7 @@ class FHResult:
     nh_plane: int | None = None
     reason: str = ""
     facts: dict = field(default_factory=dict)
+    log: str = ""  # the last attempt's full FastHenry log (version banner, refine counts)
 
     @property
     def n_attempts(self) -> int:
@@ -221,16 +236,40 @@ def _run_once(binary: str, deck: str, args: list[str], freqs: tuple[float, ...],
             att.exit_code = 0
             zc = d / "Zc.mat"
             z = parse_zc(zc.read_text()) if zc.exists() else {}
-            if not _freqs_match(z, freqs):
+            if not _freqs_match(z, freqs) or not _all_1x1(zc.read_text()):
                 att.status = "parse_error"
         return att, (z if att.status == "ok" else {}), text
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
 
+_MATRIX_RE = re.compile(r"Impedance matrix for frequency\s*=\s*\S+\s+(\d+)\s*x\s*(\d+)")
+
+
+def _all_1x1(text: str) -> bool:
+    """Zc.mat must hold only 1 x 1 matrices: a larger one (several ports) would be silently reduced to Z11 (T0427)."""
+    dims = _MATRIX_RE.findall(text)
+    return bool(dims) and all(a == "1" and b == "1" for a, b in dims)
+
+
 def _freqs_match(z: dict[float, complex], freqs: tuple[float, ...]) -> bool:
-    return len(z) == len(freqs) and all(
+    """Every requested frequency present once, finite, with R > 0 and Im Z > 0 (a passive inductive loop; T0427)."""
+    return len(z) == len(freqs) and all(v.real > 0 and v.imag > 0 for v in z.values()) and all(
         any(abs(f - g) <= FREQ_MATCH_RTOL * g for f in z) for g in freqs) and all(math.isfinite(v.real) and math.isfinite(v.imag) for v in z.values())
+
+
+def _external_kill(att: Attempt) -> bool:
+    """SIGKILL (or a wrapper's exit 137 = 128 + 9) that the adapter's watchdog did not send."""
+    return att.signal == signal.SIGKILL or att.exit_code == 128 + signal.SIGKILL
+
+
+def _repeated_exit(attempts: list[Attempt]) -> bool:
+    """The last two attempts ended with the same non-zero exit code.  Codes above 128 are 128 + signal (a wrapper reporting
+    a segfault, the intermittent D0002 failure the retries exist for) and stay retried; a plain code is a fixed error."""
+    if len(attempts) < 2:
+        return False
+    a, b = attempts[-2].exit_code, attempts[-1].exit_code
+    return a is not None and a == b and 0 < a <= 128
 
 
 def mode_args(mode: str, order: int = MULTIPOLE_ORDER, tol: float = MULTIPOLE_TOL) -> list[str]:
@@ -265,12 +304,19 @@ def solve_deck(deck: str, *, mode: str = "multipole", freqs: tuple[float, ...] =
                         reason=f"estimated dense memory {est:.2f} GB x {MEM_MARGIN} margin > cap {mem_cap_mb / 1024:.2f} GB")
     attempts: list[Attempt] = []
     refined = None
+    log_text = ""
     z: dict[float, complex] = {}
     for n in range(1, (max_retries if mode == "multipole" else 0) + 2):
         att, z, text = _run_once(str(b["path"]), deck, args, freqs, timeout_s, mem_cap_mb, n)
         attempts.append(att)
         refined = refined_filaments(text) or refined
+        log_text = text
         if att.status != "crash":  # ok, parse_error, killed_memory, timeout: a retry would repeat it
+            break
+        if _external_kill(att):  # SIGKILL not sent by our watchdog (e.g. the Linux OOM killer): the rerun is killed again
+            att.status = "killed_external"
+            break
+        if _repeated_exit(attempts):  # the same deterministic error twice in a row
             break
     last = attempts[-1]
     if last.status != "ok":
@@ -280,7 +326,7 @@ def solve_deck(deck: str, *, mode: str = "multipole", freqs: tuple[float, ...] =
     zs = {g: next(v for f, v in z.items() if abs(f - g) <= FREQ_MATCH_RTOL * g) for g in freqs}
     return FHResult(ok=True, status="ok", R_ohm={f: v.real for f, v in zs.items()},
                     L_H={f: v.imag / (2 * math.pi * f) for f, v in zs.items()}, Z=zs, attempts=attempts, **base,
-                    n_filaments_refined=refined)
+                    n_filaments_refined=refined, log=log_text)
 
 
 def solve_layout(layout, lev: FHLevel, *, mode: str = "multipole", die_model: str = "short",
@@ -298,12 +344,15 @@ def self_test(binary: str | os.PathLike | None = None) -> dict:
     r = solve_deck(SELF_TEST_DECK, mode="direct", freqs=SELF_TEST_FREQS_HZ, timeout_s=60, mem_cap_mb=1000, binary=binary)
     if not r.ok:
         raise SelfTestError(f"self-test run failed: {r.status}: {r.reason}")
+    banner = next((ln.strip() for ln in r.log.splitlines() if "FastHenry" in ln), "")
+    if not all(part in banner for part in SELF_TEST_BANNER_PARTS):
+        raise SelfTestError(f"self-test: version banner {banner!r} lacks {SELF_TEST_BANNER_PARTS} (not the pinned build, D0002)")
     L_nh = r.L_H[1.0e3] * 1e9
     rec = {"binary": r.binary_path, "binary_sha256": r.binary_sha256, "L_nH_1kHz": L_nh, "recorded_nH": SELF_TEST_L_NH,
-           "closed_form_nH": SELF_TEST_CLOSED_FORM_NH, "pass": True}
+           "closed_form_nH": SELF_TEST_CLOSED_FORM_NH, "hoer_love_nH": SELF_TEST_HOER_LOVE_NH, "banner": banner, "pass": True}
     if abs(L_nh - SELF_TEST_L_NH) > SELF_TEST_TOL_NH:
         raise SelfTestError(f"self-test L = {L_nh:.4f} nH, D0002 recorded {SELF_TEST_L_NH} nH (tolerance {SELF_TEST_TOL_NH} nH)")
-    if abs(L_nh / SELF_TEST_CLOSED_FORM_NH - 1) > SELF_TEST_CLOSED_FORM_TOL:
-        raise SelfTestError(f"self-test L = {L_nh:.4f} nH is not within {SELF_TEST_CLOSED_FORM_TOL:.1%} of the "
-                            f"{SELF_TEST_CLOSED_FORM_NH} nH closed form")
+    if abs(L_nh - SELF_TEST_HOER_LOVE_NH) > SELF_TEST_HOER_LOVE_TOL_NH:
+        raise SelfTestError(f"self-test L = {L_nh:.5f} nH, exact uniform-current (Hoer-Love) value {SELF_TEST_HOER_LOVE_NH} nH "
+                            f"(tolerance {SELF_TEST_HOER_LOVE_TOL_NH} nH)")
     return rec

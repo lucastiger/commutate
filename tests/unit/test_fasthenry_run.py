@@ -46,7 +46,11 @@ ZC = ("Row 1:  n1  to  n2\nImpedance matrix for frequency = 1e+07 1 x 1\n   0.00
 L_FAKE_10MHZ = 0.2 / (2 * math.pi * 1e7)
 
 
-def fake(tmp_path: Path, *, crashes: int = 0, how: str = "exit", zc: str = ZC, pre: str = "", name: str = "fake_fh") -> Path:
+BANNER = "Running FastHenry 3.0wr (29Sep96, mod 031424)"
+
+
+def fake(tmp_path: Path, *, crashes: int = 0, how: str = "exit", zc: str = ZC, pre: str = "", name: str = "fake_fh",
+         banner: str = BANNER) -> Path:
     """Shell script posing as FastHenry: runs ``crashes`` times as a crash ('exit' = exit 139, 'signal' = SIGSEGV; both
     leave a VALID-looking Zc.mat behind, which must never be parsed), then writes ``zc`` and exits 0."""
     cnt = tmp_path / f"{name}.count"
@@ -54,6 +58,7 @@ def fake(tmp_path: Path, *, crashes: int = 0, how: str = "exit", zc: str = ZC, p
     p = tmp_path / name
     p.write_text(f"""#!/bin/sh
 N=$(cat '{cnt}' 2>/dev/null || echo 0); N=$((N+1)); echo $N > '{cnt}'
+echo '{banner}'
 pwd >> '{tmp_path}/{name}.cwds'; ls >> '{tmp_path}/{name}.ls'
 {pre}
 cat > Zc.mat <<'EOF'
@@ -64,6 +69,15 @@ exit 0
 """)
     p.chmod(p.stat().st_mode | stat.S_IXUSR)
     return p
+
+
+BAR_1KHZ = ZC.replace("1e+07", "1000").replace("2e+07", "2000")
+
+
+def bar_zc(l_nh: float) -> str:
+    """Zc.mat of a bar with inductance ``l_nh`` at 1 and 2 kHz (R = 0.002 ohm)."""
+    return "".join(f"Impedance matrix for frequency = {f} 1 x 1\n   0.002  +{2 * math.pi * f * l_nh * 1e-9:.9e}j\n"
+                   for f in (1000, 2000))
 
 
 # ----------------------------------------------------------------------------------------------------- binary lookup
@@ -98,6 +112,30 @@ def test_self_test_passes_on_the_pinned_build(real_binary):
     assert rec["binary_sha256"] == hashlib.sha256(real_binary.read_bytes()).hexdigest()
     assert abs(rec["L_nH_1kHz"] - 5.704) <= R.SELF_TEST_TOL_NH
     assert abs(rec["L_nH_1kHz"] / 5.695 - 1) <= R.SELF_TEST_CLOSED_FORM_TOL
+    assert abs(rec["L_nH_1kHz"] - 5.704254) <= R.SELF_TEST_HOER_LOVE_TOL_NH
+    assert "FastHenry 3.0wr" in rec["banner"] and "mod 031424" in rec["banner"]
+
+
+def test_self_test_requires_the_pinned_version_banner(tmp_path):
+    good = bar_zc(5.704254)
+    assert R.self_test(fake(tmp_path, zc=good))["banner"] == BANNER
+    for i, other in enumerate(("Running FastHenry2 3.0 (build x)", "Running FastHenry 3.0wr (29Sep96, mod 999999)", "")):
+        with pytest.raises(R.SelfTestError, match="banner"):
+            R.self_test(fake(tmp_path, zc=good, banner=other, name=f"other{i}"))
+
+
+def test_self_test_bound_is_the_exact_hoer_love_value():
+    # independent of the adapter: Hoer-Love (1965) partial self L of a 10 x 1 x 1 mm bar from the Ruehli series
+    # (5.695 nH, 0.16 % low) is within 1e-3 of the exact value; the recorded 5.704 is within the print rounding of it
+    assert abs(R.SELF_TEST_HOER_LOVE_NH - R.SELF_TEST_L_NH) <= 5e-4
+    assert R.SELF_TEST_HOER_LOVE_TOL_NH < R.SELF_TEST_TOL_NH  # the exact bound is the tighter one, so it can fire
+
+
+def test_self_test_hoer_love_bound_fires_inside_the_recorded_bound(tmp_path):
+    # 5.7050 nH is within D0002's 1.5e-3 nH of 5.704 but 7.5e-4 nH from the exact value: only the new bound catches it
+    with pytest.raises(R.SelfTestError, match="Hoer-Love"):
+        R.self_test(fake(tmp_path, zc=bar_zc(5.7050)))
+    R.self_test(fake(tmp_path, zc=bar_zc(5.7042), name="ok"))
 
 
 def test_self_test_raises_on_a_wrong_build_and_on_a_crash(tmp_path):
@@ -196,13 +234,44 @@ def test_every_run_has_its_own_fresh_directory(tmp_path):
 def test_dense_memory_screen_has_a_margin(tmp_path):
     b = fake(tmp_path)
     facts = {"direct_mem_est_gb": 1.0, "n_filaments": 100}
-    # 1.0 GB = 1024 MB fits a 1100 MB cap, but not with the 10 % margin (review T0417: the exporter counts before refinement)
-    r = R.solve_deck(".end\n", mode="direct", facts=facts, mem_cap_mb=1100, binary=b)
+    # 1.0 GB = 1024 MB fits a 1300 MB cap, but not with the margin (T0428: peak = 1.24-1.26 x the estimate above 5k filaments)
+    r = R.solve_deck(".end\n", mode="direct", facts=facts, mem_cap_mb=1300, binary=b)
     assert not r.ok and r.status == "not_run" and r.attempts == [] and "margin" in r.reason
-    assert R.MEM_MARGIN >= 1.05
-    assert R.solve_deck(".end\n", mode="direct", facts=facts, mem_cap_mb=1200, binary=b).ok
+    assert R.MEM_MARGIN >= 1.26 * 1.02  # covers T0428's worst measured ratio with headroom
+    assert R.solve_deck(".end\n", mode="direct", facts=facts, mem_cap_mb=1400, binary=b).ok
     # multipole has no dense estimate: it is limited by the watchdog only
     assert R.solve_deck(".end\n", mode="multipole", facts=facts, mem_cap_mb=1100, binary=b).ok
+
+
+def test_external_sigkill_is_not_retried(tmp_path):
+    # SIGKILL not sent by our watchdog (Linux OOM killer): the same deck is killed again, so one attempt only
+    r = R.solve_deck(".end\n", binary=fake(tmp_path, pre="kill -KILL $$", name="oom"))
+    assert not r.ok and r.n_attempts == 1 and r.status == "killed_external" and r.attempts[0].signal == 9
+    r = R.solve_deck(".end\n", binary=fake(tmp_path, pre="exit 137", name="w137"))  # a wrapper reporting 128 + 9
+    assert not r.ok and r.n_attempts == 1 and r.status == "killed_external"
+
+
+def test_identical_nonzero_exit_twice_is_not_retried_but_a_segfault_still_is(tmp_path):
+    r = R.solve_deck(".end\n", binary=fake(tmp_path, pre="exit 1", name="e1"))
+    assert not r.ok and r.status == "crash" and r.n_attempts == 2 and [a.exit_code for a in r.attempts] == [1, 1]
+    # a deterministic error that changes is still retried until it repeats: 2, 3, 3
+    b = fake(tmp_path, pre='[ "$N" -eq 1 ] && exit 2; exit 3', name="e23")
+    r = R.solve_deck(".end\n", binary=b)
+    assert [a.exit_code for a in r.attempts] == [2, 3, 3]
+    # SIGSEGV (the intermittent D0002 crash) is retried through many identical failures
+    r = R.solve_deck(".end\n", binary=fake(tmp_path, crashes=5, how="signal", name="segv"))
+    assert r.ok and r.n_attempts == 6
+
+
+def test_zc_with_negative_inductance_or_nonpositive_r_or_a_2x2_matrix_is_a_parse_error(tmp_path):
+    for name, zc in (("negl", ZC.replace("+0.2j", "-0.2j")), ("zerol", ZC.replace("+0.4j", "+0.0j")),
+                     ("negr", ZC.replace("0.002  +0.2j", "-0.002  +0.2j")), ("zeror", ZC.replace("0.002  +0.2j", "0  +0.2j"))):
+        r = R.solve_deck(".end\n", binary=fake(tmp_path, zc=zc, name=name))
+        assert not r.ok and r.status == "parse_error" and r.n_attempts == 1, name
+    two = ("Impedance matrix for frequency = 1e+07 2 x 2\n   0.002  +0.2j   0.0001 +0.01j\n   0.0001 +0.01j   0.002 +0.2j\n"
+           "Impedance matrix for frequency = 2e+07 2 x 2\n   0.002  +0.4j   0.0001 +0.02j\n   0.0001 +0.02j   0.002 +0.4j\n")
+    r = R.solve_deck(".end\n", binary=fake(tmp_path, zc=two, name="two"))
+    assert not r.ok and r.status == "parse_error"
 
 
 def test_refined_count_is_parsed_from_the_log():
