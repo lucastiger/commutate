@@ -1,0 +1,78 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "'Pinned binary' is recorded, not verified: no build-identity check",
+      "detail": "find_binary/binary_info only resolve an executable and record its sha256; self_test checks only the Zc.mat value. Any FastHenry build on PATH that reproduces a one-filament bar passes, including FastHenry2, which D0002 rejected on licence grounds. FastHenry's log prints a version banner, 'Running FastHenry 3.0wr (29Sep96, mod 031424)', that the adapter never checks. The local binary's sha256 (eaa6d6fc\u2026) differs from D0002's recorded 15bfbcd1\u2026 (a known, documented rebuild). This meets D0002/O004's 'record sha256 + self-test' wording, but is narrower than the literal 'pinned binary'.",
+      "evidence": "shasum of ~/.local/bin/fasthenry = eaa6d6fc\u20262d14; D0002 line 38 records 15bfbcd1\u20267365; research/notes/o006-p4-fasthenry-feasibility.md:46 documents the discrepancy; the fake-binary self-test test shows self_test depends only on Zc.mat content",
+      "suggested_check": "In self_test, require the '3.0wr' / 'mod 031424' banner in the run log.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Self-test is not enforced or recorded by solve_deck/solve_layout",
+      "detail": "O004 requires D0002's self-test to pass on each VM, but FHResult carries no self-test record and the solve functions never call self_test. The E004 runner must call it and store the record itself.",
+      "evidence": "fasthenry_run.py solve_deck lines 285-323: no self_test call; FHResult has no self-test field",
+      "suggested_check": "Confirm the E004 runner calls self_test() once per host and stores its dict beside the results.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Closed-form bound in self_test is dead code",
+      "detail": "Once |L - 5.704| <= 1.5e-3 nH passes, L/5.695 - 1 lies in [+0.132 %, +0.184 %], always inside the 0.3 % closed-form tolerance. The second check can never fire, so it adds no protection.",
+      "evidence": "By hand: (5.704 \u00b1 0.0015)/5.695 - 1 = 0.00132 \u2026 0.00184 < 0.003",
+      "suggested_check": "Drop it, or derive a tolerance that is not implied by the first check.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Default timeout and memory cap are below the judged FastHenry level's projected cost",
+      "detail": "solve_deck defaults to timeout_s=3600 and mem_cap_mb=6000, while O004 cites P4's projection of about 10 GB and 2.4 h per run at the third (judged) level. With defaults those runs end as timeout or killed_memory and are not retried. The caller must override both.",
+      "evidence": "fasthenry_run.py line 286-287 defaults; O004 objective.yaml scope_in: 'P4 projected about 10 GB and 2.4 h per run at the third level'",
+      "suggested_check": "E004 runner review: confirm explicit timeout_s/mem_cap_mb for finest-level solves.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "An external SIGKILL (e.g. Linux OOM killer) is retried as a crash",
+      "detail": "Only watchdog kills are marked non-retryable. Any other signal, SIGKILL from the kernel OOM killer included, is classified 'crash' and retried up to 10 times, possibly 10 multi-hour runs on a VM. Read from code; my attempt to confirm it with a fake binary was denied by the sandbox.",
+      "evidence": "_run_once lines 254-257 (WIFSIGNALED \u2192 'crash'); solve_deck line 313 retries every 'crash'",
+      "suggested_check": "Treat SIGKILL not sent by the watchdog as non-retryable, or cap total retry wall time.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Closed-form validation is at uniform current (10 Hz) only",
+      "detail": "Bar (Hoer-Love) and loop (Grover) checks run at 10-20 Hz. At the operating 10/20 MHz the tests check only plausibility bounds and multipole-vs-direct agreement. The adapter's L = Im Z/(2 pi f) path is frequency-agnostic, so this limits scope, not correctness.",
+      "evidence": "tests bar_deck/loop_deck use f=(10,20); end-to-end test checks 1e-9 < L < 1e-7 and m/d within 3.3e-4",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Loop-vs-Grover tolerance was fitted from a prior sweep",
+      "detail": "The 0.15 s/b bound comes from a sweep run before the test, not from a derivation. The added falling-error assertion still makes it a genuine convergence test. Extending to s = 0.05 mm gives err = 3.1e-4 (err/(s/b) = 0.062), still falling and inside the bound.",
+      "evidence": "Independent run: err = 3.895e-3, 1.635e-3, 7.06e-4, 3.10e-4 at s = 0.4, 0.2, 0.1, 0.05 mm",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition of done: pytest tests/unit/test_fasthenry_run.py gave 25 passed, 0 skipped (real binary present); self_test() gave L = 5.704256 nH, pass; ruff clean. tests/unit/test_fasthenry.py still passes (55) after the exporter >2-frequency guard.",
+    "Recomputed the bar partial self-inductance with a different reduction (cross-section average of the closed-form parallel-filament mutual inductance, 2-D quadrature). It agrees with the test's Hoer-Love quadrature to ~1e-16 on 5 bars, two of them adversarial (1x5x0.3 mm short wide bar, 3x0.5x2 mm). FastHenry (direct, n = 1 and 3) agrees with it within 7.4e-7 and its DC resistance within 4.1e-6.",
+    "Re-derived Grover's rectangle formula from side self-inductances and opposite-side mutuals (thin-conductor, GMD 0.44705 s). The test's grover_rectangle is algebraically correct.",
+    "Ran the loop sweep beyond the test (s down to 0.05 mm): the relative error falls monotonically, 3.9e-3 \u2192 3.1e-4, roughly in proportion to s.",
+    "Ran the mini-layout deck directly with each mode's flags and read FastHenry's full log: direct = 'Solution technique: LUDECOMP / Performing LU Decomposition'; multipole = 'ITERATIVE, MULTIPOLE, Order of expansion: 4, Error tolerance: 0.0001'. The multipole-vs-direct test compares genuinely different solvers.",
+    "Checked the hand arithmetic: the Ruehli closed form gives 5.6946 nH for the 10x1x1 mm bar; the recorded 5.704 nH is +0.16 %; the self-test's closed-form check is implied by its recorded-value check.",
+    "Code-read the retry semantics (range(1, max_retries+2) = 11 attempts = 1 + 10 retries, as O004 F1 requires), the crash/parse/timeout classification, that no Zc.mat is read after a nonzero exit or a signal, the proc_taskinfo struct layout (96 bytes), and ru_maxrss units per platform.",
+    "Checked D0002, D0004 and O004 for what 'pinned binary' requires: record path and sha256 plus self-test, with no hash verification required."
+  ],
+  "caveats": [
+    "'Pinned binary' holds only as 'path and sha256 recorded + self-test value reproduced'. Build identity is not verified, and the local binary's hash differs from D0002's recorded one (known rebuild).",
+    "The self-test is not run or recorded inside solve_deck/solve_layout; O004's 'self-test passed on each VM' depends on the E004 runner calling self_test().",
+    "The default timeout_s = 3600 and mem_cap_mb = 6000 must be overridden for O004's finest FastHenry level (about 2.4 h, 10 GB per P4).",
+    "Closed-form validation covers uniform current (10 Hz) only; the 10/20 MHz values are validated only by multipole-vs-direct agreement and plausibility bounds.",
+    "One adversarial probe (an external SIGKILL fake binary) was denied by the sandbox; its behaviour, a retry as a crash, is inferred from code."
+  ]
+}
