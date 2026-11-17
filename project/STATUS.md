@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-17T00:00:30+00:00 from repository state — do not edit_
+_generated 2026-11-17T00:02:41+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0229** [budget_increase] daily LLM budget reached
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -43,7 +42,6 @@ cancelled: 45, done: 360, failed: 4, review: 3, running: 3, todo: 13
 - T0428 `running` critic/review: Review T0385 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T23:05:29+00:00 loop_started {"pid": 9748}
 - 2026-11-16T23:05:31+00:00 run_finished {"run": "T0385-builder-20261116T123616-1b28", "status": "completed", "cost": 1.487164, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T23:12:24+00:00 verified {"task": "T0385"}
 - 2026-11-16T23:12:24+00:00 run_finished {"run": "T0387-scientist-20261116T123702-806f", "status": "error", "cost": 3.090616, "subtype": "success", "report": "missing"}
@@ -58,3 +56,4 @@ cancelled: 45, done: 360, failed: 4, review: 3, running: 3, todo: 13
 - 2026-11-17T00:00:28+00:00 run_started {"run": "T0427-critic-20261116T160028-9dd1", "task": "T0427", "role": "critic", "session": "c4c88cda-f19d-4353-9be8-b18e76bd8e79"}
 - 2026-11-17T00:00:30+00:00 run_started {"run": "T0428-critic-20261116T160030-ca1a", "task": "T0428", "role": "critic", "session": "f574f800-7638-4347-a287-660d27b3593f"}
 - 2026-11-17T00:00:30+00:00 run_started {"run": "T0382-scientist-20261116T160030-8287", "task": "T0382", "role": "scientist", "session": "0980b0a0-f516-4599-b117-dccd2695249b"}
+- 2026-11-17T00:02:19+00:00 inbox_resolved {"id": "I0229", "status": "approved", "note": "Acknowledged after the 00:00 UTC reset; cap not raised.", "by": "human"}
