@@ -4,7 +4,7 @@ title: perturb.py hash coverage and redraw fixes (T0446), adapter test and docst
   E004's hash freezes
 type: implement
 agent: builder
-status: running
+status: review
 depends_on:
 - T0438
 - T0442
@@ -83,4 +83,51 @@ target: null
 lens: null
 trigger: null
 rationale: founder approved 2026-11-17 in the founder session
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All six items are done and committed as f6bdaf7a. The new rules_sha256() is 2dbd9977efa56bec0a4317f1adf14bd0ffc4b172520a707e2c6890ea9888b8cd,
+    for T0389 to refreeze E004''s hash from. Item 1: `_rule_sources` now hashes Die.bounds and geometry.layout._ring_ints,
+    with tests that monkeypatch each and assert the hash changes. Item 2: a new LongSideError(ValueError)
+    covers the both-sided-edge case and the no-long-side case, and `_draw_single` redraws only that. A
+    power net without exactly one trace now fails loudly in `_draw_params`; a test covers this for trace_width.
+    Item 3: `long_sides` snaps vertices within 1e-6 mm of a whole mm before merging collinear points,
+    with a test on k/1000 coordinates carrying float noise. Item 4: docstrings of draw, measured_rules
+    and _rule_sources updated. Items 5'
+  report:
+    status: completed
+    summary: 'All six items are done and committed as f6bdaf7a. The new rules_sha256() is 2dbd9977efa56bec0a4317f1adf14bd0ffc4b172520a707e2c6890ea9888b8cd,
+      for T0389 to refreeze E004''s hash from. Item 1: `_rule_sources` now hashes Die.bounds and geometry.layout._ring_ints,
+      with tests that monkeypatch each and assert the hash changes. Item 2: a new LongSideError(ValueError)
+      covers the both-sided-edge case and the no-long-side case, and `_draw_single` redraws only that.
+      A power net without exactly one trace now fails loudly in `_draw_params`; a test covers this for
+      trace_width. Item 3: `long_sides` snaps vertices within 1e-6 mm of a whole mm before merging collinear
+      points, with a test on k/1000 coordinates carrying float noise. Item 4: docstrings of draw, measured_rules
+      and _rule_sources updated. Items 5 and 6: the Hoer-Love test now compares against bar_self_L, ''killed_external''
+      is in both status docstrings, FHResult.log is filled on failure (with a test), and the stale 0.3
+      % comment is dropped.'
+    files_changed:
+    - src/moduleforge/generate/perturb.py
+    - src/moduleforge/solvers/fasthenry_run.py
+    - tests/unit/test_perturb.py
+    - tests/unit/test_fasthenry_run.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_perturb.py tests/unit/test_fasthenry_run.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate/perturb.py src/moduleforge/solvers/fasthenry_run.py
+        tests/unit/test_perturb.py tests/unit/test_fasthenry_run.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - Item 3 snaps only vertices within 1e-6 mm of a whole mm, not every vertex. Rounding every vertex
+      would turn the existing both-sided-edge test's x=20.5 mm side into x=20 mm and stop it raising.
+      I would not weaken that test.
+    - The item 2 fix covers errors from `_draw_params` only. `apply`'s ValueErrors are still redrawn,
+      so a terminal_copper draw on a reference with a duplicated power-net trace still ends in the 'no
+      new DRC-clean move' RuntimeError instead of the 'exactly one trace' error. Closing that would mean
+      classifying apply's invalid-move errors, which I did not do.
+    - LongSideError also covers the 'net has no long side' case, which the packet did not mention. That
+      case is a documented legitimate redraw.
+    - The hash value above was computed before the commit and only the test file changed after, but the
+      orchestrator should recompute it.

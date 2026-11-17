@@ -238,6 +238,15 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
 
   - Burst 1''s F7(c) result for context: 0 of 13 development pairs excluded, largest E_R/r 0.349 % (research/notes/o004-f7-l2-pilot.md).
 
+
+
+  T0451''s report (founder session, 2026-11-17): the rules hash it computed is 2dbd9977efa56bec0a4317f1adf14bd0ffc4b172520a707e2c6890ea9888b8cd
+  (commit f6bdaf7a). Recompute perturb.rules_sha256() on main after T0451 merges and freeze that value,
+  not this one, if they differ. LongSideError now marks the legitimate redraws (a both-sided edge, or
+  a net with no long side), and other _draw_params errors fail loudly. apply''s ValueErrors are still
+  redrawn, so the registration report must record every redraw with its exception type and message, per
+  reference and move type, so that a reference defect cannot pass as a silent redraw.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
