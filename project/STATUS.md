@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T04:46:35+00:00 from repository state — do not edit_
+_generated 2026-11-17T04:47:24+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -39,7 +39,6 @@ cancelled: 45, done: 375, failed: 4, running: 3, todo: 7
 - T0397 `running` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 1)
 
 ## Recent events
-- 2026-11-17T04:08:25+00:00 run_finished {"run": "T0433-critic-20261116T200236-ec02", "status": "completed", "cost": 2.174218, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T04:20:01+00:00 inbox_opened {"id": "I0233", "kind": "protected_change", "subject": "T0387: merge needs founder approval"}
 - 2026-11-17T04:20:08+00:00 run_started {"run": "T0419-builder-20261116T202008-a7e3", "task": "T0419", "role": "builder", "session": "a93ed5af-d43b-43bd-b972-d9b7190fa28e"}
 - 2026-11-17T04:20:44+00:00 run_finished {"run": "T0432-critic-20261116T200148-ee9f", "status": "completed", "cost": 2.016062, "subtype": "success", "report": "structured_output"}
@@ -54,3 +53,4 @@ cancelled: 45, done: 375, failed: 4, running: 3, todo: 7
 - 2026-11-17T04:46:25+00:00 run_finished {"run": "T0419-builder-20261116T202008-a7e3", "status": "completed", "cost": 0.488094, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T04:46:25+00:00 task_failed_attempt {"task": "T0419", "signal": "scope_violation", "action": "repair"}
 - 2026-11-17T04:46:35+00:00 run_started {"run": "T0388-scientist-20261116T204635-8522", "task": "T0388", "role": "scientist", "session": "c2354df4-f911-45a7-bcc2-2913c851964c"}
+- 2026-11-17T04:47:12+00:00 task_reassigned {"task": "T0419", "frm": "builder", "to": "scientist", "reason": "all touches under research/, outside builder write scope"}

@@ -3,7 +3,7 @@ objective: O002
 title: 'F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review
   T0411 findings 1-2)'
 type: implement
-agent: builder
+agent: scientist
 status: todo
 depends_on: []
 description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 verdict the founder gets
@@ -69,7 +69,13 @@ description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 ver
   level1 confirmed. After the hardening, rerun `uv run python research/o002_f1/f1_dev_check.py --analyse`
   (no solve) on the committed records, commit the regenerated f1_dev_check.json, and state in research/notes/o002-f1-dev-check.md
   the verdict, the ''broken'' list (expected empty) and the worst level-1 error over tolerance per quantity
-  and load.'
+  and load.
+
+
+  Founder session, 2026-11-17: attempt 1 (a builder) finished the work and committed it on this branch,
+  but every file is under research/, outside the builder''s write scope, so verify refused it. This task
+  is now a scientist''s. Check the committed work against the brief, rerun its tests and the definition
+  of done, fix only what fails, and report.'
 context_files:
 - research/o002_f1/f1_dev_check.py
 - research/o002_f1/f1_dev_check.json
@@ -211,3 +217,8 @@ history:
 
     research/o002_f1/test_f1_dev_check.py (outside builder write scope)'
   at: '2026-11-17T04:46:25+00:00'
+- outcome: reassigned
+  summary: 'founder session: builder -> scientist; every file T0419 touches is under research/, which
+    only the scientist role may write (attempt 1''s work is complete and committed on the branch; it failed
+    verify on scope only)'
+  at: '2026-11-17T04:47:12+00:00'

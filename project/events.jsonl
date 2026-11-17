@@ -2763,3 +2763,4 @@
 {"ts": "2026-11-17T04:46:25+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0419-builder-20261116T202008-a7e3", "status": "completed", "cost": 0.488094, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-17T04:46:25+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0419", "signal": "scope_violation", "action": "repair"}
 {"ts": "2026-11-17T04:46:35+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0388-scientist-20261116T204635-8522", "task": "T0388", "role": "scientist", "session": "c2354df4-f911-45a7-bcc2-2913c851964c"}
+{"ts": "2026-11-17T04:47:12+00:00", "event": "task_reassigned", "actor": "session", "task": "T0419", "frm": "builder", "to": "scientist", "reason": "all touches under research/, outside builder write scope"}
