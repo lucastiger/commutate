@@ -4,7 +4,7 @@ title: 'E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVAL
   F7(a) job list'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0384
 - T0385
@@ -292,8 +292,8 @@ runs:
 - T0389-scientist-20261117T103108-f20b
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0247
 target: null
 lens: null
 trigger: null
@@ -444,3 +444,7 @@ history:
 - outcome: full_gate_passed
   summary: 6aa59a43a677d40a7f51d8127c2794f3fd110599
   at: '2026-11-17T21:31:33+00:00'
+- outcome: merge_approved
+  summary: I0247
+  replan: false
+  at: '2026-11-17T21:42:56+00:00'

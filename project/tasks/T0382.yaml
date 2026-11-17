@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: running
+status: failed
 depends_on:
 - T0377
 - T0378
@@ -793,3 +793,123 @@ history:
 - outcome: rebriefed
   summary: 'founder session: attempt 4 after the founder merges main into the branch (I0244)'
   at: '2026-11-17T16:53:39+00:00'
+- attempt: 4
+  outcome: agent_finished
+  summary: "The development L1 run for 2D_Case_2R and 2D_Case_4 is complete, on T0437's code that will\
+    \ be frozen. Every definition-of-done command passes. The biggest finding: the phase-sequential cost\
+    \ model says the registered run takes 170 to 246 h, so it does not fit its 120 h timeout in any scenario\
+    \ modelled ($104 to $151).\n\n**What was run**\n- I checked that the branch has T0437's code before\
+    \ starting: `control.DEGRADE_TAG` comes first in the degradation entropy lists, and `nulls.py` returns\
+    \ `no_moves` and records `seed_in_domain`.\n- I finished all runner edits before the run, because\
+    \ the code stamp covers `e011_run.py`:\n  - `--dev-solve --dry-run`;\n  - wall time recorded per stage;\n\
+    \  - phase-aware VM sizing;\n  - the manifest's `layouts` keyed by layout name, with an L1 row table;\n\
+    \  - selftest che"
+  report:
+    summary: "The development L1 run for 2D_Case_2R and 2D_Case_4 is complete, on T0437's code that will\
+      \ be frozen. Every definition-of-done command passes. The biggest finding: the phase-sequential\
+      \ cost model says the registered run takes 170 to 246 h, so it does not fit its 120 h timeout in\
+      \ any scenario modelled ($104 to $151).\n\n**What was run**\n- I checked that the branch has T0437's\
+      \ code before starting: `control.DEGRADE_TAG` comes first in the degradation entropy lists, and\
+      \ `nulls.py` returns `no_moves` and records `seed_in_domain`.\n- I finished all runner edits before\
+      \ the run, because the code stamp covers `e011_run.py`:\n  - `--dev-solve --dry-run`;\n  - wall\
+      \ time recorded per stage;\n  - phase-aware VM sizing;\n  - the manifest's `layouts` keyed by layout\
+      \ name, with an L1 row table;\n  - selftest checks for each of these.\n- The first start died after\
+      \ 18 minutes on a bug in my own sizing code (an empty phase made the scheduler simulation deadlock).\
+      \ I fixed it and started again from scratch.\n- That run completed, but its manifest failed the\
+      \ definition-of-done check: `layouts` was a list of records. Fixing that changed the code stamp,\
+      \ so I set the run aside and ran a third time from an empty work directory, 11:12–13:10, one command,\
+      \ exit 0.\n- The second and third runs agree exactly: the same 611 (fingerprint, level) jobs with\
+      \ the same purposes and ranks, and identical per-layout records. The development stages reproduce.\n\
+      \n**Results, development seeds only; L2 is pending, so none of this is evidence**\n- **Proxy (reach=True):**\
+      \ 2R 25 steps, L1(W*)/L1(W) = 0.9138; Case 4 73 steps, 0.6533. Both equal T0437's pins.\n  - Sensitivity\
+      \ rows: threshold-free 35 steps / 0.9136 and 81 steps / 0.6532; reach=False probe 27 / 0.8979 and\
+      \ 120 / 0.6280; dies-fixed 17 / 0.9302 and 63 / 0.7014.\n  - The other DC- reading changes the proxy\
+      \ on 2R but not on Case 4. The search of draw 0 reaches the same lowest L1 under either reading,\
+      \ with a different shortlist.\n  - The 2 K Tj fallback did not fire on either layout.\n- **Degradations:**\
+      \ L1(D_j)/L1(W*) is 1.309–1.538 on 2R (7 of 8 reached the target) and 1.390–1.421 on Case 4 (8 of\
+      \ 8). No draw fell outside the domain. All 16 entropy lists start with DEGRADE_TAG. R_D at L2 is\
+      \ not measured locally.\n- **Search improvement curve:** all 16 searches stop at the 2000-evaluation\
+      \ budget and were still improving after evaluation 1800. Each share is a bracket; I report the upper\
+      \ end.\n\n| layout | last 10 %: median (max) | last 25 %: median (max) |\n|---|---|---|\n| 2R |\
+      \ 0.001 (0.009) | 0.013 (0.030) |\n| Case 4 | 0.028 (0.060) | 0.109 (0.162) |\n\n  The budget is\
+      \ unchanged; that decision is yours.\n- **L1 indicator (not A1, which is judged at L2):** L1(search\
+      \ best)/L1(W*) is at or below 1.02 on 5 of 8 draws on 2R and 8 of 8 on Case 4. This is speculation,\
+      \ but if L2 tracks L1, 2R rather than Case 4 is the layout at risk for A1.\n- **Nulls:** all 32\
+      \ widen and compact runs end at a local optimum, seeded in the domain; none is capped or `no_moves`.\
+      \ Steps: 2R widen 14–26, compact 21–36; Case 4 widen 30–58, compact 53–73. The 200-step limit is\
+      \ never approached.\n- **Ablations:** the random screen used 2000 L1 evaluations for 2000 draws\
+      \ on every draw. Proxy-alone took 28–42 steps on 2R and 29–35 on Case 4.\n\n**Burst job list and\
+      \ VM sizing (`E011.dev_jobs.json`)**\n- 611 wave-1 jobs, each with its level and purposes; 34 shortlist\
+      \ groups; 170 wave-2 jobs. The dry run on the real manifest would submit all 611 jobs exactly once\
+      \ (exit 0).\n- The \"about 25 GB\" per Case 4 0.25 mm solve is E010's scheduling prior (model ×\
+      \ 1.6). Your VM calibration measured 15.8–15.9 GB, so after its first such solve the scheduler admits\
+      \ each at 17.5 GB.\n- On n2d-custom-8-81920: Case 4 0.25 mm solves run 2 at once before the first\
+      \ finishes and 3 after; everything else runs 4 at once, limited by vCPUs.\n- Development burst:\
+      \ 61–71 h, $38–44.\n- Registered run: 170.2 / 198.0 / 212.3 / 246.4 h ($104–151). Case 4 alone is\
+      \ about 109 h, 81 h of it for its 152 solves at 0.25 mm. The earlier 91–136 h estimate covered only\
+      \ those Case 4 solves.\n- The spec's old cost basis line says gen2_0 is about 0.33 M unknowns at\
+      \ 0.25 mm. That is wrong: the smoke run measured it at thk_c, which implies about 1.8 M.\n\n**Decisions\
+      \ for you before registration:** the search budget; the timeout, VM shape or a split of the run;\
+      \ and the `no_moves` rule (proposed: counted like a capped null, never a resolved failure).\n\n\
+      **Commands and exit codes**\n- `--selftest` → 0, run after every runner edit.\n- `--smoke` → 0 twice:\
+      \ 618 s on earlier code, 784 s on the final code, with the same metrics. Its INVALID verdict preview\
+      \ is expected for its single uncounted layout.\n- `--dev`: 1 on the first start (sizing bug), then\
+      \ 0 and 0.\n- `--dev-solve --dry-run` → 0 on both manifests.\n- `--freeze-report` → 0, `ok: true`,\
+      \ after I filled `frozen_sha256` and `code_sha256` (control.py and nulls.py changed).\n- Manifest\
+      \ check → 1 on the second run's list-form `layouts`, 0 on the final manifest.\n- Spec check, `mfos\
+      \ exp check E011`, both ruff checks and `mfos gate --fast` (run twice) → all 0.\n- After the spec\
+      \ edits, the manifest's code stamp still matches the checkout. Nothing is committed."
+    status: completed
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    - experiments/drafts/E011.dev_jobs.json
+    files_written:
+    - experiments/runners/e011_run.py
+    - experiments/drafts/E011.yaml
+    - experiments/drafts/E011.dev_jobs.json
+    - research/notes/e011-dev-run.md
+    - research/o008_e011_dev/summarize.py
+    - research/o008_e011_dev/dev_summary.md
+    - research/o008_e011_dev/.gitignore
+    evidence:
+    - 'Fact: the final dev run (research/o008_e011_dev/work, code stamp 33dac5c7b2fc7a5e) ran 11:12 to
+      13:10 in one command, exit 0. Manifest status: ''complete: L1 stages done, L2 pending (burst VM)''.'
+    - 'Fact: run 1 (09:23 to 11:08, other stamp) and run 2 give the same 611 (fingerprint, level) jobs,
+      the same purposes and ranks, and identical per-layout records.'
+    - 'Fact: the reach=True proxy is 2R 25 steps / 0.9138 and Case 4 73 steps / 0.6533, equal to T0437''s
+      pins in tests/unit/optimize/test_control.py.'
+    - 'Fact: all 16 searches stop at budget 2000, with the last improving evaluation at or after 1860.
+      The upper end of the last-10 % gain share is 2R median 0.001 and Case 4 median 0.028; for the last
+      25 % it is 0.013 and 0.109.'
+    - 'Fact: all 32 null runs end at local_optimum with seed_in_domain true. The largest step count is
+      73 (Case 4 compact), against NULL_STEP_LIMIT 200.'
+    - 'Fact: --dev-solve --dry-run on the final manifest submits 611 of 611 jobs, rebuilds 339 fingerprints,
+      rebuilds 34 groups and would submit 170 wave-2 jobs (exit 0).'
+    - 'Fact: research/l2_thread_calib/summary.txt gives 15.8 to 15.9 GB peak RSS for Case 4 at 0.25 mm,
+      1.007 times E010''s model. The 25.3 GB figure is the scheduler''s prior.'
+    - 'Model: the registered run takes 170.2 to 246.4 h against a 120 h timeout ($104 to $151). The dev
+      burst takes 61.4 to 71.5 h ($38 to $44).'
+    - 'Fact: the smoke run measured gen2_0 thk_c at 228,567 unknowns against the model''s 281,064.'
+    recommended_actions:
+    - 'Founder: decide the search budget before registration. Case 4''s searches make up to about 16 %
+      of their L1 gain in the last 25 % of the 2000 evaluations; 2R''s make under 3 %.'
+    - 'Founder: decide the timeout, the VM shape, or a per-layout split or parallel run for the registered
+      run. The phase-sequential model gives 170 to 246 h against timeout_min = 120 h in every scenario.'
+    - 'Founder: confirm frozen.nulls.no_moves_rule (a no_moves null counts as capped and is never a resolved
+      failure). The development run produced no no_moves or capped run.'
+    - 'Run I0205''s burst with `e011_run.py --dev-solve experiments/drafts/E011.dev_jobs.json --workdir
+      <dir>`. The dry run shows it submits every job. Then do the dev L2 analysis: the band bound, the
+      joint operating characteristic, W* by choose_proxy at 0.25 mm, R_D in the window, and the redraw
+      rate.'
+    - 'Correct the spec''s cost_estimate.basis gen2_0 figure when the cost text is next revised: about
+      1.8 M unknowns at 0.25 mm by measurement, not 0.33 M.'
+- attempt: 4
+  outcome: dod_failed
+  summary: definition of done not met
+  failure_output: 'FAIL draft:E011.dev_jobs
+
+    draft /Users/lukeskywalker/mf/wt/T0382/experiments/drafts/E011.dev_jobs.yaml missing'
+  at: '2026-11-17T21:46:00+00:00'

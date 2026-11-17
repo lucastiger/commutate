@@ -2886,3 +2886,7 @@
 {"ts": "2026-11-17T21:00:49+00:00", "event": "task_added", "actor": "session", "task": "T0457", "note": "founder approved 2026-11-17"}
 {"ts": "2026-11-17T21:31:35+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0247", "kind": "protected_change", "subject": "T0389: merge needs founder approval"}
 {"ts": "2026-11-17T21:31:41+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0398-scientist-20261117T133141-2750", "task": "T0398", "role": "scientist", "session": "fcc9f3de-006d-4e4a-be6d-12aac8e8e0db"}
+{"ts": "2026-11-17T21:32:17+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0382-scientist-20261117T085511-4122", "status": "completed", "cost": 6.065576, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-17T21:42:56+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0247", "status": "approved", "note": "T0389 merge approved, reviews T0453, T0454, T0455 accept with caveats. E004 part 2, partial: solve stage, estimators, F1 caps relative per D0024, FastHenry job list. Unfinished items and review caveats routed to T0457, which runs next. Per D0024.", "by": "human"}
+{"ts": "2026-11-17T21:46:00+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0382", "signal": "dod_failed", "action": "diagnose"}
+{"ts": "2026-11-17T21:46:00+00:00", "event": "investigation_spawned", "actor": "orchestrator", "task": "T0458", "about": "T0382", "cls": "implementation"}

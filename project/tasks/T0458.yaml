@@ -1,0 +1,49 @@
+id: T0458
+objective: O008
+title: Diagnose failure of T0382
+type: investigate
+agent: scientist
+status: todo
+depends_on: []
+description: 'Task T0382 (''Design E011: draft spec and runner (selftest, smoke, development mode with
+  the burst job manifest)'') failed with preliminary class `implementation`: definition of done not met.
+
+  Failure output (tail):
+
+  ```
+
+  FAIL draft:E011.dev_jobs
+
+  draft /Users/lukeskywalker/mf/wt/T0382/experiments/drafts/E011.dev_jobs.yaml missing
+
+  ```
+
+  Determine the true failure class and root cause. Follow skill mf-diagnosis: list at least two alternative
+  explanations, design a discriminating test, run it if cheap, and write your notes to research/diagnoses/T0458.md.'
+context_files:
+- project/tasks/T0382.yaml
+deliverables:
+- research/diagnoses/T0458.md
+touches:
+- research/diagnoses/T0458.md
+definition_of_done: []
+experiment: null
+risk: medium
+model: null
+budget_usd: 5.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: orchestrator
+created_at: '2026-11-17T21:46:00+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: ''
+history: []
