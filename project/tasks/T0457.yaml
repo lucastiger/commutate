@@ -1,0 +1,95 @@
+id: T0457
+objective: O004
+title: 'E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance,
+  solve-stage review fixes, local FastHenry probe'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0389
+description: "Finish E004 design part 2 (O004). It runs after T0389 has merged; read T0389's report and\
+  \ reviews T0453 (physics), T0454 (numerics) and T0455 (statistics) first. Scope is experiments/runners/e004_run.py,\
+  \ experiments/drafts/E004.yaml and research/o004_f7/**. A scientist may not write src/ or tests/unit/:\
+  \ put the checks in the runner's --selftest. Cite D0024 and the O004 state log for the founder decisions.\n\
+  \nA. Registration stage\n1. The founder's banded-acceptance rule (2026-11-17 15:58 UTC; T0389's brief\
+  \ carries the full text). Pairs are drawn from E004's sealed seed as now. A frozen rule accepts or redraws\
+  \ each slot until the pooled registered pairs have at least 3 below 0.90 and at least 1 at or above\
+  \ 0.98, at both frequencies. Every move type keeps a pair on each reference. Redraws stay within a frozen\
+  \ limit, and registration refuses if a band cannot be filled.\n   Simulate the rule on 2D_Case_4 with\
+  \ at least 200 development seeds under the current rules (rules_sha256 2dbd9977...). Report the pass\
+  \ fraction for lower ends 0.76, 0.78, 0.80, 0.82 and 0.85, the distribution of each draw's lowest r_L1,\
+  \ mean and maximum redraws per slot, and per-type coverage under the 6 % rule. Keep 0.75 in the code\
+  \ until the founder amends O004.\n2. Record every redraw (move type, reference, exception type and message,\
+  \ band reason) in the registration report, and say if a move type is restricted on a reference. A reference\
+  \ defect must never pass as a silent redraw (reviews T0446, T0452).\n3. Wire the 2R designer-proxy pair\
+  \ (D0024 item 3): control.proxy_descent with step_mm=1 from the twin, with the ratio against the frozen\
+  \ 2R reconstruction. Check that every visited layout and the end point are on the 1 mm lattice (review\
+  \ T0444). If one is not, stop and report it; that needs a builder change and a D0024 amendment. Smoke-test\
+  \ stage_solve with the built proxy record (T0454 item 4).\n4. seed_provenance: compare with the sealed\
+  \ seed ExperimentRun records from the registry, and re-derive each slot's draw seed and moves from it.\
+  \ Compare each reference's fingerprint with the registration record in the solve stage (T0453 item 5,\
+  \ T0454 item 8).\n\nB. Solve stage (T0453-T0455)\n5. Record K1's argmax pair and its excluded_f1 flag\
+  \ in solve.json (O004 F1).\n6. Emit zero-failure bounds only for strata whose counted pairs all meet\
+  \ A1, else label them conditional. Apply O004's 6 % effect rule to coverage after exclusion, and compute\
+  \ the covered ratio range from counted pairs only.\n7. Label the deterministic discretisation band as\
+  \ a band, not a 95 % confidence interval.\n8. Pass cfg.solve.fasthenry.thickness.at to fh_terms (no\
+  \ hard-coded 'k1') and assert it is in FH_LADDER; drop fh_level's unused parameter.\n9. The mesh-shift\
+  \ flag uses the larger of |r_4mm - r_2mm| and a three-level estimate (T0447/T0448 item 2).\n10. Assert\
+  \ at plan time that every job's timeout fits the experiment's timeout_min, and set cpu_hours_est from\
+  \ the runner's own plan (96.5 CPU-h, or the regenerated value).\n11. FastHenry memory caps: a mis-projected\
+  \ cap must not turn a judged value into a missing one, and the run into INVALID (T0455). State the margin\
+  \ policy (cap = projection x a stated factor, with MEM_MARGIN 1.30 from research/o004_f7/fh_direct_mem.json),\
+  \ and retry once at the VM's full memory before recording a value as missing.\n12. Runner --selftest\
+  \ cases for the finite-estimate paths: a monotone ladder, a missing FastHenry finest value with K1 firing\
+  \ elsewhere, the F1 cap boundary (E_R/r just below and just above 0.5 %), and the K1-saves-from-INVALID\
+  \ branch.\n\nC. Before burst 2 (I0209)\n13. Probe the small Case 4 FastHenry decks locally (k0, at or\
+  \ below 3 GB projected, one at a time, within the local policy), and record time and peak memory against\
+  \ the projection. Refit the time rule and widen the stated k2 uncertainty from the measured misses (gen2_0\
+  \ was 15x slow). Regenerate research/o004_f7/vm_jobs_fasthenry.json with --dev-fh-plan. The plan reports\
+  \ the machine, the parallelism and the expected makespan, and burst_gcp.sh's MF_GCP_MAX_HOURS set above\
+  \ that makespan with margin (the default of 6 h stopped burst 1 early). It also reports each pair's\
+  \ FastHenry thickness-term share of the 1 % cap (T0454 item 6).\n"
+context_files: []
+deliverables: []
+touches:
+- experiments/drafts/E004.yaml
+- experiments/runners/e004_run.py
+- research/o004_f7/**
+- research/notes/e004-*.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e004_run.py --selftest
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python experiments/runners/e004_run.py --smoke --stage registration
+  exists: null
+  timeout_s: 1800
+- cmd: uv run mfos exp check E004
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('research/o004_f7/vm_jobs_fasthenry.json'));
+    assert d.get('jobs'), 'no jobs'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e004_run.py
+  exists: null
+  timeout_s: 900
+experiment: E004
+risk: medium
+model: null
+budget_usd: 9.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T21:00:49+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session
+history: []

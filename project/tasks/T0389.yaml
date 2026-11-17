@@ -4,7 +4,7 @@ title: 'E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVAL
   F7(a) job list'
 type: design_experiment
 agent: scientist
-status: review
+status: merge
 depends_on:
 - T0384
 - T0385
@@ -441,3 +441,6 @@ history:
     - 'Preconditioner probe of every multipole deck: a deck that crashes on every attempt is recorded
       as such and becomes a missing value; no direct fallback, no other level substituted'
     affects_acceptance_criteria: false
+- outcome: full_gate_passed
+  summary: 6aa59a43a677d40a7f51d8127c2794f3fd110599
+  at: '2026-11-17T21:31:33+00:00'

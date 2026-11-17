@@ -1,0 +1,83 @@
+id: T0456
+objective: O002
+title: 'E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra development layouts in 3 strata,
+  corrected power simulation'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0398
+description: 'Diagnose E007''s per-stratum A4 misses before E007 freezes (O002; founder decision 2026-11-17,
+  D0025 item 4''s stop rule). T0398''s development rows (experiments/drafts/E007.dev_rows.json, research/notes/e007-dev-rows.md)
+  met every criterion pooled (A4 0.107 against 0.5), but A4 > 0.3 in three strata on 6 switch rows each:
+  interleaved/2 0.352, side_by_side/2 0.340, u_shaped/6 0.951. Do not change the L1, its calibration,
+  the criteria, thresholds, bound or m; report facts for the founder''s decision.
+
+  1. u_shaped/6 (A4 0.951): find why, using T0398''s rows and solves. Per switch row, give the L1 and
+  reference spreads and the null''s, which dies set each spread, whether one layout or one die position
+  dominates, and whether the calibration factor or the grid rule could explain it. u_shaped/6 is outside
+  c(s)''s calibration families; compare with u_shaped/2, which is calibrated.
+
+  2. More development layouts: on a fresh development seed (never E007''s sealed seed, and not 20261395
+  or 20261398), run 6 more layouts in each of interleaved/2, side_by_side/2 and u_shaped/6, at P_ref and
+  0.5 P_ref, judged at level 1 locally within the policy''s local limits. Report per-stratum A4 and A2
+  on all 9 layouts (18 switch rows), with the per-stratum bound where it is finite, and say for each stratum
+  whether A4 stays above 0.3. Record the high-side and low-side bias separately (T0423/T0424 and T0398
+  saw low-side dies off by +0.3 to +0.5 K on interleaved).
+
+  3. Redo the per-cell power simulation (review T0420 item 2). Model die deviations around their (layout,
+  switch) mean, the high-/low-side offsets as fixed effects and the measured reference variation, as T0398
+  recommended. Its consistency check must pass first: the simulated A4 must match the A4 measured on the
+  development rows. Then report joint power and A4''s power alone at m = 20, 24, 32 and 40 under normal
+  and t3 errors, with kill-side rates at 1.2 x each kill threshold.
+
+  4. Raise config.compute.bytes_per_dof[''1''] in experiments/drafts/E007.yaml from 3400 to at least 4400
+  (T0398 measured up to 4.3 kB per DOF).
+
+  5. Write research/notes/e007-a4-strata.md with the facts above, the inferences separated, and what would
+  change the conclusion. The extra rows go to research/o002_e007/dev_rows_a4_strata.json (meta.smoke false);
+  do not overwrite E007.dev_rows.json.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- research/o002_e007/**
+- research/notes/e007-a4-strata.md
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_*.py
+definition_of_done:
+- cmd: null
+  exists: research/notes/e007-a4-strata.md
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('research/o002_e007/dev_rows_a4_strata.json'));
+    assert d['meta']['smoke'] is False; s = {r.get('stratum') or (r.get('family'), r.get('dies')) for
+    r in d['rows']}; assert len(d['rows']) > 0, 'no rows'"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e007_run.py --selftest
+  exists: null
+  timeout_s: 2400
+- cmd: uv run mfos exp check E007
+  exists: null
+  timeout_s: 900
+experiment: E007
+risk: medium
+model: null
+budget_usd: 6.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T20:58:50+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder decision 2026-11-17 in the founder session (Diagnose, then decide)
+history: []

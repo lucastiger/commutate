@@ -1,0 +1,78 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The zero-failure bounds and counted coverage ignore whether counted pairs actually passed",
+      "detail": "diagnostics() counts a pair as 'counted' when F1 did not exclude it. It then reports pooled_zero_failure_bound95 = 1 - 0.05^(1/n_counted), plus per-type and clustered bounds, whether or not those pairs met the 2 % agreement. A zero-failure bound is only valid when there are zero failures. When A1 is met the numbers are right: no pair can be excluded and every |d| is at most 2 %. On any other outcome the metric reports a 'zero-failure' bound while a failure is present.",
+      "evidence": "Synthetic harness through assemble/criteria/diagnostics with 4 pairs, one of them (P3) 4 % off FastHenry: A1 = 0.0385 (not met), but n_counted = 4, pooled_zero_failure_bound95 = 0.527 and clustered = 0.776 are still reported.",
+      "suggested_check": "Compute the bounds only over counted pairs within A1's threshold, or label them 'valid only if A1 is met' in the metric and solve.json.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A deterministic discretisation band is recorded as a 95 % confidence interval",
+      "detail": "stage_solve passes ratio_band(...), i.e. [max(0, |d| - u), |d| + u] built from the solvers' discretisation estimates, as ci= to run.metric. run.metric's default level is 0.95, so result.json will show A1, K1 and K2 with a '95 % CI' that is not a statistical interval. The criteria use point values (uncertainty: point), so no verdict changes, but a reader or a later claim could misread it.",
+      "evidence": "e004_run.py stage_solve: run.metric('max_ratio_diff_vs_fasthenry', crit['A1'], ci=b1 ...), with no level argument; mfos/evidence.py metric(..., level=0.95).",
+      "suggested_check": "Move the band into solve.json diagnostics, or record it with an explicit non-statistical label instead of the default 0.95 level.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The job-list deliverable is stale against the committed probe record",
+      "detail": "vm_jobs_fasthenry.json marks gen2_0__fh_g3 as precond_probe 'vm_first: not probed locally'. Yet fh_probe.json has a local probe of the identical deck (same deck_sha256 83e9d2b10289\u2026) with result 'timeout' (1800 s, 770 MB, never reached 'Calling gmres'). dev_fh_plan would have copied that result, so the plan was written before the probe record and never regenerated.",
+      "evidence": "Deck-hash comparison: gen2_0__fh_g1 matches (past_preconditioner, calibration 15.2x applied); gen2_0__fh_g3 matches by sha, but the plan shows the default vm_first text instead of 'timeout'.",
+      "suggested_check": "Re-run `e004_run.py --dev-fh-plan` and confirm every probed deck's precond_probe equals its fh_probe.json result.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Coverage after exclusion does not apply O004's 6 % effect rule, and the covered ratio range can include rows from pairs that are not counted",
+      "detail": "O004 scope_in says a move type is covered only if one of its counted pairs has |1 - r| >= 6 % at L1. diagnostics() reports only per-type counts, without re-applying that rule after exclusion. covered_range_fh_finest takes r_fh from every non-excluded row, so a pair excluded at one frequency still adds its other-frequency ratio. This has no effect on a pass, because A1 cannot be met with any exclusion; it only affects the INCONCLUSIVE diagnostics.",
+      "evidence": "e004_run.py diagnostics(): per_type has pairs/counted/excluded/bound only; rfh = [r['r_fh'] for r in pr if not r['excluded_f1'] ...] works row by row, not pair by pair.",
+      "suggested_check": "Re-apply the coverage rule (min over FK of |1 - r_L1| >= 0.06) to counted pairs, and build the covered range from counted pairs only.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A tight FastHenry memory cap can turn a mis-projection into a missing judged value and an INVALID run",
+      "detail": "mem_cap_mb is set to 1.3 x (31.1 kB x exporter filaments), a linear fit from P4's 25k\u2013102k-filament runs. It is applied to the judged references' k2 decks (330k\u2013431k filaments) and to F7(a)'s Case 4 k2 decks (about 1.17M filaments). The adapter kills a run above the cap and does not retry, so a missing finest value makes the run INVALID unless K1 fires, and that burns the sealed pairs (decision_if_fail). The VM has 108 GB of usable memory, but the cap is 17 GB for 2R's k2 deck. The spec says F7(a) recalibrates the time rule before registration; it says nothing about refitting kb_per_filament.",
+      "evidence": "vm_jobs_fasthenry.json e004_cost_plan: 2D_Case_2R k2_nh5 has 430,924 filaments and mem_proj 17.4 GB; fasthenry_run.py lines 215-216 kill above mem_cap_mb, and line 315 does not retry killed_memory.",
+      "suggested_check": "Before registration, refit the sizing rule from F7(a)'s measured peaks, or set the judged runs' cap from VM headroom rather than from the projection.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "gci_capped on the 3 / 5 / 9 thickness ladder assumes a refinement ratio of 2",
+      "detail": "FastHenry's thickness term adds gci_capped(f3, f5, f9), whose formula assumes r = 2. The ladder's actual ratios are 1.67 and 1.8, so at the order cap p = 1 it understates f9's error by up to 1/(1.8 - 1) = 1.25x, roughly cancelling Roache's 1.25 safety factor. O004 freezes this estimator, so the code follows the spec.",
+      "evidence": "fh_terms(): fin = gci_capped(*thk) with thk = (nh 3, 5, 9); gci_capped uses |d2| / (2^p - 1).",
+      "suggested_check": "Report the r = 1.8 form beside the frozen value in the F7(a) results.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The smoke run reports freeze_hashes_match = false at this commit",
+      "detail": "The smoke registration recorded freeze_hashes_match false (smoke records it and does not refuse). The likely cause is that this review checkout is a single 'review snapshot' commit, so the frozen commit 3f60b2f4 is not among HEAD's ancestors. That was not confirmed. If the cause is instead a hash mismatch on the real branch, registration would refuse.",
+      "evidence": "Smoke output: checks.freeze_hashes_match false; git log shows a single commit 0eb19df 'review snapshot'.",
+      "suggested_check": "Run `e004_run.py --print-freeze` on the real task branch and confirm it matches config.freeze.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: exit 0.",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke` to completion with exit 0. All four solves came back ok: l2 lat1.0 for 2D_Case_4 and dev_pair0 (97 s, gmres flags 0, fingerprint_ok), and FastHenry k0 nh3 for both (366 s and 466 s). Smoke criteria: A1 = inf and A2 = inf (every smoke estimate is +inf, as designed), K1 = 0.0038 (does not fire), K2 = 0.045, pairs_missing_finest empty.",
+    "Recomputed zero_failure_bound from the runner: n = 13 gives 0.2058 and n = 2 gives 0.7764, matching O004's decision_if_pass (20.6 % / 78 %); n = 0 gives 1.0.",
+    "Built a synthetic harness that fed constructed solver results (2 references, 4 pairs, all l2 and FastHenry levels at both frequencies) through the runner's own assemble/criteria/diagnostics with the real E004 draft config and mfos.metrics.gci_step_floor. Six scenarios: (1) all complete: A1 finite, finest_values_present passes; (2) one pair's FastHenry k2 missing and K1 not firing: A1 = inf, A2 = inf, finest_values_present fails (INVALID), as O004 F1 requires; (3) the same plus another pair 9 % off: K1 = 0.086 fires and finest_values_present passes; (4) a coarse k0 missing: pair excluded but finest_complete stays true, so it stays in K1 on its raw value; (5) a reference's t9 missing: both of its pairs excluded, clustered bound 0.95; (6) a pair 4 % off with no exclusion: A1 = 0.038 (not met), and the zero-failure bounds are still reported (finding 1).",
+    "Read mfos.metrics gci_capped, gci_step_floor, ratio_middle_term, max_rel_err_or_inf and max_consistency_capped, and confirmed that the spec's recompute block matches criteria().",
+    "Re-derived step_rule_check by hand: P3's example gives rho \u2248 -3.57, so gci_capped returns +inf, and both steps are below 0.1 % of the finest value, so the rule returns 3 max|d|. The check can fail.",
+    "Compared vm_jobs_fasthenry.json against fh_probe.json by deck sha256 and found the stale gen2_0 g3 probe status (finding 3). Also reviewed the sizing projections and the E004 cost plan (about 96 CPU-h, 11.4 h makespan, $8.35).",
+    "Checked that perturb.apply handles compound pairs, so the registered solve stage can rebuild every drawn pair."
+  ],
+  "caveats": [
+    "The reported zero-failure bounds, coverage counts and covered ratio range hold only when A1 is met (no exclusion, every counted pair within 2 %); on any other outcome they are not zero-failure bounds.",
+    "The 'CI' attached to A1/K1/K2 is a deterministic discretisation band, not a 95 % confidence interval; verdicts use point values.",
+    "Per the draft's own design_status, F3/F6 diagnostics, the 2D_Case_2R proxy pair wiring, the banded-acceptance rule and the F7(a) recalibration of nh_lateral and the sizing rule are still open. This review covers the solve stage, estimators, metrics, INVALID rule and job list only.",
+    "The smoke run reported freeze_hashes_match false, probably because the review snapshot has no history. This should be confirmed on the real branch before registration.",
+    "The packet's diff was truncated; the review used the full runner file in the repository at this commit."
+  ]
+}

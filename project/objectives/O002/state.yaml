@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 2
 max_replans: 3
 needs_replan: false
-spent_usd: 80.053
+spent_usd: 85.2741
 budget_override_usd: null
 log:
 - 'founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions
@@ -37,5 +37,10 @@ log:
   on this convention; T0398 measures level-2 cpu/wall on one solve to confirm it. Also pending: m (layouts
   per stratum), decided before registration from T0398''s power figures for the as-measured L1 (T0434
   finding 1: joint power 0.531 under t3 at m = 20)'
+- 'founder decision 2026-11-17T20:58:50+00:00 (recorded by the founder session; D0025 item 4 stop rule
+  tripped on T0398''s development rows: A4 > 0.3 in interleaved/2 0.352, side_by_side/2 0.340, u_shaped/6
+  0.951, pooled A4 0.107): diagnose before deciding; task T0456 investigates u_shaped/6, adds 6 development
+  layouts in each of the 3 strata, and redoes the per-cell power simulation; the founder then decides
+  (accept or revise L1) and chooses m'
 evidence_rules: 2
 frozen_hash: sha256:f52c33de4a6472294c7bb3f5801c7bee97f9225b143175b28ab905f15f258134
