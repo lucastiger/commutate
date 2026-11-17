@@ -178,7 +178,14 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ and state in E011's spec how a no_moves null draw counts for A3. My reading: it is not a resolved\
   \ failure, because the null never moved; it counts like a capped null and is reported. The founder confirms\
   \ it with the spec. Do the same for the search's existing 'no_moves' stop reason. T0437 also changed\
-  \ every degradation draw (the seed tag), so no development row or pin from before T0437 carries over.\n"
+  \ every degradation draw (the seed tag), so no development row or pin from before T0437 carries over.\n\
+  \n\nAttempt 4 (founder session, 2026-11-17, resolving I0244): attempt 3 was right to block. Agents cannot\
+  \ merge, and the instruction to merge main into this branch first was the session's mistake. The founder\
+  \ has merged main into this branch, so it now has T0437's code (control.py seed tag, nulls.py fixes,\
+  \ proxy pins) and attempt 3's runner work. Do not merge anything yourself. Check that control.py has\
+  \ DEGRADE_TAG and that nulls.py returns no_moves and records seed_in_domain, then do steps 1-5 of the\
+  \ folded-in brief above: the development run from scratch with code-stamped checkpoints, --freeze-report,\
+  \ the complete E011.dev_jobs.json with VM sizing, the improvement curve and null reports, and research/notes/e011-dev-run.md.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
@@ -782,3 +789,6 @@ history:
     \ still attempt 1's stale schema-1 file, not status complete.\n- research/notes/e011-dev-run.md is\
     \ not written; it is meant to hold the dev run's results.\n\nNothing is committed."
   at: '2026-11-17T16:53:08+00:00'
+- outcome: rebriefed
+  summary: 'founder session: attempt 4 after the founder merges main into the branch (I0244)'
+  at: '2026-11-17T16:53:39+00:00'
