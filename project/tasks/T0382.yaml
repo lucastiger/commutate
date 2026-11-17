@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: running
+status: needs_founder
 depends_on:
 - T0377
 - T0378
@@ -342,3 +342,256 @@ history:
 
     ...[truncated; full reviews: project/reviews/T0382/]'
   at: '2026-11-17T04:20:47+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Blocked. The founder''s step 1 (the source fixes in control.py, nulls.py, test_control.py
+    and test_nulls.py) is not mine to make. The task''s `touches` lists those files, but the packet''s
+    Boundaries and `.mfos/policy.toml` (`role_write_scopes.scientist = research/**, experiments/drafts/**,
+    experiments/runners/**, tests/acceptance_drafts/**, project/memory/**`) exclude `src/` and `tests/unit/`.
+    `.claude/hooks/guard.py` enforces that scope (MFOS_ROLE=scientist), and I did not get around it through
+    Bash. I confirmed by reading the code that none of the fixes is present: `control.draw_degradations`
+    still seeds with `SeedSequence([sealed_seed, layout_index, j, a])`; nulls.py has no `no_moves`, no
+    `seed_in_domain` and no `dies_fixed`; test_nulls.py has no slow marks.
+
+
+    Because the seed-tag fix chan'
+  report:
+    status: blocked
+    failure_class: none
+    summary: 'Blocked. The founder''s step 1 (the source fixes in control.py, nulls.py, test_control.py
+      and test_nulls.py) is not mine to make. The task''s `touches` lists those files, but the packet''s
+      Boundaries and `.mfos/policy.toml` (`role_write_scopes.scientist = research/**, experiments/drafts/**,
+      experiments/runners/**, tests/acceptance_drafts/**, project/memory/**`) exclude `src/` and `tests/unit/`.
+      `.claude/hooks/guard.py` enforces that scope (MFOS_ROLE=scientist), and I did not get around it
+      through Bash. I confirmed by reading the code that none of the fixes is present: `control.draw_degradations`
+      still seeds with `SeedSequence([sealed_seed, layout_index, j, a])`; nulls.py has no `no_moves`,
+      no `seed_in_domain` and no `dies_fixed`; test_nulls.py has no slow marks.
+
+
+      Because the seed-tag fix changes every degradation draw, I did not rerun `--dev` (step 3) or produce
+      fresh freeze hashes (step 5): those rows would not come from the code that will be frozen, which
+      is exactly what the founder''s ordering is meant to prevent.
+
+
+      Done within scope (step 2, part of 3, 4, and reviews T0430/T0431/T0432):
+
+      - **dev_solve rewritten.** It keys jobs by (fingerprint, level) and asserts that the jobs submitted
+      equal `totals.jobs_wave1`, the manifest''s job count and the number of distinct outputs. Every purpose
+      and shortlist rank of a deduplicated job is now recorded (manifest schema e011.dev_jobs/2). Shortlist
+      groups are rebuilt from all purposes, and each best is picked by (L, L1 rank), with rank and group
+      counts checked.
+
+      - **Convergence.** em_ok uses E010''s `band_solve_failures` predicate, so a missing convergence
+      record or a non-finite L_H or tolerance fails closed. It also skips the Scheduler''s `.job.json`
+      files, a fault the stricter predicate exposed in the first real smoke run. dev_solve exits 3 unless
+      every result converges.
+
+      - **Code stamp.** Work directories carry `code_stamp.json` (sha256 over `src/moduleforge/**`, both
+      runners and the stage-setting config blocks), and a resumed run refuses checkpoints with a different
+      stamp or no stamp. The manifest carries the stamp, and dev_solve refuses a mismatch or a status
+      other than complete.
+
+      - **Seed streams.** `seed_streams_distinct` now checks the run''s real sub-seeds and the degradation
+      entropy lists the run recorded (T0432). It reports that control.py''s entropy is not yet domain-tagged.
+
+      - **Improvement curve (step 4).** Each draw reports the share of the search''s final L1 gain made
+      in the last 10 % and 25 % of the budget. It is exact when a shortlist member had been evaluated
+      by the cut (using the evaluation order in `visited`); otherwise it is reported as a bracket. Hand-checked.
+
+      - **VM sizing.** The manifest gains a `vm_sizing` block.
+
+      - **New selftest case.** It runs a dev-mode run on fakes, then write_manifest, then dev_solve (388
+      wave-1 jobs at all 5 levels, 34 shortlist groups, 170 wave-2 jobs), plus the refusals and predicate
+      checks. I re-inserted attempt 1''s two defects as mutants (fingerprint-only keying; first purpose
+      only), and the selftest fails on both.
+
+      - **Stale state.** Attempt 1''s checkpoints are moved to `research/o008_e011_dev/work.attempt1-stale`,
+      and the runner refuses them. `E011.dev_jobs.json` is attempt 1''s partial schema-1 manifest, marked
+      `stale: true`, and dev_solve refuses it.
+
+      - **Spec.** The spec documents all of the above, adds a `prerequisites_pending` block, and adds
+      the interpretation note on the common-mode term (T0432).
+
+
+      New finding (cost-model numbers, not measured): in E010''s cost model, Case 4 lat0.25 is 4.11 M
+      unknowns, 1.60 h and 15.8 GB, or 25.3 GB with the level prior. The Scheduler admits jobs at the
+      prior value, so 2 fit at once in the 66.3 GB usable, not the 4 the spec''s registered-run cost line
+      assumed. My inference is about 136 h of makespan for Case 4''s roughly 170 registered 0.25 mm solves,
+      which exceeds timeout_min (120 h), and about $105 in total. If measured memory matches the model,
+      it would be about 91 h and $80. The founder decides the VM shape and timeout; I changed neither.
+
+
+      Commands and exit codes, all on the final code:
+
+      - `uv run python experiments/runners/e011_run.py --selftest`: 0
+
+      - `E011_SMOKE_DIR=$TMPDIR/e011smoke3 uv run python experiments/runners/e011_run.py --smoke`: 0 (845
+      s; verdict_preview INVALID, the expected outcome for smoke''s single gen2_0 layout)
+
+      - the DoD spec-validation python: 0
+
+      - `test -f experiments/drafts/E011.dev_jobs.json`: 0
+
+      - `uv run ruff check experiments/runners/e011_run.py`: 0, and `uv run ruff check .`: 0
+
+      - `uv run mfos exp check E011`: 0
+
+      - `uv run mfos gate --fast`: 0 when run alone. An earlier run that overlapped a smoke run hit the
+      gate''s 900 s unit-test timeout.
+
+
+      Earlier smoke runs exited 1: the first because em_ok counted the `.job.json` files as unconverged
+      results (since fixed); the second because `/usr/bin/time -l` itself fails in the sandbox with `sysctl
+      kern.clockrate: Operation not permitted`. Nothing is committed; the orchestrator commits.'
+    root_cause: 'Planning/scope mismatch, not a physics failure: the founder''s step 1 changes src/moduleforge/optimize/{control,nulls}.py
+      and tests/unit/optimize/test_{control,nulls}.py, but this design_experiment task is assigned to
+      the scientist role, whose policy write scope (.mfos/policy.toml role_write_scopes.scientist) and
+      the packet''s Boundaries exclude src/ and tests/unit/. The hook enforces it. Steps 3 (fresh --dev
+      rows and a complete manifest) and 5 (freeze hashes) depend on step 1.'
+    evidence:
+    - 'Fact: .mfos/policy.toml line 26: scientist = ["research/**", "experiments/drafts/**", "experiments/runners/**",
+      "tests/acceptance_drafts/**", "project/memory/**"]; .claude/hooks/guard.py denies Edit/Write outside
+      role_write_scopes; MFOS_ROLE=scientist in this session. The task''s touches list includes control.py,
+      nulls.py and their tests.'
+    - 'Fact: control.py lines 193-197: ent = [int(sealed_seed), int(layout_index), j, a] (no domain tag);
+      nulls.py has no no_moves, seed_in_domain or dies_fixed; test_nulls.py has no slow marks.'
+    - 'Fact: selftest exit 0 with 6 planted scenarios plus the manifest case: ''388 wave-1 jobs at [fil_f,
+      lat0.25, lat0.5, thk_c, thk_f], 34 shortlist groups, 170 wave-2 jobs, dev_solve rc 0''.'
+    - 'Fact (mutation test): with attempt 1''s fingerprint-only keying re-inserted, the selftest exits
+      1 with ''wave 1: 116 jobs built ... totals.jobs_wave1 388''; with first-purpose-only recording,
+      it exits 1 with ''alt_short_d0 group None'' and dev_solve rc 3.'
+    - 'Fact: smoke on real code (gen2_0) exit 0 in 845 s; the search row''s improvement curve and the
+      seed-stream check ran on real streams (n_streams 4, all distinct, control_entropy_domain_tagged
+      False). The child solves'' recorded peak_GB was at most 2.17 GB (smoke2 results).'
+    - 'Fact: the first smoke run failed l2_converged because the em_*.json glob matched E010 Scheduler
+      ''<out>.job.json'' files (status None); all 6 real results had gmres_flags [0] and finite solver_tol_rel_L_max.
+      Fixed, with a selftest guard.'
+    - 'Fact: `--dev-solve experiments/drafts/E011.dev_jobs.json` exit 1 (refused: schema 1, status ''stale:
+      partial ...''); `--dev --workdir research/o008_e011_dev/work.attempt1-stale` exit 1 (StaleCheckpoint),
+      with nothing written.'
+    - 'Fact (cost model, not measured): Case 4 lat0.25 4.11 M unknowns, est 1.60 h, 15.8 GB model, x1.6
+      prior = 25.3 GB, int(66.3 // 25.3) = 2 at once; 2R lat0.25 1.54 M, 0.39 h, 10.3 GB, 6 at once.'
+    - 'Fact: mfos gate --fast run alone: ''all gates passed'', exit 0; run concurrently with smoke: unit
+      tests TIMEOUT after 900 s.'
+    alternative_explanations:
+    - explanation: The founder intended the scientist to make the src/ fixes and the policy scope is simply
+        stale, so the work could have been done via Bash writes (the hook only blocks Bash writes to protected
+        paths, not to src/).
+      how_to_discriminate: Founder confirms whether the scientist role's write scope should be extended
+        for T0382, or whether a builder task should carry the four files. I treated the packet's explicit
+        Boundaries plus the system rule 'never edit src/ production code' as binding and did not circumvent
+        the hook.
+    - explanation: The fast-gate timeout is a real regression from this change rather than CPU contention.
+      how_to_discriminate: This change touches no src/ or tests/unit/ file, and the gate run alone passed
+        (exit 0). Rerunning the gate with the smoke stopped reproduces the pass.
+    discriminating_tests:
+    - 'Founder decision on write scope: extend scientist scope for T0382''s four source/test files, or
+      create a builder task for them'
+    - 'After the source fixes: `uv run python experiments/runners/e011_run.py --dev` (resume across 2-hour
+      commands until the manifest status reads ''complete'' for 2D_Case_2R and 2D_Case_4); the code stamp
+      guarantees one code version'
+    - Then `uv run python experiments/runners/e011_run.py --freeze-report` and fill code_sha256/frozen_sha256;
+      check the regenerated manifest's vm_sizing against the spec's sizing_check_attempt2
+    recommended_actions:
+    - 'Founder: either extend this task''s write scope to src/moduleforge/optimize/control.py, src/moduleforge/optimize/nulls.py,
+      tests/unit/optimize/test_control.py and tests/unit/optimize/test_nulls.py, or split them into a
+      builder task (items: domain tag in draw_degradations with a streams-differ test; T0425 and T0426
+      items 1-4 for nulls; pin the reach=True proxy terminal values on both layouts; import check for
+      no l2_layout in control; slow marks with a fast smoke test).'
+    - 'After they land, rerun T0382 steps 3-5: `--dev` to completion on both layouts (checkpoints are
+      refused if the code changes in between), the improvement-curve medians per layout for the budget
+      decision, then `--freeze-report`.'
+    - 'Founder: decide the registered run''s VM shape and timeout given the cost-model sizing (Case 4
+      lat0.25 at 25.3 GB with prior means 2 at once, about 136 h makespan, above timeout_min = 120 h;
+      the spec''s ''$75, four at once'' line assumed 15.8 GB).'
+    - 'Do not run experiments/drafts/E011.dev_jobs.json on a VM: it is attempt 1''s stale partial manifest
+      (dev_solve refuses it).'
+    - 'Consider marking the long tests in test_nulls.py slow soon: the fast gate has little margin under
+      its 900 s limit when the machine is shared.'
+    files_written:
+    - experiments/runners/e011_run.py
+    - experiments/drafts/E011.yaml
+    - experiments/drafts/E011.dev_jobs.json
+    - research/o008_e011_dev/.gitignore
+    - research/o008_e011_dev/attempt2.md
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    confidence: 0.85
+    affects_acceptance_criteria: false
+- attempt: 2
+  outcome: blocked
+  summary: agent reported blocked
+  failure_output: 'ozen, which is exactly what the founder''s ordering is meant to prevent.
+
+
+    Done within scope (step 2, part of 3, 4, and reviews T0430/T0431/T0432):
+
+    - **dev_solve rewritten.** It keys jobs by (fingerprint, level) and asserts that the jobs submitted
+    equal `totals.jobs_wave1`, the manifest''s job count and the number of distinct outputs. Every purpose
+    and shortlist rank of a deduplicated job is now recorded (manifest schema e011.dev_jobs/2). Shortlist
+    groups are rebuilt from all purposes, and each best is picked by (L, L1 rank), with rank and group
+    counts checked.
+
+    - **Convergence.** em_ok uses E010''s `band_solve_failures` predicate, so a missing convergence record
+    or a non-finite L_H or tolerance fails closed. It also skips the Scheduler''s `.job.json` files, a
+    fault the stricter predicate exposed in the first real smoke run. dev_solve exits 3 unless every result
+    converges.
+
+    - **Code stamp.** Work directories carry `code_stamp.json` (sha256 over `src/moduleforge/**`, both
+    runners and the stage-setting config blocks), and a resumed run refuses checkpoints with a different
+    stamp or no stamp. The manifest carries the stamp, and dev_solve refuses a mismatch or a status other
+    than complete.
+
+    - **Seed streams.** `seed_streams_distinct` now checks the run''s real sub-seeds and the degradation
+    entropy lists the run recorded (T0432). It reports that control.py''s entropy is not yet domain-tagged.
+
+    - **Improvement curve (step 4).** Each draw reports the share of the search''s final L1 gain made
+    in the last 10 % and 25 % of the budget. It is exact when a shortlist member had been evaluated by
+    the cut (using the evaluation order in `visited`); otherwise it is reported as a bracket. Hand-checked.
+
+    - **VM sizing.** The manifest gains a `vm_sizing` block.
+
+    - **New selftest case.** It runs a dev-mode run on fakes, then write_manifest, then dev_solve (388
+    wave-1 jobs at all 5 levels, 34 shortlist groups, 170 wave-2 jobs), plus the refusals and predicate
+    checks. I re-inserted attempt 1''s two defects as mutants (fingerprint-only keying; first purpose
+    only), and the selftest fails on both.
+
+    - **Stale state.** Attempt 1''s checkpoints are moved to `research/o008_e011_dev/work.attempt1-stale`,
+    and the runner refuses them. `E011.dev_jobs.json` is attempt 1''s partial schema-1 manifest, marked
+    `stale: true`, and dev_solve refuses it.
+
+    - **Spec.** The spec documents all of the above, adds a `prerequisites_pending` block, and adds the
+    interpretation note on the common-mode term (T0432).
+
+
+    New finding (cost-model numbers, not measured): in E010''s cost model, Case 4 lat0.25 is 4.11 M unknowns,
+    1.60 h and 15.8 GB, or 25.3 GB with the level prior. The Scheduler admits jobs at the prior value,
+    so 2 fit at once in the 66.3 GB usable, not the 4 the spec''s registered-run cost line assumed. My
+    inference is about 136 h of makespan for Case 4''s roughly 170 registered 0.25 mm solves, which exceeds
+    timeout_min (120 h), and about $105 in total. If measured memory matches the model, it would be about
+    91 h and $80. The founder decides the VM shape and timeout; I changed neither.
+
+
+    Commands and exit codes, all on the final code:
+
+    - `uv run python experiments/runners/e011_run.py --selftest`: 0
+
+    - `E011_SMOKE_DIR=$TMPDIR/e011smoke3 uv run python experiments/runners/e011_run.py --smoke`: 0 (845
+    s; verdict_preview INVALID, the expected outcome for smoke''s single gen2_0 layout)
+
+    - the DoD spec-validation python: 0
+
+    - `test -f experiments/drafts/E011.dev_jobs.json`: 0
+
+    - `uv run ruff check experiments/runners/e011_run.py`: 0, and `uv run ruff check .`: 0
+
+    - `uv run mfos exp check E011`: 0
+
+    - `uv run mfos gate --fast`: 0 when run alone. An earlier run that overlapped a smoke run hit the
+    gate''s 900 s unit-test timeout.
+
+
+    Earlier smoke runs exited 1: the first because em_ok counted the `.job.json` files as unconverged
+    results (since fixed); the second because `/usr/bin/time -l` itself fails in the sandbox with `sysctl
+    kern.clockrate: Operation not permitted`. Nothing is committed; the orchestrator commits.'
+  at: '2026-11-17T05:56:47+00:00'

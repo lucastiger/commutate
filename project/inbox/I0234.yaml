@@ -1,0 +1,46 @@
+id: I0234
+kind: decision
+subject: 'T0382 blocked: the agent reports the task impossible or mis-specified'
+summary: '(cost-model numbers, not measured): in E010''s cost model, Case 4 lat0.25 is 4.11 M unknowns,
+  1.60 h and 15.8 GB, or 25.3 GB with the level prior. The Scheduler admits jobs at the prior value, so
+  2 fit at once in the 66.3 GB usable, not the 4 the spec''s registered-run cost line assumed. My inference
+  is about 136 h of makespan for Case 4''s roughly 170 registered 0.25 mm solves, which exceeds timeout_min
+  (120 h), and about $105 in total. If measured memory matches the model, it would be about 91 h and $80.
+  The founder decides the VM shape and timeout; I changed neither.
+
+
+  Commands and exit codes, all on the final code:
+
+  - `uv run python experiments/runners/e011_run.py --selftest`: 0
+
+  - `E011_SMOKE_DIR=$TMPDIR/e011smoke3 uv run python experiments/runners/e011_run.py --smoke`: 0 (845
+  s; verdict_preview INVALID, the expected outcome for smoke''s single gen2_0 layout)
+
+  - the DoD spec-validation python: 0
+
+  - `test -f experiments/drafts/E011.dev_jobs.json`: 0
+
+  - `uv run ruff check experiments/runners/e011_run.py`: 0, and `uv run ruff check .`: 0
+
+  - `uv run mfos exp check E011`: 0
+
+  - `uv run mfos gate --fast`: 0 when run alone. An earlier run that overlapped a smoke run hit the gate''s
+  900 s unit-test timeout.
+
+
+  Earlier smoke runs exited 1: the first because em_ok counted the `.job.json` files as unconverged results
+  (since fixed); the second because `/usr/bin/time -l` itself fails in the sandbox with `sysctl kern.clockrate:
+  Operation not permitted`. Nothing is committed; the orchestrator commits.'
+refs:
+- T0382
+- O008
+options:
+- re-scope, then `mfos task retry T0382`
+- cancel
+- give guidance
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-17T05:56:47+00:00'
+resolved_at: null
+resolved_by: null
