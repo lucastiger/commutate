@@ -1,0 +1,89 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The F2 freeze does not cover all of L1 or the geometry modules the registration checks run on",
+      "detail": "config.freeze.files_meaning says the freeze covers 'L1 (physics/peec), which the registration checks use', but only physics/peec/model.py is hashed. model.py imports physics/peec/kernels.py (the partial-inductance kernels), and kernels.py is not in config.freeze.files. The same is true of geometry/conductors.py (the RectCell and ConductorModel types that Layout.to_conductors builds, which on_lattice uses), geometry/units.py and geometry/__init__.py. perturb.rules_sha256() and rules_supplement_sha256() do not cover these files either. If kernels.py changed after the freeze, every r_L1 would move, and with it the F4 l1_span gate and the coverage report, without freeze_hashes_match noticing.",
+      "evidence": "Importing perturb, peec.model, drc and l2_layout loads moduleforge.physics.peec.kernels, geometry.conductors, geometry.units and the package __init__ files. None of them appears in E004.yaml config.freeze.files. 'from .kernels import (' is at model.py line 90.",
+      "suggested_check": "Add physics/peec/kernels.py, geometry/conductors.py, geometry/units.py and the package __init__.py files to config.freeze.files, or hash every moduleforge module present in sys.modules after the registration imports.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The frozen allocation almost never passes F4's span check, and the l2_layout 0.5 mm distribution O004 asks for is not reported",
+      "detail": "I recomputed the development span simulation from research/o004_e004/span_sim_case4.json with my own code. At lower end 0.75 no draw meets the span: 0 of 400 single-reference draws and 0 of 200 pooled draws. The per-draw counts of pairs below 0.90 are {0: 315, 1: 78, 2: 7}. This matches the research note. As drafted, a sealed registered run would be refused by F4 almost surely, and a refused sealed run stays on the record. The draft says so and leaves the decision to the founder, so the registration stage is implemented, but the design is not registrable. Separately, O004 scope_in requires that the development-seed ratio distribution be reported 'at L1 and at l2_layout 0.5 mm' before registration. Only L1 is reported.",
+      "evidence": "My recomputation gives pass counts single/pooled of 0/0 at 0.75, 0.78 and 0.80, and 0/1 at 0.85. Kind shares of r < 0.90 are die_row_shift 0.11, compound 0.06 and 0 for the other kinds, all matching the note.",
+      "suggested_check": "The founder decides the allocation or span before registration. Add the l2_layout 0.5 mm distribution on the Case 4 development pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The F4 gates and the 6 % coverage threshold are decided at a mesh where r_L1 is resolved only to about \u00b10.005",
+      "detail": "L1 runs at DEFAULT_HMAX = 4 mm. I recomputed the 12 smoke pairs at hmax 4, 2 and 1 mm and saw ratio shifts up to about 0.005. One terminal_copper pair went from 0.9953 to 1.0000, so its effect changed sign. One compound went from 1.0014 to 0.9965. Pairs within about 0.005 of 0.75, 0.90, 0.98 or |1 - r| = 0.06 could therefore flip the span gate or a coverage verdict. L1 is not the tool under test and the gate is deterministic, so this is admissible, but neither the spec nor the runner records hmax or the size of this effect.",
+      "evidence": "At 4 / 2 / 1 mm: terminal_copper 0.99527 / 0.9984 / 1.00004; compound 1.00137 / 0.9967 / 0.99648; compound 0.94566 / 0.94347 / 0.94327; die_row_shift 0.99169 / 0.99128 / 0.98941.",
+      "suggested_check": "Record hmax in config, and report r_L1 at hmax/2 beside each gate value with the pairs within 0.005 of a threshold flagged.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The reference lattice check is gated after the sealed draws, not before them as the docstring says",
+      "detail": "The runner computes ref_lattice in step 3 but only gates it inside layouts_on_lattice in step 6, after perturb.draw has consumed the sealed stream and L1 has been evaluated. A judged reference that is whole-mm but off a lattice (for example a substrate outline that is not whole mm) would therefore spend a sealed run before being refused. The module docstring says step 3 happens 'BEFORE any draw'. On the frozen 2R and Case 6 references both checks pass today, so this is latent.",
+      "evidence": "In stage_registration, step 3 calls gate('references_whole_mm') only. ref_lattice first reaches a gate in registration_checks, which runs after the draw loop.",
+      "suggested_check": "Gate ref_lattice together with references_whole_mm in step 3.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Some sanity checks cannot fail",
+      "detail": "seed_provenance compares seed with the value main() just set it from: DEV_SEED in smoke mode, int(MFOS_SEED) in registered mode, and main() already raises if MFOS_SEED is missing. layouts_drc_clean_distinct is described as 're-checked independently of the draw', but it re-runs the same drc.check with the same rules and the same geometry_key that draw used. It repeats the draw's check rather than checking it independently.",
+      "evidence": "main(): seed = DEV_SEED or seed = int(os.environ['MFOS_SEED']); stage_registration: gate('seed_provenance', seed == DEV_SEED if smoke else seed == int(sealed_env)).",
+      "suggested_check": "Record each slot's derived draw seed, and re-derive the moves from MFOS_SEED in the check, comparing parameters.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Latent KeyError once the proxy pair is built in smoke mode",
+      "detail": "In smoke mode the slot ids are '2D_Case_2R<-dev:2D_Case_4', but registration_checks appends the proxy record to per[cfg['proxy']['reference']], which is '2D_Case_2R'. That raises KeyError as soon as proxy_pair_status returns 'built' in a smoke run.",
+      "evidence": "registration_checks: per = {r: ... for r in ref_ids}; per[cfg['proxy']['reference']].append(...).",
+      "suggested_check": "Key the proxy record by its slot id.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "freeze_hashes_match fails in this snapshot only because the pinned commit is not in its history",
+      "detail": "In my smoke run the single freeze failure was 'pinned commit aea69183\u2026 is not an ancestor of HEAD'. The review snapshot is one commit with no history. Every file hash, perturb_rules_sha256, the supplement hash, l2_layout_source_sha256 and the numpy and shapely versions matched the frozen values, but I could not check the ancestry claim itself.",
+      "evidence": "registration.json freeze.failures has exactly one entry, the ancestry check; git log shows only '7accf29 review snapshot'.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "scipy is not pinned, although the solver under test uses it",
+      "detail": "config.freeze.packages pins numpy and shapely only. l2_layout, the code under test, uses scipy.sparse, scipy.sparse.linalg and scipy.fft. ExperimentRun records the scipy version in its provenance but nothing enforces it. This is a solve-stage (T0389) concern, but the freeze block is part of this deliverable.",
+      "evidence": "",
+      "suggested_check": "Add scipy to config.freeze.packages.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run python experiments/runners/e004_run.py --smoke --stage registration` and read registration.json, including the freeze failures and the l1_span detail at both frequencies.",
+    "Repeated mfos.experiments.validate_draft read-only: ExperimentSpec schema, acceptance metrics declared, recompute entries present, functions in METRICS, rows field set, and the signatures of max_rel_err_or_inf and max_consistency_capped against the spec's params.",
+    "Recomputed the span-simulation pass fractions, the per-draw counts below 0.90, the per-kind minima, medians and shares, and the Wilson upper bound from research/o004_e004/span_sim_case4.json with my own span predicate. All match the research note and the stored summary. The 10 and 20 MHz ratios differ by at most 0.0009.",
+    "Adversarial inputs to whole_mm_failures and on_lattice on 2D_Case_4: a trace shifted 0.3 mm (flagged, off all lattices), a trace shifted 0.5 mm (flagged, off the 1 mm lattice only), float noise of 1e-12 m (passes), a die shifted 0.25 mm (flagged), a terminal shifted 0.5 mm (flagged).",
+    "Boundary tests of span_check: min = 0.75 passes and 0.7500001 fails; a value of exactly 0.90 does not count as below; max 0.9799999 fails.",
+    "Read perturb.py to confirm that whole_mm_failures covers every coordinate _mm rounds: long_sides on trace vertices, die bounds in die_row_shift, terminal boxes in terminal_copper.",
+    "Listed the moduleforge modules loaded by the registration path and compared them with config.freeze.files. physics/peec/kernels.py, geometry/conductors.py, units.py and the __init__ files are not hashed.",
+    "L1 mesh sensitivity: recomputed r_L1 at 20 MHz for the 12 smoke pairs at hmax 4, 2 and 1 mm. The maximum shift is about 0.005, and one terminal_copper effect changes sign.",
+    "Geometry only on the judged references (no draw, no long_sides, no L1): rebuilt them with the frozen script, fingerprints match, whole_mm_failures is empty, on_lattice is True at 1.0, 0.5 and 0.25 mm, and measured_rules derives for both.",
+    "Read ExperimentRun.__exit__: a RegistrationRefused raised in registered mode records status 'error', as the docstring says. In smoke mode there is no MFOS_SPEC_JSON, so no declared checks are enforced."
+  ],
+  "caveats": [
+    "The command `uv run mfos exp check E004` was denied in this session. I repeated its validate_draft checks read-only instead: the schema validates, all four acceptance metrics (A1, A2, K1, K2) are declared and have recompute entries, every recompute function exists in mfos.metrics and its parameter names match, rows.json is declared, and no experiments/specs/E004.yaml exists. The CLI itself was not run.",
+    "The command `--smoke --stage registration` ran to completion. It printed the summary JSON with no traceback, and main() returns 0, but my exit-code capture was denied, so exit 0 is inferred. Only seed_provenance through layouts_drc_clean_distinct pass. freeze_hashes_match fails here because this snapshot has no history. l1_span fails (pooled min 0.945, 0 pairs below 0.90). proxy_pair_built is pending.",
+    "Smoke mode substitutes 2D_Case_4 in both judged slots, so the registered path's draws, L1 values and F4 outcomes on 2D_Case_2R and 2D_Case_6 are untested. F2 forbids testing them before registration. I checked only geometry on the judged references: fingerprints match, whole-mm and all three lattices pass, and measured_rules derives without error.",
+    "The draft calls itself 'NOT REGISTRABLE YET' and lists five open items: the perturb.py fixes, the proxy step parameter, the founder's span decision, the assembled F7 results and the solve stage. The claim holds only for a draft registration stage. Registered mode currently always refuses, because the proxy pair cannot be built.",
+    "The founder decisions the spec cites (I0207, I0217, the 2026-11-16 17:55 stagewise rule, and the 2026-11-17T01:41 F1 rule from review T0429) are not recorded anywhere in this snapshot, so I could not verify them. The cited F1 rule differs from O004's text: it uses E_R/r <= 0.005 with gci_step_floor, where O004 has an estimate of at most 0.5 % with gci_capped. It is implemented in T0389, not here.",
+    "Running the smoke command writes registration.json into the cwd-relative .mfos/artifacts store, which is gitignored; the working tree stayed clean."
+  ]
+}

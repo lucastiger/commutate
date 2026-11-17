@@ -117,6 +117,52 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   new value), the perturb.py file hash, the commit, and the supplement hash if it changes; rerun the registration
   smoke and the dev-span simulation.
 
+
+
+  Reviews T0440 (physics) and T0441 (numerics) of T0388, both accept with caveats (founder session, 2026-11-17).
+  In experiments/drafts/E004.yaml and experiments/runners/e004_run.py:
+
+  1. Freeze coverage: config.freeze.files hashes only physics/peec/model.py for L1, but kernels.py (the
+  partial-inductance kernels), geometry/conductors.py (decompose_polygon, RectCell, used by on_lattice),
+  geometry/units.py and the package __init__ files are on the executed path and hashed nowhere. Hash every
+  moduleforge module present in sys.modules after the registration and solve imports (or list them all),
+  and pin scipy in config.freeze.packages beside numpy and shapely (l2_layout uses scipy.sparse, scipy.sparse.linalg
+  and scipy.fft).
+
+  2. Gate the reference lattice check together with references_whole_mm in step 3, before any sealed draw;
+  re-check DRC on every compound intermediate in pair_records (the stagewise rule); make a ValueError
+  from measured_rules on a judged reference a RegistrationRefused that names the cause.
+
+  3. Checks that cannot fail: seed_provenance compares the seed with the value just set from it; compare
+  instead with the sealed seed ExperimentRun records from the registry, and re-derive each slot''s draw
+  seed and moves from it. layouts_drc_clean_distinct repeats draw''s own check; say so, or make it independent.
+
+  4. Smoke mode: the proxy record is appended to per[''2D_Case_2R''], but smoke slot ids are ''2D_Case_2R<-dev:2D_Case_4''
+  (latent KeyError once the proxy pair is built): key it by slot id.
+
+  5. L1 resolution: L1 runs at DEFAULT_HMAX = 4 mm, where r_L1 moves by up to about 0.005 between hmax
+  4, 2 and 1 mm (T0441). Record hmax in config, report r_L1 at hmax/2 beside each gate value, and flag
+  pairs within 0.005 of 0.75, 0.90, 0.98 or |1 - r| = 0.06.
+
+  6. O004 scope_in asks that the development-seed ratio distribution be reported at L1 and at l2_layout
+  0.5 mm before registration: cite T0387''s l2_layout 0.5 mm values for the 11 Case 4 development pairs
+  (research/o004_f7/f7c_local.json) in the spec.
+
+  7. The span and allocation (finding 2 of both reviews: 0 of 200 pooled draws pass; the binding term
+  is ''at least 3 below 0.90'') are a founder decision, taken after burst 1''s F7(c) results. Do not change
+  the allocation or the span; keep the registration check as O004 states it.
+
+  8. The founder decisions the spec cites (F1''s relative caps, I0207, I0217) are recorded in O004''s
+  state log, which blinded critics do not see; the founder will record them as decision records before
+  registration. Cite them as ''founder decision, O004 state log, <date>'' until then.
+
+
+
+  Correction (founder session, 2026-11-17): item C of the T0427/T0428 note above (the five fasthenry_run.py
+  adapter fixes) is not this task''s: a scientist may not write src/ or tests/unit/. A builder makes them.
+  This task still measures what C(5) needs: peak_mem_mb / direct_mem_est on two or three direct FastHenry
+  runs above 5k filaments, reported with the job list, so the builder can set MEM_MARGIN from the fit.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
@@ -138,8 +184,6 @@ touches:
 - experiments/drafts/E004.yaml
 - experiments/runners/e004_run.py
 - research/o004_f7/vm_jobs_fasthenry.json
-- src/moduleforge/solvers/fasthenry_run.py
-- tests/unit/test_fasthenry_run.py
 definition_of_done:
 - cmd: uv run mfos exp check E004
   exists: null

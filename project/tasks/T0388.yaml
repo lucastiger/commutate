@@ -4,7 +4,7 @@ title: 'E004 design, part 1: draft spec and registration stage (frozen reference
   F2/F4 checks on L1)'
 type: design_experiment
 agent: scientist
-status: review
+status: todo
 depends_on:
 - T0386
 - T0387
@@ -290,3 +290,10 @@ history:
       finest_complete, L_l2, L_fh, E_l2, E_fh, matching the spec''s recompute entries), F1 with caps relative
       to the ratio, and the five declared solve sanity checks.'
     root_cause: ''
+- attempt: 1
+  outcome: gate_failed
+  summary: the full gate fails before merge (high/critical risk)
+  failure_output: 'FAIL uv run pytest -q tests
+
+    TIMEOUT after 2700s'
+  at: '2026-11-17T07:02:15+00:00'

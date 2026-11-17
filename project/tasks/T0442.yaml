@@ -1,0 +1,71 @@
+id: T0442
+objective: O004
+title: FastHenry adapter fixes from reviews T0427/T0428 (retries, Zc.mat checks, version banner, self-test
+  bound, MEM_MARGIN)
+type: implement
+agent: builder
+status: running
+depends_on: []
+description: 'FastHenry run adapter fixes from reviews T0427 (physics) and T0428 (numerics) of T0385 (O004).
+  T0389 (E004 design part 2, a scientist) cannot make them: they are in src/ and tests/unit/. Each comes
+  with a test in tests/unit/test_fasthenry_run.py (fake binaries are fine); never weaken an existing test.
+
+  1. Retries: an external SIGKILL (not sent by the adapter''s own watchdog, e.g. the Linux OOM killer)
+  is not retried, and neither is a non-zero exit code repeated identically on consecutive attempts. T0428
+  confirmed with fake binaries that both are retried 10 times today; at P4''s projected 2.4 h per judged-level
+  run that is about 10 wasted VM runs.
+
+  2. Parse: _freqs_match (or the Zc.mat parse) requires a 1 x 1 matrix with R > 0 and Im Z > 0 at every
+  frequency, else parse_error. A negative Im Z (L = -3.97 nH) and a 2 x 2 matrix (silently reduced to
+  Z11) are both accepted today.
+
+  3. Build identity: self_test() requires FastHenry''s version banner (''FastHenry 3.0wr'' and ''mod 031424'')
+  in the run log, so another build (e.g. FastHenry2, which D0002 rejected on licence grounds) fails it,
+  and records the banner.
+
+  4. Self-test bound: the closed-form check is implied by the |L - 5.704| <= 1.5e-3 nH check and can never
+  fire. Compare instead with the exact uniform-current value of the D0002 bar, 5.704254 nH (Hoer-Love),
+  with a tolerance you derive and state, or drop it.
+
+  5. MEM_MARGIN: set it from peak_mem_mb / direct_mem_est on direct runs above 5k filaments (T0428 measured
+  1.24-1.26 times the estimate, so the effective margin of about 1.18 is too small) and state the fit
+  in the code comment. T0389 measures the ratio on two or three such runs; if its numbers are not in research/o004_f7/
+  or T0389''s report when you start, use T0428''s figures with a margin covering 1.26 and say so.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- src/moduleforge/solvers/fasthenry_run.py
+- tests/unit/test_fasthenry_run.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_fasthenry_run.py tests/unit/test_fasthenry.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/solvers/fasthenry_run.py tests/unit/test_fasthenry_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 2400
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0442-fasthenry-adapter-fixes-from-reviews-t04
+pr: null
+runs:
+- T0442-builder-20261116T230231-3c2d
+created_by: session
+created_at: '2026-11-17T06:30:54+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session
+history: []
