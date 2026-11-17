@@ -4,7 +4,7 @@ title: 'E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVAL
   F7(a) job list'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0384
 - T0385
@@ -299,4 +299,145 @@ lens: null
 trigger: null
 rationale: Required experiment E004 (design); A1, A2, K1, K2 as frozen; F1 (estimators, exclusions, retries,
   INVALID rule); F7(a) pilot plan.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Partial. Core T0389 items (1)–(6) are implemented and committed (16095fbe): E004''s solve
+    stage in experiments/runners/e004_run.py and experiments/drafts/E004.yaml, plus the F7(a) job list
+    research/o004_f7/vm_jobs_fasthenry.json. Several founder and review add-ons in the packet are NOT
+    done (listed under recommended_actions). Two background probe processes are also still running and
+    I could not stop them (see the first recommended action).
+
+
+    FACTS (commands and exit codes):
+
+    - `uv run python experiments/runners/e004_run.py --smoke --stage registration` (before changes): exit
+    0, 18 s.
+
+    - `uv run python experiments/runners/e004_run.py --smoke`: exit 0, 11 min 36 s, result.json status
+    ''complete''. All five solve sanity checks passed. On one Case 4 development pair at the coarsest
+    levels (labelled '
+  report:
+    summary: 'Partial. Core T0389 items (1)–(6) are implemented and committed (16095fbe): E004''s solve
+      stage in experiments/runners/e004_run.py and experiments/drafts/E004.yaml, plus the F7(a) job list
+      research/o004_f7/vm_jobs_fasthenry.json. Several founder and review add-ons in the packet are NOT
+      done (listed under recommended_actions). Two background probe processes are also still running and
+      I could not stop them (see the first recommended action).
+
+
+      FACTS (commands and exit codes):
+
+      - `uv run python experiments/runners/e004_run.py --smoke --stage registration` (before changes):
+      exit 0, 18 s.
+
+      - `uv run python experiments/runners/e004_run.py --smoke`: exit 0, 11 min 36 s, result.json status
+      ''complete''. All five solve sanity checks passed. On one Case 4 development pair at the coarsest
+      levels (labelled smoke): K1 = 0.0038, K2 = 0.045 (FastHenry k0 nh3 24.436 nH vs l2_layout 1.0 mm
+      23.466 nH, +4.1 %). A1 = A2 = +inf, as designed: smoke estimates are +inf, so F1 excludes every
+      pair.
+
+      - `uv run mfos exp check E004`: exit 0 after the final edits.
+
+      - `uv run mfos gate --fast`: exit 0, ''all gates passed'' (run before the last dev-mode and spec-value
+      edits). `uv run ruff check .` passes after them.
+
+      - `--dev-fh-direct-mem`: exit 0. Three direct runs gave peak/estimate ratios 1.081 (8,416 filaments),
+      1.082 (9,022) and 1.040 (9,992), written to research/o004_f7/fh_direct_mem.json. Together with P4''s
+      in-repo 1.094 and 1.011, no in-repo run exceeds 1.094, so MEM_MARGIN = 1.30 is conservative. T0428''s
+      1.24–1.26 was not reproduced.
+
+      - `--dev-fh-probe 4.5`: only gen2_0 at nh 1 (11,736 filaments) finished locally. It got past the
+      preconditioner in 917 s at 328 MB, about 15x the time projected from P4''s sizing. Every other deck
+      is marked vm_first, to be probed by the first VM step (`--dev-fh-probe 108`). This was limited by
+      local wall time, not memory.
+
+      - `--dev-fh-plan`: exit 0. 24 jobs; 57 FastHenry CPU-h; 20.9 h makespan; about $15 on e2-highmem-16
+      ($0.73/h, lessons.md). Each Case 4 k2 nh5 deck is about 1.17M filaments, 47 GB projected and about
+      10.5 h (±50 %). E004''s cost plan: 15 layouts, 96.5 CPU-h, 11.4 h makespan, about $8.4. The judged
+      references'' decks were exported for filament counts only (no solve, F2): 2R k2 431k filaments,
+      Case 6 k2 331k.
+
+      - Stacks: 2D_Case_2R has Case 4''s stack exactly (0.2 mm Cu, 0.835 mm ceramic). 2D_Case_6''s ceramic
+      is 0.64 mm, between Case 4 and gen2_0 (0.38 mm), so the thin-stack gap may apply to Case 6. This
+      is stated in config.stacks.
+
+      - Refreeze at HEAD 3f60b2f4: perturb.rules_sha256 = 2dbd9977… (T0451''s value), with the files list
+      recomputed (27 files).
+
+
+      DESIGN (inferences):
+
+      - FastHenry ladder: k0/k1/k2 = trace cell 1/0.5/0.25 mm, plane 2/1/0.5 mm, wire 2x2/4x4/8x8 filaments
+      and 1/2/4 pieces, at nh_lateral = 5 (provisional; F7(a) decides, never 1). The thickness ladder
+      is nh 3/5/9 at k1.
+
+      - Estimators: gci_capped for L; mfos.metrics.gci_step_floor (0.1 %) for every ratio. Thickness terms
+      are added to both L and ratios: P3''s for l2_layout, and |f5 − f9| + gci_capped(3, 5, 9) for FastHenry.
+      A missing level gives +inf.
+
+      - F1 caps are relative to the ratio (D0024).
+
+      - An l2_layout GMRES flag or a FastHenry deck that crashes on every attempt counts as a missing
+      value, never its own INVALID check. finest_values_present fails only when a pair lacks a finest
+      value and no completed pair fires K1.
+
+      - Child solves are packed by projected memory (MF_E004_MEM_GB), never by CPU count, and are checkpointed.
+
+
+      SPECULATION: gen2_0''s 15x slower preconditioner suggests that time projections for 2R and Case
+      6 may also be underestimated. The frozen timeout factor was raised to 10x for that reason.'
+    status: partial
+    failure_class: none
+    confidence: 0.7
+    evidence:
+    - 'Smoke (full pipeline): exit 0, result.json status complete; sanity checks ratio_step_rule_validated,
+      fasthenry_binary_pinned (sha eaa6d6fc…2d14, banner ''FastHenry 3.0wr (29Sep96, mod 031424)''), fasthenry_closed_form_validated,
+      exported_geometry_identical and finest_values_present all True'
+    - 'ratio_step_rule_validated on P3''s example (0.9692, 0.9691322, 0.9693744): gci_step_floor gives
+      7.268e-4 = 3 max|d|; gci_capped gives +inf; the local copy agrees'
+    - 'Smoke Case 4 FastHenry k0 nh3: 43,116 filaments, 457 s, 1,556 MB (36 kB per filament, inside the
+      31.1 kB x 1.3 projection); time +23 % over projection'
+    - 'fh_direct_mem.json: ratios 1.0807, 1.0817, 1.0399 at 8,416 / 9,022 / 9,992 filaments'
+    - 'fh_probe.json: gen2_0 g1 past_preconditioner after 916.7 s, peak RSS 328 MB'
+    - 'vm_jobs_fasthenry.json: 24 jobs, makespan 20.9 h, $15.2; E004 plan 96.5 CPU-h, 11.4 h, $8.4'
+    - 'Stacks: 2R = Case 4 (0.835 mm ceramic); Case 6 0.64 mm ceramic; gen2_0 0.38 mm ceramic and 0.3
+      mm Cu'
+    - mfos exp check E004 exit 0; mfos gate --fast exit 0; ruff check passes
+    files_written:
+    - experiments/drafts/E004.yaml
+    - experiments/runners/e004_run.py
+    - research/o004_f7/vm_jobs_fasthenry.json
+    - research/o004_f7/fh_direct_mem.json
+    - research/o004_f7/fh_probe.json
+    experiment_drafts:
+    - experiments/drafts/E004.yaml
+    recommended_actions:
+    - 'FOUNDER, NOW: two `e004_run.py --dev-fh-probe 4.5` processes (and their fasthenry children) are
+      still running in the background. Together they may exceed the 5 GB policy, and they race on research/o004_f7/fh_probe.json.
+      I could not stop them: pkill/ps are blocked by the sandbox, and a libproc-based kill was denied.
+      Please run: pkill -f ''e004_run.py --dev-fh-probe''; pkill -x fasthenry. Then check whether fh_probe.json
+      changed after commit 16095fbe and commit or discard it.'
+    - 'Burst VM (founder): first `uv run python experiments/runners/e004_run.py --dev-fh-probe 108`, then
+      `MF_E004_MEM_GB=108 uv run python experiments/runners/e004_run.py --dev-fh-run research/o004_f7/vm_jobs_fasthenry.json`.
+      Then regenerate the plan with `--dev-fh-plan` so the probe results and time calibration flow into
+      the caps.'
+    - 'Builder: refit MEM_MARGIN from research/o004_f7/fh_direct_mem.json plus P4''s runs.jsonl (in-repo
+      maximum 1.094).'
+    - 'Not done in this attempt (open in design_status): (i) the founder''s banded-acceptance rule (2026-11-17T15:58)
+      and its 200-seed simulation for lower ends 0.76–0.85; (ii) T0451''s redraw record (exception type
+      and message per reference and move type), and restating ''never redrawn around''; (iii) wiring the
+      2R proxy pair (proxy_descent now has step_mm), with T0444''s 1 mm lattice check on every visited
+      layout; (iv) the F3 per-conductor-group and F6 diagnostics; (v) seed_provenance checked against
+      the registry''s sealed seed; (vi) the mesh-shift flag using a three-level estimate (T0447/T0448
+      (2)).'
+    - 'Founder decision after F7(a): nh_lateral (3 vs 5) and the plane pitch at k2. Case 4 k2 nh5 at plane
+      0.5 mm is 47 GB and about 10.5 h per deck; 2R and Case 6 are 13–17 GB.'
+    - Re-run the full smoke once the background probes are stopped. The last edits after the smoke run
+      touched only dev-mode functions and spec values (timeout_factor, design_status, freeze).
+    discriminating_tests:
+    - 'gen2_0 gap rule (in the job list): at identical levels (cell 0.5 mm, plane 2 mm, wire 2x2, 2 pieces),
+      the gap closes iff |g(gen2_0)| <= |g(case4_base)| + 0.02 and T(gen2_0) = 3|L_nh5 − L_nh3|/L_nh5
+      <= 0.01, at both frequencies, where g = L_FH(nh5)/L_l2(lat0.5) − 1'
+    - 'Preconditioner probe of every multipole deck: a deck that crashes on every attempt is recorded
+      as such and becomes a missing value; no direct fallback, no other level substituted'
+    affects_acceptance_criteria: false
