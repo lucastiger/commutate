@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 1
 max_replans: 3
 needs_replan: false
-spent_usd: 71.855
+spent_usd: 74.0292
 budget_override_usd: null
 log:
 - 'founder answered I0207: (b)+(c): O004 runs the proxy descent in 1 mm steps (on the lattice by construction),
@@ -26,5 +26,12 @@ log:
   and E_R / r <= 0.01 for FastHenry, with E_R the gci_step_floor estimate of the three-level ratio sequence
   in ratio units and r the finest ratio. Decided before any burst-1 (F7(c)) result exists. Also from T0429:
   0.7616 is the lowest span found by a start-dependent search, not a proven floor'
+- 'founder decision 2026-11-16 on T0386''s partial result (given in the founder session and recorded then
+  only in T0387''s brief; added to this log 2026-11-17T04:08:58+00:00 after review T0433 found it missing
+  from the repository''s records): the frozen rules, compounds included, reach no 2D_Case_4 pair with
+  r <= 0.75 at L1; wherever O004''s F7(a)/(c) or a brief says ''the pair with r <= 0.75'', the lowest
+  compound found, r = 0.7616 at 20 MHz (0.7613 at 10 MHz, pinned in T0386''s tests), is used, labelled
+  ''lowest reachable, r = 0.7616, stands in for r <= 0.75''. The span-reach report was later restricted
+  to 2D_Case_4 and gen2_0 (F2)'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38

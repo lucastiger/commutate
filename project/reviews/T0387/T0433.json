@@ -1,0 +1,74 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F7(c) is not finished: no drawn pair has its 0.25 mm or thk_f level, so every drawn pair's ratio estimate is +inf/pending",
+      "detail": "O004 F7(c) asks for every Case 4 development pair on the 1.0/0.5/0.25 mm ladder, with its ratio estimate and the resulting F1 exclusion rate. All 11 drawn pairs (the stand-in included) lack lat0.25 and thk_f, and 10 of them also lack thk_c and fil_f. Every drawn pair's E_R is therefore +inf and its F1 status is 'pending'. The only exclusion rate reported, 0 of 2, comes from O006 P3's two pairs. The frozen rules did not draw them, and P3's die_shift does not have frozen-rule geometry (same_geometry false). So F7's response trigger cannot be judged yet. The work says this openly and hands the missing levels to a 42-job VM manifest. That makes it a complete pipeline plus a partial result, not a complete F7(c). The claim's word 'completely' holds only in that narrower sense.",
+      "evidence": "f7c_local.json exclusion: n_complete 2, n_pending 11, per_pair all dev* and standin 'pending'; f7_trigger.undecided_pending lists all 11 drawn pairs; vm_jobs_l2.json Counter: lat0.25 11, thk_f 11, thk_c 10, fil_f 10.",
+      "suggested_check": "After the founder's VM run, re-run --assemble and --check, then judge the F7(c) trigger on the 11 drawn pairs.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The definition-of-done `--check` does not catch corrupted results",
+      "detail": "`--check` recomputes E_R only from the per-level ratios stored in the file, and only for the drawn pairs. For those pairs E_R is +inf whatever the ratios are. It does not recompute ratios from the solve files. It does not check the P3 precedent pairs, which are the only 'complete' pairs and the whole basis of the reported exclusion rate. It does not check that per-pair F1 statuses or the trigger agree with the estimates, and it checks the VM manifest only for lat0.25 jobs. On a scratch copy in $TMPDIR I made four corruptions at once and it still printed 'check OK' (rc 0): a drawn pair's lat0.5 ratio scaled by 1.10; the precedent die_shift E_R set to 0.9 while its status stayed 'counted'; that pair's per_pair status flipped to 'excluded' with n_excluded left at 0; and every thk_c/thk_f/fil_f VM job deleted. Without those jobs every pair would come back excluded after the VM run. The DoD command passing is therefore weak evidence. I confirmed the actual files by independent recomputation (see checks), so their content is not in doubt.",
+      "evidence": "Mutation run: pilot_l2.cmd_check() with OUT/SOLVES pointed at a corrupted copy returned 0 and printed 'check OK'.",
+      "suggested_check": "Have --check recompute ratio_per_level from the solve files, recompute the precedent pairs, re-derive per_pair status and the trigger, and require every missing level of every pair to be either solved or in the manifest.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The stand-in replaces F7(c)'s 'one pair with r <= 0.75' on the strength of a founder decision not recorded in the repo",
+      "detail": "F7(c) requires one development pair with r <= 0.75. None was drawn. The work substitutes T0386's pinned compound at r = 0.7616 and cites 'founder decision 2026-11-16 (i)'. I found no record of that decision in project/decisions, project/memory or docs; it appears only in this note and in pilot_l2.py comments. The span search also reaches 0.7616 only from that pinned start (descent alone gave 0.7895). The note says so.",
+      "evidence": "grep for LOWEST_COMPOUND / 'stands in for r' / 0.7616 under project, docs and research/notes finds only the new note and tests/unit/test_perturb.py.",
+      "suggested_check": "Confirm decision (i) in the T0387 packet or in an ADR.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The F1 cap is read as an absolute 0.005 in ratio units; the objective's wording ('at most 0.5 %') also allows a relative reading",
+      "detail": "ratio_estimate applies F1 as E_R <= 0.005, although E_R_over_r is also computed. At r \u2248 0.8 a relative cap is about 20 % tighter. Under the projection's rho = 0.8 scenario, dev00 (0.00467 / 0.90 = 0.0052) would switch from counted to excluded. That would not change whether the trigger fires in that scenario, since dev01 and the stand-in are excluded there anyway. A1 is stated as a relative difference, which makes the ambiguity worth settling before the VM figures are judged.",
+      "evidence": "pilot_l2.py: F1=('counted' if tot <= F1_CAP ...); projection rows dev00 rho=0.8 E_R 0.00467.",
+      "suggested_check": "Get a founder statement on whether F1's 0.5 % is absolute or relative to r.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Two docstrings in pilot_l2.py are out of date or wrong",
+      "detail": "(1) The module docstring says the Case 6 0.25 mm solve is listed for the burst VM. It was solved locally and is not in vm_jobs_l2.json. (2) The projection() docstring calls P3 die_shift 'the only Case 4 pair whose lateral sequence is outside the step floor'. Its steps are -0.051 % and -0.028 %, both below the 0.1 % floor, so its lateral term is 3 max|d|, not gci_capped. The rho = 0.56 used in the projection is still that pair's observed step ratio.",
+      "evidence": "pilot_l2.py lines 4-6 and 565-568; f7c precedent rel_steps [-0.000505, -0.000284].",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "span_reach's 'lower bound' count of pairs below 0.90 can double-count",
+      "detail": "n_distinct_below_0p90_found_lower_bound adds up per-combo counts. The joint stage also counts candidates, not distinct geometries. Overlapping geometries are therefore counted more than once, so the figure (7605 on Case 4, 140 on gen2_0) is not a lower bound. Neither span verdict depends on it: both fail on the lowest reachable value, 0.7616 and 0.888.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run python research/o004_f7/pilot_l2.py --check` on HEAD: 'check OK' (exit 0).",
+    "Re-drew the pairs: perturb.draw(case4, ALLOC, seed=20261116, measured_rules + overrides) gives exactly the 10 stored (move_type, params) pairs.",
+    "Recomputed the P3 precedent E_R from the raw solve files with my own gci_capped, step-floor and middle-term code (no mfos import): die_shift 0.0017182 / 0.0017739 and trace_width 0.0016158 / 0.0014434 at 10 / 20 MHz, matching f7c_local.json. E/effect is 12.4-12.9 % and 4.7-5.3 %.",
+    "Recomputed the stored lat1.0 and lat0.5 ratios of all 11 pairs from raw solve L values: no mismatch above 1e-14.",
+    "Checked solver health across all 31 solve files: every GMRES flag 0, max relative tolerance on L 3.5e-5, one l2_layout source sha (ed0288b6\u2026).",
+    "Checked level consistency of the reused P3 levels: P3's lat0.25 (patched cell 0.25 mm, layers 10/6/6, edges E0) equals l2_layout's unpatched refinement 1, because CELL[1] = 0.25e-3, LAYERS = (10,6,6) and WIRE_EDGES[1] = E0, and refinement enters only through those tuples. P3's thk_f params are 0.5 mm with 20/12/12, as declared.",
+    "Checked F7(b): the Case 6 solve fingerprint 71e07ae149b4\u20264cb7 equals the frozen reconstruction in experiments/specs/E010.yaml and research/o003/references/2D_Case_6.json. Refinement 1 (0.25 mm), flags 0/0, peak 4.75 GB.",
+    "Checked the VM manifest: 42 jobs, all fingerprints match dev_pairs.json, and every pair has every level either solved or listed. The burst_gcp.sh argument order (--cmd CMD PATH TYPE ZONE, MF_REF / MF_GCP_PROVISION / MF_GCP_SPOT=auto) matches the script.",
+    "Re-derived the statistics by hand: 1 - 0.05^(1/2) = 0.776 and its ^13 = 3.49e-9; 1 - 0.05^(1/11) = 0.238 and (0.762)^13 = 0.029; (9/11)^13 = 0.074. Re-derived dev01's projection by hand: rho = 0.8 gives 1.25\u00b7|d2|/(2^0.322 - 1) \u2248 0.0069, plus 6.9e-4, \u2248 0.0076; its exclusion threshold is rho \u2248 0.73.",
+    "Reproduced the gen2_0 claims: draw(gen2_0, {trace_width: 1}) raises ValueError 'edge has copper on both sides'; gen2_0 is off the 1 mm lattice and on the 0.5 / 0.25 mm lattices. The draw-reachable minimum is 0.9445 and the apply minimum 0.888.",
+    "Mutation-tested `--check` on a $TMPDIR copy with four corruptions; it still passed (finding 2)."
+  ],
+  "caveats": [
+    "F7(c)'s actual result (exclusion rate over the drawn development pairs and the F7 trigger) is undetermined until the 42 VM jobs run and are assembled; '0 of 2' concerns P3's non-drawn pairs only.",
+    "The r <= 0.75 requirement of F7(c) is met only by a non-drawn stand-in at r = 0.7616, resting on a founder decision not recorded in the repository.",
+    "Projected exclusions (rho = 0.56 / 0.8) are inference; the contraction ratio of ratio sequences on Case 4 ranges from 0.56 to divergent-but-floored (3.8), so the projection does not bound the outcome.",
+    "The `--check` DoD command does not catch corrupted ratios, precedent estimates, status inconsistencies or missing thickness/filament jobs; acceptance here rests on my independent recomputation, not on that check.",
+    "F1 cap applied as absolute 0.005 in ratio units; a relative reading would tighten it ~20 % at r \u2248 0.8.",
+    "I could not see the original T0387 packet; scope judgements are against O004 F7 and the claim text."
+  ]
+}
