@@ -694,12 +694,32 @@ class Orchestrator:
                      + output[-1500:]),
             refs=[t.id], options=["resolve in the worktree, then retry", "cancel the task"])
 
+    def _registration_premature(self, t: m.Task, eid: str) -> str:
+        """Why asking the founder to register ``eid`` now would be premature, or "". An experiment designed over several
+        tasks asked once per merged part: 2026-11-17, E004's part 1 (T0388) opened I0242 while parts 2 and 3 were still
+        to run, and the founder rejected it as premature. The request waits for the last unfinished design task of the
+        experiment (named by its experiment field or by the drafts it touches), and is not opened twice."""
+        draft = re.compile(rf"experiments/drafts/{re.escape(eid)}(?![0-9])")
+        for x in self.s.tasks(t.objective):
+            if x.id == t.id or x.type != "design_experiment" or x.status in ("done", "cancelled", "failed"):
+                continue
+            if x.experiment == eid or any(draft.match(p) for p in x.touches):
+                return f"design task {x.id} of {eid} is still {x.status}"
+        for item in self.s.inbox():
+            if item.kind == "experiment_registration" and eid in item.refs:
+                return f"{item.id} already asks to register {eid}"
+        return ""
+
     def _post_merge(self, t: m.Task) -> None:
         if t.type == "design_experiment":
             last = next((h for h in reversed(t.history) if h.get("outcome") == "agent_finished"), {})
             drafts = [Path(x).stem for x in (last.get("report") or {}).get("experiment_drafts", [])] or \
                      ([t.experiment] if t.experiment else [])
             for eid in drafts:
+                why = self._registration_premature(t, eid)
+                if why:
+                    self.s.event("registration_deferred", task=t.id, experiment=eid, reason=why)
+                    continue
                 self.s.add_inbox(kind="experiment_registration", subject=f"register {eid} (pre-registration)",
                                  summary=f"Designed by {t.id}. Reviewed by critic. Registering freezes the design.",
                                  refs=[eid, t.id, t.objective], options=["approve", "reject with note"])
