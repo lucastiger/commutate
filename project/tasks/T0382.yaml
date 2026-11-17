@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: failed
+status: todo
 depends_on:
 - T0377
 - T0378
@@ -185,7 +185,14 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ proxy pins) and attempt 3's runner work. Do not merge anything yourself. Check that control.py has\
   \ DEGRADE_TAG and that nulls.py returns no_moves and records seed_in_domain, then do steps 1-5 of the\
   \ folded-in brief above: the development run from scratch with code-stamped checkpoints, --freeze-report,\
-  \ the complete E011.dev_jobs.json with VM sizing, the improvement curve and null reports, and research/notes/e011-dev-run.md.\n"
+  \ the complete E011.dev_jobs.json with VM sizing, the improvement curve and null reports, and research/notes/e011-dev-run.md.\n\
+  \n\nAttempt 5 (founder session, 2026-11-17): attempt 4's work is complete and committed. Verification\
+  \ failed only because the report listed experiments/drafts/E011.dev_jobs.json under experiment_drafts;\
+  \ the orchestrator reads every entry there as an experiment id and ran `mfos exp check` on 'E011.dev_jobs',\
+  \ whose spec does not exist (the same tooling quirk as T0398). Report experiment_drafts as [\"experiments/drafts/E011.yaml\"\
+  ] only and put the job list under files_written. Do not rerun the development run or change any result:\
+  \ check that the manifest's code stamp still matches the checkout, confirm the definition-of-done commands\
+  \ pass, and report attempt 4's results again.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
@@ -246,7 +253,7 @@ budget_usd: 8.0
 max_turns: 120
 wall_minutes: null
 attempts: 4
-max_attempts: 4
+max_attempts: 5
 branch: task/T0382-design-e011-draft-spec-and-runner-selfte
 pr: null
 runs:
@@ -913,3 +920,7 @@ history:
 
     draft /Users/lukeskywalker/mf/wt/T0382/experiments/drafts/E011.dev_jobs.yaml missing'
   at: '2026-11-17T21:46:00+00:00'
+- outcome: rebriefed
+  summary: 'founder session: diagnosis T0458 cancelled (tooling quirk: a non-spec file listed as an experiment
+    draft); retry to re-report'
+  at: '2026-11-17T21:46:26+00:00'
