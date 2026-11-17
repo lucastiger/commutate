@@ -74,7 +74,7 @@ Derivation: `benchmarks/thermal_l1_calibration.py`. Per-solve reference summarie
 - **P_ref:** C004's rule, as E009's `calibrate_power`. Level-0 reference solves start at 30 W with the update
   p ← 60 p / rise, until the hottest die rises 60 ± 0.25 K above the coolant.
 - **Reference:** `thermal_fem.solve_layout` with the frozen E009 rule at level 1, at that P_ref.
-  - Energy balance is at most 2.1e-13 on every solve.
+  - Energy balance is at most 2.85e-13 over all cached solves.
   - Peak RSS is 4.2 GB; solves ran one at a time.
 - **c(s):** the mean over the two layouts of the per-layout mean over dies of (reference rise) / (coarse-FV rise).
 
@@ -108,7 +108,7 @@ differences and scales spreads by 0.3 %. This is a flagged deviation from the no
   (attach meets Cu, singular exponent about 0.83, `thermal_model.md` section 8) is resolved only to the coarse rule's
   accuracy.
 - **`tj_max`.** It is not converged on this grid and is not calibrated.
-- **Speed.** The time grows with die count and layout complexity: 12-die layouts take 0.45-0.62 s per evaluation on this
+- **Speed.** The time grows with die count and layout complexity: 12-die layouts take 0.45-0.79 s per evaluation on this
   Mac, and machine load moves the median by about 15 %.
 
 ## 4. Tests and checks
@@ -118,6 +118,9 @@ differences and scales spreads by 0.3 %. This is a flagged deviation from the no
   FV and the series solve the same problem.
   - Coarse rule within 0.7 % (measured +0.34 %).
   - Fine rule within 0.2 % (measured −0.05 %), a convergence check.
+- 1D Kirchhoff limit with k(T): all seven layers on their `K_LAWS`, against the exact per-layer integral of k dT = q t
+  (brentq) at 20, 40 and 60 W, h = 5e4; coarse rule within 5e-4 of the rise (measured 1.6e-5 to 2.4e-4), fine rule 5e-5.
+- `GRID_RULE` and `CALIBRATION` are pinned together: a grid-rule change needs a refit of c(s).
 - Linearity in power at constant k: 1e-9.
 - k(T):
   - every `K_LAWS` law falls above 300 K;
@@ -138,8 +141,8 @@ differences and scales spreads by 0.3 %. This is a flagged deviation from the no
 
 **`benchmarks/thermal_l1_speed.py --check`** measures the median wall time per evaluation on one thread over the 12
 development rows at both loads, against a 1.0 s limit (A5). Measured on this Mac:
-- median 0.41 s;
-- maximum 0.62 s.
+- median 0.41-0.48 s (machine load moves it);
+- maximum about 0.79 s under load (T0423/T0424).
 
 ## 5. Spread criterion (A4) per die-count band, and the founder's question
 The founder asked (T0395 packet): does a finer coarse grid or a per-switch correction improve the 2-die stratum within

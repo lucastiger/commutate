@@ -6,6 +6,8 @@ import dataclasses
 
 import numpy as np
 import pytest
+from scipy.integrate import quad
+from scipy.optimize import brentq
 from shapely.affinity import scale
 from shapely.geometry import box
 
@@ -13,7 +15,7 @@ from moduleforge.generate.halfbridge import generate_layouts
 from moduleforge.geometry.layout import Die, Layout, Terminal, Trace
 from moduleforge.geometry.stack import K_LAWS, T_REF
 from moduleforge.solvers.thermal_series import box_series
-from moduleforge.thermal import CALIBRATION, L1Result, evaluate, raw_fv
+from moduleforge.thermal import CALIBRATION, GRID_RULE, L1Result, evaluate, raw_fv
 
 T_C, H = 338.15, 5000.0
 
@@ -79,6 +81,53 @@ def test_single_source_nlayer_series_limit():
                   grid_rule={"h0_max": 0.5e-3, "lat_frac": 16.0, "edge_frac": 0.5, "z_cells": 6})
     assert fine["tj_mean"][0] - T_C == pytest.approx(exact, rel=0.002)
     assert out.T_bp - T_C == pytest.approx(P / (H * a * a), rel=1e-12)  # exact mean bottom temperature
+
+
+def _kirchhoff_top_temperature(lo: Layout, P: float, h: float) -> float:
+    """Exact 1D top-of-die temperature [K] with every layer on its K_LAWS law (adiabatic sides, flux q = P/A).
+
+    Steady 1D conduction with k(T) conserves q, and the Kirchhoff transform makes each layer exact:
+    integral_{T_below}^{T_above} k(T) dT = q t (Carslaw & Jaeger 1959 sec. 1.1 and 1.2; Incropera, composite wall).
+    Each layer is solved for T_above by brentq on that integral (quad, 1e-13), starting from the exact bottom
+    temperature T_c + q/h; the die is the seventh layer."""
+    st, d = lo.stack, lo.dies[0]
+    layers = [*st.layers, st.die_attach, st.die]
+    thick = [la.thickness for la in st.layers] + [d.attach_thickness, d.thickness]
+    q = P / (d.w * d.h)
+    T = T_C + q / h
+    for la, t in zip(layers, thick, strict=True):
+        def resid(T1, la=la, t=t, T0=T):
+            return quad(lambda x: la.k_at(x), T0, T1, epsabs=1e-12, epsrel=1e-13)[0] - q * t
+        T = brentq(resid, T, min(T + 150.0, 523.0), xtol=1e-12)
+    return T
+
+
+@pytest.mark.parametrize("P", [20.0, 40.0, 60.0])
+def test_1d_kirchhoff_limit_with_k_of_T(P):
+    """k(T) path against the exact 1D Kirchhoff limit: a 5 mm column (die = substrate = baseplate, adiabatic sides,
+    h = 5e4 to keep every layer inside the 273-523 K validity range), all seven layers on their K_LAWS.
+
+    The FV is exact in 1D only for constant k per cell; with k(T) it carries a discretisation error that grows with
+    the k variation across a cell, i.e. with the rise.  Measured on the frozen coarse rule (2 z cells per layer): 1.6e-5,
+    3.8e-5 and 2.4e-4 of the rise at 20, 40 and 60 W (the error is second order in the temperature step per cell, so it
+    grows faster than the power).  The tolerance is set from this scaling, about twice the worst measured value, 5e-4
+    of the rise.  The convergence check refines to 8 z cells per layer (measured 8.6e-7, 5.1e-6, 1.4e-5); it must beat
+    the coarse error at 60 W and hold 5e-5, so the FV converges to the Kirchhoff value rather than landing near it.
+    The Picard tolerance (1e-2 K lagged increment) is far below both."""
+    h = 5.0e4
+    lo = _column(5.0e-3, 5.0e-3)
+    exact = _kirchhoff_top_temperature(lo, P, h)
+    rise = exact - T_C
+    out = evaluate(lo, P, h=h, T_c=T_C, calibrate=False)
+    err = abs(out.tj_mean[0] - exact) / rise
+    assert err < 5e-4
+    assert out.tj_mean[0] > exact  # lagged-k mid-cell sampling errs on the hot side here (measured sign)
+    fine = raw_fv(lo, P, h=h, T_c=T_C,
+                  grid_rule={"h0_max": 0.5e-3, "lat_frac": 16.0, "edge_frac": 0.5, "z_cells": 8})
+    err_fine = abs(fine["tj_mean"][0] - exact) / rise
+    assert err_fine < 5e-5
+    if P == 60.0:
+        assert err_fine < err / 5
 
 
 def test_linearity_in_power_constant_k(lay):
@@ -193,3 +242,14 @@ def test_unsupported_die_size_raises():
     mixed = dataclasses.replace(mixed, dies=[dataclasses.replace(d0, w=4.0e-3, h=4.0e-3), *mixed.dies[1:]])
     with pytest.raises(ValueError, match="one die size"):
         evaluate(mixed, 10.0, h=H, T_c=T_C)
+
+
+def test_grid_rule_and_calibration_are_pinned_together():
+    """CALIBRATION holds c(s) fitted on the coarse FV of exactly this GRID_RULE (CALIBRATION_VERSION o002-l1-cal-v2).
+    Changing either without the other silently breaks the die-local rise by up to the coarse-grid bias (about 1.7 %)."""
+    assert GRID_RULE == {"h0_max": 1.5e-3, "lat_frac": 16.0, "edge_frac": 2.0, "z_cells": 2}, (
+        "GRID_RULE changed: a grid-rule change needs a refit of c(s) (benchmarks/thermal_l1_calibration.py), a new "
+        "CALIBRATION_VERSION and updated CALIBRATION values; update this pin only together with them")
+    assert CALIBRATION == {4.0: 0.98544, 4.5: 0.98284, 5.0: 0.98298, 5.5: 0.98402}, (
+        "CALIBRATION changed: its values are valid only for the pinned GRID_RULE; a grid-rule change needs a refit of "
+        "c(s), so refit and re-pin both together")
