@@ -1,21 +1,24 @@
 id: E004
 title: 'l2_layout 0.25 mm against the pinned FastHenry on the inductance ratios and absolute loop inductance of sealed-seed
-  re-layouts of the frozen PowerSynth 2D_Case_2R and 2D_Case_6 reconstructions (O004 A1/A2/K1/K2, F1-F8). Draft part 1
-  (T0388): references, freeze, allocation, registration checks; the solve stage is T0389'
+  re-layouts of the frozen PowerSynth 2D_Case_2R and 2D_Case_6 reconstructions (O004 A1/A2/K1/K2, F1-F8). Draft parts 1
+  (T0388: references, freeze, allocation, registration checks) and 2 (T0389: solve stage, estimators, metrics)'
 objective: O004
 status: draft
 runner: uv run python experiments/runners/e004_run.py
 config:
   design_status: >-
-    DRAFT, NOT REGISTRABLE YET (T0388 attempt 2, 2026-11-17). Open before registration: (i) T0438 (perturb.py fixes of
-    review T0416 items 1, 2, 4 and T0387's long_sides fix; in review): when it lands, perturb.rules_sha256(), perturb.py's
-    file hash and the pinned commit are refrozen here (`e004_run.py --print-freeze`), and rules_supplement_sha256 may be
-    retired if rules_sha256 then covers its inputs; (ii) T0437 (proxy_descent step_mm; needs founder): the 2D_Case_2R proxy
-    pair is wired and the proxy rule's sources refrozen; (iii) D0024 "Open": the span's lower end and the allocation are
-    the founder's after burst 1's F7(c) results (I0209); as drafted, F4 refuses a sealed draw almost surely
-    (research/notes/o004-e004-registration-design.md section 3); (iv) F7(a) and F7(c) are not assembled, so F7's response
-    trigger is undecided (not fired); (v) T0389's solve stage. O004 scope_in's development distribution at L1 and at
-    l2_layout 0.5 mm is T0387's F7(d) (research/o004_f7, 11 Case 4 development pairs).
+    DRAFT, NOT REGISTRABLE YET (T0389, 2026-11-17). Done in T0389: the solve stage (l2_layout and FastHenry ladders,
+    estimators, F1, A1/A2/K1/K2, the INVALID rule, coverage, zero-failure bounds, F8), its smoke, the F7(a) FastHenry job
+    list (research/o004_f7/vm_jobs_fasthenry.json) and the refreeze at 3f60b2f4 (after T0451; perturb.rules_sha256 =
+    2dbd9977..., the value T0451 reported). Open before registration: (i) the founder's banded-acceptance rule
+    (2026-11-17T15:58 UTC) in the registration stage, its 200-seed development simulation, and T0451's redraw record
+    (every redraw with exception type and message, per reference and move type; the perturbation_rules_text sentence 'never
+    redrawn around' predates LongSideError and is to be restated with it); (ii) the 2D_Case_2R proxy pair (proxy_descent now
+    has step_mm; wiring and T0444's check that every visited layout and the end point are on the 1 mm lattice);
+    (iii) F7(a) results (founder burst): they fix nh_lateral (provisional 5) and the thin-stack gap (config.stacks);
+    (iv) the F3 per-conductor-group and F6 diagnostics are not yet in the runner (reported, not judged); (v) seed_provenance
+    against the registry's sealed seed (reviews T0440/T0441 item 3). The span's lower end stays 0.75 until the founder
+    amends O004.
   decisions:
   - {id: D0024, items: '1 F1 caps relative to the ratio; 2 the 0.7616 compound stands in for "r <= 0.75"; 3 the 2R proxy
       pair at 1 mm against the reconstruction (I0207); 4 compounds (I0217) under the stagewise rule; 5 development geometry
@@ -43,12 +46,12 @@ config:
       F2: every hash below is recomputed by the registration stage before any draw; the reconstruction script's sha256 is
       checked first and nothing is imported from it before that. A mismatch refuses the run (registered mode) before any
       solve. A change after registration voids the run (new experiment id, freshly drawn pairs).
-    commit: 42db7eb51b76a986a6c35847a8558c925ff61ba1
+    commit: 3f60b2f4f769551f96a62469346078598b002b20
     commit_meaning: >-
       a main commit the hashes below were taken at (src/ identical to this branch's HEAD); the registration stage requires
       it to be an ancestor of HEAD and every frozen file's blob at it to carry the frozen sha256
     reconstruction_script_sha256: aa96880cf38b2597e8a5927254ddc047d8de98b5b5d7ccdc5cf0fe6b19fd206a
-    perturb_rules_sha256: 70307210174b4f0beb725238d7a000de55b6b378d821d99071fbf051b7fa33b2
+    perturb_rules_sha256: 2dbd9977efa56bec0a4317f1adf14bd0ffc4b172520a707e2c6890ea9888b8cd
     perturb_rules_supplement_sha256: 38420f5bd3a2ea56ed340e2f8a91a766c2d34f00039b9bb9034df32dbbfdacc3
     perturb_rules_supplement_meaning: >-
       e004_run.rules_supplement_sha256(): review T0416 item 1's inputs that perturb.rules_sha256() does not yet cover
@@ -61,7 +64,7 @@ config:
       src/moduleforge/drc/rules.py: 19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5
       src/moduleforge/generate/__init__.py: 194f83ccb880033d9fba9299ee09c1d0e8bd5e966f131a4515134af751e6df39
       src/moduleforge/generate/derivative.py: 2be5db7e37217427c944c8dfa849de10b18222eb0c24903a359d30ee0fb9ea22
-      src/moduleforge/generate/perturb.py: 6f28e5a013a541f3d9765ffff3bcf03ae7a97f7655a7263b4971664c492f234b
+      src/moduleforge/generate/perturb.py: 685979c4c9cecb83521e2abfd395a2db38468d38e2265d47b26a629c62d99d48
       src/moduleforge/generate/twin.py: 26a77a60130d95e4b5e087f30806ff2e26086757668d7d7e7fdecbb681a123e5
       src/moduleforge/geometry/__init__.py: 9d585508033546b121219c944193e50ad0ed6a39a48b256e4ba2759b6c5c2b44
       src/moduleforge/geometry/conductors.py: e9a21349fa36cd3c66d004f98c5468d4c954e9baced0503213c68a05a9b7b9df
@@ -70,7 +73,7 @@ config:
       src/moduleforge/geometry/stack.py: b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999
       src/moduleforge/geometry/units.py: 49b5fb83312b557e82f7b7eb014c54f077466c9207e113e19f6a7f1b5f953bcb
       src/moduleforge/optimize/__init__.py: 773a6d8c0a0019c2c5bc11fcd5e50d2747e1495ce8fbe944d066c874ef3d2b38
-      src/moduleforge/optimize/control.py: f6e7585cfaf27c20629ae2cb93de9559074994b5756af5af3edc7f94b0a0aa45
+      src/moduleforge/optimize/control.py: de00f8c97342e1f6ff2b4d5b34292e76bc16e5e17086d56c9c2951074ab7a0a1
       src/moduleforge/optimize/local.py: 0da8d2c4efd8e4aa5af211875b9de9cd67d9edf126a1237abea7ea0af9205085
       src/moduleforge/optimize/search.py: 55bbe01dfed2d006b671859ef9b5aeb6ff6525cfa18d73154c252742f3a2b075
       src/moduleforge/physics/__init__.py: a81f63371f321dc76d852149c3e878796ef065d6e25b5406c0f0a16842462fbd
@@ -79,7 +82,7 @@ config:
       src/moduleforge/physics/peec/model.py: c51ab7daff23cd3f2951290f660356b286909ab565a4e6b25e370b0fe3ba068c
       src/moduleforge/solvers/__init__.py: f68728d9696592932ccc80819431f3d27be9733aad103230c93dad7e8d99e443
       src/moduleforge/solvers/fasthenry.py: 0d2c77cdb70bc3d707d538c1be6d29439c7bc402558aca4621713ed7a629c70a
-      src/moduleforge/solvers/fasthenry_run.py: a373e493a784839d04e150db1a6e26764ed8442be8a82aa13ed07311828c3468
+      src/moduleforge/solvers/fasthenry_run.py: 324827d618b5307fa48457f81bf7ad623976345362033efd368ca36447aaf5b1
       src/moduleforge/solvers/l2_core.py: 5d6d43bdd227d33b8b68f4a19bf3b09bf32235f1bc2f9acca994bbaf99d7ddca
       src/moduleforge/solvers/l2_dd.py: 22f28822dc371a2da14eee6e9d58f713839200c2ea4a418adcac96168bb5e023
       src/moduleforge/solvers/l2_layout.py: b91a437bdf642f694c37074b3395a5fa5fae08b70b6b7634660e184965ddfc39
@@ -158,6 +161,90 @@ config:
     E_R / r <= 0.005 for l2_layout and E_R / r <= 0.01 for FastHenry, E_R the mfos.metrics.gci_step_floor estimate of the
     three-level ratio sequence (ratio units, step_floor 1e-3 relative) plus the thickness terms, r the finest ratio. A
     pair failing a cap or with +inf is excluded (A1 not met; it stays in K1 on its raw value). Implemented in T0389.
+  f1_caps: {l2_layout: 0.005, fasthenry: 0.01}
+  f1_caps_meaning: E_R / r caps of F1 (D0024 item 1), E_R the ratio estimate including the thickness terms, r the finest ratio
+  kill: {K1: 0.05, K2: 0.15}
+  solve:
+    meaning: >-
+      T0389. Every registered layout (2 references, 12 drawn pairs, the 2R proxy pair) is solved by both tools on the
+      identical Layout (fingerprint) at 10 and 20 MHz. Estimators (O004 scope_in): gci_capped for every L sequence; for every
+      ratio sequence mfos.metrics.gci_step_floor (steps all below 0.1 % of the finest ratio -> 3 max|d|), registered mode
+      refuses without it; thickness terms added to L and to ratios: l2_layout's ratio_middle_term(thk_c, lat0.5, thk_f)
+      plus its filament term 3 |fil_f - lat0.5| (O006 P3); FastHenry's |f(nh_lateral) - f(9)| + gci_capped(f3, f5, f9) of
+      the 3 / 5 / 9 ladder at the thickness level (the ratio-step rule for ratios; T0368). A missing coarser-level or
+      thickness solve, an l2_layout GMRES flag, or a FastHenry deck without a value (retries exhausted, killed, parse
+      error) makes that estimate +inf; a missing finest value goes to the INVALID rule (F1). No check that depends on solver
+      values makes the run INVALID. Smoke: the coarsest level of each ladder only, labelled, every estimate +inf.
+    mem_budget_gb_default: 5.0
+    mem_budget_meaning: child solves are packed by projected peak memory within MF_E004_MEM_GB (default 5 GB, the Mac policy); never by CPU count
+    l2_layout:
+      levels:
+        lat1.0: {cell_mm: 1.0, cell_mm_patch: 1.0, refinement: 0, layers: [10, 6, 6], annuli: [0, 0.35, 0.6, 0.8, 0.93, 1]}
+        lat0.5: {cell_mm: 0.5, cell_mm_patch: null, refinement: 0}
+        lat0.25: {cell_mm: 0.25, cell_mm_patch: null, refinement: 1}
+        thk_c: {cell_mm: 0.5, cell_mm_patch: 0.5, refinement: 0, layers: [5, 3, 3], annuli: [0, 0.35, 0.6, 0.8, 0.93, 1]}
+        thk_f: {cell_mm: 0.5, cell_mm_patch: 0.5, refinement: 0, layers: [20, 12, 12], annuli: [0, 0.35, 0.6, 0.8, 0.93, 1]}
+        fil_f: {cell_mm: 0.5, cell_mm_patch: 0.5, refinement: 0, layers: [10, 6, 6], annuli: [0, 0.175, 0.35, 0.475, 0.6, 0.7, 0.8, 0.865, 0.93, 0.965, 1]}
+      levels_meaning: >-
+        O006 P3 / E010 child_em's mesh-constant pattern (research/o004_f7/pilot_l2.py LEVELS): lat1.0 patches CELL[0] to 1.0 mm
+        at refinement 0; lat0.5 is the unpatched refinement 0; the judged lat0.25 is the unpatched refinement 1 (no patch);
+        the child refuses if CELL[refinement] is not cell_mm
+      peak_gb: {lat1.0: 2.0, lat0.5: 5.4, lat0.25: 16.1, thk_c: 2.3, thk_f: 9.0, fil_f: 5.0}
+      wall_s: {lat1.0: 140, lat0.5: 340, lat0.25: 6600, thk_c: 480, thk_f: 2000, fil_f: 1250}
+      sizing_source: max over T0387's 11 Case 4 development pairs (research/o004_f7/solves; 0.25 mm 15.8-16.1 GB, T0387 report) with the 0.25 mm wall time pinned (6,519 s, research/notes/l2-thread-calibration.md)
+    fasthenry:
+      pinned_binary_sha256: eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14
+      pinned_meaning: D0002's provisioned FastHenry 3.0wr (research/o006_p4/binary_check.json); self_test() once per host, its record stored keyed by binary_sha256 beside every FHResult
+      self_test_exact_nH: 5.704254
+      self_test_exact_tol_nH: 3.0e-4
+      mode: multipole
+      order: 4
+      tol: 1.0e-4
+      max_retries: 10
+      no_direct_fallback: O004 F1. Direct LU needs 8 F^2 bytes (P4), about 41 GB at k0's 72k filaments on Case 4
+      die_model: short
+      terminal_model: point
+      rh: 2.0
+      nw_trace: 1
+      nh_lateral: 5
+      nh_lateral_meaning: >-
+        the lateral ladder's thickness filaments (traces and planes), a level of the 3 / 5 / 9 ladder and never 1 (founder,
+        T0417/T0418: nh = 1 is +24 % on a thin-ceramic stack). PROVISIONAL: F7(a)'s thickness ladder decides it before
+        registration (founder); 5 is the middle of the ladder, so its thickness term is the error of the value judged
+      lateral:
+        k0: {cell_mm: 1.0, plane_cell_mm: 2.0, wire_n: 2, wire_sub: 1}
+        k1: {cell_mm: 0.5, plane_cell_mm: 1.0, wire_n: 4, wire_sub: 2}
+        k2: {cell_mm: 0.25, plane_cell_mm: 0.5, wire_n: 8, wire_sub: 4}
+      lateral_meaning: >-
+        three levels at ratio 2 in every lateral knob: trace cell, plane pitch (coarsest 2 mm, F7(a); P4's 4 mm plane cell
+        caused its k0-to-k1 ratio step), and the wire section refined with the traces (wire_n filaments per side and
+        wire_sub pieces per polyline segment, review T0362); wire_n = wire_sub = 1 is never used (T0385: NaN impedance)
+      thickness: {at: k1, nh: [3, 5, 9]}
+      sizing: {kb_per_filament: 31.1, mem_margin: 1.3, t_ref_s: 1246, f_ref: 102192, exponent: 1.4, timeout_factor: 10.0,
+        min_timeout_s: 1800, min_mem_cap_mb: 2000}
+      sizing_meaning: >-
+        explicit mem_cap_mb and timeout_s per job (reviews T0427/T0428 B(2)): projected peak = 31.1 kB per exporter
+        filament (P4's largest per-filament multipole peak, 0.78 GB at 25,056) x 1.3 margin for FastHenry's own refinement
+        (the post-refinement count is known only once a run starts, T0385 (3)); time = 1,246 s x (F / 102,192)^1.40 (P4 k1
+        and its k0 -> k1 exponent), timeout 10 x that (T0389: gen2_0 reached the preconditioner only after 15 x the
+        projected total, so the time rule is layout-dependent; F7(a) recalibrates it per reference before registration).
+        A timeout or a memory kill is not retried and leaves a missing value
+      always_crash_rule: >-
+        review T0427/T0428 A: a deck that crashes on every multipole attempt has no value; no direct fallback, no other level
+        substituted; F1 makes the estimate it feeds +inf (exclusion) and a missing finest value goes to the INVALID rule.
+        Decks probed before registration: research/o004_f7/fh_probe.json and vm_jobs_fasthenry.json (precond_probe)
+  stacks:
+    meaning: >-
+      founder T0417/T0418 (3): the stack of each judged reference and development layout (Layout.stack, read by both solvers
+      through the exporter; layer thicknesses in mm), so a reader can tell whether the thin-stack FastHenry gap applies. The
+      gap was seen on gen2_0 (thin: 0.3 mm Cu, 0.38 mm ceramic): FastHenry nh 1 +24 % against l2_layout, against about +8 %
+      on Case 4 at the same level. 2D_Case_2R has Case 4's stack exactly; 2D_Case_6's ceramic (0.64 mm) lies between Case 4's
+      and gen2_0's, so until F7(a)'s gap rule (research/o004_f7/vm_jobs_fasthenry.json gap_rule) closes the gap, Case 6's
+      FastHenry values are not known to behave as Case 4's
+    2D_Case_2R: {kind: PowerSynth_2D_Case_2R, top_cu: 0.2, ceramic: 0.835, backside_cu: 0.2, solder: 0.001, baseplate: 1.0, judged: true, same_as: 2D_Case_4}
+    2D_Case_6: {kind: PowerSynth_2D_Case_6, top_cu: 0.2, ceramic: 0.64, backside_cu: 0.2, solder: 0.001, baseplate: 1.0, judged: true, thinner_ceramic_than_case4: true}
+    2D_Case_4: {kind: PowerSynth_2D_Case_4, top_cu: 0.2, ceramic: 0.835, backside_cu: 0.2, solder: 0.001, baseplate: 1.0, judged: false}
+    gen2_0: {kind: DBC, top_cu: 0.3, ceramic: 0.38, backside_cu: 0.3, solder: 0.1, baseplate: 3.0, judged: false, thin_stack: true}
   stand_in: >-
     D0024 item 2: wherever F7(a)/(c) or a brief names "the pair with r <= 0.75", the lowest compound found on 2D_Case_4 is
     used, labelled "lowest reachable, r = 0.7616, stands in for r <= 0.75" (a start-dependent search minimum, not a proven
@@ -181,6 +268,15 @@ metrics:
     ones included, of |r_L2 / r_FH - 1| on raw values (solve stage, T0389)'}
 - {name: max_rel_diff_vs_fasthenry, description: 'K2: max over layouts and frequencies of |L_L2 / L_FH - 1| (solve stage,
     T0389)'}
+- {name: n_counted_pairs, description: 'solve: pairs counted after F1 exclusion (coverage after exclusion; per move type with
+    one-sided zero-failure bounds in solve.json diagnostics)'}
+- {name: pooled_zero_failure_bound95, description: 'solve: one-sided 95 % zero-failure bound 1 - 0.05^(1/n) over counted pairs
+    (the clustered bound by reference beside it in solve.json)'}
+- {name: l1_max_ratio_diff_vs_fasthenry, description: 'F8, reported: max |r_L1 / r_FH - 1| over pairs with a FastHenry finest
+    value'}
+- {name: n_l2_gmres_flagged, description: 'solve: l2_layout solves with a GMRES flag, treated as missing values'}
+- {name: n_fh_decks_crashed_every_attempt, description: 'solve: FastHenry decks that crashed on every multipole attempt,
+    treated as missing values (no direct fallback, no other level)'}
 - {name: n_registered_pairs, description: registration - pairs drawn plus the proxy pair if built}
 - {name: l1_ratio_min, description: registration - lowest L1 ratio at 20 MHz over the drawn pairs}
 - {name: l1_ratio_max, description: registration - highest L1 ratio at 20 MHz over the drawn pairs}
@@ -218,18 +314,26 @@ sanity_checks:
     it'}
 - {name: freeze_covers_loaded_sources, description: 'F2: at the end of the stage, before any solve, every moduleforge
     source file loaded (lazy imports included) is in config.freeze.files'}
-- {name: fasthenry_binary_pinned, description: 'solve stage (T0389): binary sha256 recorded and D0002 self-test passed on
-    each VM'}
-- {name: fasthenry_closed_form_validated, description: 'solve stage (T0389): the run adapter''s closed-form validation of
-    the reference solver passes on this run'}
-- {name: exported_geometry_identical, description: 'solve stage (T0389): both solvers read the same layout fingerprint and
-    the exported deck matches it'}
-- {name: l2_solver_health, description: 'solve stage (T0389): every l2_layout GMRES flag 0'}
-- {name: finest_values_present, description: 'solve stage (T0389): missing-data rule of F1 (INVALID only if a pair lacks
-    a finest value and no completed pair fires K1)'}
+- {name: ratio_step_rule_validated, description: 'solve stage: the ratio-step rule used (mfos.metrics.gci_step_floor; registered
+    mode refuses without it; smoke only may use the labelled runner-local copy) gives exactly 3 max|d| on P3''s trace-width
+    example (relative steps 0.007 % and 0.025 %) where gci_capped gives +inf, and still defers to gci_capped when a step
+    exceeds 0.1 %'}
+- {name: fasthenry_binary_pinned, description: 'solve stage: fasthenry_run.self_test() passed once on this host (record
+    stored keyed by binary_sha256), its binary is config.solve.fasthenry.pinned_binary_sha256, and every FHResult carries
+    that sha256'}
+- {name: fasthenry_closed_form_validated, description: 'solve stage: the self-test bar''s L at 1 kHz within 3e-4 nH of the
+    exact uniform-current (Hoer-Love) 5.704254 nH, recomputed from the self-test record'}
+- {name: exported_geometry_identical, description: 'solve stage: every l2_layout and FastHenry solve read the registered
+    layout (fingerprint equal to the registration record), and every solved FastHenry deck re-exports to the same sha256'}
+- {name: finest_values_present, description: 'solve stage, missing-data rule of F1: fails (INVALID) only if some pair lacks
+    a finest value of either solver and no completed pair fires K1. An l2_layout GMRES flag or a FastHenry deck without a
+    value is a missing value (+inf estimate or missing finest), reported, never an INVALID check of its own (review T0364:
+    no check that depends on solver values makes the run INVALID)'}
 timeout_min: 6000
 cpu_hours_est: 60.0
 code_under_test:
+- src/moduleforge/geometry/layout.py
+- src/moduleforge/geometry/stack.py
 - src/moduleforge/solvers/l2_layout.py
 - src/moduleforge/solvers/l2_core.py
 - src/moduleforge/solvers/fasthenry.py
@@ -259,6 +363,6 @@ recompute:
   fn: max_rel_err
   pred: L_l2
   ref: L_fh
-  where: {row_kind: layout}
+  where: {row_kind: layout, finest_complete: true}
 null_baselines: []
 recompute_exempt: {}

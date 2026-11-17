@@ -1,0 +1,37 @@
+{
+ "decks": {
+  "291aabae6e999a56452644e013b59769859338027a4f4dc9141d81acb3303c17": {
+   "id": "gen2_0__fh_g1",
+   "n_filaments": 11736,
+   "attempts": [
+    {
+     "n": 1,
+     "status": "past_preconditioner",
+     "wall_s": 916.71,
+     "peak_rss_mb": 328.0,
+     "exit_code": -9,
+     "log_tail": " 10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0\nBlock A runtime=0.447017, block B runtime=4.5084\n\nPrecond build time 4.98145, matsize 0, nonzero 0 recalls 0\n 10.0 20.0 30.0 40.0 50.0 59.9 69.9 79.9 89.9 99.9\nReorder and factor time 908.946\nconductor 0 from node nt148y46\nCalling gmres...\n1 2 3 4 "
+    }
+   ],
+   "result": "past_preconditioner",
+   "binary": "/Users/lukeskywalker/.local/bin/fasthenry"
+  },
+  "83e9d2b10289e0013678a2c7571d4cefe50654a7522c3b5fddc98f6b5f11c4ad": {
+   "id": "gen2_0__fh_g3",
+   "n_filaments": 34056,
+   "attempts": [
+    {
+     "n": 1,
+     "status": "timeout",
+     "wall_s": 1800.07,
+     "peak_rss_mb": 770.0,
+     "exit_code": -9,
+     "log_tail": ".\nTotal Memory allocated: 727178 kilobytes\nFrequency = 1e+07\nForming sparse matrix preconditioner.\n 10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0\nBlock A runtime=0.75498, block B runtime=11.2263\n\nPrecond build time 12.0642, matsize 0, nonzero 0 recalls 0\n 10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0"
+    }
+   ],
+   "result": "timeout",
+   "binary": "/Users/lukeskywalker/.local/bin/fasthenry"
+  }
+ },
+ "label": "RESEARCH ONLY, NOT EVIDENCE (T0389): multipole preconditioner probe, development geometry (F2)"
+}

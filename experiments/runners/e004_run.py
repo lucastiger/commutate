@@ -22,7 +22,19 @@ Stages
          compound intermediate DRC-clean (stagewise rule, D0024 item 4) and distinct, the pooled L1 span; the coverage
          rule reported per move type; L1 at config.l1.hmax_m (the gate) and at hmax_check_m (reported), with every value
          near a threshold flagged (review T0441); finally, every moduleforge source file loaded is frozen.
-  solve         a stub (T0389).
+  solve         (T0389) on every registered layout (references, drawn pairs, the proxy pair once built):
+      a. l2_layout 1.0 / 0.5 / 0.25 mm (1.0 mm by E010's mesh-constant pattern, CELL[0] patched at refinement 0; 0.5 mm the
+         unpatched refinement 0; the judged 0.25 mm the unpatched refinement 1) and P3's thickness (5/3/3, 20/12/12 layers)
+         and filament (bisected annuli) levels at 0.5 mm, each solve its own child process;
+      b. FastHenry (moduleforge.solvers.fasthenry export, fasthenry_run.solve_deck, multipole, up to 10 retries, no direct
+         fallback): lateral k0 / k1 / k2 (trace cell 1 / 0.5 / 0.25 mm, plane 2 / 1 / 0.5 mm, wire 2x2 / 4x4 / 8x8 filaments
+         and 1 / 2 / 4 pieces) at nh_lateral, and the thickness ladder nh 3 / 5 / 9 at k1; self_test() once per host
+         (stored by binary sha256), explicit timeout_s and mem_cap_mb per job, every attempt's peak memory and wall time;
+      c. estimators: gci_capped for every L sequence, the ratio-step rule (mfos.metrics.gci_step_floor, 0.1 %) for every
+         ratio sequence, plus the thickness (and l2's filament) terms, on L and on ratios; a missing level -> +inf;
+      d. F1 (caps relative to the ratio, D0024 item 1), rows, A1 / A2 / K1 / K2, the INVALID rule (a pair lacking a finest
+         value and no completed pair firing K1), coverage after exclusion, per-type zero-failure bounds, F8.
+      Child processes are packed by projected memory (MF_E004_MEM_GB), never by CPU count; results are checkpointed.
 
 Modes
   (no flag)                    registered: `mfos exp run E004` sets MFOS_SEED (sealed), MFOS_SPEC_JSON, MFOS_RUN_DIR.
@@ -33,6 +45,11 @@ Modes
   --dev-span-sim N             research only (not evidence): the registration span check on 2D_Case_4 with the frozen
                                allocation on N development seeds, checkpointed to --out (resumes).
   --print-freeze               print the freeze values of the current tree (the act of freezing; not evidence).
+  --smoke                      (stage all) also the solve stage at the coarsest level of each ladder (l2 1.0 mm, FastHenry
+                               k0 at nh 3) on one Case 4 development pair and 2D_Case_4, through the metrics (labelled).
+  --dev-fh-plan / --dev-fh-probe GB / --dev-fh-direct-mem / --dev-fh-run FILE
+                               research only (F7(a), development geometry): the FastHenry job list, the multipole
+                               preconditioner probe, the direct-mode memory runs, and the job list's runner (burst VM).
 
 Units: SI internally (H, Hz, m); perturbation parameters in whole mm (perturb's convention).
 """
@@ -46,6 +63,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -514,10 +532,8 @@ def diversity(pairs: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------------------------------------------- stages
-SOLVE_CHECKS = ("fasthenry_binary_pinned", "fasthenry_closed_form_validated", "exported_geometry_identical",
-                "l2_solver_health", "finest_values_present")
 
-
+# ---------------------------------------------------------------------------------------------------------------- stages
 def stage_registration(run, cfg: dict, smoke: bool, seed: int) -> dict:
     """Registration (F2, F4, F5), in the module docstring's order.  Registered: any failure raises RegistrationRefused;
     smoke: every check is recorded and the stage completes."""
@@ -627,13 +643,527 @@ def stage_registration(run, cfg: dict, smoke: bool, seed: int) -> dict:
     return rec
 
 
-def stage_solve(run, cfg: dict, smoke: bool) -> None:
-    """Stub (T0389): exporter -> FastHenry ladder + thickness ladder, l2_layout 1.0 / 0.5 / 0.25 mm ladder, estimators
-    (gci_step_floor), F1 exclusions (caps relative to the ratio, founder 2026-11-17), rows, A1/A2/K1/K2 metrics."""
-    if not smoke:
-        raise NotImplementedError("E004 solve stage: T0389")
-    for name in SOLVE_CHECKS:
-        run.sanity(name, passed=False, detail="not run: --stage registration (the solve stage is T0389's stub)")
+# ================================================================================================ solve stage (T0389)
+# Facts this section relies on (sources):
+#  * l2_layout levels: O006 P3 / E010 child_em's mesh-constant pattern (research/o004_f7/pilot_l2.py LEVELS): lat1.0 =
+#    CELL[0] patched to 1.0 mm at refinement 0; lat0.5 = unpatched refinement 0; lat0.25 = unpatched refinement 1;
+#    thk_c / thk_f = 0.5 mm with layers 5/3/3 and 20/12/12; fil_f = 0.5 mm with the bisected annuli E1.
+#  * Estimators: mfos.metrics.gci_capped (D0012, D0013), gci_step_floor (O004 scope_in, founder), ratio_middle_term (O006
+#    P3's thickness term); F1 caps relative to the ratio (D0024 item 1).
+#  * FastHenry sizing: O006 P4 multipole runs (research/notes/o006-p4-fasthenry-feasibility.md section 3.2): 0.56-0.78 GB at
+#    25,056 filaments and 2.43-2.87 GB at 102,192 (22-31 kB per filament); 1203-1246 s at 102,192 filaments, time exponent
+#    1.40 in the filament count (k0 -> k1, +-25 % under contention).
+SOLVE_CHECKS = ("ratio_step_rule_validated", "fasthenry_binary_pinned", "fasthenry_closed_form_validated",
+                "exported_geometry_identical", "finest_values_present")
+L2_LADDER = ("lat1.0", "lat0.5", "lat0.25")
+L2_ALL = L2_LADDER + ("thk_c", "thk_f", "fil_f")
+FH_LADDER = ("k0", "k1", "k2")
+STEP_FLOOR_REL = 1e-3  # O004 scope_in: ratio steps all below 0.1 % count as converged (relative to the finest ratio)
+P3_EXAMPLE_R = 0.9692  # O006 P3's trace-width pair ratio (l2_layout 0.9692 +- 0.0011, P4 note section 3.4)
+P3_EXAMPLE_STEPS = (-7e-5, 2.5e-4)  # its relative steps 0.007 % and 0.025 % (O004 notes; gci_capped gave +inf)
+SOLVE_TAG = "e004-solve-v1"
+INF = math.inf
+
+
+def _gci_step_floor_local(f0: float, f1: float, f2: float, step_floor: float, relative: bool = False) -> float:
+    """SMOKE-ONLY, labelled runner-local copy of the ratio-step rule (O004 scope_in), used only if mfos.metrics lacks
+    gci_step_floor; registered mode refuses without the mfos.metrics function.  Same rule: both steps below the floor ->
+    3 max|d|, else gci_capped."""
+    from mfos.metrics import gci_capped
+    d1, d2 = float(f1) - float(f0), float(f2) - float(f1)
+    lim = step_floor * abs(float(f2)) if relative else step_floor
+    if abs(d1) < lim and abs(d2) < lim:
+        return 3.0 * max(abs(d1), abs(d2))
+    return gci_capped(f0, f1, f2)
+
+
+def step_rule(smoke: bool):
+    """(function, source label): mfos.metrics.gci_step_floor; in smoke mode only, the labelled local copy if it is absent."""
+    try:
+        from mfos.metrics import gci_step_floor
+        return gci_step_floor, "mfos.metrics.gci_step_floor"
+    except ImportError:
+        if not smoke:
+            raise RegistrationRefused("registered mode needs mfos.metrics.gci_step_floor") from None
+        return _gci_step_floor_local, "runner-local copy (smoke only, labelled; mfos.metrics lacks gci_step_floor)"
+
+
+def step_rule_check(smoke: bool) -> dict:
+    """ratio_step_rule_validated: on P3's trace-width example (relative steps 0.007 % and 0.025 %) gci_capped gives +inf
+    and the ratio-step rule gives exactly 3 max|d| (finite); the local copy agrees with the function used."""
+    from mfos.metrics import gci_capped
+    fn, src = step_rule(smoke)
+    r0 = P3_EXAMPLE_R
+    r1 = r0 * (1 + P3_EXAMPLE_STEPS[0])
+    r2 = r1 * (1 + P3_EXAMPLE_STEPS[1])
+    want = 3.0 * max(abs(r1 - r0), abs(r2 - r1))
+    got, loc, cap = fn(r0, r1, r2, STEP_FLOOR_REL, relative=True), _gci_step_floor_local(r0, r1, r2, STEP_FLOOR_REL, True), \
+        gci_capped(r0, r1, r2)
+    # a sequence with one step above the floor must still go to gci_capped (here: +inf, |rho| > 1)
+    big = fn(r0, r0 * 1.002, r0 * 1.002 * 1.003, STEP_FLOOR_REL, relative=True)
+    ok = math.isinf(cap) and math.isclose(got, want, rel_tol=1e-12) and math.isclose(loc, got, rel_tol=1e-12) and \
+        math.isinf(big)
+    return dict(passed=ok, value=got, threshold=want, detail=f"{src}: P3 example ({r0}, {r1:.7f}, {r2:.7f}) -> {got:.3e} "
+                f"(3 max|d| = {want:.3e}); gci_capped -> {cap}; local copy -> {loc:.3e}; steps 0.2 %/0.3 % -> {big}")
+
+
+# ------------------------------------------------------------------------------------------------------------- levels
+def l2_level(cfg: dict, name: str) -> dict:
+    return cfg["solve"]["l2_layout"]["levels"][name]
+
+
+def fh_level(cfg: dict, k: str, nh: int, smoke_nh: bool = False) -> dict:
+    """FHLevel kwargs of lateral level ``k`` at ``nh`` thickness filaments (traces and planes alike)."""
+    f = cfg["solve"]["fasthenry"]
+    lv = f["lateral"][k]
+    if lv["wire_n"] == 1 and lv["wire_sub"] == 1:  # T0385: NaN impedance at wire_n = wire_sub = 1
+        raise ValueError(f"FastHenry level {k}: wire_n = wire_sub = 1 is never used (T0385)")
+    return dict(cell_mm=lv["cell_mm"], plane_cell_mm=lv["plane_cell_mm"], nh_trace=int(nh), nh_plane=int(nh), rh=f["rh"],
+                nw_trace=f["nw_trace"], wire_n=lv["wire_n"], wire_sub=lv["wire_sub"])
+
+
+def fh_sizing(cfg_or_sizing: dict, n_fil: int) -> dict:
+    """Projected multipole peak (GB, with the stated margin), wall time (s), and the explicit mem_cap_mb / timeout_s passed
+    to the adapter (review T0427/T0428 B(2)); frozen rule config.solve.fasthenry.sizing (P4's measured runs)."""
+    s = cfg_or_sizing["solve"]["fasthenry"]["sizing"] if "solve" in cfg_or_sizing else cfg_or_sizing
+    mem = s["kb_per_filament"] * n_fil * 1e3 / 1e9
+    t = s["t_ref_s"] * (n_fil / s["f_ref"]) ** s["exponent"]
+    return dict(mem_raw_gb=mem, mem_proj_gb=mem * s["mem_margin"], time_proj_s=t,
+                mem_cap_mb=max(s["min_mem_cap_mb"], mem * s["mem_margin"] * 1024),
+                timeout_s=max(s["min_timeout_s"], s["timeout_factor"] * t))
+
+
+def solve_jobs(cfg: dict, layouts: dict, smoke: bool) -> list[dict]:
+    """Every solve of the stage: l2_layout's ladder and P3 terms, FastHenry's lateral ladder at nh_lateral and its thickness
+    ladder at the thickness level.  Smoke: the coarsest level of each ladder only (l2 lat1.0, FastHenry k0 at the lowest nh)."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    f = cfg["solve"]["fasthenry"]
+    nh_lat, nh_list, at = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]], f["thickness"]["at"]
+    if 1 in nh_list or nh_lat == 1 or nh_lat not in nh_list:
+        raise ValueError("FastHenry nh = 1 is a smoke-test level (T0417): never in E004's ladder; nh_lateral must be in it")
+    jobs = []
+    for name, lay in layouts.items():
+        for lv in (("lat1.0",) if smoke else L2_ALL):
+            jobs.append(dict(id=f"{name}__l2_{lv}", solver="l2_layout", layout=name, level=lv, key=lv,
+                             spec=l2_level(cfg, lv), mem_proj_gb=cfg["solve"]["l2_layout"]["peak_gb"][lv],
+                             fingerprint=lay.fingerprint()))
+        fh = [("k0", min(nh_list))] if smoke else [(k, nh_lat) for k in FH_LADDER] + \
+            [(at, nh) for nh in nh_list if nh != nh_lat]
+        for k, nh in fh:
+            kw = fh_level(cfg, k, nh)
+            _deck, facts = export(lay, FHLevel(**kw), die_model=f["die_model"], terminal_model=f["terminal_model"])
+            sz = fh_sizing(cfg, facts["n_filaments"])
+            key = k if (nh == nh_lat or smoke) else f"t{nh}"
+            jobs.append(dict(id=f"{name}__fh_{k}_nh{nh}", solver="fasthenry", layout=name, level=f"{k}_nh{nh}", key=key,
+                             fh_level=kw, mode=f["mode"], order=f["order"], tol=f["tol"], max_retries=f["max_retries"],
+                             die_model=f["die_model"], terminal_model=f["terminal_model"],
+                             n_filaments_exporter=facts["n_filaments"], deck_sha256=facts["deck_sha256"]
+                             if "deck_sha256" in facts else hashlib.sha256(_deck.encode()).hexdigest(),
+                             fingerprint=lay.fingerprint(), **sz))
+    return jobs
+
+
+# ------------------------------------------------------------------------------------------------------------ children
+def _job_hash(job: dict) -> str:
+    return hashlib.sha256(json.dumps({k: v for k, v in job.items() if k not in ("time_proj_s",)}, sort_keys=True,
+                                     default=str).encode()).hexdigest()
+
+
+def child_solve(job_path: str) -> int:
+    """One solve in this (child) process: reads the job JSON (with 'layout_pickle' and 'out'), writes the result JSON.
+    l2_layout's module constants are patched here (E010's mesh-constant pattern), so every l2 solve has its own process."""
+    import pickle
+    import resource
+    job = json.loads(Path(job_path).read_text())
+    lay = pickle.loads(Path(job["layout_pickle"]).read_bytes())
+    fp = lay.fingerprint()
+    rec = dict(id=job["id"], job_hash=job["job_hash"], fingerprint=fp, fingerprint_ok=fp == job["fingerprint"],
+               host=os.uname().nodename, time_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    t0 = time.perf_counter()
+    if job["solver"] == "l2_layout":
+        from moduleforge.solvers import l2_layout as L
+        sp = job["spec"]
+        if sp.get("cell_mm_patch") is not None:  # E010 child_em: patch slot 0, solve at refinement 0
+            L.CELL = (sp["cell_mm_patch"] * MM,) + tuple(L.CELL[1:])
+            for attr, n in zip(("LAYERS_TOP", "LAYERS_BACK", "LAYERS_BASE"), sp["layers"], strict=True):
+                setattr(L, attr, (int(n),) + tuple(getattr(L, attr)[1:]))
+            L.WIRE_EDGES = (tuple(sp["annuli"]),) + tuple(L.WIRE_EDGES[1:])
+        cell = float(L.CELL[sp["refinement"]])
+        if abs(cell - sp["cell_mm"] * MM) > 1e-12:
+            raise RuntimeError(f"{job['id']}: l2_layout CELL[{sp['refinement']}] = {cell} m, level wants {sp['cell_mm']} mm")
+        r = L.loop_inductance(lay, list(FREQS_HZ), refinement=sp["refinement"])
+        m = r.meta
+        flags = [int(x) for x in m["gmres_flags"]]
+        rec.update(ok=all(x == 0 for x in flags), status="ok" if all(x == 0 for x in flags) else "gmres_flag",
+                   L_H=dict(zip(FK, map(float, r.L_H), strict=True)), R_ohm=dict(zip(FK, map(float, r.R_ohm), strict=True)),
+                   cell_m=cell, n_unknowns=int(m["n_unknowns"]), gmres_flags=flags,
+                   gmres_iters=[int(x) for x in m["gmres_iters"]], solver_tol_rel_L_max=float(m["solver_tol_rel_L_max"]),
+                   source_sha256=m["source_sha256"], tool_version=m["tool_version"])
+    else:
+        from dataclasses import asdict
+
+        from moduleforge.solvers import fasthenry_run as FR
+        from moduleforge.solvers.fasthenry import FHLevel, export
+        lev = FHLevel(**job["fh_level"])
+        deck, facts = export(lay, lev, die_model=job["die_model"], terminal_model=job["terminal_model"])
+        res = FR.solve_deck(deck, mode=job["mode"], order=job["order"], tol=job["tol"], max_retries=job["max_retries"],
+                            timeout_s=float(job["timeout_s"]), mem_cap_mb=float(job["mem_cap_mb"]), facts=facts)
+        rec.update(ok=res.ok, status=res.status, reason=res.reason, binary_sha256=res.binary_sha256,
+                   binary_path=res.binary_path, deck_sha256=res.deck_sha256, n_filaments_exporter=res.n_filaments_exporter,
+                   n_filaments_refined=res.n_filaments_refined, nh_trace=res.nh_trace, nh_plane=res.nh_plane,
+                   wire_n=lev.wire_n, wire_sub=lev.wire_sub, die_model=job["die_model"], args=res.args,
+                   L_H=dict(zip(FK, (res.L_H[f] for f in FREQS_HZ), strict=True)) if res.ok else None,
+                   R_ohm=dict(zip(FK, (res.R_ohm[f] for f in FREQS_HZ), strict=True)) if res.ok else None,
+                   attempts=[{k: v for k, v in asdict(a).items() if k != "log_tail"} | {"log_tail": a.log_tail[-300:]}
+                             for a in res.attempts],
+                   crashed_every_attempt=bool(res.attempts) and all(a.status == "crash" for a in res.attempts),
+                   peak_mem_mb_max=max((a.peak_mem_mb for a in res.attempts), default=None))
+        if res.ok and not all(math.isfinite(v) and v > 0 for v in rec["L_H"].values()):
+            rec.update(ok=False, status="nonpositive_or_nan_L")
+    ru = resource.getrusage(resource.RUSAGE_SELF)
+    rec.update(wall_s=time.perf_counter() - t0, peak_GB_self=ru.ru_maxrss * (1.0 if sys.platform == "darwin" else 1024.0)
+               / 1e9, threads={k: os.environ.get(k) for k in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MF_L2_THREADS")})
+    tmp = Path(job["out"]).with_suffix(".tmp")
+    tmp.write_text(json.dumps(rec, indent=1, default=str))
+    tmp.replace(job["out"])
+    return 0
+
+
+def run_jobs(jobs: list[dict], layouts: dict, work: Path, mem_budget_gb: float, log=print) -> dict:
+    """Run every job not already done (checkpoint and resume: a result whose job hash matches is reused), as child
+    processes packed by PROJECTED MEMORY (never by CPU count): a job starts only while the running jobs' projected peaks
+    plus its own stay within ``mem_budget_gb``.  A job projected above the budget refuses the stage before any solve."""
+    import pickle
+    too_big = [j["id"] for j in jobs if j["mem_proj_gb"] > mem_budget_gb]
+    if too_big:
+        raise RuntimeError(f"jobs projected above the memory budget {mem_budget_gb} GB (set MF_E004_MEM_GB on a larger "
+                           f"machine): {too_big[:5]}")
+    (work / "layouts").mkdir(parents=True, exist_ok=True)
+    (work / "solves").mkdir(parents=True, exist_ok=True)
+    for name, lay in layouts.items():
+        p = work / "layouts" / f"{name}.pkl"
+        if not p.exists():
+            p.write_bytes(pickle.dumps(lay))
+    out, pending = {}, []
+    for j in jobs:
+        j = dict(j, job_hash=_job_hash(j), layout_pickle=str(work / "layouts" / f"{j['layout']}.pkl"),
+                 out=str(work / "solves" / f"{j['id']}.json"))
+        if Path(j["out"]).exists() and json.loads(Path(j["out"]).read_text()).get("job_hash") == j["job_hash"]:
+            out[j["id"]] = json.loads(Path(j["out"]).read_text())
+        else:
+            pending.append(j)
+    pending.sort(key=lambda j: -j["mem_proj_gb"])
+    running: dict = {}
+    while pending or running:
+        for j in list(pending):
+            if sum(r["mem_proj_gb"] for r in running.values()) + j["mem_proj_gb"] <= mem_budget_gb:
+                jp = work / "solves" / f"{j['id']}.job.json"
+                jp.write_text(json.dumps(j, default=str))
+                fh = open(work / "solves" / f"{j['id']}.log", "w")  # noqa: SIM115 (closed when the child ends)
+                p = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--child", str(jp)], stdout=fh,
+                                     stderr=subprocess.STDOUT, cwd=ROOT)
+                running[p] = dict(j, _fh=fh, _t0=time.time())
+                pending.remove(j)
+                log(f"start {j['id']} (projected {j['mem_proj_gb']:.1f} GB)")
+        time.sleep(1.0)
+        for p in list(running):
+            if p.poll() is None:
+                continue
+            j = running.pop(p)
+            j["_fh"].close()
+            if Path(j["out"]).exists():
+                out[j["id"]] = json.loads(Path(j["out"]).read_text())
+            else:  # the child died before writing (e.g. killed): a missing value, recorded
+                out[j["id"]] = dict(id=j["id"], ok=False, status=f"child_exit_{p.returncode}", job_hash=j["job_hash"],
+                                    log_tail=(work / "solves" / f"{j['id']}.log").read_text()[-1500:])
+            log(f"done {j['id']}: {out[j['id']].get('status')} ({time.time() - j['_t0']:.0f} s)")
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------- estimators
+def _v(res: dict, jobs_by_key: dict, layout: str, key: str, fk: str):
+    """L (H) of ``layout`` at level key ``key`` and frequency ``fk``, or None if the solve is missing or not ok."""
+    jid = jobs_by_key.get((layout, key))
+    r = res.get(jid) if jid else None
+    return float(r["L_H"][fk]) if r and r.get("ok") and r.get("L_H") else None
+
+
+def _ratio(x, y):
+    return None if x is None or y is None else x / y
+
+
+def l2_terms(v: dict, ratio: bool, step_fn) -> dict:
+    """l2_layout estimate of the finest (0.25 mm) value: lateral (gci_capped for L, the ratio-step rule for ratios) +
+    P3's thickness term (ratio_middle_term) + P3's filament term 3 |fil_f - lat0.5|.  A missing level -> that term +inf."""
+    from mfos.metrics import gci_capped, ratio_middle_term
+    lat = [v.get(k) for k in L2_LADDER]
+    e_lat = INF if None in lat else (step_fn(*lat, STEP_FLOOR_REL, relative=True) if ratio else gci_capped(*lat))
+    thk = (v.get("thk_c"), v.get("lat0.5"), v.get("thk_f"))
+    e_thk = INF if None in thk else ratio_middle_term(*thk)
+    e_fil = INF if None in (v.get("fil_f"), v.get("lat0.5")) else 3.0 * abs(v["fil_f"] - v["lat0.5"])
+    return dict(finest=lat[2], lateral=e_lat, thickness=e_thk, filament=e_fil, total=e_lat + e_thk + e_fil)
+
+
+def fh_terms(v: dict, nh_lat: int, nh_list: list[int], ratio: bool, step_fn) -> dict:
+    """FastHenry estimate of the finest (k2 at nh_lateral) value: lateral (as l2) + thickness term from the 3 / 5 / 9 ladder
+    at the thickness level: |f(nh_lateral) - f(9)| + gci_capped(f3, f5, f9) (the ratio-step rule for ratios; O004 scope_in:
+    gci_capped on the thickness ladder stays conservative while its steps contract, T0368).  Missing -> +inf."""
+    from mfos.metrics import gci_capped
+    lat = [v.get(k) for k in FH_LADDER]
+    e_lat = INF if None in lat else (step_fn(*lat, STEP_FLOOR_REL, relative=True) if ratio else gci_capped(*lat))
+    thk = [v.get("k1" if nh == nh_lat else f"t{nh}") for nh in nh_list]
+    if None in thk:
+        e_thk = INF
+    else:
+        fin = step_fn(*thk, STEP_FLOOR_REL, relative=True) if ratio else gci_capped(*thk)
+        e_thk = abs(thk[nh_list.index(nh_lat)] - thk[-1]) + fin
+    return dict(finest=lat[2], lateral=e_lat, thickness=e_thk, total=e_lat + e_thk)
+
+
+def zero_failure_bound(n: int, conf: float = 0.95) -> float:
+    """One-sided upper bound on a failure share after n passes and 0 failures: 1 - (1 - conf)^(1/n) (exact binomial,
+    Clopper-Pearson with k = 0); 1.0 for n = 0."""
+    return 1.0 - (1.0 - conf) ** (1.0 / n) if n > 0 else 1.0
+
+
+def assemble(cfg: dict, pairs: list[dict], ref_of: dict, res: dict, jobs: list[dict], smoke: bool, step_fn) -> dict:
+    """Rows (pair x frequency, layout x frequency), F1 exclusions, the criteria's inputs and the reported diagnostics.
+    ``ref_of``: pair layout name -> reference layout name.  Smoke: every ladder has one level, so 'finest' is the coarsest
+    level solved (labelled) and every estimate is +inf (missing levels), which F1 turns into exclusions."""
+    f = cfg["solve"]["fasthenry"]
+    nh_lat, nh_list = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]]
+    by_key = {(j["layout"], j["key"]): j["id"] for j in jobs}
+    l2_keys = ("lat1.0",) if smoke else L2_ALL
+    fh_keys = ("k0",) if smoke else FH_LADDER + tuple(f"t{n}" for n in nh_list if n != nh_lat)
+    fin_l2, fin_fh = ("lat1.0", "k0") if smoke else ("lat0.25", "k2")
+    layouts = sorted({j["layout"] for j in jobs})
+    vals = {lay: {fk: {"l2": {k: _v(res, by_key, lay, k, fk) for k in l2_keys},
+                       "fh": {k: _v(res, by_key, lay, k, fk) for k in fh_keys}} for fk in FK} for lay in layouts}
+
+    def terms(l2v, fhv, ratio):
+        if smoke:
+            return (dict(finest=l2v.get(fin_l2), total=INF, note="smoke: one level"),
+                    dict(finest=fhv.get(fin_fh), total=INF, note="smoke: one level"))
+        return l2_terms(l2v, ratio, step_fn), fh_terms(fhv, nh_lat, nh_list, ratio, step_fn)
+    cap_l2, cap_fh = cfg["f1_caps"]["l2_layout"], cfg["f1_caps"]["fasthenry"]
+    layout_rows, pair_rows = [], []
+    for lay in layouts:
+        for fk in FK:
+            a, b = terms(vals[lay][fk]["l2"], vals[lay][fk]["fh"], ratio=False)
+            done = a["finest"] is not None and b["finest"] is not None
+            layout_rows.append(dict(row_kind="layout", layout=lay, freq=fk, L_l2=a["finest"] if done else math.nan,
+                                    L_fh=b["finest"] if done else math.nan, E_l2=a["total"] if done else INF,
+                                    E_fh=b["total"] if done else INF, finest_complete=done, terms_l2=a, terms_fh=b))
+    for p in pairs:
+        lay, ref = p["name"], ref_of[p["name"]]
+        for fk in FK:
+            rl2, rfh = ({k: _ratio(vals[lay][fk][sv][k], vals[ref][fk][sv][k]) for k in keys}
+                        for sv, keys in (("l2", l2_keys), ("fh", fh_keys)))
+            a, b = terms(rl2, rfh, ratio=True)
+            done = a["finest"] is not None and b["finest"] is not None
+            rel_l2 = a["total"] / a["finest"] if done and a["finest"] else INF
+            rel_fh = b["total"] / b["finest"] if done and b["finest"] else INF
+            excl = not (rel_l2 <= cap_l2 and rel_fh <= cap_fh)  # +inf or nan fails
+            pair_rows.append(dict(row_kind="pair", pair=lay, reference=ref, kind=p["kind"], components=p["components"],
+                                  freq=fk, r_l2=a["finest"] if done else math.nan, r_fh=b["finest"] if done else math.nan,
+                                  r_L1=p[f"r_L1_{fk}"], E_R_l2=a["total"], E_R_fh=b["total"], E_R_l2_rel=rel_l2,
+                                  E_R_fh_rel=rel_fh, excluded_f1=bool(excl), finest_complete=done,
+                                  ratio_per_level_l2=rl2, ratio_per_level_fh=rfh, terms_l2=a, terms_fh=b))
+    return dict(layout_rows=layout_rows, pair_rows=pair_rows, finest_levels={"l2_layout": fin_l2, "fasthenry": fin_fh},
+                smoke_label="SMOKE: coarsest levels only; 'finest' = the one level solved; not evidence" if smoke else "")
+
+
+def criteria(asm: dict, cfg: dict) -> dict:
+    """A1, A2, K1, K2 exactly as O004 freezes them (mfos.metrics functions, the same the recompute block names), and the
+    INVALID rule's inputs."""
+    from mfos.metrics import max_consistency_capped, max_rel_err, max_rel_err_or_inf
+    pr, lr = asm["pair_rows"], asm["layout_rows"]
+    out: dict = {}
+    if pr:
+        out["A1"] = max_rel_err_or_inf([r["r_l2"] for r in pr], [r["r_fh"] for r in pr], [r["excluded_f1"] for r in pr])
+        done = [r for r in pr if r["finest_complete"]]
+        out["K1"] = max_rel_err([r["r_l2"] for r in done], [r["r_fh"] for r in done]) if done else math.nan
+        out["K1_fires"] = bool(done) and out["K1"] > cfg["kill"]["K1"]
+        out["pairs_missing_finest"] = sorted({r["pair"] for r in pr if not r["finest_complete"]})
+    if lr:
+        out["A2"] = max_consistency_capped([r["L_l2"] for r in lr], [r["L_fh"] for r in lr], [r["E_l2"] for r in lr],
+                                           [r["E_fh"] for r in lr], cfg["a2_cap_rel"])
+        done = [r for r in lr if r["finest_complete"]]
+        out["K2"] = max_rel_err([r["L_l2"] for r in done], [r["L_fh"] for r in done]) if done else math.nan
+    return out
+
+
+def ratio_band(rows: list[dict], key: str, ekeys: tuple[str, str]) -> tuple[float, float] | None:
+    """Discretisation band of a max-type ratio criterion (reported beside the point value, O004 uses point values):
+    [max_i max(0, |d_i| - u_i), max_i (|d_i| + u_i)], u_i = the two solvers' relative estimates; None if not finite."""
+    lo, hi = 0.0, 0.0
+    for r in rows:
+        d = abs(r[key[0]] / r[key[1]] - 1.0)
+        u = r[ekeys[0]] + r[ekeys[1]]
+        if not (math.isfinite(d) and math.isfinite(u)):
+            return None
+        lo, hi = max(lo, max(0.0, d - u)), max(hi, d + u)
+    return (lo, hi) if rows else None
+
+
+def diagnostics(asm: dict, cfg: dict) -> dict:
+    """Reported, not judged: coverage after exclusion per move type with one-sided zero-failure bounds (per type, pooled,
+    and the clustered bound by reference), the covered ratio range on FastHenry's finest ratios beside the L1 span, and
+    F8 (L1's ratio agreement with FastHenry beside l2_layout's)."""
+    from moduleforge.generate import perturb as P
+    pr = asm["pair_rows"]
+    counted = {}
+    for r in pr:
+        counted.setdefault(r["pair"], {"kind": r["kind"], "components": r["components"], "reference": r["reference"],
+                                       "ok": True})
+        counted[r["pair"]]["ok"] &= not r["excluded_f1"]
+    ok = {k: v for k, v in counted.items() if v["ok"]}
+    per_type = {}
+    for t in [*P.MOVE_TYPES, P.COMPOUND]:
+        n_all = sum(v["kind"] == t for v in counted.values())
+        n_ok = sum(v["kind"] == t for v in ok.values())
+        per_type[t] = {"pairs": n_all, "counted": n_ok, "excluded": n_all - n_ok,
+                       "zero_failure_bound95": zero_failure_bound(n_ok)}
+    refs = sorted({v["reference"] for v in ok.values()})
+    rfh = [r["r_fh"] for r in pr if not r["excluded_f1"] and math.isfinite(r["r_fh"])]
+    rl1 = [r["r_L1"] for r in pr]
+    l1_vs_fh = [abs(r["r_L1"] / r["r_fh"] - 1) for r in pr if math.isfinite(r["r_fh"])]
+    return {"n_pairs": len(counted), "n_counted": len(ok), "coverage_after_exclusion": len(ok) / max(1, len(counted)),
+            "per_move_type": per_type, "pooled_zero_failure_bound95": zero_failure_bound(len(ok)),
+            "clustered_zero_failure_bound95": zero_failure_bound(len(refs)),
+            "covered_range_fh_finest": [min(rfh), max(rfh)] if rfh else None,
+            "registered_range_l1": [min(rl1), max(rl1)] if rl1 else None,
+            "F8_l1_max_ratio_diff_vs_fasthenry": max(l1_vs_fh) if l1_vs_fh else None}
+
+
+def fh_selftest_record(work: Path) -> dict:
+    """fasthenry_run.self_test() once on this host (review T0427/T0428 B(1)), stored keyed by binary_sha256 under the run
+    directory; {'ok': False, 'error': ...} if the binary is missing or the self-test fails."""
+    from moduleforge.solvers import fasthenry_run as FR
+    host = os.uname().nodename
+    try:
+        rec = FR.self_test()
+        rec.update(ok=True, host=host)
+    except Exception as e:  # SelfTestError, FileNotFoundError (not provisioned)
+        rec = {"ok": False, "host": host, "error": f"{type(e).__name__}: {e}"}
+    d = work / "fh_selftest"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{host}__{str(rec.get('binary_sha256', 'none'))[:16]}.json").write_text(json.dumps(rec, indent=1, default=str))
+    return rec
+
+
+def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
+    """Solve stage (T0389): l2_layout ladder and P3 terms, FastHenry ladder and thickness ladder on every layout (smoke:
+    the coarsest level of each ladder on one Case 4 development pair and its reference), estimators, F1, rows, criteria,
+    INVALID rule, diagnostics.  F2: in smoke nothing is solved on 2D_Case_2R or 2D_Case_6."""
+    from moduleforge.generate import perturb as P
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    work = run.run_dir / "solve"
+    work.mkdir(parents=True, exist_ok=True)
+    rec: dict = {"mode": "smoke" if smoke else "registered"}
+    chk = step_rule_check(smoke)
+    run.sanity("ratio_step_rule_validated", passed=chk["passed"], value=chk["value"], threshold=chk["threshold"],
+               detail=chk["detail"])
+    step_fn, rec["step_rule_source"] = step_rule(smoke)
+    # layouts: rebuilt from the registration records (fingerprints checked below)
+    if smoke:
+        ref, _rules = case4_reference()
+        refs = {"2D_Case_4": ref}
+        pick = [p for p in reg["pairs"] if p["slot"] == 0][:1]
+        if not pick:  # review T0447/T0448 (3): no pair drawn -> a failed draw, recorded, not a crash
+            rec["failed_draw"] = "no development pair drawn in slot 0"
+        pairs = [dict(p, name="dev_pair0", ref_name="2D_Case_4") for p in pick]
+    else:
+        refs = {}
+        recon = recon_module()
+        for e in cfg["references"]:
+            refs[e["reference_id"]] = recon.snapped(e["reference_id"])[0]
+        pairs = [dict(p, name=p["pair"].replace("#", "_p"), ref_name=p["reference"]) for p in reg["pairs"]]
+        if reg["proxy"].get("status") == "built":
+            pairs.append(dict(reg["proxy"]["record"], name="2D_Case_2R_proxy", ref_name="2D_Case_2R"))
+    layouts = dict(refs)
+    geo_bad = []
+    for p in pairs:
+        lay = P.apply(refs[p["ref_name"]], p["kind"], p["params"]) if p["kind"] != "proxy" else p["layout"]
+        if lay.fingerprint() != p["fingerprint"]:
+            geo_bad.append(f"{p['name']}: rebuilt fingerprint differs from the registration record")
+        layouts[p["name"]] = lay
+    jobs = solve_jobs(cfg, layouts, smoke)
+    rec["jobs"] = jobs
+    budget = float(os.environ.get("MF_E004_MEM_GB", cfg["solve"]["mem_budget_gb_default"]))
+    st = fh_selftest_record(work)
+    rec["fh_selftest"] = {st.get("binary_sha256", "none"): st}
+    fh_jobs = [j for j in jobs if j["solver"] == "fasthenry"]
+    run_list = jobs if st["ok"] else [j for j in jobs if j["solver"] != "fasthenry"]
+    res = run_jobs(run_list, layouts, work, budget) if run_list else {}
+    rec["results"] = res
+    # checks that depend on no compared value
+    pinned = cfg["solve"]["fasthenry"]["pinned_binary_sha256"]
+    shas = {r.get("binary_sha256") for j in fh_jobs if (r := res.get(j["id"])) and r.get("binary_sha256")}
+    pin_ok = st["ok"] and st.get("binary_sha256") == pinned and shas <= {pinned}
+    run.sanity("fasthenry_binary_pinned", passed=bool(pin_ok), value=None, threshold=None,
+               detail=f"self-test on {st.get('host')}: {st.get('ok')} ({st.get('error', st.get('banner', ''))}); binary "
+                      f"{st.get('binary_sha256')}; FHResult binaries {sorted(shas)}; pinned {pinned}")
+    hl = st.get("L_nH_1kHz")
+    cf_ok = hl is not None and abs(hl - cfg["solve"]["fasthenry"]["self_test_exact_nH"]) <= \
+        cfg["solve"]["fasthenry"]["self_test_exact_tol_nH"]
+    run.sanity("fasthenry_closed_form_validated", passed=bool(cf_ok), value=hl,
+               threshold=cfg["solve"]["fasthenry"]["self_test_exact_nH"],
+               detail="D0002 bar at 1 kHz against the exact uniform-current (Hoer-Love) 5.704254 nH, recomputed here from "
+                      "the self-test record")
+    for j in fh_jobs:  # the deck each FHResult solved is the one the layout exports now (identical geometry)
+        r = res.get(j["id"])
+        if r and r.get("deck_sha256"):
+            d, _f = export(layouts[j["layout"]], FHLevel(**j["fh_level"]), die_model=j["die_model"],
+                           terminal_model=j["terminal_model"])
+            if hashlib.sha256(d.encode()).hexdigest() != r["deck_sha256"]:
+                geo_bad.append(f"{j['id']}: solved deck sha256 differs from the layout's export")
+    for j in jobs:
+        r = res.get(j["id"])
+        if r and r.get("fingerprint") not in (None, layouts[j["layout"]].fingerprint()):
+            geo_bad.append(f"{j['id']}: solved fingerprint differs")
+    run.sanity("exported_geometry_identical", passed=not geo_bad, value=len(geo_bad), threshold=0,
+               detail=geo_bad[:20] or "every l2_layout and FastHenry solve read the registered layout (fingerprint), "
+                                      "every FastHenry deck re-exported to the same sha256")
+    ref_of = {p["name"]: p["ref_name"] for p in pairs}
+    asm = assemble(cfg, [dict(p) for p in pairs], ref_of, res, jobs, smoke, step_fn)
+    crit = criteria(asm, cfg) if pairs else {}
+    missing = crit.get("pairs_missing_finest", [p["name"] for p in pairs])
+    k1_fires = crit.get("K1_fires", False)
+    run.sanity("finest_values_present", passed=(not missing and bool(pairs)) or k1_fires, value=len(missing), threshold=0,
+               detail=("every pair has both finest values" if not missing else
+                       f"pairs lacking a finest value: {missing}; K1 fires on a completed pair: {k1_fires}") +
+                      " (F1: INVALID only if a pair lacks a finest value and no completed pair fires K1)")
+    gm = [r["id"] for r in res.values() if r.get("status") == "gmres_flag"]
+    crashed = [r["id"] for r in res.values() if r.get("crashed_every_attempt")]
+    rec.update(assembly=asm, criteria=crit, l2_gmres_flagged_as_missing=gm, fh_crashed_every_attempt_as_missing=crashed)
+    if pairs:
+        diag = diagnostics(asm, cfg)
+        rec["diagnostics"] = diag
+        pr = asm["pair_rows"]
+        cnt = [r for r in pr if r["finest_complete"]]
+        b1 = ratio_band([r for r in pr if not r["excluded_f1"]], ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel"))
+        run.metric("max_ratio_diff_vs_fasthenry", crit["A1"], ci=b1 if math.isfinite(crit["A1"]) else None, n=len(pr))
+        run.metric("max_ratio_diff_vs_fasthenry_all", crit["K1"],
+                   ci=ratio_band(cnt, ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel")), n=len(cnt))
+        run.metric("max_abs_consistency", crit["A2"], n=len(asm["layout_rows"]))
+        lcnt = [dict(r, el=r["E_l2"] / r["L_l2"], ef=r["E_fh"] / r["L_fh"]) for r in asm["layout_rows"]
+                if r["finest_complete"]]
+        run.metric("max_rel_diff_vs_fasthenry", crit["K2"], ci=ratio_band(lcnt, ("L_l2", "L_fh"), ("el", "ef")),
+                   n=len(lcnt))
+        run.metric("n_counted_pairs", diag["n_counted"], n=diag["n_pairs"])
+        run.metric("pooled_zero_failure_bound95", diag["pooled_zero_failure_bound95"], n=diag["n_counted"])
+        if diag["F8_l1_max_ratio_diff_vs_fasthenry"] is not None:
+            run.metric("l1_max_ratio_diff_vs_fasthenry", diag["F8_l1_max_ratio_diff_vs_fasthenry"], n=len(cnt))
+    run.metric("n_l2_gmres_flagged", len(gm), n=sum(j["solver"] == "l2_layout" for j in jobs))
+    run.metric("n_fh_decks_crashed_every_attempt", len(crashed), n=len(fh_jobs))
+    rows = [{k: v for k, v in r.items() if not k.startswith(("terms_", "ratio_per_level"))}
+            for r in asm["pair_rows"] + asm["layout_rows"]]
+    run.rows(rows)
+    out = work / "solve.json"
+    out.write_text(json.dumps(rec, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+    run.artifact("solve.json", out)
+    return rec
 
 
 # ------------------------------------------------------------------------------------------------------------ dev span
@@ -710,6 +1240,283 @@ def summarize_span_sim(state: dict, lower_ends=(0.75, 0.78, 0.80, 0.85)) -> dict
     return res
 
 
+# ======================================================================== F7(a) FastHenry development mode (T0389)
+F7_DIR = ROOT / "research" / "o004_f7"
+GEN_DEV_SEED = 20261110  # E010 dev.dev_seed: gen2_0 = derivative.generate(halfbridge_housing_spec(2), 1, seed)[0]
+F7A_LADDER_LAYOUTS = ("case4_base", "standin_compound", "dev03_trace_width")  # D0024 item 2 stand-in; a trace-edge move
+F7A_WIRE_FINE = ("case4_base", "dev03_trace_width")  # k1 with the wire section refined once more (wire_n 8, wire_sub 4)
+GEN2_DIAG = {"cell_mm": 0.5, "plane_cell_mm": 2.0, "wire_n": 2, "wire_sub": 2, "nh": (1, 3, 5)}  # founder T0417/T0418
+VM = {"machine": "e2-highmem-16", "ram_gib": 128, "usable_gb": 108.0, "usd_per_h": 0.73,
+      "source": "project/memory/lessons.md 2026-11-04 (e2-highmem-16 $0.73/h; n2-highmem-32 $2.10/h)"}
+
+
+def dev_layout(name: str):
+    """Development layouts only (F2): 2D_Case_4's base, a T0387 development pair (dev_pairs.json, fingerprint checked),
+    or gen2_0 (E010's generator housing layout, development seed)."""
+    from moduleforge.generate import derivative as D
+    from moduleforge.generate import perturb as P
+    if name == "case4_base":
+        return case4_reference()[0]
+    if name == "gen2_0":
+        return D.generate(D.halfbridge_housing_spec(2), 1, GEN_DEV_SEED)[0]
+    pr = next(p for p in json.loads((F7_DIR / "dev_pairs.json").read_text())["pairs"] if p["name"] == name)
+    lay = P.apply(case4_reference()[0], pr["move_type"], pr["params"])
+    if lay.fingerprint() != pr["fingerprint"]:
+        raise RuntimeError(f"{name}: rebuilt fingerprint differs from dev_pairs.json (rules changed)")
+    return lay
+
+
+def stack_summary(lay) -> dict:
+    st = lay.stack
+    return {"kind": st.kind, "layers_mm": {la.name: round(la.thickness / MM, 4) for la in st.layers}}
+
+
+def f7a_jobs(cfg: dict) -> tuple[list[dict], dict]:
+    """The F7(a) job list: E004's FastHenry ladder (k0/k1/k2 at nh_lateral) and thickness ladder (3/5/9 at k1) on 2D_Case_4's
+    base, the r <= 0.75 stand-in and a trace-edge move; k1 with a finer wire section on the trace-edge pair; the founder's
+    gen2_0 thickness diagnostic (nh 1/3/5 at cell 0.5 mm, plane 2 mm, wire_sub 2) on gen2_0 and, at identical levels, on
+    Case 4's base; l2_layout lat0.5 on gen2_0 for the gap rule.  Die model 'short' everywhere (no direct solve needed)."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    names = sorted(set(F7A_LADDER_LAYOUTS) | {"gen2_0"})
+    lays = {n: dev_layout(n) for n in names}
+    jobs = [j for j in solve_jobs(cfg, {n: lays[n] for n in F7A_LADDER_LAYOUTS}, smoke=False) if j["solver"] == "fasthenry"]
+    f = cfg["solve"]["fasthenry"]
+    extra = [(n, "k1w", dict(fh_level(cfg, "k1", f["nh_lateral"]), wire_n=8, wire_sub=4)) for n in F7A_WIRE_FINE]
+    extra += [(n, f"g{nh}", dict(cell_mm=GEN2_DIAG["cell_mm"], plane_cell_mm=GEN2_DIAG["plane_cell_mm"], nh_trace=nh,
+                                 nh_plane=nh, rh=f["rh"], nw_trace=f["nw_trace"], wire_n=GEN2_DIAG["wire_n"],
+                                 wire_sub=GEN2_DIAG["wire_sub"])) for n in ("gen2_0", "case4_base") for nh in GEN2_DIAG["nh"]]
+    for n, key, kw in extra:
+        _d, facts = export(lays[n], FHLevel(**kw), die_model=f["die_model"], terminal_model=f["terminal_model"])
+        jobs.append(dict(id=f"{n}__fh_{key}", solver="fasthenry", layout=n, level=key, key=key, fh_level=kw, mode=f["mode"],
+                         order=f["order"], tol=f["tol"], max_retries=f["max_retries"], die_model=f["die_model"],
+                         terminal_model=f["terminal_model"], n_filaments_exporter=facts["n_filaments"],
+                         deck_sha256=hashlib.sha256(_d.encode()).hexdigest(), fingerprint=lays[n].fingerprint(),
+                         **fh_sizing(cfg, facts["n_filaments"])))
+    jobs.append(dict(id="gen2_0__l2_lat0.5", solver="l2_layout", layout="gen2_0", level="lat0.5", key="lat0.5",
+                     spec=l2_level(cfg, "lat0.5"), mem_proj_gb=cfg["solve"]["l2_layout"]["peak_gb"]["lat0.5"],
+                     fingerprint=lays["gen2_0"].fingerprint()))
+    return jobs, lays
+
+
+def probe_deck(deck: str, args: list[str], mem_cap_mb: float, timeout_s: float, max_attempts: int = 3) -> dict:
+    """Review T0427/T0428 A: run a multipole deck only until FastHenry prints 'Calling gmres' (past 'Forming sparse matrix
+    preconditioner', where T0428's deterministic SIGSEGV happened), then stop it.  A crash is retried up to max_attempts;
+    a deck that crashes on every attempt is recorded as such.  Peak RSS (ps) and wall time per attempt."""
+    from moduleforge.solvers import fasthenry_run as FR
+    b = FR.find_binary()
+    atts = []
+    for n in range(1, max_attempts + 1):
+        d = Path(tempfile.mkdtemp(prefix="fhprobe_", dir=os.environ.get("TMPDIR")))
+        (d / "deck.inp").write_text(deck)
+        t0, peak, status = time.time(), 0.0, None
+        with open(d / "run.log", "w") as log:
+            p = subprocess.Popen([str(b), "deck.inp", *args], cwd=d, stdout=log, stderr=subprocess.STDOUT)
+            while status is None:
+                time.sleep(0.5)
+                txt = (d / "run.log").read_text(errors="replace")
+                rss = FR._rss_mb(p.pid) if p.poll() is None else 0.0
+                peak = max(peak, rss)
+                if "Calling gmres" in txt:
+                    status = "past_preconditioner"
+                elif p.poll() is not None:
+                    status = "exited_ok_before_gmres" if p.returncode == 0 else "crash"
+                elif rss > mem_cap_mb:
+                    status = "killed_memory"
+                elif time.time() - t0 > timeout_s:
+                    status = "timeout"
+            if p.poll() is None:
+                p.kill()
+                p.wait()
+        atts.append(dict(n=n, status=status, wall_s=round(time.time() - t0, 2), peak_rss_mb=round(peak, 1),
+                         exit_code=p.returncode, log_tail=txt[-300:]))
+        shutil.rmtree(d, ignore_errors=True)
+        if status != "crash":
+            break
+    return dict(attempts=atts, result=atts[-1]["status"] if atts[-1]["status"] != "crash" else
+                f"crashed_every_attempt ({len(atts)} of {len(atts)})", binary=str(b))
+
+
+def dev_fh_probe(cfg: dict, max_local_gb: float) -> dict:
+    """Probe every multipole deck of the F7(a) job list whose projected peak fits ``max_local_gb``, one at a time; the rest
+    are marked 'vm_first' (the first VM job probes them).  Checkpointed to research/o004_f7/fh_probe.json."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    from moduleforge.solvers.fasthenry_run import mode_args
+    out_p = F7_DIR / "fh_probe.json"
+    state = json.loads(out_p.read_text()) if out_p.exists() else {"decks": {}}
+    state["label"] = "RESEARCH ONLY, NOT EVIDENCE (T0389): multipole preconditioner probe, development geometry (F2)"
+    jobs, lays = f7a_jobs(cfg)
+    # E004's own ladder decks (Case 4) first, then the gen2_0 diagnostic (its preconditioner is ~15x slower per filament)
+    for j in sorted((j for j in jobs if j["solver"] == "fasthenry"),
+                    key=lambda j: (j["layout"] == "gen2_0", j["n_filaments_exporter"])):
+        if j["deck_sha256"] in state["decks"]:
+            continue
+        if j["mem_proj_gb"] > max_local_gb:
+            state["decks"][j["deck_sha256"]] = dict(id=j["id"], result="vm_first", mem_proj_gb=j["mem_proj_gb"],
+                                                    n_filaments=j["n_filaments_exporter"])
+            continue
+        deck, _f = export(lays[j["layout"]], FHLevel(**j["fh_level"]), die_model=j["die_model"],
+                          terminal_model=j["terminal_model"])
+        print(f"probe {j['id']} ({j['n_filaments_exporter']} filaments)", flush=True)
+        r = probe_deck(deck, mode_args(j["mode"], j["order"], j["tol"]), mem_cap_mb=max_local_gb * 1024,
+                       timeout_s=j["timeout_s"])
+        state["decks"][j["deck_sha256"]] = dict(id=j["id"], n_filaments=j["n_filaments_exporter"], **r)
+        out_p.write_text(json.dumps(state, indent=1))
+    return state
+
+
+def dev_fh_direct_mem(out_p: Path) -> dict:
+    """Review T0445: direct FastHenry runs above 5k filaments, peak_mem_mb / (direct_mem_est_gb x 1024) per run, so the
+    adapter's MEM_MARGIN can be refitted on an in-repo basis (research/o004_f7/fh_direct_mem.json)."""
+    from moduleforge.solvers import fasthenry_run as FR
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    runs = []
+    for name, kw in (("case4_base", dict(cell_mm=1.0, plane_cell_mm=4.0, wire_n=2, wire_sub=1)),
+                     ("standin_compound", dict(cell_mm=1.0, plane_cell_mm=4.0, wire_n=2, wire_sub=2)),
+                     ("case4_base", dict(cell_mm=1.0, plane_cell_mm=3.0, wire_n=2, wire_sub=1))):
+        lay = dev_layout(name)
+        deck, facts = export(lay, FHLevel(**kw))
+        r = FR.solve_deck(deck, mode="direct", facts=facts, timeout_s=1800, mem_cap_mb=4500)
+        a = r.attempts[-1] if r.attempts else None
+        runs.append(dict(layout=name, level=kw | {"nh_trace": 1, "nh_plane": 1}, status=r.status,
+                         filaments=facts["n_filaments"], direct_mem_est_gb=facts["direct_mem_est_gb"],
+                         peak_mem_mb=a.peak_mem_mb if a else None, mem_polled=a.mem_polled if a else None,
+                         wall_s=a.wall_s if a else None, ratio=(a.peak_mem_mb / (facts["direct_mem_est_gb"] * 1024))
+                         if a else None, binary_sha256=r.binary_sha256, host=os.uname().nodename))
+        print(runs[-1], flush=True)
+    rec = {"label": "RESEARCH ONLY (T0389, review T0445): direct-mode peak memory against the exporter's dense estimate",
+           "ratio_definition": "peak_mem_mb / (direct_mem_est_gb * 1024); peak_mem_mb is the adapter's max(ps RSS poll, "
+                               "ru_maxrss)", "runs": runs,
+           "ratio_max": max((r["ratio"] for r in runs if r["ratio"]), default=None)}
+    out_p.write_text(json.dumps(rec, indent=1))
+    return rec
+
+
+def makespan(jobs: list[dict], budget_gb: float) -> float:
+    """Greedy list schedule by projected memory (largest first) on one machine: projected wall time (s)."""
+    t, running, pend = 0.0, [], sorted(jobs, key=lambda j: -j["mem_proj_gb"])
+    while pend or running:
+        for j in list(pend):
+            if sum(m for _e, m in running) + j["mem_proj_gb"] <= budget_gb:
+                running.append((t + j["time_proj_s"], j["mem_proj_gb"]))
+                pend.remove(j)
+        if not running:
+            raise RuntimeError("a job does not fit the machine")
+        running.sort()
+        t = running.pop(0)[0]
+    return t
+
+
+def dev_fh_plan(cfg: dict) -> dict:
+    """Write research/o004_f7/vm_jobs_fasthenry.json: the F7(a) job list with deck facts, explicit caps, projections, the
+    preconditioner probe's result per deck, the gap rule, and E004's cost plan (filament counts of the judged references'
+    decks: geometry export only, no solve, F2)."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    jobs, lays = f7a_jobs(cfg)
+    probe = json.loads((F7_DIR / "fh_probe.json").read_text())["decks"] if (F7_DIR / "fh_probe.json").exists() else {}
+    for j in jobs:
+        if j["solver"] == "fasthenry":
+            pr = probe.get(j["deck_sha256"], {"result": "vm_first: not probed locally (T0389's wall time), probed by the "
+                                                         "first VM step"})
+            j["precond_probe"] = pr["result"]
+            j["probe_peak_rss_mb"] = max((a["peak_rss_mb"] for a in pr.get("attempts", [])), default=None)
+            if pr["result"].startswith("crashed_every_attempt"):
+                j["on_crash"] = ("no direct fallback (O004 F1; direct needs ~%.0f GB): a missing value, +inf estimate "
+                                 "(F1 exclusion); never another level" % (8 * j["n_filaments_exporter"] ** 2 / 1e9))
+        else:
+            j.update(time_proj_s=cfg["solve"]["l2_layout"]["wall_s"]["lat0.5"], precond_probe="n/a (l2_layout)")
+    # per-layout time calibration from the local probes: measured wall time to 'Calling gmres' over the projected total
+    # (a lower bound on the true factor); applied to that layout's projections and timeouts (gen2_0: ~15x, T0389)
+    s = cfg["solve"]["fasthenry"]["sizing"]
+    fac: dict = {}
+    for j in jobs:
+        pr = probe.get(j.get("deck_sha256"), {})
+        for a in pr.get("attempts", []):
+            if a["status"] == "past_preconditioner":
+                fac[j["layout"]] = max(fac.get(j["layout"], 1.0), a["wall_s"] / j["time_proj_s"])
+    for j in jobs:
+        if j["solver"] == "fasthenry" and fac.get(j["layout"], 1.0) > 1.0:
+            j["time_calibration"] = fac[j["layout"]]
+            j["time_proj_s"] *= fac[j["layout"]]
+            j["timeout_s"] = max(s["min_timeout_s"], s["timeout_factor"] * j["time_proj_s"])
+    fh = [j for j in jobs if j["solver"] == "fasthenry"]
+    span = makespan(jobs, VM["usable_gb"])
+    # E004 cost plan: per judged reference, the k2 / t9 deck sizes (export only); 15 layouts (2 references, 12 pairs, proxy)
+    recon = recon_module()
+    ref_sizes = {}
+    for e in cfg["references"]:
+        lay = recon.snapped(e["reference_id"])[0]
+        ref_sizes[e["reference_id"]] = {"stack": stack_summary(lay)}
+        for k, nh in [(k, cfg["solve"]["fasthenry"]["nh_lateral"]) for k in FH_LADDER] + [("k1", 3), ("k1", 9)]:
+            _d, fc = export(lay, FHLevel(**fh_level(cfg, k, nh)))
+            ref_sizes[e["reference_id"]][f"{k}_nh{nh}"] = dict(n_filaments=fc["n_filaments"],
+                                                                **fh_sizing(cfg, fc["n_filaments"]))
+    e004_jobs = []
+    for rid, s in ref_sizes.items():
+        n_lay = 7 if rid == "2D_Case_6" else 8  # 6 pairs + reference (+ the 2R proxy pair)
+        for key, v in s.items():
+            if key != "stack":
+                e004_jobs += [dict(mem_proj_gb=v["mem_proj_gb"], time_proj_s=v["time_proj_s"])] * n_lay
+        l2 = cfg["solve"]["l2_layout"]
+        e004_jobs += [dict(mem_proj_gb=l2["peak_gb"][lv], time_proj_s=l2["wall_s"][lv]) for lv in L2_ALL] * n_lay
+    e_span = makespan(e004_jobs, VM["usable_gb"])
+    plan = {
+        "label": "F7(a) FastHenry job list for the founder's burst VM (T0389). RESEARCH / DEVELOPMENT ONLY (O004 F2): "
+                 "2D_Case_4 and gen2_0, development seeds; no FastHenry on 2D_Case_2R or 2D_Case_6 before registration",
+        "command": "uv run python experiments/runners/e004_run.py --dev-fh-run research/o004_f7/vm_jobs_fasthenry.json "
+                   "(on the VM: MF_E004_MEM_GB=108; resumes from research/o004_f7/fh_solves)",
+        "first_vm_step": "the probe of every deck marked precond_probe = vm_first: `e004_run.py --dev-fh-probe 108` "
+                         "before the full runs (review T0427/T0428 A)",
+        "binary": {"pinned_sha256": cfg["solve"]["fasthenry"]["pinned_binary_sha256"],
+                   "rule": "fasthenry_run.self_test() once per host, stored keyed by binary_sha256 beside every result"},
+        "levels": cfg["solve"]["fasthenry"], "gen2_diag_levels": GEN2_DIAG,
+        "die_model": "short on every job (no distributed-die deck: no direct solve is needed or projected, T0385 (2))",
+        "wire_rule": "no job uses wire_n = 1 with wire_sub = 1 (T0385 (1)); each job records wire_n and wire_sub",
+        "layouts": {n: {"fingerprint": lay.fingerprint(), "stack": stack_summary(lay)} for n, lay in lays.items()},
+        "gap_rule": {
+            "quantity": "g(X) = L_FH(X, nh 5 at cell 0.5 mm, plane 2 mm, wire 2/2) / L_l2(X, lat0.5) - 1 at 10 and 20 MHz, "
+                        "X in {gen2_0, case4_base}; T(X) = 3 |L_FH(nh 5) - L_FH(nh 3)| / L_FH(nh 5) (two-level, p = 1)",
+            "closes_if": "|g(gen2_0)| <= |g(case4_base)| + 0.02 (Case 4's few percent, measured at identical levels) AND "
+                         "T(gen2_0) <= 0.01 (the thickness term inside the 1 % estimate), at both frequencies",
+            "otherwise": "the thin-stack gap stays open: no non-Case-4 FastHenry deck is relied on and E004's nh_lateral is "
+                         "revisited by the founder before registration (T0417/T0418)"},
+        "always_crash_rule": "a multipole deck that crashes on every attempt (retries up to 10; the adapter stops early "
+                             "on a repeated identical exit) has no value: no direct fallback (O004 F1: direct needs "
+                             "8 F^2 bytes, far above any machine for these decks), no other level substituted; F1 makes "
+                             "the affected estimate +inf (exclusion), a missing finest value goes to the INVALID rule",
+        "memory_rule": "mem_proj_gb = kb_per_filament x exporter filaments x mem_margin (config.solve.fasthenry.sizing; "
+                       "margin covers FastHenry's post-refinement growth, unknown before the run, T0385 (3)); every "
+                       "attempt's peak_mem_mb and wall_s are recorded",
+        "jobs": jobs,
+        "projection": {"vm": VM, "n_jobs": len(jobs), "fh_cpu_h": sum(j["time_proj_s"] for j in fh) / 3600,
+                       "makespan_h": span / 3600, "usd": span / 3600 * VM["usd_per_h"],
+                       "uncertainty": "time +-25 % (P4 contention) and the 1.40 exponent extrapolated from 25k-102k "
+                                      "filaments to ~1M: treat k2 times as +-50 %"},
+        "e004_cost_plan": {"reference_deck_sizes": ref_sizes, "n_layouts": 15,
+                           "cpu_h": sum(j["time_proj_s"] for j in e004_jobs) / 3600, "makespan_h": e_span / 3600,
+                           "usd": e_span / 3600 * VM["usd_per_h"],
+                           "note": "pairs sized as their reference; l2_layout at the measured Case 4 peaks (15.9 GB at "
+                                   "0.25 mm, T0387), a conservative bound for 2R / Case 6 (Case 6 0.25 mm: 4.75 GB)"},
+        "direct_mem": "research/o004_f7/fh_direct_mem.json",
+    }
+    (F7_DIR / "vm_jobs_fasthenry.json").write_text(json.dumps(plan, indent=1, default=str))
+    return plan["projection"] | {"e004": {k: v for k, v in plan["e004_cost_plan"].items() if k != "reference_deck_sizes"}}
+
+
+def dev_fh_run(job_file: Path) -> None:
+    """Run the job list (burst VM, the founder): self-test once per host, then every job not yet done, packed by memory
+    (MF_E004_MEM_GB), results checkpointed under research/o004_f7/fh_solves/."""
+    plan = json.loads(job_file.read_text())
+    lays = {n: dev_layout(n) for n in plan["layouts"]}
+    for n, v in plan["layouts"].items():
+        if lays[n].fingerprint() != v["fingerprint"]:
+            raise RuntimeError(f"{n}: fingerprint differs from the job list")
+    work = F7_DIR / "fh_solves"
+    st = fh_selftest_record(work)
+    if not st["ok"]:
+        raise RuntimeError(f"FastHenry self-test failed on this host: {st}")
+    run_jobs(plan["jobs"], lays, work, float(os.environ.get("MF_E004_MEM_GB", "5")))
+
+
 # ------------------------------------------------------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -718,7 +1525,28 @@ def main() -> int:
     ap.add_argument("--dev-span-sim", type=int, default=0, metavar="N", help="research: span check on N dev seeds")
     ap.add_argument("--out", default=str(ROOT / "research" / "o004_e004" / "span_sim_case4.json"))
     ap.add_argument("--print-freeze", action="store_true", help="print the current tree's freeze values (not evidence)")
+    ap.add_argument("--child", metavar="JOB_JSON", help=argparse.SUPPRESS)
+    ap.add_argument("--dev-fh-plan", action="store_true", help="research: write research/o004_f7/vm_jobs_fasthenry.json")
+    ap.add_argument("--dev-fh-probe", type=float, default=0.0, metavar="GB",
+                    help="research: preconditioner probe of the F7(a) decks projected below GB")
+    ap.add_argument("--dev-fh-direct-mem", action="store_true", help="research: direct-mode peak / estimate runs")
+    ap.add_argument("--dev-fh-run", metavar="JOB_LIST", help="research (burst VM): run the F7(a) job list")
     a = ap.parse_args()
+    if a.child:
+        return child_solve(a.child)
+    if a.dev_fh_plan or a.dev_fh_probe or a.dev_fh_direct_mem or a.dev_fh_run:
+        import yaml
+        cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
+        if a.dev_fh_probe:
+            st = dev_fh_probe(cfg, a.dev_fh_probe)
+            print(json.dumps({v["id"]: v["result"] for v in st["decks"].values()}, indent=1))
+        if a.dev_fh_direct_mem:
+            print(json.dumps(dev_fh_direct_mem(F7_DIR / "fh_direct_mem.json"), indent=1, default=str))
+        if a.dev_fh_plan:
+            print(json.dumps(dev_fh_plan(cfg), indent=1, default=str))
+        if a.dev_fh_run:
+            dev_fh_run(Path(a.dev_fh_run))
+        return 0
     if a.print_freeze:
         print(json.dumps(print_freeze(), indent=1))
         return 0
@@ -745,11 +1573,18 @@ def main() -> int:
         if not a.smoke:
             if rec["proxy"].get("status") != "built":
                 raise RegistrationRefused(f"the 2D_Case_2R proxy pair is not built: {rec['proxy'].get('reason')}")
-        if a.stage in ("solve", "all") or a.smoke:
-            stage_solve(run, cfg, a.smoke)
+        sol = {}
+        if a.stage in ("solve", "all"):
+            sol = stage_solve(run, cfg, a.smoke, rec)
+        else:
+            for name in SOLVE_CHECKS:
+                run.sanity(name, passed=False, detail="not run: --stage registration")
         print(json.dumps({"run_dir": str(run.run_dir), "checks": {k: v["passed"] for k, v in rec["checks"].items()},
                           "coverage": {k: v["covered"] for k, v in rec["coverage"].items()},
-                          "proxy": rec["proxy"]["status"], "wall_s": round(rec["wall_s"], 1)}, indent=1))
+                          "proxy": rec["proxy"]["status"], "wall_s": round(rec["wall_s"], 1),
+                          "solve": {k: v for k, v in sol.get("criteria", {}).items()},
+                          "solve_status": {r["id"]: r.get("status") for r in sol.get("results", {}).values()}},
+                         indent=1, default=str))
     return 0
 
 

@@ -1,0 +1,67 @@
+{
+ "label": "RESEARCH ONLY (T0389, review T0445): direct-mode peak memory against the exporter's dense estimate",
+ "ratio_definition": "peak_mem_mb / (direct_mem_est_gb * 1024); peak_mem_mb is the adapter's max(ps RSS poll, ru_maxrss)",
+ "runs": [
+  {
+   "layout": "case4_base",
+   "level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 4.0,
+    "wire_n": 2,
+    "wire_sub": 1,
+    "nh_trace": 1,
+    "nh_plane": 1
+   },
+   "status": "ok",
+   "filaments": 8416,
+   "direct_mem_est_gb": 0.849948672,
+   "peak_mem_mb": 940.59375,
+   "mem_polled": true,
+   "wall_s": 48.856043125037104,
+   "ratio": 1.0807106525891188,
+   "binary_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+   "host": "Lucas-MacBook-Air-3.local"
+  },
+  {
+   "layout": "standin_compound",
+   "level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 4.0,
+    "wire_n": 2,
+    "wire_sub": 2,
+    "nh_trace": 1,
+    "nh_plane": 1
+   },
+   "status": "ok",
+   "filaments": 9022,
+   "direct_mem_est_gb": 0.976757808,
+   "peak_mem_mb": 1081.953125,
+   "mem_polled": true,
+   "wall_s": 71.1001722922083,
+   "ratio": 1.0817367826281175,
+   "binary_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+   "host": "Lucas-MacBook-Air-3.local"
+  },
+  {
+   "layout": "case4_base",
+   "level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 3.0,
+    "wire_n": 2,
+    "wire_sub": 1,
+    "nh_trace": 1,
+    "nh_plane": 1
+   },
+   "status": "ok",
+   "filaments": 9992,
+   "direct_mem_est_gb": 1.198080768,
+   "peak_mem_mb": 1275.796875,
+   "mem_polled": true,
+   "wall_s": 119.66845875000581,
+   "ratio": 1.039909344193886,
+   "binary_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+   "host": "Lucas-MacBook-Air-3.local"
+  }
+ ],
+ "ratio_max": 1.0817367826281175
+}
