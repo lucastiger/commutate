@@ -3,7 +3,7 @@ objective: O002
 title: Thermal L1 tests and doc fixes from reviews T0423/T0424 before E007's code freeze
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on: []
 description: 'Thermal L1 test and doc items from reviews T0423 (physics) and T0424 (numerics) of T0395
   (O002), before E007 freezes the model. T0397 (E007 design, a scientist) could not make them: they are
@@ -52,11 +52,12 @@ model: null
 budget_usd: 2.0
 max_turns: 80
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0443-thermal-l1-tests-and-doc-fixes-from-revi
 pr: null
-runs: []
+runs:
+- T0443-builder-20261117T024059-8aa3
 created_by: session
 created_at: '2026-11-17T06:30:54+00:00'
 protected_approved: false
