@@ -118,7 +118,29 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ null, layout and draw from T0379's family at the registered R_D range [1.25, 1.60], the step count\
   \ and terminal kind. T0426 measured only up to R_D(L1) of about 1.15 on 2D_Case_4, where compact took\
   \ 107 of the 200 steps; if any development run is capped, say so before the limit is frozen in the spec.\n\
-  6. Ablation (c) counts its budget in draws: report l1_evals beside n_draws.\n"
+  6. Ablation (c) counts its budget in draws: report l1_evals beside n_draws.\n\n\nFounder session, 2026-11-17,\
+  \ for the next attempt (after reviews T0430 and T0431 rejected attempt 1; read their findings in the\
+  \ packet). Order the work so that the development rows come from the code that will be frozen:\n1. Source\
+  \ fixes first; they are in this task's scope (touches: control.py, nulls.py and their tests), not another\
+  \ task's: the nonzero domain tag in every entropy list in control.py, with a test that the streams differ\
+  \ (review T0414 item 4); every T0425 and T0426 item for nulls.py listed above; the reach=True proxy's\
+  \ terminal values pinned in a regression test on both development layouts (2R: 25 steps, L1 ratio 0.9138\
+  \ before the seed change, re-measure after); mark the long tests in tests/unit/optimize/test_nulls.py\
+  \ slow, keeping a fast smoke test.\n2. Runner fixes from T0430/T0431: key dev_solve's jobs by (fingerprint,\
+  \ level) or job id and assert that the number submitted equals totals.jobs_wave1; record every purpose\
+  \ of a deduplicated job and rebuild the shortlist groups from it, selecting the best by (L, L1 rank);\
+  \ reuse E010's convergence predicate in em_ok (a missing gmres record or a non-finite L_H is not converged);\
+  \ add a selftest case that runs write_manifest and dev_solve on a small fake manifest and asserts every\
+  \ (fingerprint, level) job is submitted.\n3. The seed-tag change alters every degradation draw, so attempt\
+  \ 1's development checkpoints are stale: move research/o008_e011_dev/work aside (do not reuse it), make\
+  \ the runner refuse a checkpoint written with a different code hash, and rerun --dev for both layouts.\
+  \ A single background command is limited to 2 hours; resume from the checkpoints across several commands\
+  \ until the manifest's status reads complete for 2D_Case_2R and 2D_Case_4.\n4. Report, per layout, the\
+  \ search's improvement curve: the share of its final L1 gain made in the last 10 % and the last 25 %\
+  \ of the 2000-evaluation budget (attempt 1 on 2R was still improving in its last 10 %). The founder\
+  \ decides the budget before registration from this; do not change it.\n5. Then `e011_run.py --freeze-report`\
+  \ to refresh code_sha256 and frozen_sha256, and state the manifest's VM sizing from the measured unknowns\
+  \ (Case 4's 0.25 mm solves at about 25 GB each).\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
