@@ -61,6 +61,7 @@ BURST_OUT = HERE / "burst_out"  # level-2 solves copied back from the burst VM
 OUT = HERE / "f1_dev_check.json"
 O7 = ROOT / "research" / "o007_dev3" / "cache"
 FROZEN = ROOT / "research" / "o007_dev3" / "frozen_config.json"
+DEV_STUDY = ROOT / "research" / "o007_dev3" / "dev_study.json"
 FEM_FILE = ROOT / "src" / "moduleforge" / "solvers" / "thermal_fem.py"
 FEM_SHA_PREFIX = "a216d5fe3209bcee"
 
@@ -82,6 +83,7 @@ DIFF_TOL_K = 0.1
 EB_TOL = 1e-6
 TJ_LIMIT_K = 175.0 + 273.15
 REPRO_TOL_K = 1e-6
+POWER_REL_TOL = 1e-12  # record power_W against p_ref(stratum) x load factor
 
 # E009's memory figures (config fem_bytes_per_dof, fem_memory_margin, memory_fraction) for the level-2 schedule
 FEM_BYTES_PER_DOF, FEM_MARGIN, MEM_FRACTION = 4964.065014991321, 1.15, 0.85
@@ -340,23 +342,29 @@ def reproduction() -> dict:
     return {"tol_K": REPRO_TOL_K, "passed": ok, "rows": rows}
 
 
-def stored(repro_ok: bool) -> dict:
-    """{key: solve record} for every stored solve; the o007_dev3 level-2 solves at P_ref only if reproduction passed."""
-    out = {}
-    for d in (CACHE, BURST_OUT):
+def stored_records(repro_ok: bool) -> list[tuple[str, str, dict]]:
+    """[(origin, file stem, record)] for every status-ok stored solve: cache/ and burst_out/ files (origin 'cache',
+    'burst_out'), then the o007_dev3 level-2 solves at P_ref (origin 'o007_dev3') only if reproduction passed."""
+    out = []
+    for origin, d in (("cache", CACHE), ("burst_out", BURST_OUT)):
         if d.exists():
             for p in sorted(d.glob("*__L[012].json")):
                 rec = load_json(p)
                 if rec.get("status") == "ok":
-                    out[rec["key"]] = rec
+                    out.append((origin, p.stem, rec))
     if repro_ok:
+        have = {r["key"] for _, _, r in out}
         for n in DEV:
             k = key_of(n, "P_ref", 2)
-            if k not in out:
-                rec = _o7_record(n, 2)
-                if rec is not None:
-                    out[k] = rec
+            rec = _o7_record(n, 2) if k not in have else None
+            if rec is not None:
+                out.append(("o007_dev3", k, rec))
     return out
+
+
+def stored(repro_ok: bool) -> dict:
+    """{key: solve record} for every stored solve (a later file overrides an earlier one of the same key)."""
+    return {rec["key"]: rec for _, _, rec in stored_records(repro_ok)}
 
 
 # ------------------------------------------------------------------------------------------------ F1 analysis
@@ -389,7 +397,8 @@ def analyse() -> dict:
     P = p_ref()
     fem_sha = sha256(FEM_FILE)
     rep = reproduction()
-    S = stored(rep["passed"])
+    recs = stored_records(rep["passed"])
+    S = {rec["key"]: rec for _, _, rec in recs}
 
     def vals(name, load, field):
         return [S[key_of(name, load, lv)][field] if key_of(name, load, lv) in S else None for lv in LEVELS]
@@ -475,7 +484,7 @@ def analyse() -> dict:
                            "tj_avg_max_C": max(S[k]["tj_mean"]) - 273.15})
     checks["tj_at_P_ref"] = {"limit_C": TJ_LIMIT_K - 273.15, "values": tj,
                              "passed": bool(all(t["tj_max_C"] <= TJ_LIMIT_K - 273.15 for t in tj))}
-    checks["sanity"] = sanity(S, lays)
+    checks["sanity"] = sanity(S, lays, recs, P, rep)
     # verdict
     missing = [k for k in all_keys(levels=(2,)) if k not in S]
     missing01 = [k for k in all_keys(levels=(0, 1)) if k not in S]
@@ -483,18 +492,22 @@ def analyse() -> dict:
     for c in ("abs_die_average", "spread", "pair_difference", "level1_vs_level2"):
         for load in LOADS:
             flags += [v.get("pass_L1") for v in checks[c][load]["values"]]
-    hard_fail = (not checks["energy_balance"]["passed"]) or (not checks["tj_at_P_ref"]["passed"])
-    if any(f is False for f in flags):
+    # broken = the experiment itself failed a check; then no 'confirmed' or 'refuted' may be read from the flags
+    broken = [f"sanity.{c}" for c, v in checks["sanity"].items() if v.get("passed") is not True]
+    broken += [c for c in ("energy_balance", "tj_at_P_ref") if checks[c]["passed"] is not True]
+    if rep["passed"] is not True:
+        broken.append("reproduction_check")
+    if broken:
+        level1 = "pending"
+    elif any(f is False for f in flags):
         level1 = "refuted"
-    elif hard_fail:
-        level1 = "pending"  # the experiment is broken (energy or envelope), not a level-1 verdict
     elif flags and all(f is True for f in flags) and not missing and not missing01:
         level1 = "confirmed"
     else:
         level1 = "pending"
     return {"task": "T0393", "objective": "O002", "failure_mode": "F1",
             "status": "complete" if not missing and not missing01 else "awaiting_level2",
-            "level1": level1, "missing_level2": missing, "missing_level0_1": missing01,
+            "level1": level1, "broken": broken, "missing_level2": missing, "missing_level0_1": missing01,
             "loads": {ld: {"factor": f, "power_W_per_die": {s: P[s] * f for s in DEV}} for ld, f in LOADS.items()},
             "thermal_fem_sha256": fem_sha, "frozen_config_sha256": sha256(FROZEN),
             "rules": {"estimator": "mfos.metrics.gci_step_floor(f0, f1, f2, 0.01 K) (gci_capped with the step floor)",
@@ -521,7 +534,7 @@ def _summ(rows: list[dict]) -> dict:
             "passed": None if any(f is None for f in flags) else bool(all(flags))}
 
 
-def sanity(S: dict, lays: dict) -> dict:
+def sanity(S: dict, lays: dict, recs: list, P: dict, rep: dict) -> dict:
     """Checks that separate 'the experiment is broken' from 'level 1 is insufficient'."""
     out = {}
     fps = {n: v[3]["fingerprint"] for n, v in lays.items()}
@@ -531,13 +544,14 @@ def sanity(S: dict, lays: dict) -> dict:
     pic = [s.get("picard_residual_K") for s in S.values()]
     out["picard_converged"] = {"passed": all(p is not None and p < 1e-4 for p in pic), "max_K": max(pic)}
     out["cg_not_capped"] = {"passed": not any(s.get("cg_hit_maxiter") for s in S.values())}
-    own = [s for s in S.values() if s.get("source") == "this task"]
+    own = [r for o, _, r in recs if o in ("cache", "burst_out")]  # every solve of this task, whatever its label
     out["own_solves_frozen_bytes"] = {"passed": all(s["thermal_fem_sha256"].startswith(FEM_SHA_PREFIX) for s in own)}
     bm = [abs(s["bottom_mean_T_K_trapezoid"] - s["bottom_mean_T_K_flux"]) for s in own
           if math.isfinite(s.get("bottom_mean_T_K_trapezoid", float("nan")))]
     out["bottom_mean_two_ways"] = {"passed": bool(bm) and max(bm) <= 1e-6 and len(bm) == len(own),
                                    "max_abs_diff_K": max(bm) if bm else None, "n": len(bm),
                                    "basis": "trapezoid of the Q1 field at z = 0 vs T_c + Q_out / (h A)"}
+    out["record_provenance"] = record_provenance(recs, lays, P, rep)
     growth = []
     for n in lays:
         for ld in LOADS:
@@ -555,6 +569,55 @@ def sanity(S: dict, lays: dict) -> dict:
                 sc.append({"layout": n, "level": lv, "ratio_min": float((rb / ra).min()), "ratio_max": float((rb / ra).max())})
     out["half_load_scaling"] = {"passed": all(0.40 <= s["ratio_min"] and s["ratio_max"] <= 0.5 for s in sc), "values": sc}
     return out
+
+
+def record_provenance(recs: list, lays: dict, P: dict, rep: dict) -> dict:
+    """Every stored record against what it must be: power = p_ref(stratum) x load factor (rel 1e-12), the layout's
+    fingerprint, the key's level and load, the die count, the frozen solver bytes and the frozen config.  The
+    o007_dev3 level-2 records carry no solver hash (T0411 finding 3): their provenance is dev_study.json's recorded
+    thermal_fem_sha256 plus reproduction_check.passed."""
+    frozen_sha = sha256(FROZEN)
+    study_sha = load_json(DEV_STUDY)["meta"]["thermal_fem_sha256"]
+    bad = []
+    for origin, stem, r in recs:
+        why = []
+        try:
+            name, load, lv = parse_key(r["key"])
+            if stem != r["key"]:
+                why.append(f"file stem {stem} != key")
+            if name not in lays or load not in LOADS:
+                raise KeyError("unknown layout or load in key")
+            stratum = lays[name][1]
+            want = P[stratum] * LOADS[load]
+            if r.get("layout") != name or r.get("level") != lv or r.get("load") != load:
+                why.append("layout/level/load fields do not match the key")
+            if not (isinstance(r.get("power_W"), (int, float)) and abs(r["power_W"] - want) <= POWER_REL_TOL * want):
+                why.append(f"power_W {r.get('power_W')} != {want}")
+            if origin == "o007_dev3":
+                if not (rep["passed"] is True and study_sha.startswith(FEM_SHA_PREFIX) and lv == 2 and load == "P_ref"):
+                    why.append("o007_dev3 record without a passed reproduction, a frozen dev_study hash, or at L2 P_ref")
+            else:
+                if r.get("fingerprint") != lays[name][3]["fingerprint"]:
+                    why.append("fingerprint differs from layouts()")
+                if not str(r.get("thermal_fem_sha256", "")).startswith(FEM_SHA_PREFIX):
+                    why.append("thermal_fem_sha256 is not the frozen bytes")
+                if r.get("frozen_config_sha256") != frozen_sha:
+                    why.append("frozen_config_sha256 differs from frozen_config.json")
+            nd = len(lays[name][0].dies)
+            if len(r.get("tj_mean", [])) != nd or len(r.get("tj_max", [])) != nd:
+                why.append(f"die count != {nd}")
+        except (KeyError, ValueError, TypeError) as e:
+            why.append(f"unreadable record: {e!r}")
+        if why:
+            bad.append({"key": r.get("key", stem), "origin": origin, "problems": why})
+    return {"passed": not bad, "n_records": len(recs), "failing": bad, "failing_keys": [b["key"] for b in bad],
+            "o007_dev3_basis": "o007_dev3 level-2 records carry no solver hash (T0411 finding 3), and no fingerprint "
+                               "or frozen_config_sha256 either, so those three are not checked on them: provenance is "
+                               "dev_study.json meta.thermal_fem_sha256 (" + study_sha[:16] + ") plus "
+                               f"reproduction_check.passed ({rep['passed']}), which ties the o007_dev3 level-0/1 "
+                               "solves of the same cases to this task's fingerprinted cache records within "
+                               f"{REPRO_TOL_K} K; power, level, load and die count are checked as for every record",
+            "n_o007_dev3": sum(o == "o007_dev3" for o, _, _ in recs)}
 
 
 # ------------------------------------------------------------------------------------------------ burst plan
@@ -624,7 +687,7 @@ def main(argv=None) -> int:
         return 0
     res = analyse()
     write_json(OUT, res)
-    print(json.dumps({k: res[k] for k in ("status", "level1", "missing_level2")}, indent=1))
+    print(json.dumps({k: res[k] for k in ("status", "level1", "broken", "missing_level2")}, indent=1))
     return 0
 
 

@@ -138,3 +138,32 @@ pending sequences, and E010's 2R results. It is not evidence.
   and the other die counts are untested.
 - The local-rise denominator uses the mean baseplate-bottom temperature, which is O002's A2 definition.
 - The 0.01 K step floor did not fire on any complete sequence.
+
+## 7. Verdict rule after T0419, and the result on the committed burst records
+- **Rule.** `--analyse` now sets `level1 = 'pending'` and lists the failed checks in a top-level `broken` list if any
+  sanity check fails (including the new `record_provenance`), `reproduction_check.passed` is false, the energy balance
+  fails, or Tj at P_ref exceeds its limit. `refuted` and `confirmed` are possible only when `broken` is empty; the
+  per-quantity rules are unchanged. `record_provenance` checks every stored record (cache/, burst_out/, and the
+  o007_dev3 level-2 records at P_ref): power equal to p_ref x load factor (relative 1e-12), the layout's fingerprint,
+  the key's level and load, the die count, solver hash `a216d5fe3209bcee`, and `frozen_config_sha256`. The o007_dev3
+  level-2 records carry no solver hash (T0411 finding 3), so their provenance is dev_study.json's recorded
+  `thermal_fem_sha256` plus `reproduction_check.passed`; the check's output says so. `own_solves_frozen_bytes` now
+  covers every record in cache/ and burst_out/, whatever its `source` label.
+- **Result (no solve; the 6 committed I0212 records plus the cached level 0-1 and o007_dev3 level-2 records).**
+  status `complete`, level1 `confirmed`, `broken` = `[]`; 24 records pass `record_provenance`.
+- **Worst level-1 error over tolerance** (error_L1 = |f1 - f2| + estimate, as a fraction of the tolerance):
+
+  | quantity | P_ref | 0.5 P_ref |
+  |---|---|---|
+  | die average (1 % of local rise) | 0.717 (side_by_side_6, die 11; 0.212 K of 0.296 K) | 0.695 (side_by_side_6, die 11; 0.100 K of 0.144 K) |
+  | per-switch spread (0.1 K) | 0.261 (side_by_side_6_p, HS) | 0.316 (side_by_side_6, LS) |
+  | same-stratum pair difference (0.1 K) | 0.558 (side_by_side pair) | 0.250 (side_by_side pair) |
+  | level-1 vs level-2 spread/pair (0.1 K) | 0.248 | 0.111 |
+
+  The die-average cells give the worst ratio and, for that die, error_L1 out of its tolerance. The largest absolute
+  die-average error_L1 is on another die, u_shaped_2_p die 3: 0.305 K (ratio 0.672) at P_ref and 0.143 K (ratio 0.647)
+  at 0.5 P_ref. Attempt 1 of T0419 printed these two values against side_by_side_6 die 11; T0419 attempt 2 corrected
+  that from f1_dev_check.json. The o007_dev3 level-2 records also carry no fingerprint and no `frozen_config_sha256`,
+  so those fields are not checked on them. Their geometry is tied to this task's fingerprinted layouts through the
+  reproduction check, which compares the level-0/1 solves of the same o007_dev3 cases with this task's cache records
+  to within 1e-6 K. That link is an inference, not a direct field check, and `record_provenance` says so in its output.

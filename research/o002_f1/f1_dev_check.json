@@ -4,6 +4,7 @@
  "failure_mode": "F1",
  "status": "complete",
  "level1": "confirmed",
+ "broken": [],
  "missing_level2": [],
  "missing_level0_1": [],
  "loads": {
@@ -2754,6 +2755,14 @@
     "max_abs_diff_K": 5.684341886080802e-14,
     "n": 22,
     "basis": "trapezoid of the Q1 field at z = 0 vs T_c + Q_out / (h A)"
+   },
+   "record_provenance": {
+    "passed": true,
+    "n_records": 24,
+    "failing": [],
+    "failing_keys": [],
+    "o007_dev3_basis": "o007_dev3 level-2 records carry no solver hash (T0411 finding 3), and no fingerprint or frozen_config_sha256 either, so those three are not checked on them: provenance is dev_study.json meta.thermal_fem_sha256 (a216d5fe3209bcee) plus reproduction_check.passed (True), which ties the o007_dev3 level-0/1 solves of the same cases to this task's fingerprinted cache records within 1e-06 K; power, level, load and die count are checked as for every record",
+    "n_o007_dev3": 2
    },
    "dof_growth_8x": {
     "passed": true,
