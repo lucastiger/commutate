@@ -176,9 +176,9 @@ def feature_size(feature_x, feature_y) -> float:
     return min(float(np.diff(_merge(f)).min()) for f in (feature_x, feature_y) if len(_merge(f)) > 1)
 
 
-def level0_cell(f_min: float) -> float:
-    """Level-0 lateral cell size ``h0 = min(LAT_FRAC * f_min, H0_MAX)``."""
-    return min(LAT_FRAC * f_min, H0_MAX)
+def level0_cell(f_min: float, *, lat_frac: float | None = None, h0_max: float | None = None) -> float:
+    """Level-0 lateral cell size ``h0 = min(LAT_FRAC * f_min, H0_MAX)`` (the module constants unless overridden)."""
+    return min((LAT_FRAC if lat_frac is None else lat_frac) * f_min, H0_MAX if h0_max is None else h0_max)
 
 
 def lateral_counts(lines, f_min: float, far_mask, level: int) -> np.ndarray:
@@ -192,8 +192,8 @@ def lateral_counts(lines, f_min: float, far_mask, level: int) -> np.ndarray:
     return n0 * R**int(level)
 
 
-def z_counts(n_intervals: int, level: int) -> np.ndarray:
-    return np.full(n_intervals, Z_CELLS * R**int(level), dtype=int)
+def z_counts(n_intervals: int, level: int, z_cells: int | None = None) -> np.ndarray:
+    return np.full(n_intervals, (Z_CELLS if z_cells is None else z_cells) * R**int(level), dtype=int)
 
 
 # ---------------------------------------------------------------------------------------------------- layout mode
@@ -228,8 +228,12 @@ def _regions(layout: Layout):
     return back, top
 
 
-def build_layout_grid(layout: Layout, level: int) -> LayoutGrid:
-    """Conforming grid and material map of docs/thermal_model.md section 2 at ``level`` of the frozen rule."""
+def build_layout_grid(layout: Layout, level: int, *, h0_max: float | None = None, lat_frac: float | None = None,
+                      edge_frac: float | None = None, z_cells: int | None = None) -> LayoutGrid:
+    """Conforming grid and material map of docs/thermal_model.md section 2 at ``level`` of the frozen rule.
+
+    The keyword overrides (default: the frozen module constants) let a caller (``moduleforge.thermal``) pass a coarser
+    rule explicitly instead of patching module globals; with none given the grid is the frozen one, unchanged."""
     st = layout.stack
     back, top = _regions(layout)
     polys = [layout.baseplate_outline, layout.outline, back, top, *(t.polygon for t in layout.traces)]
@@ -247,7 +251,8 @@ def build_layout_grid(layout: Layout, level: int) -> LayoutGrid:
     ox0, oy0, ox1, oy1 = layout.outline.bounds
     far = lambda lines, lo, hi: (0.5 * (lines[:-1] + lines[1:]) < lo) | (0.5 * (lines[:-1] + lines[1:]) > hi)  # noqa: E731
     fmin = feature_size(fx, fy)
-    h0, s_edge = level0_cell(fmin), EDGE_FRAC * min(la.thickness for la in (*st.layers, st.die_attach))
+    h0 = level0_cell(fmin, lat_frac=lat_frac, h0_max=h0_max)
+    s_edge = (EDGE_FRAC if edge_frac is None else edge_frac) * min(la.thickness for la in (*st.layers, st.die_attach))
     dx = [v for d in layout.dies for v in (d.bounds[0], d.bounds[2])]
     dy = [v for d in layout.dies for v in (d.bounds[1], d.bounds[3])]
     x = edge_graded_nodes(xl, dx, h0, s_edge, GROW, level, far(xl, ox0, ox1), FAR_FACTOR)
@@ -262,7 +267,7 @@ def build_layout_grid(layout: Layout, level: int) -> LayoutGrid:
         z0, z1 = layout.die_z_range(d)
         zlines += [zt + d.attach_thickness, z1]
     zl = _merge(zlines)
-    z = _subdivide(zl, z_counts(len(zl) - 1, level))
+    z = _subdivide(zl, z_counts(len(zl) - 1, level, z_cells))
 
     nx, ny, nz = len(x) - 1, len(y) - 1, len(z) - 1
     xc, yc, zc = 0.5 * (x[:-1] + x[1:]), 0.5 * (y[:-1] + y[1:]), 0.5 * (z[:-1] + z[1:])
