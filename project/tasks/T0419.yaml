@@ -4,7 +4,7 @@ title: 'F1 development check: gate the level-1 verdict on the sanity block and p
   T0411 findings 1-2)'
 type: implement
 agent: scientist
-status: running
+status: merge
 depends_on: []
 description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 verdict the founder gets
   from `--analyse`, after the burst level-2 solves (I0212) are copied back, cannot read ''confirmed''
@@ -223,3 +223,107 @@ history:
     only the scientist role may write (attempt 1''s work is complete and committed on the branch; it failed
     verify on scope only)'
   at: '2026-11-17T04:47:12+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: I checked attempt 1's work (b7d5ce6d) against the brief, and it holds up. The `broken` list
+    is built from every sanity check that does not pass (including the new record_provenance), plus energy_balance,
+    tj_at_P_ref and reproduction_check. Any entry in it forces level1 to 'pending', so 'refuted' and 'confirmed'
+    are only possible when it is empty. record_provenance looks at every record in cache/, burst_out/
+    and the o007_dev3 level-2 set at P_ref. For each one it checks power against p_ref × load factor (relative
+    1e-12), the layout fingerprint, the solver hash prefix a216d5fe3209bcee, frozen_config_sha256, layout,
+    level, load and die count, and it lists failing records by key. own_solves_frozen_bytes now covers
+    burst_out records as well as cache records. No tolerance, estimator, layout or b
+  report:
+    status: completed
+    failure_class: none
+    summary: 'I checked attempt 1''s work (b7d5ce6d) against the brief, and it holds up. The `broken`
+      list is built from every sanity check that does not pass (including the new record_provenance),
+      plus energy_balance, tj_at_P_ref and reproduction_check. Any entry in it forces level1 to ''pending'',
+      so ''refuted'' and ''confirmed'' are only possible when it is empty. record_provenance looks at
+      every record in cache/, burst_out/ and the o007_dev3 level-2 set at P_ref. For each one it checks
+      power against p_ref × load factor (relative 1e-12), the layout fingerprint, the solver hash prefix
+      a216d5fe3209bcee, frozen_config_sha256, layout, level, load and die count, and it lists failing
+      records by key. own_solves_frozen_bytes now covers burst_out records as well as cache records. No
+      tolerance, estimator, layout or burst-plan file was changed, and nothing was solved. The test file
+      covers all 7 cases the brief asks for, plus two extras (a 1e-9 power error on a cache record, and
+      a frozen-config hash mismatch). Synthetic records live only in tmp_path.
+
+
+      Two problems failed review, and I fixed both in commit 36c25243:
+
+      1. **Notes table.** In research/notes/o002-f1-dev-check.md, the die-average row gave the worst ratio
+      for side_by_side_6 die 11 (0.717 at P_ref, 0.695 at 0.5 P_ref), which is correct. But the K values
+      beside it (0.305 K and 0.143 K) are the largest absolute error_L1 values, and those belong to u_shaped_2_p
+      die 3 (ratios 0.672 and 0.647). Die 11''s actual values are 0.212 K of a 0.296 K tolerance at P_ref
+      and 0.100 K of 0.144 K at 0.5 P_ref. I corrected the row and added a paragraph explaining the difference.
+
+      2. **Provenance text.** The o007_dev3 level-2 records have no fingerprint and no frozen_config_sha256,
+      not only no solver hash. I confirmed this by inspecting the raw files and their .spec.json. The
+      check skipped those fields silently, so its output text now names them. It also states that the
+      only link from those records to this task''s fingerprinted layouts is an inference: the reproduction
+      check matches the level-0/1 solves of the same o007_dev3 cases to the cache records within 1e-6
+      K. I regenerated f1_dev_check.json with --analyse (no solve). The only change in it is that text
+      string.
+
+
+      The verdict on the committed I0212 records: status ''complete'', level1 ''confirmed'', broken ==
+      [], and all 24 stored records pass record_provenance. The worst level-1 error as a fraction of tolerance,
+      which I recomputed from the JSON and which matches the notes, is:
+
+
+      | quantity | P_ref | 0.5 P_ref |
+
+      |---|---|---|
+
+      | die average | 0.717 | 0.695 |
+
+      | spread | 0.261 | 0.316 |
+
+      | pair difference | 0.558 | 0.250 |
+
+      | level 1 vs level 2 | 0.248 | 0.111 |
+
+
+      Commands run and their exit codes:
+
+      - `uv run pytest -q research/o002_f1/test_f1_dev_check.py`: 0 (9 passed), before and after the edits.
+
+      - `uv run python research/o002_f1/f1_dev_check.py --analyse`: 0, run twice. The first run left the
+      committed JSON byte-identical; the second regenerated it after the text edit.
+
+      - DoD JSON assertion one-liner: 0.
+
+      - `uv run ruff check research/o002_f1`: 0.
+
+      - thermal_fem shasum prefix test: 0.
+
+      - `uv run mfos gate --fast`: 0 ("all gates passed"). The first run started before my edits; I re-ran
+      it on the final committed tree.'
+    evidence:
+    - 'git diff b7d5ce6d~1 b7d5ce6d -- f1_dev_check.py: broken list is built from sanity (passed is not
+      True), energy_balance, tj_at_P_ref and rep[''passed'']. When broken is non-empty, level1 = ''pending''
+      before the flags are looked at.'
+    - Raw research/o007_dev3/cache/a_q1h4_graded_gs2__case1a__L2__kT.json and its .spec.json contain no
+      'fingerprint' or 'sha256' strings, so the o007_dev3 level-2 records cannot be checked for fingerprint
+      or frozen config directly.
+    - 'f1_dev_check.json abs_die_average P_ref, side_by_side_6 die 11: error_L1 = 0.2122 K, tol = 0.2958
+      K, ratio 0.7175. The largest absolute error_L1 is u_shaped_2_p die 3 at 0.3054 K (ratio 0.672).
+      At half_P_ref: die 11 is 0.1003 / 0.1444 K, and u_shaped_2_p die 3 is 0.1434 K (ratio 0.647).'
+    - 'Recomputed worst ratios match the notes: spread 0.261 / 0.316, pair 0.558 / 0.250, level 1 vs level
+      2 0.248 / 0.111.'
+    - '--analyse output: status complete, level1 confirmed, broken [], missing_level2 []. record_provenance
+      passed, n_records 24.'
+    - 'DoD exit codes: pytest 0, analyse 0, json-assert 0, ruff 0, sha 0, mfos gate --fast 0 (on the final
+      tree).'
+    files_written:
+    - research/o002_f1/f1_dev_check.py
+    - research/o002_f1/f1_dev_check.json
+    - research/notes/o002-f1-dev-check.md
+    recommended_actions:
+    - Accept T0419. The 'confirmed' level-1 verdict on the I0212 burst records now depends on an empty
+      broken list and on all 24 records passing record_provenance.
+    - 'Follow-up outside this task''s scope (T0411 finding 3): any future re-solve of the o007_dev3 level-2
+      records should store thermal_fem_sha256, fingerprint and frozen_config_sha256 on each record. Their
+      provenance could then be checked directly instead of through dev_study.json plus the reproduction
+      check.'
+    confidence: 0.9

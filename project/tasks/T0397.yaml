@@ -4,7 +4,7 @@ title: 'E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, lev
   subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0393
 - T0394
@@ -466,3 +466,159 @@ history:
 
     ...[truncated; full reviews: project/reviews/T0397/]'
   at: '2026-11-17T09:50:21+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Attempt 2 of T0397 fixes the blocker that review T0436 found and every minor finding from
+    T0435 and T0436. All definition-of-done commands exit 0. One limit: in this worktree, `uv run mfos
+    exp check E007` exits 1 on a schema error. The draft now names the Woodruff bound, which main merged
+    in da2118fc after this branch''s base. Checked against main''s committed mfos, the draft has no problems.
+
+
+    **The blocker (null baselines):**
+
+    - Attempt 1 applied the three nulls (die_position, stratum_mean, isolated_die) to A2 and A3 as well.
+    The evaluator would then have marked A3 non-discriminating, and E007 could never PASS.
+
+    - Each null now applies to A1 and A4 only, as O002 F2 and the hypothesis text require. A3 and A5 are
+    each met by a layout-ignorant predictor by the objective''s own statement.
+
+    - On mai'
+  report:
+    summary: 'Attempt 2 of T0397 fixes the blocker that review T0436 found and every minor finding from
+      T0435 and T0436. All definition-of-done commands exit 0. One limit: in this worktree, `uv run mfos
+      exp check E007` exits 1 on a schema error. The draft now names the Woodruff bound, which main merged
+      in da2118fc after this branch''s base. Checked against main''s committed mfos, the draft has no
+      problems.
+
+
+      **The blocker (null baselines):**
+
+      - Attempt 1 applied the three nulls (die_position, stratum_mean, isolated_die) to A2 and A3 as well.
+      The evaluator would then have marked A3 non-discriminating, and E007 could never PASS.
+
+      - Each null now applies to A1 and A4 only, as O002 F2 and the hypothesis text require. A3 and A5
+      are each met by a layout-ignorant predictor by the objective''s own statement.
+
+      - On main''s evaluator, `null_check` on the fake m = 20 rows flags nothing and applies the nulls
+      to A1 and A4 only. On the same rows the stratum-mean null''s A3 upper bound is 0.413 K, so attempt
+      1''s design would have been non-discriminating there.
+
+      - A new gated sanity check, `f2_null_discrimination`, applies F2''s rule at P_ref: each null''s
+      point estimate must fail A1 (> 0.5 K) and A4 (> 0.5). Mutation tests show it catches a null that
+      meets A1 and an `applies_to` that goes beyond A1 and A4.
+
+
+      **Real reference path in the selftest:**
+
+      - The selftest now runs one real level-0 P_ref calibration through a real child process, on side_by_side/2''s
+      development layout at 4.0 mm. P_ref came out at 38.979 W, with a rise of 59.967 K after 3 solves
+      in 25 s.
+
+      - On that run: energy balance at most 5.2e-14; the Q1 baseplate-bottom mean equals T_c + Q_out/(hA)
+      to 9 decimals; Picard residual 3.6e-5 K; CG at most 96 iterations; the DOF estimator is exact; peak
+      memory 0.57 GB against an estimate of 0.66 GB.
+
+      - Real DOF growth on the 12 level-2 subset layouts is 7.33-7.66 per level, inside 8 ± 15 %. The
+      fake-mode bypass of `node_count_growth` is removed.
+
+
+      **Other fixes:**
+
+      - Every derived seed stream (six streams; per stratum or pool where they apply) is recorded and
+      checked. Mutations show a forbidden timing_order, l2_subset or die_size seed is caught.
+
+      - F7 draw fingerprints are checked against C004, T0393 and the P_ref layouts too.
+
+      - The F7 selection and its half-load L1 runs moved inside the single-threaded L1 phase. The main
+      process re-derives the selection and refuses a mismatch. The energy balance check now covers every
+      L1 evaluation, and the Tj rating check covers the F7 layouts.
+
+      - The A5 timing wording is corrected.
+
+      - Six more imported modules are added to the code freeze, and `geometry/*.py` to `code_under_test`.
+
+      - The per-stratum A2 report now flags whether each bound carries information, with counts.
+
+      - The spec now states the F6 scope (the hottest-node estimate exists only on the subset), that the
+      die-position null''s A4 is close to the stratum-mean null''s by construction, and which scenario
+      each power figure (0.898 and 0.531) belongs to.
+
+      - The cost summary was regenerated from `--plan`: 717 reference solves, 1,693 L1 evaluations, 56.7
+      CPU-h expected (61.1 upper), Option A $15.54 and Option B $13.84.
+
+
+      **D0025 (new on main):** the spec cites it for the bound, the sample, the CPU-hour convention and
+      the frozen L1. The recompute entries now carry `ci: woodruff, level 0.94, cluster layout` (all except
+      A5). `--dev` reports D0025 decision 4''s per-stratum check: implied calibration factor beside c(s),
+      HS and LS die bias, A2 against 1.8 %, and A4 against 0.3.
+
+
+      **Founder decisions before registration** (also listed in the spec):
+
+      - m is still provisional (20).
+
+      - Registration waits for T0398''s development rows, the D0025 check, and `mfos exp check E007 --rows`
+      on them.
+
+      - Whether all three nulls apply to A4.
+
+      - Whether F2 is gated or only reported.
+
+      - Compute location (all on the VM, or local then VM).
+
+      - Fixed parameters of null (a) and F7; A5 warm-up; pair rows; the yardstick.
+
+
+      The fake physics is not evidence that the nulls fail on real data. Only the development-row null
+      check before registration can show that.'
+    status: completed
+    failure_class: none
+    confidence: 0.8
+    experiment_drafts:
+    - experiments/drafts/E007.yaml
+    files_written:
+    - experiments/drafts/E007.yaml
+    - experiments/runners/e007_run.py
+    - research/notes/e007-design.md
+    evidence:
+    - '`uv run python experiments/runners/e007_run.py --selftest` exits 0 in 78 s with 0 failures. It
+      covers fake physics at m = 20 with 686 jobs, resume, every sanity check passing, finite V4 bounds,
+      the evaluator''s null check and mutations, plus a real level-0 calibration through a child process.'
+    - 'The same selftest with main''s committed tooling (`git archive da2118fc tools/` into $TMPDIR, PYTHONPATH
+      pointed at it) exits 0. mfos.metrics.quantile_ci equals e007_metrics.quantile_ci exactly on every
+      entry. evaluate.null_check in bounds mode: every null is not_satisfied on A1 and A4, and no criterion
+      is flagged.'
+    - '`uv run python experiments/runners/e007_run.py --verify-freeze` exits 0: 17 file hashes, the GridRule
+      key for key, production constants, the L1 grid rule and calibration table, and the allocation.'
+    - '`uv run python experiments/runners/e007_run.py --plan` exits 0: 717 reference solves, 1,693 L1
+      evaluations, 56.7 / 61.1 CPU-h, $15.54 (Option A) and $13.84 (Option B).'
+    - The DoD required-strings check on experiments/drafts/E007.yaml exits 0.
+    - '`uv run ruff check experiments/runners/e007_run.py` exits 0.'
+    - '`test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee`
+      exits 0.'
+    - '`uv run mfos gate --fast` exits 0 (''all gates passed'').'
+    - experiments.validate_draft run with main's da2118fc tooling on PYTHONPATH returns [].
+    - '`uv run mfos exp check E007` in this worktree exits 1 on a schema error (`scheme: woodruff` is
+      not a valid literal). This is expected: the branch base 646ca5d1 predates da2118fc.'
+    - 'Real physics: L1 on u_shaped_2_j00 took 0.39 s with energy balance 6.7e-16. The real calibration
+      of side_by_side_2_pref gave P_ref 38.979 W and rise 59.967 K. Q1 bottom mean 344.624961037 K equals
+      the flux mean. The DOF estimator is exact at 63,882. Peak memory 0.57 GB, under the 0.66 GB estimate.'
+    recommended_actions:
+    - Merge this branch into main, where CISpec accepts scheme 'woodruff', then run `uv run mfos exp check
+      E007` there. It should report no problems.
+    - 'Before registration: T0398 writes experiments/drafts/E007.dev_rows.json with `e007_run.py --dev`.
+      Then set dev_rows in the spec and run `uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json`.
+      Every null must fail A1 and A4, and D0025''s per-stratum L1 check (l1_dev_check_D0025) must pass
+      the 1.8 % A2 guard and A4 <= 0.3.'
+    - 'Founder: fix the final m from T0398''s power figures (D0025 decision 2), then update allocation.layouts_per_stratum,
+      f3_simulation.json and cpu_hours_est.'
+    - 'Founder: decide the open items in config.founder_decisions_before_registration: whether all three
+      nulls apply to A4, whether F2 is gated or only reported, compute location (Option A or B), null
+      (a) and F7 parameters, and A5''s warm-up.'
+    - Do not register before both the development-row null check and the D0025 check have passed. The
+      selftest's fake physics is not evidence that the nulls fail on real data.
+    discriminating_tests:
+    - '`mfos exp check E007 --rows <T0398 dev rows>` on main, which shows whether each null fails A1 and
+      A4 on real reference data. If it does not, F2 is a design error and the spec must be revised.'
+    - The per-stratum A2 upper_informative count on the dev rows, which shows whether per-stratum bounds
+      carry information at m = 20.
