@@ -1,0 +1,88 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "No unit tests for the new solve-stage logic (assemble, criteria, INVALID rule, estimators)",
+      "detail": "Nothing under tests/ references e004_run.py. The F1 exclusion, A1/A2/K1/K2 inputs and the finest_values_present (INVALID) rule are checked only through the smoke run. In smoke every estimate is +inf by construction, so the finite-estimate paths, the F1 caps and the K1-saves-from-INVALID branch never run. My synthetic checks found these paths correct today, but nothing guards them against regressions.",
+      "evidence": "grep -rln e004_run tests -> no files. Smoke assemble() returns total=INF for every row, so excluded_f1 is always True and A1 is always +inf in smoke.",
+      "suggested_check": "Add a unit test that feeds hand-built results to assemble()/criteria(), covering a monotone ladder, a missing FastHenry finest value with K1 firing elsewhere, and the cap boundary.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The run does not record a K1 that fires on an F1-excluded pair",
+      "detail": "O004 F1 says: 'A K1 that fires on an excluded pair is recorded as a failed comparison, not as a refutation of l2_layout, until the diagnosis.' criteria() returns only K1, K1_fires and pairs_missing_finest. It does not say which pair reaches K1 or whether that pair is excluded. The rows (excluded_f1, r_l2, r_fh) are enough to reconstruct it, but solve.json does not record it as F1 requires.",
+      "evidence": "Synthetic rows: pair 'a' excluded with r_l2=0.80 and r_fh=0.85, pair 'b' missing. Result: K1=0.0588, K1_fires=True, and nothing indicates that the firing pair is an excluded one.",
+      "suggested_check": "Record K1's argmax pair and its excluded_f1 flag in crit/solve.json.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Zero-failure bounds are computed on counted pairs whether or not those pairs meet A1",
+      "detail": "diagnostics() reports zero_failure_bound(n_counted) per move type, pooled and clustered. A counted pair that disagrees by more than 2 % is a failure, which makes a 'zero-failure' bound meaningless. O004 decision_if_pass states the bound only alongside a pass. The bound is reported, not judged, so no verdict changes, but the label can mislead when A1 fails.",
+      "evidence": "diagnostics(): per_type[t]['zero_failure_bound95'] = zero_failure_bound(n_ok), where n_ok counts only pairs that are not F1-excluded and the agreement value is not tested.",
+      "suggested_check": "Emit the bound only when every counted pair of that stratum meets the A1 threshold, or label it conditional.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The 2R proxy-pair path in stage_solve is unexercised and assumes a record format that does not exist yet",
+      "detail": "stage_solve expects the built proxy record to carry kind=='proxy', a live 'layout' object, 'fingerprint', 'components' and r_L1_*. No proxy builder exists yet (design_status open item ii), so this branch has never run. Registered mode refuses until the proxy is built, so this cannot produce wrong evidence, but 'completely implements' does not yet hold for the 13th pair.",
+      "evidence": "e004_run.py line 1087: `... if p['kind'] != 'proxy' else p['layout']`. Main refuses when the proxy status is not 'built' (line 1574).",
+      "suggested_check": "When the proxy is wired (T0444), smoke-test stage_solve with a built proxy record.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The FastHenry thickness-ladder key is hard-coded to 'k1', and fh_level has an unused parameter",
+      "detail": "fh_terms reads the nh_lateral point of the thickness ladder with v.get('k1' ...). It does not use cfg.solve.fasthenry.thickness.at, although solve_jobs builds the ladder at `at`. If `at` ever changes, the thickness term would silently mix lateral levels. fh_level also takes a smoke_nh argument it never uses.",
+      "evidence": "fh_terms: `thk = [v.get(\"k1\" if nh == nh_lat else f\"t{nh}\") ...]`. solve_jobs uses `at = f['thickness']['at']`.",
+      "suggested_check": "Pass `at` to fh_terms and assert at in FH_LADDER.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "gci_capped assumes refinement ratio 2, but the FastHenry thickness ladder nh 3/5/9 at rh=2 is not ratio 2",
+      "detail": "With rh=2 the edge filament is t/4, t/10 and t/46 for nh = 3, 5 and 9, so the edge-size ratios are 2.5 and 4.6. For order-1 convergence in edge size, gci_capped(f3, f5, f9) gives about 0.107C against a true f9 error of 0.0217C, about 5 times conservative. The gap rule's T(X) = 3|f5 - f3| is conservative in the same way. This follows the frozen O004 rule (T0368), not an implementation error, but it raises the chance of FastHenry F1 exclusions (1 % cap) and so of A1 not being met.",
+      "evidence": "Hand derivation: d1 = -0.15C, d2 = -0.0783C, rho = 0.522, p = 0.938, estimate = 1.25 * 0.0783C / (2^0.938 - 1) = 0.107C.",
+      "suggested_check": "Have F7(a)'s burst report the FastHenry thickness term's share of the 1 % cap on the Case 4 pairs.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "The cost/time projection is extrapolated far outside its calibration, and the spec's cpu_hours_est disagrees with the runner's plan",
+      "detail": "k2 decks have about 1.17M exporter filaments. Their times come from a two-point exponent (1.40, fitted at 25k-102k filaments), an 11x extrapolation, with a stated \u00b150 %. The same job list records a 15x underprediction on gen2_0. E004's own cost plan in vm_jobs_fasthenry.json gives 96.5 CPU-h, while E004.yaml keeps cpu_hours_est: 60.0.",
+      "evidence": "jq on vm_jobs_fasthenry.json: case4_base__fh_k2_nh5 has 1,168,944 filaments, 47.3 GB, 37,779 s projected and a 377,786 s timeout; e004_cost_plan.cpu_h = 96.55; gen2_0 time_calibration = 15.2.",
+      "suggested_check": "After the VM probe step, regenerate the plan (--dev-fh-plan) so timeouts reflect the measured calibration, and align cpu_hours_est with the plan.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Reference layouts are not compared with the registration record's fingerprint in the solve stage",
+      "detail": "The exported_geometry_identical description says every solve read 'the registered layout (fingerprint equal to the registration record)'. stage_solve compares only rebuilt pairs with p['fingerprint']. References are rebuilt from recon.snapped() and are checked only for self-consistency between child and parent. The risk is low because the reconstruction script's hash is frozen and checked at registration.",
+      "evidence": "stage_solve: geo_bad is only appended for pairs in the `for p in pairs` loop. refs[...] = recon.snapped(...)[0] has no record comparison.",
+      "suggested_check": "Compare each reference's fingerprint with the registration stage's reference record.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: exit 0 (CHECK_OK).",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke` myself (run dir $TMPDIR/e004-smoke-xdvjxnlk) to completion: exit 0 (SMOKE_OK). All four solves came back ok: dev_pair0 and 2D_Case_4 with l2_layout lat1.0 (GMRES flags 0, fingerprint_ok, cell 1 mm, peak 1.87 GB within the 2.0 GB projection) and with FastHenry k0 nh3. The FastHenry self-test on this host used binary eaa6d6fc\u20262d14 (matching the pin) and gave L = 5.7042564 nH against Hoer-Love 5.704254 \u00b1 3e-4.",
+    "Hand-verified fh_terms on the ladder k0/k1/k2 = 1.02/1.008/1.004 and t3/k1/t9 = 1.010/1.008/1.007: lateral 0.005 (rho = 1/3, p = 1) and thickness 0.001 + 0.00125 = 0.00225. The code returned exactly these values.",
+    "Hand-verified l2_terms on the ladder 1.010/1.004/1.002, thk_c/thk_f = 1.0045/1.0039, fil_f = 1.0041: lateral 0.0025, ratio_middle_term 1.5625e-4 (rp = 5), filament 3e-4. The code matched.",
+    "Checked zero_failure_bound(12) = 1 - 0.05^(1/12) = 0.2209 and zero_failure_bound(2) = 0.7764 by hand.",
+    "Adversarial criteria() test with hand-built rows: an excluded completed pair with |0.80/0.85 - 1| = 0.0588, a pair missing its finest value, and a clean pair. Got A1 = +inf, K1 = 0.0588 over completed pairs including the excluded one, K1_fires = True, pairs_missing_finest = ['b'], A2 = +inf, K2 = 0.0196 over completed layouts only. All as O004 A1/A2/K1/K2/F1 require.",
+    "Read mfos.metrics gci_capped, gci_step_floor, ratio_middle_term, max_rel_err_or_inf and max_consistency_capped, and checked that the runner's calls and the recompute block (pred/ref/params/where for all four criteria) match O004's definitions, including the finest_complete filter for K1 and K2.",
+    "Checked that the l2_layout level patching agrees with the module constants: CELL = (0.5, 0.25, 0.125) mm with layers 10/6/6 and E0 annuli on every slot, so lat0.5 and lat0.25 differ only laterally. WIRE_EDGES[refinement] is the only other refinement-indexed constant and is patched consistently. The levels agree with research/o004_f7/pilot_l2.py LEVELS.",
+    "Checked that the FastHenry deck sha256 in fasthenry_run (sha256(deck.encode())) is computed the same way as the parent's re-export check.",
+    "Inspected vm_jobs_fasthenry.json with jq: 24 jobs; no level uses wire_n = wire_sub = 1; nh_lateral is 5 and lies in the 3/5/9 ladder; explicit timeout_s and mem_cap_mb on each job; k2 decks project to 47-49 GB, within the 108 GB VM; 2R and Case 6 reference decks were sized by export only.",
+    "Ran ruff on e004_run.py: all checks passed. grep shows no tests reference e004_run."
+  ],
+  "caveats": [
+    "This is a design and implementation review. No converged l2_layout or FastHenry ladder exists yet (F7(a) is pending a founder burst), so whether the F1 caps are reachable, and so whether A1 can be met, is untested.",
+    "By the draft's own design_status the work is not registrable: the banded-acceptance rule, the 2R proxy wiring, the F7(a) results (which fix nh_lateral, still provisional at 5), the F3/F6 diagnostics and seed_provenance are all open. 'Completely implements' holds for the solve-stage machinery, not for a registrable E004.",
+    "Smoke covers only the coarsest level of each ladder, and every estimate is +inf there, so the finite-estimate F1 paths are covered only by my component-level checks.",
+    "Inline Python heredoc scripts were refused by the sandbox's permission policy, so the larger end-to-end synthetic test of assemble() with job and result dicts was not run. Only component-level checks of the estimators and criteria() were run."
+  ]
+}
