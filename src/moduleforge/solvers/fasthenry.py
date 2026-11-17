@@ -141,6 +141,10 @@ MAX_LINE = 900
 
 @dataclass(frozen=True)
 class FHLevel:
+    """Refinement level.  ``nh_trace = nh_plane = 1`` (the defaults) is a SMOKE-TEST level only: one filament through the
+    thickness is strongly biased on thin-ceramic stacks (+24 % against l2_layout on a generated layout, about +8 % on Case 4,
+    review T0417); judge nothing at nh = 1, use the 3 / 5 / 9 ladder."""
+
     cell_mm: float = 1.0
     plane_cell_mm: float = 4.0
     nh_trace: int = 1
@@ -470,6 +474,8 @@ def export(layout, lev: FHLevel, freqs=FREQS_HZ, title: str = "", *, die_model: 
     for e in equivs:
         L.extend(equiv_lines(e))
     L.append(f".external {port_nodes['P'][0]} {port_nodes['M'][0]}")
+    if len(freqs) > 2:  # the .freq line holds a decade sweep between min and max: middle entries would be dropped (review T0418)
+        raise ValueError(f"freqs must hold at most two frequencies (fmin, fmax), got {len(freqs)}")
     fmin, fmax = min(freqs), max(freqs)
     ndec = 1.0 / math.log10(fmax / fmin) if fmax > fmin else 1.0
     L.append(f".freq fmin={_fmt(fmin)} fmax={_fmt(fmax)} ndec={_fmt(ndec * (1 + 1e-9))}")
