@@ -1,0 +1,66 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Calibration factor transfers less well at 4.0 mm, and off the calibrated strata",
+      "detail": "The adopted 1.5 mm rule's c(4.0 mm) family spread is 0.0059. That is above the design note's ~0.005 refutation line, and the doc says so. I ran a fresh level-1 reference solve on a stratum the table never saw (interleaved, 3 dies per switch, 4.0 mm, seed 777). That case needs c = 0.9804; the table has 0.98544, an offset of about 0.5 %. The error also depends on the switch: about 0.1 K on the HS dies and 0.35-0.43 K on the LS dies of the same layout. A2-type stays at or below 0.84 %, well inside the 1.8 % guard and A2's 3 %, so no decision changes. Still, the factor is not as family-independent as the 5.0 mm agreement (0.0016) suggests.",
+      "evidence": "Fresh FEM.solve_layout at level 1 with the frozen rule: 633915 DOFs, energy balance 2.3e-13. L1 minus reference per die: [0.094, 0.114, 0.104, 0.355, 0.427, 0.367] K. A2-type at most 0.0084. Mean ref/FV rise ratio 0.98037 against the table's 0.98544.",
+      "suggested_check": "Before E007 relies on 4.0 mm and 3-5-die strata, add one or two calibration or validation rows there.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "L1 is a calibrated, not converged, discretisation; c(s) is tied to the frozen rule",
+      "detail": "Lateral refinement of the raw FV on the u_shaped/2 development layout moves the ref/FV ratio 0.97406 (4 mm), 0.98218 (1.5 mm), 0.98272 (1 mm), 0.98372 (0.75 mm). The ratio has not settled, and the remaining ~1.7 % bias comes from edge and z resolution near the die-edge singularity. The bias is removed by the frozen c(s), so it is fine as long as GRID_RULE and CALIBRATION stay frozen together. Spreads converge monotonically under the same refinement (HS 0.799 -> 0.682 -> 0.666 -> 0.662 K against the reference's 0.627 K), which supports the doc's inferred cause of the A4 gain. Picard truncation at 1e-2 K is negligible: at most 1.6e-5 K against 1e-7.",
+      "evidence": "raw_fv with h0_max 4, 1.5, 1, 0.75 mm (edge_frac 2, z_cells 2): 35890, 53408, 70066 and 100862 cells.",
+      "suggested_check": "Have the evaluate()/regression tests check that the table version and the grid rule are frozen together.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Change to thermal_layout.py, a file other experiments list as code under test",
+      "detail": "build_layout_grid, level0_cell and z_counts gain keyword overrides. src/moduleforge/solvers/thermal_layout.py is listed in code_under_test for E006, E008, E009 and E010. The defaults keep behaviour unchanged: the 37 existing thermal_layout/GCI tests pass and the fingerprint regression passes in gate --fast. The evaluator compares hashes at each result's run commit (tools/mfos/mfos/evaluate.py:182), so existing evidence is unaffected. Any re-run of those experiments will record a new hash for this file.",
+      "evidence": "experiments/specs/E009.yaml:279, E006.yaml:235; pytest tests/unit/solvers/test_thermal_layout.py and test_thermal_gci_matches_evaluator.py: 37 passed.",
+      "suggested_check": "Record in the merge note that the thermal_layout.py hash changes with no behavioural change.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Speed benchmark covers only 5.0 mm side_by_side/6 and u_shaped/2",
+      "detail": "The --check median is 0.413 s (max 0.593 s) on the 24 benchmark evaluations. I timed 24 layouts outside that set (all three families, 3 and 6 dies per switch, 4.0 and 5.5 mm): median 0.48 s, max 0.71 s (u_shaped/6 at 5.5 mm, about 99k cells). That still passes A5's 1 s with margin. The benchmark median understates the cost of large-die 12-die layouts.",
+      "evidence": "Off-set timing run, one BLAS thread: interleaved/6 at 5.5 mm 0.63-0.65 s; u_shaped/6 at 5.5 mm 0.68-0.71 s.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Some tests are weak, but the important guards do discriminate",
+      "detail": "Linearity at constant k would pass for any linear solver, and mirror symmetry is tested only in x. The tests that matter do discriminate. The 1D composite-wall test would fail with an arithmetic-mean face conductance. The Fourier-series limit uses an independent solver (thermal_series). The A2 regression guard catches a model with the calibration switched off: uncalibrated A2-type p95 is 2.27 % / 2.23 % against the 1.8 % guard. The fresh-seed regression rows chose the grid rule, so they are not out of sample; the doc states this. Small doc slip: it says energy balance is at most 2.1e-13 on every solve, but the cached max is 2.85e-13 once the level-0 and validation solves are included.",
+      "evidence": "Reran the regression rows with calibrate=False: A1 0.212 / 0.098 K, A2 0.0227 / 0.0223. With calibration: A2 0.00665 / 0.00640.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD commands. pytest tests/unit/thermal + tests/regression/test_thermal_l1_dev.py: 27 passed. The speed benchmark with --check gave median 0.413 s and max 0.593 s. The signature assertion was not run as a separate command, but the tests call `evaluate(..., h=, T_c=, constant_k=)` and use L1Result.tj_mean. ruff: clean. thermal_fem.py sha256 prefix a216d5fe3209bcee: matches. mfos gate --fast: all gates passed.",
+    "Power injection: q_in = q_out = P_total = 188.567544 W on the u_shaped/2 development layout, so the analytic T_bp uses the injected power.",
+    "FV bottom (Robin) area against baseplate_outline.area on 9 generated layouts (3 families): equal to 2e-16 relative, so T_bp is exact for the FV as well.",
+    "Picard tolerance: 1e-2 K against 1e-7 K changes die means by at most 1.6e-5 K (u_shaped/2) and 5.9e-6 K (side_by_side/6).",
+    "Grid-refinement series of the raw FV (h0_max 4 / 1.5 / 1 / 0.75 mm): ref/FV ratio and per-switch spreads converge monotonically. Numbers are in the findings.",
+    "Fresh level-1 reference FEM solve (frozen E009 rule) on an uncalibrated stratum (interleaved/3, 4.0 mm, seed 777): A2-type at most 0.84 %. The required c differs from the table by 0.5 %. Peak RSS 2.6 GB.",
+    "Re-solved one cached validation reference (val side_by_side/2 #3, 0c0557bc\u2026) from scratch: max |fresh - cached| = 0.0 K, same DOF count.",
+    "Cached reference metadata (50 solves): energy balance at most 2.85e-13, no CG maxiter hits, a single thermal_fem sha. All P_ref files are within 60 \u00b1 0.25 K.",
+    "Tested the tests: with calibrate=False the A2 regression guard fails (2.27 % > 1.8 %), so it discriminates.",
+    "Off-benchmark timing over 24 layouts (3 families \u00d7 3/6 dies per switch \u00d7 4.0/5.5 mm): median 0.48 s, max 0.71 s.",
+    "Existing thermal_layout/GCI unit tests after the thermal_layout.py change: 37 passed.",
+    "Cross-checked the doc tables against benchmarks/results/thermal_l1_calibration.json: A1, A2 and A4 values, and the decision rule's choice of 1.5 mm (0.213 against 0.217 for 1 mm)."
+  ],
+  "caveats": [
+    "The model is validated only for the default DBC stack, square dies of 4.0-5.5 mm, steady state and uniform h. Calibration rows cover side_by_side/6 and u_shaped/2 only; A4 is validated only for 2-die strata at 5.0 mm.",
+    "At 4.0 mm the calibration factor's family dependence (0.0059, and 0.5 % in my out-of-coverage case) is above the design note's transfer line. It is harmless for A2 at these margins but not established in general.",
+    "tj_max is unconverged and uncalibrated; it is report-only.",
+    "The fresh-seed rows (seed 20261395) chose the grid rule, so the tests on them are regression guards, not out-of-sample evidence. E007 on sealed seeds decides.",
+    "Lens was numerics. I did not judge statistical adequacy (p95 over 12 values) beyond noting it."
+  ]
+}

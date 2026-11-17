@@ -4,7 +4,7 @@ title: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested
   symmetry and power scaling, with a speed benchmark
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on:
 - T0392
 description: 'This is build item (2) of the objective notes. Implement the method chosen in research/notes/o002-l1-design.md
@@ -324,3 +324,6 @@ history:
       reductions).
     - 'Speed: the median evaluation is 0.41 s and the maximum 0.65 s on 12-die layouts. Medians moved
       by about 15 % with machine load across runs.'
+- outcome: full_gate_passed
+  summary: 1e4e11312870afcf205a8134be93acd96bdc348c
+  at: '2026-11-17T03:09:48+00:00'

@@ -135,6 +135,19 @@ description: 'Draft experiments/drafts/E007.yaml and experiments/runners/e007_ru
   of 300 layouts (20 per (family, dies) stratum, 15 strata, f3_simulation.json''s fixed allocation). The
   spec cites this decision (O002 state log) where it states the bound and the allocation.
 
+
+
+  Reviews T0423 and T0424 of T0395 (founder session, 2026-11-17), for E007''s freeze: (1) add a unit test
+  of the k(T) path against the exact 1D Kirchhoff limit (all seven layers on their K_LAWS, brentq on the
+  integral of k dT = q t; T0423 found agreement to 1.6e-5 to 2.4e-4 at 20-60 W), in tests/unit/thermal/test_l1.py;
+  (2) the grid rule and the calibration table are frozen together: add a test that pins GRID_RULE and
+  the CALIBRATION values together, with a failure message saying a grid-rule change needs a refit (test-only:
+  no change to src/moduleforge/thermal before the freeze unless you stop and say why); (3) correct docs/thermal_l1.md:
+  energy balance is at most 2.85e-13 over all cached solves (not 2.1e-13), and the speed maximum is about
+  0.79 s under load (median 0.41-0.48 s); (4) E007''s spec notes that T0395 changed src/moduleforge/solvers/thermal_layout.py
+  (keyword overrides, defaults unchanged), whose hash E006, E008, E009 and E010 record: a re-run of those
+  experiments records a new hash for it with no change in behaviour.
+
   '
 context_files:
 - project/objectives/O002/objective.yaml
@@ -163,6 +176,8 @@ touches:
 - experiments/runners/e007_*.py
 - research/o002_e007/**
 - research/notes/e007-design.md
+- tests/unit/thermal/test_l1.py
+- docs/thermal_l1.md
 definition_of_done:
 - cmd: null
   exists: experiments/drafts/E007.yaml

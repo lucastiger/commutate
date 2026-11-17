@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 2
 max_replans: 3
 needs_replan: false
-spent_usd: 50.2556
+spent_usd: 52.6284
 budget_override_usd: null
 log:
 - 'founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions
@@ -26,5 +26,10 @@ log:
   in some simulated cells); the sample is 300 layouts, 20 per (family, dies) stratum over 15 strata, the
   fixed allocation of research/o002_e007/f3_simulation.json (t3 power 0.898; about 52 CPU-hours and $15
   VM)'
+- 'founder decision 2026-11-17T02:35:20+00:00 (recorded by the founder session, reviews T0423/T0424 of
+  T0395): accept T0395''s 1.5 mm grid rule and its c(s) table although the family spread at 4.0 mm (0.0059)
+  exceeds the design note''s 0.005 transfer line; T0398''s development rows check the transfer per stratum
+  (implied c, HS/LS bias), and if any stratum misses the model''s 1.8 % A2 guard or A4 <= 0.3 the founder
+  decides before E007 freezes'
 evidence_rules: 2
 frozen_hash: sha256:f52c33de4a6472294c7bb3f5801c7bee97f9225b143175b28ab905f15f258134
