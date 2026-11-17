@@ -1,0 +1,264 @@
+id: E004
+title: 'l2_layout 0.25 mm against the pinned FastHenry on the inductance ratios and absolute loop inductance of sealed-seed
+  re-layouts of the frozen PowerSynth 2D_Case_2R and 2D_Case_6 reconstructions (O004 A1/A2/K1/K2, F1-F8). Draft part 1
+  (T0388): references, freeze, allocation, registration checks; the solve stage is T0389'
+objective: O004
+status: draft
+runner: uv run python experiments/runners/e004_run.py
+config:
+  design_status: >-
+    DRAFT, NOT REGISTRABLE YET (T0388 attempt 2, 2026-11-17). Open before registration: (i) T0438 (perturb.py fixes of
+    review T0416 items 1, 2, 4 and T0387's long_sides fix; in review): when it lands, perturb.rules_sha256(), perturb.py's
+    file hash and the pinned commit are refrozen here (`e004_run.py --print-freeze`), and rules_supplement_sha256 may be
+    retired if rules_sha256 then covers its inputs; (ii) T0437 (proxy_descent step_mm; needs founder): the 2D_Case_2R proxy
+    pair is wired and the proxy rule's sources refrozen; (iii) D0024 "Open": the span's lower end and the allocation are
+    the founder's after burst 1's F7(c) results (I0209); as drafted, F4 refuses a sealed draw almost surely
+    (research/notes/o004-e004-registration-design.md section 3); (iv) F7(a) and F7(c) are not assembled, so F7's response
+    trigger is undecided (not fired); (v) T0389's solve stage. O004 scope_in's development distribution at L1 and at
+    l2_layout 0.5 mm is T0387's F7(d) (research/o004_f7, 11 Case 4 development pairs).
+  decisions:
+  - {id: D0024, items: '1 F1 caps relative to the ratio; 2 the 0.7616 compound stands in for "r <= 0.75"; 3 the 2R proxy
+      pair at 1 mm against the reconstruction (I0207); 4 compounds (I0217) under the stagewise rule; 5 development geometry
+      under F2', open: span lower end and allocation}
+  - {id: D0007, items: no GPL (PowerSynth) file read or committed}
+  - {id: D0002, items: the pinned FastHenry build and its self-test}
+  references:
+  - reference_id: 2D_Case_2R
+    kind: public
+    reconstruction_fingerprint: 66cb1e191c9f88396125cfd87227865d209ea6cf4c5f4306082c5ccee2ad696a
+    meaning: Layout.fingerprint() of what the frozen T0263 script's snapped('2D_Case_2R') returns (E010 config.references)
+    has_twin: true
+  - reference_id: 2D_Case_6
+    kind: public
+    reconstruction_fingerprint: 71e07ae149b42bcd5efa243edc51730c208556e66fdf8c9d3356dc54ce574cb7
+    meaning: Layout.fingerprint() of what the frozen T0263 script's snapped('2D_Case_6') returns (E010 config.references)
+    has_twin: false
+  reconstruction_script: research/scripts/o003_powersynth_references.py
+  licence_rule: >-
+    D0007 / F5: the reconstructions are ModuleForge geometry transcribed by hand (T0263); no PowerSynth (GPL-3.0) file is
+    read, copied or committed; the registration stage checks that no tracked file carries one of the script's
+    FORBIDDEN_NAMES and records the script's sha256 (its SOURCES_SHA256 record the files T0263 read)
+  freeze:
+    rule: >-
+      F2: every hash below is recomputed by the registration stage before any draw; the reconstruction script's sha256 is
+      checked first and nothing is imported from it before that. A mismatch refuses the run (registered mode) before any
+      solve. A change after registration voids the run (new experiment id, freshly drawn pairs).
+    commit: 42db7eb51b76a986a6c35847a8558c925ff61ba1
+    commit_meaning: >-
+      a main commit the hashes below were taken at (src/ identical to this branch's HEAD); the registration stage requires
+      it to be an ancestor of HEAD and every frozen file's blob at it to carry the frozen sha256
+    reconstruction_script_sha256: aa96880cf38b2597e8a5927254ddc047d8de98b5b5d7ccdc5cf0fe6b19fd206a
+    perturb_rules_sha256: 70307210174b4f0beb725238d7a000de55b6b378d821d99071fbf051b7fa33b2
+    perturb_rules_supplement_sha256: 38420f5bd3a2ea56ed340e2f8a91a766c2d34f00039b9bb9034df32dbbfdacc3
+    perturb_rules_supplement_meaning: >-
+      e004_run.rules_supplement_sha256(): review T0416 item 1's inputs that perturb.rules_sha256() does not yet cover
+      (NETS in order, SIGNAL_NET, SIGNAL_PADS, the sources of Die.bounds, Die.box, BondWire.length, SignalWire.length)
+    l2_layout_source_sha256: ed0288b6744de1289c60e7057abc3fbe7c9c8b0f6da3bf04efce60260e458a8e
+    packages: {numpy: 2.5.3, scipy: 1.18.1, shapely: 2.1.2}
+    files:
+      src/moduleforge/__init__.py: 8497b6ec8f6a31584b8a2caece91c5de82622a7c5262b3770d8ffcf42053c8de
+      src/moduleforge/drc/__init__.py: d4e956db315452c839cc3821a8b0a14f98a6c5f871cc9f3417177216a6a2ab03
+      src/moduleforge/drc/rules.py: 19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5
+      src/moduleforge/generate/__init__.py: 194f83ccb880033d9fba9299ee09c1d0e8bd5e966f131a4515134af751e6df39
+      src/moduleforge/generate/derivative.py: 2be5db7e37217427c944c8dfa849de10b18222eb0c24903a359d30ee0fb9ea22
+      src/moduleforge/generate/perturb.py: 6f28e5a013a541f3d9765ffff3bcf03ae7a97f7655a7263b4971664c492f234b
+      src/moduleforge/generate/twin.py: 26a77a60130d95e4b5e087f30806ff2e26086757668d7d7e7fdecbb681a123e5
+      src/moduleforge/geometry/__init__.py: 9d585508033546b121219c944193e50ad0ed6a39a48b256e4ba2759b6c5c2b44
+      src/moduleforge/geometry/conductors.py: e9a21349fa36cd3c66d004f98c5468d4c954e9baced0503213c68a05a9b7b9df
+      src/moduleforge/geometry/layout.py: 4e95052d8138d67d4f68413b5160315302554e24a731084c74924807a31a3543
+      src/moduleforge/geometry/snap.py: d75da78fba20d0be52e1f736b4e0a6910673f5044c4d4b26ce75ab08bce6b1de
+      src/moduleforge/geometry/stack.py: b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999
+      src/moduleforge/geometry/units.py: 49b5fb83312b557e82f7b7eb014c54f077466c9207e113e19f6a7f1b5f953bcb
+      src/moduleforge/optimize/__init__.py: 773a6d8c0a0019c2c5bc11fcd5e50d2747e1495ce8fbe944d066c874ef3d2b38
+      src/moduleforge/optimize/control.py: f6e7585cfaf27c20629ae2cb93de9559074994b5756af5af3edc7f94b0a0aa45
+      src/moduleforge/optimize/local.py: 0da8d2c4efd8e4aa5af211875b9de9cd67d9edf126a1237abea7ea0af9205085
+      src/moduleforge/optimize/search.py: 55bbe01dfed2d006b671859ef9b5aeb6ff6525cfa18d73154c252742f3a2b075
+      src/moduleforge/physics/__init__.py: a81f63371f321dc76d852149c3e878796ef065d6e25b5406c0f0a16842462fbd
+      src/moduleforge/physics/peec/__init__.py: 9655be0526747a339d92c0f23ad116ba775dd2dcfef3e75053d0fe9a5765a1d5
+      src/moduleforge/physics/peec/kernels.py: 2daef19d6f75a6fbd4f9a0a13d22d7c828b0cd3be031a01a31bfac5f36553a77
+      src/moduleforge/physics/peec/model.py: c51ab7daff23cd3f2951290f660356b286909ab565a4e6b25e370b0fe3ba068c
+      src/moduleforge/solvers/__init__.py: f68728d9696592932ccc80819431f3d27be9733aad103230c93dad7e8d99e443
+      src/moduleforge/solvers/fasthenry.py: 0d2c77cdb70bc3d707d538c1be6d29439c7bc402558aca4621713ed7a629c70a
+      src/moduleforge/solvers/fasthenry_run.py: a373e493a784839d04e150db1a6e26764ed8442be8a82aa13ed07311828c3468
+      src/moduleforge/solvers/l2_core.py: 5d6d43bdd227d33b8b68f4a19bf3b09bf32235f1bc2f9acca994bbaf99d7ddca
+      src/moduleforge/solvers/l2_dd.py: 22f28822dc371a2da14eee6e9d58f713839200c2ea4a418adcac96168bb5e023
+      src/moduleforge/solvers/l2_layout.py: b91a437bdf642f694c37074b3395a5fa5fae08b70b6b7634660e184965ddfc39
+    files_meaning: >-
+      every moduleforge source file the registration stage loads (e004_run.FREEZE_IMPORTS, the reconstruction script and
+      the whole stage; reviews T0440 / T0441: L1's kernels.py, geometry/conductors.py and units.py, l2_dd.py and the package
+      __init__ files were missing): the exporter (solvers/fasthenry.py, T0384) and run adapter (solvers/fasthenry_run.py,
+      T0385); the proxy rule's sources (optimize/control.py, local.py, search.py, generate/twin.py, derivative.py; refrozen
+      once T0437 lands); the perturbation rules, DRC, geometry, snapping and stack; L1 (physics/peec). The stage refuses if
+      a loaded moduleforge file is not listed here (freeze_hashes_match at the start, freeze_covers_loaded_sources at the
+      end, which catches lazy imports).
+  perturbation_rules_text: >-
+    Frozen rules: moduleforge.generate.perturb at the hash above (die_row_shift, trace_width, terminal_copper,
+    wire_landing, and compounds of 2 or 3 distinct types, I0217), drawn by perturb.draw with each reference's own measured
+    rules (perturb.measured_rules, no overrides on a judged reference). Stagewise rule (founder, 2026-11-16 17:55 UTC):
+    every step of a compound is DRC-clean, changed and drawn on the layout the earlier steps left, not only the final
+    layout (D0024 item 4). Representation dependence (review T0416 item 2, stated rather than fixed): long_sides reads the polygon's
+    vertex list, so collinear vertex splits change the trace_width edge set and edge index for the same copper; after a
+    compound component the net is canonicalised (perturb._canonical), so a later trace_width index counts the canonical
+    polygon's long sides. Whole-mm rule (T0416 item 3): perturb rounds absolute coordinates to whole mm, so the
+    registration stage requires every reference coordinate it rounds to be whole mm and every layout on the 1.0, 0.5 and
+    0.25 mm lattices before any solve. A draw that raises (e.g. 'edge has copper on both sides', T0387) refuses the design
+    and names the net; it is never redrawn around.
+  allocation: {die_row_shift: 1, trace_width: 1, terminal_copper: 1, wire_landing: 1, compound: 2}
+  allocation_rationale: >-
+    Pre-registered (T0388), fixed before the development span simulation was run: the minimum single moves for per-type
+    coverage on each reference (one per type; I0217: single moves keep per-type coverage, and only single pairs count for
+    'each move type on each reference' and for the coverage rule), and the remaining two of the six slots to compounds,
+    which I0217 allows toward the span (on 2D_Case_4 only compounds reach below 0.873, span_reach.json).
+  seed_rule: >-
+    registered: the sealed seed s from `mfos exp run` (MFOS_SEED); reference slot k (references order) draws with
+    perturb.draw(reference, allocation, SeedSequence(entropy=s, spawn_key=(k,)).generate_state(1, uint64)[0]). Smoke and
+    development modes use e004_run.DEV_SEED only and never read the sealed seed.
+  proxy:
+    reference: 2D_Case_2R
+    rule: >-
+      Founder decision I0207 (2026-11-16), recorded as D0024 item 3: the designer-proxy pair uses O008's proxy descent (optimize.control.proxy_descent)
+      from the 2R twin in 1 mm steps (on the 1 mm lattice by construction), the step exposed as a parameter of O008's
+      implementation, not a copy of its code; its ratio is against the frozen 2R reconstruction, as O004 defines r.
+    scope_note: >-
+      Declared scope note: this is not exactly O008's 0.5 mm proxy rule; the pair is deterministic and shared with O008,
+      so its l2_layout ratio may be known before registration (review T0363); no FastHenry solve on 2R or Case 6 is made
+      before registration.
+    step_mm: 1.0
+    registered_mode: refuses to run without the built pair
+    smoke_mode: records the pair as pending, with the reason
+  min_references: 2
+  min_pairs_per_reference: 6
+  span: {lower_end: 0.75, upper_end: 0.98, n_below: 3, below: 0.90}
+  l1:
+    model: moduleforge.physics.peec.model.loop_inductance
+    hmax_m: 4.0e-3
+    hmax_check_m: 2.0e-3
+    near_threshold_abs: 0.005
+    meaning: >-
+      the F4 gates and the coverage rule are decided on L1 at hmax_m (its default mesh; deterministic, frozen; L1 is not the
+      tool under test). Review T0441 measured ratio shifts up to about 0.005 between 4, 2 and 1 mm, so the ratios at
+      hmax_check_m are reported beside every gate value, and every value within max(near_threshold_abs, |r_hmax - r_check|)
+      of a span or coverage threshold, or on its other side at hmax_check_m, is flagged (reported, not checked)
+  span_meaning: >-
+    O004 scope_in, read by the runner from the objective's text (e004_run.objective_span, one place); this block asserts
+    the value at registration and the runner refuses if the two differ. Checked on L1 (moduleforge.physics.peec), pooled
+    over every registered pair of every reference (the proxy pair once built), at 10 and at 20 MHz: min r <= lower_end,
+    max r >= upper_end, at least n_below pairs with r < below. A founder amendment changes the objective's sentence and
+    this line only.
+  coverage_min_effect: 0.06
+  coverage_meaning: >-
+    review T0366, reported not checked: a move type is covered by a pass only if one of its counted single pairs has
+    |1 - r| >= 6 % at L1 at both frequencies; compounds containing the type are reported apart
+  frequencies_hz: [1.0e+7, 2.0e+7]
+  loop: DC+ terminal to DC- terminal, dies as ideal shorts (module-internal commutation loop)
+  l2_layout_ladder_m: [1.0e-3, 0.5e-3, 0.25e-3]
+  judged_level: l2_layout 0.25 mm; FastHenry its finest level
+  f1_rule: >-
+    D0024 item 1 (founder, 2026-11-17T01:41 UTC; review T0429 of T0387; decided before any F7(c) burst result): F1's caps are relative to the ratio: a counted pair needs
+    E_R / r <= 0.005 for l2_layout and E_R / r <= 0.01 for FastHenry, E_R the mfos.metrics.gci_step_floor estimate of the
+    three-level ratio sequence (ratio units, step_floor 1e-3 relative) plus the thickness terms, r the finest ratio. A
+    pair failing a cap or with +inf is excluded (A1 not met; it stays in K1 on its raw value). Implemented in T0389.
+  stand_in: >-
+    D0024 item 2: wherever F7(a)/(c) or a brief names "the pair with r <= 0.75", the lowest compound found on 2D_Case_4 is
+    used, labelled "lowest reachable, r = 0.7616, stands in for r <= 0.75" (a start-dependent search minimum, not a proven
+    floor). If r <= 0.75 is unreachable on a judged reference, that is reported and the span is not changed on that account
+  development_geometry: >-
+    D0024 item 5 / O004 F2: span-reach, rule-range and pilot work use 2D_Case_4, gen2_0 and development seeds only; nothing
+    is drawn and no inductance is computed on 2D_Case_2R or 2D_Case_6 before registration, except F7(b)'s l2_layout 0.25 mm
+    solve of 2D_Case_6's reconstruction
+  a2_cap_rel: 0.05
+  f7_status: >-
+    research/notes/o004-f7-l2-pilot.md (T0387): F7(b) passed (Case 6 0.25 mm solve completed); F7(c) exclusion rate 0 of
+    2 complete pairs with 11 pending (VM), trigger not fired and undecided; F7(a) not yet run. Registration waits on the
+    founder's reading of the assembled F7 results.
+sealed_seed: true
+metrics:
+- {name: max_ratio_diff_vs_fasthenry, description: 'A1: max over pre-registered pairs and both frequencies of |r_L2 / r_FH
+    - 1|, l2_layout 0.25 mm vs FastHenry finest; +inf if any pair is excluded by F1 (solve stage, T0389)'}
+- {name: max_abs_consistency, description: 'A2: max over layouts and frequencies of |L_L2 - L_FH| / (E_L2 + E_FH), each
+    estimate capped at E/L <= 0.05 (+inf if above its cap or infinite) (solve stage, T0389)'}
+- {name: max_ratio_diff_vs_fasthenry_all, description: 'K1: max over every pre-registered pair with a finest value, excluded
+    ones included, of |r_L2 / r_FH - 1| on raw values (solve stage, T0389)'}
+- {name: max_rel_diff_vs_fasthenry, description: 'K2: max over layouts and frequencies of |L_L2 / L_FH - 1| (solve stage,
+    T0389)'}
+- {name: n_registered_pairs, description: registration - pairs drawn plus the proxy pair if built}
+- {name: l1_ratio_min, description: registration - lowest L1 ratio at 20 MHz over the drawn pairs}
+- {name: l1_ratio_max, description: registration - highest L1 ratio at 20 MHz over the drawn pairs}
+- {name: l1_n_below_0p90, description: registration - drawn pairs with L1 ratio below 0.90 at 20 MHz}
+- {name: l1_ratio_std, description: 'registration - diversity statistic: sample standard deviation of the L1 ratios at 20 MHz'}
+- {name: l1_n_near_threshold, description: 'registration - pairs with an L1 ratio near a span or coverage threshold
+    (config.l1, reported)'}
+- {name: n_move_types_covered_l1, description: 'registration - move types with a single pair of |1 - r_L1| >= 6 % (coverage
+    rule, reported)'}
+sanity_checks:
+- {name: seed_provenance, description: 'registered: pairs drawn from run.seed (the sealed seed ExperimentRun records),
+    and a replay of every slot''s draw from MFOS_SEED, read independently, reproduces every move and geometry; smoke: the
+    same with the development seed, the sealed seed never read (reviews T0440/T0441: the check can now fail)'}
+- {name: freeze_hashes_match, description: 'F2: reconstruction script sha256 first, then every config.freeze hash, the
+    perturbation-rules hashes, l2_layout source_sha256, numpy/scipy/shapely versions, every loaded moduleforge file
+    frozen, the pinned commit an ancestor of HEAD whose blobs carry the frozen hashes'}
+- {name: references_fingerprints_match, description: 'F2: both judged references rebuilt by the frozen T0263 script with the
+    frozen fingerprints (depends on no solve)'}
+- {name: no_powersynth_files_in_tree, description: 'F5 / D0007: no tracked file named like a PowerSynth sample file'}
+- {name: references_whole_mm, description: 'T0416 item 3: every reference coordinate the whole-mm construction rounds is
+    whole mm'}
+- {name: references_on_lattice, description: 'F4: each reference on the 1.0, 0.5 and 0.25 mm lattices, gated before
+    any draw (reviews T0440/T0441)'}
+- {name: draws_complete, description: 'the frozen allocation drawn on every reference; a draw that raises refuses and names
+    the net (T0387)'}
+- {name: n_references, description: 'F4: at least two references'}
+- {name: pairs_per_reference, description: 'F4: at least 6 pairs per reference'}
+- {name: move_type_per_reference, description: 'F4: each of the four single move types on each reference'}
+- {name: layouts_on_lattice, description: 'F4: every reference and re-layout on the 1.0, 0.5 and 0.25 mm lattices'}
+- {name: layouts_drc_clean_distinct, description: 'every re-layout and every compound intermediate DRC-clean under its
+    reference''s measured rules (stagewise rule, D0024 item 4), every step changing the geometry, the stepwise result equal
+    to perturb.apply''s, all distinct; re-run on the materialised layouts with the same drc.check (not an independent DRC)'}
+- {name: l1_span, description: 'F4: pooled L1 ratios span [lower_end, 0.98] with at least 3 below 0.90 at both frequencies'}
+- {name: proxy_pair_built, description: 'the 2D_Case_2R designer-proxy pair built (I0207); registered mode refuses without
+    it'}
+- {name: freeze_covers_loaded_sources, description: 'F2: at the end of the stage, before any solve, every moduleforge
+    source file loaded (lazy imports included) is in config.freeze.files'}
+- {name: fasthenry_binary_pinned, description: 'solve stage (T0389): binary sha256 recorded and D0002 self-test passed on
+    each VM'}
+- {name: fasthenry_closed_form_validated, description: 'solve stage (T0389): the run adapter''s closed-form validation of
+    the reference solver passes on this run'}
+- {name: exported_geometry_identical, description: 'solve stage (T0389): both solvers read the same layout fingerprint and
+    the exported deck matches it'}
+- {name: l2_solver_health, description: 'solve stage (T0389): every l2_layout GMRES flag 0'}
+- {name: finest_values_present, description: 'solve stage (T0389): missing-data rule of F1 (INVALID only if a pair lacks
+    a finest value and no completed pair fires K1)'}
+timeout_min: 6000
+cpu_hours_est: 60.0
+code_under_test:
+- src/moduleforge/solvers/l2_layout.py
+- src/moduleforge/solvers/l2_core.py
+- src/moduleforge/solvers/fasthenry.py
+- src/moduleforge/solvers/fasthenry_run.py
+- src/moduleforge/generate/perturb.py
+- src/moduleforge/geometry/conductors.py
+rows: {artifact: rows.json}
+recompute:
+- metric: max_ratio_diff_vs_fasthenry
+  fn: max_rel_err_or_inf
+  pred: r_l2
+  ref: r_fh
+  params: {excluded: excluded_f1}
+  where: {row_kind: pair}
+- metric: max_abs_consistency
+  fn: max_consistency_capped
+  pred: L_l2
+  ref: L_fh
+  params: {e_pred: E_l2, e_ref: E_fh, cap_rel: 0.05}
+  where: {row_kind: layout}
+- metric: max_ratio_diff_vs_fasthenry_all
+  fn: max_rel_err
+  pred: r_l2
+  ref: r_fh
+  where: {row_kind: pair, finest_complete: true}
+- metric: max_rel_diff_vs_fasthenry
+  fn: max_rel_err
+  pred: L_l2
+  ref: L_fh
+  where: {row_kind: layout}
+null_baselines: []
+recompute_exempt: {}
