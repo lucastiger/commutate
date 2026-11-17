@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-17T18:30:14+00:00 from repository state — do not edit_
+_generated 2026-11-17T18:31:08+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0245** [protected_change] T0451: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -25,7 +24,7 @@ _generated 2026-11-17T18:30:14+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 35 | $80.05 | 1517932 | 785394 | 109 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 49 | $97.54 | 1647363 | 942331 | 141 | 0 |
+| O004 | 50 | $97.54 | 1647363 | 942331 | 141 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -33,16 +32,13 @@ _generated 2026-11-17T18:30:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 46, done: 394, failed: 4, needs_founder: 1, running: 2, todo: 5
+cancelled: 46, done: 395, failed: 4, running: 3, todo: 4
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 4)
+- T0389 `running` scientist/design_experiment: E004 design, part 2: solve stage, estimators, A1/A2/K1/K2 metrics, INVALID rules, and the FastHenry F7(a) job list (attempt 1)
 - T0398 `running` scientist/design_experiment: E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on the dev structure (attempt 1)
-- T0451 `needs_founder` builder/implement: perturb.py hash coverage and redraw fixes (T0446), adapter test and docstring items (T0445), before E004's hash freezes (attempt 1)
 
 ## Recent events
-- 2026-11-17T16:42:39+00:00 run_started {"run": "T0451-builder-20261117T084239-1749", "task": "T0451", "role": "builder", "session": "bdd863ab-32cd-481d-ae5b-5d04a3448e4e"}
-- 2026-11-17T16:42:40+00:00 run_started {"run": "T0398-scientist-20261117T084240-e4d3", "task": "T0398", "role": "scientist", "session": "42d0956f-582d-4e90-b39e-5de340d71007"}
-- 2026-11-17T16:43:15+00:00 loop_stopped {"reason": "STOP file"}
 - 2026-11-17T16:53:01+00:00 inbox_resolved {"id": "I0243", "status": "rejected", "note": "Premature: E007 design is incomplete. T0398 development rows and the final layouts per stratum from its power fig
 - 2026-11-17T16:53:07+00:00 loop_started {"pid": 57452}
 - 2026-11-17T16:53:08+00:00 run_finished {"run": "T0382-scientist-20261117T070728-ed30", "status": "completed", "cost": 1.955482, "subtype": "success", "report": "structured_output"}
@@ -55,3 +51,6 @@ cancelled: 46, done: 394, failed: 4, needs_founder: 1, running: 2, todo: 5
 - 2026-11-17T17:31:39+00:00 run_started {"run": "T0452-critic-20261117T093139-9a28", "task": "T0452", "role": "critic", "session": "76055eba-cb1b-44fe-a264-d8870c0b0724"}
 - 2026-11-17T17:52:25+00:00 run_finished {"run": "T0452-critic-20261117T093139-9a28", "status": "completed", "cost": 2.064137, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T17:52:32+00:00 inbox_opened {"id": "I0245", "kind": "protected_change", "subject": "T0451: merge needs founder approval"}
+- 2026-11-17T18:30:34+00:00 inbox_resolved {"id": "I0245", "status": "approved", "note": "T0451 merge approved, review T0452 accepts with caveats. Rules hash now covers Die.bounds and _ring_ints, LongSid
+- 2026-11-17T18:30:57+00:00 merged {"task": "T0451"}
+- 2026-11-17T18:31:08+00:00 run_started {"run": "T0389-scientist-20261117T103108-f20b", "task": "T0389", "role": "scientist", "session": "6cb45661-9e39-42a3-951d-89ca80ed7ac2"}
