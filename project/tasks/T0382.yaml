@@ -171,7 +171,14 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ (d) the ablation's l1_evals beside n_draws.\n5. `mfos exp check E011` exits 0 and the selftest passes.\
   \ Write the facts to research/notes/e011-dev-run.md.\n\n\nFounder session, 2026-11-17: the founder accepted\
   \ decision record D0026 (project/decisions/, commit 9a54cdb0). The spec and notes cite D0026 for the\
-  \ pre-registration decisions it records, instead of the objective's state log.\n"
+  \ pre-registration decisions it records, instead of the objective's state log.\n\n\nReview T0444 of\
+  \ T0437 (founder session, 2026-11-17): nulls.py now returns the terminal kind 'no_moves' (the first\
+  \ neighbourhood was empty: D_j had no valid in-domain neighbour), but experiments/runners/e011_metrics.py's\
+  \ TERMINAL_KINDS does not include it and its validator raises on it. Map it in the runner and the metrics,\
+  \ and state in E011's spec how a no_moves null draw counts for A3. My reading: it is not a resolved\
+  \ failure, because the null never moved; it counts like a capped null and is reported. The founder confirms\
+  \ it with the spec. Do the same for the search's existing 'no_moves' stop reason. T0437 also changed\
+  \ every degradation draw (the seed tag), so no development row or pin from before T0437 carries over.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py

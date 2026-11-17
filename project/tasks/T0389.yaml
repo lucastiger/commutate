@@ -179,6 +179,15 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   report if a move type''s draws are restricted on a reference. A redraw that changes coverage must not
   be silent.
 
+
+
+  Review T0444 of T0437 (founder session, 2026-11-17): proxy_descent(step_mm=1) is not on the 1 mm lattice
+  by construction when reach=True. The reach jumps (twin._walk_candidates) go to outline limits or pad
+  edges, which may sit at x.5 mm. When you wire the 2D_Case_2R proxy pair (D0024 item 3), check that every
+  visited layout and the end point are on the 1 mm lattice, and report the result. If a jump leaves the
+  lattice, stop and say so: the fix is a builder change in control.py (filter the jumps to multiples of
+  step_mm), and D0024''s ''by construction'' wording would need an amendment.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml

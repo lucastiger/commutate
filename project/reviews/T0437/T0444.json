@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "proxy_descent docstring: the '1 mm stays on the 1 mm lattice' guarantee is false when reach=True and the outline limits or pad edges sit on a half-millimetre",
+      "detail": "The new docstring says step_mm=1 'keeps every visited layout on the 1 mm lattice when W_params is on it'. The default reach=True neighbourhood includes the reach jumps from twin._walk_candidates. Those jumps only require the 0.5 mm design grid: a slot end or a column outer edge can go to the outline limit or to the pad edge. When a limit or pad edge sits at x.5 mm, the 1 mm descent leaves the lattice. The new test only uses the default 70x40 housing, whose limits are whole millimetres, so it cannot catch this. This is not a blocker: the frozen proxy rule in the O008 objective uses 0.5 mm steps, the default is bit-identical to before, and the in-domain pins use 0.5 mm. Any E011 design step that relies on the 1 mm lattice property would be wrong for such geometry.",
+      "evidence": "Scratch run on D.halfbridge_housing_spec(3, rules=DesignRules(edge_margin=1.5e-3), wires_per_die=1); W._limits gives (1.5, 68.5) and (1.5, 38.5). Starting from generated layouts 1 and 4 rounded onto the 1 mm lattice (DRC-clean), the first neighbourhood holds 11 off-lattice valid jumps (e.g. col_DC+_outer>limit). proxy_descent(step_mm=1.0) takes col_PHASE_outer>limit at step 26 (layout 1) and step 13 (layout 4), and every later state is off the lattice. On the default housing (seeds 0, 1, 4, 5) no state left the lattice.",
+      "suggested_check": "Either qualify the docstring (single steps only, or reach=False), or filter jumps to multiples of step_mm, and add a test on a spec whose limits are at x.5 mm.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "New null terminal kind 'no_moves' is outside the E011 row schema, and its A3 meaning is undecided",
+      "detail": "nulls.py adds NO_MOVES = 'no_moves'. experiments/runners/e011_metrics.py has TERMINAL_KINDS = ('local_optimum', 'step_limit', 'budget', 'seed', 'no_candidate'), and its validator raises ValueError on any other kind. A no_moves null is not capped, so under the A3 rule it could count as a resolved failure even though the null never moved, because D_j had no in-domain neighbour. The E011 runner or spec will need to map this kind and decide how it counts. The search's existing 'no_moves' stop reason has the same gap.",
+      "evidence": "grep: e011_metrics.py lines 65 and 122-127. nulls.py lines 43 and 111-112/141-142.",
+      "suggested_check": "Before registration, state in E011's spec how a no_moves null draw maps to terminal_kind/capped and whether it can be a resolved failure.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Fast tests renamed outside the stated scope so the DoD grep for 'test_determinism' no longer matches them",
+      "detail": "Four fast tests were renamed and not marked slow: test_derivative::test_determinism, test_local_search::test_determinism_and_different_seeds, test_search::test_determinism_across_runs and thermal/test_l1::test_determinism. Their bodies are unchanged, so nothing is weakened and fast coverage is kept. The DoD's substring grep is met by renaming rather than by slow marks, and test_l1/test_derivative are outside the named scope.",
+      "evidence": "git grep 'def test_.*determinis' -- tests; the material diff hunks for test_derivative.py, test_local_search.py, test_search.py and test_l1.py.",
+      "suggested_check": "None needed. A DoD that names test node ids instead of bare substrings would avoid the ambiguity.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The seed-stream tag is verified: the old scheme collided with the search's streams; the new one does not",
+      "detail": "Sealed seeds come from secrets.randbelow(2**31-1), a single 32-bit word. The old entropy [s, li, j, a] collided through numpy's zero padding within the pool. The tagged 5-word list puts its 5th word through the extra mixing step, so it cannot equal any search stream. The change also alters every degradation draw compared with earlier development work, so any development rows or pins built on the old streams would be stale. No registered spec references them, and E011 is not registered.",
+      "evidence": "Scratch: SeedSequence([s,1,7,0]) == [s,1,7] -> True; [s,3,0,0] == [s,3] -> True. New scheme: 384 distinct states for 2 seeds (incl. s == DEGRADE_TAG) x 4 li x 8 j x 6 a; 0 collisions with [seed,k,it] and [seed,chunk] for seeds {s, TAG, 1, 0}.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Extra cost and use of a private helper in nulls",
+      "detail": "_step0_stats builds its own _Space and validates the whole first neighbourhood a second time, because descend does not share its cache. null_widen also runs one more descend at the limit. Both are small next to a 200-step run. nulls.py now imports the private local._Space.",
+      "evidence": "nulls.py lines 88-96, 106-110.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran DoD 1: `uv run pytest -q tests/unit/optimize tests/unit/generate/test_twin.py` gives 162 passed in 1121 s, including the slow-marked pins test_in_domain_proxy_pins[2R-25], [case4-73] and the exact-limit nulls tests.",
+    "Ran DoD 2: `uv run ruff check src tests` passed; also `ruff check src tests experiments/runners` passed.",
+    "Ran DoD 3: `pytest --collect-only -q -m 'not slow' tests/unit` collected 1138/1192 (54 deselected); the forbidden-name grep gives 0 matches.",
+    "Ran DoD 4: `uv run mfos gate --fast` printed 'all gates passed' (exit 0).",
+    "Checked numpy SeedSequence collisions numerically: the old untagged entropy collides with the local [s,1,it] and candidate_stream [s,chunk] streams; the tagged entropy gives 384/384 distinct states with 0 collisions against search streams, including sealed seed == DEGRADE_TAG. Confirmed sealed seeds are < 2^31 (tools/mfos/mfos/experiments.py).",
+    "Adversarial lattice test: proxy_descent(step_mm=1.0, reach=True) on the default housing (seeds 0, 1, 4, 5) stays on the lattice. On a housing with edge_margin=1.5 mm (limits at x.5), it leaves the 1 mm lattice through col_*_outer>limit jumps, which contradicts the docstring.",
+    "Independent check of the nulls' exact-limit labelling, using my own saturating measures (copper cap +8 mm^2, wire floor -2 mm) on a different D_j (generate seed 7): widen and compact give step_limit below the optimum step count and local_optimum at and above it, with step counts correct and n_neighbours_step0=71, seed_in_domain=True.",
+    "Read local.descend/_Space/neighbours and twin._walk_candidates to confirm that _step0_stats counts the same neighbourhood descend searches (same movable set, 0.5 mm, reach jumps, same validity test).",
+    "Checked downstream consumers: e011_metrics.TERMINAL_KINDS excludes 'no_moves'; the CI/full gate still runs slow tests (`pytest -q tests`)."
+  ],
+  "caveats": [
+    "The step_mm parameter passes through correctly and the 0.5 mm default is bit-identical, but the documented 1 mm lattice guarantee holds only when every reach-jump target (outline limits, pad edges, column edges) is a whole millimetre, or with reach=False. It fails on geometry with half-millimetre limits.",
+    "Whether the real development references (2D_Case_2R, 2D_Case_4, gen2_0, 2D_Case_6) have half-millimetre limits was not checked: loading them through the E010 runner was refused in this sandbox.",
+    "The E011 runner must map the nulls' new 'no_moves' terminal kind into the e011_metrics row schema and decide whether such a draw can be a resolved failure under A3.",
+    "The in-domain proxy pins (2R: 25 steps, ratio 0.91379; case4: 73 steps, ratio 0.65327) are regression pins of current behaviour, not independent physics checks.",
+    "The tagged seed streams change every degradation draw compared with the untagged scheme. Any development rows produced before this change are not reproducible under the new code."
+  ]
+}
