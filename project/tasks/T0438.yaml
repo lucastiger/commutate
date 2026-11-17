@@ -3,7 +3,7 @@ objective: O004
 title: perturb.py fixes before E004's hash freezes (reviews T0416, T0387)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Source fixes to the perturbation rules before E004 freezes their hash (O004). T0388 (E004
   design part 1, a scientist) could not make them: they are in src/ and tests/unit/. Each fix comes with
@@ -71,4 +71,66 @@ target: null
 lens: null
 trigger: null
 rationale: founder approved 2026-11-17 in the founder session (T0388 cannot write src/)
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All five perturb.py fixes are in, each with a test, and the DoD commands pass. The new rules_sha256()
+    is 24d12d8062c55f798c8410b1dee333dbf05e47bd05142c84b9d1119ac10fea73, for T0389 to refreeze E004''s
+    perturbation hash from. The commit is 98d23862.
+
+
+    1. **Hash coverage:** `_rule_sources` now includes NETS, SIGNAL_NET, SIGNAL_PADS and the sources of
+    Die.box, BondWire.length and SignalWire.length. The test checks that changing NETS, SIGNAL_NET or
+    SIGNAL_PADS changes the hash.
+
+    2. **Collinear splits:** `long_sides` now works on `_canonical(poly)`. The test splits every edge
+    of the Case 4 nets at its midpoint and gets the same edge set.
+
+    3. **Whole-mm check:** a new `require_whole_mm` checks trace vertices, die boxes and terminal boxes.
+    `measured_rules` and `draw` both call it and raise ValueError'
+  report:
+    status: completed
+    summary: 'All five perturb.py fixes are in, each with a test, and the DoD commands pass. The new rules_sha256()
+      is 24d12d8062c55f798c8410b1dee333dbf05e47bd05142c84b9d1119ac10fea73, for T0389 to refreeze E004''s
+      perturbation hash from. The commit is 98d23862.
+
+
+      1. **Hash coverage:** `_rule_sources` now includes NETS, SIGNAL_NET, SIGNAL_PADS and the sources
+      of Die.box, BondWire.length and SignalWire.length. The test checks that changing NETS, SIGNAL_NET
+      or SIGNAL_PADS changes the hash.
+
+      2. **Collinear splits:** `long_sides` now works on `_canonical(poly)`. The test splits every edge
+      of the Case 4 nets at its midpoint and gets the same edge set.
+
+      3. **Whole-mm check:** a new `require_whole_mm` checks trace vertices, die boxes and terminal boxes.
+      `measured_rules` and `draw` both call it and raise ValueError otherwise. 2D_Case_2R and 2D_Case_6
+      pass it, and gen2_0 is rejected by `draw`.
+
+      4. **Positive terminal_copper case:** a new test uses DC+, side W, margin 1, delta +3. The slab
+      sticks out 2 mm past T10, so the closed-form gain is 2 mm × 5 mm = 10 mm², and the test checks it.
+
+      5. **Both-sided edges in draw:** `_draw_params` now draws the net first and evaluates long sides
+      only for that net. `_draw_single` now catches the ValueError from `_draw_params` and redraws. On
+      gen2_0, `long_sides` still raises for DC+ and PHASE, so `_draw_params` yields only DC- (test marked
+      slow). The synthetic layout (DC- widened by 0.5 mm) gives only DC+ and PHASE. Neither test runs
+      draw or long_sides on 2D_Case_2R or 2D_Case_6.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    concerns:
+    - I edited one existing expectation, in test_long_sides_exclude_end_caps. Case 4's DC- top side is
+      now ('h', 50, 10, 52) where it was ('h', 50, 20, 52), because canonicalising merges the collinear
+      split where T9 and T4 meet. This is the direct effect of fix 2, and the new value is the geometrically
+      true edge. No tolerance was loosened.
+    - '`draw` output changes for the same seed. The net is now drawn uniformly over NETS rather than among
+      nets that have long sides, so the rng stream differs. This is expected since the hash is being refrozen.'
+    - The first `mfos gate --fast` run hit the 10-minute background limit and was killed. A rerun with
+      a longer limit passed in 845 s.
+    - The gen2_0 test loads experiments/runners/e008_run.py (read-only) and is marked slow.
+    files_changed:
+    - src/moduleforge/generate/perturb.py
+    - tests/unit/test_perturb.py

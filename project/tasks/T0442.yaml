@@ -4,7 +4,7 @@ title: FastHenry adapter fixes from reviews T0427/T0428 (retries, Zc.mat checks,
   bound, MEM_MARGIN)
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'FastHenry run adapter fixes from reviews T0427 (physics) and T0428 (numerics) of T0385 (O004).
   T0389 (E004 design part 2, a scientist) cannot make them: they are in src/ and tests/unit/. Each comes
@@ -68,4 +68,79 @@ target: null
 lens: null
 trigger: null
 rationale: founder approved 2026-11-17 in the founder session
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All five FastHenry adapter fixes are in and committed (40e7fa7e). Each has a test, and the
+    DoD commands and `mfos gate --fast` all pass.
+
+
+    1. **Retries:** An external SIGKILL is no longer retried. It ends as status `killed_external`, whether
+    it shows as signal 9 or as a wrapper''s exit 137. A non-zero exit code that repeats identically on
+    two consecutive attempts also stops the retries. Exit codes above 128 are treated as signal-style
+    crashes and still retried, because the existing tests use `exit 139` as a segfault stand-in and real
+    SIGSEGV is the intermittent D0002 crash the retries exist for.
+
+    2. **Parse:** The Zc.mat parse now requires a 1x1 matrix at every frequency. It also requires R >
+    0 and Im Z > 0 at every frequency. A negative L, zero R or a 2x2 matrix gives `parse_error`.
+
+    3. **Bui'
+  report:
+    status: completed
+    summary: 'All five FastHenry adapter fixes are in and committed (40e7fa7e). Each has a test, and the
+      DoD commands and `mfos gate --fast` all pass.
+
+
+      1. **Retries:** An external SIGKILL is no longer retried. It ends as status `killed_external`, whether
+      it shows as signal 9 or as a wrapper''s exit 137. A non-zero exit code that repeats identically
+      on two consecutive attempts also stops the retries. Exit codes above 128 are treated as signal-style
+      crashes and still retried, because the existing tests use `exit 139` as a segfault stand-in and
+      real SIGSEGV is the intermittent D0002 crash the retries exist for.
+
+      2. **Parse:** The Zc.mat parse now requires a 1x1 matrix at every frequency. It also requires R
+      > 0 and Im Z > 0 at every frequency. A negative L, zero R or a 2x2 matrix gives `parse_error`.
+
+      3. **Build identity:** `self_test()` requires ''FastHenry 3.0wr'' and ''mod 031424'' in the run
+      log and records the banner. `FHResult` gained a `log` field to carry it. The real binary prints
+      "Running FastHenry 3.0wr (29Sep96, mod 031424)".
+
+      4. **Self-test bound:** `self_test()` now also checks |L − 5.704254| ≤ 3e-4 nH against the Hoer-Love
+      exact value. The tolerance is 10 times the 6-significant-digit print resolution of Zc.mat (about
+      3e-5 nH). It is tighter than the 1.5e-3 nH check against the recorded value. A test shows it fires
+      on 5.7050 nH, which passes the recorded bound. The old closed-form check was implied by the recorded-value
+      check and never fired, so I removed it from `self_test()`. The constants stay as a record.
+
+      5. **MEM_MARGIN:** Changed from 1.10 to 1.30. I did not find T0389''s ratios in `research/o004_f7/`,
+      so I used T0428''s 1.24–1.26 times the estimate, plus about 3 % headroom. The fit is in the code
+      comment, and the margin should be re-fitted when T0389''s measurements exist.
+
+
+      I changed two existing tests, without loosening any tolerance:
+
+      - **`fake()` banner:** The fake binary now prints the pinned banner by default.
+
+      - **Memory-screen test:** `test_dense_memory_screen_has_a_margin` used a 1200 MB cap with a 1.0
+      GB estimate. That passes only with a margin of about 1.17 or less, so the new margin fails it. I
+      moved the cap to 1400 MB and the "must refuse" cap to 1300 MB, and the margin assertion now requires
+      at least 1.26 × 1.02.
+
+
+      `mfos gate --fast` takes about 25 minutes here.'
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/test_fasthenry_run.py tests/unit/test_fasthenry.py
+      exit_code: 0
+    - cmd: uv run ruff check src/moduleforge/solvers/fasthenry_run.py tests/unit/test_fasthenry_run.py
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/solvers/fasthenry_run.py
+    - tests/unit/test_fasthenry_run.py
+    concerns:
+    - T0389's measured memory ratios were not available, so MEM_MARGIN = 1.30 rests on T0428's figures
+      only; re-fit it once T0389's runs exist.
+    - Existing test_dense_memory_screen_has_a_margin had its caps changed (1200 -> 1400 MB, 1100 -> 1300
+      MB), which was unavoidable once the margin rose above about 1.17. The fake binary now prints the
+      pinned banner by default.
+    - Exit codes above 128 are still retried (treated as signal-style crashes), except 137 (128 + SIGKILL);
+      this was needed to keep the existing exit-139 retry tests valid.

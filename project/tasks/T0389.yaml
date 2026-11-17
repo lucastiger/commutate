@@ -163,6 +163,22 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   This task still measures what C(5) needs: peak_mem_mb / direct_mem_est on two or three direct FastHenry
   runs above 5k filaments, reported with the job list, so the builder can set MEM_MARGIN from the fit.
 
+
+
+  Founder session, 2026-11-17: the founder accepted decision record D0024 (project/decisions/, commit
+  9a54cdb0). The spec and notes cite D0024 for the pre-registration decisions it records, instead of the
+  objective''s state log.
+
+
+
+  T0438''s report (founder session, 2026-11-17): the new perturb.rules_sha256() is 24d12d8062c55f798c8410b1dee333dbf05e47bd05142c84b9d1119ac10fea73
+  (commit 98d23862). Draw output changes for the same seed: the net is now drawn uniformly over NETS first,
+  and _draw_single silently redraws when that net''s long sides raise (a both-sided edge). Rerun the development
+  span simulation under the new rules. In registered mode, record per judged reference how many draws
+  were redrawn for this reason and which nets can never yield a trace_width move, and say in the registration
+  report if a move type''s draws are restricted on a reference. A redraw that changes coverage must not
+  be silent.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
