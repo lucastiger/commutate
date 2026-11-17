@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0377
 - T0378
@@ -184,4 +184,90 @@ lens: null
 trigger: null
 rationale: E011 is the only required experiment. Its design task drafts the spec and runner that produce
   every per-draw column A1, A2, A3 and K1 need, and the F1, F2, F5 and F6 checks.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The background development L1 run (`e011_run.py --dev`) has been stopped: it reached the 2-hour
+    background limit, the longest allowed, so I have not restarted it. It stopped at 18:40 during 2D_Case_4''s
+    last draw (draw 7), in the search stage. 2D_Case_2R is complete. Every finished stage is checkpointed
+    in research/o008_e011_dev/work, so rerunning `uv run python experiments/runners/e011_run.py --dev`
+    redoes only Case 4 draw 7. That writes the complete manifest, including Case 4''s shortlist and end-point
+    jobs.
+
+
+    experiments/drafts/E011.dev_jobs.json therefore still shows status "partial: L1 stages running". It
+    lists 328 wave-1 jobs, and only 2D_Case_2R appears under its layouts.
+
+
+    Everything else is as I reported before:
+
+    - **Exit 0:** `--selftest` (all planted verdicts: PASS, INCONCLUSIVE, INV'
+  report:
+    summary: 'The background development L1 run (`e011_run.py --dev`) has been stopped: it reached the
+      2-hour background limit, the longest allowed, so I have not restarted it. It stopped at 18:40 during
+      2D_Case_4''s last draw (draw 7), in the search stage. 2D_Case_2R is complete. Every finished stage
+      is checkpointed in research/o008_e011_dev/work, so rerunning `uv run python experiments/runners/e011_run.py
+      --dev` redoes only Case 4 draw 7. That writes the complete manifest, including Case 4''s shortlist
+      and end-point jobs.
+
+
+      experiments/drafts/E011.dev_jobs.json therefore still shows status "partial: L1 stages running".
+      It lists 328 wave-1 jobs, and only 2D_Case_2R appears under its layouts.
+
+
+      Everything else is as I reported before:
+
+      - **Exit 0:** `--selftest` (all planted verdicts: PASS, INCONCLUSIVE, INVALID twice, plus INCONCLUSIVE
+      and FAIL extras), `--smoke` (run 3; runs 1 and 2 hit two bugs I fixed), the spec validation command,
+      ruff, `mfos exp check E011`, and `test -f` on the manifest.
+
+      - **Exit 1:** `mfos gate --fast`, twice. Its `pytest -q -x -m ''not slow'' tests/unit` step timed
+      out at 900 s while other compute was running. I changed nothing under tests/ or src/.
+
+
+      2D_Case_2R development facts at L1:
+
+      - **F2:** W is inside the reach domain and outside E010''s legacy domain (fails at col_PHASE_outer_edge);
+      symmetric difference 0.0 mm².
+
+      - **Frozen proxy:** 25 steps to a local optimum, L1 ratio 0.9138 (the reviewers measured 0.914).
+
+      - **Probe''s reach=False rule:** 27 steps, 0.8979, matching the probe.
+
+      - **Other DC- reading:** 23 steps, 0.9149, a different layout. The spec now freezes the reading
+      as built and says why.
+
+      - **Nulls:** reached their own local optimum in 20-30 steps; none was capped.
+
+      - **Search:** used its full 2000-evaluation budget and was still improving in the last 10 %.'
+    status: partial
+    failure_class: none
+    confidence: 0.7
+    affects_acceptance_criteria: false
+    files_written:
+    - experiments/drafts/E011.yaml
+    - experiments/runners/e011_run.py
+    - experiments/drafts/E011.dev_jobs.json
+    - research/o008_e011_dev/.gitignore
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    evidence:
+    - 'Dev run log ends at ''18:40:17 2D_Case_4: draw 7 search''; the background task was stopped at its
+      7,200,000 ms limit'
+    - 'E011.dev_jobs.json: status ''partial: L1 stages running'', 328 wave-1 jobs, layouts [''2D_Case_2R'']'
+    - Selftest exit 0 (SELFTEST PASS); smoke run 3 exit 0; spec validation, ruff and mfos exp check exit
+      0
+    - 'mfos gate --fast exit 1 twice: tests/unit (not slow) TIMEOUT after 900 s'
+    - '2D_Case_2R proxies: frozen 0.9138 / 25 steps; reach=False 0.8979 / 27; DC- read +1 0.9149 / 23,
+      different layout'
+    recommended_actions:
+    - 'Rerun `uv run python experiments/runners/e011_run.py --dev`: it resumes from research/o008_e011_dev/work,
+      redoes only 2D_Case_4 draw 7, and rewrites E011.dev_jobs.json with status complete.'
+    - Then run the manifest on the burst VM with `uv run python experiments/runners/e011_run.py --dev-solve
+      experiments/drafts/E011.dev_jobs.json --workdir <dir>`, and do the dev L2 analysis (band bound,
+      joint operating characteristic, dev_rows, A3 margins against the in-domain proxy).
+    - 'Founder: decide on the fast gate''s unit-test timeout; T0426 item 4 (mark test_nulls'' long tests
+      slow) is the likely fix.'
+    - 'src (other task): add the nonzero seed tag in control.py, land T0425/T0426 in nulls.py, and pin
+      the reach=True proxy on 2R (25 steps, 0.9138); then refresh code_sha256 and frozen_sha256 with `e011_run.py
+      --freeze-report`.'
