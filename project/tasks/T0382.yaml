@@ -3,13 +3,14 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: todo
 depends_on:
 - T0377
 - T0378
 - T0379
 - T0380
 - T0381
+- T0437
 description: "Build item (4) of the objective notes. E011 is O008's id (E012 is O009's); experiments/specs\
   \ and drafts hold no E011.\n\n(a) experiments/drafts/E011.yaml, pre-registered and development-only.\n\
   \   - Counted layouts: 2D_Case_2R and 2D_Case_4; gen2_0 reported, not counted. Rules: each layout's\
@@ -140,7 +141,35 @@ description: "Build item (4) of the objective notes. E011 is O008's id (E012 is 
   \ of the 2000-evaluation budget (attempt 1 on 2R was still improving in its last 10 %). The founder\
   \ decides the budget before registration from this; do not change it.\n5. Then `e011_run.py --freeze-report`\
   \ to refresh code_sha256 and frozen_sha256, and state the manifest's VM sizing from the measured unknowns\
-  \ (Case 4's 0.25 mm solves at about 25 GB each).\n"
+  \ (Case 4's 0.25 mm solves at about 25 GB each).\n\n\nAttempt 3 (founder session, 2026-11-17, resolving\
+  \ I0234): attempt 2 was right to block. The source fixes are not a scientist's; builder task T0437 makes\
+  \ them, and this attempt starts only after T0437 has merged. Keep attempt 2's runner work (dev_solve\
+  \ keyed by (fingerprint, level), purposes per job, E010's convergence predicate, code-stamped checkpoints,\
+  \ real seed-stream check, improvement curve); merge current main into this branch first. Then do the\
+  \ following, which was briefed as T0439 and is folded into this task:\n\nE011's development L1 run on\
+  \ the code that will be frozen, and the complete burst job list for I0205 (O008). It runs after T0437\
+  \ (source prerequisites: the seed-stream tag changes every degradation draw) and T0382 (the runner fixes:\
+  \ dev_solve keyed by (fingerprint, level), purposes per job, E010's convergence predicate, code-stamped\
+  \ checkpoints). Read T0382's research/o008_e011_dev/attempt2.md and reviews T0430, T0431 and T0432 first.\n\
+  \n1. Rerun `uv run python experiments/runners/e011_run.py --dev` from scratch for 2D_Case_2R and 2D_Case_4\
+  \ (development seeds only, never a sealed seed). A single background command is limited to 2 hours:\
+  \ resume from the checkpoints across several commands until the manifest's status reads complete for\
+  \ both layouts. Attempt 1's checkpoints (research/o008_e011_dev/work.attempt1-stale) are refused by\
+  \ the code stamp; do not reuse them.\n2. `e011_run.py --freeze-report`, then fill code_sha256 and frozen_sha256\
+  \ in experiments/drafts/E011.yaml.\n3. experiments/drafts/E011.dev_jobs.json: status complete, every\
+  \ job with its level and purposes, totals per level, and the VM sizing from the measured or modelled\
+  \ unknowns: 2D_Case_4's 0.25 mm solves are about 25 GB each (T0382), so state how many run at once on\
+  \ the proposed machine, the makespan and the cost, and whether the registered run fits its timeout (T0382\
+  \ estimated about 91-136 h for the registered run's Case 4 solves against timeout_min = 120 h, and about\
+  \ $80-105). Check that `--dev-solve` on the manifest would submit every job (the selftest's manifest\
+  \ check, run on the real manifest in a dry mode if the runner has one).\n4. Report per layout: (a) the\
+  \ search's improvement curve, the share of its final L1 gain made in the last 10 % and the last 25 %\
+  \ of the 2000-evaluation budget (attempt 1 on 2R was still improving in its last 10 %); the founder\
+  \ decides the budget before registration from this, so do not change it; (b) for each null and draw,\
+  \ the step count and terminal kind (local_optimum, step_limit or no_moves) and seed_in_domain, at the\
+  \ registered R_D range [1.25, 1.60] (review T0426 item 5); (c) the in-domain proxy's steps and L1 ratio;\
+  \ (d) the ablation's l1_evals beside n_draws.\n5. `mfos exp check E011` exits 0 and the selftest passes.\
+  \ Write the facts to research/notes/e011-dev-run.md.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - experiments/runners/e010_run.py
@@ -162,10 +191,8 @@ deliverables:
 touches:
 - experiments/drafts/E011*
 - experiments/runners/e011_run.py
-- src/moduleforge/optimize/control.py
-- tests/unit/optimize/test_control.py
-- src/moduleforge/optimize/nulls.py
-- tests/unit/optimize/test_nulls.py
+- research/o008_e011_dev/**
+- research/notes/e011-dev-run.md
 definition_of_done:
 - cmd: uv run python experiments/runners/e011_run.py --selftest
   exists: null
@@ -183,6 +210,17 @@ definition_of_done:
   exists: null
   timeout_s: 900
 - cmd: uv run ruff check experiments/runners/e011_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E011.dev_jobs.json')); assert
+    str(d['status']).startswith('complete'), d['status']; assert set(d['layouts']) >= {'2D_Case_2R', '2D_Case_4'},
+    d['layouts']"
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/e011-dev-run.md
+  timeout_s: 900
+- cmd: uv run mfos exp check E011
   exists: null
   timeout_s: 900
 experiment: null
@@ -595,3 +633,7 @@ history:
     results (since fixed); the second because `/usr/bin/time -l` itself fails in the sandbox with `sysctl
     kern.clockrate: Operation not permitted`. Nothing is committed; the orchestrator commits.'
   at: '2026-11-17T05:56:47+00:00'
+- outcome: rescoped
+  summary: 'founder session: I0234 resolved; src fixes moved to T0437 (builder); T0439''s dev-run brief
+    folded into attempt 3; waits for T0437'
+  at: '2026-11-17T05:57:36+00:00'

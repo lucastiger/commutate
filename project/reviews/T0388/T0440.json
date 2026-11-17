@@ -1,0 +1,72 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "F2 freeze misses two source files that L1, the lattice check and both solvers run",
+      "detail": "`config.freeze.files` hashes only `physics/peec/model.py` for L1, yet its `files_meaning` says it covers 'L1 (physics/peec), which the registration checks use'. Two files on the executed path are hashed nowhere: not in freeze.files, not in `l2_layout.source_sha256()` (only l2_layout.py and l2_core.py), and not in `perturb.rules_sha256()` (only named l2_layout functions, arc_wire and Layout.fingerprint). (1) `physics/peec/kernels.py` holds L1's partial-inductance kernels (Hoer-Love bar mutuals, segment mutuals, round-wire self, skin depth). (2) `geometry/conductors.py` holds `decompose_polygon`, which `Layout.to_conductors` uses to cut traces into the rectangle cells read by `perturb.on_lattice` (a registration check), by l2_layout and by the FastHenry exporter. After registration, a change to either file would leave every freeze check passing while it moves every L1 ratio (the span check, the coverage report, the planned proxy's L1 descent) or the conductor geometry both solvers see. So F2's 'a change after registration voids the run' cannot fire for them. `code_under_test` also leaves out conductors.py, although both judged tools read it. The proxy rule's own imports (generate/derivative.py, generate/twin.py, optimize/search.py) are unfrozen too, but the spec already says those will be refrozen.",
+      "evidence": "model.py line 90 `from .kernels import (...)`; layout.py lines 14-21 import `decompose_polygon` from .conductors and line 252 calls it in to_conductors; on_lattice calls `layout.to_conductors()`; l2_layout.source_sha256 loops over (Path(__file__), Path(core.__file__)) only; neither file is in the 11 entries of config.freeze.files.",
+      "suggested_check": "Hash every moduleforge source file loaded during registration and solve (from sys.modules), or at least add these two files to config.freeze.files and conductors.py to code_under_test, then refreeze.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "As drafted, the frozen allocation plus O004's span makes a sealed registration almost certain to be refused",
+      "detail": "I reran the development span simulation and recounted its committed output on 2D_Case_4. The pooled L1 span check (min <= 0.75, max >= 0.98, at least 3 below 0.90, both frequencies) passes in 0 of 200 pooled draws, and in 1 of 200 even at a 0.85 lower end. The binding term is n_below >= 3: per single draw the counts are 0 below 0.90 in 315 draws, 1 in 78 and 2 in 7. Under this allocation only the die-row shift and the two compounds can reach below 0.90 (trace_width min 0.915, wire_landing 0.963, terminal_copper 0.981). The code implements the check correctly, but the design cannot pass registration unless the founder changes the allocation or the span. The draft says so (design_status item iii). This limits what 'implements the registration stage' delivers: the stage works, but the spec is not registrable.",
+      "evidence": "Rerunning `--dev-span-sim 8` to $TMPDIR reproduced the committed span_sim_case4.json pair by pair (0 differences). My recount of the committed file: n_below per draw {0: 315, 1: 78, 2: 7}; minima per kind die_row_shift 0.8732, compound 0.7987, trace_width 0.9147; pooled pass at lower end 0.85: 1/200.",
+      "suggested_check": "Founder decision on allocation or span (options 1-3 in the note) before registration, then rerun the dev span simulation under the amended rule.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The seed_provenance check cannot fail",
+      "detail": "In registered mode the seed is set to int(MFOS_SEED) just before the check compares it with int(MFOS_SEED). In smoke mode it is set to DEV_SEED and then compared with DEV_SEED. Both are true by construction, so the check proves nothing about the seed being the sealed one.",
+      "evidence": "main(): `seed = int(os.environ['MFOS_SEED'])` or `seed = DEV_SEED`; stage_registration then gates `seed == int(sealed_env)` or `seed == DEV_SEED`.",
+      "suggested_check": "Compare against something set independently, e.g. the seed ExperimentRun records from the registry's sealed-seed entry, and confirm the draws' seed is derived from it.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Reference lattice check runs after the draws, though the docstring says before; compound intermediates not re-checked",
+      "detail": "The module docstring (step 3) says each reference is checked on the three lattices BEFORE any draw. In fact `ref_lattice` is only gated inside `layouts_on_lattice`, after all draws and their L1 evaluations. No solve happens in between, so F2 is not breached, but the documented order is wrong. Separately, the spec says every step of a compound is DRC-clean (stagewise rule), but the independent re-check in pair_records only checks DRC on the final layout. A judged reference whose measured_rules raise ValueError would also escape as a bare ValueError rather than RegistrationRefused. It is still refused, but the cause is not named.",
+      "evidence": "stage_registration: ref_lattice computed in step 3 but passed to registration_checks only in step 6; pair_records calls check(lay, rules) on the final apply() result only.",
+      "suggested_check": "Gate the reference lattice check together with references_whole_mm, and re-check DRC on each compound intermediate in pair_records.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The spec's F1 rule departs from frozen O004 F1, citing a founder decision not recorded in the repo",
+      "detail": "O004's F1 and scope_in say: gci_capped, a ratio estimate of at most 0.5 % (l2_layout) or 1 % (FastHenry), and 3 max|d| for ratio steps below 0.1 %. The spec's f1_rule uses caps relative to the ratio (E_R / r) and mfos.metrics.gci_step_floor, citing 'Founder decision 2026-11-17T01:41 (review T0429 of T0387)'. T0429 appears nowhere in project/, research/, experiments/, src/ or tests/ (only in this packet). I0207 and I0217 are cited throughout but have no ADR in project/decisions either. The rule belongs to the solve stage (T0389), so part 1 does not depend on it.",
+      "evidence": "grep for T0429 and '01:41' over project/ research/ returned no record; O004 objective.yaml F1 text still names gci_capped and absolute caps.",
+      "suggested_check": "Record the F1 change, I0207 and I0217 as ADRs or an O004 amendment before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Pinned freeze commit not present in this review snapshot",
+      "detail": "In this worktree, freeze_hashes_match fails only because commit aea6918 does not exist here (single-commit snapshot). Every file hash, both rules hashes, the l2_layout source hash and the package versions matched the tree. I could not verify that the commit is an ancestor on main.",
+      "evidence": "smoke registration.json freeze.failures = ['pinned commit aea691831d6d... is not an ancestor of HEAD']; `git cat-file -t aea6918...` fails.",
+      "suggested_check": "Rerun the smoke on the integration branch and confirm freeze_hashes_match is true there.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "`uv run mfos exp check E004`: exit 0.",
+    "`uv run python experiments/runners/e004_run.py --smoke --stage registration`: exit 0 in 2.0 s. Passed: seed_provenance, references_fingerprints_match, no_powersynth_files_in_tree, references_whole_mm, draws_complete, n_references, pairs_per_reference, move_type_per_reference, layouts_on_lattice, layouts_drc_clean_distinct. Failed: l1_span (min 0.9454, 0 below 0.90) and proxy_pair_built (pending). freeze_hashes_match failed only on the pinned-commit ancestry; every file, rules and l2 hash matched. I inspected all 12 pairs: params, r_L1 at 10 and 20 MHz, empty DRC lists, distinct, on all three lattices.",
+    "Geometry-only check on the judged references (no draw, no long_sides, no L1): both rebuilt fingerprints match the spec; whole_mm_failures is empty for both; both lie on the 1.0, 0.5 and 0.25 mm lattices. The registration geometry gates can pass on 2R and Case 6.",
+    "span_check boundaries against O004's text: min 0.75 inclusive passes, 0.7501 fails; 'below 0.90' is strict (two values below gives False); max 0.9799 fails. objective_span() parses {0.75, 0.98, 3, 0.90} from O004 scope_in.",
+    "freeze_record on altered configs: an altered drc/rules.py hash is reported; an altered config.span is reported as differing from O004; an altered reconstruction-script hash returns early with no other value computed (the stated order holds).",
+    "Reran `--dev-span-sim 8` to $TMPDIR: every pair matches the committed research/o004_e004/span_sim_case4.json exactly. Recounting the committed 200 seeds reproduces the note's figures (n_below distribution, per-kind minima and shares, pooled pass 1/200 at lower end 0.85).",
+    "Physics conventions: r = L(re-layout)/L(reference) in pair_records, at 10 and 20 MHz, as O004 defines it. The L1 port (current injected at the DC+ terminal and extracted at the DC- terminal, PHASE open, each die an ideal short) matches O004's loop definition (model.py docstring lines 53-57).",
+    "Freeze coverage traced through imports: model.py imports .kernels; Layout.to_conductors calls conductors.decompose_polygon; l2_layout.source_sha256 hashes only l2_layout.py and l2_core.py. kernels.py and conductors.py are hashed nowhere. I also checked l2_core's import of l2_dd: it is used only by the bar-mesh path (hl_block, bar_block, BarSystem), which l2_layout does not call, so no finding."
+  ],
+  "caveats": [
+    "Holds for part 1 only. The solve stage, the F1 exclusions, A1/A2/K1/K2 and every solve-stage sanity check are stubs (T0389), and the spec says it is 'DRAFT, NOT REGISTRABLE YET'.",
+    "The 2D_Case_2R proxy pair is not built, and registered mode refuses until it is. Its sources (control.py, local.py and their imports derivative.py, twin.py, search.py) must be frozen once optimize.control.proxy_descent exposes a step parameter.",
+    "The smoke runs the registration path on 2D_Case_4 stand-ins with E008 development rule overrides. Draw success, DRC-cleanliness and the span on the judged references under their own measured rules have not been exercised (F2 forbids doing so before registration).",
+    "As drafted the registration span check would almost surely refuse a sealed draw (0/200 pooled development draws pass). This awaits a founder decision on allocation or span.",
+    "O004 scope_in also asks for the development ratio distribution at l2_layout 0.5 mm before registration. Only the L1 distribution is reported here.",
+    "Pinned-commit ancestry could not be verified in this single-commit review snapshot. Every content hash matched the tree.",
+    "The perturb.py fixes from review T0416 and the long_sides fix from T0387 are outside this change's scope. Landing them will change rules_sha256 and the perturb.py hash, so a refreeze is required."
+  ]
+}
