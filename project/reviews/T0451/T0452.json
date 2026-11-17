@@ -1,0 +1,45 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "New draw() docstring overstates the redraw fix: reference defects hit inside apply() are still silently redrawn",
+      "detail": "The new `draw` docstring says ValueError is raised for 'a reference that ... has a defect the draws cannot work around (e.g. a power net without exactly one trace); only a net with no readable long side is redrawn'. That is true only for trace_width's `_draw_params`. `_draw_single` still wraps `apply()` in `except ValueError: continue` (lines 480-483). So `_net_poly`'s 'must have exactly one trace' raised from `_apply_terminal_copper` (line 363) or `_apply_die_row_shift` (line 256) is still silently redrawn, and so are `row_axis`'s 'not on one row' / 'no die' errors and `_apply_die_row_shift`'s 'no die' (line 252). The draw then quietly skips that net or switch, or ends in a RuntimeError after 2000 draws, instead of failing loudly. The new test `test_draw_single_redraws_only_the_long_side_error` covers trace_width only. The judged references are well formed (one trace per power net, dies on one row), so E004's draws are unaffected.",
+      "evidence": "perturb.py lines 252-256 (`_apply_die_row_shift`: `row_axis`, `_net_poly`), 363 (`_apply_terminal_copper`: `_net_poly`), 480-483 (`except ValueError: continue` around `apply`), 514-516 (new docstring). A scratch draw on a Case 4 copy with DC+ split into two traces, meant to show this directly, was refused by the sandbox, so this rests on reading the code.",
+      "suggested_check": "Either make `_net_poly`/`row_axis` raise a reference-defect error that `_draw_single` re-raises from `apply`, with a terminal_copper test, or narrow the docstring to trace_width.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Rules hash changed again; E004 draft freeze and O004 F7 pilot hash are stale; T0446's pilot-note item not addressed",
+      "detail": "`rules_sha256()` is now 2dbd9977\u2026 (perturb.py source changed). experiments/drafts/E004.yaml still freezes 70307210\u2026, and research/o004_f7 dev_pairs.json / span_reach.json record 70307210\u2026. The draft already plans a refreeze (`--print-freeze`), and the pilot falls back to checking by fingerprint. T0446's maintainability item (update the pilot note or re-stamp the hash) is not in this diff, which is consistent with the claim's scope (perturb.py and the adapter).",
+      "evidence": "uv run python -c 'P.rules_sha256()' -> 2dbd9977efa5\u2026; git grep shows 70307210\u2026 in E004.yaml:51, dev_pairs.json:26, span_reach.json:5.",
+      "suggested_check": "Refreeze E004 with `e004_run.py --print-freeze` after this lands.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Small remaining hash-coverage gaps and a stale inline comment",
+      "detail": "`geometry.units.mm_to_m`, which sets DesignRules' default values, is not in `_rule_sources`; E004's file-level freeze (`moduleforge_sources`) covers it. The inline comment at perturb.py:557-559 still lists only Die.box, BondWire.length and SignalWire.length (the docstring above it was updated). `e004_run.rules_supplement_sha256` now only duplicates inputs `rules_sha256` covers, so the draft can retire it as planned.",
+      "evidence": "drc/rules.py:18 imports mm_to_m and uses it in the DesignRules defaults (lines 26-42); e004_run.py:129-146.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD: `uv run pytest -q tests/unit/test_perturb.py tests/unit/test_fasthenry_run.py` gave 85 passed, 1 xfailed (slow tests included); ruff on the 4 files: all checks passed; `uv run mfos gate --fast`: 'all gates passed', exit 0.",
+    "Ran the whole fast unit suite (`pytest -m 'not slow' tests/unit`): 1157 passed, 1 xfailed, so nothing else broke.",
+    "Copied the pre-change long_sides (`_canonical(poly)` without the snap) into a scratch script and compared it with the new one on a synthetic L-shaped net with a collinear split. With vertex noise sd from 1e-16 to 5e-10 m (max deviation 1.3e-13 to 6.5e-7 mm, all inside require_whole_mm's 1e-6 mm), old != exact reading and new == exact reading in every case. The T0446 one-ulp-jog example: old gives the split edges ('h',50,10,20) and ('h',50,20,52), new gives the merged ('h',50,10,52). A genuinely off-lattice 50.5 mm edge still raises LongSideError.",
+    "Checked `_snap_whole_mm` directly: exact 0.05, 0.05+6e-17 and off-lattice 0.0205 / 0.0123456 map to 0.05, 0.05, 0.0205, 0.0123456 (snaps only within tolerance, identity on exact values).",
+    "Read Layout.fingerprint and its helpers: with `_ring_ints` added, its whole call closure (nested put/nm/sig) is hashed; Die.bounds is now hashed; the DRC imports only geometry constants and `mm_to_m` beyond what is hashed.",
+    "Test-the-tests by reasoning against the old code: the hash test's name assertion and the Die.bounds/_ring_ints monkeypatches fail if those sources are absent; the duplicate-trace test fails under the previous catch-all (silent redraw ends in success or RuntimeError, not ValueError), and the flaky-LongSideError half fails if `except LongSideError` is removed; `assert 'FastHenry' in r.log` fails when the failure branch omits log=log_text; the Hoer-Love assertion uses the file's independent Neumann quadrature `bar_self_L` (abs 1e-6 nH), so a wrong constant such as 5.7044 would now fail.",
+    "Checked fasthenry_run.solve_deck: `log_text` is set before the loop and on every attempt, so the failure branch cannot raise NameError; the docstring status lists now include killed_external.",
+    "Checked downstream compatibility: e004_run.draw_pairs and both_sided_nets catch ValueError and match 'both sides'; LongSideError subclasses ValueError and keeps the message, so the runner's refusal path still works.",
+    "Recomputed the current rules hash (2dbd9977\u2026) and found every recorded copy (E004 draft, O004 F7 research files) at the stale 70307210\u2026."
+  ],
+  "caveats": [
+    "The sandbox refused three scratch scripts: an old-vs-new long_sides comparison on the Case 4, 2D_Case_2R and 2D_Case_6 references loaded through importlib, a draw on a Case 4 copy with DC+ split into two traces, and a monkeypatch mutation of `_snap_whole_mm`. I used synthetic polygons and code reading instead. By reasoning, `_snap_whole_mm` is the identity on coordinates that are bit-exactly k*MM, which an earlier review reported for every trace coordinate of 2R and 6, so the judged references' long sides cannot change.",
+    "I checked completeness against the items listed in the T0445 and T0446 critic outputs (read from .mfos/runs). The T0445 MEM_MARGIN evidence item and the T0446 pilot-note item are not addressed; neither is a test, docstring or perturb-fix item.",
+    "The redraw fix makes reference defects fail loudly only on the trace_width `_draw_params` path (see finding 1)."
+  ]
+}
