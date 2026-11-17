@@ -97,6 +97,11 @@ def ranges() -> dict:
             "long_side_min_mm": LONG_SIDE_MIN_MM, "lattices_m": LATTICES_M, "compound_sizes": COMPOUND_SIZES}
 
 
+class LongSideError(ValueError):
+    """A net whose long sides cannot be read (an edge with copper on both sides) or that has none: the one error of a draw
+    that ``_draw_single`` redraws.  Every other ValueError of ``_draw_params`` (a reference defect) propagates."""
+
+
 @dataclass(frozen=True)
 class Move:
     """One drawn pair: ``move_type`` is one of PAIR_KINDS; ``params`` are whole-mm integers / names (see the ``_apply_*``
@@ -150,7 +155,7 @@ def require_whole_mm(layout: Layout) -> None:
 def measured_rules(reference: Layout, overrides: Mapping | None = None) -> DesignRules:
     """The reference's measured design rules as E010 builds them (``e010_run.e008_rules``): ``measure_rules`` with the
     ``min_signal_wire_length`` lower bound dropped, then ``overrides`` (development references only; never for the judged
-    ones).  ValueError if the reference itself is not DRC-clean under them (the rules cannot be derived: stop, do not
+    ones).  ValueError if the reference is not on the whole-mm lattice (``require_whole_mm``) or not DRC-clean under them (the rules cannot be derived: stop, do not
     substitute rules)."""
     require_whole_mm(reference)
     ov = dict(overrides or {})
@@ -278,12 +283,21 @@ def _apply_die_row_shift(ref: Layout, p: Mapping) -> Layout:
 
 
 # ------------------------------------------------------------------------------------------------------- (b) trace width
+def _snap_whole_mm(a: np.ndarray) -> np.ndarray:
+    """``a`` (coordinates in m) with every value within ``require_whole_mm``'s 1e-6 mm of a whole mm set to exactly it."""
+    k = np.round(a / MM)
+    return np.where(np.abs(a / MM - k) <= 1e-6, k * MM, a)
+
+
 def long_sides(poly: Polygon) -> list[tuple[str, int, int, int]]:
     """Axis-aligned exterior edges of ``poly`` at least ``LONG_SIDE_MIN_MM`` long and at least as long as the band is wide
     (distance to the opposite boundary along the inward normal at the edge midpoint), as (axis, c, a0, a1) in whole mm:
     'h' = horizontal edge at y = c from x = a0 to a1, 'v' = vertical at x = c from y = a0 to a1.  Sorted."""
     out = []
-    poly = _canonical(poly)  # the edge set must not depend on collinear splits in the vertex list
+    # vertices within ``require_whole_mm``'s 1e-6 mm of a whole mm are set to it before merging: ``shapely.simplify(poly, 0.0)``
+    # needs exact float collinearity, which that noise destroys.  (A genuinely off-lattice vertex is left alone, so the
+    # both-sided-edge error still reads it.)  The edge set must not depend on collinear splits in the vertex list.
+    poly = _canonical(shapely.transform(poly, _snap_whole_mm))
     xy = [(_mm(x), _mm(y)) for x, y in poly.exterior.coords]
     for (x0, y0), (x1, y1) in zip(xy[:-1], xy[1:], strict=True):
         if (x0 != x1) == (y0 != y1):
@@ -310,7 +324,7 @@ def _outward(poly: Polygon, axis: str, c: int, a0: int, a1: int) -> int:
         q = (mid * MM, (c + n * 1e-3) * MM) if axis == "h" else ((c + n * 1e-3) * MM, mid * MM)
         if not poly.contains(Point(q)):
             return n
-    raise ValueError("edge has copper on both sides")
+    raise LongSideError("edge has copper on both sides")
 
 
 def _apply_trace_width(ref: Layout, p: Mapping) -> Layout:
@@ -433,12 +447,12 @@ def _draw_params(reference: Layout, move_type: str, rng: np.random.Generator) ->
                 return {"switch": sw, "dx_mm": dx, "dy_mm": dy}
     if move_type == "trace_width":
         # the net is drawn first and only its long sides are evaluated: a net whose long sides cannot be read (an edge with
-        # copper on both sides) or that has none makes this draw invalid (ValueError, redrawn by ``_draw_single``) instead
+        # copper on both sides) or that has none makes this draw invalid (LongSideError, redrawn by ``_draw_single``) instead
         # of making every trace_width draw on the layout fail
         net = NETS[int(rng.integers(len(NETS)))]
         n = len(long_sides(_net_poly(reference, net)))
         if not n:
-            raise ValueError(f"net {net} has no long side")
+            raise LongSideError(f"net {net} has no long side")
         return {"net": net, "edge": int(rng.integers(n)), "delta_mm": _nonzero(rng, *TRACE_DELTA_MM)}
     net = NETS[int(rng.integers(len(NETS)))]
     if move_type == "terminal_copper":
@@ -461,6 +475,9 @@ def _draw_single(reference: Layout, kind: str, rng: np.random.Generator, rules: 
     for _try in range(MAX_REDRAWS):
         try:
             params = _draw_params(reference, kind, rng)
+        except LongSideError:
+            continue  # only this draw is invalid; any other error of the reference fails loudly
+        try:
             new = apply(reference, kind, params)
         except ValueError:
             continue
@@ -494,7 +511,9 @@ def draw(reference: Layout, allocation: Mapping[str, int], seed: int, rules: Des
     every returned move is DRC-clean under ``rules`` (default ``measured_rules(reference)``), changes the geometry (each
     component of a compound changes it too) and gives a geometry distinct from the reference's and from every other returned
     move's, single or compound (``geometry_key``).  RuntimeError after ``MAX_REDRAWS`` consecutive rejected draws of a
-    pair."""
+    pair.  ValueError for an unknown pair kind, a non-integer allocation, or a ``reference`` that is not on the whole-mm
+    lattice (``require_whole_mm``) or has a defect the draws cannot work around (e.g. a power net without exactly one trace);
+    only a net with no readable long side is redrawn."""
     unknown = set(allocation) - set(PAIR_KINDS)
     if unknown:
         raise ValueError(f"unknown pair kinds {sorted(unknown)}; expected {PAIR_KINDS}")
@@ -515,9 +534,12 @@ def draw(reference: Layout, allocation: Mapping[str, int], seed: int, rules: Des
 def _rule_sources() -> list[tuple[str, str]]:
     """(name, source text) of everything that decides which layouts a seed yields: this module's whole source (moves, draw,
     helpers, constants), the DRC (``moduleforge.drc``: ``check``, ``measure_rules``, ``DesignRules``), the wire constructor
-    ``geometry.layout.arc_wire`` and the fingerprint (``Layout.fingerprint``, the distinctness test), and l2_layout's lattice
-    rule (``layout_lattice``, ``check_on_lattice``, ``cell_fill``, ``_snap_aligned``, ``rect_cover``, ``_overlap_1d``,
-    ``ALIGN_TOL``)."""
+    ``geometry.layout.arc_wire`` and the fingerprint (``Layout.fingerprint`` and its normalise-and-round helper
+    ``_ring_ints``, the distinctness test), and l2_layout's lattice rule (``layout_lattice``, ``check_on_lattice``,
+    ``cell_fill``, ``_snap_aligned``, ``rect_cover``, ``_overlap_1d``, ``ALIGN_TOL``).  Also the inputs the rng indexes or
+    the DRC / draw read through the geometry package: ``NETS`` (its order decides which net a draw picks), ``SIGNAL_NET`` and
+    ``SIGNAL_PADS`` (the signal wires' nets), and the property sources the DRC measures: ``Die.bounds`` (the geometry),
+    ``Die.box``, ``BondWire.length`` and ``SignalWire.length``."""
     import sys
 
     import moduleforge.drc as drc_pkg
@@ -527,7 +549,8 @@ def _rule_sources() -> list[tuple[str, str]]:
     mods = [("generate.perturb", inspect.getsource(sys.modules[__name__])), ("drc", inspect.getsource(drc_pkg)),
             ("drc.rules", inspect.getsource(drc_rules))]
     fns = [("geometry.layout.arc_wire", inspect.getsource(geo.arc_wire)),
-           ("geometry.layout.Layout.fingerprint", inspect.getsource(geo.Layout.fingerprint))]
+           ("geometry.layout.Layout.fingerprint", inspect.getsource(geo.Layout.fingerprint)),
+           ("geometry.layout._ring_ints", inspect.getsource(geo._ring_ints))]
     fns += [(f"solvers.l2_layout.{f.__name__}", inspect.getsource(f)) for f in
             (L2.layout_lattice, L2.check_on_lattice, L2.cell_fill, L2._snap_aligned, L2.rect_cover, L2._overlap_1d)]
     fns.append(("solvers.l2_layout.ALIGN_TOL", repr(L2.ALIGN_TOL)))
@@ -536,6 +559,7 @@ def _rule_sources() -> list[tuple[str, str]]:
     # BondWire.length and SignalWire.length properties are what the DRC measures
     fns += [("geometry.layout.NETS", repr(tuple(NETS))), ("geometry.layout.SIGNAL_PADS", repr(tuple(SIGNAL_PADS))),
             ("geometry.layout.SIGNAL_NET", json.dumps({f"{p}|{s}": n for (p, s), n in SIGNAL_NET.items()}, sort_keys=True)),
+            ("geometry.layout.Die.bounds", inspect.getsource(geo.Die.bounds.fget)),
             ("geometry.layout.Die.box", inspect.getsource(geo.Die.box.fget)),
             ("geometry.layout.BondWire.length", inspect.getsource(geo.BondWire.length.fget)),
             ("geometry.layout.SignalWire.length", inspect.getsource(geo.SignalWire.length.fget))]

@@ -109,7 +109,8 @@ def binary_info(binary: str | os.PathLike | None = None) -> dict:
 # ------------------------------------------------------------------------------------------------------ results
 @dataclass
 class Attempt:
-    """One process run: ``status`` in ok / crash / parse_error / killed_memory / timeout."""
+    """One process run: ``status`` in ok / crash / parse_error / killed_memory / timeout / killed_external (SIGKILL
+    not sent by our watchdog, e.g. the Linux OOM killer)."""
 
     n: int
     status: str
@@ -125,7 +126,7 @@ class Attempt:
 @dataclass
 class FHResult:
     ok: bool
-    status: str  # ok / crash (retries exhausted) / parse_error / killed_memory / timeout / not_run
+    status: str  # ok / crash (retries exhausted) / parse_error / killed_memory / timeout / killed_external / not_run
     mode: str
     args: list[str]
     freqs_hz: tuple[float, ...]
@@ -142,7 +143,7 @@ class FHResult:
     nh_plane: int | None = None
     reason: str = ""
     facts: dict = field(default_factory=dict)
-    log: str = ""  # the last attempt's full FastHenry log (version banner, refine counts)
+    log: str = ""  # the last attempt's full FastHenry log, also on failure (version banner, refine counts)
 
     @property
     def n_attempts(self) -> int:
@@ -321,7 +322,7 @@ def solve_deck(deck: str, *, mode: str = "multipole", freqs: tuple[float, ...] =
     last = attempts[-1]
     if last.status != "ok":
         return FHResult(ok=False, status=last.status, R_ohm={}, L_H={}, Z={}, attempts=attempts, **base,
-                        n_filaments_refined=refined,
+                        n_filaments_refined=refined, log=log_text,
                         reason=f"last attempt {last.status} (exit {last.exit_code}, signal {last.signal}): {last.log_tail[-200:]!r}")
     zs = {g: next(v for f, v in z.items() if abs(f - g) <= FREQ_MATCH_RTOL * g) for g in freqs}
     return FHResult(ok=True, status="ok", R_ohm={f: v.real for f, v in zs.items()},

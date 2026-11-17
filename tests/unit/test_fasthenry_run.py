@@ -128,6 +128,8 @@ def test_self_test_bound_is_the_exact_hoer_love_value():
     # independent of the adapter: Hoer-Love (1965) partial self L of a 10 x 1 x 1 mm bar from the Ruehli series
     # (5.695 nH, 0.16 % low) is within 1e-3 of the exact value; the recorded 5.704 is within the print rounding of it
     assert abs(R.SELF_TEST_HOER_LOVE_NH - R.SELF_TEST_L_NH) <= 5e-4
+    # the constant is the exact value, by this file's own Hoer-Love quadrature (not a comparison of two module constants)
+    assert R.SELF_TEST_HOER_LOVE_NH == pytest.approx(bar_self_L(10e-3, 1e-3, 1e-3) * 1e9, abs=1e-6)
     assert R.SELF_TEST_HOER_LOVE_TOL_NH < R.SELF_TEST_TOL_NH  # the exact bound is the tighter one, so it can fire
 
 
@@ -140,7 +142,7 @@ def test_self_test_hoer_love_bound_fires_inside_the_recorded_bound(tmp_path):
 
 def test_self_test_raises_on_a_wrong_build_and_on_a_crash(tmp_path):
     wrong = ZC.replace("+0.2j", "+3.6e-5j").replace("+0.4j", "+7.2e-5j").replace("1e+07", "1000").replace("2e+07", "2000")
-    # L = 3.6e-5 / (2 pi 1e3) = 5.730 nH: outside D0002's 1.5e-3 nH and the 0.3 % closed-form bound
+    # L = 3.6e-5 / (2 pi 1e3) = 5.730 nH: outside D0002's 1.5e-3 nH
     with pytest.raises(R.SelfTestError, match="D0002 recorded"):
         R.self_test(fake(tmp_path, zc=wrong))
     with pytest.raises(R.SelfTestError, match="failed"):
@@ -191,6 +193,7 @@ def test_direct_mode_never_retries_and_never_falls_back(tmp_path):
     # a failing multipole run is never re-run with the direct solver
     r = R.solve_deck(".end\n", mode="multipole", max_retries=2, binary=fake(tmp_path, crashes=99, name="always"))
     assert r.n_attempts == 3 and "direct" not in r.args
+    assert "FastHenry" in r.log  # the failed run's log is kept, not only the successful one's
     with pytest.raises(ValueError):
         R.mode_args("hybrid")
 

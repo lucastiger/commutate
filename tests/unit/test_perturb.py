@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from shapely.geometry import box
+from shapely.geometry import Polygon, box
 
 from moduleforge.drc import check
 from moduleforge.generate import perturb as P
@@ -664,3 +664,62 @@ def test_gen2_0_long_sides_and_draw_params():
         except ValueError:
             pass
     assert nets == {DC_MINUS}
+
+
+# ------------------------------------------------------------------------------------------------------------- T0451 fixes
+def test_rules_sha256_covers_die_bounds_and_ring_ints(monkeypatch):
+    """Review T0446 item 1: Die.box only calls box(*self.bounds), so Die.bounds (the geometry) and Layout's normalise-and-round
+    helper ``_ring_ints`` (the distinctness key) must be hashed too."""
+    from moduleforge.geometry import layout as geo
+    names = dict(P._rule_sources())
+    assert "geometry.layout.Die.bounds" in names and "geometry.layout._ring_ints" in names
+    h = P.rules_sha256()
+    with monkeypatch.context() as m:
+        m.setattr(geo.Die, "bounds", property(lambda self: (self.cx - self.w, self.cy - self.h, self.cx + self.w,
+                                                            self.cy + self.h)))
+        assert P.rules_sha256() != h
+    assert P.rules_sha256() == h
+    with monkeypatch.context() as m:
+        m.setattr(geo, "_ring_ints", lambda poly: [[int(round(v * 1e6)) for c in poly.exterior.coords for v in c]])
+        assert P.rules_sha256() != h
+    assert P.rules_sha256() == h
+
+
+def test_draw_single_redraws_only_the_long_side_error(case4, monkeypatch):
+    """Review T0446 item 2: a reference defect (a power net without exactly one trace) fails loudly instead of a silent
+    redraw; the long-side error is still redrawn."""
+    ref, rules = case4
+    dup = dataclasses.replace(ref, traces=[*ref.traces, Trace(DC_PLUS, box(0, 0, 1e-3, 1e-3))])
+    with pytest.raises(ValueError, match="exactly one trace"):
+        P._draw_single(dup, "trace_width", np.random.default_rng(1), rules, set())
+    real = P._draw_params
+    calls = []
+
+    def flaky(reference, move_type, rng):
+        calls.append(1)
+        if len(calls) < 3:
+            raise P.LongSideError("edge has copper on both sides")
+        return real(reference, move_type, rng)
+
+    monkeypatch.setattr(P, "_draw_params", flaky)
+    params, new = P._draw_single(ref, "trace_width", np.random.default_rng(2), rules, set())
+    assert len(calls) >= 3 and params["net"] in NETS
+
+
+def test_long_sides_tolerate_whole_mm_noise(case4):
+    """Review T0446 item 3: vertices built as k/1000 (1e-6 mm of float noise, which ``require_whole_mm`` accepts) merge their
+    collinear splits like exact ones."""
+    ref, _ = case4
+    for net, poly in _nets(ref).items():
+        base = P.long_sides(poly)
+        xy = list(poly.exterior.coords)
+        split = []
+        for a, b in zip(xy[:-1], xy[1:], strict=True):
+            split += [a, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)]
+        # whole-mm coordinates built as k / 1000 with different float noise of order 1e-13 mm per vertex
+        rng = np.random.default_rng(0)
+        noisy = [(round(x / 1e-3) / 1000 + rng.normal(0, 1e-16), round(y / 1e-3) / 1000 + rng.normal(0, 1e-16))
+                 for x, y in [*split, split[0]]]
+        # exact collinearity is lost, whole mm is not
+        assert any(x != round(x / 1e-3) * 1e-3 for x, _ in noisy)
+        assert P.long_sides(Polygon(noisy)) == base, net
