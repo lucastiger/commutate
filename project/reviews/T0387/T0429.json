@@ -1,0 +1,82 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The F7(c) exclusion rate on the frozen-rule development pairs is not measured yet; the reported rate is on P3's pairs",
+      "detail": "F7(c) asks for the F1 exclusion rate over every Case 4 development pair the frozen rules draw. All 11 drawn pairs, the stand-in included, are 'pending': each lacks its 0.25 mm level and its thk_f level, and 10 also lack thk_c and fil_f. The only completed rate, 0/2, comes from O006 P3's two pairs, and P3's die_shift is not a frozen-rule geometry (same_geometry false). The note says all of this openly. Running the 0.25 mm level locally really is impossible: P3's VM files record peak_mem_mb of 15,792-15,860, which is above the 10 GB single-process cap. So the deliverable is a correct pipeline plus a VM manifest, not a measured F7(c) result. The F7 trigger is undecided, not passed.",
+      "evidence": "f7c_local.json exclusion: n_complete 2 (case4_die_shift, case4_trace_width), n_pending 11. P3 lat0.25 peak_mem_mb 15800.99 / 15791.91 / 15859.63.",
+      "suggested_check": "After the VM run, rerun --assemble and --check and re-judge the F7(c) trigger on the 11 drawn pairs only.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "'[0.75, 0.98] cannot be reached' rests on a start-dependent local search",
+      "detail": "The Answer states as fact that the span cannot be reached on either development layout. The Case 4 search is coordinate descent from the best singles. Every descent and every unpinned joint stage stopped at 0.7895 or higher. The 0.7616 minimum appears only in the joint stage that includes T0386's pinned compound, whose LS die-row shift (-3, 2) no descent found. A search this sensitive to its start gives an upper bound on the lowest reachable r, not proof that lower values are unreachable. The note admits this only under 'What would prove this wrong'. A founder deciding the span should read 'not found by this search'.",
+      "evidence": "span_work/case4.json: die_row_shift+trace_width+wire_landing|min 0.7895; |min_joint 0.7616 (moves equal STANDIN); every other compound min >= 0.7929.",
+      "suggested_check": "Run a few random-restart descents (several starts per combo) on Case 4 before treating 0.7616 as the floor.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The rho = 0.56 projection basis is described wrongly and is weak",
+      "detail": "The projection() docstring says P3's die_shift is 'the only Case 4 pair whose lateral sequence is outside the step floor'. Its relative steps are 5.0e-4 and 2.8e-4, both inside the 1e-3 floor, which is why its lateral term is 3 max|d| = 0.001494 and not gci_capped's 0.00044 (I recomputed this by hand from the solve files). Sub-floor step ratios are what mfos.metrics itself calls 'close to random'. So the 'no exclusion at rho = 0.56' scenario leans on a noisy contraction estimate. The note labels it as inference.",
+      "evidence": "die_shift 20 MHz: r = 0.98700 / 0.98650 / 0.98622; d1 = -4.98e-4, d2 = -2.80e-4; floor 9.86e-4.",
+      "suggested_check": "Fix the docstring, and present rho = 0.8 (or 1, i.e. +inf) as the cautious case.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "--check does not tie the stored ratios to the solve files or check VM coverage of the thickness and filament levels",
+      "detail": "cmd_check recomputes E_R from the stored ratio_per_level, not from the solve L values. It requires VM jobs only for missing lat0.25, not for missing thk_c, thk_f or fil_f. A stale or hand-edited f7c_local.json that is internally consistent would pass. I recomputed every stored ratio from the solve files (max difference 0) and confirmed the manifest's 11 thk_f, 10 thk_c and 10 fil_f jobs, so nothing is wrong now.",
+      "evidence": "pilot_l2.py lines 806-825.",
+      "suggested_check": "Have --check rebuild ratio_per_level from solve_value() and require a job for every missing F1 level.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Stale or loose statements in the script and note",
+      "detail": "(1) The module docstring still says the Case 6 0.25 mm solve is listed for the VM with only a mesh count taken locally; it was in fact solved locally. (2) The note gives lat0.25 projections as 16.0-16.2 GB, but the manifest includes 15.81 GB (dev02). (3) The $0.40/h price for n2d-custom-8-81920-ext is approximate and unverified (extended memory is billed above standard). (4) n_distinct_below_0p90_found_lower_bound (7605) sums per-combo counts, and the joint stage counts candidates rather than distinct geometries, so it is not a strict lower bound. It feeds no decision, because 14 single die-row shifts below 0.90 suffice.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "F1 cap applied to absolute E_R, not E_R / r",
+      "detail": "F1 says the ratio estimate must be 'at most 0.5 %'. The code compares the absolute E_R in ratio units with 0.005. E_R_over_r is stored, but it is not used for the status. Near r = 0.8, the relative reading is 25 % stricter. For the pairs completed so far, and for the stand-in projection at rho = 0.56 (0.0034, or 0.0042 relative), the status is the same either way, but VM results near the cap could flip.",
+      "evidence": "",
+      "suggested_check": "Have the founder state which reading F1 means before the VM results are assembled.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Process deviations disclosed",
+      "detail": "Two fil_f solves (5.9 GB) and one lat0.5 solve (5.4 GB) went over the 5 GB total budget. About 10 minutes ran three processes at once, and swap below 4 GB could not be verified. These are stated in the note and do not affect the results.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run python research/o004_f7/pilot_l2.py --check`: 'check OK'. Ran ruff on the script: clean.",
+    "Re-ran perturb.draw(case4, ALLOC, seed=20261116) with measured_rules(case4, CASE4_OVERRIDES): all 10 drawn pairs match dev_pairs.json. All 11 layouts have zero DRC violations and are on the 1.0 / 0.5 / 0.25 mm lattices. PAIR_KINDS are all present.",
+    "Recomputed every stored ratio_per_level from the raw solve files plus P3's base lat0.25 and thk_f: max difference 0.",
+    "Hand-recomputed the stand-in filament term (3 x |0.806595 - 0.807355| = 0.00228 at 20 MHz) and P3 die_shift's full E_R (lateral 0.001494 via the step floor, thickness 1.77e-5 monotone, filament 2.62e-4, total 0.001774), matching f7c_local.json.",
+    "Hand-recomputed the projections: dev01 at rho = 0.8 gives 0.0076 (excluded); stand-in at rho = 0.8 gives 0.0060 (excluded) and at 0.56 about 0.0034. Recomputed the binomial figures: 1 - 0.05^(1/2) = 0.776; 0.05^6.5 = 3.5e-9; 1 - 0.05^(1/11) = 0.238; 0.05^(13/11) = 0.029; (9/11)^13 = 0.074.",
+    "Confirmed all solve files (P3 and this task) share tool_version 0.3.0 and source_sha256 ed0288b6\u2026, with every GMRES flag 0. Confirmed that refinement 1 in l2_layout changes only CELL (layers 10/6/6 and E0 annuli at both refinements), so the VM's unpatched-refinement-1 solves are level-consistent with P3's base lat0.25.",
+    "Confirmed the 0.25 mm infeasibility on the Mac from P3's VM records (peak_mem_mb 15,792-15,860) and the calibration note.",
+    "Confirmed the Case 6 solve: refinement 1, 0.25 mm cell, 1,095,080 unknowns, L = 7.0539 / 7.0019 nH, peak 4.75 GB, flags 0. Its fingerprint matches the current frozen reconstruction.",
+    "Confirmed the VM manifest has 42 jobs (11 lat0.25, 11 thk_f, 10 thk_c, 10 fil_f) and no Case 6 job.",
+    "Reproduced the gen2_0 facts: it is off the 1 mm lattice and on the 0.5 / 0.25 mm lattices; draw(gen2_0, {trace_width: 1}) raises ValueError 'edge has copper on both sides'. Checked span_reach minima (Case 4 0.7616, gen2_0 0.8880) and 14 single die-row shifts below 0.90.",
+    "Inspected span_work/case4.json: every unpinned compound descent stops at 0.7895 or higher; only the pinned joint start reaches 0.7616."
+  ],
+  "caveats": [
+    "F7(c) and the F7 response trigger are undecided: none of the 11 frozen-rule development pairs has a complete F1 ladder. The 0/2 rate covers P3's precedent pairs only, and one of them is not a frozen-rule geometry.",
+    "F7(b) passes only as a feasibility check: the Case 6 0.25 mm l2_layout solve completed locally.",
+    "Span-reach conclusions are lower bounds from a start-dependent local search, not proof that [0.75, 0.98] is unreachable.",
+    "The projected exclusions at rho = 0.56 / 0.8 are inference. The rho = 0.56 basis comes from a sub-floor step ratio.",
+    "The filament term follows P3's frozen radial-only fil_f level, which the note itself flags as overstating the filament error (about 40x). It dominates the stand-in's estimate.",
+    "I could not run some longer inline scripts (the sandbox refused them), so part of the arithmetic was redone by hand from the JSON values."
+  ]
+}

@@ -92,6 +92,15 @@ description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e
   of each draw''s lowest L1 ratio. This is development work under F2 (Case 4, development seeds, L1 only).
   Keep the lower end as the frozen 0.75 in the code until the founder amends it.
 
+
+
+  Founder decision 2026-11-17T01:41:03+00:00 (recorded by the founder session, review T0429 of T0387):
+  F1''s caps are relative to the ratio. A counted pair needs E_R / r <= 0.5 % for l2_layout and E_R /
+  r <= 1 % for FastHenry, with E_R the gci_step_floor estimate of the three-level ratio sequence (ratio
+  units) and r the finest ratio. E004''s F1 exclusion check, its smoke mode and its tests use this reading,
+  and the spec states it. (T0387''s pilot_l2.py used the absolute reading E_R <= 0.005; it is corrected
+  before burst 1''s results are assembled.)
+
   '
 context_files:
 - project/objectives/O004/objective.yaml

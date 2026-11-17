@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 1
 max_replans: 3
 needs_replan: false
-spent_usd: 67.4379
+spent_usd: 69.5702
 budget_override_usd: null
 log:
 - 'founder answered I0207: (b)+(c): O004 runs the proxy descent in 1 mm steps (on the lattice by construction),
@@ -21,5 +21,10 @@ log:
   change the span (guidance in T0386''s brief) (no replan)'
 - 'founder answered I0218: Retry once: split long .equiv lines to at most 900 characters, test line length
   at 0.25 mm on Case 4 and both references, plus the minor fixes (guidance in T0384''s brief) (no replan)'
+- 'founder decision 2026-11-17T01:41:03+00:00 (recorded by the founder session, review T0429 finding 6):
+  F1''s ratio-estimate caps are relative to the ratio: a counted pair needs E_R / r <= 0.005 for l2_layout
+  and E_R / r <= 0.01 for FastHenry, with E_R the gci_step_floor estimate of the three-level ratio sequence
+  in ratio units and r the finest ratio. Decided before any burst-1 (F7(c)) result exists. Also from T0429:
+  0.7616 is the lowest span found by a start-dependent search, not a proven floor'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
