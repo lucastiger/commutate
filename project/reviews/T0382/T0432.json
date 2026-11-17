@@ -1,0 +1,62 @@
+{
+  "verdict": "reject",
+  "findings": [
+    {
+      "severity": "blocker",
+      "title": "--dev-solve keys the manifest's jobs by fingerprint and silently drops 144 of 328 wave-1 jobs, including every 0.25 mm production-level solve",
+      "detail": "In dev_solve, `lays[j[\"fingerprint\"]] = (lay, j)` is overwritten whenever one layout appears at several levels, which is the normal case: W, the descent end, every null end point and every seed D_j are banded over five levels. Only the last job per fingerprint is submitted. On the committed manifest that is 184 of 328 jobs, at only two levels (lat0.5: 148, fil_f: 36). All 36 lat0.25 jobs, all 36 thk_c jobs and all 36 thk_f jobs are lost. For W, W* and every scored layout only fil_f is solved. For the 8 seed D_j of 2D_Case_2R the lat0.5 R_D solve is replaced by their fil_f band job, so 8 of the 16 D_R_D jobs are lost. As a result, the burst run that the manifest's how_to_run prescribes cannot produce L_sub at 0.25 mm. Without it there is no s_j, no b_j, no choose_proxy for W*, no measured band bound, no A3 registration check, no joint operating characteristic, and no R_D window check on the 2R draws: these are exactly the dev L2 outputs the spec defers to this run. The VM spend (about $7-11 in the manifest's own totals) would be wasted. The selftest and smoke never exercise dev_solve, so the DoD commands cannot catch this.",
+      "evidence": "experiments/runners/e011_run.py lines 1238-1245. I replayed the same dict construction on experiments/drafts/E011.dev_jobs.json: 'jobs 328, unique fingerprints 184; levels kept {lat0.5: 148, fil_f: 36} vs manifest {lat0.5: 184, lat0.25: 36, thk_c: 36, thk_f: 36, fil_f: 36}; W_band 2R [lat0.25, lat0.5, thk_c, thk_f, fil_f] -> kept fil_f; D_R_D kept at lat0.5: 8 of 16'.",
+      "suggested_check": "Key the dict by job id (or by (fingerprint, level)), and add a selftest case that runs dev_solve on a fake manifest and asserts every manifest job's result file exists.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The delivered burst manifest is partial: 2D_Case_4 has no search, null, ablation or shortlist jobs",
+      "detail": "The manifest's status is 'partial: L1 stages running'. Its 'layouts' list holds only 2D_Case_2R. For 2D_Case_4 it contains only the W/descent band jobs, the proxy sensitivity jobs and 8 D_R_D jobs; it has no search_short, rs_short, widen, compact or proxy_alone jobs. The spec's pre-registration steps need per-draw s_j and b_j on every counted layout: the band bound ('measures b_j on development draws on every counted layout'), the joint operating characteristic per layout, and the A3 registration check. These cannot be computed for Case 4 from this manifest. Case 4 is also the layout the spec itself names as the open A1 question. The dev mode rewrites the manifest after each stage, so this is resumable, but the deliverable as committed is not the complete burst manifest.",
+      "evidence": "E011.dev_jobs.json: status 'partial: L1 stages running'; layouts ['2D_Case_2R']. Job counts for 2D_Case_4: W_band x5, descent_band x5, proxy x2, proxy_reach_false_probe 1, proxy_threshold_free 1, D_R_D 8, and nothing else.",
+      "suggested_check": "Finish --dev for 2D_Case_4 and commit the manifest with status 'complete: L1 stages done, L2 pending' before the burst run.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The gated sanity check seed_streams_distinct can never fail for an actual run",
+      "detail": "sanity() tests sub_seed(12345, 'degrade') against sub_seed(12345, 'search', 1, 0), with 12345 hard-coded, instead of the run's sealed seed and its real layout indices and draws. The result is the same constant on every run, so the gated check carries no information about the streams actually used. A collision is astronomically unlikely, so this does not threaten the verdict, but the check is not real in the mf-review sense: it could not have failed.",
+      "evidence": "e011_run.py lines 761-765.",
+      "suggested_check": "Compute the check from rx.seed over every (layout_index, draw) actually used.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Development draws are not scored the way the registered run will score them",
+      "detail": "In dev, the shortlist best and R_D use lat0.5 (screen_level). In the registered run both use lat0.25 (make_ctx sets screen = production). Every dev draw's attempt 0 is also accepted provisionally, before any R_D window test; draw 4 on 2R stopped at max_proposals with L1 ratio 1.358, below the 1.3875 target. The dev-derived A3 registration check, band bound and operating characteristic therefore describe a slightly different procedure from the registered one. The spec says this and calls the operating characteristic a planning figure.",
+      "evidence": "make_ctx lines 832 and 840-841; manifest degradation_report.",
+      "suggested_check": "When the dev L2 analysis is written, redo the selection at lat0.25 from the solved shortlists and apply the R_D window before computing the A3 check and the operating characteristic.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The operating-characteristic method draws a fresh common-mode error that will not vary between dev and the registered run",
+      "detail": "W* is deterministic, so the registered run's single L_sub(W*) solve is the same number as dev's. Its error relative to the truth is a fixed offset that the dev s_kj already contain, not a fresh draw. Sampling c_k ~ N(0, sigma_k^2) on every replicate widens the figure. O008 asks for this term, so this is only a reading note: the result estimates P(PASS) against the truth, not reproducibility of the dev outcome.",
+      "evidence": "E011.yaml config.joint_operating_characteristic.method steps (1)-(3).",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the DoD commands: --selftest prints SELFTEST PASS and all six planted scenarios give the wanted verdicts; --smoke completes in 562 s with 6 rows, and none of the required checks it tests failed (it piped through tail, so the exit code was not captured directly); the ExperimentSpec validation passed with the four metric names present; ruff is clean.",
+    "Recomputed sha256 of the five code_under_test files: all equal config.code_sha256.",
+    "Replayed dev_solve's fingerprint-keyed job dict on the committed manifest: 184 of 328 jobs survive, and all lat0.25, thk_c and thk_f jobs are dropped (blocker).",
+    "Summarized the manifest by layout, level and purpose: 2D_Case_4 has no per-draw search, null or ablation jobs; the summed est_wall_s matches totals.sum_est_wall_h_vm (43.49 h); usd_wave1 equals makespan x 0.612 $/h; no duplicate ids or (fingerprint, level) pairs.",
+    "Verified the spec's numpy claim: SeedSequence([s, li, j, 0]) equals SeedSequence([s, li, j]), and [X, li, 0, 0] equals [X, li]. Distinct (li, j, a) tuples do not collide, and the search and degradation streams start from different words.",
+    "Checked the Clopper-Pearson code against closed forms: one-sided lower bound at 8/8 = 0.05^(1/8) = 0.6877; two-sided Bonferroni (0.975) lower bound at 8/8 = 0.0125^(1/8) = 0.5782; one-sided lower bound at 7/8 = 0.5293.",
+    "Recomputed O008's A1 operating-characteristic table with scipy's binomial survival function: 0.9428/0.8131/0.6572/0.2553 per layout and 0.889/0.661/0.432/0.065 for two layouts, matching the objective's 0.94/0.81/0.66/0.26 and 0.89/0.66/0.43/0.07.",
+    "Checked the K1 order-statistic interval: 1 - 2 x 0.5^8 = 0.9922 per layout; a Monte Carlo of (max of the minima, max of the maxima) over two layouts, 20000 replicates, gave coverage 0.997 for the max of the two medians.",
+    "Read e011_metrics.py against O008's A1/A2/A3/K1 definitions: the strictness (<= for a pass, > for resolved failures and paired wins), the capped-null exclusion, the paired margin b_search + b_null, and min over layouts for A1 and A3 all match the objective text."
+  ],
+  "caveats": [
+    "The sandbox denied my attempt to compare n7 (e011_metrics), the mfos.metrics port and the evaluator's recompute on edge-case rows: missing candidates (s = None), capped nulls, and s exactly at 0.02. That agreement is unverified beyond the selftest's planted scenarios.",
+    "I did not run --dev or --dev-solve; the dev_solve finding comes from reading the code and replaying its dict logic on the committed manifest.",
+    "The packet's diff was truncated inside the manifest; I reviewed the files at the review-snapshot commit directly.",
+    "Apart from the dev_solve defect, the statistical design (definitions, Clopper-Pearson and order-statistic intervals, seed separation between dev and sealed draws, pre-registered sensitivity rows) is consistent with O008."
+  ]
+}

@@ -4,7 +4,7 @@ title: 'F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio est
   VM job list'
 type: investigate
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0386
 description: 'This tests the cheapest likely failure before any E004 design spend: P3''s l2_layout ratio
@@ -109,8 +109,8 @@ runs:
 - T0387-scientist-20261116T174928-dac5
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0233
 target: null
 lens: null
 trigger: null
@@ -429,3 +429,7 @@ history:
     - research/notes/o004-f7-l2-pilot.md
     - project/memory/lessons.md
     experiment_drafts: []
+- outcome: merge_approved
+  summary: I0233
+  replan: false
+  at: '2026-11-17T04:26:21+00:00'

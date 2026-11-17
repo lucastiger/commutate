@@ -1,0 +1,71 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The selected design is under-powered for the L1 as actually measured (n1 scenario)",
+      "detail": "F3's power criterion is defined for an L1 whose true p95 is 0.6 x each threshold. The design meets it: joint power is 0.898 under t3 at m = 20, and my fresh-seed rerun gave 0.9005. But the L1 measured on development rows has A4 = 0.366, which is 0.73 x the 0.5 threshold. For that L1, the selected V4 bound at m = 20 passes A1-A4 jointly with probability 0.531 under t3 (0.967 under normal), and A4 alone drives the shortfall. These numbers sit in f3_simulation.json's cells but are not in the top-level summary or the row contract. The F3 claim stands as written, but someone reading 'power_joint 0.898' could expect E007 to pass the real L1 far more reliably than the simulation says it will under heavy tails.",
+      "evidence": "f3_simulation.json cells['n1|t3|20']: power_joint V4 0.531, power_each A4 0.531; cells['n1|normal|20']: 0.967; alt|t3|20: 0.898",
+      "suggested_check": "Report the n1-scenario power next to power_joint in the summary, and decide explicitly whether about 50 % power for the as-measured L1 under t3 is acceptable or whether m should grow.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The bound variant and the selection rule were changed after round-1 results were seen",
+      "detail": "V4 (V3 at one-sided 0.97) was added, and the 'every m' coverage requirement was amended, after round-1 coverage had been seen. Both changes are documented, and round 2 used fresh seeds. My own fresh-seed reruns (seed 31337+, 2000 reps) gave V4 coverage of 0.9705-1.0 in alt|t3|20 and 0.9695-0.999 in kill|t3|20, close to the reported values. So the forking path does not appear to bias the selected result.",
+      "evidence": "selection_rule 'AMENDED after the alt cells at m = 6 and 8 had been seen'; ROUND2 text; my rerun alt|t3|20 V4 {A1 .9705, A3 .9745, K2 .985}, power .9005",
+      "suggested_check": "Keep the round-1 file (f3_simulation_r1_noselection.json) with the registration so the amendment can be audited.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "'Smallest sample' is only resolved to the simulated grid",
+      "detail": "Round 2 simulated m \u2208 {12, 16, 20, 24, 32}. V4 fails at m = 16 (t3 power 0.748) and passes at m = 20 (0.898), so a smaller m between 17 and 19 might also reach 0.8. That would be up to about 15 % fewer layouts (255-285 instead of 300).",
+      "evidence": "power_by_m: 16 t3 V4 0.748, 20 t3 V4 0.898",
+      "suggested_check": "Simulate the alt cells at m = 17-19 if cost matters, or state that the grid resolution is 4.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The coverage text says 95 % bounds, but the selected bounds are one-sided 97 %, and the kill bounds are stricter than the objective's wording",
+      "detail": "coverage_definition speaks of a 'one-sided 95 % bound', but the selected CISpec level of 0.94 gives one-sided 97 % bounds, and the K1/K2 lower bounds under max-over-loads are 98.5 % per load. Using these as 95 % bounds is valid for the pass criteria. For the kill criteria, it makes K1-K3 harder to fire than 'lower 95 % bound' implies. No kill-side power (detecting an L1 beyond the kill thresholds) is reported.",
+      "evidence": "f3_simulation.json coverage_definition; e007_row_contract.md 'each load's lo is at 98.5 %'",
+      "suggested_check": "Fix the coverage_definition text, and report the probability that each K fires in a scenario somewhat beyond the kill thresholds.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "A3 is not at 0.6 x its threshold in the power scenario",
+      "detail": "The alt scenario calibrates A1, A2 and A4 to 0.6 x their thresholds. A3 just follows from the model, at about 0.094 K against a 1.0 K threshold, so its power is trivially 1. Given A4 = A3 / null with the null at about 0.31-0.34 K, A3 = 0.6 K and A4 = 0.3 cannot both hold, so this is a property of the model, not an error. Still, 'passes A1-A4 jointly at 0.6 x each threshold' holds only for A1, A2 and A4.",
+      "evidence": "cells['alt|t3|20'].truth A3 0.0939, null_A3_P_ref 0.315",
+      "suggested_check": "State in the summary that A3 is not calibrated, and why.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Level-2 CPU-hours rest on estimates and on a single-process convention",
+      "detail": "reference_cpu_hours (51.96) counts level-2 solves as single-process wall-hours taken from n2 estimates (0.64 / 1.54 h), on an 8-vCPU VM. The cpu/wall ratio of 0.94 was measured only at level 1. If the budget counted VM vCPU-hours, 24.17 VM-hours would be about 193 vCPU-h, which is over the 100 CPU-h budget. My recomputation of the formula (level 1 22.98 h, level 2 28.86 h, level 0 0.12 h) matches the JSON.",
+      "evidence": "stats_sim.cost(); recomputed by hand: 2 \u00d7 (20\u00d71980 + 1764) s = 22.98 h; 2 \u00d7 (6\u00d73114 + 6\u00d75544) s = 28.86 h",
+      "suggested_check": "Confirm which accounting convention the O002 cpu_hours budget uses, and measure level-2 cpu/wall on the VM.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: pytest on test_e007_metrics.py (11 passed), git apply --check on the patch (OK), ruff check (clean), and the f3_simulation.json assertion one-liner (OK).",
+    "Ran check_patch.py with and without the patch: patched 134 passed / 2 failed / 1 error, baseline 128 / 2 / 1, with identical repo-path failures. The patch's 6 new tests pass against the patched mfos.metrics, models and evaluate.",
+    "Checked that all 159 non-blank lines of the e007_metrics.py block between the markers appear in the patch's added lines.",
+    "Recomputed the top-level 'coverage' dict from the per-cell data (min over the m = 20 cells for V4, per model): it matches exactly. sim_checkpoint_r2.json's cells are identical to the JSON's cells.",
+    "Worked the patch's hand-computed tests through by hand: the 1-2-3-4 jackknife variance of 1/12, t3 at alpha 0.1 giving level 0.973 and an outward bound of 4, and the pair-term jackknife variance of 4/9 with se 2/3. All correct.",
+    "Checked the Bonferroni logic for the max-over-loads lower bound and the ratio bound (union bound), and the argmax argument for the max upper bound.",
+    "Independent fresh-seed Monte Carlo with 2000 reps per cell, plus truth recomputed on a new seed: alt|t3|20 V4 coverage min 0.9705 and power 0.9005 (JSON 0.965 / 0.898); V3 A1 coverage 0.9495, confirming that V3 sits at nominal and V4 is correctly preferred; kill|t3|20 V4 coverage min 0.9695.",
+    "Adversarial data-generating processes outside the authors' two models, with V4 at m = 20 and 800 reps each: one stratum with 4 x errors (min coverage 0.99), errors ramping from 0.4 x to 2 x with die count (min 0.976), and 4 % or 8 % of layouts with 6 x or 4 x errors (min 0.961). Coverage held in all of them.",
+    "Recomputed reference_cpu_hours from the cost formula by hand: 51.96 h, matching the JSON.",
+    "Read the evaluator's judge(): pass criteria use hi for <= and kill criteria use lo for >. So the 0.94 central level gives the intended one-sided 97 % bounds, and the patch's routing (including null_values) passes the right pred column."
+  ],
+  "caveats": [
+    "All coverage and power results depend on a parametric model calibrated to n1 development measurements. That calibration covers only 2 and 6 dies, with values interpolated in between and the same values assumed for every family; the load correlation rho = 0.9 is assumed; errors are assumed independent across layouts. Coverage is shown for that model with normal and t3 errors, not for E007's real rows.",
+    "The truth values are Monte Carlo estimates with about 0.5-1 % relative error: A1 truth was 0.2998 in the JSON vs 0.3021 in my fresh run, and kill A4 was 0.9885 vs 0.9973. This is immaterial at V4's margin of about 0.965 minimum coverage, but it would matter for a bound at nominal level.",
+    "I ran the patched tests/mfos/test_metrics.py only through check_patch.py's scratch copy: 134 passed against 128 at baseline, with the same 3 path-dependent failures and errors in both runs. My attempt to run the full patched tests/mfos suite in a scratch copy was denied by the sandbox. A grep found no other tests or code that enumerate CISpec schemes or call bootstrap_ci in a way the patch could break.",
+    "The selected design gives about 53 % power under t3 for the L1 as measured (A4 = 0.366). This is an outcome risk for E007, not a defect in meeting F3."
+  ]
+}

@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: review
+status: todo
 depends_on:
 - T0377
 - T0378
@@ -293,3 +293,51 @@ history:
     - 'src (other task): add the nonzero seed tag in control.py, land T0425/T0426 in nulls.py, and pin
       the reach=True proxy on 2R (25 steps, 0.9138); then refresh code_sha256 and frozen_sha256 with `e011_run.py
       --freeze-report`.'
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] --dev-solve drops 144 of the 328 manifest jobs, including every 0.25 mm
+    solve, and still exits 0: dev_solve() builds its job table as `lays[j["fingerprint"]] = (lay, j)`,
+    keyed by fingerprint alone. Every band set (W, W*, seeds, widen, compact, proxy-alone) has one fingerprint
+    at five levels, so only the last entry, fil_f, survives and only one level per fingerprint is submitted.
+    Wave 1 on the burst VM would therefore solve 184 of the 328 listed jobs. It would solve nothing at
+    lat0.25 (the production L_sub level), thk_c or thk_f, and none of the 36 lat0.5 band entries. Without
+    L_sub(W*) and the bands at 0.25 mm, no development row gets s_j or b_j. That leaves band_bound.development_value,
+    the joint operating characteristic and the registration check (A3 on development draws) all uncomputable,
+    even though wave 2 adds the shortlist bests. The run still returns 0, so this failure would surface
+    only after the VM run (about $7-11, roughly 11 h makespan) had been paid for. This breaks the deliverable
+    ''development mode with the burst job manifest'', whose how_to_run says ''wave 1 = these jobs''.
+
+    - [blocker] --dev-solve keys manifest jobs by fingerprint and drops 144 of 328 wave-1 jobs, including
+    every 0.25 mm solve: dev_solve builds `lays[j[''fingerprint'']] = (lay, j)` (e011_run.py ~L1238-1245)
+    and then submits one em_job per dict entry. Each band layout (W, W*, every null or ablation end point,
+    every D_j) has the same fingerprint at all five band levels, so the last job in manifest order (fil_f)
+    overwrites the others. When the burst VM runs the manifest as its how_to_run says, it would solve
+    no lat0.25, thk_c or thk_f job for W, W*, the nulls, the ablations or the D_j, and it would not solve
+    the lat0.5 D_R_D jobs either, because each D_j shares its fingerprint with its seed_dj_band jobs.
+    Without these solves the dev L2 analysis cannot compute L_sub(W*) at the production level, s_j for
+    any non-best role, R_D for the provisionally accepted draws, or the W* band behind every b_j. Those
+    are exactly the values the dev run exists to produce: choose_proxy, the R_D window check, band_bound
+    development_value and the joint operating characteristic. The selftest never runs --dev, write_manifest
+    or --dev-solve, so nothing catches this.
+
+    - [blocker] --dev-solve keys the manifest''s jobs by fingerprint and silently drops 144 of 328 wave-1
+    jobs, including every 0.25 mm production-level solve: In dev_solve, `lays[j["fingerprint"]] = (lay,
+    j)` is overwritten whenever one layout appears at several levels, which is the normal case: W, the
+    descent end, every null end point and every seed D_j are banded over five levels. Only the last job
+    per fingerprint is submitted. On the committed manifest that is 184 of 328 jobs, at only two levels
+    (lat0.5: 148, fil_f: 36). All 36 lat0.25 jobs, all 36 thk_c jobs and all 36 thk_f jobs are lost. For
+    W, W* and every scored layout only fil_f is solved. For the 8 seed D_j of 2D_Case_2R the lat0.5 R_D
+    solve is replaced by their fil_f band job, so 8 of the 16 D_R_D jobs are lost. As a result, the burst
+    run that the manifest''s how_to_run prescribes cannot produce L_sub at 0.25 mm. Without it there is
+    no s_j, no b_j, no choose_proxy for W*, no measured band bound, no A3 registration check, no joint
+    operating characteristic, and no R_D window check on the 2R draws: these are exactly the dev L2 outputs
+    the spec defers to this run. The VM spend (about $7-11 in the manifest''s own totals) would be wasted.
+    The selftest and smoke never exercise dev_solve, so the DoD commands cannot catch this.
+
+    - [major] The committed burst manifest is a mid-run snapshot that omits 2D_Case_4''s development draws:
+    E011.dev_jobs.json has status ''partial: L1 stages running'', and its `layouts` array holds only 2D_Case_2R.
+    For 2D_Case_4 it lists only t
+
+    ...[truncated; full reviews: project/reviews/T0382/]'
+  at: '2026-11-17T04:20:47+00:00'

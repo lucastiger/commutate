@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 2
 max_replans: 3
 needs_replan: false
-spent_usd: 53.7697
+spent_usd: 55.9562
 budget_override_usd: null
 log:
 - 'founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions
@@ -31,5 +31,11 @@ log:
   exceeds the design note''s 0.005 transfer line; T0398''s development rows check the transfer per stratum
   (implied c, HS/LS bias), and if any stratum misses the model''s 1.8 % A2 guard or A4 <= 0.3 the founder
   decides before E007 freezes'
+- 'founder decision 2026-11-17T04:25:17+00:00 (recorded by the founder session, review T0434 finding 6):
+  O002''s cpu_hours budget counts the CPU time the solver processes use (process CPU time, as run records
+  measure it), not burst-VM vCPU-hours; VM cost is tracked in dollars. E007''s plan is about 52 CPU-hours
+  on this convention; T0398 measures level-2 cpu/wall on one solve to confirm it. Also pending: m (layouts
+  per stratum), decided before registration from T0398''s power figures for the as-measured L1 (T0434
+  finding 1: joint power 0.531 under t3 at m = 20)'
 evidence_rules: 2
 frozen_hash: sha256:f52c33de4a6472294c7bb3f5801c7bee97f9225b143175b28ab905f15f258134

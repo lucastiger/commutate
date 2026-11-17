@@ -148,6 +148,11 @@ description: 'Draft experiments/drafts/E007.yaml and experiments/runners/e007_ru
   (keyword overrides, defaults unchanged), whose hash E006, E008, E009 and E010 record: a re-run of those
   experiments records a new hash for it with no change in behaviour.
 
+
+  Founder decision 2026-11-17T04:25:17+00:00: O002''s cpu_hours budget counts process CPU time (what run
+  records measure), not burst-VM vCPU-hours; VM time is costed in dollars. E007''s spec states this convention
+  beside its cost plan.
+
   '
 context_files:
 - project/objectives/O002/objective.yaml

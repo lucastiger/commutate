@@ -78,6 +78,24 @@ description: 'Prerequisite: the founder has applied research/o002_e007/e007_metr
   the model''s 1.8 % guard; and A4 against 0.3. If any stratum misses the 1.8 % guard or A4 <= 0.3, stop
   and report it: the founder decides before E007 freezes.
 
+
+
+  Review T0434 of T0396 (founder session, 2026-11-17): the founder''s choice of 300 layouts (m = 20 per
+  stratum) rested on joint power 0.898 for an L1 at 0.6 x each threshold under t3 errors. For the L1 as
+  measured on development rows (A4 = 0.366, about 0.73 x A4''s 0.5 threshold), f3_simulation.json''s cells
+  give joint power 0.531 under t3 (0.967 under normal) at m = 20, with A4 alone causing the shortfall;
+  that scenario was simulated only at m = 20. When re-running stats_sim.py on this task''s development
+  rows: (1) report joint power, and A4''s power alone, for the as-measured L1 (n1''s values, and again
+  with A1-A4 as measured on this task''s development rows) at m = 20, 24, 32 and 40 under normal and t3
+  errors, beside power_joint in the summary; (2) report, for a scenario somewhat beyond each kill threshold,
+  the probability that K1, K2 and K3 each fire (no kill-side power is on record). The founder decides
+  m before registration from these figures; keep m = 20 in the files until then.
+
+
+  Founder decision 2026-11-17T04:25:17+00:00: O002''s cpu_hours budget counts process CPU time (what run
+  records measure), not burst-VM vCPU-hours; VM time is costed in dollars. E007''s spec states this convention
+  beside its cost plan.
+
   '
 context_files:
 - experiments/drafts/E007.yaml
