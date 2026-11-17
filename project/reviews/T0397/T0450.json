@@ -1,0 +1,71 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "A5's median interval is recorded with level 0.94 but computed at 95 %",
+      "detail": "metric_with_bound builds A5's (l1_eval_s_p50) interval with binom.ppf(0.025, n, 0.5), a two-sided 95 % order-statistic interval. full() then calls run.metric(..., level=lev) with lev = 0.94 (the Woodruff level) for every metric that has a ci, A5 included, so results.json labels the interval as 94 %. A5 is judged on the point (uncertainty use: point), so the verdict cannot change; only the metadata is wrong.",
+      "evidence": "e007_run.py lines 772-777 (binom.ppf(0.025)) and lines 1201-1203 (level=lev if ci is not None). My Monte Carlo at n = 600: indices (275, 324), coverage 0.9547.",
+      "suggested_check": "Record level 0.95 for median_col metrics, or build the interval at the 0.94 level.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "F4 constant-k A1/A3 metrics are recorded without their unit",
+      "detail": "full() guesses each metric's unit from its name: 'K' if the name ends in '_K' or contains '_K_'. f4_constant_k_A1_P_ref, f4_constant_k_A1_half_P_ref, f4_constant_k_A3_P_ref and f4_constant_k_A3_half_P_ref match neither pattern (the k in 'constant_k' is lower case), so they are written with unit '' while E007.yaml declares unit K. mfos does not compare units, so this is cosmetic.",
+      "evidence": "e007_run.py line 1203 compared with the E007.yaml metrics block (f4_constant_k_A1_*/A3_* unit: K). A grep for unit handling in mfos evaluate.py/evidence.py found no unit check.",
+      "suggested_check": "Take units from the spec's metrics list, not from the metric name.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The VM-hour and $ plan assumes parallel packing that the runner's defaults do not do",
+      "detail": "--plan's option A (25.4 VM-h, $15.54) assumes up to 8 concurrent solves on the n2d-custom-8 VM and level-2 jobs two at a time where memory allows, with CPU time equal to wall time on one effective thread. The runner defaults to --max-procs 1 and a 5 GB cap. With no E007_MAX_PROCS / E007_MEM_CAP_GB set, every level-2 job is refused with a MemoryError (a loud failure); with only the cap raised, the run is serial, about 57 VM-h or roughly $35. That still fits O002's $120. The 8 vCPUs of an n2d machine are 4 cores with SMT, so 8 concurrent memory-bound AMG solves may run slower and use more process CPU time than the per-DOF rates assume. cpu_hours_est (57) has about 1.75x headroom to the 100 CPU-hour budget.",
+      "evidence": "plan() lines 1300-1309 (parallelism par = min(vcpus, usable // mem)) and argparse --max-procs default 1 (line 1579). The env vars are documented in research/notes/e007-design.md:132. My serial level-2 estimate from the plan lines: about 27 h on its own; the plan's makespan arithmetic reproduces ~25-26 VM-h only with that packing.",
+      "suggested_check": "Put the exact burst command, with E007_MAX_PROCS and E007_MEM_CAP_GB, into the spec or design note before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Validated on a checkout without mfos.metrics.quantile_ci",
+      "detail": "In this checkout mfos.metrics has no quantile_ci, so the selftest bounds came from the verbatim copy in research/o002_e007/e007_metrics.py. The spec states that CISpec(scheme='woodruff') is only accepted on main after da2118fc. Here, `mfos exp check E007` and the evaluator's use of the woodruff ci were therefore not exercised against the merged code. The author discloses this.",
+      "evidence": "uv run python -c 'import mfos.metrics as m; hasattr(m, \"quantile_ci\")' printed False. The selftest prints 'mfos.metrics.quantile_ci present: False'.",
+      "suggested_check": "Rerun --selftest and `mfos exp check E007` on main at or after da2118fc before registration.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Which host times A5 is not fixed in the spec",
+      "detail": "A5 (median L1 wall time against 1 s, judged on the point) is measured on whichever host runs the L1 phase: the local Mac under option B or the n2d VM under option A. That choice is left to a founder decision. The real L1 time measured here was 0.41 s per evaluation on the local Mac, and an EPYC vCPU could be noticeably slower. This choice of path is disclosed in founder_decisions_before_registration.",
+      "evidence": "E007.yaml founder_decisions_before_registration ('A5 is measured on whichever host runs the L1 phase'). The selftest's 'real L1 on u_shaped_2_j00: 0.41 s'.",
+      "suggested_check": "Fix the timing host (or CPU model) in the spec at registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F6's hottest-node estimate exists only on the 12-layout subset",
+      "detail": "O002 F6 asks for every die's hottest node with its estimate. The draft reports the hottest node for every die but the step-floor estimate only on the level-2 subset. This is disclosed and listed as a founder decision.",
+      "evidence": "f6_report scope string; E007.yaml founder_decisions_before_registration.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e007_run.py --verify-freeze`: every frozen file hash, the GridRule file hash and key-for-key match, thermal_fem's production constants, the L1 grid rule and calibration table (0.98544/0.98284/0.98298/0.98402, o002-l1-cal-v2), the allocation file hash and bound, code_must_match O007, and code_under_test coverage all print OK.",
+    "Ran `e007_run.py --selftest` to completion: 0 failures. This includes real reference-path checks: a level-0 calibration of side_by_side_2_pref reached a 59.967 K rise after 3 solves, energy balance 5.2e-14, Q1 bottom mean equal to T_c + Q_out/(hA) to 1e-9 K, Picard residual 3.6e-5 K, CG at most 96 iterations, an exact level-0 DOF estimate, and peak RSS 0.54 GB against a 0.66 GB estimate. Real DOF growth on the 12 subset layouts was 7.33-7.66, inside 8 \u00b1 15 % with about 8 % margin. Also covered: real L1 at 0.41 s, the real isolated-die null, the evaluator's null_check applying the nulls to A1/A4 only, and the mutation checks.",
+    "Ran `e007_run.py --plan` (rc 0): 717 reference solves; 56.7 CPU-h expected, 61.1 upper; the largest level-2 job is 59.6 GB against 66.3 GB usable on the VM. I re-derived the option-A makespan arithmetic by hand from the per-job lines; it holds only with the assumed parallel packing.",
+    "Ran `uv run ruff check experiments/runners/e007_run.py` (all checks passed) and the packet's spec-key assertion (all keys present). thermal_fem's sha256 prefix a216d5fe3209bcee was confirmed through verify-freeze.",
+    "Checked the leave-one-layout-out nulls independently: built random die rows (5 layouts \u00d7 2 loads \u00d7 2 switches \u00d7 3 dies) and compared add_lolo_nulls' null_pos and null_smean with a brute-force mean over the other layouts. Maximum difference 1.1e-13 K.",
+    "Checked the design note's claim that the die-position null's spread is at most the stratum-mean spread (max of means \u2264 mean of maxima). It held on the random rows.",
+    "Monte Carlo check of A5's distribution-free median interval at n = 600: order-statistic indices (275, 324), coverage 0.9547 over 20000 draws, consistent with a 95 % interval (and so mislabelled as 0.94 in full()).",
+    "Read the runner's metric, null, F1, F4, F6, F7, sample and job code against O002's acceptance block and the F1-F7 detection text. Checked: A1 at the reference's hottest die with self-pairs excluded; A2's denominator taken from the exact energy-balance baseplate mean; A4 at P_ref with a per-(stratum, switch) leave-one-out denominator; the F1 level-1 error = |v1 - v2| + gci_step_floor(v0, v1, v2) (matches F1's rule, and mfos gci_step_floor returns the finest-level estimate); F7 choosing the lowest L1 hottest-die average from 40 draws, 2 pools per cell; K1/K2 lower bounds at alpha/2 per load (98.5 %). L1.evaluate's wall_s spans the whole evaluate call with no caching between calls, so the timing is not flattered by reuse.",
+    "Checked that the isolated-die null does not double-count die and attach: LayerStack.layers excludes die_attach and die (stack.py), so box_series covers the five substrate layers only and the 1D die and attach term is added once."
+  ],
+  "caveats": [
+    "Valid as a draft design and runner. Before registration it still depends on founder decisions listed in the spec: the final m (20 is provisional and depends on T0398's power at the as-measured A4 of 0.366, where joint power at m = 20 is 0.531 under t3 errors), null applies_to, whether f2_null_discrimination is gated, the compute location and timing host for A5, and the F6 subset scope.",
+    "Bounds were exercised through the e007_metrics.py fallback, not mfos.metrics.quantile_ci, which this checkout lacks. The woodruff CISpec path and `mfos exp check E007` still need to be run on main after da2118fc.",
+    "The cost plan's VM-hours assume parallel packing on 8 SMT vCPUs. The run must be launched with E007_MAX_PROCS and E007_MEM_CAP_GB set, otherwise level-2 jobs are refused (5 GB default cap) or the run goes serial. CPU-hour rates are extrapolated from single-solve measurements; T0398 is to measure a level-2 solve.",
+    "Nothing here tests the real reference at levels 1 and 2 on sealed layouts, or that real data pass the F1 and F2 gates. Those can only be shown by T0398's development rows and the run itself.",
+    "Not reviewed in depth, given the remaining budget: research/notes/e007-design.md beyond the env-var line; e007_metrics.py's Woodruff implementation, which is a pre-existing frozen file outside this diff."
+  ]
+}
