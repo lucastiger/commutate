@@ -112,7 +112,7 @@ full = [
   "uv run mfos doctor --ci",
 ]
 fast_timeout_s = 1800              # per command; 900 s timed out T0387 and T0396 (2026-11-17) beside agents running the same suite
-full_timeout_s = 2700              # per command; the full suite took 411 s alone on the M5 (2026-10-31), longer beside agents
+full_timeout_s = 5400              # per command; 2700 s timed out T0388 (2026-11-17) beside two builders; T0385's full gate took 43 min
 
 [planning]
 max_new_tasks = 8
