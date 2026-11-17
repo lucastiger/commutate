@@ -4,7 +4,7 @@ title: 'F1 development check: gate the level-1 verdict on the sanity block and p
   T0411 findings 1-2)'
 type: implement
 agent: builder
-status: todo
+status: running
 depends_on: []
 description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 verdict the founder gets
   from `--analyse`, after the burst level-2 solves (I0212) are copied back, cannot read ''confirmed''
@@ -116,11 +116,12 @@ model: null
 budget_usd: 2.0
 max_turns: 40
 wall_minutes: null
-attempts: 0
+attempts: 1
 max_attempts: 3
-branch: null
+branch: task/T0419-f1-development-check-gate-the-level-1-ve
 pr: null
-runs: []
+runs:
+- T0419-builder-20261116T202008-a7e3
 created_by: planner:T0412
 created_at: '2026-11-16T16:16:26+00:00'
 protected_approved: false
