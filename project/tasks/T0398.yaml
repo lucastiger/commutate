@@ -4,7 +4,7 @@ title: 'E007 development rows: local dev run, F2 null check via mfos exp check, 
   the dev structure'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0397
 description: 'Prerequisite: the founder has applied research/o002_e007/e007_metrics.patch to the protected
@@ -352,3 +352,107 @@ history:
 
     draft /Users/lukeskywalker/mf/wt/T0398/experiments/drafts/E007.dev_rows.yaml missing'
   at: '2026-11-17T20:58:34+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Repair attempt 2: only the report needed fixing. Following the repair note, I did not re-run
+    the development run and changed no result. The worktree is clean at commit 0746d7f9 (attempt 1''s
+    work) and this attempt wrote no files. Attempt 1''s verification failed only because its report listed
+    the dev-rows file as an experiment draft. This report lists only experiments/drafts/E007.yaml there,
+    and the dev-rows file appears under files_written.
+
+
+    I re-ran every definition-of-done command in this worktree (base 0746d7f9, which includes the Woodruff
+    patch da2118fc). All exited 0:
+
+    1. `test -f experiments/drafts/E007.dev_rows.json`: exit 0.
+
+    2. `uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json`: exit 0.
+
+    3. The null_check one-liner (assert no ''A1'' or ''A4'' in bad): exit 0.
+
+    4. The'
+  report:
+    summary: 'Repair attempt 2: only the report needed fixing. Following the repair note, I did not re-run
+      the development run and changed no result. The worktree is clean at commit 0746d7f9 (attempt 1''s
+      work) and this attempt wrote no files. Attempt 1''s verification failed only because its report
+      listed the dev-rows file as an experiment draft. This report lists only experiments/drafts/E007.yaml
+      there, and the dev-rows file appears under files_written.
+
+
+      I re-ran every definition-of-done command in this worktree (base 0746d7f9, which includes the Woodruff
+      patch da2118fc). All exited 0:
+
+      1. `test -f experiments/drafts/E007.dev_rows.json`: exit 0.
+
+      2. `uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json`: exit 0.
+
+      3. The null_check one-liner (assert no ''A1'' or ''A4'' in bad): exit 0.
+
+      4. The meta assertion one-liner (smoke False, the three F2 nulls, A1 > 0.5 K, A4 > 0.5, F3 coverage
+      >= 0.95, l1_eval_s_p50 > 0): exit 0.
+
+      5. `uv run python experiments/runners/e007_run.py --selftest`: exit 0 (''selftest: 0 failure(s)'').
+
+      6. `uv run python experiments/runners/e007_run.py --verify-freeze`: exit 0.
+
+      7. `uv run ruff check experiments/runners`: exit 0 (''All checks passed!'').
+
+      8. thermal_fem.py sha256 prefix equals a216d5fe3209bcee: exit 0.
+
+      9. `uv run mfos gate --fast`: exit 0 (''all gates passed'').
+
+
+      I also ran `uv run mfos exp check E007` without --rows, the check the orchestrator runs for each
+      entry in experiment_drafts: exit 0.
+
+
+      Facts read back from the committed dev rows (not recomputed):
+
+      - Development point values: A1 0.230 K, A2 0.0081, A3 0.091 K, A4 0.107 and A5 p50 0.440 s. A1 and
+      A4 show as ''undetermined'' in the exp check, while A2, A3 and A5 are satisfied.
+
+      - F2 nulls, A1 point / A4 point: die_position 5.69 K / 1.000; stratum_mean 5.50 K / 1.000; isolated_die
+      3.82 K / 11.42. None meets A1 or A4.
+
+      - F3 coverage on the dev structure is at least 0.971 in every statistic and error model (lowest:
+      K2, 0.974 normal and 0.971 t3).
+
+
+      Open: the founder''s D0025 per-stratum check still trips. A4 is above 0.3 in 3 of 15 strata (interleaved/2,
+      side_by_side/2 and u_shaped/6). No stratum misses the 1.8 % A2 guard. Per the packet, this is a
+      stop for the founder before E007 freezes, and the repair note says T0456 is handling it. Nothing
+      gated changed: criteria, thresholds, bound, allocation and m = 20 are as attempt 1 left them.'
+    status: completed
+    failure_class: none
+    confidence: 0.95
+    experiment_drafts:
+    - experiments/drafts/E007.yaml
+    files_written:
+    - experiments/drafts/E007.dev_rows.json
+    - experiments/drafts/E007.yaml
+    - experiments/runners/e007_run.py
+    - research/notes/e007-dev-rows.md
+    - research/o002_e007/dev_work/
+    evidence:
+    - Worktree clean at 0746d7f9; `git status --short` empty, so this attempt modified no files (all listed
+      files_written were committed in attempt 1, 0746d7f9)
+    - '`test -f experiments/drafts/E007.dev_rows.json` exit 0'
+    - '`uv run mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json` exit 0'
+    - null_check DoD one-liner exit 0; nulls not_satisfied for A1 (die_position 5.69 K, stratum_mean 5.50
+      K, isolated_die 3.82 K)
+    - meta assertion DoD one-liner exit 0 (smoke False; f2_nulls has die_position/stratum_mean/isolated_die;
+      all A1_point_K > 0.5; all A4_point > 0.5; f3_dev coverage min 0.971; l1_eval_s_p50 = 0.440 s)
+    - '`uv run python experiments/runners/e007_run.py --selftest` exit 0 (0 failures)'
+    - '`uv run python experiments/runners/e007_run.py --verify-freeze` exit 0'
+    - '`uv run ruff check experiments/runners` exit 0'
+    - thermal_fem.py sha256 prefix check exit 0 (a216d5fe3209bcee)
+    - '`uv run mfos gate --fast` exit 0 (all gates passed)'
+    - '`uv run mfos exp check E007` (draft spec, no --rows) exit 0'
+    - 'meta.l1_dev_check_summary: strata_missing_A2_guard_0.018 = []; strata_missing_A4_0.3 = [interleaved/2,
+      side_by_side/2, u_shaped/6]'
+    recommended_actions:
+    - 'Orchestrator: verify experiment_drafts as the id E007 only; the dev-rows file is a deliverable
+      under files_written, not an experiment id.'
+    - 'Founder (via T0456): decide on the D0025 stop (A4 > 0.3 in interleaved/2, side_by_side/2 and u_shaped/6)
+      before E007 freezes; also decide m, which stays at 20 until then.'
+    affects_acceptance_criteria: false
