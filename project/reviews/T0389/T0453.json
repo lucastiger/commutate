@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Every Case 4 deck in the F7(a) job list is unprobed, and its cost projection is extrapolated 11x past calibration",
+      "detail": "Only gen2_0__fh_g1 was probed locally. All 17 Case 4 decks are marked vm_first, including k0 decks at about 2.9 GB projected that would fit the Mac's 5 GB budget. The k2 decks are 1.16-1.21 M filaments, against P4's largest measured run of 102,192, so the 1.40 time exponent is extrapolated 11x. The same runner documents a 15x miss on gen2_0's time rule. The stated uncertainty of '+-50 % on k2 times' is weakly supported, so the F7(a) burst figures (20.9 h makespan, about $15) could be several times too low. The plan does schedule a probe as the first VM step, which limits the damage.",
+      "evidence": "research/o004_f7/vm_jobs_fasthenry.json: case4_base__fh_k2_nh5 has 1,168,944 filaments, 47.3 GB, 37,779 s projected and a 377,786 s timeout; precond_probe='vm_first' on every Case 4 job; time_calibration is set only for gen2_0 (15.2).",
+      "suggested_check": "Probe the Case 4 k0 decks locally (<=3 GB) before the burst, and widen the stated k2 time uncertainty.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F7(a)'s wire-group criterion cannot be evaluated from what this change delivers",
+      "detail": "O004 F7(a) asks for 'the wire-group difference to l2_layout shrinking with the wire refinement'. The job list supplies k1 against k1w (wire_n 8, wire_sub 4) on case4_base and dev03_trace_width. The per-conductor-group attribution (F3) is not in the runner (the spec's open item iv), so only total-L differences can be compared, and a total-L trend confounds the wire term with the trace and plane terms.",
+      "evidence": "E004.yaml design_status (iv); f7a_jobs adds no grouped diagnostic; the runner has no F3 code.",
+      "suggested_check": "Add the per-group (wire) attribution before reading F7(a)'s wire criterion, or have the founder accept total-L differences as a stand-in.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Experiment timeout and CPU estimate are not tied to the job sizing rule",
+      "detail": "Per-job FastHenry timeouts are 10x the projection and are not clamped to the spec's timeout_min of 6000 min. They fit today: the judged references' k2 timeouts are 26.0 h (2R) and 17.9 h (Case 6), against the 100 h limit. But an mfos-level timeout would kill the whole run rather than produce the missing-value and INVALID path that F1 defines. Separately, cpu_hours_est is 60 while the runner's own E004 cost plan gives 96.5 CPU-h.",
+      "evidence": "vm_jobs_fasthenry.json e004_cost_plan: cpu_h 96.5, makespan 11.4 h; E004.yaml: timeout_min 6000, cpu_hours_est 60.0.",
+      "suggested_check": "Assert at plan time that every job's timeout fits the experiment timeout, and update cpu_hours_est from the plan.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "FastHenry thickness ladder 3/5/9 at rh = 2 is not a constant-ratio refinement",
+      "detail": "With rh = 2 the edge-filament thickness falls by 2.5x (nh 3 to 5) and then 4.6x (nh 5 to 9), while gci_capped assumes r = 2. O004's notes already acknowledge this (T0368: conservative while steps contract). At 20 MHz (skin depth about 14.6 um) the edge filaments at nh 5 are about 20 um on 0.2 mm copper and about 100 um on a 1 mm plane, so the thickness sequence may be pre-asymptotic. That is the founder's design, not an implementation defect.",
+      "evidence": "O004 notes; config.solve.fasthenry rh 2.0, thickness nh [3, 5, 9].",
+      "suggested_check": "When F7(a) reports, check that the thickness steps actually contract (rho in [0, 1)) on Case 4.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The solve stage does not re-check the references' fingerprints against the registration record",
+      "detail": "exported_geometry_identical compares rebuilt pair fingerprints with the registration records, and solved fingerprints with the in-memory layouts. The references are rebuilt by recon.snapped() without being compared with registration's judged_fingerprints. The risk is low because it is the same call minutes earlier, under a freeze check.",
+      "evidence": "stage_solve: geo_bad covers pairs only; refs come from recon.snapped(e['reference_id'])[0].",
+      "suggested_check": "Compare refs[...].fingerprint() with reg['judged_fingerprints'] in the same check.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: it passes (exit 0, no output).",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke` to completion (exit 0). The FastHenry self-test passed on the pinned binary (sha eaa6d6fc...; 5.7042564 nH). All four smoke solves were ok (l2 lat1.0 87-88 s at 1.70 GB; FastHenry k0 nh3 357 s and 469 s against 372 s projected; FastHenry reported 0.75 GB allocated against 1.74 GB projected). Results: A1 = A2 = +inf as designed for smoke, K1 0.0038, K2 0.045, no missing finest value.",
+    "Verified the deliverable research/o004_f7/vm_jobs_fasthenry.json exists and parses: 24 jobs, no wire_n = wire_sub = 1, nh = 1 only in the founder's gen2_0 diagnostic, k0/k1/k2 at nh 5 plus a 3/5/9 thickness ladder at k1 on case4_base, standin_compound and dev03_trace_width, plus k1w and the gen2_0 gap jobs. Inspected the projections and the E004 cost plan (judged k2 decks 431k and 331k filaments).",
+    "Synthetic test of assemble() and criteria() against formulas taken from O004/P3 text, not from the runner. On a non-degenerate pair, E_R_l2 = gci_step_floor(R1.0, R0.5, R0.25) + ratio_middle_term(thk) + 3|R_fil - R0.5| equalled the hand value 1.9667e-3 exactly. E_R_fh = gci_step_floor(k-ladder) + |R5 - R9| + gci_step_floor(R3, R5, R9) equalled 1.975e-3. The F1 relative caps excluded and kept rows correctly. A2 matched a hand recomputation (0.0913).",
+    "Tested the INVALID and missing-data logic: a pair missing FastHenry k2 is marked finest_complete = False, K1 is computed on completed pairs and fires at 6.5 % > 5 %, A1 = +inf because of exclusions, and the reference's missing-finest propagation behaves as intended.",
+    "Checked argument order and semantics of mfos.metrics.gci_capped, gci_step_floor, ratio_middle_term, max_rel_err_or_inf and max_consistency_capped against the runner's calls (coarse to fine; relative floor on the finest value), and checked the spec's recompute block against the row columns.",
+    "Independently computed the self-test bar's uniform-current partial self-inductance (10 x 1 x 1 mm) by 2-D quadrature of the exact filament kernel: 5.7042536 nH, against the spec's 5.704254 +- 3e-4 nH.",
+    "Recomputed the sha256 of all 27 frozen files, the reconstruction script and perturb.rules_sha256() on this tree: all match E004.yaml. The smoke's freeze_hashes_match is false only because pinned commit 3f60b2f4 is absent from this review snapshot's single-commit history.",
+    "Checked that l2_layout's unpatched CELL / LAYERS / WIRE_EDGES make lat0.5 and lat0.25 differ only laterally (10/6/6 layers and E0 annuli at both levels), consistent with the pilot's LEVELS."
+  ],
+  "caveats": [
+    "Registered mode cannot be exercised: the 2R proxy pair is not wired and the founder's banded-acceptance rule is not in place (both are open items stated in design_status). The proxy-pair branch of stage_solve (p['layout'], r_L1_* keys on the proxy record) is therefore untested.",
+    "Only the coarsest level of each ladder ran (smoke). The fine-level paths (thk/fil patches, FastHenry k1/k2 and the thickness ladder) were checked by code reading and synthetic inputs, not by solves.",
+    "The F7(a) job list's time and cost projections for Case 4 extrapolate 11x past P4's calibration and no Case 4 deck has been probed. Treat the burst cost as an order-of-magnitude figure until the first VM probe step reports.",
+    "F7(a)'s wire-group criterion needs the F3 per-group attribution, which this change does not yet provide."
+  ]
+}
