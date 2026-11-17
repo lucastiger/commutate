@@ -357,8 +357,12 @@ def metric_value(rc: m.RecomputeSpec, rows: list[dict], pred: Optional[str]) -> 
                           params=rc.params)
     if rc.ci is None:
         return m.MetricValue(value=stat(rows), n=len(rows))
-    point, ci = mx.bootstrap_ci(stat, rows, n_boot=rc.ci.n_boot, level=rc.ci.level, seed=rc.ci.seed,
-                                scheme=rc.ci.scheme, strata=rc.ci.strata, cluster=rc.ci.cluster)
+    if rc.ci.scheme == "woodruff":  # O002 F3: needs the metric's terms, not an opaque statistic
+        point, ci = mx.quantile_ci(rc.fn, rows, pred=pred, ref=rc.ref, strata=rc.strata, group=rc.group,
+                                   role=rc.role, params=rc.params, level=rc.ci.level, cluster=rc.ci.cluster)
+    else:
+        point, ci = mx.bootstrap_ci(stat, rows, n_boot=rc.ci.n_boot, level=rc.ci.level, seed=rc.ci.seed,
+                                    scheme=rc.ci.scheme, strata=rc.ci.strata, cluster=rc.ci.cluster)
     return m.MetricValue(value=point, ci=ci, level=rc.ci.level, n=len(rows))
 
 
