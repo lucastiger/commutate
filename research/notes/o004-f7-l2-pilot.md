@@ -194,3 +194,27 @@ F7(b) passes as a feasibility check: the solve completes. No FastHenry, no 2R, a
   `peak_mem_mb`) stay in `vm_jobs_l2.json`.
 - **The exclusion rate is still 0 of 2 complete pairs, with 11 pending.** The F7 trigger has not fired and is undecided
   until the VM jobs are assembled.
+
+## Burst 1 and the final F7(c) result (founder session, 2026-11-17)
+- **Runs.** The founder ran the 42 jobs of `vm_jobs_l2.json` on n2d-custom-8-81920-ext (`burst_gcp.sh`, Spot, from main
+  after T0387's merge f2a64fd0). The first burst stopped at the script's default 6 h limit (`MF_GCP_MAX_HOURS`) with 32 jobs done; a
+  resumed burst (`MF_GCP_RESUME=1`) ran the last 10 and exited 0. All 42 solves converged (GMRES flags 0). Each 0.25 mm
+  solve peaked at 15.8-16.1 GB and took 1.2-1.6 h on 2 threads, as projected.
+- **F1 reading.** The status uses the founder's relative reading, E_R / r <= 0.5 % (D0024 item 1, decided before any of
+  these results existed), not the absolute E_R <= 0.005 this note's earlier sections used. In this pilot a pair whose
+  missing level is still a VM job is 'pending', not 'excluded'.
+- **Result (`f7c_local.json`, `pilot_l2.py --check` OK).** All 13 pairs have complete ladders (the 11 frozen-rule
+  development pairs and P3's two precedent pairs). None is excluded. Largest E_R / r: the stand-in compound (r_L1 0.7616,
+  r at 0.25 mm 0.8070), 0.289 % at 10 MHz and 0.349 % at 20 MHz. Next: dev03 trace_width 0.347 % / 0.290 %, dev07
+  wire_landing 0.284 % / 0.298 %, dev01 die_row_shift 0.232 % / 0.260 %. Every other pair is below 0.22 %. Under the
+  absolute reading every pair is also counted.
+- **F7(c)'s trigger does not fire.** No development pair with r <= 0.90 is excluded, and none is excluded at all. The
+  observed rate is 0 of 13; its one-sided 95 % upper bound is 20.6 %, at which the chance of no exclusion among E004's 13
+  judged pairs would be 0.05.
+- **Inference, not a result.** The large-effect pairs converged faster than the rho = 0.8 projection assumed; the
+  stand-in, the pair most at risk, sits at 0.70 of the cap. The judged references are other layouts, so this is a
+  development rate, not a bound for them.
+- **Reproducibility after T0438.** T0438 changed `perturb.rules_sha256()` and renumbers Case 4's trace_width edges, and
+  `measured_rules` now refuses gen2_0 (off the 1 mm lattice). The development pairs are fixed geometries, identified by
+  the fingerprints in `dev_pairs.json` and every solve file; `--check` verifies those instead of a rebuild once the rules
+  hash differs. `span_reach.json`'s gen2_0 results can no longer be regenerated with the current rules.

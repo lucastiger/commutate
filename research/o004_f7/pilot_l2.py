@@ -2,8 +2,13 @@
 
 Development geometry only (O004 F2): 2D_Case_4 (research/scripts/o006_case4_layout.py) and gen2_0 (E010's generator
 housing layout, dev seed 20261110), development seeds only.  On the judged references nothing is drawn and no inductance is
-computed, except the F7(b) l2_layout 0.25 mm solve of 2D_Case_6's reconstruction, which is listed for the burst VM
-(``vm_jobs_l2.json``); locally only its 0.25 mm unknown count is taken (mesh count, no solve) to size that job.
+computed, except the F7(b) l2_layout 0.25 mm solve of 2D_Case_6's reconstruction, which ran locally (1.10 M unknowns,
+4.75 GB, solves/case6_recon__lat0.25.json) and is listed for the burst VM only if that file is missing.
+
+The development pairs were drawn under perturb.rules_sha256() 70307210... (dev_pairs.json).  T0438 and later changes to the
+rules (canonical long sides renumber the trace_width edges) mean the current rules may no longer rebuild a pair from its move
+parameters; the pairs are fixed geometries, identified by the fingerprints recorded in dev_pairs.json and in every solve file,
+and --check verifies those instead of a rebuild when the rules hash has changed.
 
 Modes (each writes only under research/o004_f7/):
   --pairs        draw the F7(c) development pairs on Case 4, L1 ratios at 10 / 20 MHz -> dev_pairs.json
@@ -23,7 +28,9 @@ Ratio estimate of a pair (O004 scope_in and F1; O006 P3 for the thickness and fi
   E_R = gci_step_floor(R_1.0, R_0.5, R_0.25, 0.001, relative=True)       (mfos.metrics, on main, packet note (iii))
         + ratio_middle_term(R_thk_c, R_0.5, R_thk_f)                       (mfos.metrics; P3 thickness term)
         + 3 |R_fil_f - R_0.5|                                              (P3 filament term)
-A missing level makes E_R = +inf (O004 F1).  F1 excludes a pair with E_R > 0.005.
+A missing level makes E_R = +inf (O004 F1); in this pilot such a pair is 'pending' while the level is a VM job, not
+'excluded'.  F1 excludes a pair with E_R / r > 0.005, r the finest (0.25 mm) ratio: the caps
+are relative to the ratio (founder decision 2026-11-17, D0024 item 1; review T0429 finding 6).  T0387 first applied E_R > 0.005.
 """
 from __future__ import annotations
 
@@ -64,7 +71,7 @@ E1 = (0, .175, .35, .475, .6, .7, .8, .865, .93, .965, 1)
 LEVELS = {  # name -> (cell mm patched into CELL[0] or None, refinement, layers top/back/base, annulus edges)
     "lat1.0": (1.0, 0, (10, 6, 6), E0), "lat0.5": (None, 0, None, None), "lat0.25": (None, 1, None, None),
     "thk_c": (0.5, 0, (5, 3, 3), E0), "thk_f": (0.5, 0, (20, 12, 12), E0), "fil_f": (0.5, 0, (10, 6, 6), E1)}
-F1_CAP = 0.005  # O004 F1: l2_layout ratio estimate at most 0.5 %
+F1_CAP = 0.005  # O004 F1: l2_layout ratio estimate at most 0.5 % of the ratio (E_R / r, D0024 item 1)
 STEP_FLOOR = 1e-3  # O004 scope_in: ratio steps all below 0.1 % count as converged
 N_JUDGED = 13
 THREAD_VARS = ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "MF_L2_FFT_WORKERS", "MF_L2_THREADS")
@@ -503,11 +510,12 @@ def ratio_estimate(R: dict) -> dict:
         prov = 3.0 * abs(g("lat0.5") - g("lat1.0")) if None not in lat[:2] else math.inf
         steps = [None if None in (a, b) else (b - a) / b for a, b in ((lat[0], lat[1]), (lat[1], lat[2]))]
         tot = e_lat + e_thk + e_fil
+        rel = (tot / lat[2]) if lat[2] else math.inf
+        missing = None in lat or None in thk or g("fil_f") is None  # a level not solved yet (a VM job), not divergence
         out[f] = dict(E_lateral_step_floor=e_lat, E_lateral_gci_capped=e_gci, E_thickness=e_thk, E_filament=e_fil,
-                      E_R=tot, E_R_over_r=(tot / lat[2]) if lat[2] else math.inf, rel_steps=steps,
+                      E_R=tot, E_R_over_r=rel, rel_steps=steps,
                       E_lateral_two_level_provisional=prov,
-                      F1=("pending" if math.isinf(tot) and lat[2] is None else
-                          "counted" if tot <= F1_CAP else "excluded"))
+                      F1=("pending" if missing else "counted" if rel <= F1_CAP else "excluded"))
     return out
 
 
@@ -562,10 +570,10 @@ def unknowns_025(name: str) -> tuple[int, str]:
 
 
 def projection(blocks: dict) -> dict:
-    """INFERENCE, not F1's rule: E_R of each pending pair if its missing 0.25 mm step d2 = rho d1 (d1 its own measured 1.0 ->
-    0.5 mm ratio step), with rho = 0.56 (P3 die_shift's observed rho, the only Case 4 pair whose lateral sequence is outside the
-    step floor and monotone) and rho = 0.8 (a slower contraction); thickness term taken as P3's larger pair value 3.2e-4 where
-    missing, and the filament term as measured where present, else P3's larger 3.7e-4."""
+    """INFERENCE, not F1's rule: E_R / r of each pending pair if its missing 0.25 mm step d2 = rho d1 (d1 its own measured
+    1.0 -> 0.5 mm ratio step), with rho = 0.56 (P3 die_shift's observed step ratio; both of its steps are below the 0.1 % floor,
+    so this rho is a noisy contraction estimate) and rho = 0.8 (the cautious case); thickness term taken as P3's larger pair
+    value 3.2e-4 where missing, and the filament term as measured where present, else P3's larger 3.7e-4."""
     from mfos.metrics import gci_step_floor
     out = {}
     for n, b in blocks.items():
@@ -580,8 +588,8 @@ def projection(blocks: dict) -> dict:
                 r025 = r05 + rho * (r05 - r1)
                 lat = gci_step_floor(r1, r05, r025, STEP_FLOOR, relative=True)
                 fil = 3 * abs(R["fil_f"][f] - r05) if R.get("fil_f") else 3.7e-4
-                e.append(lat + 3.2e-4 + fil)
-            row[f"rho={rho}"] = dict(E_R_max_over_f=max(e), excluded=max(e) > F1_CAP)
+                e.append((lat + 3.2e-4 + fil) / r025)
+            row[f"rho={rho}"] = dict(E_R_over_r_max_over_f=max(e), excluded=max(e) > F1_CAP)
         out[n] = row
     return out
 
@@ -712,7 +720,7 @@ def cmd_assemble() -> None:
         slots[slots.index(min(slots))] += j["proj_wall_s"]
     mk = max(slots)
     vm = dict(label="RESEARCH ONLY (T0387): l2_layout jobs for the founder's burst VM; agents never start VMs",
-              jobs=jobs, n_jobs=len(jobs), sum_peak_GB_if_serial_max=max(j["proj_peak_GB"] for j in jobs),
+              jobs=jobs, n_jobs=len(jobs), sum_peak_GB_if_serial_max=max((j["proj_peak_GB"] for j in jobs), default=0.0),
               machine=VM_MACHINE, zone=VM_ZONE, parallel=4, threads_per_solve=2,
               projection=dict(makespan_s=round(mk), makespan_h=round(mk / 3600, 2), price_usd_per_h=VM_PRICE,
                               cost_usd=round(mk / 3600 * VM_PRICE + 0.3, 2), sum_GB_all_jobs=round(gb, 1),
@@ -721,9 +729,11 @@ def cmd_assemble() -> None:
                                      "thk_f: 8.1 GB (Mac, P3) and 846 s x 2^1.44 (2.04 M unknowns); thk_c / fil_f: P3 Mac peaks, "
                                      "846 s x 1.1. Price approximate (regular N2D custom 8 vCPU / 80 GB); "
                                      "calibration: research/notes/l2-thread-calibration.md")),
-              command=("MF_REF=task/T0387-f7-b-d-l2-layout-check-on-case-4-develop MF_GCP_PROVISION=0 MF_GCP_SPOT=auto "
+              command=("MF_GCP_PROVISION=0 MF_GCP_SPOT=auto MF_GCP_RESUME=1 MF_GCP_MAX_HOURS="
+                       f"{max(2, math.ceil(mk / 3600 * 1.3) + 1)} "
                        "scripts/burst_gcp.sh --cmd \"uv sync --all-groups && uv run python research/o004_f7/pilot_l2.py "
-                       "--run-vm --parallel 4 --threads 2\" research/o004_f7/solves " + VM_MACHINE + " " + VM_ZONE),
+                       "--run-vm --parallel 4 --threads 2\" research/o004_f7/solves " + VM_MACHINE + " " + VM_ZONE
+                       + "  (burst_gcp.sh stops at MF_GCP_MAX_HOURS, default 6: the first burst stopped there with 10 jobs left)"),
               after=("uv run python research/o004_f7/pilot_l2.py --assemble && uv run python research/o004_f7/pilot_l2.py "
                      "--check"),
               f2_note="case6_recon: only its l2_layout 0.25 mm solve (F7(b)); its unknown count was taken locally (mesh count, "
@@ -780,8 +790,10 @@ def cmd_check() -> int:
     ref = c4mod().build("base")
     if pairs["reference"]["fingerprint"] != ref.fingerprint():
         errs.append("Case 4 base fingerprint differs")
-    if pairs["rules_sha256"] != P.rules_sha256():
-        errs.append("perturb.rules_sha256 changed since dev_pairs.json was written")
+    same_rules = pairs["rules_sha256"] == P.rules_sha256()
+    if not same_rules:  # the pairs are fixed geometries: identified by fingerprint, not rebuilt under newer rules
+        print(f"note: perturb.rules_sha256 is now {P.rules_sha256()[:8]}..., the pairs were drawn under "
+              f"{pairs['rules_sha256'][:8]}...; checking them by recorded fingerprint, not by rebuild")
     kinds = {p["move_type"] for p in pairs["pairs"]}
     if kinds != set(P.PAIR_KINDS):
         errs.append(f"dev pairs miss kinds {set(P.PAIR_KINDS) - kinds}")
@@ -790,8 +802,8 @@ def cmd_check() -> int:
     st = next((p for p in pairs["pairs"] if p["name"] == "standin_compound"), None)
     if st is None or st.get("label") != STANDIN_LABEL or abs(st["r_L1"]["20MHz"] - STANDIN_R20) > 5e-4:
         errs.append("stand-in compound missing, mislabelled or not at r = 0.7616")
-    for p in pairs["pairs"]:  # layouts rebuild to their recorded fingerprints (no solve)
-        if P.apply(ref, p["move_type"], p["params"]).fingerprint() != p["fingerprint"]:
+    for p in pairs["pairs"]:  # layouts rebuild to their recorded fingerprints (no solve), while the rules are unchanged
+        if same_rules and P.apply(ref, p["move_type"], p["params"]).fingerprint() != p["fingerprint"]:
             errs.append(f"{p['name']}: fingerprint does not rebuild")
     names = set(all_dev_layouts(pairs))
     if set(f7c["pairs"]) != names - {"case4_base"}:
@@ -803,24 +815,58 @@ def cmd_check() -> int:
         d = jload(f)
         if d["name"] in fps and d["fingerprint"] != fps[d["name"]]:
             errs.append(f"{f.name}: fingerprint mismatch")
-    # f7c estimates recompute from the stored per-level ratios
-    for nm, b in f7c["pairs"].items():
-        R = {lv: (None if v is None else [v[f] for f in FK]) for lv, v in b["ratio_per_level"].items()}
-        e = _clean(ratio_estimate(R))
-        for f in FK:
-            a, c = e[f]["E_R"], b["estimate"][f]["E_R"]
-            if (a == "inf") != (c == "inf") or (a != "inf" and abs(a - c) > 1e-15):
-                errs.append(f"{nm} {f}: E_R does not recompute")
-            if e[f]["F1"] != b["estimate"][f]["F1"]:
-                errs.append(f"{nm} {f}: F1 status does not recompute")
-        if abs(b["r_L1"]["20MHz"] - next(p for p in pairs["pairs"] if p["name"] == nm)["r_L1"]["20MHz"]) > 1e-15:
-            errs.append(f"{nm}: L1 ratio differs between files")
-    # every dev layout lacking a 0.25 mm value is in the VM manifest, and the F7(b) Case 6 job is there
+    # every stored ladder value equals its solve file, and the ratios, estimates and F1 statuses of the drawn pairs and of
+    # P3's precedent pairs recompute from the solve files (reviews T0429 finding 4, T0433 finding 2)
+    def _lad_ok(nm, lad):
+        for lv, d in lad.items():
+            if d is None:
+                continue
+            v, src, fp = solve_value(nm, lv)
+            if v is None or src != d["source"] or [d["L_H"][f] for f in FK] != v:
+                errs.append(f"{nm} {lv}: stored ladder value differs from {d['source']}")
+    base_lad = f7c["base"]["ladder"]
+    _lad_ok("case4_base", base_lad)
+    status = {}
+    for group in ("pairs", "p3_precedent_pairs"):
+        for nm, b in f7c[group].items():
+            _lad_ok(nm, b["ladder"])
+            R = {lv: (None if b["ladder"].get(lv) is None or base_lad.get(lv) is None else
+                      [b["ladder"][lv]["L_H"][f] / base_lad[lv]["L_H"][f] for f in FK]) for lv in LEVELS}
+            for lv in LEVELS:
+                st_r = b["ratio_per_level"].get(lv)
+                if (st_r is None) != (R[lv] is None) or (st_r is not None and any(
+                        abs(st_r[f] - R[lv][i]) > 1e-15 for i, f in enumerate(FK))):
+                    errs.append(f"{nm} {lv}: stored ratio does not recompute from the solve files")
+            e = _clean(ratio_estimate(R))
+            for f in FK:
+                a, c = e[f]["E_R"], b["estimate"][f]["E_R"]
+                if (a == "inf") != (c == "inf") or (a != "inf" and abs(a - c) > 1e-15):
+                    errs.append(f"{nm} {f}: E_R does not recompute")
+                if e[f]["F1"] != b["estimate"][f]["F1"]:
+                    errs.append(f"{nm} {f}: F1 status does not recompute")
+            fs = [e[f]["F1"] for f in FK]
+            status[nm] = "excluded" if "excluded" in fs else "pending" if "pending" in fs else "counted"
+            if group == "pairs" and abs(b["r_L1"]["20MHz"] - next(
+                    p for p in pairs["pairs"] if p["name"] == nm)["r_L1"]["20MHz"]) > 1e-15:
+                errs.append(f"{nm}: L1 ratio differs between files")
+    ex, trig = f7c["exclusion"], f7c["f7_trigger"]
+    if ex["per_pair"] != status:
+        errs.append("exclusion per-pair statuses do not recompute")
+    judged = {n: s for n, s in status.items() if s != "pending"}
+    k = sum(s == "excluded" for s in judged.values())
+    if (ex["n_excluded"], ex["n_complete"]) != (k, len(judged)):
+        errs.append("exclusion counts do not recompute")
+    rl = {n: b["r_L1"]["20MHz"] for g in ("pairs", "p3_precedent_pairs") for n, b in f7c[g].items()}
+    low = sorted(n for n, s in status.items() if s == "excluded" and rl[n] <= 0.90)
+    if sorted(trig["excluded_with_r_le_0p90"]) != low or trig["fires"] != (bool(low) or k > 1):
+        errs.append("F7 trigger does not recompute")
+    # every level a dev layout's F1 estimate still lacks is in the VM manifest, and the F7(b) Case 6 job is there
     jobset = {(j["name"], j["level"]) for j in vm["jobs"]}
     for nm in names:
-        lad = f7c["base"]["ladder"] if nm == "case4_base" else f7c["pairs"][nm]["ladder"]
-        if lad.get("lat0.25") is None and (nm, "lat0.25") not in jobset:
-            errs.append(f"{nm}: no 0.25 mm value and no VM job")
+        lad = base_lad if nm == "case4_base" else f7c["pairs"][nm]["ladder"]
+        for lv in ("lat0.25", "thk_c", "thk_f", "fil_f"):
+            if lad.get(lv) is None and (nm, lv) not in jobset:
+                errs.append(f"{nm}: no {lv} value and no VM job")
     if ("case6_recon", "lat0.25") not in jobset and not solve_path("case6_recon", "lat0.25").exists():
         errs.append("F7(b) Case 6 0.25 mm job missing")
     for j in vm["jobs"]:

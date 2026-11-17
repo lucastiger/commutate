@@ -1,6 +1,6 @@
 {
  "label": "RESEARCH ONLY, NOT EVIDENCE (T0387, O004 F7(c)/(d)); development geometry 2D_Case_4",
- "estimator": "(O004 scope_in and F1; O006 P3 for the thickness and filament terms):\n  E_R = gci_step_floor(R_1.0, R_0.5, R_0.25, 0.001, relative=True)       (mfos.metrics, on main, packet note (iii))\n        + ratio_middle_term(R_thk_c, R_0.5, R_thk_f)                       (mfos.metrics; P3 thickness term)\n        + 3 |R_fil_f - R_0.5|                                              (P3 filament term)\nA missing level makes E_R = +inf (O004 F1).  F1 excludes a pair with E_R > 0.005.",
+ "estimator": "(O004 scope_in and F1; O006 P3 for the thickness and filament terms):\n  E_R = gci_step_floor(R_1.0, R_0.5, R_0.25, 0.001, relative=True)       (mfos.metrics, on main, packet note (iii))\n        + ratio_middle_term(R_thk_c, R_0.5, R_thk_f)                       (mfos.metrics; P3 thickness term)\n        + 3 |R_fil_f - R_0.5|                                              (P3 filament term)\nA missing level makes E_R = +inf (O004 F1); in this pilot such a pair is 'pending' while the level is a VM job, not\n'excluded'.  F1 excludes a pair with E_R / r > 0.005, r the finest (0.25 mm) ratio: the caps\nare relative to the ratio (founder decision 2026-11-17, D0024 item 1; review T0429 finding 6).  T0387 first applied E_R > 0.005.",
  "F1_cap": 0.005,
  "levels": {
   "lat1.0": {
@@ -191,7 +191,14 @@
     "source": "research/o004_f7/solves/standin_compound__lat0.5.json",
     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
    },
-   "lat0.25": null,
+   "lat0.25": {
+    "L_H": {
+     "10MHz": 1.837758160446911e-08,
+     "20MHz": 1.8269314774572843e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__lat0.25.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   },
    "thk_c": {
     "L_H": {
      "10MHz": 1.8774783947491496e-08,
@@ -200,7 +207,14 @@
     "source": "research/o004_f7/solves/standin_compound__thk_c.json",
     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
    },
-   "thk_f": null,
+   "thk_f": {
+    "L_H": {
+     "10MHz": 1.851307509575636e-08,
+     "20MHz": 1.840645112024441e-08
+    },
+    "source": "research/o004_f7/solves/standin_compound__thk_f.json",
+    "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+   },
    "fil_f": {
     "L_H": {
      "10MHz": 1.857420492544082e-08,
@@ -219,12 +233,18 @@
     "10MHz": 0.8069961742568684,
     "20MHz": 0.8073553319846709
    },
-   "lat0.25": null,
+   "lat0.25": {
+    "10MHz": 0.8067166392679929,
+    "20MHz": 0.8070736287618737
+   },
    "thk_c": {
     "10MHz": 0.8080527390816533,
     "20MHz": 0.8081499887307728
    },
-   "thk_f": null,
+   "thk_f": {
+    "10MHz": 0.8068673886383646,
+    "20MHz": 0.8072290502419127
+   },
    "fil_f": {
     "10MHz": 0.8063972270524892,
     "20MHz": 0.8065954395374542
@@ -232,32 +252,32 @@
   },
   "estimate": {
    "10MHz": {
-    "E_lateral_step_floor": "inf",
-    "E_lateral_gci_capped": "inf",
-    "E_thickness": "inf",
+    "E_lateral_step_floor": 0.0003494187360944534,
+    "E_lateral_gci_capped": 0.0003494187360944534,
+    "E_thickness": 0.0001833280395918958,
     "E_filament": 0.0017968416131377563,
-    "E_R": "inf",
-    "E_R_over_r": "inf",
+    "E_R": 0.0023295883888241053,
+    "E_R_over_r": 0.0028877405961750735,
     "rel_steps": [
      -0.0010612773408332939,
-     null
+     -0.00034650951185190645
     ],
     "E_lateral_two_level_provisional": 0.0025693402616339123,
-    "F1": "pending"
+    "F1": "counted"
    },
    "20MHz": {
-    "E_lateral_step_floor": "inf",
-    "E_lateral_gci_capped": "inf",
-    "E_thickness": "inf",
+    "E_lateral_step_floor": 0.0003521290284964895,
+    "E_lateral_gci_capped": 0.0003521290284964895,
+    "E_thickness": 0.00018767652569716753,
     "E_filament": 0.0022796773416502436,
-    "E_R": "inf",
-    "E_R_over_r": "inf",
+    "E_R": 0.0028194828958439007,
+    "E_R_over_r": 0.0034934642830162232,
     "rel_steps": [
      -0.0010461984817614657,
-     null
+     -0.0003490427796895689
     ],
     "E_lateral_two_level_provisional": 0.0025339617676931603,
-    "F1": "pending"
+    "F1": "counted"
    }
   },
   "move_type": "compound",
@@ -286,10 +306,38 @@
      "source": "research/o004_f7/solves/dev00_die_row_shift__lat0.5.json",
      "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.0511051742141404e-08,
+      "20MHz": 2.038474828784518e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__lat0.25.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.094410145526513e-08,
+      "20MHz": 2.074240652793878e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__thk_c.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.0664838740428525e-08,
+      "20MHz": 2.054025056605577e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__thk_f.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.0739409269028926e-08,
+      "20MHz": 2.06264731046175e-08
+     },
+     "source": "research/o004_f7/solves/dev00_die_row_shift__fil_f.json",
+     "fingerprint": "062c46721120a9fd1e6130f876598f35a3047f2068c9adf76737dbbaa94a170a"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -300,39 +348,51 @@
      "10MHz": 0.9007465597701615,
      "20MHz": 0.9009038272148988
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.900369106523155,
+     "20MHz": 0.9005259898946193
+    },
+    "thk_c": {
+     "10MHz": 0.9014185513858998,
+     "20MHz": 0.9014206358638094
+    },
+    "thk_f": {
+     "10MHz": 0.9006491025872037,
+     "20MHz": 0.9008084637201885
+    },
+    "fil_f": {
+     "10MHz": 0.9003993545018296,
+     "20MHz": 0.900464283458264
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0004718165587580536,
+     "E_lateral_gci_capped": 0.0004718165587580536,
+     "E_thickness": 0.00014248582440089876,
+     "E_filament": 0.0010416158049956215,
+     "E_R": 0.0016559181881545739,
+     "E_R_over_r": 0.001839154826789904,
      "rel_steps": [
       -0.0011049864586444025,
-      null
+      -0.00041922056662295736
      ],
      "E_lateral_two_level_provisional": 0.002985938253649678,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0004722966503493964,
+     "E_lateral_gci_capped": 0.0004722966503493964,
+     "E_thickness": 0.0001461776175542186,
+     "E_filament": 0.0013186312699043912,
+     "E_R": 0.0019371055378080062,
+     "E_R_over_r": 0.0021510823224932005,
      "rel_steps": [
       -0.0010997574284692942,
-      null
+      -0.0004195740317541886
      ],
      "E_lateral_two_level_provisional": 0.0029723270289480075,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "die_row_shift",
@@ -360,10 +420,38 @@
      "source": "research/o004_f7/solves/dev01_die_row_shift__lat0.5.json",
      "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.1107654882384342e-08,
+      "20MHz": 2.0976232496542668e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__lat0.25.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.1565489602318305e-08,
+      "20MHz": 2.1355770588657308e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__thk_c.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.1277875587648738e-08,
+      "20MHz": 2.114823760462728e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__thk_f.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.1354533746842593e-08,
+      "20MHz": 2.123712046537511e-08
+     },
+     "source": "research/o004_f7/solves/dev01_die_row_shift__fil_f.json",
+     "fingerprint": "592f4623622fd3eb145cce73b4edccbd49e133562d3a25ffb1067e82fd3c0e14"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -374,39 +462,51 @@
      "10MHz": 0.9274262743572985,
      "20MHz": 0.9275282621388353
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.926558062754288,
+     "20MHz": 0.9266556675841859
+    },
+    "thk_c": {
+     "10MHz": 0.9281626351347985,
+     "20MHz": 0.9280761264349822
+    },
+    "thk_f": {
+     "10MHz": 0.9273674860808812,
+     "20MHz": 0.9274722022376956
+    },
+    "fil_f": {
+     "10MHz": 0.9271049214529964,
+     "20MHz": 0.9271225558328653
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0011014582773014876,
+     "E_lateral_gci_capped": 0.0011014582773014876,
+     "E_thickness": 7.986116035813127e-05,
+     "E_filament": 0.0009640587129063904,
+     "E_R": 0.002145378150566009,
+     "E_R_over_r": 0.002315427642158393,
      "rel_steps": [
       -0.0018585398118542457,
-      null
+      -0.0009370288143947405
      ],
      "E_lateral_two_level_provisional": 0.005170975960358093,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.001115803628081234,
+     "E_lateral_gci_capped": 0.001115803628081234,
+     "E_thickness": 7.806258593815711e-05,
+     "E_filament": 0.0012171189179100983,
+     "E_R": 0.0024109851319294895,
+     "E_R_over_r": 0.0026018133987298505,
      "rel_steps": [
       -0.0018604188234089298,
-      null
+      -0.0009416599770271321
      ],
      "E_lateral_two_level_provisional": 0.005176773114380584,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "die_row_shift",
@@ -434,10 +534,38 @@
      "source": "research/o004_f7/solves/dev02_trace_width__lat0.5.json",
      "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2817478540328824e-08,
+      "20MHz": 2.267304689677e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__lat0.25.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.3272457040774533e-08,
+      "20MHz": 2.3048177485171846e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__thk_c.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.298141723987797e-08,
+      "20MHz": 2.2838847320119533e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__thk_f.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.3070597095351107e-08,
+      "20MHz": 2.2943309510436273e-08
+     },
+     "source": "research/o004_f7/solves/dev02_trace_width__fil_f.json",
+     "fingerprint": "05fa3f141dde1aa96a8e871dd05d48f22360a4145ff2baf4f6192852d39a0292"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -448,39 +576,51 @@
      "10MHz": 1.0016127299545612,
      "20MHz": 1.0016138108064545
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 1.0016138140911475,
+     "20MHz": 1.0016149187780443
+    },
+    "thk_c": {
+     "10MHz": 1.0016292442859542,
+     "20MHz": 1.0016245114182567
+    },
+    "thk_f": {
+     "10MHz": 1.0016140495103119,
+     "20MHz": 1.0016151897180785
+    },
+    "fil_f": {
+     "10MHz": 1.0016076380558623,
+     "20MHz": 1.0016075290084978
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 8.624428708192688e-05,
+     "E_lateral_gci_capped": 8.983779904367384e-06,
+     "E_thickness": 4.954299417914143e-05,
+     "E_filament": 1.5275696096717084e-05,
+     "E_R": 0.0001510629773577854,
+     "E_R_over_r": 0.0001508195825901804,
      "rel_steps": [
       2.8701807429384212e-05,
-      null
+      1.082389810354305e-06
      ],
      "E_lateral_two_level_provisional": 8.624428708192688e-05,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 8.683489467808947e-05,
+     "E_lateral_gci_capped": 9.045301528967653e-06,
+     "E_thickness": 3.2101835406583845e-05,
+     "E_filament": 1.8845393870092764e-05,
+     "E_R": 0.00013778212395476608,
+     "E_R_over_r": 0.00013755997576679296,
      "rel_steps": [
       2.889832845794259e-05,
-      null
+      1.106185190572548e-06
      ],
      "E_lateral_two_level_provisional": 8.683489467808947e-05,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "trace_width",
@@ -508,10 +648,38 @@
      "source": "research/o004_f7/solves/dev03_trace_width__lat0.5.json",
      "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.41598995313744e-08,
+      "20MHz": 2.4007443047055787e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__lat0.25.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.4665278930617115e-08,
+      "20MHz": 2.4422576621512897e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__thk_c.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.4342312899314753e-08,
+      "20MHz": 2.4191827657261995e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__thk_f.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.4431338443729635e-08,
+      "20MHz": 2.429601974656829e-08
+     },
+     "source": "research/o004_f7/solves/dev03_trace_width__fil_f.json",
+     "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -522,39 +690,51 @@
      "10MHz": 1.0608759109991248,
      "20MHz": 1.0608977379849194
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 1.0605417717347005,
+     "20MHz": 1.060563815138182
+    },
+    "thk_c": {
+     "10MHz": 1.0615752626416306,
+     "20MHz": 1.0613529591151274
+    },
+    "thk_f": {
+     "10MHz": 1.0609268498559845,
+     "20MHz": 1.0609511815077326
+    },
+    "fil_f": {
+     "10MHz": 1.060684085983125,
+     "20MHz": 1.0606611174395997
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
+     "E_lateral_step_floor": 0.001002417793272814,
      "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_thickness": 0.0020980549275173566,
+     "E_filament": 0.0005754750479993742,
+     "E_R": 0.0036759477687895448,
+     "E_R_over_r": 0.0034661037092173115,
      "rel_steps": [
       -3.9200847413471355e-05,
-      null
+      -0.00031506468988744165
      ],
      "E_lateral_two_level_provisional": 0.00012476170413511234,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
+     "E_lateral_step_floor": 0.0010017685402121668,
      "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_thickness": 0.00136566339062405,
+     "E_filament": 0.000709861635959097,
+     "E_R": 0.003077293566795314,
+     "E_R_over_r": 0.002901563793588762,
      "rel_steps": [
       -3.383148661113644e-05,
-      null
+      -0.00031485408230138586
      ],
      "E_lateral_two_level_provisional": 0.0001076752428552652,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "trace_width",
@@ -582,10 +762,38 @@
      "source": "research/o004_f7/solves/dev04_terminal_copper__lat0.5.json",
      "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2469619655278432e-08,
+      "20MHz": 2.2327188537327932e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__lat0.25.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.2913451102917854e-08,
+      "20MHz": 2.2693683692714876e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__thk_c.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2630201967670155e-08,
+      "20MHz": 2.2489596850832123e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__thk_f.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.271941431202058e-08,
+      "20MHz": 2.2594120660745496e-08
+     },
+     "source": "research/o004_f7/solves/dev04_terminal_copper__fil_f.json",
+     "fingerprint": "325a98600dc5b0fb65b4cf9530e08f59251ac372f6e0c7e9cacdb37b0ff26d5b"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -596,39 +804,51 @@
      "10MHz": 0.9863179764755572,
      "20MHz": 0.9863102487652498
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.9863439294715565,
+     "20MHz": 0.9863361212622758
+    },
+    "thk_c": {
+     "10MHz": 0.9861778956982423,
+     "20MHz": 0.9862189691839975
+    },
+    "thk_f": {
+     "10MHz": 0.9863068059502621,
+     "20MHz": 0.9862985421591506
+    },
+    "fil_f": {
+     "10MHz": 0.9863610730587019,
+     "20MHz": 0.9863634256790715
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.00041383249768489616,
+     "E_lateral_gci_capped": 0.00041383249768489616,
+     "E_thickness": 0.00042024233194459804,
+     "E_filament": 0.00012928974943415827,
+     "E_R": 0.0009633645790636525,
+     "E_R_over_r": 0.0009767024972514248,
      "rel_steps": [
       -0.00013985770226746335,
-      null
+      2.6312318881694116e-05
      ],
      "E_lateral_two_level_provisional": 0.00041383249768489616,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0004179613928573245,
+     "E_lateral_gci_capped": 0.0004179613928573245,
+     "E_thickness": 0.0002738387437566381,
+     "E_filament": 0.0001595307414653524,
+     "E_R": 0.000851330878079315,
+     "E_R_over_r": 0.0008631245066740674,
      "rel_steps": [
       -0.00014125419913276627,
-      null
+      2.6230913040985612e-05
      ],
      "E_lateral_two_level_provisional": 0.0004179613928573245,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "terminal_copper",
@@ -656,10 +876,38 @@
      "source": "research/o004_f7/solves/dev05_terminal_copper__lat0.5.json",
      "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2809161770178102e-08,
+      "20MHz": 2.26647606261532e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__lat0.25.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.326455353751513e-08,
+      "20MHz": 2.304034490250206e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__thk_c.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2973639641462324e-08,
+      "20MHz": 2.2831097553571122e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__thk_f.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.306282059841962e-08,
+      "20MHz": 2.2935561336560012e-08
+     },
+     "source": "research/o004_f7/solves/dev05_terminal_copper__fil_f.json",
+     "fingerprint": "c06295d4c05cc1b890905e70d21c78ffd47514373b479d748945254fbde9a083"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -670,39 +918,51 @@
      "10MHz": 1.0012740451264095,
      "20MHz": 1.0012742370841525
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 1.001248734669385,
+     "20MHz": 1.0012488606867518
+    },
+    "thk_c": {
+     "10MHz": 1.001289083383173,
+     "20MHz": 1.0012841241232173
+    },
+    "thk_f": {
+     "10MHz": 1.001275073381762,
+     "20MHz": 1.001275317754189
+    },
+    "fil_f": {
+     "10MHz": 1.0012700222285953,
+     "20MHz": 1.0012692766178826
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.00012972382713294373,
+     "E_lateral_gci_capped": 4.4659089887920316e-05,
+     "E_thickness": 4.511477029023325e-05,
+     "E_filament": 1.2068693442612854e-05,
+     "E_R": 0.00018690729086578983,
+     "E_R_over_r": 0.00018667418433992539,
      "rel_steps": [
       -4.318625447394084e-05,
-      null
+      -2.5278890397631325e-05
      ],
      "E_lateral_two_level_provisional": 0.00012972382713294373,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.00012969243929195073,
+     "E_lateral_gci_capped": 4.5084193455583385e-05,
+     "E_thickness": 2.966111719437947e-05,
+     "E_filament": 1.488139880989614e-05,
+     "E_R": 0.00017423495529622635,
+     "E_R_over_r": 0.00017401763151742258,
      "rel_steps": [
       -4.317579689577448e-05,
-      null
+      -2.534474534466813e-05
      ],
      "E_lateral_two_level_provisional": 0.00012969243929195073,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "terminal_copper",
@@ -730,10 +990,38 @@
      "source": "research/o004_f7/solves/dev06_wire_landing__lat0.5.json",
      "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.2309269801557152e-08,
+      "20MHz": 2.216908467728221e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__lat0.25.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.2751886067565344e-08,
+      "20MHz": 2.253475961306275e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__thk_c.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2470066852027513e-08,
+      "20MHz": 2.233168481975027e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__thk_f.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.2558036529770795e-08,
+      "20MHz": 2.2434675860553285e-08
+     },
+     "source": "research/o004_f7/solves/dev06_wire_landing__fil_f.json",
+     "fingerprint": "00294ea345e15b7b3516b96eb6dd4e69ac42a0248f29e3c57fa6b60fc1bd1622"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -744,39 +1032,51 @@
      "10MHz": 0.9793441912225584,
      "20MHz": 0.9793908361013293
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.9793050873711525,
+     "20MHz": 0.9793516526260488
+    },
+    "thk_c": {
+     "10MHz": 0.9792242567258023,
+     "20MHz": 0.9793124684970531
+    },
+    "thk_f": {
+     "10MHz": 0.9793275330893478,
+     "20MHz": 0.9793731887578219
+    },
+    "fil_f": {
+     "10MHz": 0.9793548729744193,
+     "20MHz": 0.9794027423364556
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0007849032270511591,
+     "E_lateral_gci_capped": 0.0007849032270511591,
+     "E_thickness": 0.00035980349026853986,
+     "E_filament": 3.204525558242466e-05,
+     "E_R": 0.0011767519729021236,
+     "E_R_over_r": 0.001201619381005155,
      "rel_steps": [
       0.00026715266334550195,
-      null
+      -3.9930203478163225e-05
      ],
      "E_lateral_two_level_provisional": 0.0007849032270511591,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0008215223687447759,
+     "E_lateral_gci_capped": 0.0008215223687447759,
+     "E_thickness": 0.00023510281282845824,
+     "E_filament": 3.5718705379106375e-05,
+     "E_R": 0.0010923438869523405,
+     "E_R_over_r": 0.001115374527651342,
      "rel_steps": [
       0.0002796031772889286,
-      null
+      -4.0009607555526284e-05
      ],
      "E_lateral_two_level_provisional": 0.0008215223687447759,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "wire_landing",
@@ -804,10 +1104,38 @@
      "source": "research/o004_f7/solves/dev07_wire_landing__lat0.5.json",
      "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.3542132926805027e-08,
+      "20MHz": 2.3389366773639967e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__lat0.25.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.4001299282399958e-08,
+      "20MHz": 2.3767739329309067e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__thk_c.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.3706759188296415e-08,
+      "20MHz": 2.3555917318846894e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__thk_f.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.3802080948140632e-08,
+      "20MHz": 2.3667972311525978e-08
+     },
+     "source": "research/o004_f7/solves/dev07_wire_landing__fil_f.json",
+     "fingerprint": "b481525ba2cd2a33f83fc0ade5bdde6e44885815b7dfc247a0d12cabed6d22b2"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -818,39 +1146,51 @@
      "10MHz": 1.0332070838272196,
      "20MHz": 1.0330423398198751
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 1.0334238075859787,
+     "20MHz": 1.0332593942010817
+    },
+    "thk_c": {
+     "10MHz": 1.032998072356145,
+     "20MHz": 1.0328951305825205
+    },
+    "thk_f": {
+     "10MHz": 1.0332270992474895,
+     "20MHz": 1.0330628452301733
+    },
+    "fil_f": {
+     "10MHz": 1.0333649354955614,
+     "20MHz": 1.033243231662192
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0024288504485872053,
+     "E_lateral_gci_capped": 0.00027090469844892606,
+     "E_thickness": 2.7668914356717884e-05,
+     "E_filament": 0.0004735550050254389,
+     "E_R": 0.002930074367969362,
+     "E_R_over_r": 0.0028353075925489414,
      "rel_steps": [
       0.0007835958820537134,
-      null
+      0.00020971430807791786
      ],
      "E_lateral_two_level_provisional": 0.0024288504485872053,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0024439430759164438,
+     "E_lateral_gci_capped": 0.0002713179765082008,
+     "E_thickness": 2.9779939187386096e-05,
+     "E_filament": 0.0006026755269505912,
+     "E_R": 0.003076398542054421,
+     "E_R_over_r": 0.002977372922346473,
      "rel_steps": [
       0.0007885908065628682,
-      null
+      0.00021006765815508266
      ],
      "E_lateral_two_level_provisional": 0.0024439430759164438,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "wire_landing",
@@ -878,10 +1218,38 @@
      "source": "research/o004_f7/solves/dev08_compound__lat0.5.json",
      "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.252547550831029e-08,
+      "20MHz": 2.2383002301728756e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__lat0.25.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.296583610215822e-08,
+      "20MHz": 2.2745663533417588e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__thk_c.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.2681301681613176e-08,
+      "20MHz": 2.254064951844761e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__thk_f.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.2770724173856617e-08,
+      "20MHz": 2.264538636573859e-08
+     },
+     "source": "research/o004_f7/solves/dev08_compound__fil_f.json",
+     "fingerprint": "6a00792cedc303f952d7914ac6bb2e6fa112dbd94f0af1a8934263de0927c248"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -892,39 +1260,51 @@
      "10MHz": 0.9885524717345289,
      "20MHz": 0.9885568198250236
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.988795821511059,
+     "20MHz": 0.9888017757176102
+    },
+    "thk_c": {
+     "10MHz": 0.9884325071090236,
+     "20MHz": 0.9884779019165726
+    },
+    "thk_f": {
+     "10MHz": 0.9885339180068012,
+     "20MHz": 0.9885374961064565
+    },
+    "fil_f": {
+     "10MHz": 0.9885886855175455,
+     "20MHz": 0.9886014688034801
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0008561740270198737,
+     "E_lateral_gci_capped": 0.001760731094235031,
+     "E_thickness": 0.0003598938765156934,
+     "E_filament": 0.00010864134904997602,
+     "E_R": 0.001324709252585543,
+     "E_R_over_r": 0.0013397197113567364,
      "rel_steps": [
       0.0002886962002524823,
-      null
+      0.00024610720558901106
      ],
      "E_lateral_two_level_provisional": 0.0008561740270198737,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0008596580118291897,
+     "E_lateral_gci_capped": 0.0018031261122988626,
+     "E_thickness": 0.00023675372535314487,
+     "E_filament": 0.00013394693536938895,
+     "E_R": 0.0012303586725517235,
+     "E_R_over_r": 0.0012442925394817444,
      "rel_steps": [
       0.0002898697018350956,
-      null
+      0.000247730029012921
      ],
      "E_lateral_two_level_provisional": 0.0008596580118291897,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "compound",
@@ -952,10 +1332,38 @@
      "source": "research/o004_f7/solves/dev09_compound__lat0.5.json",
      "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 2.1728734013383392e-08,
+      "20MHz": 2.1592655347762727e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__lat0.25.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    },
+    "thk_c": {
+     "L_H": {
+      "10MHz": 2.2181475776762076e-08,
+      "20MHz": 2.196712455894216e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__thk_c.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    },
+    "thk_f": {
+     "L_H": {
+      "10MHz": 2.1894148376520745e-08,
+      "20MHz": 2.1759868265869896e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__thk_f.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    },
+    "fil_f": {
+     "L_H": {
+      "10MHz": 2.197601029445716e-08,
+      "20MHz": 2.1855186197732747e-08
+     },
+     "source": "research/o004_f7/solves/dev09_compound__fil_f.json",
+     "fingerprint": "4372e4bc87adc59141319999070d2b7848716943f06d9a297658fa40a0889198"
+    }
    },
    "ratio_per_level": {
     "lat1.0": {
@@ -966,39 +1374,51 @@
      "10MHz": 0.9542723780158914,
      "20MHz": 0.9543398419192022
     },
-    "lat0.25": null,
-    "thk_c": null,
-    "thk_f": null,
-    "fil_f": null
+    "lat0.25": {
+     "10MHz": 0.9538214361438092,
+     "20MHz": 0.9538870461840188
+    },
+    "thk_c": {
+     "10MHz": 0.9546742219998087,
+     "20MHz": 0.954644262773924
+    },
+    "thk_f": {
+     "10MHz": 0.9542269037234975,
+     "20MHz": 0.9542957346257877
+    },
+    "fil_f": {
+     "10MHz": 0.9540862628717138,
+     "20MHz": 0.9541046828302789
+    }
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.0005636773401027084,
+     "E_lateral_gci_capped": 0.0005636773401027084,
+     "E_thickness": 6.409625753827096e-05,
+     "E_filament": 0.0005583454325326365,
+     "E_R": 0.0011861190301736158,
+     "E_R_over_r": 0.0012435441113264965,
      "rel_steps": [
       -0.0010477764105809855,
-      null
+      -0.0004727738914164826
      ],
      "E_lateral_two_level_provisional": 0.002999592260862216,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
-     "E_filament": "inf",
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_lateral_step_floor": 0.000565994668979275,
+     "E_lateral_gci_capped": 0.000565994668979275,
+     "E_thickness": 6.447599144127562e-05,
+     "E_filament": 0.0007054772667697273,
+     "E_R": 0.0013359479271902778,
+     "E_R_over_r": 0.0014005305266851836,
      "rel_steps": [
       -0.0010484730051508006,
-      null
+      -0.00047468485602651645
      ],
      "E_lateral_two_level_provisional": 0.003001798685976498,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "compound",
@@ -1026,7 +1446,14 @@
      "source": "research/o004_f7/solves/standin_compound__lat0.5.json",
      "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
     },
-    "lat0.25": null,
+    "lat0.25": {
+     "L_H": {
+      "10MHz": 1.837758160446911e-08,
+      "20MHz": 1.8269314774572843e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__lat0.25.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    },
     "thk_c": {
      "L_H": {
       "10MHz": 1.8774783947491496e-08,
@@ -1035,7 +1462,14 @@
      "source": "research/o004_f7/solves/standin_compound__thk_c.json",
      "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
     },
-    "thk_f": null,
+    "thk_f": {
+     "L_H": {
+      "10MHz": 1.851307509575636e-08,
+      "20MHz": 1.840645112024441e-08
+     },
+     "source": "research/o004_f7/solves/standin_compound__thk_f.json",
+     "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53"
+    },
     "fil_f": {
      "L_H": {
       "10MHz": 1.857420492544082e-08,
@@ -1054,12 +1488,18 @@
      "10MHz": 0.8069961742568684,
      "20MHz": 0.8073553319846709
     },
-    "lat0.25": null,
+    "lat0.25": {
+     "10MHz": 0.8067166392679929,
+     "20MHz": 0.8070736287618737
+    },
     "thk_c": {
      "10MHz": 0.8080527390816533,
      "20MHz": 0.8081499887307728
     },
-    "thk_f": null,
+    "thk_f": {
+     "10MHz": 0.8068673886383646,
+     "20MHz": 0.8072290502419127
+    },
     "fil_f": {
      "10MHz": 0.8063972270524892,
      "20MHz": 0.8065954395374542
@@ -1067,32 +1507,32 @@
    },
    "estimate": {
     "10MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
+     "E_lateral_step_floor": 0.0003494187360944534,
+     "E_lateral_gci_capped": 0.0003494187360944534,
+     "E_thickness": 0.0001833280395918958,
      "E_filament": 0.0017968416131377563,
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_R": 0.0023295883888241053,
+     "E_R_over_r": 0.0028877405961750735,
      "rel_steps": [
       -0.0010612773408332939,
-      null
+      -0.00034650951185190645
      ],
      "E_lateral_two_level_provisional": 0.0025693402616339123,
-     "F1": "pending"
+     "F1": "counted"
     },
     "20MHz": {
-     "E_lateral_step_floor": "inf",
-     "E_lateral_gci_capped": "inf",
-     "E_thickness": "inf",
+     "E_lateral_step_floor": 0.0003521290284964895,
+     "E_lateral_gci_capped": 0.0003521290284964895,
+     "E_thickness": 0.00018767652569716753,
      "E_filament": 0.0022796773416502436,
-     "E_R": "inf",
-     "E_R_over_r": "inf",
+     "E_R": 0.0028194828958439007,
+     "E_R_over_r": 0.0034934642830162232,
      "rel_steps": [
       -0.0010461984817614657,
-      null
+      -0.0003490427796895689
      ],
      "E_lateral_two_level_provisional": 0.0025339617676931603,
-     "F1": "pending"
+     "F1": "counted"
     }
    },
    "move_type": "compound",
@@ -1537,158 +1977,146 @@
   }
  ],
  "exclusion": {
-  "n_complete": 2,
+  "n_complete": 13,
   "n_excluded": 0,
-  "n_pending": 11,
+  "n_pending": 0,
   "per_pair": {
-   "dev00_die_row_shift": "pending",
-   "dev01_die_row_shift": "pending",
-   "dev02_trace_width": "pending",
-   "dev03_trace_width": "pending",
-   "dev04_terminal_copper": "pending",
-   "dev05_terminal_copper": "pending",
-   "dev06_wire_landing": "pending",
-   "dev07_wire_landing": "pending",
-   "dev08_compound": "pending",
-   "dev09_compound": "pending",
-   "standin_compound": "pending",
+   "dev00_die_row_shift": "counted",
+   "dev01_die_row_shift": "counted",
+   "dev02_trace_width": "counted",
+   "dev03_trace_width": "counted",
+   "dev04_terminal_copper": "counted",
+   "dev05_terminal_copper": "counted",
+   "dev06_wire_landing": "counted",
+   "dev07_wire_landing": "counted",
+   "dev08_compound": "counted",
+   "dev09_compound": "counted",
+   "standin_compound": "counted",
    "case4_die_shift": "counted",
    "case4_trace_width": "counted"
   },
   "rate": 0.0,
   "p_no_exclusion_13_at_rate": 1.0,
-  "upper95_rate_if_zero": 0.7763932022500211,
-  "p_no_exclusion_13_at_upper95": 3.49385621484342e-09,
+  "upper95_rate_if_zero": 0.20581666518655073,
+  "p_no_exclusion_13_at_upper95": 0.049999999999999954,
   "note": "complete = every level of the F1 estimate present; pending pairs lack the 0.25 mm level (VM)"
  },
  "f7_trigger": {
   "excluded_with_r_le_0p90": [],
   "n_excluded": 0,
   "fires": false,
-  "undecided_pending": [
-   "dev00_die_row_shift",
-   "dev01_die_row_shift",
-   "dev02_trace_width",
-   "dev03_trace_width",
-   "dev04_terminal_copper",
-   "dev05_terminal_copper",
-   "dev06_wire_landing",
-   "dev07_wire_landing",
-   "dev08_compound",
-   "dev09_compound",
-   "standin_compound"
-  ]
+  "undecided_pending": []
  },
  "projection_inference": {
   "label": "INFERENCE, not F1's rule and not a result (docstring of pilot_l2.projection)",
   "rows": {
    "dev00_die_row_shift": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0015767331783568487,
+     "E_R_over_r_max_over_f": 0.002800383348065333,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.004671251004867569,
-     "excluded": false
+     "E_R_over_r_max_over_f": 0.006223379881989975,
+     "excluded": true
     }
    },
    "dev01_die_row_shift": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0022273447430583375,
+     "E_R_over_r_max_over_f": 0.003318141570016522,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.007592364152506782,
+     "E_R_over_r_max_over_f": 0.00911245825757427,
      "excluded": true
     }
    },
    "dev02_trace_width": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0007768348946780895,
+     "E_R_over_r_max_over_f": 0.0004249875503469779,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.0007768348946780895,
+     "E_R_over_r_max_over_f": 0.00042498460287196263,
      "excluded": false
     }
    },
    "dev03_trace_width": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0008147617041351124,
+     "E_R_over_r_max_over_f": 0.0010722602093006896,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.0008147617041351124,
+     "E_R_over_r_max_over_f": 0.0010722689158139925,
      "excluded": false
     }
    },
    "dev04_terminal_copper": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0011079613928573246,
+     "E_R_over_r_max_over_f": 0.0009100210961011833,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.0011079613928573246,
+     "E_R_over_r_max_over_f": 0.000910051950220072,
      "excluded": false
     }
    },
    "dev05_terminal_copper": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0008197238271329438,
+     "E_R_over_r_max_over_f": 0.00046399383289832404,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.0008197238271329438,
+     "E_R_over_r_max_over_f": 0.00046399864105723857,
      "excluded": false
     }
    },
    "dev06_wire_landing": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.001511522368744776,
+     "E_R_over_r_max_over_f": 0.0012018253896205209,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.001511522368744776,
+     "E_R_over_r_max_over_f": 0.0012017447594486865,
      "excluded": false
     }
    },
    "dev07_wire_landing": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.003133943075916444,
+     "E_R_over_r_max_over_f": 0.003257497194562175,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.003133943075916444,
+     "E_R_over_r_max_over_f": 0.0032568810635007985,
      "excluded": false
     }
    },
    "dev08_compound": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0015496580118291897,
+     "E_R_over_r_max_over_f": 0.0013285951013370793,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.0015496580118291897,
+     "E_R_over_r_max_over_f": 0.0013285026940941152,
      "excluded": false
     }
    },
    "dev09_compound": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0015814432461383598,
+     "E_R_over_r_max_over_f": 0.002009815162224192,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.004692398247968663,
-     "excluded": false
+     "E_R_over_r_max_over_f": 0.005272855755813869,
+     "excluded": true
     }
    },
    "standin_compound": {
     "rho=0.56": {
-     "E_R_max_over_f": 0.0033521871999347866,
+     "E_R_over_r_max_over_f": 0.004154493279625255,
      "excluded": false
     },
     "rho=0.8": {
-     "E_R_max_over_f": 0.005978293031908457,
+     "E_R_over_r_max_over_f": 0.007410988162271942,
      "excluded": true
     }
    }
