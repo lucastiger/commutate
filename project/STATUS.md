@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T21:54:09+00:00 from repository state — do not edit_
+_generated 2026-11-17T23:25:07+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -38,8 +38,6 @@ cancelled: 47, done: 399, failed: 4, review: 1, todo: 8
 - T0398 `review` scientist/design_experiment: E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on the dev structure (attempt 2)
 
 ## Recent events
-- 2026-11-17T20:58:34+00:00 run_finished {"run": "T0455-critic-20261117T124250-7589", "status": "completed", "cost": 2.712642, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T20:58:50+00:00 task_added {"task": "T0456", "note": "founder approved 2026-11-17 (Diagnose, then decide)"}
 - 2026-11-17T21:00:49+00:00 task_added {"task": "T0457", "note": "founder approved 2026-11-17"}
 - 2026-11-17T21:31:35+00:00 inbox_opened {"id": "I0247", "kind": "protected_change", "subject": "T0389: merge needs founder approval"}
 - 2026-11-17T21:31:41+00:00 run_started {"run": "T0398-scientist-20261117T133141-2750", "task": "T0398", "role": "scientist", "session": "fcc9f3de-006d-4e4a-be6d-12aac8e8e0db"}
@@ -53,3 +51,5 @@ cancelled: 47, done: 399, failed: 4, review: 1, todo: 8
 - 2026-11-17T21:46:26+00:00 task_rebriefed {"task": "T0382", "note": "T0458 cancelled; experiment_drafts quirk; retry"}
 - 2026-11-17T21:47:34+00:00 run_finished {"run": "T0398-scientist-20261117T133141-2750", "status": "completed", "cost": 0.395608, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T21:54:01+00:00 verified {"task": "T0398"}
+- 2026-11-17T23:21:29+00:00 loop_stopped {"reason": "STOP file"}
+- 2026-11-17T23:24:57+00:00 loop_started {"pid": 41772}
