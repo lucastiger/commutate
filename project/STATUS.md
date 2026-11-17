@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T02:06:30+00:00 from repository state — do not edit_
+_generated 2026-11-17T02:18:14+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -40,8 +40,6 @@ cancelled: 45, done: 366, failed: 4, review: 1, running: 3, todo: 10
 - T0424 `running` critic/review: Review T0395 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-17T01:17:04+00:00 run_finished {"run": "T0420-critic-20261116T170523-fb3c", "status": "completed", "cost": 2.109277, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T01:26:21+00:00 founder_decision_recorded {"objective": "O002", "summary": "E007: one-sided 97 % Woodruff bounds (level 0.94); 300 layouts, 20 per stratum"}
 - 2026-11-17T01:28:20+00:00 inbox_opened {"id": "I0231", "kind": "protected_change", "subject": "T0396: merge needs founder approval"}
 - 2026-11-17T01:28:29+00:00 run_started {"run": "T0429-critic-20261116T172829-54ef", "task": "T0429", "role": "critic", "session": "0b06a88d-e5e8-4436-adb7-ef2c4c1392bf"}
 - 2026-11-17T01:28:31+00:00 run_started {"run": "T0423-critic-20261116T172831-33cc", "task": "T0423", "role": "critic", "session": "dfa3caa0-cae2-48f2-bb91-c024d5f5e08d"}
@@ -55,3 +53,5 @@ cancelled: 45, done: 366, failed: 4, review: 1, running: 3, todo: 10
 - 2026-11-17T02:05:15+00:00 task_failed_attempt {"task": "T0396", "signal": "dod_failed", "action": "repair"}
 - 2026-11-17T02:06:11+00:00 run_finished {"run": "T0423-critic-20261116T172831-33cc", "status": "completed", "cost": 1.805304, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T02:06:30+00:00 run_started {"run": "T0424-critic-20261116T180630-44d0", "task": "T0424", "role": "critic", "session": "7e3c1719-f002-4eaa-bbfe-e021fca01811"}
+- 2026-11-17T02:14:33+00:00 loop_stopped {"reason": "STOP file"}
+- 2026-11-17T02:18:00+00:00 loop_started {"pid": 53536}
