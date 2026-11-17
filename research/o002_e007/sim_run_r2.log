@@ -1,0 +1,27 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[     31 s] alt|normal|12 power {'V3_t_outward_bonferroni': 0.998, 'V4_t_outward_bonferroni_l094': 0.995} cov_min [0.953, 0.978]
+[     63 s] alt|t3|12 power {'V3_t_outward_bonferroni': 0.666, 'V4_t_outward_bonferroni_l094': 0.487} cov_min [0.962, 0.978]
+[    106 s] alt|normal|16 power {'V3_t_outward_bonferroni': 1.0, 'V4_t_outward_bonferroni_l094': 1.0} cov_min [0.962, 0.974]
+[    150 s] alt|t3|16 power {'V3_t_outward_bonferroni': 0.867, 'V4_t_outward_bonferroni_l094': 0.748} cov_min [0.95, 0.969]
+[    207 s] alt|normal|20 power {'V3_t_outward_bonferroni': 1.0, 'V4_t_outward_bonferroni_l094': 1.0} cov_min [0.951, 0.971]
+[    266 s] alt|t3|20 power {'V3_t_outward_bonferroni': 0.942, 'V4_t_outward_bonferroni_l094': 0.898} cov_min [0.946, 0.965]
+[    341 s] alt|normal|24 power {'V3_t_outward_bonferroni': 1.0, 'V4_t_outward_bonferroni_l094': 1.0} cov_min [0.941, 0.968]
+[    417 s] alt|t3|24 power {'V3_t_outward_bonferroni': 0.984, 'V4_t_outward_bonferroni_l094': 0.958} cov_min [0.949, 0.967]
+[    525 s] alt|normal|32 power {'V3_t_outward_bonferroni': 1.0, 'V4_t_outward_bonferroni_l094': 1.0} cov_min [0.959, 0.976]
+[    630 s] alt|t3|32 power {'V3_t_outward_bonferroni': 0.998, 'V4_t_outward_bonferroni_l094': 0.992} cov_min [0.949, 0.97]
+[    687 s] n1|normal|20 power {'V3_t_outward_bonferroni': 0.98, 'V4_t_outward_bonferroni_l094': 0.967} cov_min [0.962, 0.98]
+[    745 s] n1|t3|20 power {'V3_t_outward_bonferroni': 0.664, 'V4_t_outward_bonferroni_l094': 0.531} cov_min [0.951, 0.965]
+[    805 s] edge|normal|20 power {'V3_t_outward_bonferroni': 0.0, 'V4_t_outward_bonferroni_l094': 0.0} cov_min [0.97, 0.986]
+[    867 s] edge|t3|20 power {'V3_t_outward_bonferroni': 0.0, 'V4_t_outward_bonferroni_l094': 0.0} cov_min [0.956, 0.973]
+[    928 s] kill|normal|20 power {'V3_t_outward_bonferroni': 0.0, 'V4_t_outward_bonferroni_l094': 0.0} cov_min [0.951, 0.974]
+[    990 s] kill|t3|20 power {'V3_t_outward_bonferroni': 0.0, 'V4_t_outward_bonferroni_l094': 0.0} cov_min [0.932, 0.971]
+Traceback (most recent call last):
+  File "/Users/lukeskywalker/mf/wt/T0396/research/o002_e007/stats_sim.py", line 405, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0396/research/o002_e007/stats_sim.py", line 328, in main
+    eligible = [v for v in PREFERENCE if first_m[v] is not None]
+                                         ~~~~~~~^^^
+KeyError: 'V2_t_outward_delta'
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+wrote /Users/lukeskywalker/mf/wt/T0396/research/o002_e007/f3_simulation.json: selected V4_t_outward_bonferroni_l094, m 20, power 0.898, coverage {'A1': {'normal': 0.981, 't3': 0.965}, 'A2': {'normal': 0.989, 't3': 0.981}, 'A3': {'normal': 0.971, 't3': 0.966}, 'A4': {'normal': 0.998, 't3': 0.998}, 'K1': {'normal': 0.979, 't3': 0.984}, 'K2': {'normal': 0.986, 't3': 0.973}, 'K3': {'normal': 1.0, 't3': 0.998}}

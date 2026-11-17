@@ -1,0 +1,1712 @@
+{
+ "task": "T0396",
+ "objective": "O002",
+ "experiment": "E007",
+ "kind": "F3 design-time simulation (not evidence)",
+ "generated": "2026-11-16T08:59:10",
+ "smoke": false,
+ "seed": 20261116,
+ "reps_per_cell": 1000,
+ "truth_reps": 1200,
+ "selection_rule": "Declared before any coverage was computed: a variant is eligible if its simulated coverage is >= 0.95 for every statistic (A1-A4 upper, K1-K3 lower), both error models, every scenario and every m at which coverage is simulated; among eligible variants the one reaching joint power >= 0.8 under both models at the smallest m wins, ties broken by PREFERENCE (most conservative first). AMENDED after the alt cells at m = 6 and 8 had been seen (all variants under-covered at m = 6 under t3): coverage is required at the selected m (every scenario and model) and, in the alt scenario, at every larger m simulated; smaller m do not disqualify a variant, since E007 does not use them. Coverage at every m is reported.",
+ "bound": {
+  "selected": null,
+  "variant": {
+   "crit": "t",
+   "rounding": "outward",
+   "ratio": "bonferroni"
+  },
+  "ci_spec": {
+   "scheme": "woodruff",
+   "level": 0.9,
+   "cluster": "layout"
+  },
+  "description": "Woodruff quantile bound, layout-jackknife variance of the empirical CDF, t(K-1) critical value, order statistic rounded outward; A4/K3 by the variant's ratio rule; max over loads: max of upper bounds, lower bounds at alpha / 2 (Bonferroni)",
+  "first_m_by_variant": {
+   "V1_z_linear_delta": null,
+   "V2_t_outward_delta": null,
+   "V3_t_outward_bonferroni": null
+  },
+  "min_coverage_by_variant_and_m": {
+   "V1_z_linear_delta": {
+    "alt|normal|6": 0.941,
+    "alt|t3|6": 0.926,
+    "alt|normal|8": 0.94,
+    "alt|t3|8": 0.94,
+    "alt|normal|10": 0.929,
+    "alt|t3|10": 0.927,
+    "alt|normal|12": 0.942,
+    "alt|t3|12": 0.947,
+    "alt|normal|16": 0.942,
+    "alt|t3|16": 0.941,
+    "alt|normal|20": 0.933,
+    "alt|t3|20": 0.949,
+    "alt|normal|24": 0.942,
+    "alt|t3|24": 0.946,
+    "alt|normal|32": 0.939,
+    "alt|t3|32": 0.95
+   },
+   "V2_t_outward_delta": {
+    "alt|normal|6": 0.944,
+    "alt|t3|6": 0.934,
+    "alt|normal|8": 0.954,
+    "alt|t3|8": 0.953,
+    "alt|normal|10": 0.929,
+    "alt|t3|10": 0.953,
+    "alt|normal|12": 0.948,
+    "alt|t3|12": 0.953,
+    "alt|normal|16": 0.943,
+    "alt|t3|16": 0.95,
+    "alt|normal|20": 0.944,
+    "alt|t3|20": 0.95,
+    "alt|normal|24": 0.944,
+    "alt|t3|24": 0.946,
+    "alt|normal|32": 0.947,
+    "alt|t3|32": 0.95
+   },
+   "V3_t_outward_bonferroni": {
+    "alt|normal|6": 0.952,
+    "alt|t3|6": 0.934,
+    "alt|normal|8": 0.959,
+    "alt|t3|8": 0.96,
+    "alt|normal|10": 0.966,
+    "alt|t3|10": 0.959,
+    "alt|normal|12": 0.956,
+    "alt|t3|12": 0.96,
+    "alt|normal|16": 0.953,
+    "alt|t3|16": 0.953,
+    "alt|normal|20": 0.944,
+    "alt|t3|20": 0.952,
+    "alt|normal|24": 0.946,
+    "alt|t3|24": 0.953,
+    "alt|normal|32": 0.947,
+    "alt|t3|32": 0.951
+   }
+  }
+ },
+ "coverage": {
+  "A1": {
+   "normal": 0.96,
+   "t3": 0.951
+  },
+  "A2": {
+   "normal": 0.979,
+   "t3": 0.968
+  },
+  "A3": {
+   "normal": 0.947,
+   "t3": 0.966
+  },
+  "A4": {
+   "normal": 0.997,
+   "t3": 0.998
+  },
+  "K1": {
+   "normal": 0.979,
+   "t3": 0.978
+  },
+  "K2": {
+   "normal": 0.975,
+   "t3": 0.99
+  },
+  "K3": {
+   "normal": 0.998,
+   "t3": 1.0
+  }
+ },
+ "coverage_definition": "min over scenarios (n1, alt, edge, kill) at the selected m of the share of datasets whose one-sided 95 % bound covers the true value (A1-A4 upper, K1-K3 lower bounds of A1, A2, A4's statistics)",
+ "power_joint": 0.996,
+ "power_by_m": {
+  "6": {
+   "normal": {
+    "V1_z_linear_delta": 0.879,
+    "V2_t_outward_delta": 0.842,
+    "V3_t_outward_bonferroni": 0.765
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.261,
+    "V2_t_outward_delta": 0.23,
+    "V3_t_outward_bonferroni": 0.106
+   }
+  },
+  "8": {
+   "normal": {
+    "V1_z_linear_delta": 0.999,
+    "V2_t_outward_delta": 0.999,
+    "V3_t_outward_bonferroni": 0.988
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.533,
+    "V2_t_outward_delta": 0.5,
+    "V3_t_outward_bonferroni": 0.317
+   }
+  },
+  "10": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 0.996
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.7,
+    "V2_t_outward_delta": 0.674,
+    "V3_t_outward_bonferroni": 0.498
+   }
+  },
+  "12": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.804,
+    "V2_t_outward_delta": 0.791,
+    "V3_t_outward_bonferroni": 0.699
+   }
+  },
+  "16": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.913,
+    "V2_t_outward_delta": 0.906,
+    "V3_t_outward_bonferroni": 0.862
+   }
+  },
+  "20": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.961,
+    "V2_t_outward_delta": 0.956,
+    "V3_t_outward_bonferroni": 0.939
+   }
+  },
+  "24": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.982,
+    "V2_t_outward_delta": 0.981,
+    "V3_t_outward_bonferroni": 0.974
+   }
+  },
+  "32": {
+   "normal": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "t3": {
+    "V1_z_linear_delta": 0.996,
+    "V2_t_outward_delta": 0.996,
+    "V3_t_outward_bonferroni": 0.996
+   }
+  }
+ },
+ "layouts_per_stratum": {
+  "side_by_side/2": 32,
+  "side_by_side/3": 32,
+  "side_by_side/4": 32,
+  "side_by_side/5": 32,
+  "side_by_side/6": 32,
+  "interleaved/2": 32,
+  "interleaved/3": 32,
+  "interleaved/4": 32,
+  "interleaved/5": 32,
+  "interleaved/6": 32,
+  "u_shaped/2": 32,
+  "u_shaped/3": 32,
+  "u_shaped/4": 32,
+  "u_shaped/5": 32,
+  "u_shaped/6": 32
+ },
+ "n_layouts": 480,
+ "reference_cpu_hours": 65.1625,
+ "reference_usd": 14.79204,
+ "cost": {
+  "layouts_judged": 480,
+  "level1_cpu_h": 36.18,
+  "level0_cpu_h": 0.1225,
+  "level2_cpu_h": 28.86,
+  "reference_cpu_hours": 65.1625,
+  "vm_hours_level2": 24.17,
+  "reference_usd": 14.79204,
+  "level1_local_usd": 0.0,
+  "level1_vm_equivalent_usd": 2.76777,
+  "assumptions": "level 1 local (3-4 GB per solve, n1); level 2 on the burst VM (est. 22.6-54.1 GB); level-1 time linear in die count between n1's 2- and 6-die means; F7 and the level-2 subset priced at each band's largest die count (3 and 6)"
+ },
+ "mc_se": {
+  "coverage_max": 0.007084560677981384,
+  "power": 0.0019959959919799443
+ },
+ "cells": {
+  "alt|normal|6": {
+   "par": {
+    "sc": 0.10030112240287817,
+    "sd": 0.03924955423956362,
+    "beta": 0.01464755153917649
+   },
+   "truth_calibration": {
+    "A1": 0.30000000000007204,
+    "A2": 0.01800000000002692,
+    "A3": 0.10955470799972077,
+    "A4": 0.29999999999999427,
+    "null_A3_P_ref": 0.3651823599990762
+   },
+   "truth": {
+    "A1": 0.2983164444061381,
+    "A2": 0.017938733393050944,
+    "A3": 0.10839596903351205,
+    "A4": 0.2994967137603485,
+    "null_A3_P_ref": 0.3619270731639761
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.99,
+     "A2": 0.976,
+     "A3": 0.941,
+     "A4": 0.948,
+     "K1": 0.985,
+     "K2": 0.966,
+     "K3": 0.942
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.991,
+     "A2": 0.98,
+     "A3": 0.952,
+     "A4": 0.95,
+     "K1": 0.988,
+     "K2": 0.972,
+     "K3": 0.944
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.991,
+     "A2": 0.98,
+     "A3": 0.952,
+     "A4": 0.999,
+     "K1": 0.988,
+     "K2": 0.972,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.879,
+    "V2_t_outward_delta": 0.842,
+    "V3_t_outward_bonferroni": 0.765
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.885,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.994
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.848,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.994
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.848,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.907
+    }
+   },
+   "point_mean": {
+    "A1": 0.2942516134922587,
+    "A2": 0.018036251148091518,
+    "A3": 0.10757870258131262,
+    "A4": 0.30247413374617926
+   }
+  },
+  "alt|t3|6": {
+   "par": {
+    "sc": 0.10715749672707438,
+    "sd": 0.03814470997053824,
+    "beta": 0.014955808049753973
+   },
+   "truth_calibration": {
+    "A1": 0.3000000004511044,
+    "A2": 0.01800000002015676,
+    "A3": 0.1002237213770911,
+    "A4": 0.3000000000000034,
+    "null_A3_P_ref": 0.33407907125696656
+   },
+   "truth": {
+    "A1": 0.3008040575493927,
+    "A2": 0.01790298217032716,
+    "A3": 0.10101724298892058,
+    "A4": 0.2984533069518491,
+    "null_A3_P_ref": 0.3384691696688695
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.975,
+     "A2": 0.971,
+     "A3": 0.926,
+     "A4": 0.951,
+     "K1": 0.981,
+     "K2": 0.964,
+     "K3": 0.946
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.982,
+     "A2": 0.973,
+     "A3": 0.934,
+     "A4": 0.952,
+     "K1": 0.984,
+     "K2": 0.968,
+     "K3": 0.949
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.982,
+     "A2": 0.973,
+     "A3": 0.934,
+     "A4": 0.999,
+     "K1": 0.984,
+     "K2": 0.968,
+     "K3": 1.0
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.261,
+    "V2_t_outward_delta": 0.23,
+    "V3_t_outward_bonferroni": 0.106
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.303,
+     "A2": 0.986,
+     "A3": 1.0,
+     "A4": 0.855
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.273,
+     "A2": 0.982,
+     "A3": 1.0,
+     "A4": 0.849
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.273,
+     "A2": 0.982,
+     "A3": 1.0,
+     "A4": 0.406
+    }
+   },
+   "point_mean": {
+    "A1": 0.3031441489644014,
+    "A2": 0.01808655850268223,
+    "A3": 0.09929324638616546,
+    "A4": 0.30471987158308195
+   }
+  },
+  "alt|normal|8": {
+   "par": {
+    "sc": 0.10117563069571954,
+    "sd": 0.038025446052823125,
+    "beta": 0.014633959205438604
+   },
+   "truth_calibration": {
+    "A1": 0.3000000000000026,
+    "A2": 0.018000000000000207,
+    "A3": 0.10559980961916474,
+    "A4": 0.30000000000002874,
+    "null_A3_P_ref": 0.3519993653971821
+   },
+   "truth": {
+    "A1": 0.2993687240945272,
+    "A2": 0.0180017573526536,
+    "A3": 0.10551333685680574,
+    "A4": 0.2974230213054736,
+    "null_A3_P_ref": 0.35475847294428625
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.978,
+     "A2": 0.973,
+     "A3": 0.94,
+     "A4": 0.952,
+     "K1": 0.985,
+     "K2": 0.972,
+     "K3": 0.956
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.982,
+     "A2": 0.976,
+     "A3": 0.959,
+     "A4": 0.954,
+     "K1": 0.985,
+     "K2": 0.975,
+     "K3": 0.959
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.982,
+     "A2": 0.976,
+     "A3": 0.959,
+     "A4": 1.0,
+     "K1": 0.985,
+     "K2": 0.975,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.999,
+    "V2_t_outward_delta": 0.999,
+    "V3_t_outward_bonferroni": 0.988
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.999
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.999
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.988
+    }
+   },
+   "point_mean": {
+    "A1": 0.2966125529877487,
+    "A2": 0.018033683790806856,
+    "A3": 0.10430918660053493,
+    "A4": 0.29867744602350543
+   }
+  },
+  "alt|t3|8": {
+   "par": {
+    "sc": 0.10593145030179996,
+    "sd": 0.03715095266378509,
+    "beta": 0.014995268790129659
+   },
+   "truth_calibration": {
+    "A1": 0.3000000000007194,
+    "A2": 0.0180000000000513,
+    "A3": 0.09896198836409,
+    "A4": 0.30000000000000276,
+    "null_A3_P_ref": 0.3298732945469636
+   },
+   "truth": {
+    "A1": 0.29633340513857515,
+    "A2": 0.018001101716300743,
+    "A3": 0.09852306589813753,
+    "A4": 0.3003321558940071,
+    "null_A3_P_ref": 0.32804701050029483
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.961,
+     "A2": 0.969,
+     "A3": 0.94,
+     "A4": 0.951,
+     "K1": 0.971,
+     "K2": 0.971,
+     "K3": 0.955
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.966,
+     "A2": 0.974,
+     "A3": 0.96,
+     "A4": 0.953,
+     "K1": 0.976,
+     "K2": 0.976,
+     "K3": 0.957
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.966,
+     "A2": 0.974,
+     "A3": 0.96,
+     "A4": 0.999,
+     "K1": 0.976,
+     "K2": 0.976,
+     "K3": 0.997
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.533,
+    "V2_t_outward_delta": 0.5,
+    "V3_t_outward_bonferroni": 0.317
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.559,
+     "A2": 0.998,
+     "A3": 1.0,
+     "A4": 0.944
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.523,
+     "A2": 0.998,
+     "A3": 1.0,
+     "A4": 0.943
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.523,
+     "A2": 0.998,
+     "A3": 1.0,
+     "A4": 0.579
+    }
+   },
+   "point_mean": {
+    "A1": 0.3009452037762486,
+    "A2": 0.018087869401577805,
+    "A3": 0.09740292482179748,
+    "A4": 0.30258837707358277
+   }
+  },
+  "alt|normal|10": {
+   "par": {
+    "sc": 0.10152234889289365,
+    "sd": 0.03781413047646527,
+    "beta": 0.014632378615965108
+   },
+   "truth_calibration": {
+    "A1": 0.29999999999952953,
+    "A2": 0.01799999999997605,
+    "A3": 0.10478326174722812,
+    "A4": 0.30000000000000915,
+    "null_A3_P_ref": 0.3492775391574164
+   },
+   "truth": {
+    "A1": 0.30009027966503116,
+    "A2": 0.01798441195887347,
+    "A3": 0.1046221152220152,
+    "A4": 0.29819526541634467,
+    "null_A3_P_ref": 0.35085102734927814
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.977,
+     "A2": 0.98,
+     "A3": 0.944,
+     "A4": 0.96,
+     "K1": 0.974,
+     "K2": 0.967,
+     "K3": 0.929
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.979,
+     "A2": 0.982,
+     "A3": 0.966,
+     "A4": 0.96,
+     "K1": 0.979,
+     "K2": 0.97,
+     "K3": 0.929
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.979,
+     "A2": 0.982,
+     "A3": 0.966,
+     "A4": 0.998,
+     "K1": 0.979,
+     "K2": 0.97,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 0.996
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.996
+    }
+   },
+   "point_mean": {
+    "A1": 0.29883328137501425,
+    "A2": 0.018077883557924414,
+    "A3": 0.1042954949491122,
+    "A4": 0.30216843464063675
+   }
+  },
+  "alt|t3|10": {
+   "par": {
+    "sc": 0.10559631594440927,
+    "sd": 0.03680597106927712,
+    "beta": 0.014977049119927338
+   },
+   "truth_calibration": {
+    "A1": 0.2999999999999993,
+    "A2": 0.018000000000008634,
+    "A3": 0.09660146871224172,
+    "A4": 0.2999999999999919,
+    "null_A3_P_ref": 0.3220048957074811
+   },
+   "truth": {
+    "A1": 0.29791417514009827,
+    "A2": 0.017983107632097692,
+    "A3": 0.0981273742480571,
+    "A4": 0.3018776710784757,
+    "null_A3_P_ref": 0.3250567486409025
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.961,
+     "A2": 0.955,
+     "A3": 0.927,
+     "A4": 0.954,
+     "K1": 0.978,
+     "K2": 0.984,
+     "K3": 0.952
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.967,
+     "A2": 0.964,
+     "A3": 0.959,
+     "A4": 0.956,
+     "K1": 0.98,
+     "K2": 0.986,
+     "K3": 0.953
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.967,
+     "A2": 0.964,
+     "A3": 0.959,
+     "A4": 0.999,
+     "K1": 0.98,
+     "K2": 0.986,
+     "K3": 1.0
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.7,
+    "V2_t_outward_delta": 0.674,
+    "V3_t_outward_bonferroni": 0.498
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.717,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.977
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.692,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.976
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.692,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.726
+    }
+   },
+   "point_mean": {
+    "A1": 0.29870779895322913,
+    "A2": 0.01801780366891083,
+    "A3": 0.09662229342637577,
+    "A4": 0.30435334720813817
+   }
+  },
+  "alt|normal|12": {
+   "par": {
+    "sc": 0.1012715542714698,
+    "sd": 0.03723296818328977,
+    "beta": 0.014688220283872424
+   },
+   "truth_calibration": {
+    "A1": 0.29999999999999943,
+    "A2": 0.018000000000008315,
+    "A3": 0.10376007725074828,
+    "A4": 0.29999999999997445,
+    "null_A3_P_ref": 0.34586692416919035
+   },
+   "truth": {
+    "A1": 0.29825684890459186,
+    "A2": 0.018031838272214544,
+    "A3": 0.10300451853613524,
+    "A4": 0.2971906239748611,
+    "null_A3_P_ref": 0.3465941056903875
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.984,
+     "A2": 0.975,
+     "A3": 0.942,
+     "A4": 0.946,
+     "K1": 0.974,
+     "K2": 0.966,
+     "K3": 0.951
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.985,
+     "A2": 0.977,
+     "A3": 0.956,
+     "A4": 0.948,
+     "K1": 0.977,
+     "K2": 0.968,
+     "K3": 0.951
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.985,
+     "A2": 0.977,
+     "A3": 0.956,
+     "A4": 0.995,
+     "K1": 0.977,
+     "K2": 0.968,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.2973401736767132,
+    "A2": 0.01810008863463185,
+    "A3": 0.10240463884775441,
+    "A4": 0.29830068347033023
+   }
+  },
+  "alt|t3|12": {
+   "par": {
+    "sc": 0.10636471554359365,
+    "sd": 0.0365766014089166,
+    "beta": 0.01503495158806745
+   },
+   "truth_calibration": {
+    "A1": 0.2999999997673184,
+    "A2": 0.017999999994003504,
+    "A3": 0.09638785418521673,
+    "A4": 0.30000000000000854,
+    "null_A3_P_ref": 0.3212928472840466
+   },
+   "truth": {
+    "A1": 0.2993092849723779,
+    "A2": 0.018040199014298975,
+    "A3": 0.09663103022812257,
+    "A4": 0.30104472316071423,
+    "null_A3_P_ref": 0.3209856303527885
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.959,
+     "A2": 0.971,
+     "A3": 0.947,
+     "A4": 0.95,
+     "K1": 0.978,
+     "K2": 0.979,
+     "K3": 0.961
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.962,
+     "A2": 0.973,
+     "A3": 0.96,
+     "A4": 0.953,
+     "K1": 0.979,
+     "K2": 0.98,
+     "K3": 0.962
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.962,
+     "A2": 0.973,
+     "A3": 0.96,
+     "A4": 0.996,
+     "K1": 0.979,
+     "K2": 0.98,
+     "K3": 1.0
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.804,
+    "V2_t_outward_delta": 0.791,
+    "V3_t_outward_bonferroni": 0.699
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.807,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.996
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.794,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.996
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.794,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.878
+    }
+   },
+   "point_mean": {
+    "A1": 0.30099592415240206,
+    "A2": 0.01811861438472466,
+    "A3": 0.09612937292902503,
+    "A4": 0.30365035222093045
+   }
+  },
+  "alt|normal|16": {
+   "par": {
+    "sc": 0.10177752553330646,
+    "sd": 0.03681290234353351,
+    "beta": 0.014651953538697401
+   },
+   "truth_calibration": {
+    "A1": 0.3000000000000632,
+    "A2": 0.017999999999951343,
+    "A3": 0.1024157543229501,
+    "A4": 0.2999999999999985,
+    "null_A3_P_ref": 0.3413858477431687
+   },
+   "truth": {
+    "A1": 0.3000545880670727,
+    "A2": 0.01802094121416528,
+    "A3": 0.10217597388581133,
+    "A4": 0.2978498898972015,
+    "null_A3_P_ref": 0.34304519609215184
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.961,
+     "A2": 0.976,
+     "A3": 0.942,
+     "A4": 0.972,
+     "K1": 0.983,
+     "K2": 0.977,
+     "K3": 0.942
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.965,
+     "A2": 0.976,
+     "A3": 0.953,
+     "A4": 0.972,
+     "K1": 0.984,
+     "K2": 0.978,
+     "K3": 0.943
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.965,
+     "A2": 0.976,
+     "A3": 0.953,
+     "A4": 0.999,
+     "K1": 0.984,
+     "K2": 0.978,
+     "K3": 0.998
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.2991604083436797,
+    "A2": 0.01807390480267608,
+    "A3": 0.10188942872515558,
+    "A4": 0.3005500553975559
+   }
+  },
+  "alt|t3|16": {
+   "par": {
+    "sc": 0.10626265043315075,
+    "sd": 0.03601050491527073,
+    "beta": 0.015006159103050273
+   },
+   "truth_calibration": {
+    "A1": 0.2999999998658373,
+    "A2": 0.017999999997092002,
+    "A3": 0.09592067030329225,
+    "A4": 0.29999999999998583,
+    "null_A3_P_ref": 0.31973556767765593
+   },
+   "truth": {
+    "A1": 0.29989517948683264,
+    "A2": 0.018004552015676162,
+    "A3": 0.09550558594097354,
+    "A4": 0.3004146238605235,
+    "null_A3_P_ref": 0.317912572675939
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.945,
+     "A2": 0.973,
+     "A3": 0.941,
+     "A4": 0.965,
+     "K1": 0.972,
+     "K2": 0.978,
+     "K3": 0.95
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.953,
+     "A2": 0.976,
+     "A3": 0.954,
+     "A4": 0.965,
+     "K1": 0.973,
+     "K2": 0.98,
+     "K3": 0.95
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.953,
+     "A2": 0.976,
+     "A3": 0.954,
+     "A4": 1.0,
+     "K1": 0.973,
+     "K2": 0.98,
+     "K3": 0.998
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.913,
+    "V2_t_outward_delta": 0.906,
+    "V3_t_outward_bonferroni": 0.862
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.915,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.998
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.908,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.998
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.908,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.951
+    }
+   },
+   "point_mean": {
+    "A1": 0.30090181599152915,
+    "A2": 0.0180594369132328,
+    "A3": 0.0949725464352773,
+    "A4": 0.30346043159737035
+   }
+  },
+  "alt|normal|20": {
+   "par": {
+    "sc": 0.10209257229962099,
+    "sd": 0.03681177464347823,
+    "beta": 0.014657241295686737
+   },
+   "truth_calibration": {
+    "A1": 0.30000000000000043,
+    "A2": 0.017999999999997723,
+    "A3": 0.10228933486418973,
+    "A4": 0.30000000000001287,
+    "null_A3_P_ref": 0.3409644495472845
+   },
+   "truth": {
+    "A1": 0.30003641031119604,
+    "A2": 0.0180074351037804,
+    "A3": 0.10209189065531166,
+    "A4": 0.30026134116290704,
+    "null_A3_P_ref": 0.3400101067287301
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.97,
+     "A2": 0.971,
+     "A3": 0.933,
+     "A4": 0.959,
+     "K1": 0.973,
+     "K2": 0.973,
+     "K3": 0.959
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.972,
+     "A2": 0.974,
+     "A3": 0.944,
+     "A4": 0.96,
+     "K1": 0.973,
+     "K2": 0.974,
+     "K3": 0.96
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.972,
+     "A2": 0.974,
+     "A3": 0.944,
+     "A4": 0.997,
+     "K1": 0.973,
+     "K2": 0.974,
+     "K3": 0.998
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.29911852012049756,
+    "A2": 0.01807447688463943,
+    "A3": 0.10166606697548462,
+    "A4": 0.3002609376323123
+   }
+  },
+  "alt|t3|20": {
+   "par": {
+    "sc": 0.1077657125762694,
+    "sd": 0.035938430920426624,
+    "beta": 0.014949816255233903
+   },
+   "truth_calibration": {
+    "A1": 0.2999999999965087,
+    "A2": 0.018000000000270897,
+    "A3": 0.09504944448702227,
+    "A4": 0.29999999999999966,
+    "null_A3_P_ref": 0.3168314816234079
+   },
+   "truth": {
+    "A1": 0.2997198537893117,
+    "A2": 0.01796187370217054,
+    "A3": 0.09502379877537948,
+    "A4": 0.3020514520002499,
+    "null_A3_P_ref": 0.31459474253843633
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.951,
+     "A2": 0.973,
+     "A3": 0.955,
+     "A4": 0.949,
+     "K1": 0.971,
+     "K2": 0.98,
+     "K3": 0.962
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.952,
+     "A2": 0.976,
+     "A3": 0.958,
+     "A4": 0.95,
+     "K1": 0.974,
+     "K2": 0.985,
+     "K3": 0.963
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.952,
+     "A2": 0.976,
+     "A3": 0.958,
+     "A4": 0.996,
+     "K1": 0.974,
+     "K2": 0.985,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.961,
+    "V2_t_outward_delta": 0.956,
+    "V3_t_outward_bonferroni": 0.939
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.961,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.956,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.956,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.981
+    }
+   },
+   "point_mean": {
+    "A1": 0.3027339476084701,
+    "A2": 0.018011765557053933,
+    "A3": 0.09475506207410053,
+    "A4": 0.30236488048854415
+   }
+  },
+  "alt|normal|24": {
+   "par": {
+    "sc": 0.1016007020365327,
+    "sd": 0.03655698316908308,
+    "beta": 0.014672995943911488
+   },
+   "truth_calibration": {
+    "A1": 0.29999999933565563,
+    "A2": 0.01799999997988347,
+    "A3": 0.10120964068773967,
+    "A4": 0.3000000000000048,
+    "null_A3_P_ref": 0.33736546895912684
+   },
+   "truth": {
+    "A1": 0.2997216568534003,
+    "A2": 0.018006176444084518,
+    "A3": 0.10123106737299435,
+    "A4": 0.2990406301217323,
+    "null_A3_P_ref": 0.33851944243090176
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.944,
+     "A2": 0.991,
+     "A3": 0.968,
+     "A4": 0.961,
+     "K1": 0.98,
+     "K2": 0.969,
+     "K3": 0.942
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.946,
+     "A2": 0.991,
+     "A3": 0.971,
+     "A4": 0.961,
+     "K1": 0.984,
+     "K2": 0.971,
+     "K3": 0.944
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.946,
+     "A2": 0.991,
+     "A3": 0.971,
+     "A4": 1.0,
+     "K1": 0.984,
+     "K2": 0.971,
+     "K3": 0.999
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.29913530802652916,
+    "A2": 0.01808232993083901,
+    "A3": 0.10104169708661817,
+    "A4": 0.2998747713621667
+   }
+  },
+  "alt|t3|24": {
+   "par": {
+    "sc": 0.1079774419854616,
+    "sd": 0.03571075832608264,
+    "beta": 0.015014986468855672
+   },
+   "truth_calibration": {
+    "A1": 0.2999999999999928,
+    "A2": 0.01799999999997211,
+    "A3": 0.09447865061806783,
+    "A4": 0.3000000000000068,
+    "null_A3_P_ref": 0.31492883539355226
+   },
+   "truth": {
+    "A1": 0.3016372330401635,
+    "A2": 0.018025686568285657,
+    "A3": 0.09484291856050149,
+    "A4": 0.30108940768082476,
+    "null_A3_P_ref": 0.3149991867566508
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.951,
+     "A2": 0.977,
+     "A3": 0.949,
+     "A4": 0.96,
+     "K1": 0.976,
+     "K2": 0.981,
+     "K3": 0.946
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.953,
+     "A2": 0.977,
+     "A3": 0.959,
+     "A4": 0.96,
+     "K1": 0.977,
+     "K2": 0.983,
+     "K3": 0.946
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.953,
+     "A2": 0.977,
+     "A3": 0.959,
+     "A4": 1.0,
+     "K1": 0.977,
+     "K2": 0.983,
+     "K3": 0.998
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.982,
+    "V2_t_outward_delta": 0.981,
+    "V3_t_outward_bonferroni": 0.974
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.982,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.981,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.981,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 0.993
+    }
+   },
+   "point_mean": {
+    "A1": 0.302433610749137,
+    "A2": 0.01806475572390547,
+    "A3": 0.09443891439779668,
+    "A4": 0.3030814451067611
+   }
+  },
+  "alt|normal|32": {
+   "par": {
+    "sc": 0.10171703466466148,
+    "sd": 0.036445900909508645,
+    "beta": 0.014664747117399885
+   },
+   "truth_calibration": {
+    "A1": 0.3000000000013464,
+    "A2": 0.017999999999956925,
+    "A3": 0.10088919118540925,
+    "A4": 0.3000000000000073,
+    "null_A3_P_ref": 0.33629730395135593
+   },
+   "truth": {
+    "A1": 0.2995595244589031,
+    "A2": 0.018008383240720557,
+    "A3": 0.10107282247454921,
+    "A4": 0.29991729537369455,
+    "null_A3_P_ref": 0.3370023137499066
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.957,
+     "A2": 0.977,
+     "A3": 0.939,
+     "A4": 0.959,
+     "K1": 0.978,
+     "K2": 0.972,
+     "K3": 0.961
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.96,
+     "A2": 0.979,
+     "A3": 0.947,
+     "A4": 0.96,
+     "K1": 0.979,
+     "K2": 0.975,
+     "K3": 0.962
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.96,
+     "A2": 0.979,
+     "A3": 0.947,
+     "A4": 0.997,
+     "K1": 0.979,
+     "K2": 0.975,
+     "K3": 0.998
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 1.0,
+    "V2_t_outward_delta": 1.0,
+    "V3_t_outward_bonferroni": 1.0
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 1.0,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.29868402023901264,
+    "A2": 0.018059618231883724,
+    "A3": 0.10086451699274891,
+    "A4": 0.30041451176564793
+   }
+  },
+  "alt|t3|32": {
+   "par": {
+    "sc": 0.1074061531123154,
+    "sd": 0.03550842720123402,
+    "beta": 0.015016390122321427
+   },
+   "truth_calibration": {
+    "A1": 0.29999999999704985,
+    "A2": 0.0179999999998263,
+    "A3": 0.09392381867338599,
+    "A4": 0.3000000000000131,
+    "null_A3_P_ref": 0.3130793955779396
+   },
+   "truth": {
+    "A1": 0.29975372369543024,
+    "A2": 0.018022221029345753,
+    "A3": 0.09403898900047293,
+    "A4": 0.30069891780844543,
+    "null_A3_P_ref": 0.31273471047334694
+   },
+   "reps": 1000,
+   "coverage": {
+    "V1_z_linear_delta": {
+     "A1": 0.951,
+     "A2": 0.968,
+     "A3": 0.961,
+     "A4": 0.95,
+     "K1": 0.978,
+     "K2": 0.986,
+     "K3": 0.96
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.951,
+     "A2": 0.968,
+     "A3": 0.966,
+     "A4": 0.95,
+     "K1": 0.978,
+     "K2": 0.99,
+     "K3": 0.96
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.951,
+     "A2": 0.968,
+     "A3": 0.966,
+     "A4": 0.998,
+     "K1": 0.978,
+     "K2": 0.99,
+     "K3": 1.0
+    }
+   },
+   "power_joint": {
+    "V1_z_linear_delta": 0.996,
+    "V2_t_outward_delta": 0.996,
+    "V3_t_outward_bonferroni": 0.996
+   },
+   "power_each": {
+    "V1_z_linear_delta": {
+     "A1": 0.996,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V2_t_outward_delta": {
+     "A1": 0.996,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    },
+    "V3_t_outward_bonferroni": {
+     "A1": 0.996,
+     "A2": 1.0,
+     "A3": 1.0,
+     "A4": 1.0
+    }
+   },
+   "point_mean": {
+    "A1": 0.29923781811530453,
+    "A2": 0.01804141571418019,
+    "A3": 0.0937423651105971,
+    "A4": 0.30131273388507157
+   }
+  }
+ },
+ "sanity": {
+  "consistency_max_rel_diff": 3.665956427312267e-13,
+  "pct_bootstrap_a3_coverage": {
+   "normal": 0.915,
+   "t3": 0.9125
+  },
+  "calibration_max_rel_miss": 2.2144811540059095e-09
+ },
+ "model": {
+  "strata": [
+   "side_by_side/2",
+   "side_by_side/3",
+   "side_by_side/4",
+   "side_by_side/5",
+   "side_by_side/6",
+   "interleaved/2",
+   "interleaved/3",
+   "interleaved/4",
+   "interleaved/5",
+   "interleaved/6",
+   "u_shaped/2",
+   "u_shaped/3",
+   "u_shaped/4",
+   "u_shaped/5",
+   "u_shaped/6"
+  ],
+  "cells": 6,
+  "n1": {
+   "R": [
+    45.47,
+    35.0
+   ],
+   "S": [
+    0.512,
+    9.777
+   ],
+   "sv": [
+    0.066,
+    0.155
+   ],
+   "sa": 0.87
+  },
+  "g_half": 0.488,
+  "rho": 0.9,
+  "scenarios": {
+   "n1": [
+    0.18884,
+    0.010189,
+    0.366
+   ],
+   "alt": [
+    0.3,
+    0.018,
+    0.3
+   ],
+   "edge": [
+    0.5,
+    0.03,
+    0.5
+   ],
+   "kill": [
+    1.5,
+    0.15,
+    1.0
+   ]
+  },
+  "thresholds": {
+   "A1": 0.5,
+   "A2": 0.03,
+   "A3": 1.0,
+   "A4": 0.5,
+   "K1": 1.5,
+   "K2": 0.15,
+   "K3": 1.0
+  },
+  "specs": {
+   "A1": {
+    "fn": "max_over_groups",
+    "pred": "tj_hot_l1_K",
+    "ref": "tj_hot_ref_K",
+    "strata": [
+     "family",
+     "dies"
+    ],
+    "params": {
+     "fn": "pairwise_diff_error_quantile",
+     "by": "load",
+     "inner": {
+      "q": 0.95,
+      "unit": "layout"
+     }
+    },
+    "where": {
+     "kind": "layout"
+    }
+   },
+   "A2": {
+    "fn": "max_over_groups",
+    "pred": "tj_l1_K",
+    "ref": "tj_ref_K",
+    "strata": [],
+    "params": {
+     "fn": "quantile_rel_err",
+     "by": "load",
+     "inner": {
+      "q": 0.95,
+      "scale": "rise_ref_K"
+     }
+    },
+    "where": {
+     "kind": "die"
+    }
+   },
+   "A3": {
+    "fn": "max_over_groups",
+    "pred": "spread_l1_K",
+    "ref": "spread_ref_K",
+    "strata": [],
+    "params": {
+     "fn": "quantile_abs_err",
+     "by": "load",
+     "inner": {
+      "q": 0.95
+     }
+    },
+    "where": {
+     "kind": "switch"
+    }
+   },
+   "A4": {
+    "fn": "quantile_abs_err_ratio",
+    "pred": "spread_l1_K",
+    "ref": "spread_ref_K",
+    "strata": [],
+    "params": {
+     "null": "spread_null_K",
+     "q": 0.95
+    },
+    "where": {
+     "kind": "switch",
+     "load": "P_ref"
+    }
+   }
+  }
+ }
+}
