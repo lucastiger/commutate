@@ -120,6 +120,18 @@ description: 'Prerequisite: the founder has applied research/o002_e007/e007_metr
   9a54cdb0). The spec and notes cite D0025 for the pre-registration decisions it records, instead of the
   objective''s state log.
 
+
+
+  Reviews T0449 (physics) and T0450 (numerics) of T0397 attempt 2, both accept with caveats (founder session,
+  2026-11-17). Fix these in the runner and spec with the development rows: (1) A5''s median interval is
+  recorded with level 0.94 but computed at 95 %: make them agree; (2) record the F4 constant-k A1/A3 metrics
+  with their unit; (3) the F4 ''k(T) tested'' flag uses point estimates and hard-coded thresholds: state
+  the rule, or use the bounds; (4) the VM-hour and $ plan assumes parallel packing that the runner''s
+  defaults do not do: either set the defaults to match or replan the cost; (5) fix in the spec which host
+  times A5; (6) state as a scope limit that F6''s hottest-node estimate exists only on the 12-layout level-2
+  subset. T0397''s `mfos exp check E007` failed only in its own worktree, whose base predates the Woodruff
+  patch (da2118fc); run it on current main.
+
   '
 context_files:
 - experiments/drafts/E007.yaml

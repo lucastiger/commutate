@@ -3,7 +3,7 @@ objective: O002
 title: Thermal L1 tests and doc fixes from reviews T0423/T0424 before E007's code freeze
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: 'Thermal L1 test and doc items from reviews T0423 (physics) and T0424 (numerics) of T0395
   (O002), before E007 freezes the model. T0397 (E007 design, a scientist) could not make them: they are
@@ -60,8 +60,8 @@ runs:
 - T0443-builder-20261117T024059-8aa3
 created_by: session
 created_at: '2026-11-17T06:30:54+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0241
 target: null
 lens: null
 trigger: null
@@ -121,3 +121,7 @@ history:
       three powers. That sign is a measured property, so it could flip if the source is ever changed.
     - I changed the speed range in the docs' limitations paragraph from 0.45-0.62 s to 0.45-0.79 s to
       match the new maximum. The packet did not list that line explicitly.
+- outcome: merge_approved
+  summary: I0241
+  replan: false
+  at: '2026-11-17T15:04:15+00:00'

@@ -203,6 +203,16 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   hash coverage (Die.bounds, _ring_ints; review T0446). Refreeze E004''s perturb_rules_sha256 once, from
   the value T0451 reports, not from T0438''s 24d12d80....
 
+
+
+  Reviews T0447 (physics) and T0448 (numerics) of T0388 attempt 2, both accept with caveats (founder session,
+  2026-11-17), beyond what is already listed above: (1) add geometry/layout.py and geometry/stack.py,
+  which build the conductor model both solvers read, to code_under_test and the freeze; (2) the mesh-shift
+  flag uses |r_4mm - r_2mm| with a 0.005 floor, which underestimates the 4 mm error: flag on the larger
+  of that and a three-level estimate, or say why not; (3) the smoke stage crashes instead of recording
+  when no pair is drawn: record it as a failed draw; (4) seed_provenance: see item 3 of the T0440/T0441
+  note.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml

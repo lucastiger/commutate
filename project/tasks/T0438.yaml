@@ -3,7 +3,7 @@ objective: O004
 title: perturb.py fixes before E004's hash freezes (reviews T0416, T0387)
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on: []
 description: 'Source fixes to the perturbation rules before E004 freezes their hash (O004). T0388 (E004
   design part 1, a scientist) could not make them: they are in src/ and tests/unit/. Each fix comes with
@@ -65,8 +65,8 @@ runs:
 - T0438-builder-20261116T215742-1826
 created_by: session
 created_at: '2026-11-17T05:41:18+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0237
 target: null
 lens: null
 trigger: null
@@ -134,3 +134,7 @@ history:
     files_changed:
     - src/moduleforge/generate/perturb.py
     - tests/unit/test_perturb.py
+- outcome: merge_approved
+  summary: I0237
+  replan: false
+  at: '2026-11-17T15:04:07+00:00'
