@@ -4,7 +4,7 @@ title: 'E011 source prerequisites: control.py seed-stream tag, proxy_descent ste
   review fixes, slow marks'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'Source prerequisites for E011 (O008), collected from reviews of T0378, T0379 and T0380 and
   from I0207. Scientists may not write src/ or tests/unit/, so T0382 (E011 design) could not make these;
@@ -98,4 +98,83 @@ lens: null
 trigger: null
 rationale: founder approved 2026-11-17 in the founder session (scientist tasks T0382/T0388 cannot write
   src/)
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'All six items are implemented and committed (65afb782). All four DoD commands exit 0. `mfos
+    gate --fast` took 845 s, but it shared the machine with the long pytest run, so that figure is not
+    clean. I did not run a before/after timing of the fast unit suite.
+
+
+    1. **Seed streams (control.py).** Degradation entropy is now `[DEGRADE_TAG, seed, layout_index, draw,
+    attempt]`, built by a new `degrade_entropy()`. `DEGRADE_TAG` is nonzero, so draw 0 and attempt 0 no
+    longer collide. The new test shows the untagged lists collide, that 18 tagged (layout_index, draw,
+    attempt) streams are distinct including draw 0 and attempt 0, and that they differ from the search''s
+    `[seed, kind, counter]` and `[seed, chunk]` streams. I updated the existing entropy assertion in `test_redraw_accepts_in_window_only_and_re'
+  report:
+    status: completed
+    summary: "All six items are implemented and committed (65afb782). All four DoD commands exit 0. `mfos\
+      \ gate --fast` took 845 s, but it shared the machine with the long pytest run, so that figure is\
+      \ not clean. I did not run a before/after timing of the fast unit suite.\n\n1. **Seed streams (control.py).**\
+      \ Degradation entropy is now `[DEGRADE_TAG, seed, layout_index, draw, attempt]`, built by a new\
+      \ `degrade_entropy()`. `DEGRADE_TAG` is nonzero, so draw 0 and attempt 0 no longer collide. The\
+      \ new test shows the untagged lists collide, that 18 tagged (layout_index, draw, attempt) streams\
+      \ are distinct including draw 0 and attempt 0, and that they differ from the search's `[seed, kind,\
+      \ counter]` and `[seed, chunk]` streams. I updated the existing entropy assertion in `test_redraw_accepts_in_window_only_and_records_attempts`\
+      \ to the new entropy list; no tolerance was loosened.\n2. **`step_mm` (control.py).** `proxy_descent`\
+      \ takes `step_mm=0.5`. A test checks the default gives the same trajectory as the old behaviour\
+      \ and as `local.descend` at 0.5 mm. A 1 mm run from a start rounded to the 1 mm lattice keeps every\
+      \ visited layout on it, moving one parameter by exactly 1 mm per step.\n3. **Proxy pins.** The in-domain\
+      \ proxy (reach=True, MIN_GAIN_H) is pinned on 2D_Case_2R (25 steps, L1 ratio 0.9137879703309786)\
+      \ and on 2D_Case_4 (73 steps, 0.6532744956888346, measured here). Both are marked slow.\n4. **Review\
+      \ T0425 (nulls.py).** `NullResult.stats` now holds `seed_in_domain` and `n_neighbours_step0` for\
+      \ (b) and (d). Both return the new terminal `no_moves` when the first neighbourhood is empty. The\
+      \ test uses a real out-of-domain layout that builds, is DRC-clean and has zero valid neighbours.\n\
+      5. **Review T0426 (nulls.py).**\n   - When the step limit is hit, the neighbourhood is examined\
+      \ once more and the run is labelled `local_optimum` if nothing improves; the returned layout is\
+      \ unchanged.\n   - Slow tests cover this on the real 70x40 fixture for both widen and compact; fast\
+      \ variants use saturating measures.\n   - A synthetic candidate pays 200 mm of wire per mm of `land_LS`\
+      \ movement at a 3 mm² copper cost. The unconstrained A−W descent takes the move and loses copper;\
+      \ `null_compact` rejects it.\n   - `null_widen` and `null_compact` take `dies_fixed=False`, passed\
+      \ through to `descend`, with a test.\n6. **Slow marks.** The nine named tests (test_determinism\
+      \ in test_twin.py and test_nulls.py) are marked `@pytest.mark.slow`. Fast variants added: `test_repeat_runs_are_identical_fast`\
+      \ (nulls, about 5 s), and `test_limit_equal_to_the_optimum_step_count_fast_variant` (about 2–5 s\
+      \ per null). I added no fast variants for the thermal-FEM or twin tests."
+    concerns:
+    - The DoD grep for `test_determinism` is a substring match, so it also hit four unrelated tests, which
+      I renamed. They stay in the fast suite.
+    - 'Renames: tests/unit/thermal/test_l1.py::test_determinism -> test_repeat_evaluation_is_deterministic;
+      tests/unit/generate/test_derivative.py::test_determinism -> test_generate_is_deterministic_per_seed;
+      tests/unit/optimize/test_search.py::test_determinism_across_runs -> test_repeat_runs_are_identical;
+      tests/unit/optimize/test_local_search.py::test_determinism_and_different_seeds -> test_repeat_runs_identical_and_seeds_differ.
+      Bodies are unchanged. Marking them slow instead would drop their fast-suite coverage.'
+    - The search's own streams in local.py and search.py are unchanged ([seed, kind, counter] and [seed,
+      chunk]). Only control.py was in scope, so the degradation streams are tagged and the search's are
+      not. A collision would need a sealed seed equal to the tag value 0x4D460D01, which I judge negligible.
+    - 'Fast-suite time: I have no clean before/after figure. The pre-change baseline in research/o004_f7/gate_unit_timing_attempt2.txt
+      is 740-984 s. The 845 s for `mfos gate --fast` after the change ran while the 1375 s DoD pytest
+      run was using the machine.'
+    - 'The full DoD pytest (tests/unit/optimize and test_twin.py, slow tests included) took 22 min 55
+      s: 162 passed, exit 0.'
+    files_changed:
+    - src/moduleforge/optimize/control.py
+    - src/moduleforge/optimize/nulls.py
+    - tests/unit/optimize/test_control.py
+    - tests/unit/optimize/test_nulls.py
+    - tests/unit/optimize/test_search.py
+    - tests/unit/optimize/test_local_search.py
+    - tests/unit/generate/test_twin.py
+    - tests/unit/generate/test_derivative.py
+    - tests/unit/solvers/test_thermal_fem.py
+    - tests/unit/solvers/test_thermal_fem_assembly.py
+    - tests/unit/thermal/test_l1.py
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize tests/unit/generate/test_twin.py
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: '! uv run pytest --collect-only -q -m ''not slow'' tests/unit | grep -E ''(the nine named test
+        names)'''
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
