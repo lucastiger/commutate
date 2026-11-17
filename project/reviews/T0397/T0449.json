@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "F6 hottest-node estimate exists only on the 12-layout level-2 subset",
+      "detail": "O002 F6 asks for the hottest-node Tj of every die to be reported with its grid-convergence estimate, which is infinite where the hot spot moves (D0020). The runner reports the hottest node and the hottest-node minus die-average gap for every judged die. The estimate itself (f1 rows, quantity 'hottest_node') is computed only on the 6 cells x 2 layouts of the level-2 subset. The spec and the f6_report scope string disclose this as a founder decision, citing budget. The claim holds only in this narrower reading of F6.",
+      "evidence": "e007_run.py f6_report: est = [r['estimate_K'] for r in f1rows if r['quantity']=='hottest_node']; E007.yaml founder_decisions_before_registration item on F6",
+      "suggested_check": "Founder confirms that the subset-only F6 estimate meets F6 before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F4 'k(T) tested' flag uses point estimates and hard-coded thresholds",
+      "detail": "all_metrics sets f4_kT_tested from point values compared against a literal dict {A1: 0.5, A2: 0.03, A3: 1.0, A4: 0.5}. The thresholds are not read from O002's acceptance block, although the same function already loads it through objective_criteria. The values match O002 today, but a threshold amendment would leave F4 silently stale. O002 F4 does not say whether 'exceeds a threshold' means the point or the bound; the runner's choice of point is defensible but not stated in the spec.",
+      "evidence": "e007_run.py all_metrics: thr = {\"A1\": 0.5, \"A2\": 0.03, \"A3\": 1.0, \"A4\": 0.5}; tested |= v > thr[k]",
+      "suggested_check": "Derive thr from objective_criteria(spec)['pass_all'], and state point-vs-bound in the f4_kT_tested description.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Isolated-die null rests on fixed modelling choices; the series solver itself is exact",
+      "detail": "Null (a) treats the five-layer substrate as covering the whole baseplate, takes k at 363.15 K at both loads, and adds a 1D die-plus-attach resistance. Die and attach are not double-counted: LayerStack.layers excludes them, and the code adds them only through r1d. The other dies contribute only the uniform baseplate rise Tc + nP/(hA), which is exact by energy balance. My check: with a source covering the full plate, box_series reproduces the 1D series value Tc + P/(hA) + P*sum(t/k)/A with zero difference. For a 5 mm source, the local rise changes by 1.7e-3 K from 200 to 400 modes and by 4.3e-4 K from 400 to 800, so the configured 400 modes are converged. The modelling choices are untuned and disclosed as founder decisions; they could make the null weaker or stronger than the 'die-size-aware isolated-die spreading model' F2 has in mind.",
+      "evidence": "My run: full-cover box_series 344.3027055664396 K vs hand 1D 344.3027055664396 K; 5 mm source local rise 24.04882 / 24.05053 / 24.05096 K at 200 / 400 / 800 modes",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The Woodruff bound in this checkout comes from the fallback copy",
+      "detail": "This checkout has no mfos.metrics.quantile_ci (the self-test reports 'ci present: False'), so the runner used research/o002_e007/e007_metrics.quantile_ci. The spec header says validation must happen on main after da2118fc. I did not verify that mfos's CISpec accepts scheme 'woodruff' at this base. This is outside the physics lens; it is provenance work for registration.",
+      "evidence": "selftest.log line: 'ci present: False (merged on main da2118fc; absent in a checkout based before it ...)'",
+      "suggested_check": "Run `mfos exp check E007` on main after da2118fc before registration.",
+      "impact": "evidence"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all six definition-of-done commands. --verify-freeze: every file hash, the GridRule key for key, the FEM production constants, the L1 grid rule and calibration table, the f3 allocation, code_must_match and code_under_test all OK. --selftest: exit 0, 0 failures, including one real level-0 calibration (P_ref 38.979 W, rise 59.967 K; energy balance 5.2e-14; Q1 bottom mean equal to Tc + Q_out/(hA) to 1e-9 K; real DOF growth 7.33-7.66). --plan: exit 0. ruff: clean. Spec keyword check: no keys missing. shasum of thermal_fem.py: a216d5fe3209bcee... as required.",
+    "Re-derived the isolated-die null independently: LayerStack.layers excludes die and attach, so they are not double-counted. Tested box_series against the 1D limit (source covering the whole plate): exact to 0.0 K. Tested its mode convergence for a 5 mm source: 200/400/800 modes give 24.04882/24.05053/24.05096 K.",
+    "Checked A2's denominator: the reference uses tb_flux = Tc + Q_out/(hA), which equals the exact Q1 integral of the bottom field (the trapezoid rule is exact for bilinear elements; confirmed numerically by the self-test). L1 uses T_bp = Tc + sum(P)/(hA), the same quantity by energy balance.",
+    "Checked the F1 implementation against O002 F1: the error is |v1 - v2| + gci_step_floor(v0, v1, v2, 0.01 K). In mfos.metrics, gci_step_floor is gci_capped of the finest level, with 3 max|d| when both steps are below 0.01 K, matching F1's 'level-2 estimate plus distance'. The pair hottest die is fixed at level 1 across levels.",
+    "Checked the calibration rule against C004/O002: hottest node at level 0 (max over per-die top-face maxima, where the maximum sits for a heated top face) reaches 60 +/- 0.25 K via p <- p*target/rise. The real calibration converged in 3 solves.",
+    "Checked that the FV energy balance used for L1's energy_balance check is computed from the solved field (q_out from the Robin outflow of the solution), so the check can fail.",
+    "Checked the generator's die ordering (left to right per switch; die_index has the same meaning in every layout of a stratum, so the die-position null is well defined). Checked draw_die_size_mm's support {4.0, 4.5, 5.0, 5.5}, which equals L1's calibration table keys.",
+    "Checked the hottest-die rule (reference die average at the judged level, applied to L1 and the reference alike, ties to first in (switch, die_index) order), the spreads (max - min per switch) and the leave-one-layout-out stratum-mean and die-position nulls in e007_metrics.layout_rows/switch_rows and add_lolo_nulls against O002 scope_in and F2."
+  ],
+  "caveats": [
+    "Physics lens only. I did not re-run the F3 power and coverage simulation, and did not check the Woodruff bound against mfos main.",
+    "F6's hottest-node convergence estimate exists only on the 12-layout level-2 subset; this is a disclosed founder decision.",
+    "Null (a) uses a laterally uniform substrate over the whole baseplate and constant k at 363.15 K at both loads; these are fixed, disclosed choices that a founder may revisit.",
+    "Whether the nulls fail A1 and A4 (F2) and whether D0025's per-stratum L1 check passes depend on T0398's development rows, which do not exist yet. Registration is gated on them by the spec's founder_decisions_before_registration."
+  ]
+}
