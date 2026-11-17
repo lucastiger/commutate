@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-17T15:07:28+00:00 from repository state — do not edit_
+_generated 2026-11-17T16:42:40+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
+- **I0243** [experiment_registration] register E007 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -22,9 +23,9 @@ _generated 2026-11-17T15:07:28+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 34 | $80.05 | 1517932 | 785394 | 109 | 0 |
+| O002 | 35 | $80.05 | 1517932 | 785394 | 109 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 47 | $95.01 | 1602035 | 925454 | 135 | 0 |
+| O004 | 48 | $95.01 | 1602035 | 925454 | 135 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -32,28 +33,25 @@ _generated 2026-11-17T15:07:28+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 46, done: 388, failed: 4, merge: 5, running: 1, todo: 7
+cancelled: 46, done: 393, failed: 4, running: 3, todo: 5
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 3)
-- T0388 `merge` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 2)
-- T0397 `merge` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 2)
-- T0419 `merge` scientist/implement: F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review T0411 findings 1-2) (attempt 2)
-- T0438 `merge` builder/implement: perturb.py fixes before E004's hash freezes (reviews T0416, T0387) (attempt 1)
-- T0443 `merge` builder/implement: Thermal L1 tests and doc fixes from reviews T0423/T0424 before E007's code freeze (attempt 1)
+- T0398 `running` scientist/design_experiment: E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on the dev structure (attempt 1)
+- T0451 `running` builder/implement: perturb.py hash coverage and redraw fixes (T0446), adapter test and docstring items (T0445), before E004's hash freezes (attempt 1)
 
 ## Recent events
-- 2026-11-17T12:06:37+00:00 inbox_opened {"id": "I0240", "kind": "protected_change", "subject": "T0397: merge needs founder approval"}
-- 2026-11-17T12:11:40+00:00 run_finished {"run": "T0443-builder-20261117T024059-8aa3", "status": "completed", "cost": 0.419673, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T12:29:31+00:00 verified {"task": "T0443"}
-- 2026-11-17T12:29:36+00:00 inbox_opened {"id": "I0241", "kind": "protected_change", "subject": "T0443: merge needs founder approval"}
-- 2026-11-17T15:00:03+00:00 task_added {"task": "T0451", "note": "founder approved 2026-11-17"}
-- 2026-11-17T15:01:26+00:00 inbox_resolved {"id": "I0235", "status": "approved", "note": "T0437 merge approved (review T0444 accept with caveats). Seed streams domain-tagged; proxy_descent step_mm; in-do
-- 2026-11-17T15:01:34+00:00 inbox_resolved {"id": "I0236", "status": "approved", "note": "T0442 merge approved (review T0445 accept with caveats). No retry on external SIGKILL or repeated exits; 1x1 Zc.m
-- 2026-11-17T15:01:37+00:00 merged {"task": "T0437"}
-- 2026-11-17T15:04:07+00:00 inbox_resolved {"id": "I0237", "status": "approved", "note": "T0438 merge approved (review T0446 accept with caveats). perturb.py hash coverage, canonical long sides, whole-mm
-- 2026-11-17T15:04:10+00:00 inbox_resolved {"id": "I0238", "status": "approved", "note": "T0388 merge approved (reviews T0440, T0441, T0447, T0448 accept with caveats). E004 part 1, partial: perturb fixe
-- 2026-11-17T15:04:11+00:00 inbox_resolved {"id": "I0239", "status": "approved", "note": "T0419 merge approved (low risk; reassigned builder -> scientist for scope). F1 dev check gates level 1 on sanity 
 - 2026-11-17T15:04:13+00:00 inbox_resolved {"id": "I0240", "status": "approved", "note": "T0397 merge approved (attempt 2 fixes T0436's blocker: the nulls apply to A1 and A4 only; reviews T0435, T0449, T
 - 2026-11-17T15:04:15+00:00 inbox_resolved {"id": "I0241", "status": "approved", "note": "T0443 merge approved (low risk). k(T) Kirchhoff unit test, GRID_RULE/CALIBRATION pin test, docs/thermal_l1.md cor
 - 2026-11-17T15:07:22+00:00 merged {"task": "T0442"}
 - 2026-11-17T15:07:28+00:00 run_started {"run": "T0382-scientist-20261117T070728-ed30", "task": "T0382", "role": "scientist", "session": "6e83c6eb-e247-4434-bdc6-03b7a5e0fd19"}
+- 2026-11-17T15:48:54+00:00 merged {"task": "T0388"}
+- 2026-11-17T15:48:54+00:00 inbox_opened {"id": "I0242", "kind": "experiment_registration", "subject": "register E004 (pre-registration)"}
+- 2026-11-17T15:51:37+00:00 inbox_resolved {"id": "I0242", "status": "rejected", "note": "Premature: E004's design is incomplete (T0389 part 2, T0390 part 3, T0451 hash completion, the 2R proxy pair, and
+- 2026-11-17T15:58:20+00:00 founder_decision_recorded {"objective": "O004", "summary": "E004 span via banded L1 acceptance in the sealed stream; lower end amended from T0389's simulation"}
+- 2026-11-17T16:25:38+00:00 merged {"task": "T0397"}
+- 2026-11-17T16:25:38+00:00 inbox_opened {"id": "I0243", "kind": "experiment_registration", "subject": "register E007 (pre-registration)"}
+- 2026-11-17T16:31:18+00:00 merged {"task": "T0419"}
+- 2026-11-17T16:36:52+00:00 merged {"task": "T0438"}
+- 2026-11-17T16:42:32+00:00 merged {"task": "T0443"}
+- 2026-11-17T16:42:39+00:00 run_started {"run": "T0451-builder-20261117T084239-1749", "task": "T0451", "role": "builder", "session": "bdd863ab-32cd-481d-ae5b-5d04a3448e4e"}
+- 2026-11-17T16:42:40+00:00 run_started {"run": "T0398-scientist-20261117T084240-e4d3", "task": "T0398", "role": "scientist", "session": "42d0956f-582d-4e90-b39e-5de340d71007"}
