@@ -1,11 +1,9 @@
 # ModuleForge status
-_generated 2026-11-17T01:49:28+00:00 from repository state — do not edit_
+_generated 2026-11-17T02:05:26+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0230** [protected_change] T0385: merge needs founder approval
-- **I0231** [protected_change] T0396: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -34,20 +32,14 @@ _generated 2026-11-17T01:49:28+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 364, failed: 4, needs_founder: 2, review: 1, running: 3, todo: 10
+cancelled: 45, done: 365, failed: 4, review: 1, running: 3, todo: 11
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 1)
-- T0385 `needs_founder` builder/implement: FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse, closed-form validation (attempt 1)
 - T0387 `running` scientist/investigate: F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio estimates, F1 exclusion rate, VM job list (attempt 2)
 - T0395 `review` builder/implement: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested against analytic limits, symmetry and power scaling, with a speed benchmark (attempt 2)
-- T0396 `needs_founder` scientist/design_experiment: E007 statistics: F3 coverage and power simulation, bound selection and fixed allocation; protected mfos.metrics additions drafted as a patch (attempt 1)
 - T0423 `running` critic/review: Review T0395 (physics) (attempt 1)
 
 ## Recent events
-- 2026-11-17T00:06:20+00:00 run_started {"run": "T0387-scientist-20261116T160620-eb98", "task": "T0387", "role": "scientist", "session": "39796813-99fd-481c-969b-b4bd94d5344e"}
-- 2026-11-17T00:09:55+00:00 run_finished {"run": "T0428-critic-20261116T160030-ca1a", "status": "completed", "cost": 1.977187, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T01:05:12+00:00 inbox_opened {"id": "I0230", "kind": "protected_change", "subject": "T0385: merge needs founder approval"}
-- 2026-11-17T01:05:23+00:00 run_started {"run": "T0420-critic-20261116T170523-fb3c", "task": "T0420", "role": "critic", "session": "acf93c3c-b7de-40be-af8e-a1d554014587"}
 - 2026-11-17T01:05:59+00:00 run_finished {"run": "T0387-scientist-20261116T160620-eb98", "status": "completed", "cost": 2.766734, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T01:17:04+00:00 verified {"task": "T0387"}
 - 2026-11-17T01:17:04+00:00 run_finished {"run": "T0420-critic-20261116T170523-fb3c", "status": "completed", "cost": 2.109277, "subtype": "success", "report": "structured_output"}
@@ -59,3 +51,7 @@ cancelled: 45, done: 364, failed: 4, needs_founder: 2, review: 1, running: 3, to
 - 2026-11-17T01:41:04+00:00 founder_decision_recorded {"objective": "O004", "summary": "F1 caps relative: E_R / r <= 0.5 % (l2_layout), 1 % (FastHenry); decided before burst-1 results"}
 - 2026-11-17T01:49:16+00:00 task_failed_attempt {"task": "T0387", "signal": "dod_failed", "action": "repair"}
 - 2026-11-17T01:49:28+00:00 run_started {"run": "T0387-scientist-20261116T174928-dac5", "task": "T0387", "role": "scientist", "session": "787e3504-a026-4db1-8e0b-8affd84c21c8"}
+- 2026-11-17T01:49:38+00:00 inbox_resolved {"id": "I0230", "status": "approved", "note": "T0385 merge approved (reviews T0427, T0428 accept with caveats). Caveats routed to T0389: deterministic multipole
+- 2026-11-17T01:49:40+00:00 inbox_resolved {"id": "I0231", "status": "approved", "note": "T0396 merge approved (review T0420 accepts with caveats; routed to T0397/T0398). Founder decisions: one-sided 97 
+- 2026-11-17T01:50:13+00:00 merged {"task": "T0385"}
+- 2026-11-17T02:05:15+00:00 task_failed_attempt {"task": "T0396", "signal": "dod_failed", "action": "repair"}

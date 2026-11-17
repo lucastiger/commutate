@@ -4,7 +4,7 @@ title: 'E007 statistics: F3 coverage and power simulation, bound selection and f
   mfos.metrics additions drafted as a patch'
 type: design_experiment
 agent: scientist
-status: merge
+status: todo
 depends_on:
 - T0392
 description: 'F3 and the protected tools/mfos additions listed in the objective notes. Draft them for
@@ -311,3 +311,12 @@ history:
   summary: I0231
   replan: false
   at: '2026-11-17T01:49:40+00:00'
+- attempt: 1
+  outcome: dod_failed
+  summary: the fast gate fails once current main is merged into the branch
+  failure_output: 'main changed after this task was verified; make the branch work with it.
+
+    FAIL uv run pytest -q -x -m ''not slow'' tests/unit
+
+    TIMEOUT after 900s'
+  at: '2026-11-17T02:05:15+00:00'
