@@ -96,6 +96,24 @@ description: 'Prerequisite: the founder has applied research/o002_e007/e007_metr
   records measure), not burst-VM vCPU-hours; VM time is costed in dollars. E007''s spec states this convention
   beside its cost plan.
 
+
+
+  Review T0435 of T0397 (physics, accept with caveats; founder session, 2026-11-17). Fix in experiments/runners/e007_run.py
+  and the spec before the development run: (1) sealed_seeds_fresh: record all six derived stream seeds
+  (layouts, die_size, f7, f7_strata, l2_subset, timing_order) in sub_seeds and check every one against
+  the forbidden list; (2) layouts_distinct_and_unseen: intersect the F7 draw fingerprints with the C004,
+  other-development and P_ref sets too; (3) run the half-P_ref L1 evaluations of the F7 layouts inside
+  run_l1_phase (after the timed block), so the energy_balance check covers every L1 evaluation, and apply
+  tj_max_within_rating to F7 layouts as well (O002 F1: every layout); (4) reword the A5 timing text to
+  ''after the P_ref calibration and before any judged reference solve, with none running''; (5) regenerate
+  config.compute.plan_summary and design note section 6 from the current --plan output (local part 22.2
+  h, side_by_side/6 judged above the 5 GB local cap at the upper size); (6) add src/moduleforge/geometry/*.py
+  and src/moduleforge/generate/__init__.py to config.freeze.files and code_under_test; (7) state as scope
+  limits that the die-position null is not independent of the stratum-mean null for A4 (it is at most
+  the mean spread by construction), and that hottest-node estimates (F6) exist only on the level-2 subset.
+  Also: the A1-A4 recompute entries can now carry ci: {scheme: woodruff, level: 0.94, cluster: layout};
+  the founder merged the mfos.metrics patch (da2118fc).
+
   '
 context_files:
 - experiments/drafts/E007.yaml
