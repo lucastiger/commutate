@@ -96,7 +96,7 @@ def test_reaches_known_feasible_optimum(spec, world):
     assert not check(r.best, spec.rules)
 
 
-def test_determinism_and_different_seeds(spec, world):
+def test_repeat_runs_identical_and_seeds_differ(spec, world):
     tv, seed_lay = world
     cfg = LocalConfig(budget=700, shortlist=4)
     a = local_search(spec, seed_lay, 5, Solvers(tv).bundle(), cfg)

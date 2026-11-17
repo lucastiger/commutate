@@ -181,6 +181,7 @@ def test_source_mean_is_the_exact_galerkin_integral(order):
 
 
 # ---------------------------------------------------------------------------------------------------------- 2. k(T)
+@pytest.mark.slow
 def test_kirchhoff_column_convergence_orders():
     """1D column, k = k0 (1 + beta (T - T0)), uniform inflow q on top, Robin bottom. Kirchhoff: phi(T) = phi(T_b) + q z, so
     T(z) = T0 + (-1 + sqrt(1 + 2 beta phi/k0)) / beta, T_b = T_c + q/h. Both the lagged-k Picard scheme at Gauss points and
@@ -409,6 +410,7 @@ def test_o006_manufactured_case_q1_coarse_levels():
     _check_mms(1, (0, 1))
 
 
+@pytest.mark.slow
 def test_o006_manufactured_case_q2_coarse_levels():
     res = _check_mms(2, (0, 1))
     q1 = _mms_levels(1, (1,))[0][1]  # Q2 at level 0 (same dof count as Q1 at level 1) is at least as accurate

@@ -182,6 +182,36 @@ def test_proxy_descent_is_clean_in_domain_and_monotone(spec, wstar):
     assert np.all(d[:4] == 0) and np.all(d[40:] == 0)  # flags, feet and signal offsets never move
 
 
+def _state(ent):
+    return np.random.SeedSequence(ent).generate_state(4).tolist()
+
+
+def test_seed_streams_differ_including_zero_draw_and_attempt():
+    assert C.DEGRADE_TAG != 0
+    # the failure mode: numpy drops trailing zero words, so the untagged lists collide
+    assert _state([5, 1, 0, 0]) == _state([5, 1, 0])
+    states = {}
+    for li in (0, 1):
+        for j in (0, 1, 2):
+            for a in (0, 1, 2):
+                ent = C.degrade_entropy(5, li, j, a)
+                assert ent[0] == C.DEGRADE_TAG and ent[-1] == a and len(ent) == 5
+                states[(li, j, a)] = tuple(_state(ent))
+    assert len(set(states.values())) == len(states)  # incl. (j, a) = (0, 0) vs everything else
+    # distinct from the search's streams (local: [seed, kind, counter]; candidate_stream: [seed, chunk])
+    search = {tuple(_state(e)) for e in ([5, 1, 0], [5, 2, 0], [5, 0], [5, 1], [5], [5, 1, 0, 0, 0], [5, 0, 0, 0])}
+    assert not search & set(states.values())
+    # the sealed seed participates: another seed gives another stream
+    assert tuple(_state(C.degrade_entropy(6, 0, 0, 0))) != states[(0, 0, 0)]
+
+
+def test_draw_degradations_streams_for_zero_draw_and_attempt_are_distinct(spec, wstar):
+    f, _ = _scripted([1.0] * 6)
+    out = C.draw_degradations(spec, wstar, 3, 0, 2, f, redraw_limit=2, l1=l1, cfg=FAST)
+    ents = [tuple(a["entropy"]) for o in out for a in o.attempt_log]
+    assert len(ents) == 6 and len(set(ents)) == 6 and ents[0] == (C.DEGRADE_TAG, 3, 0, 0, 0)
+
+
 # -------------------------------------------------------------------------------------------- the redraw logic
 def _scripted(values):
     calls = []
@@ -205,11 +235,11 @@ def test_redraw_accepts_in_window_only_and_records_attempts(spec, wstar):
     assert [a["r_d"] for a in out[0].attempt_log] == [1.24, 1.61, 1.25]
     assert [a["in_window"] for a in out[2].attempt_log] == [False] * 4
     assert out[0].layout.fingerprint() == calls[2] and out[1].layout.fingerprint() == calls[3]
-    # sub-seeds are SeedSequence([seed, layout_index, draw, attempt]), per attempt
+    # sub-seeds are SeedSequence([DEGRADE_TAG, seed, layout_index, draw, attempt]), per attempt
     for o in out:
         for a in o.attempt_log:
-            assert a["entropy"] == [77, 2, o.draw, a["attempt"]]
-    rng = np.random.default_rng(np.random.SeedSequence([77, 2, 0, 2]))
+            assert a["entropy"] == [C.DEGRADE_TAG, 77, 2, o.draw, a["attempt"]]
+    rng = np.random.default_rng(np.random.SeedSequence([C.DEGRADE_TAG, 77, 2, 0, 2]))
     again = C.degrade_draw(spec, wstar, rng, l1, FAST)
     assert again.layout.fingerprint() == out[0].layout.fingerprint()
     assert len({c for c in calls}) > 1  # different attempts give different layouts
@@ -274,6 +304,31 @@ def test_proxy_alone_spends_at_most_the_l1_budget(spec, wstar):
     assert big.l1 <= r.l1 and big.steps >= r.steps  # the same path, a longer prefix: more budget never ends higher
     with pytest.raises(ValueError):
         C.proxy_alone(spec, start.layout, l1, budget=0)
+
+
+def test_proxy_descent_step_mm_default_is_bit_identical_and_one_mm_stays_on_the_lattice(spec, wstar):
+    p = D.params_of(wstar)
+    a = C.proxy_descent(spec, p, l1, step_limit=4)
+    b = C.proxy_descent(spec, p, l1, step_limit=4, step_mm=0.5)
+    assert [t["fingerprint"] for t in a.trajectory] == [t["fingerprint"] for t in b.trajectory]
+    assert [t["score"] for t in a.trajectory] == [t["score"] for t in b.trajectory]
+    direct = L.descend(spec, p, l1, step_mm=0.5, step_limit=4, min_gain=C.MIN_GAIN_H)
+    assert [t["fingerprint"] for t in a.trajectory] == [t["fingerprint"] for t in direct.trajectory]
+    # 1 mm run from a start on the 1 mm lattice: every visited layout stays on it
+    dg = C.degrade_draw(spec, wstar, np.random.default_rng(0), l1, C.DegradeConfig(target_ratio=1.1, max_proposals=100))
+    start = D.Params.from_vector(np.round(dg.params.to_vector()))
+    assert not check(D.build(spec, start), spec.rules)  # seed 0 rounds to a DRC-clean start (checked when written)
+    r = C.proxy_descent(spec, start, l1, step_limit=4, step_mm=1.0)
+    assert r.steps >= 1
+    movable = list(L.movable_indices(False))
+    for t in r.trajectory:
+        v = np.asarray(t["vec"])
+        assert np.all(np.abs(v[movable] - np.round(v[movable])) < 1e-9)
+    # steps are 1 mm: consecutive visited vectors differ in one parameter by 1 mm, unless a reach jump
+    for t0, t1 in zip(r.trajectory, r.trajectory[1:], strict=False):
+        if t1["move"] in NAMES:
+            d = np.abs(np.asarray(t1["vec"]) - np.asarray(t0["vec"]))
+            assert np.count_nonzero(d > 1e-12) == 1 and d.max() == pytest.approx(1.0)
 
 
 # --------------------------------------------------------------------------------------- column sides (T0402/T0403)
@@ -343,3 +398,16 @@ def test_proxy_descent_reproduces_the_probe_on_2R_twin():
     assert r.l1_ratio == pytest.approx(0.898, abs=5e-4)
     assert r.l1 * 1e9 == pytest.approx(ref["l1_proxy_nH"], abs=1e-9)
     assert not check(r.layout, spec_.rules)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(("which", "steps", "ratio"), [("2R", 25, 0.9137879703309786), ("case4", 73, 0.6532744956888346)])
+def test_in_domain_proxy_pins(which, steps, ratio, twoR, case4):
+    """Regression pins of the frozen in-domain proxy rule (reach=True, min_gain = MIN_GAIN_H, 0.5 mm steps, die rows
+    included) on the development twins, beside the reach=False pin (0.898, 27 steps) above.  No seed is involved."""
+    spec_, tw = twoR if which == "2R" else case4
+    r = C.proxy_descent(spec_, D.params_of(tw), l1, step_limit=400)
+    assert r.kind == L.LOCAL_OPTIMUM and r.steps == steps
+    assert r.l1_ratio == pytest.approx(ratio, abs=1e-9)
+    assert not check(r.layout, spec_.rules)
+    assert D.in_domain(spec_, D.params_of(r.layout), reach=True)[0]

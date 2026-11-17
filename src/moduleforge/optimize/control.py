@@ -13,7 +13,7 @@ injected ``r_d_at_l2`` only to accept or reject a whole draw (F6).
     A stochastic L1 ascent from W* by joint moves of 2-4 parameters of the search's set, 0.5-2 mm each (the probe,
     research/o008_probe/probe.py ``ascent``), every accepted state DRC-clean and in ``in_domain(reach=True)``, stopping at the
     frozen L1 target 1.25 x 1.11 (``twin.DEGRADE_RATIO``, ``twin.DEGRADE_MARGIN``).  A draw's sub-seed is
-    ``SeedSequence([sealed_seed, layout_index, draw, attempt])``; the draw is accepted if ``r_d_at_l2`` of it lies in
+    ``SeedSequence([DEGRADE_TAG, sealed_seed, layout_index, draw, attempt])``; the draw is accepted if ``r_d_at_l2`` of it lies in
     [1.25, 1.60], else redrawn with the next attempt, at most ``redraw_limit`` redraws.
 ``proxy_alone``
     Ablation (e): the proxy rule from a degraded D_j with the search's L1 budget and no L2 shortlist.
@@ -38,6 +38,10 @@ from . import local as L
 
 R_D_WINDOW = (1.25, 1.60)  # accepted L_sub(D) / L_sub(W*) (the objective's window)
 FROZEN_L1_TARGET = T.DEGRADE_RATIO * (1.0 + T.DEGRADE_MARGIN)  # 1.25 x 1.11 = 1.3875, the L1 stop of a degradation
+# Domain tag: the first entropy word of every degradation stream.  numpy's SeedSequence drops trailing zero entropy words
+# ([s, li, j, 0] == [s, li, j]), and the search's own streams ([seed, kind, counter] in local, [seed, chunk] in search)
+# start with the sealed seed itself; a nonzero tag first keeps the degradation's streams apart from them.
+DEGRADE_TAG = 0x4D460D01
 MIN_GAIN_H = 1e-12  # the probe's step tolerance: score(new) > score(cur) + 1e-12 with score = -L1 in H
 
 
@@ -59,13 +63,15 @@ class ProxyDescent:
 
 def proxy_descent(spec: D.ReferenceSpec, W_params: D.Params, l1: Callable[[Layout], float], step_limit: int,
                   dies_fixed: bool = False, reach: bool = True, max_evals: int | None = None,
-                  movable: Sequence[int] | None = None, min_gain: float = MIN_GAIN_H) -> ProxyDescent:
-    """Steepest single-parameter L1 descent from ``W_params`` in 0.5 mm steps, DRC-clean and in the reach domain, to a local
+                  movable: Sequence[int] | None = None, min_gain: float = MIN_GAIN_H,
+                  step_mm: float = 0.5) -> ProxyDescent:
+    """Steepest single-parameter L1 descent from ``W_params`` in ``step_mm`` steps (default 0.5 mm; 1 mm keeps every visited
+    layout on the 1 mm lattice when ``W_params`` is on it), DRC-clean and in the reach domain, to a local
     optimum or ``step_limit`` steps, over ``local.movable_indices(dies_fixed)`` (die rows included unless ``dies_fixed``,
     in which case the ``row_*`` entries of the result are bit-identical to ``W_params``'s).  ``reach=False`` is the probe's
     rule (build + DRC only, no reach jumps), for regression anchors; ``max_evals`` a budget of distinct L1 evaluations.
     ``min_gain``: a step must lower L1 by more than this (H); the probe's tolerance 1e-12 H (0.001 nH, ~1e-4 relative)."""
-    res = L.descend(spec, W_params, l1, movable=movable, step_mm=0.5, step_limit=step_limit, dies_fixed=dies_fixed,
+    res = L.descend(spec, W_params, l1, movable=movable, step_mm=step_mm, step_limit=step_limit, dies_fixed=dies_fixed,
                     reach=reach, max_evals=max_evals, min_gain=min_gain)
     return ProxyDescent(res.layout, res.params, res.trajectory[0]["score"], res.score, res.steps, res.kind, res.trajectory)
 
@@ -168,6 +174,12 @@ def degrade_draw(spec: D.ReferenceSpec, Wstar_layout: Layout, rng: np.random.Gen
                        float(np.sum(diff)), stop, path)
 
 
+def degrade_entropy(sealed_seed: int, layout_index: int, draw: int, attempt: int) -> list[int]:
+    """Entropy list of attempt ``attempt`` of draw ``draw``: the nonzero ``DEGRADE_TAG`` first, so no trailing-zero
+    truncation can make two (draw, attempt) pairs, or the degradation and the search, share a stream."""
+    return [DEGRADE_TAG, int(sealed_seed), int(layout_index), int(draw), int(attempt)]
+
+
 @dataclass
 class DrawRecord:
     draw: int
@@ -182,7 +194,7 @@ def draw_degradations(spec: D.ReferenceSpec, Wstar: Layout, sealed_seed: int, la
                       r_d_at_l2: Callable[[Layout], float], redraw_limit: int, l1: Callable[[Layout], float],
                       cfg: DegradeConfig = DegradeConfig(), window: tuple[float, float] = R_D_WINDOW) -> list[DrawRecord]:
     """``n_draws`` degradations D_j of ``Wstar``.  Attempt ``a`` of draw ``j`` uses
-    ``default_rng(SeedSequence([sealed_seed, layout_index, j, a]))``; ``r_d_at_l2(D)`` (= L_sub(D) / L_sub(W*), injected) is
+    ``default_rng(SeedSequence([DEGRADE_TAG, sealed_seed, layout_index, j, a]))``; ``r_d_at_l2(D)`` (= L_sub(D) / L_sub(W*)) is
     called once per attempt, only to accept (``window[0] <= r_d <= window[1]``) or reject the whole draw; a rejected draw is
     redrawn with the next attempt, at most ``redraw_limit`` redraws (``redraw_limit + 1`` attempts).  Every attempt and the
     achieved R_D are recorded (F6); a draw that exhausts the limit is returned with ``accepted=False``."""
@@ -193,7 +205,7 @@ def draw_degradations(spec: D.ReferenceSpec, Wstar: Layout, sealed_seed: int, la
         log: list[dict] = []
         rec = DrawRecord(j, None, False, 0, None, log)
         for a in range(redraw_limit + 1):
-            ent = [int(sealed_seed), int(layout_index), j, a]
+            ent = degrade_entropy(sealed_seed, layout_index, j, a)
             rng = np.random.default_rng(np.random.SeedSequence(ent))
             dg = degrade_draw(spec, Wstar, rng, l1, cfg)
             r = float(r_d_at_l2(dg.layout))
@@ -224,6 +236,6 @@ def feasible_sides(spec: D.ReferenceSpec, p: D.Params, ctx: D._Ctx | None = None
     return [s for s in itertools.product((-1, 1), repeat=3) if D._replay(spec, cx, p, s, seq, sv, hts) is None]
 
 
-__all__ = ["DegradeConfig", "Degradation", "DrawRecord", "FROZEN_L1_TARGET", "ProxyChoice", "ProxyDescent", "R_D_WINDOW",
-           "choose_proxy", "degrade_draw", "draw_degradations", "feasible_sides", "proxy_alone", "proxy_descent",
+__all__ = ["DegradeConfig", "Degradation", "DrawRecord", "FROZEN_L1_TARGET", "ProxyChoice", "ProxyDescent",
+           "R_D_WINDOW", "DEGRADE_TAG", "degrade_entropy", "choose_proxy", "degrade_draw", "draw_degradations", "feasible_sides", "proxy_alone", "proxy_descent",
            "read_sides"]

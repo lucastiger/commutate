@@ -259,6 +259,7 @@ def test_benchmark_rule_options_h0_finest_and_zrefine():
     assert F.estimate_dofs(lay, zr, 1) > F.estimate_dofs(lay, lat, 1)
 
 
+@pytest.mark.slow
 def test_benchmark_smoke_run_with_new_options(tmp_path):
     import json
     import subprocess

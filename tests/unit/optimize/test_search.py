@@ -398,7 +398,7 @@ def ref_calls(r):
     return len(r.rows["tj"]) // 2
 
 
-def test_determinism_across_runs():
+def test_repeat_runs_are_identical():
     a = go(Counter(thermal_fn=hot_unless(set())))
     b = go(Counter(thermal_fn=hot_unless(set())))
     assert a.rows == b.rows and a.levelling == b.levelling and a.thermal_checked == b.thermal_checked

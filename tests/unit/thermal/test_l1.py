@@ -151,7 +151,7 @@ def test_energy_balance_and_flux_consistency(lay):
     assert np.all(o.tj_max >= raw.tj_mean)  # coarse surface max is above the area mean
 
 
-def test_determinism(lay):
+def test_repeat_evaluation_is_deterministic(lay):
     a = evaluate(lay, 33.0, h=H, T_c=T_C)
     b = evaluate(lay, 33.0, h=H, T_c=T_C)
     # same inputs, same process: equal up to floating-point summation order in the iterative solver (1e-9 K)

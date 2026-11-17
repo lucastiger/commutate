@@ -94,6 +94,7 @@ def test_fit_recovers_a_generated_layout_without_its_family_string(housing, hous
         assert not check(lay, housing.rules)
 
 
+@pytest.mark.slow
 def test_determinism(case4):
     ref, spec = case4
     a, pa, ra = W.twin(ref, spec, with_l1=False)
@@ -189,6 +190,7 @@ def test_degrade_on_case4(case4):
     print(f"Case 4 degrade L1 ratio {rec['l1_ratio']:.3f} (target {_ratio_target():.3f})")
 
 
+@pytest.mark.slow
 def test_degrade_is_deterministic_and_raises_when_the_ratio_is_missed(housing, housing_refs, monkeypatch):
     tw, _, _ = W.twin(housing_refs[0], housing, with_l1=False)
     a, _ = W.degrade(tw, housing, with_l1=False)
@@ -347,6 +349,7 @@ def test_spread_moves_are_used_when_narrowing_is_not_enough():
     assert check(d, spec.rules) == []
 
 
+@pytest.mark.slow
 def test_degrade_error_when_no_move_reaches_the_target():
     spec = D.halfbridge_housing_spec(4, rules=DesignRules(min_trace_width=2e-3), wires_per_die=1)
     ref = D.generate(spec, 4, seed=941, max_failures=3000)[2]
@@ -577,6 +580,7 @@ def test_walk_steps_are_on_the_grid_valid_and_listed():
     assert d2.fingerprint() == d.fingerprint() and rec2 == rec
 
 
+@pytest.mark.slow
 def test_degrade_error_carries_the_walk_terminal_state():
     """(2, 1, 1) of the 2 mm stress set: the walk ends at a local maximum; the terminal ratio is locked (as in
     tests/regression/test_degrade_walk_stress.py) and the record says where the walk started and stopped."""

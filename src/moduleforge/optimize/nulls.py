@@ -17,8 +17,11 @@ length), and they take no solver.  (c) is the D0008 random screen alone and uses
 
 (b) and (d) move exactly the parameters ``local.movable_indices()`` returns (``descend``'s default) and every layout they
 visit is DRC-clean and in ``in_domain(reach=True)``.  Each runs to its own local optimum within ``NULL_STEP_LIMIT`` steps and
-records its terminal kind (``local_optimum`` or ``step_limit``); a run capped at the limit is not a resolved failure of
-the null (A3, review T0359).  Every null records ``steps``, ``changed_params`` and ``manhattan_mm`` from ``D_j`` (over the
+records its terminal kind (``local_optimum``, ``step_limit`` or ``no_moves``); a run capped at the limit is not a resolved
+failure of the null (A3, review T0359).  A run that reaches its local optimum on exactly the limit is labelled
+``local_optimum`` (the neighbourhood is examined once more when the limit is hit, review T0426).  ``no_moves``: ``D_j``
+(possibly outside the reach domain) has no valid neighbour, so the null returns it unchanged; ``stats`` carries
+``seed_in_domain`` and ``n_neighbours_step0`` (valid neighbours of ``D_j``) for both (b) and (d).  Every null records ``steps``, ``changed_params`` and ``manhattan_mm`` from ``D_j`` (over the
 whole parameter vector, in mm).
 """
 from __future__ import annotations
@@ -34,9 +37,10 @@ from shapely.ops import unary_union
 from moduleforge.generate import derivative as D
 from moduleforge.geometry.layout import NETS, Layout
 
-from .local import LOCAL_OPTIMUM, STEP_LIMIT, LocalConfig, LocalSolvers, descend
+from .local import LOCAL_OPTIMUM, STEP_LIMIT, LocalConfig, LocalSolvers, _Space, descend, movable_indices
 from .search import candidate_stream
 
+NO_MOVES = "no_moves"  # terminal kind: the first neighbourhood has no DRC-clean in-domain move at all
 NULL_STEP_LIMIT = 200  # frozen: generous (the probe's proxy descent used 200; its nulls 60 and several hit that cap)
 _TOL = 1e-9
 
@@ -47,7 +51,7 @@ class NullResult:
     layout: Layout
     params: D.Params
     steps: int
-    terminal: str  # LOCAL_OPTIMUM, STEP_LIMIT, or "none" for (a) and (c), which do not descend
+    terminal: str  # LOCAL_OPTIMUM, STEP_LIMIT, NO_MOVES, or "none" for (a) and (c), which do not descend
     changed_params: int
     manhattan_mm: float
     score_trajectory: list[float] = field(default_factory=list)  # blind score (higher is better) at step 0, 1, ...
@@ -81,37 +85,62 @@ def null_seed(spec: D.ReferenceSpec, d: Layout, solvers: LocalSolvers | None = N
     return _result("seed", d, d, 0, "none", [])
 
 
+def _step0_stats(spec: D.ReferenceSpec, d: Layout, dies_fixed: bool) -> dict:
+    """``seed_in_domain`` (``d`` in ``in_domain(reach=True)``) and ``n_neighbours_step0`` (valid neighbours of ``d`` over
+    the movable parameters, the set ``descend`` searches)."""
+    sp = _Space(spec)
+    p = D.params_of(d)
+    vec = p.to_vector()
+    n = sum(sp.valid(v, kind) is not None
+            for kind, _, v in sp.neighbours(vec, movable_indices(dies_fixed), 0.5, p))
+    return {"seed_in_domain": bool(D.in_domain(spec, p, reach=True, ctx=sp.ctx)[0]), "n_neighbours_step0": int(n)}
+
+
 def null_widen(spec: D.ReferenceSpec, d: Layout, step_limit: int = NULL_STEP_LIMIT,
-               solvers: LocalSolvers | None = None) -> NullResult:
+               solvers: LocalSolvers | None = None, dies_fixed: bool = False) -> NullResult:
     """(b) steepest widening of the power copper from ``d`` to a local optimum of the area, or ``step_limit`` steps.
-    ``solvers`` is never called."""
-    r = descend(spec, D.params_of(d), lambda lay: -power_copper_mm2(lay), step_limit=step_limit)
-    return _result("widen", d, r.layout, r.steps, r.kind, [-t["score"] for t in r.trajectory])
+    ``solvers`` is never called.  ``dies_fixed`` is passed to ``descend`` (die rows do not move)."""
+    def score(lay: Layout) -> float:
+        return -power_copper_mm2(lay)
+
+    stats = _step0_stats(spec, d, dies_fixed)
+    r = descend(spec, D.params_of(d), score, step_limit=step_limit, dies_fixed=dies_fixed)
+    kind = r.kind
+    if kind == STEP_LIMIT and descend(spec, r.params, score, step_limit=1, dies_fixed=dies_fixed).steps == 0:
+        kind = LOCAL_OPTIMUM  # the optimum was reached on exactly the limit
+    if r.steps == 0 and stats["n_neighbours_step0"] == 0:
+        kind = NO_MOVES
+    return _result("widen", d, r.layout, r.steps, kind, [-t["score"] for t in r.trajectory], stats)
 
 
 def null_compact(spec: D.ReferenceSpec, d: Layout, step_limit: int = NULL_STEP_LIMIT,
-                 solvers: LocalSolvers | None = None) -> NullResult:
+                 solvers: LocalSolvers | None = None, dies_fixed: bool = False) -> NullResult:
     """(d) steepest ascent of ``compact_score`` over the moves that neither reduce the power copper nor lengthen the power
-    wires, to a local optimum or ``step_limit`` steps.  ``solvers`` is never called."""
+    wires, to a local optimum or ``step_limit`` steps.  ``solvers`` is never called.  ``dies_fixed`` is passed to
+    ``descend``."""
+    stats = _step0_stats(spec, d, dies_fixed)
     p, lay = D.params_of(d), d
     traj = [compact_score(lay)]
     steps, kind = 0, LOCAL_OPTIMUM
     while True:
-        if steps >= step_limit:
-            kind = STEP_LIMIT
-            break
         a0, w0 = power_copper_mm2(lay), power_wire_mm(lay)
 
         def score(cl: Layout, a0=a0, w0=w0) -> float:
             a, w = power_copper_mm2(cl), power_wire_mm(cl)
             return math.inf if (a < a0 - _TOL or w > w0 + _TOL) else -(a - w)
 
-        r = descend(spec, p, score, step_limit=1)
+        # at the limit one more neighbourhood is examined (without taking the move) to tell step_limit from local_optimum
+        r = descend(spec, p, score, step_limit=1, dies_fixed=dies_fixed)
         if r.steps == 0:
+            break
+        if steps >= step_limit:
+            kind = STEP_LIMIT
             break
         p, lay, steps = r.params, r.layout, steps + 1
         traj.append(compact_score(lay))
-    return _result("compact", d, lay, steps, kind, traj)
+    if steps == 0 and stats["n_neighbours_step0"] == 0:
+        kind = NO_MOVES
+    return _result("compact", d, lay, steps, kind, traj, stats)
 
 
 def ablation_random_screen(spec: D.ReferenceSpec, d: Layout, seed: int, solvers: LocalSolvers,
@@ -138,5 +167,5 @@ def ablation_random_screen(spec: D.ReferenceSpec, d: Layout, seed: int, solvers:
     return _result("random_screen", d, best, 0, "none", [], stats)
 
 
-__all__ = ["NULL_STEP_LIMIT", "NullResult", "ablation_random_screen", "compact_score", "null_compact", "null_seed",
+__all__ = ["NO_MOVES", "NULL_STEP_LIMIT", "NullResult", "ablation_random_screen", "compact_score", "null_compact", "null_seed",
            "null_widen", "power_copper_mm2", "power_wire_mm"]

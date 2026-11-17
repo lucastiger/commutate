@@ -68,7 +68,7 @@ def hb_layouts(hb):
     return D.generate(hb, 60, seed=3)
 
 
-def test_determinism(c4, hb):
+def test_generate_is_deterministic_per_seed(c4, hb):
     for spec in (c4, hb):
         a = [x.fingerprint() for x in D.generate(spec, 12, seed=11)]
         assert a == [x.fingerprint() for x in D.generate(spec, 12, seed=11)]
