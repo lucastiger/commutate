@@ -58,6 +58,37 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   adapter''s watchdog alone: the memory projections in the job list carry a stated margin, and the runner
   records each attempt''s peak RSS.
 
+
+
+  Reviews T0427 (physics) and T0428 (numerics) of T0385 (both accept with caveats; founder session, 2026-11-17):
+
+  A. The thickness ladder. T0428 found a deterministic multipole crash: the test''s mini_layout at cell
+  0.5 mm, plane cell 1.0 mm, nh_trace = nh_plane = 5 (2896 filaments) crashed with SIGSEGV on 11 of 11
+  attempts, each in about 0.35 s, in ''Forming sparse matrix preconditioner''. Direct mode solves the
+  same deck, and multipole solves it at nh 3 and 9. Retries therefore cover random crashes only. Before
+  writing vm_jobs_fasthenry.json, run every multipole ladder deck you plan (Case 4 development pairs and
+  gen2_0) far enough to see whether it gets past the preconditioner: locally where the deck fits in memory,
+  otherwise as the first VM job. Record each deck that crashes on every attempt, and state in the job
+  list and in E004''s draft what happens to such a deck (direct mode where memory allows, or a missing
+  value that F1 turns into an exclusion). Never substitute another level silently.
+
+  B. The E004 runner: (1) calls fasthenry_run.self_test() once on each host and stores its record, keyed
+  by binary_sha256, beside every FHResult; (2) passes explicit timeout_s and mem_cap_mb for every level
+  (the defaults, 3600 s and 6000 MB, are below P4''s projection of about 2.4 h and 10 GB for the judged
+  level, and a timeout or memory kill is not retried); (3) records each attempt''s peak_mem_mb and wall_s.
+
+  C. Small adapter fixes in src/moduleforge/solvers/fasthenry_run.py and tests/unit/test_fasthenry_run.py:
+  (1) SIGKILL not sent by the watchdog (e.g. the Linux OOM killer) and a non-zero exit code repeated identically
+  on consecutive attempts are not retried (T0428 confirmed both are retried 10 times with fake binaries),
+  with tests; (2) _freqs_match requires a 1 x 1 Zc.mat with R > 0 and Im Z > 0 at every frequency, else
+  parse_error (a negative Im Z and a 2 x 2 matrix were both accepted), with tests; (3) self_test() requires
+  the version banner ''FastHenry 3.0wr'' and ''mod 031424'' in the run log, so a different build (e.g.
+  FastHenry2, which D0002 rejected on licence grounds) fails it; (4) the self-test''s closed-form check
+  is implied by the 1.5e-3 nH check and can never fire: compare instead with the exact uniform-current
+  value of the D0002 bar, 5.704254 nH (Hoer-Love), or drop it; (5) set MEM_MARGIN from peak_mem_mb / direct_mem_est
+  on two or three direct runs above 5k filaments (T0428 measured ratios of 1.24 to 1.26 to the estimate,
+  so the effective margin of about 1.18 is too small), and state the fit in the code comment.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
@@ -79,6 +110,8 @@ touches:
 - experiments/drafts/E004.yaml
 - experiments/runners/e004_run.py
 - research/o004_f7/vm_jobs_fasthenry.json
+- src/moduleforge/solvers/fasthenry_run.py
+- tests/unit/test_fasthenry_run.py
 definition_of_done:
 - cmd: uv run mfos exp check E004
   exists: null

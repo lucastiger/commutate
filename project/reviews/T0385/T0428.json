@@ -1,0 +1,86 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The multipole solver crashes deterministically on a thickness-ladder deck, so retries cover only random crashes",
+      "detail": "The retry logic assumes crashes are random (O004 F1 / P4: 8 of 32, at random). On the test's own mini_layout at cell_mm=0.5, plane_cell_mm=1.0, nh_trace=nh_plane=5 (2896 filaments, no solver_notes), multipole mode crashed 11 times out of 11 with SIGSEGV, each in about 0.35 s, during 'Forming sparse matrix preconditioner'. Direct mode solves the same deck. The same layout solves in multipole at nh 3 and 9 (0.5 mm) and at nh 5 and 9 (1.0 mm). The adapter reports this correctly (status crash, 11 attempts, no Zc.mat read), so the code is not wrong. But O004's thickness ladder (3/5/9) can produce decks where all 10 retries fail and the value is missing, which F1 then turns into an exclusion. The suite tests multipole only at cell 1.0 with nh in {1, 3}, so it would not catch this.",
+      "evidence": "solve_layout(mini_layout(), FHLevel(cell_mm=0.5, plane_cell_mm=1.0, nh_trace=5, nh_plane=5, wire_n=2), mode='multipole') -> status crash, n_attempts 11, every attempt signal 11; log tail ends after 'Frequency = 1e+07 | Forming sparse matrix preconditioner.'",
+      "suggested_check": "Before E004 registration, run the multipole thickness ladder on Case 4 development decks and record any deterministic crash (same deck crashes 11 of 11).",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The direct-mode memory screen's margin is smaller than the measured overshoot",
+      "detail": "The exporter's direct_mem_est_gb uses 1e9 bytes per GB. The adapter compares est*1.10*1024 with an MiB cap, so the effective margin over the true estimate is about 1.18. Measured ru_maxrss in direct mode was 1.24 to 1.26 times the true estimate and grew quadratically with size. That makes it 1.15 to 1.17 times the number the adapter compares, which is above MEM_MARGIN = 1.10. A deck that passes the screen just under the cap would be killed by the watchdog partway through the run. The cost is wasted compute, not a wrong number. The test only checks the arithmetic (MEM_MARGIN >= 1.05), not that the margin covers the real peak.",
+      "evidence": "mini_layout direct: 1776 fil est 58.0 MB (adapter units) vs peak 67.0 MB; 2896 fil 172.9 vs 200.0; 3990 fil 291.5 vs 340.7",
+      "suggested_check": "Fit peak/est on two or three direct runs with more than 5k filaments and set MEM_MARGIN from the fit.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Runs killed from outside and runs that fail every time are retried as crashes",
+      "detail": "Any non-zero exit code or signal counts as 'crash' and is retried up to 10 times. That includes SIGKILL from the Linux OOM killer and fixed failures such as a deck syntax error with exit 1. Both were confirmed with fake binaries: SIGKILL was retried every time (signal 9 on each attempt), and exit 1 ran 11 times. The module docstring justifies not retrying the adapter's own kills ('the same deck would be killed again'), but the same reasoning applies to an OOM kill. On a burst VM at P4's projected 2.4 h per third-level run, that could mean about 10 wasted runs.",
+      "evidence": "fake binary 'kill -KILL $$': status crash, 4 attempts with max_retries=3, signals [9,9,9,9]; fake 'exit 1': 11 attempts",
+      "suggested_check": "Treat SIGKILL (and optionally a repeated identical non-zero exit) as not retryable.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "No passivity or port-count check on the parsed impedance",
+      "detail": "A Zc.mat with a negative Im Z at 10 MHz was accepted as ok=True with L = -3.97 nH. A 2x2 Zc.mat (two ports) was accepted and silently reduced to Z11. FastHenry is unlikely to print either for the exporter's one-port decks. Still, a cheap R > 0, L > 0, 1x1 check would turn a parse or sign slip into parse_error instead of a reported inductance.",
+      "evidence": "fake Zc.mat '2.45718e-03-2.49644e-01j' -> ok, L_H[1e7] = -3.97e-9; 2x2 matrix -> ok, L from Z11",
+      "suggested_check": "Require a 1 x 1 matrix and R > 0, Im Z > 0 for each frequency in _freqs_match.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "'Pinned binary' is enforced only by recording the hash and by the self-test",
+      "detail": "find_binary accepts any executable named fasthenry. Its sha256 is recorded but never compared with D0002. solve_deck and solve_layout never run or require self_test, so a result carries no proof that the self-test passed on that binary. The provisioned binary here (eaa6d6fc\u20262d14) differs from the hash D0002 recorded (15bfbcd1\u20267365); the P4 note already documents this. This matches D0002's wording ('records its path and sha256') and O004's ('sha256 recorded and self-test passed on each VM'). The guarantee therefore rests on the E004 runner calling self_test() on each machine.",
+      "evidence": "shasum ~/.local/bin/fasthenry = eaa6d6fc\u20262d14; self_test() passes at 5.704256 nH",
+      "suggested_check": "Have the E004 runner store self_test()'s record, keyed by binary_sha256, next to every FHResult.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The self-test's closed-form bound can never fire on its own, and an exact reference exists",
+      "detail": "|L - 5.704| <= 1.5e-3 nH already places L/5.695 - 1 in [0.13 %, 0.19 %], inside the 0.3 % closed-form bound, so the second check never fires independently. The exact uniform-current value of the D0002 bar is 5.704254 nH (Hoer\u2013Love closed form, checked independently below). It would be a sharper reference than Ruehli's approximation (5.6946 nH).",
+      "evidence": "exact Hoer-Love 5.70425358866 nH; FastHenry 5.704256 nH (+4.9e-7)",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The default timeout is shorter than the projected finest-level run",
+      "detail": "timeout_s defaults to 3600 s. P4 projected about 2.4 h per run at FastHenry's third level. A caller that keeps the default would get 'timeout' at the judged level, which is not retried.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Changes outside the two listed deliverables",
+      "detail": "fasthenry.py also changed: an FHLevel docstring and a ValueError when more than two frequencies are passed. Both are small and justified by earlier reviews, the file is not a protected path, and all 80 FastHenry unit tests pass.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the three definition-of-done commands. pytest gave 25 passed and 0 skipped (the RSS watchdog test really ran); self_test() returned 5.704256 nH on binary eaa6d6fc\u2026; ruff found no issues. Also ran all FastHenry unit tests: 80 passed.",
+    "Wrote my own exact Hoer\u2013Love closed form for a rectangular bar (64-term primitive, mpmath at 40 digits) and compared it with the test's dblquad reference bar_self_L on (10,1,1), (20,4,1), (5,2,3) and (100,1,1) mm. They agree to better than 1e-15 relative, so the closed-form reference is correct and independent.",
+    "Measured FastHenry against that reference through the adapter: worst |L/exact - 1| over 3 geometries x n = 1, 2, 4 was 5.7e-7 (test tolerance 5e-6); DC R worst 1.2e-6. Ruehli vs exact: 2.0e-4 and 2.4e-4 (bound 3e-4).",
+    "Repeated the Grover loop sweep and extended it to s/b = 0.08 to 0.005: err/(s/b) = 0.120, 0.097, 0.082, 0.071, 0.062, falling monotonically as the test's comment states; the 0.15 bound has a margin of about 1.5x.",
+    "Measured multipole vs direct margins on mini_layout: dL at most 5.6e-5 and dR at most 2.16e-4 (tolerance 3.3e-4). At cell 0.5 / 0.25 mm with nh 3: dL -3e-5 and -9.5e-5.",
+    "Read FastHenry's log through the adapter: multipole flags take effect ('Solution technique: ITERATIVE', 'Error tolerance: 0.0001', 'Expansion order: 4'); direct is LUDECOMP; Zc.mat prints 6 significant digits; the parsed frequencies are exactly 1e7 and 2e7.",
+    "Fake-binary edge cases: an extra frequency, a missing row, inf and an empty Zc.mat each gave parse_error; direct mode with max_retries=10 still made 1 attempt; external SIGKILL and exit 1 were retried as crashes; a negative Im Z and a 2x2 matrix were accepted.",
+    "Ran direct and multipole at larger levels to compare the dense-memory estimate with measured peak RSS (peak/est 1.15 to 1.17 in the adapter's units, more than MEM_MARGIN); this is where I found the multipole SIGSEGV on the nh=5 deck that happens 11 times out of 11.",
+    "Checked D0002 and O004 for the pin and self-test requirements and compared the provisioned binary's sha256 with D0002's recorded hash."
+  ],
+  "caveats": [
+    "The adapter's retries help only with random crashes. A deck that crashes the multipole solver every time (found at nh=5 on a 0.5 mm deck) still gives a missing value after 11 attempts. O004's thickness ladder should be screened for such decks before registration.",
+    "'Pinned' means the hash is recorded and self_test() passes; the adapter compares the hash with nothing. Results are tied to the D0002 build only if the E004 runner calls self_test() on each machine and stores its record with the binary sha256.",
+    "Multipole vs direct agreement (3.3e-4) is tested only on small decks (<= 4k filaments here). It says nothing about the 20k+ filament finest levels where direct mode cannot run.",
+    "The memory screen and watchdog guard resources, not correctness. The screen can let through a direct run that the watchdog later kills, and on macOS resident set size leaves out compressed pages."
+  ]
+}
