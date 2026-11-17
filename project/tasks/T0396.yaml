@@ -4,7 +4,7 @@ title: 'E007 statistics: F3 coverage and power simulation, bound selection and f
   mfos.metrics additions drafted as a patch'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0392
 description: 'F3 and the protected tools/mfos additions listed in the objective notes. Draft them for
@@ -150,8 +150,8 @@ runs:
 - T0396-scientist-20261116T082527-88e2
 created_by: planner:T0373
 created_at: '2026-11-16T01:46:31+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0231
 target: null
 lens: null
 trigger: null
@@ -307,3 +307,7 @@ history:
       and use the recompute entries in e007_row_contract.md.
     - Before registration, re-run stats_sim.py with error scales measured on the frozen L1's development
       rows in all six cells, since only side_by_side/6 and u_shaped/2 were measured.
+- outcome: merge_approved
+  summary: I0231
+  replan: false
+  at: '2026-11-17T01:49:40+00:00'

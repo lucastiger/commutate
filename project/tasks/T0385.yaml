@@ -4,7 +4,7 @@ title: 'FastHenry run adapter: pinned binary and self-test, multipole with up to
   closed-form validation'
 type: implement
 agent: builder
-status: needs_founder
+status: merge
 depends_on:
 - T0384
 description: 'New module src/moduleforge/solvers/fasthenry_run.py, ported from research/scripts/o006_p4/run_fh.py,
@@ -78,8 +78,8 @@ runs:
 - T0385-builder-20261116T123616-1b28
 created_by: planner:T0374
 created_at: '2026-11-16T01:45:09+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0230
 target: null
 lens: null
 trigger: null
@@ -182,3 +182,7 @@ history:
 - outcome: full_gate_passed
   summary: 641b14d6bf61b7332ca58bbe8c812875b905f0f5
   at: '2026-11-17T01:05:10+00:00'
+- outcome: merge_approved
+  summary: I0230
+  replan: false
+  at: '2026-11-17T01:49:38+00:00'
