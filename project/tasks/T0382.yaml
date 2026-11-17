@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: running
+status: needs_founder
 depends_on:
 - T0377
 - T0378
@@ -647,3 +647,138 @@ history:
   summary: 'founder session: I0234 resolved; src fixes moved to T0437 (builder); T0439''s dev-run brief
     folded into attempt 3; waits for T0437'
   at: '2026-11-17T05:57:36+00:00'
+- attempt: 3
+  outcome: agent_finished
+  summary: 'Blocked: I did not start the development run, because this branch does not have T0437''s code
+    and agents cannot merge.
+
+
+    The packet''s first step for attempt 3 is "merge current main into this branch first". Everything
+    after it needs main''s code: the --dev run "on the code that will be frozen", --freeze-report, a complete
+    E011.dev_jobs.json and research/notes/e011-dev-run.md.
+
+    - **T0437 is not in the branch.** HEAD 5cd9749d has no T0437 commit. `git branch --contains f080880c`
+    lists main and T0388''s branch, not this one. main has 65 commits that HEAD lacks, including control.py,
+    nulls.py and D0026.
+
+    - **I cannot merge.** mf-git forbids it ("If you need something from main that is not in your branch,
+    report blocked and say what"). The guard hook even refused a read-only `git merge-base`. The orc'
+  report:
+    status: blocked
+    failure_class: none
+    summary: "Blocked: I did not start the development run, because this branch does not have T0437's\
+      \ code and agents cannot merge.\n\nThe packet's first step for attempt 3 is \"merge current main\
+      \ into this branch first\". Everything after it needs main's code: the --dev run \"on the code that\
+      \ will be frozen\", --freeze-report, a complete E011.dev_jobs.json and research/notes/e011-dev-run.md.\n\
+      - **T0437 is not in the branch.** HEAD 5cd9749d has no T0437 commit. `git branch --contains f080880c`\
+      \ lists main and T0388's branch, not this one. main has 65 commits that HEAD lacks, including control.py,\
+      \ nulls.py and D0026.\n- **I cannot merge.** mf-git forbids it (\"If you need something from main\
+      \ that is not in your branch, report blocked and say what\"). The guard hook even refused a read-only\
+      \ `git merge-base`. The orchestrator only takes main into a branch at merge time (loop.py `_merge`\
+      \ → `gitops.update_from_main`), not when an attempt starts.\n- **I did not work around it.** Running\
+      \ against an exported copy of main would break that rule. It would also leave the freeze hashes\
+      \ and code stamp describing main's code, not this worktree's. And a run on this branch's code would\
+      \ produce rows that D0026 item 3 and the packet already rule out (\"no development row or pin from\
+      \ before T0437 carries over\").\n\n**Done in scope; none of it depends on T0437's code:**\n- **Review\
+      \ T0444, `no_moves`:**\n  - e011_metrics.py accepts `no_moves` as a terminal kind and refuses it,\
+      \ `step_limit` or `budget` when `capped` is false.\n  - e011_run.terminal now maps a null's `no_moves`\
+      \ and the search's `stop_reason == 'no_moves'` to `(no_moves, capped=True)`. Before, both mapped\
+      \ to `(local_optimum, False)`, so a null that never moved counted as a resolved failure.\n  - The\
+      \ selftest plants a table with 5 `no_moves` and 3 `local_optimum` widen draws and checks the result\
+      \ is resolved 3, paired 8, not beaten. It also checks that the validator refuses `no_moves` with\
+      \ `capped` false.\n  - The spec adds `frozen.nulls.no_moves_rule`, worded for the founder to confirm,\
+      \ and the A3 metric text names which kinds are capped.\n- **Null rows** for widen and compact now\
+      \ carry `seed_in_domain` and `n_neighbours_step0` (packet step 4(b)). The runner raises if a null\
+      \ was seeded outside the domain. On this branch's old nulls.py both fields are None (smoke rows\
+      \ confirm it).\n- **Spec text:** it cites D0026 items 1 and 2. `seeds.rule` names T0437's entropy\
+      \ list (DEGRADE_TAG = 0x4D460D01 first). `prerequisites_pending` now says the fixes are on main\
+      \ and not in this branch.\n\nCommands run, with exit codes:\n- `uv run python experiments/runners/e011_run.py\
+      \ --selftest` → 0 (SELFTEST PASS, run 3 times)\n- `E011_SMOKE_DIR=$TMPDIR/e011smoke_a3 uv run python\
+      \ experiments/runners/e011_run.py --smoke` → 0 (534.5 s; verdict preview INVALID, expected for smoke's\
+      \ single uncounted gen2_0 layout)\n- the definition-of-done spec-validation python → 0\n- `uv run\
+      \ mfos exp check E011` → 0\n- `uv run ruff check experiments/runners/e011_run.py experiments/runners/e011_metrics.py`\
+      \ → 0\n- `uv run ruff check .` → 0\n- `uv run mfos gate --fast` → 0 (\"all gates passed\")\n- the\
+      \ `git merge-base` attempt → refused by the guard hook\n\nDefinition-of-done items that will fail:\n\
+      - E011.dev_jobs.json is still attempt 1's stale schema-1 file, not status complete.\n- research/notes/e011-dev-run.md\
+      \ is not written; it is meant to hold the dev run's results.\n\nNothing is committed."
+    root_cause: The packet tells the agent to merge main into the task branch. mf-git, the guard hook
+      and loop.py all forbid agents from merging, and the orchestrator only merges main into a branch
+      at merge time, not when an attempt starts. So T0437's control.py and nulls.py changes (f080880c),
+      which the development run must use, are not in this worktree.
+    evidence:
+    - '`git log --oneline HEAD | grep -c T0437` gives 0; `git branch --contains f080880c` lists main and
+      task/T0388-…, not task/T0382-…'
+    - '`git log --oneline main ^HEAD | wc -l` gives 65. The src files main changed since: optimize/control.py,
+      optimize/nulls.py, solvers/fasthenry.py, solvers/fasthenry_run.py, solvers/thermal_layout.py, thermal/__init__.py'
+    - 'The guard hook blocked the shell command containing `git merge-base`: ''[mfos guard] blocked shell
+      command: history rewriting/merging is the orchestrator''s job'''
+    - 'tools/mfos/mfos/loop.py `_merge` (around line 641) calls `git.update_from_main` only when integrating.
+      The `_merge_conflict` docstring says ''agents may not merge (policy: git merge is denied to them)'''
+    - '`git log main ^HEAD -- experiments/runners experiments/drafts/E011.yaml experiments/drafts/E011.dev_jobs.json
+      research/o008_e011_dev` is empty, so no conflict is expected'
+    - 'T0437''s diff, read with `git show f080880c`, is additive: proxy_descent(step_mm=0.5); null_widen/null_compact(dies_fixed=False);
+      NullResult.stats gains seed_in_domain and n_neighbours_step0; NO_MOVES terminal; degrade_entropy
+      = [DEGRADE_TAG, seed, li, j, a], recorded as ''entropy'' in each attempt log'
+    - selftest exit 0 (2.6 s), smoke exit 0 (534.5 s), exp check exit 0, spec-validation exit 0, ruff
+      exit 0, fast gate exit 0. The smoke rows show widen/compact seed_in_domain None on the pre-T0437
+      nulls.py
+    recommended_actions:
+    - 'Founder or orchestrator: in /Users/lukeskywalker/mf/wt/T0382 run `git merge --no-edit main` (what
+      gitops.update_from_main does), run the fast gate, commit, then `uv run mfos task retry T0382`. Main
+      touched none of this task''s files, so no conflict is expected.'
+    - Consider having the orchestrator run update_from_main when an attempt starts whenever main_code_moved()
+      is true, since briefs that say 'merge main first' cannot be carried out by agents.
+    - 'Next attempt: run `e011_run.py --dev` for 2D_Case_2R and 2D_Case_4 from scratch, resuming across
+      2-hour commands. Then run --freeze-report, write the complete manifest with VM sizing, and write
+      research/notes/e011-dev-run.md. Check that seed_streams_distinct reports control_entropy_domain_tagged
+      True and that the null rows'' seed_in_domain is filled.'
+    - 'Founder: confirm or change frozen.nulls.no_moves_rule (a no_moves null or search run is capped,
+      never a resolved failure for A3) before registration.'
+    files_written:
+    - experiments/drafts/E011.yaml
+    - experiments/runners/e011_metrics.py
+    - experiments/runners/e011_run.py
+    - research/o008_e011_dev/attempt3.md
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    confidence: 0.9
+    affects_acceptance_criteria: false
+- attempt: 3
+  outcome: blocked
+  summary: agent reported blocked
+  failure_output: "Blocked: I did not start the development run, because this branch does not have T0437's\
+    \ code and agents cannot merge.\n\nThe packet's first step for attempt 3 is \"merge current main into\
+    \ this branch first\". Everything after it needs main's code: the --dev run \"on the code that will\
+    \ be frozen\", --freeze-report, a complete E011.dev_jobs.json and research/notes/e011-dev-run.md.\n\
+    - **T0437 is not in the branch.** HEAD 5cd9749d has no T0437 commit. `git branch --contains f080880c`\
+    \ lists main and T0388's branch, not this one. main has 65 commits that HEAD lacks, including control.py,\
+    \ nulls.py and D0026.\n- **I cannot merge.** mf-git forbids it (\"If you need something from main\
+    \ that is not in your branch, report blocked and say what\"). The guard hook even refused a read-only\
+    \ `git merge-base`. The orchestrator only takes main into a branch at merge time (loop.py `_merge`\
+    \ → `gitops.update_from_main`), not when an attempt starts.\n- **I did not work around it.** Running\
+    \ against an exported copy of main would break that rule. It would also leave the freeze hashes and\
+    \ code stamp describing main's code, not this worktree's. And a run on this branch's code would produce\
+    \ rows that D0026 item 3 and the packet already rule out (\"no development row or pin from before\
+    \ T0437 carries over\").\n\n**Done in scope; none of it depends on T0437's code:**\n- **Review T0444,\
+    \ `no_moves`:**\n  - e011_metrics.py accepts `no_moves` as a terminal kind and refuses it, `step_limit`\
+    \ or `budget` when `capped` is false.\n  - e011_run.terminal now maps a null's `no_moves` and the\
+    \ search's `stop_reason == 'no_moves'` to `(no_moves, capped=True)`. Before, both mapped to `(local_optimum,\
+    \ False)`, so a null that never moved counted as a resolved failure.\n  - The selftest plants a table\
+    \ with 5 `no_moves` and 3 `local_optimum` widen draws and checks the result is resolved 3, paired\
+    \ 8, not beaten. It also checks that the validator refuses `no_moves` with `capped` false.\n  - The\
+    \ spec adds `frozen.nulls.no_moves_rule`, worded for the founder to confirm, and the A3 metric text\
+    \ names which kinds are capped.\n- **Null rows** for widen and compact now carry `seed_in_domain`\
+    \ and `n_neighbours_step0` (packet step 4(b)). The runner raises if a null was seeded outside the\
+    \ domain. On this branch's old nulls.py both fields are None (smoke rows confirm it).\n- **Spec text:**\
+    \ it cites D0026 items 1 and 2. `seeds.rule` names T0437's entropy list (DEGRADE_TAG = 0x4D460D01\
+    \ first). `prerequisites_pending` now says the fixes are on main and not in this branch.\n\nCommands\
+    \ run, with exit codes:\n- `uv run python experiments/runners/e011_run.py --selftest` → 0 (SELFTEST\
+    \ PASS, run 3 times)\n- `E011_SMOKE_DIR=$TMPDIR/e011smoke_a3 uv run python experiments/runners/e011_run.py\
+    \ --smoke` → 0 (534.5 s; verdict preview INVALID, expected for smoke's single uncounted gen2_0 layout)\n\
+    - the definition-of-done spec-validation python → 0\n- `uv run mfos exp check E011` → 0\n- `uv run\
+    \ ruff check experiments/runners/e011_run.py experiments/runners/e011_metrics.py` → 0\n- `uv run ruff\
+    \ check .` → 0\n- `uv run mfos gate --fast` → 0 (\"all gates passed\")\n- the `git merge-base` attempt\
+    \ → refused by the guard hook\n\nDefinition-of-done items that will fail:\n- E011.dev_jobs.json is\
+    \ still attempt 1's stale schema-1 file, not status complete.\n- research/notes/e011-dev-run.md is\
+    \ not written; it is meant to hold the dev run's results.\n\nNothing is committed."
+  at: '2026-11-17T16:53:08+00:00'

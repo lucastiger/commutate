@@ -1,0 +1,31 @@
+id: I0244
+kind: decision
+subject: 'T0382 blocked: the agent reports the task impossible or mis-specified'
+summary: "dator refuses `no_moves` with `capped` false.\n  - The spec adds `frozen.nulls.no_moves_rule`,\
+  \ worded for the founder to confirm, and the A3 metric text names which kinds are capped.\n- **Null\
+  \ rows** for widen and compact now carry `seed_in_domain` and `n_neighbours_step0` (packet step 4(b)).\
+  \ The runner raises if a null was seeded outside the domain. On this branch's old nulls.py both fields\
+  \ are None (smoke rows confirm it).\n- **Spec text:** it cites D0026 items 1 and 2. `seeds.rule` names\
+  \ T0437's entropy list (DEGRADE_TAG = 0x4D460D01 first). `prerequisites_pending` now says the fixes\
+  \ are on main and not in this branch.\n\nCommands run, with exit codes:\n- `uv run python experiments/runners/e011_run.py\
+  \ --selftest` → 0 (SELFTEST PASS, run 3 times)\n- `E011_SMOKE_DIR=$TMPDIR/e011smoke_a3 uv run python\
+  \ experiments/runners/e011_run.py --smoke` → 0 (534.5 s; verdict preview INVALID, expected for smoke's\
+  \ single uncounted gen2_0 layout)\n- the definition-of-done spec-validation python → 0\n- `uv run mfos\
+  \ exp check E011` → 0\n- `uv run ruff check experiments/runners/e011_run.py experiments/runners/e011_metrics.py`\
+  \ → 0\n- `uv run ruff check .` → 0\n- `uv run mfos gate --fast` → 0 (\"all gates passed\")\n- the `git\
+  \ merge-base` attempt → refused by the guard hook\n\nDefinition-of-done items that will fail:\n- E011.dev_jobs.json\
+  \ is still attempt 1's stale schema-1 file, not status complete.\n- research/notes/e011-dev-run.md is\
+  \ not written; it is meant to hold the dev run's results.\n\nNothing is committed."
+refs:
+- T0382
+- O008
+options:
+- re-scope, then `mfos task retry T0382`
+- cancel
+- give guidance
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-17T16:53:08+00:00'
+resolved_at: null
+resolved_by: null
