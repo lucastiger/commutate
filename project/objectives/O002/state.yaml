@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 2
 max_replans: 3
 needs_replan: false
-spent_usd: 46.341
+spent_usd: 48.4503
 budget_override_usd: null
 log:
 - 'founder approved I0211: Patch route approved, limited to the bound F3 selects; the other functions
@@ -20,5 +20,11 @@ log:
 - 'correction (session 2026-11-16 17:33): T0412 had already completed at 16:16 before the decline, proposing
   T0419 (I0223, awaiting the founder); its status is restored to done. The decline only clears the flag
   so no further replan starts'
+- 'founder decision 2026-11-17T01:26:21+00:00 (recorded by the founder session, from T0396 and review
+  T0420): E007 uses CISpec(scheme=''woodruff'', level=0.94, cluster=''layout''), one-sided 97 % bounds
+  for A1-A4 and K1-K3 (more conservative than the objective''s ''upper 95 % bound'', which under-covers
+  in some simulated cells); the sample is 300 layouts, 20 per (family, dies) stratum over 15 strata, the
+  fixed allocation of research/o002_e007/f3_simulation.json (t3 power 0.898; about 52 CPU-hours and $15
+  VM)'
 evidence_rules: 2
 frozen_hash: sha256:f52c33de4a6472294c7bb3f5801c7bee97f9225b143175b28ab905f15f258134

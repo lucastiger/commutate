@@ -67,7 +67,32 @@ description: 'Draft experiments/drafts/E004.yaml and start experiments/runners/e
   Founder 2026-11-16 17:55 UTC: the stagewise rule confirmed (every step of a compound DRC-clean, not
   only the final layout); E004''s frozen rule text states it. The span''s lower end is set by the founder
   from T0387''s span_reach.json (2D_Case_4 and gen2_0 only, per F2); the registration check on the judged
-  references stays as O004 states it.'
+  references stays as O004 states it.
+
+
+  T0387''s report (founder session, 2026-11-17): perturb._draw_params evaluates long_sides on every net,
+  so draw raises ''edge has copper on both sides'' on any layout where one net''s long side has copper
+  on both sides. On gen2_0 this happens for DC+ and PHASE, so draw(gen2_0, {trace_width: 1}) raises. Fix
+  it in perturb.py, either by evaluating long sides only for the nets the drawn move uses or by a stated
+  rule for a both-sided edge, with a test on gen2_0 (at the long_sides level, since T0416 item 3 makes
+  draw reject gen2_0, which is off the 1 mm lattice) and on a synthetic layout. Do not run draw or long_sides
+  on 2D_Case_2R or 2D_Case_6 to check (F2: development work uses 2D_Case_4, gen2_0 and development seeds
+  only). Instead, the registration stage refuses before any solve if draw raises on a judged reference,
+  and names the net.
+
+
+  T0387''s span_reach.json (founder session, 2026-11-17): on 2D_Case_4 the frozen rules reach 0.7616 at
+  the lowest (only through a compound; single moves bottom out at 0.8732, a die-row shift), and more than
+  7,600 distinct compounds lie below 0.90; single trace-width, terminal-copper and wire-landing moves
+  never go below 0.90 (minima 0.915, 0.981, 0.963). So whether a sealed-seed draw meets the span check
+  depends on the allocation, not only on the ranges. Before the founder sets the span''s lower end: simulate
+  the registration span check on 2D_Case_4 with the frozen allocation on at least 200 development seeds
+  (never E004''s sealed seed), and report the fraction of seeds whose draw meets the check for lower ends
+  0.75, 0.78, 0.80 and 0.85 (each with at least 3 below 0.90 and the upper end 0.98), plus the distribution
+  of each draw''s lowest L1 ratio. This is development work under F2 (Case 4, development seeds, L1 only).
+  Keep the lower end as the frozen 0.75 in the code until the founder amends it.
+
+  '
 context_files:
 - project/objectives/O004/objective.yaml
 - experiments/specs/E010.yaml

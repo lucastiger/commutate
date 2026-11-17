@@ -89,6 +89,17 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   on two or three direct runs above 5k filaments (T0428 measured ratios of 1.24 to 1.26 to the estimate,
   so the effective margin of about 1.18 is too small), and state the fit in the code comment.
 
+
+
+  T0387''s report (founder session, 2026-11-17): (1) an l2_layout 0.25 mm solve on 2D_Case_4 peaks at
+  15.8-15.9 GB per process (research/notes/l2-thread-calibration.md; research/o006_p3/solves/case4_base__lat0.25.json),
+  not the 8 GB earlier briefs assumed: E004''s cost plan and VM sizing use the measured figure. (2) F7(b)
+  passed locally: the 2D_Case_6 0.25 mm solve has 1,095,080 unknowns and took 595 s and 4.75 GB, with
+  GMRES converged. (3) L1 overstates large effects: l2_layout at 0.5 mm minus L1 ranges from -0.017 to
+  +0.046 over the 11 Case 4 development pairs (the stand-in is 0.7616 at L1 and 0.8074 at 0.5 mm). The
+  range the solvers judge is therefore narrower than the registered L1 span; beside the L1 span, the spec
+  reports the covered range on the solvers'' ratios, as O004 states.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml

@@ -55,7 +55,18 @@ description: 'Prerequisite: the founder has applied research/o002_e007/e007_metr
   5.0 mm dies. The development run therefore reports A1, A2, A4 and A5 per stratum (every die count and
   every die size E007 draws: 4.0, 4.5, 5.0, 5.5 mm) on a development seed not used by T0392 or T0395,
   and states per stratum whether A4 <= 0.3 holds. The calibration factor''s family spread at 4.0 mm (0.0059,
-  above the design note''s 0.005 line) is re-measured on these rows and reported, with its effect on A2.'
+  above the design note''s 0.005 line) is re-measured on these rows and reported, with its effect on A2.
+
+
+  Review T0420 of T0396 (founder session, 2026-11-17): (1) Before registration, record cpu_s and wall_s
+  for one level-2 reference solve (the cost plan''s 100 CPU-hour check assumes level-2 CPU time equals
+  wall time; above about 2.7 effective threads the budget would be exceeded under strict CPU accounting).
+  If no level-2 solve fits the local limit, say so and list it for the burst. (2) Re-run research/o002_e007/stats_sim.py
+  with error scales measured on the frozen L1''s development rows in all six (family, band) cells (only
+  side_by_side/6 and u_shaped/2 were measured in n1), and report whether V4 still covers and the power
+  at m = 20.
+
+  '
 context_files:
 - experiments/drafts/E007.yaml
 - experiments/runners/e007_run.py

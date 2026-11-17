@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Selection rule and candidate set were changed after results were seen",
+      "detail": "The rule was 'declared before any coverage was computed'. It was AMENDED after the m = 6/8 alt cells were seen: under the original rule every variant failed at m = 6 under t3, so none would have been eligible. V4 (V3 at one-sided 0.97) was then added after round 1, and V1/V2 were dropped. Both changes are disclosed, and round 2 used fresh seeds (SEED + 1). F3 does not require coverage at sample sizes E007 will not use, so the amended rule still meets F3. This is still a forking path, and the founder should see it at registration.",
+      "evidence": "f3_simulation.json selection_rule and bound.round2; stats_sim.py VARIANTS/PREFERENCE comments; round1.min_coverage alt|t3|6 is 0.926-0.934 for V1-V3",
+      "suggested_check": "Keep the fresh-seed confirmation (done in this review) as part of the registration record.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Selected bound is one-sided 97 %, not the objective's 'upper 95 % bound'; the JSON coverage definition mislabels it",
+      "detail": "V4 uses CISpec level 0.94, so lo and hi are one-sided 97 % bounds. The bound at nominal one-sided 95 % (V3) under-covers in some cells: kill|t3|20 is 0.932 and alt|normal|24 is 0.941, about 3 MC SE below 0.95. The 97 % bound is conservative for both the pass and the kill decisions, and the row contract states this. But f3_simulation.json's coverage_definition still says 'one-sided 95 % bound', and the objective text says 'upper 95 % bound'. The deviation is founder-visible only through the row contract.",
+      "evidence": "f3_simulation.json bound.ci_spec.level 0.94; coverage_definition string; min_coverage_by_variant_and_m V3 values",
+      "suggested_check": "Fix the coverage_definition wording and flag level 0.94 explicitly for founder approval at registration.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "'Smallest sample' is resolved only on the grid {12,16,20,24,32}, and A3 is not at 0.6 x its threshold in the power scenario",
+      "detail": "Power under t3 is 0.748 at m = 16 and 0.898 at m = 20, so some m between 17 and 19 might also reach 0.8. In the alt scenario A1, A2 and A4 are calibrated to 0.6 x their thresholds, but A3's truth follows from A4's: about 0.094 K against 0.6 K. A3's power is therefore trivially 1.0, and the joint power is really the power for A1, A2 and A4. The docstring discloses this ('A3 follows'), and with the A3/A4 coupling it cannot easily be avoided.",
+      "evidence": "power_by_m in f3_simulation.json; cells alt|t3|20 truth A3 0.0939; stats_sim.py SCENARIOS",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Reference CPU-hours count level-2 wall time; level-2 CPU/wall ratio not measured",
+      "detail": "cost() takes CPU-hours to equal solve wall-hours, using the CPU/wall ratio of 0.94 measured for level 1 in n1. Level 2 (28.86 h, run on the burst VM) has no measured CPU/wall ratio. If those solves run with more than about 2.7 effective threads, the 100 CPU-hour budget would be exceeded under a strict CPU-time accounting. Small items are also left out: the F4 constant-k ablation and the F2 null (a). The headline figure is 51.96 h against 100 h.",
+      "evidence": "stats_sim.py cost(): 'CPU-hours = solve wall-hours, single process; n1: cpu_s / wall_s = 0.94'; level-2 times are wall estimates from f1_dev_check",
+      "suggested_check": "Record cpu_s/wall_s for one level-2 solve before registration.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Per-stratum reporting rule fixed before the run (F3 detection) is not among the deliverables",
+      "detail": "F3 also asks that per-stratum values be reported by a rule fixed before the run. A2 is to be reported per stratum and A4 per die-count band. The row contract and the patch do not fix that rule. It probably belongs to the E007 spec task rather than this one.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "A4's null terms are not independent across layouts",
+      "detail": "spread_null_K is a leave-one-layout-out mean over the other layouts of the same (stratum, load, switch). Each null term therefore depends on about 19 other layouts, while the jackknife gives each term only its own layout. The simulation builds this structure through switch_rows, and A4/K3 coverage is 0.996-1.0 because the Bonferroni ratio is conservative. No coverage problem results, but the stated 'layouts as independent units' assumption is only approximate for the denominator.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: pytest on test_e007_metrics.py (11 passed), git apply --check on the patch (OK), ruff check research/o002_e007 (clean), and the JSON assertion one-liner (passes: every coverage >= 0.95, power_joint 0.898, 300 layouts in 6 family x band cells, 51.96 CPU-h).",
+    "Applied the patch's package hunks to a scratch copy of HEAD's package. The block between the metrics.py markers in e007_metrics.py appears verbatim in the patched metrics.py, and itertools, math and scipy.stats as _st are already imported there.",
+    "Ran check_patch.py with and without --baseline. Patched: 134 passed, 2 failed, 1 error. Baseline: 128 passed with the same 2 failures and 1 error, all relative-path tests that also fail without the patch. The 6 new woodruff/quantile_ci tests pass in the patched package.",
+    "Re-derived the hand case in test_woodruff_bound_on_pair_terms by hand: jackknife shares (1, 0, 1), variance 4/9, se 2/3, levels 5/6 and 1/6 over the sorted terms 1, 2, 3. It matches the test's expected values.",
+    "Recomputed f3_simulation.json's coverage (min over the n1/alt/edge/kill scenarios at m = 20 for V4) and power_joint from its own cells. Both match the stored summary exactly.",
+    "Fresh-seed Monte Carlo with a truth function I wrote myself (pooled p95 of the terms, leave-one-out null, hottest die by the reference): 1000 datasets each of alt|t3|20, kill|t3|20 and edge|t3|20, judged by the selected bound (t, outward, Bonferroni, level 0.94). The truths match the stored ones within about 0.5 %. Coverage of the 7 statistics ranges from 0.963 (alt|t3 A1) to 1.0, against stored values of 0.965-1.0. Power at alt|t3|20 is 0.908, against 0.898 stored.",
+    "Adversarial case outside the simulated model: L1 error scaled by (dies/6)^2, so the 6-die strata own the tail and the effective number of units drops. Over 800 datasets each under t3 and normal, coverage of the selected bound was 0.981-1.0 for all seven statistics.",
+    "Checked that quantile_terms produces the same terms as the evaluator's point statistic: on a simulated m = 20 dataset, the q-quantile of the bound's terms equals mfos.metrics.compute for A1-A3 at both loads and for A4's ratio (max abs difference 0). A1 has 2850 pair terms over 300 layout units per load.",
+    "Read the evaluator: _where matches the simulation's row filter. The patched metric_value passes no variant keywords, so the defaults (t, outward, bonferroni) plus the spec's level reproduce V4 exactly.",
+    "Checked the cost arithmetic by hand: level 1 is 2 x (20 x 1980 s + 1764 s) = 22.98 h; level 2 is 2 x (6 x 3114 s + 6 x 5544 s) = 28.86 h; total 51.96 h."
+  ],
+  "caveats": [
+    "Coverage holds at the selected allocation, m = 20 per stratum (300 layouts), and in the alt scenario at larger m. It does not hold at m = 6, and the selection rule was amended to allow for that.",
+    "The selected bound is one-sided 97 % (CISpec level 0.94). The nominal one-sided 95 % Woodruff bound under-covers in some cells, so E007 judges A1-A4 and K1-K3 at 97 %, not at the objective's stated 95 %. This is conservative, but the founder must approve it.",
+    "The coverage and power evidence comes from a synthetic generative model calibrated to n1's measurements, with assumed rho = 0.9 and linear interpolation between 2 and 6 dies. It does not come from the real development rows themselves, and it only tests the normal and t3 error models F3 requires.",
+    "Joint power is effectively the power for A1, A2 and A4 at 0.6 x their thresholds. A3's true value in that scenario is far below 0.6 x 1 K.",
+    "The 100 CPU-hour budget check rests on CPU time equalling wall time for level-2 solves, which has not been measured.",
+    "The patch to the protected package is a draft only. It applies cleanly to HEAD and needs founder approval to land."
+  ]
+}

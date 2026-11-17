@@ -4,7 +4,7 @@ title: 'F7(b)-(d) l2_layout check on Case 4 development pairs: ladder, ratio est
   VM job list'
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0386
 description: 'This tests the cheapest likely failure before any E004 design spend: P3''s l2_layout ratio
@@ -124,3 +124,147 @@ history:
 - outcome: capacity_resume
   summary: 39796813-99fd-481c-969b-b4bd94d5344e
   at: '2026-11-17T00:06:20+00:00'
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I could not measure F7(c)''s exclusion rate yet: none of the 11 development pairs has its
+    0.25 mm level, so all 11 are still pending. The 0.25 mm solve on Case 4 needs about 15.9 GB per process,
+    not the 8 GB the brief assumed, so it cannot run on this Mac. All six deliverables exist, `pilot_l2.py
+    --check` exits 0, `mfos gate --fast` passes, and the work is committed as ea2678c7 on the task branch.
+
+
+    Steps 1, 2 and 4 are done, and so is F7(b); step 3 is partial.
+
+
+    - **(1) Pairs, `dev_pairs.json`:** 10 pairs drawn with `perturb.draw` on development seed 20261116,
+    two per move kind, plus the stand-in. The stand-in is T0386''s pinned compound, labelled "lowest reachable,
+    r = 0.7616, stands in for r <= 0.75"; its L1 ratio recomputes to 0.7616 / 0.7613 at 20 / 10 MHz. Every
+    move kind is present, fou'
+  report:
+    summary: "I could not measure F7(c)'s exclusion rate yet: none of the 11 development pairs has its\
+      \ 0.25 mm level, so all 11 are still pending. The 0.25 mm solve on Case 4 needs about 15.9 GB per\
+      \ process, not the 8 GB the brief assumed, so it cannot run on this Mac. All six deliverables exist,\
+      \ `pilot_l2.py --check` exits 0, `mfos gate --fast` passes, and the work is committed as ea2678c7\
+      \ on the task branch.\n\nSteps 1, 2 and 4 are done, and so is F7(b); step 3 is partial.\n\n- **(1)\
+      \ Pairs, `dev_pairs.json`:** 10 pairs drawn with `perturb.draw` on development seed 20261116, two\
+      \ per move kind, plus the stand-in. The stand-in is T0386's pinned compound, labelled \"lowest reachable,\
+      \ r = 0.7616, stands in for r <= 0.75\"; its L1 ratio recomputes to 0.7616 / 0.7613 at 20 / 10 MHz.\
+      \ Every move kind is present, four pairs have r >= 0.98, and every layout is DRC-clean and on all\
+      \ three lattices.\n- **(2) Ratios at 1.0 and 0.5 mm, F7(d):** l2_layout ran at 1.0 and 0.5 mm on\
+      \ all 12 Case 4 layouts. L1 overstates large effects: the stand-in is 0.7616 at L1 but 0.8074 at\
+      \ 0.5 mm, and dev03 and dev00 are off by 0.017 and 0.013. The L1 span checked at registration is\
+      \ therefore wider than the range l2_layout and FastHenry will actually judge.\n- **(3) Ladder on\
+      \ the base and stand-in (partial):** the base ladder is complete. P3's 0.25 mm and thk_f files are\
+      \ reused because this task reproduced P3's values to within 1.4e-14. For the stand-in, the 1.0,\
+      \ 0.5, thk_c and fil_f levels are done; 0.25 mm and thk_f are on the VM list.\n  - The stand-in's\
+      \ filament term alone is 0.0018 / 0.0023 (10 / 20 MHz), about half of F1's 0.005 cap.\n  - Its 1.0\
+      \ to 0.5 mm step is 0.106 %, just above the 0.1 % step floor, so F1's estimate falls back to the\
+      \ ordinary three-level rule.\n- **F7(b):** the Case 6 0.25 mm solve has only 1.095 M unknowns, so\
+      \ it ran locally: L = 7.0539 / 7.0019 nH, 595 s, 4.75 GB peak, solver converged. It is not in the\
+      \ VM list.\n- **(4) VM list, `vm_jobs_l2.json`:** 42 jobs (11 at 0.25 mm, plus thk_f, thk_c and\
+      \ fil_f for each pair), run 4 at a time on n2d-custom-8-81920-ext, about 7.7 h and about $3.4. The\
+      \ command is in the file; it needs this branch as MF_REF.\n- **(5) Exclusion rate so far:** 0 of\
+      \ 2 complete ladders, both of them P3's old pairs. Only P3's trace_width pair is a geometry the\
+      \ frozen rules produce.\n  - F7's trigger has not fired but is undecided until the VM results are\
+      \ in.\n  - At the observed rate the chance of no exclusion among the 13 judged pairs is 1.0, but\
+      \ with only two pairs the 95 % bound allows a chance as low as 3.5e-9, so the figure says nothing\
+      \ yet.\n  - Projection (an estimate, not a result): if the missing 0.25 mm steps contract like P3's\
+      \ die-shift pair (rho = 0.56), nothing is excluded. At rho = 0.8, dev01 and the stand-in are excluded,\
+      \ the trigger fires, and the chance of no exclusion among 13 is 0.074.\n- **Span reach, `span_reach.json`:**\
+      \ [0.75, 0.98] with at least 3 pairs below 0.90 is reachable on neither development layout.\n  -\
+      \ **Case 4:** range 0.7616 to 1.3407 at 20 MHz (0.7613 to 1.3400 at 10 MHz). The lowest reachable\
+      \ lower end is 0.7616, and 14 single die-row shifts are below 0.90. My search reached 0.7616 only\
+      \ with T0386's pinned compound as one of its starting points; without it, it stopped at 0.7895.\n\
+      \  - **gen2_0:** it is off the 1 mm lattice. `perturb.draw` cannot draw trace_width there at all,\
+      \ because `long_sides` raises on DC+ and PHASE. Applying moves directly reaches 0.8880 to 1.1590;\
+      \ what `draw` can actually draw bottoms out at 0.9445, with no pair below 0.90.\n\nProcess deviations:\n\
+      - For about 10 minutes three light processes ran at once (under 5 GB in total), because the sandbox\
+      \ denies process listing and I could not stop one.\n- Two fil_f solves (5.9 GB) and one 0.5 mm solve\
+      \ (5.4 GB) went over the 5 GB budget. I could not verify swap below 4 GB, since `sysctl vm.swapusage`\
+      \ is denied.\n- The joint search stage was added after seeing Case 4's descent result and before\
+      \ gen2_0 was searched.\n\nCommands run:\n- `pilot_l2.py`: `--pairs` (exit 0), `--run-local` (all\
+      \ 32 solves rc 0), `--span case4` (twice) and `--span gen2_0` (once more after a crash I fixed),\
+      \ `--solve-one case6_recon lat0.25` (rc 0), `--assemble` (failed twice, then exit 0), `--check`\
+      \ (exit 0).\n- `uv run ruff check research/o004_f7/pilot_l2.py`: exit 0.\n- `uv run mfos gate --fast`:\
+      \ exit 0, all gates passed."
+    status: partial
+    failure_class: infrastructure
+    root_cause: F7(c)'s exclusion rate cannot be measured locally because a 0.25 mm l2_layout solve on
+      2D_Case_4 peaks at 15.8-15.9 GB per process (measured in research/notes/l2-thread-calibration.md
+      and P3's VM records). That is above this Mac's 10 GB single-process cap, and l2_layout has no memory
+      knob short of editing src/. The packet's figure of about 8 GB per solve is not what was measured.
+      Those solves, with the thk_f levels (8.1 GB, swap below 4 GB not verifiable in the sandbox), are
+      listed for the founder's burst VM.
+    confidence: 0.8
+    affects_acceptance_criteria: true
+    evidence:
+    - 'Fact: the Case 4 0.25 mm solve peaks at 15.8-15.9 GB per process (l2-thread-calibration table;
+      research/o006_p3/solves/case4_base__lat0.25.json peak_mem_mb 15801).'
+    - 'Fact: this task''s base lat1.0 and lat0.5 solves, and the lat1.0 solves of P3''s two pairs, reproduce
+      P3''s L to at most 1.4e-14 relative. P3''s lat0.25 files carry the current fingerprints, and P3''s
+      Mac files carry an older fingerprint value for the same geometry (f7c_local.json p3_reuse_check).'
+    - 'Fact: stand-in ratios at 20 MHz are 0.80820 (1.0 mm), 0.80736 (0.5 mm), 0.80815 (thk_c) and 0.80660
+      (fil_f). Its filament term is 0.00180 / 0.00228 (10 / 20 MHz), against F1''s cap of 0.005. Its 1.0
+      to 0.5 mm step is -0.106 % (relative).'
+    - 'Fact: P3''s die_shift pair has a complete-ladder estimate of 0.00172 / 0.00177 and P3''s trace_width
+      pair 0.00162 / 0.00144; both are counted. The frozen die_row_shift HS (0, -1) is not P3''s die_shift
+      geometry; the frozen trace_width DC- edge 0 +2 is P3''s trace_width geometry.'
+    - 'Fact: l2_layout at 0.5 mm minus L1, at 20 MHz, ranges from -0.0167 to +0.0457 across the 11 pairs
+      (stand-in +0.0457).'
+    - 'Fact: the Case 6 reconstruction at 0.25 mm has 1,095,080 unknowns; L = 7.0539 / 7.0019 nH; 595
+      s; 4.75 GB peak; GMRES flags 0 / 0.'
+    - 'Fact: Case 4 span is 0.7616 to 1.3407 at 20 MHz (0.7613 to 1.3400 at 10 MHz). The lowest single
+      move is a die-row shift at 0.8732, and 14 single die-row shifts are below 0.90.'
+    - 'Fact: on gen2_0, perturb.long_sides raises ''edge has copper on both sides'' for DC+ and PHASE,
+      and draw(gen2_0, {trace_width: 1}) raises ValueError. gen2_0 is not on the 1 mm lattice. Applying
+      moves directly reaches 0.8880 to 1.1590; draw without trace_width bottoms out at 0.9445.'
+    - 'Inference: with rho = 0.8 for the missing 0.25 mm step, dev01 (about 0.0076) and the stand-in (about
+      0.0060) exceed the 0.005 cap; with rho = 0.56 no pair does (f7c_local.json projection_inference).'
+    alternative_explanations:
+    - explanation: 'The F7 trigger will fire once the VM data arrive: large-effect pairs (die-row shifts
+        across the row, and the stand-in) fail F1, because their lateral ratio step contracts slowly and
+        the frozen filament term already takes about half the cap.'
+      how_to_discriminate: Run the 11 lat0.25 and the thk_f, thk_c and fil_f VM jobs, then `pilot_l2.py
+        --assemble`. The trigger fires if the stand-in or dev01 (or any pair with r <= 0.90) has an estimate
+        above 0.005, or if more than one pair does.
+    - explanation: 'No pair is excluded: the ratio steps contract the way P3''s die-shift pair did (rho
+        of about 0.56), so every estimate stays near 0.001-0.0035, and the 0.25 mm solves are merely expensive.'
+      how_to_discriminate: Same VM run. Every pair is counted with an estimate of at most 0.005 at both
+        frequencies, and the observed rho of each pair is below about 0.7.
+    - explanation: 'The stand-in''s estimate is dominated by the frozen filament-term artefact (P3 §5.3:
+        radial-only bisection overstates the filament error about 40x), so an exclusion would reflect
+        the estimator rather than discretisation error.'
+      how_to_discriminate: Compare the stand-in's filament term with an aspect-keeping fil_f_phi12 solve
+        at 0.5 mm (about 5 GB, runnable locally). If the phi12 term is about 10x smaller, the exclusion
+        is an estimator artefact; that is a criteria question for the founder.
+    discriminating_tests:
+    - 'Founder burst: `MF_REF=task/T0387-f7-b-d-l2-layout-check-on-case-4-develop MF_GCP_PROVISION=0 MF_GCP_SPOT=auto
+      scripts/burst_gcp.sh --cmd "uv sync --all-groups && uv run python research/o004_f7/pilot_l2.py --run-vm
+      --parallel 4 --threads 2" research/o004_f7/solves n2d-custom-8-81920-ext us-central1-a`, then `--assemble`
+      and `--check` locally. This decides the exclusion rate and the trigger.'
+    - A local fil_f_phi12 solve on the stand-in and the base (0.5 mm, about 5 GB) to measure how much
+      of the stand-in's filament term is the known radial-bisection artefact.
+    recommended_actions:
+    - 'Founder: launch the 42-job VM list above (about 7.7 h, about $3.4 projected). After it, rerun `--assemble`
+      so the exclusion rate and F7 trigger become facts.'
+    - 'Founder (span decision): [0.75, 0.98] is not reachable on Case 4 (lowest 0.7616) nor on gen2_0
+      (0.8880 by applying moves directly, 0.9445 by draw). Also note that L1 overstates large effects
+      by up to 0.046, so the span l2_layout and FastHenry will judge is narrower than the registered L1
+      span.'
+    - 'Builder task: `perturb._draw_params` evaluates `long_sides` on every net, so `draw` raises on any
+      layout where one net''s long side has copper on both sides (gen2_0 DC+ and PHASE). Check whether
+      2D_Case_2R and 2D_Case_6 can hit this, with a geometry-only test, before E004 registers.'
+    - 'Founder: decide whether F1''s filament term should use the aspect-keeping path P3 §5.3 identified.
+      The frozen term already takes about half of F1''s 0.5 % cap on the large-effect stand-in.'
+    - Correct the packet's '0.25 mm about 8 GB each' to the measured 15.9 GB in future briefs.
+    files_written:
+    - research/o004_f7/pilot_l2.py
+    - research/o004_f7/dev_pairs.json
+    - research/o004_f7/f7c_local.json
+    - research/o004_f7/vm_jobs_l2.json
+    - research/o004_f7/span_reach.json
+    - research/o004_f7/unknowns_cache.json
+    - research/o004_f7/run_local.log
+    - research/o004_f7/solves/*.json (33 solve records)
+    - research/o004_f7/span_work/case4.json
+    - research/o004_f7/span_work/gen2_0.json
+    - research/notes/o004-f7-l2-pilot.md

@@ -112,7 +112,30 @@ description: 'Draft experiments/drafts/E007.yaml and experiments/runners/e007_ru
   (lateral grid cap 1.5 mm, the four-size calibration table c = 0.98544/0.98284/0.98298/0.98402 from benchmarks/thermal_l1_calibration.py)
   by code hash. The spec states that T0395''s fresh-seed rows (seed 20261395) chose the grid and are development
   rows, never judged evidence, and that sealed seeds must differ from every development seed used so far
-  (E009''s, 20261395, and T0398''s).'
+  (E009''s, 20261395, and T0398''s).
+
+
+  Review T0420 of T0396 (accept with caveats; founder session, 2026-11-17): (1) The spec names the bound
+  exactly: CISpec(scheme=''woodruff'', level=0.94, cluster=''layout''), one-sided 97 % bounds for A1-A4
+  and K1-K3, with K1/K2''s lower bounds at 98.5 % per load. This is more conservative than O002''s ''upper
+  95 % bound'', so the spec flags it as a founder decision (the founder''s answer, when given, is recorded
+  in O002''s state log). Correct the coverage_definition in research/o002_e007/f3_simulation.json, which
+  still says ''one-sided 95 % bound''. (2) The selection rule was amended after round 1 was seen, and
+  V4 was added then. The registration record discloses both and keeps round 2''s fresh-seed confirmation
+  (SEED + 1) and round 1''s numbers. (3) F3 asks that per-stratum values be reported by a rule fixed before
+  the run: the spec fixes it (A2 per (family, dies) stratum, A4 per die-count band, with the statistic
+  and bound for each). (4) A3''s power is trivially 1.0 in the alt scenario, so the joint power of 0.898
+  (t3, m = 20) is really A1, A2 and A4''s power: state it so. (5) The sample size was resolved only on
+  the grid {12, 16, 20, 24, 32}: state it, and do not pick an m between 16 and 20 without a fresh simulation.
+
+
+
+  Founder decision 2026-11-17T01:26:21+00:00 (recorded by the founder session): accept the one-sided 97
+  % bound (CISpec(scheme=''woodruff'', level=0.94, cluster=''layout'')) for A1-A4 and K1-K3, and the sample
+  of 300 layouts (20 per (family, dies) stratum, 15 strata, f3_simulation.json''s fixed allocation). The
+  spec cites this decision (O002 state log) where it states the bound and the allocation.
+
+  '
 context_files:
 - project/objectives/O002/objective.yaml
 - experiments/specs/E009.yaml
