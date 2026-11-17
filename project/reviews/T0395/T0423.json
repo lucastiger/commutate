@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Grid rule deviates from n1's design, and at 4.0 mm it crosses the design note's own refutation line for the transfer of c(s)",
+      "detail": "n1's chosen design fixed H0_MAX at 4 mm. The implementation uses 1.5 mm. The design note invited trying a finer rule on a fresh seed, and the choice was made by a rule written before scoring, so this is a sanctioned and documented change. But section 5 of the note says the transfer of c(s) is refuted if c varies by more than about 0.005 between families at one die size. With the adopted rule it varies by 0.0059 at 4.0 mm. The regression guard for that spread was then set at 0.01 after the data were seen, as its own docstring admits. 'n1's chosen design' therefore holds only with this modification, and the factor's transfer assumption is weakest at 4.0 mm.",
+      "evidence": "The regression test output (reproduced) gives c(4.0 mm) families 0.98839 / 0.98250, spread 0.0059. research/notes/o002-l1-design.md section 5 states the refutation line of about 0.005. The docstring of test_calibration_table_rederived_from_cached_references says the 0.01 guard was 'set after the data were seen'.",
+      "suggested_check": "Before E007 registration, have the founder rule on whether the 0.0059 spread at 4.0 mm is accepted, and record a 4.0 mm cross-family check that includes interleaved.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "On an uncalibrated 3-die interleaved layout the per-die bias varies more than the calibration spread suggests",
+      "detail": "I ran one fresh level-1 reference solve on interleaved/3 at 4.0 mm (a stratum and family absent from the calibration), seed 77770001, 30 W/die. The implied per-die factor (ref rise / FV rise) was 0.970 to 0.982, against the table's 0.98544. The variation within this one layout (0.012) is twice the 0.0059 family spread. A2-type was at most 1.55 %, still under the 1.8 % design target and the 3 % A2 threshold. The switch spread errors were 0.014 K (HS) and 0.042 K (LS). The model is therefore adequate on this case, but the common-mode premise behind a single c(s) is only approximate, and LS dies show more bias than HS dies.",
+      "evidence": "Implied c per die: [0.98151 0.98227 0.98165 0.97615 0.97612 0.97044]. A2 % per die: [0.40 0.32 0.39 0.95 0.96 1.55]. Reference energy balance 3.3e-13, wall time 131 s.",
+      "suggested_check": "Include 3-5-die strata and interleaved at sizes other than 5.0 mm in E007's development-row check before freezing.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The k(T) path is unit-tested only qualitatively",
+      "detail": "The unit tests check k(T) only through super-linearity (ratio between 2.001 and 2.2) and constant-k under-prediction. No unit test compares the nonlinear solve with an exact value. I checked it myself: a 1D column with all seven layers on their K_LAWS, against the exact per-layer Kirchhoff integral (brentq on the integral of k dT = q t). The rise matched to 1.6e-5 / 3.8e-5 / 2.4e-4 relative at 20 / 40 / 60 W with h = 5e4 (rises 42-138 K). The code is right. The test suite only pins it via the regression rows against the reference.",
+      "evidence": "P=60 W: exact Tj 476.54223 K, FV 476.57582 K, difference +3.4e-2 K.",
+      "suggested_check": "Add the 1D Kirchhoff k(T) limit as a unit test.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Change outside the listed deliverables: solvers/thermal_layout.py",
+      "detail": "build_layout_grid, level0_cell and z_counts gained optional override keywords. The defaults reproduce the frozen module constants, so existing callers (e006 runner, unit tests of thermal_layout, the thermal_l2 benchmark) are unchanged. The fast gate passes. thermal_fem.py shares only gci_three_grid with this module and its hash is unchanged. The change is needed to meet the design note's 'no global state' requirement, but it is not in the deliverables list.",
+      "evidence": "git snapshot diff of src/moduleforge/solvers/thermal_layout.py. grep shows thermal_fem imports only gci_three_grid. The sha256 prefix a216d5fe3209bcee matches.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Small inaccuracies in docs/thermal_l1.md",
+      "detail": "The doc says the reference energy balance is 'at most 2.1e-13 on every solve'. The cached calibration solve side_by_side_6_s4.0 (L1) has 2.64e-13, and val interleaved/2 #0 has 2.85e-13. This is irrelevant against the 1e-6 gate. The doc also says the speed maximum is 0.62 s. My run gave median 0.478 s and max 0.791 s, still under A5's 1 s median limit but with less headroom on the maximum than documented.",
+      "evidence": "grep over tests/regression/data/o002_l1_cal/*.json. Output of benchmarks/thermal_l1_speed.py --check: 'median 0.478 s, max 0.791 s'.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command. pytest tests/unit/thermal plus the regression file: 27 passed. thermal_l1_speed.py --check: exit 0, median 0.478 s. Signature assertion OK. ruff clean. thermal_fem.py sha prefix a216d5fe3209bcee. mfos gate --fast: all gates passed.",
+    "Exact 1D nonlinear k(T) limit, independent of the repo's tests: per-layer Kirchhoff integral through the seven-layer column versus evaluate(calibrate=False). Relative error 1.6e-5 to 2.4e-4 at rises of 42-138 K.",
+    "Injected power check on the u_shaped/2 dev layout: the flux-cell area equals the die area to 1e-15, q_in = 160.000 W for 4 x 40 W, energy balance 1e-14.",
+    "Superposition at constant k: the sum of single-die responses equals the all-dies response to 3e-13 K.",
+    "Reciprocity of the 4x4 die-mean influence matrix at constant k: max |G - G^T| / max G = 2.4e-5.",
+    "Provenance: re-solved the cached 4.0 mm side_by_side/6 level-1 reference at its P_ref with thermal_fem and the frozen rule. It is identical to the cached tj_mean (max difference 0.0 K). The P_ref history meets the 60 +/- 0.25 K rule (60.014 K).",
+    "Out-of-sample transfer: a fresh level-1 reference on interleaved/3 at 4.0 mm (seed 77770001, 30 W/die) versus L1. A2-type at most 1.55 %, spread errors 0.01-0.04 K, implied c 0.970-0.982 against the table's 0.985.",
+    "Cache metadata over all 50 solve summaries in o002_l1_cal: max energy balance 2.85e-13, no CG maxiter hit, one thermal_fem sha, peak RSS 4.2 GB.",
+    "Confirmed the regression tolerances are 0.6 x O002's A1 (0.5 K) and A2 (0.03) thresholds, and that the 1 s speed limit matches A5."
+  ],
+  "caveats": [
+    "The implementation is n1's fv_coarse_xcal design with one deliberate change: the lateral cap is 1.5 mm, not 4 mm. The change was chosen on fresh-seed development rows that are now in-sample.",
+    "c(s) was calibrated on side_by_side/6 and u_shaped/2 only. Interleaved is covered only at 5.0 mm with 2 dies, and 3-5-die strata are not covered. My single 3-die interleaved check at 4.0 mm passed A2 (1.55 %) but showed per-die bias varying by about 1.2 %.",
+    "At 4.0 mm the c(s) family spread (0.0059) exceeds the design note's 0.005 refutation line. The founder should accept this explicitly before E007 freezes the table.",
+    "All A1/A2/A4 numbers are development-row point estimates over 6 layouts per stratum. They resolve no p95 bound; E007 on sealed seeds decides.",
+    "The speed margin depends on machine load: the median was 0.41-0.48 s and the maximum up to 0.79 s on this Mac."
+  ]
+}
