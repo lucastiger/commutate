@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Hash covers the Die.box wrapper but not Die.bounds, which does the computation; fingerprint helper _ring_ints is also unhashed",
+      "detail": "The T0416 item-1 fix adds `inspect.getsource(geo.Die.box.fget)` to `_rule_sources`. That source is only `return box(*self.bounds)`. The die geometry itself comes from `Die.bounds`, and `Die.bounds` is not hashed. The rules use it directly: `_apply_die_row_shift` grows the host copper from `out.dies[k].bounds`, `require_whole_mm` checks `d.bounds`, and the DRC reaches it through `Die.box`. So a change to how die boxes are computed would leave `rules_sha256()` unchanged, which is the drift this item was meant to catch. Likewise `geometry.layout._ring_ints` (normalize plus 1 nm rounding), which `Layout.fingerprint` calls for the distinctness test (`geometry_key`), is not hashed even though `fingerprint` is. Neither is likely to change before E004 runs, and the fix is two lines, so this is not a blocker.",
+      "evidence": "Scratch run: replacing `geo.Die.bounds` with a property that doubles the die extent left `P.rules_sha256() != h0` False. Replacing `geo._ring_ints` with a constant also left the hash unchanged. Restoring both gave back the original hash.",
+      "suggested_check": "Add `geometry.layout.Die.bounds` and `geometry.layout._ring_ints` to `_rule_sources`, plus a test that monkeypatches `Die.bounds` and asserts the hash changes.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Collinear-split fix depends on exact float collinearity, while require_whole_mm accepts 1e-6 mm of noise",
+      "detail": "`long_sides` now removes collinear vertices with `shapely.simplify(poly, 0.0)`, which only merges vertices that are exactly collinear in float. `require_whole_mm` accepts coordinates within 1e-6 mm of a whole mm. A one-ulp jog in the vertex list brings the split back after `_mm` rounding: the zero-length rounded edge is skipped and the long side comes back in two pieces. Case 4, 2D_Case_2R and 2D_Case_6 have every coordinate bit-equal to k*MM, and `_box_mm` uses k*MM too, so their moves stay exact and this does not trigger today. A future reference built from decimal literals (k*1e-3 differs from float(f'{k}e-3') for 26 of k = 0..199) could hit it after a union with a `_box_mm` strip.",
+      "evidence": "Synthetic DC- L-shape: with the split vertex exact, long_sides gives ('h', 50, 10, 52). With y = 0.05000000000000006 instead of 0.05 (valid polygon, area difference 1.8e-18 m^2) it gives ('h', 50, 20, 52), the old split reading. All trace coordinates of the judged references are bit-equal to k*MM (2R: 0 of 62 differ, 6: 0 of 88).",
+      "suggested_check": "Round the vertices to whole mm before merging collinear edges in long_sides, and test it on a reference whose coordinates are built as k/1000.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The O004 F7 research pilot no longer reproduces: hash check fails and gen2_0 is refused",
+      "detail": "`rules_sha256` changed from 70307210\u2026 (recorded in research/o004_f7/dev_pairs.json and span_reach.json) to 24d12d80\u2026, so `pilot_l2.py --check` will now report 'perturb.rules_sha256 changed'. `pilot_l2.gen2_0()` calls `P.measured_rules(gen2_0)`, which now starts with `require_whole_mm` and raises on gen2_0, so the gen2_0 span results in span_reach.json and research/notes/o004-f7-l2-pilot.md cannot be regenerated. The note is not updated. A hash change is expected before E004 freezes, and research output is not evidence, so this is maintainability only.",
+      "evidence": "Replayed all 11 recorded dev pairs with `P.apply`: every one still rebuilds to its recorded fingerprint, so the long_sides change did not alter them. Only the hash and the gen2_0 path break. pilot_l2.py lines 96-100 and 783-784.",
+      "suggested_check": "Add a line to the research note (or re-stamp the hash) saying the gen2_0 path is retired by the whole-mm rule.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Swallowing _draw_params errors hides malformed-reference errors; docstrings not updated",
+      "detail": "With `_draw_params` moved inside the try in `_draw_single`, every ValueError it raises becomes a silent redraw. A real reference defect, such as `_net_poly`'s 'must have exactly one trace', now silently drops that net from trace_width, or ends in a misleading RuntimeError ('no new DRC-clean move in 2000 draws') when every net is affected. Before, it failed loudly. The docstrings of `draw` and `measured_rules` do not mention the new whole-mm ValueError, and the `_rule_sources` docstring does not list the newly hashed NETS, SIGNAL_* and property sources.",
+      "evidence": "perturb.py lines 461-466 (try now wraps `_draw_params`) and lines 491-497 / 150-154 / 515-520 (docstrings).",
+      "suggested_check": "Catch only the long-side ValueError in `_draw_params` (or re-raise `_net_poly` errors), and update the three docstrings.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The T0387 _draw_params fix has no effect on any current draw path",
+      "detail": "The 'copper on both sides' error comes from off-lattice coordinates being rounded. `draw` now refuses off-lattice references (`require_whole_mm`), and integer-mm moves keep whole-mm references whole-mm, so `_outward` cannot raise on any reference `draw` accepts. gen2_0, the case behind T0387, is now refused outright. The change is harmless: once redraws are counted, the draw distribution is still uniform over the readable nets. It only guards a case the new assertion already prevents.",
+      "evidence": "Reasoning plus the slow test `test_gen2_0_long_sides_and_draw_params` (passes): `draw(gen2_0)` raises 'whole-mm'. No net of Case 4, 2R or 6 raises in long_sides.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run pytest -q tests/unit/test_perturb.py`: 51 passed, 1 xfailed, the slow gen2_0 test included. With `-m slow` alone: 1 passed.",
+    "Ran `uv run ruff check` on perturb.py and test_perturb.py: all checks passed.",
+    "Ran `uv run mfos gate --fast`: 'all gates passed', exit 0.",
+    "Monkeypatched `geometry.layout.Die.bounds` (doubled extent) and `geometry.layout._ring_ints`: `rules_sha256()` was unchanged both times, so the hash misses them.",
+    "Built a synthetic DC- L-polygon with a collinear split at y = 50 mm: long_sides now gives the merged edge ('h', 50, 10, 52). With a one-ulp jog it gives the split edge ('h', 50, 20, 52) again.",
+    "Checked that 2D_Case_2R and 2D_Case_6 pass require_whole_mm with every trace coordinate bit-equal to k*MM. They have collinear vertices (2R PHASE 11 to 9, 6 DC+ 8 to 7, 6 PHASE 11 to 9), so the canonicalization changes their edge sets as intended, and no net raises in long_sides.",
+    "Replayed all 11 recorded O004 F7 dev pairs (research/o004_f7/dev_pairs.json) with P.apply: every fingerprint rebuilds. The rules hash changed from 70307210\u2026 to 24d12d80\u2026, so the pilot's --check hash comparison will fail.",
+    "Checked the new tests by reasoning against the old code: the old `_draw_params` evaluated long_sides for every net, so the synthetic both-sided test (`got == {DC+, PHASE}`) would fail. The old long_sides read the raw vertex list, so the midpoint-split test would fail. The new tests can fail.",
+    "Read perturb.py, geometry/layout.py and the DRC's imports, and listed the callers of measured_rules/draw (only tests and research/o004_f7/pilot_l2.py). No experiment runner breaks."
+  ],
+  "caveats": [
+    "I could not check completeness against the text of reviews T0416 and T0387: they are not in the packet or in the repository at this commit. I checked only the items the new tests name: T0416 items 1 and 3, the collinear-split fix, the terminal_copper closed-form test, and T0387's trace_width draw failure.",
+    "Some scratch scripts were refused by the permission layer: a direct old-vs-new long_sides comparison by monkeypatching `_canonical`, a move-level float-noise sweep, and `pilot_l2.py --check` run directly. I replaced them with smaller checks: a synthetic one-ulp polygon, replaying the pairs' fingerprints inline, and inspecting vertex counts.",
+    "The hash still leaves out the numpy and shapely/GEOS versions, which `rng.integers`, `simplify`, `normalize` and `unary_union` depend on. uv.lock pins them. This gap predates the change."
+  ]
+}
