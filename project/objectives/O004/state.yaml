@@ -50,5 +50,12 @@ log:
   O004 and is re-approved, and decision_if_pass is stated for the covered range. Context: burst 1''s F7(c)
   result, 0 of 13 development pairs excluded (largest E_R/r 0.349 %), so F1 exclusions do not constrain
   the span'
+- 'open review items 2026-11-17T17:52:38+00:00 (founder session; review T0452 of T0451, minor, for the
+  next builder task on src/moduleforge/generate/perturb.py): (1) _draw_single still redraws ValueErrors
+  raised inside apply(), so _net_poly''s ''exactly one trace'' from _apply_terminal_copper or _apply_die_row_shift
+  is silent; make it a reference-defect error that _draw_single re-raises, with a terminal_copper test,
+  or narrow draw''s docstring to trace_width; (2) the inline comment at perturb.py:557-559 still lists
+  only Die.box, BondWire.length and SignalWire.length. E004''s registration report records every redraw
+  with its exception (T0389), which covers (1) for registration'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
