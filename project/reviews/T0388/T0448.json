@@ -1,0 +1,65 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "seed_provenance: the seed-identity half of the check cannot fail",
+      "detail": "In smoke, seed_ok is `seed == DEV_SEED and source_seed == DEV_SEED`, and both are set to the same constant. In registered mode it is `seed == run.seed == source_seed`, and ExperimentRun.seed is `int(os.environ['MFOS_SEED'])`, the same env var the stage then reads as 'independent'. The only part that can fail is the in-process replay of perturb.draw, which tests determinism, not provenance. Draws do come from the sealed seed by construction (`seed = int(run.seed)`), so the result is unaffected. The spec's 'read independently' wording is stronger than the check.",
+      "evidence": "e004_run.py stage_registration: source_seed / seed_ok lines; tools/mfos/mfos/evidence.py:56-57 (self.seed = int(MFOS_SEED)). I re-ran the draws in 5 separate processes with different PYTHONHASHSEED values and got 1 distinct output: determinism holds across processes too.",
+      "suggested_check": "Describe seed_provenance as an in-process determinism check, or replay in a subprocess.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Mesh-shift flag depends on its 0.005 floor; |r_4mm - r_2mm| underestimates the 4 mm error",
+      "detail": "The F4 gates are decided on L1 at hmax 4 mm. The near-threshold flag uses max(0.005, |r_4 - r_2|). On the 12 smoke pairs, |r_4 - r_1| reached 0.0049, just inside the floor. For one die_row_shift pair, |r_4 - r_2| = 0.0004 but |r_4 - r_1| = 0.0023, so the 2 mm check-mesh difference is not a reliable error estimate. Absolute L1 does not converge under refinement (Case 4 reference 19.41 -> 19.14 -> 18.84 nH, steps of 1.4 % and 1.5 %). Ratios mostly cancel this error. On the judged references the 4 mm ratio error could exceed 0.005 without being flagged. This is a reported diagnostic, not a gate, and L1 is not the tool under test.",
+      "evidence": "Independent L1 solves at 4/2/1 mm on the smoke draws (DEV_SEED, Case 4). 20 MHz ratios, e.g. slot0#0 0.9917/0.9913/0.9894; slot1#5 1.0014/0.9967/0.9965; max d41 = 0.0049. Peak RSS 3.9 GB at 1 mm.",
+      "suggested_check": "Report the 1 mm ratio (2.4 GB per solve on Case 4) beside the gate, or state that the flag band is a floor, not an error bound.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Smoke stage crashes rather than records if no pair is drawn",
+      "detail": "span_check calls min() and max() on the ratio list, and both raise ValueError on an empty list. If every smoke draw raised, the stage would record draws_complete=false and then crash in registration_checks. That contradicts the docstring's 'Checks are recorded, never raised; exit 0'. Registered mode is unaffected because draws_complete raises RegistrationRefused first.",
+      "evidence": "span_check([], SPAN) -> ValueError('min() iterable argument is empty'), run directly.",
+      "suggested_check": "Return passed=False with min/max None when the list is empty.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "freeze_hashes_match fails in the review snapshot (missing history, not a defect)",
+      "detail": "The DoD smoke command exits 0, but freeze_hashes_match=false here. All 29 failures are 'pinned commit 42db7eb5 not an ancestor of HEAD' and 'blob at pinned commit does not have the frozen sha256', because the snapshot is a single orphan commit. There is no live-hash, package or rules-hash mismatch. 42db7eb5 exists in the main repository ('chore(state): tick'). I could not check its blob hashes from this sandbox.",
+      "evidence": "registration.json freeze.failures from the smoke run; `git cat-file -t 42db7eb5` fails here and returns 'commit' in the main repo; `git rev-list --count HEAD` = 1.",
+      "suggested_check": "Provenance tooling should confirm on main that the blobs at 42db7eb5 carry the frozen hashes.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The frozen design almost surely fails its own F4 span gate (disclosed)",
+      "detail": "With the frozen allocation (4 singles plus 2 compounds per reference), the author's 200-seed Case 4 simulation gives a pooled span pass fraction of 0 [0, 0.019] at lower end 0.75. I checked the Wilson bounds by hand: 0.0095 for n = 400 and 0.019 for n = 200. The smoke run fails l1_span with a min of 0.945 and 0 pairs below 0.90. The spec marks itself DRAFT, NOT REGISTRABLE and leaves the decision to the founder (D0024 open).",
+      "evidence": "research/notes/o004-e004-registration-design.md section 3; smoke l1_span detail.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: exit 0.",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke --stage registration`: exit 0 in 6 s, 15 registration checks and 5 solve checks reported. l1_span and proxy_pair_built fail as disclosed. freeze_hashes_match fails only because the snapshot lacks the pinned commit's history.",
+    "Confirmed the pinned commit 42db7eb5 exists in the main repo (read-only git cat-file/log). The live tree's file, package and rules hashes all match the freeze: no live-mismatch entries in freeze.failures.",
+    "Confirmed that every tracked src/moduleforge file not in freeze.files (canary, halfbridge, nulls, l2, thermal*) is not loaded by the stage: freeze_covers_loaded_sources passed.",
+    "Recomputed the smoke pairs' L1 ratios at 4, 2 and 1 mm in a separate process. The 4 mm values match registration.json; max |r_4 - r_1| = 0.0049; absolute L1 does not converge (1.4 % and 1.5 % steps).",
+    "Cross-process reproducibility: perturb.draw via reference_seed on 3 seeds x 2 slots, in 5 subprocesses with different PYTHONHASHSEED values, gave identical moves and fingerprints.",
+    "Probed span_check boundaries: inclusive ends at 0.75 and 0.98; ratios exactly at 0.90 are not counted as below; 0.7501 and 0.9799 fail; an empty list raises ValueError.",
+    "Read perturb.apply, _apply_compound and _draw_compound: the stepwise re-check uses the same _APPLY functions, so stepwise_equals_apply holds by construction (the spec already says the re-check is not independent).",
+    "Checked that whole_mm_failures covers every perturb._mm rounding site: trace exteriors (long_sides), die bounds (host growth) and terminal boxes.",
+    "Checked by hand the Wilson 95 % upper bounds reported for k = 0: 0.0095 (n = 400) and 0.019 (n = 200).",
+    "Read the author's counter-test script: its seed counter-test only exercises replay_mismatches with a different seed, never the stage's seed_ok path.",
+    "ruff check on the runner and counter-test script: clean."
+  ],
+  "caveats": [
+    "The registration gates were only exercised on the 2D_Case_4 stand-in, never on 2D_Case_2R or 2D_Case_6. These gates are whole-mm, the three lattices, measured_rules without overrides, and draws that can raise 'edge has copper on both sides'. My geometry-only attempt to run whole_mm, on_lattice and measured_rules on the judged references was denied by the sandbox, so I can't say whether the stage would get past these pre-draw gates on the real references.",
+    "This is a draft. It is explicitly not registrable: perturb.py fixes (T0438), the proxy pair (T0437), the span and allocation (D0024 open), F7(a)/(c), and the solve stage (T0389) are all pending. A registered run would refuse at proxy_pair_built and, on current evidence, at l1_span.",
+    "The F4 gates are defined on L1 at a 4 mm mesh. Gate verdicts within about 0.005 of a threshold depend on the mesh, and the 4 to 2 mm check-mesh difference understates the 4 to 1 mm shift for some pairs.",
+    "seed_provenance is an in-process determinism check, not an independent provenance check. Provenance relies on the code path seed = int(run.seed)."
+  ]
+}
