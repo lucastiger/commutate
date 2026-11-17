@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-17T16:54:18+00:00 from repository state — do not edit_
+_generated 2026-11-17T16:55:12+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0244** [decision] T0382 blocked: the agent reports the task impossible or mis-specified
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -29,19 +28,17 @@ _generated 2026-11-17T16:54:18+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 38 | $76.74 | 1358180 | 757831 | 108 | 0 |
+| O008 | 39 | $76.74 | 1358180 | 757831 | 108 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 46, done: 393, failed: 4, needs_founder: 1, running: 2, todo: 5
+cancelled: 46, done: 393, failed: 4, running: 3, todo: 5
 
-- T0382 `needs_founder` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 3)
+- T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 4)
 - T0398 `running` scientist/design_experiment: E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on the dev structure (attempt 1)
 - T0451 `running` builder/implement: perturb.py hash coverage and redraw fixes (T0446), adapter test and docstring items (T0445), before E004's hash freezes (attempt 1)
 
 ## Recent events
-- 2026-11-17T15:51:37+00:00 inbox_resolved {"id": "I0242", "status": "rejected", "note": "Premature: E004's design is incomplete (T0389 part 2, T0390 part 3, T0451 hash completion, the 2R proxy pair, and
-- 2026-11-17T15:58:20+00:00 founder_decision_recorded {"objective": "O004", "summary": "E004 span via banded L1 acceptance in the sealed stream; lower end amended from T0389's simulation"}
 - 2026-11-17T16:25:38+00:00 merged {"task": "T0397"}
 - 2026-11-17T16:25:38+00:00 inbox_opened {"id": "I0243", "kind": "experiment_registration", "subject": "register E007 (pre-registration)"}
 - 2026-11-17T16:31:18+00:00 merged {"task": "T0419"}
@@ -55,3 +52,5 @@ cancelled: 46, done: 393, failed: 4, needs_founder: 1, running: 2, todo: 5
 - 2026-11-17T16:53:08+00:00 run_finished {"run": "T0382-scientist-20261117T070728-ed30", "status": "completed", "cost": 1.955482, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T16:53:08+00:00 task_blocked {"task": "T0382"}
 - 2026-11-17T16:53:08+00:00 inbox_opened {"id": "I0244", "kind": "decision", "subject": "T0382 blocked: the agent reports the task impossible or mis-specified"}
+- 2026-11-17T16:54:59+00:00 inbox_resolved {"id": "I0244", "status": "answered", "note": "Resolved: agents cannot merge, so the founder merged main into the T0382 branch, which now has the T0437 code. At
+- 2026-11-17T16:55:11+00:00 run_started {"run": "T0382-scientist-20261117T085511-4122", "task": "T0382", "role": "scientist", "session": "fefbfade-650f-476c-8445-b68ece0c022b"}

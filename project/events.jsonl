@@ -2860,3 +2860,5 @@
 {"ts": "2026-11-17T16:53:08+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0382-scientist-20261117T070728-ed30", "status": "completed", "cost": 1.955482, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-17T16:53:08+00:00", "event": "task_blocked", "actor": "orchestrator", "task": "T0382"}
 {"ts": "2026-11-17T16:53:08+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0244", "kind": "decision", "subject": "T0382 blocked: the agent reports the task impossible or mis-specified"}
+{"ts": "2026-11-17T16:54:59+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0244", "status": "answered", "note": "Resolved: agents cannot merge, so the founder merged main into the T0382 branch, which now has the T0437 code. Attempt 4 runs the development L1 run on that code.", "by": "human"}
+{"ts": "2026-11-17T16:55:11+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0382-scientist-20261117T085511-4122", "task": "T0382", "role": "scientist", "session": "fefbfade-650f-476c-8445-b68ece0c022b"}
