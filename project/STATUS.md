@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T12:29:41+00:00 from repository state — do not edit_
+_generated 2026-11-17T15:00:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (9 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -39,7 +39,7 @@ _generated 2026-11-17T12:29:41+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 46, done: 386, failed: 4, needs_founder: 7, todo: 7
+cancelled: 46, done: 386, failed: 4, needs_founder: 7, todo: 8
 
 - T0388 `needs_founder` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 2)
 - T0397 `needs_founder` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 2)
@@ -50,7 +50,6 @@ cancelled: 46, done: 386, failed: 4, needs_founder: 7, todo: 7
 - T0443 `needs_founder` builder/implement: Thermal L1 tests and doc fixes from reviews T0423/T0424 before E007's code freeze (attempt 1)
 
 ## Recent events
-- 2026-11-17T10:40:52+00:00 inbox_opened {"id": "I0238", "kind": "protected_change", "subject": "T0388: merge needs founder approval"}
 - 2026-11-17T10:40:59+00:00 run_started {"run": "T0443-builder-20261117T024059-8aa3", "task": "T0443", "role": "builder", "session": "9a453a00-6dd4-46d7-b32a-186be07f286f"}
 - 2026-11-17T10:41:35+00:00 run_finished {"run": "T0397-scientist-20261117T015632-62c7", "status": "completed", "cost": 5.986665, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T10:54:18+00:00 verified {"task": "T0397"}
@@ -65,3 +64,4 @@ cancelled: 46, done: 386, failed: 4, needs_founder: 7, todo: 7
 - 2026-11-17T12:11:40+00:00 run_finished {"run": "T0443-builder-20261117T024059-8aa3", "status": "completed", "cost": 0.419673, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T12:29:31+00:00 verified {"task": "T0443"}
 - 2026-11-17T12:29:36+00:00 inbox_opened {"id": "I0241", "kind": "protected_change", "subject": "T0443: merge needs founder approval"}
+- 2026-11-17T15:00:03+00:00 task_added {"task": "T0451", "note": "founder approved 2026-11-17"}

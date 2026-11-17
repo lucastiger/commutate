@@ -10,6 +10,7 @@ depends_on:
 - T0385
 - T0388
 - T0438
+- T0451
 description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004.yaml with: (1) the l2_layout
   ladder 1.0 / 0.5 / 0.25 mm on every layout at 10 and 20 MHz, using E010''s mesh-constant pattern for
   1.0 and 0.5 mm and the unpatched refinement 1 for the judged 0.25 mm value; l2_layout''s thickness and
@@ -195,6 +196,12 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   ratios of 1.094 (8344 filaments) and 1.011 (14364). Commit your direct-run measurements as research/o004_f7/fh_direct_mem.json,
   with filaments, direct_mem_est_gb, peak_mem_mb and the ratio per run, so that MEM_MARGIN can be refitted
   on an in-repo basis.
+
+
+
+  Founder session, 2026-11-17: T0451 (a builder, after T0438 and T0442) completes the perturbation-rules
+  hash coverage (Die.bounds, _ring_ints; review T0446). Refreeze E004''s perturb_rules_sha256 once, from
+  the value T0451 reports, not from T0438''s 24d12d80....
 
   '
 context_files:

@@ -1,0 +1,85 @@
+id: T0451
+objective: O004
+title: perturb.py hash coverage and redraw fixes (T0446), adapter test and docstring items (T0445), before
+  E004's hash freezes
+type: implement
+agent: builder
+status: todo
+depends_on:
+- T0438
+- T0442
+description: 'Follow-up source fixes before E004 freezes its perturbation-rules hash (O004), from review
+  T0446 of T0438 and review T0445 of T0442. It starts after T0438 and T0442 have merged (same files).
+  Each fix comes with a test; never weaken an existing test.
+
+
+  src/moduleforge/generate/perturb.py and tests/unit/test_perturb.py (T0446):
+
+  1. Hash coverage: rules_sha256() hashes Die.box''s getter, which only returns box(*self.bounds); the
+  geometry comes from Die.bounds, which is not hashed, and nor is geometry.layout._ring_ints (Layout.fingerprint''s
+  normalise-and-round helper, used for the distinctness key). Add both to _rule_sources, with a test that
+  monkeypatches Die.bounds (and one for _ring_ints) and asserts the hash changes.
+
+  2. Silent redraws: _draw_single now catches every ValueError from _draw_params, so a real reference
+  defect (e.g. _net_poly''s ''must have exactly one trace'') becomes a silent redraw or a misleading ''no
+  new DRC-clean move in 2000 draws''. Catch only the long-side (both-sided edge) error, and let other
+  errors fail loudly, with a test.
+
+  3. long_sides merges collinear vertices with shapely.simplify(poly, 0.0), which needs exact float collinearity,
+  while require_whole_mm accepts 1e-6 mm of noise. Round the vertices to whole mm before merging, and
+  test it on a reference whose coordinates are built as k/1000.
+
+  4. Update the docstrings of draw and measured_rules (the whole-mm ValueError) and of _rule_sources (NETS,
+  SIGNAL_NET, SIGNAL_PADS and the property sources now hashed).
+
+
+  src/moduleforge/solvers/fasthenry_run.py and tests/unit/test_fasthenry_run.py (T0445, minor):
+
+  5. test_self_test_bound_is_the_exact_hoer_love_value compares two module constants: assert SELF_TEST_HOER_LOVE_NH
+  == pytest.approx(bar_self_L(10e-3, 1e-3, 1e-3) * 1e9, abs=1e-6) with the file''s own quadrature.
+
+  6. Add ''killed_external'' to the Attempt and FHResult status docstrings, fill FHResult.log on failure
+  as well, and drop the stale ''0.3 % closed-form bound'' comment in test_self_test_raises_on_a_wrong_build_and_on_a_crash.
+
+
+  Report the new rules_sha256() value; T0389 refreezes E004''s hash from it (once, after this task).
+
+  '
+context_files: []
+deliverables: []
+touches:
+- src/moduleforge/generate/perturb.py
+- tests/unit/test_perturb.py
+- src/moduleforge/solvers/fasthenry_run.py
+- tests/unit/test_fasthenry_run.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_perturb.py tests/unit/test_fasthenry_run.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run ruff check src/moduleforge/generate/perturb.py src/moduleforge/solvers/fasthenry_run.py
+    tests/unit/test_perturb.py tests/unit/test_fasthenry_run.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 2400
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T15:00:03+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session
+history: []
