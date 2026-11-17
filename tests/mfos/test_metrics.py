@@ -1000,3 +1000,95 @@ def test_o003_optimistic_secondary_applies_the_twin_rule_to_its_own_pick():
     per = mx.headroom_per_reference(rows, params={"comparator": "reconstruction"})["R1"]
     ar = 10.1 / 17.1
     assert per["opt_id"] == "c01" and per["h_opt_hi"] == pytest.approx(ar * (1 - 10.05 / 10.1 * (1 - s)))
+
+
+
+# ------------------------------------------------------------------------------------------------ O002 F3 bound
+def test_woodruff_bound_one_unit_per_term_by_hand():
+    # terms 1, 2, 3, 4, one layout each; q 0.5: theta 2.5, share <= theta 1/2; jackknife shares 1/3, 1/3, 2/3, 2/3:
+    # var = 3/4 x 4 (1/6)^2 = 1/12. With c = 1 (z, alpha = 1 - Phi(1)) the levels are 0.5 +/- 1/sqrt(12)
+    alpha = float(1.0 - st.norm.cdf(1.0))
+    se = 1.0 / math.sqrt(12.0)
+    units = [("a",), ("b",), ("c",), ("d",)]
+    up = mx.woodruff_bound([1, 2, 3, 4], units, 0.5, alpha, "upper", crit="z", rounding="linear")
+    lo = mx.woodruff_bound([1, 2, 3, 4], units, 0.5, alpha, "lower", crit="z", rounding="linear")
+    assert up == pytest.approx(1 + 3 * (0.5 + se), abs=1e-12) and lo == pytest.approx(1 + 3 * (0.5 - se), abs=1e-12)
+    # t with 3 degrees of freedom, alpha 0.1, rounded outward: level 0.5 + 1.6377 / sqrt(12) = 0.973 -> 4; 0.027 -> 1
+    assert mx.woodruff_bound([1, 2, 3, 4], units, 0.5, 0.1, "upper") == 4.0
+    assert mx.woodruff_bound([1, 2, 3, 4], units, 0.5, 0.1, "lower") == 1.0
+    # a level outside [0, 1], or fewer than 2 units: no finite bound
+    assert mx.woodruff_bound([1, 2, 3, 4], units, 0.95, 0.05, "upper") == math.inf
+    assert mx.woodruff_bound([1, 2], [("a",), ("a",)], 0.5, 0.05, "lower") == -math.inf
+
+
+def test_woodruff_bound_on_pair_terms_deletes_every_pair_of_a_layout():
+    # one die-average row per layout a, b, c (errors 0, 1, 3 K): pair terms ab 1, ac 3, bc 2; q 0.5 -> theta 2.
+    # Deleting a leaves bc (share <= 2: 1), deleting b leaves ac (0), deleting c leaves ab (1): mean 2/3,
+    # var = 2/3 x (1/9 + 4/9 + 1/9) = 4/9, se = 2/3. c = 0.5: levels 0.5 +/- 1/3 over sorted terms 1, 2, 3
+    rows = [{"layout": k, "family": "f", "dies": 3, "r": 50.0, "p": 50.0 + e} for k, e in (("a", 0.0), ("b", 1.0),
+                                                                                         ("c", 3.0))]
+    alpha = float(1.0 - st.norm.cdf(0.5))
+    pt, (lo, hi) = mx.quantile_ci("pairwise_diff_error_quantile", rows, pred="p", ref="r", strata=["family", "dies"],
+                                  params={"q": 0.5, "unit": "layout"}, level=1.0 - 2.0 * alpha, cluster="layout",
+                                  crit="z", rounding="linear")
+    assert pt == mx.compute("pairwise_diff_error_quantile", rows, pred="p", ref="r", strata=["family", "dies"],
+                            params={"q": 0.5, "unit": "layout"}) == pytest.approx(2.0, abs=1e-12)
+    assert hi == pytest.approx(1 + 2 * (0.5 + 1 / 3), abs=1e-12) and lo == pytest.approx(1 + 2 * (0.5 - 1 / 3), abs=1e-12)
+
+
+def test_quantile_ci_max_over_groups_uses_bonferroni_for_the_lower_bound():
+    rng = np.random.default_rng(3)
+    rows = [{"layout": f"L{j}", "load": ld, "p": float(rng.normal()), "r": 0.0} for j in range(30)
+            for ld in ("P", "H") for _ in range(2)]
+    params = {"fn": "quantile_abs_err", "by": "load", "inner": {"q": 0.9}}
+    pt, (lo, hi) = mx.quantile_ci("max_over_groups", rows, pred="p", ref="r", params=params, level=0.9, cluster="layout")
+    assert pt == mx.compute("max_over_groups", rows, pred="p", ref="r", params=params)
+    per = {ld: [r for r in rows if r["load"] == ld] for ld in ("H", "P")}
+    terms = {ld: (np.abs([r["p"] for r in rs]), [(r["layout"],) for r in rs]) for ld, rs in per.items()}
+    assert hi == max(mx.woodruff_bound(x, u, 0.9, 0.05, "upper") for x, u in terms.values())
+    assert lo == max(mx.woodruff_bound(x, u, 0.9, 0.025, "lower") for x, u in terms.values())
+    assert lo <= pt <= hi
+
+
+def test_woodruff_ratio_bound_exact_cases():
+    rng = np.random.default_rng(5)
+    x = np.abs(rng.normal(size=60))
+    units = [(f"L{k // 2}",) for k in range(60)]
+    # identical numerator and denominator terms: ratio 1 and zero linearised variance; 2 x the terms: ratio 2
+    for side in ("upper", "lower"):
+        assert mx.woodruff_ratio_bound(x, x, units, 0.95, 0.05, side, ratio="delta") == pytest.approx(1.0, abs=1e-12)
+        assert mx.woodruff_ratio_bound(2 * x, x, units, 0.95, 0.05, side, ratio="delta") == \
+            pytest.approx(2.0, abs=1e-12)
+    y = np.abs(rng.normal(size=60)) * 2.0
+    b_hi = mx.woodruff_bound(x, units, 0.9, 0.025, "upper") / mx.woodruff_bound(y, units, 0.9, 0.025, "lower")
+    b_lo = mx.woodruff_bound(x, units, 0.9, 0.025, "lower") / mx.woodruff_bound(y, units, 0.9, 0.025, "upper")
+    assert mx.woodruff_ratio_bound(x, y, units, 0.9, 0.05, "upper") == pytest.approx(b_hi, rel=1e-12)  # the default
+    assert mx.woodruff_ratio_bound(x, y, units, 0.9, 0.05, "lower") == pytest.approx(b_lo, rel=1e-12)
+    r = float(np.quantile(x, 0.9) / np.quantile(y, 0.9))
+    lo_d = mx.woodruff_ratio_bound(x, y, units, 0.9, 0.05, "lower", ratio="delta")
+    assert b_lo < lo_d < r < mx.woodruff_ratio_bound(x, y, units, 0.9, 0.05, "upper", ratio="delta") < b_hi
+
+
+def test_quantile_ci_ratio_and_failures():
+    rows = [{"layout": f"L{k // 2}", "p": 1.0 + 0.1 * k, "r": 1.0, "n": 1.0 + 0.3 * k} for k in range(40)]
+    pt, (lo, hi) = mx.quantile_ci("quantile_abs_err_ratio", rows, pred="p", ref="r", params={"null": "n", "q": 0.9},
+                                  level=0.9, cluster="layout")
+    assert pt == pytest.approx(1.0 / 3.0, rel=1e-12) and lo <= pt <= hi  # every error is 1/3 of the null's
+    with pytest.raises(ValueError):
+        mx.quantile_ci("quantile_abs_err", rows, pred="p", ref="r", level=0.9)  # no cluster column
+    with pytest.raises(ValueError):
+        mx.quantile_ci("mape", rows, pred="p", ref="r", level=0.9, cluster="layout")
+
+
+def test_evaluator_routes_scheme_woodruff_to_quantile_ci():
+    from mfos import evaluate as ev
+    from mfos import models as mm
+    rows = [{"layout": f"L{k // 2}", "p": 0.01 * k, "r": 0.0} for k in range(160)]
+    rc = mm.RecomputeSpec(metric="x", fn="quantile_abs_err", pred="p", ref="r", params={"q": 0.95},
+                          ci=mm.CISpec(scheme="woodruff", level=0.9, cluster="layout"))
+    mv = ev.metric_value(rc, rows, "p")
+    pt, ci = mx.quantile_ci("quantile_abs_err", rows, pred="p", ref="r", params={"q": 0.95}, level=0.9,
+                            cluster="layout")
+    assert mv.value == pt and tuple(mv.ci) == ci and mv.level == 0.9 and ci[0] <= pt <= ci[1]
+    with pytest.raises(ValueError, match="woodruff"):
+        mx.bootstrap_ci(lambda rr: 0.0, rows, scheme="woodruff")

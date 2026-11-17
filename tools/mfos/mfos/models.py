@@ -194,12 +194,12 @@ class RowsSpec(_Strict):
 
 
 class CISpec(_Strict):
-    scheme: Literal["plain", "stratified", "cluster"] = "plain"
+    scheme: Literal["plain", "stratified", "cluster", "woodruff"] = "plain"  # woodruff: O002 F3
     n_boot: int = 2000
     level: float = 0.95
     seed: int = 0
     strata: list[str] = []  # columns, for scheme "stratified"
-    cluster: Optional[str] = None  # column, for scheme "cluster"
+    cluster: Optional[str] = None  # column, for schemes "cluster" and "woodruff" (the unit)
 
 
 class RecomputeSpec(_Strict):

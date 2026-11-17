@@ -38,6 +38,8 @@ Definitions (each function's docstring repeats its own):
   quantile_abs_err_ratio    quantile_abs_err of pred over that of a null column
   median_col                median of one column
   max_over_groups           max over the values of one column of another metric computed per value
+Bounds (CISpec scheme 'woodruff', O002 F3): quantile_ci gives one-sided (1 + level) / 2 bounds on the q-quantile
+metrics above by woodruff_bound / woodruff_ratio_bound, layouts as the independent units.
 """
 from __future__ import annotations
 
@@ -1017,10 +1019,193 @@ def bootstrap_ci(stat: Callable[[Rows], float], rows: Rows, *, n_boot: int = 200
             pick = rng.integers(0, len(groups), len(groups))
             idx = np.concatenate([groups[k] for k in pick])
             boots[i] = stat([rows[j] for j in idx])
+    elif scheme == "woodruff":
+        raise ValueError("scheme `woodruff` is not a bootstrap: the evaluator calls quantile_ci, which needs the metric's terms")
     else:
         raise ValueError(f"unknown bootstrap scheme `{scheme}`")
     alpha = (1.0 - level) / 2.0
     lo, hi = np.quantile(boots, [alpha, 1.0 - alpha])
+    return point, (float(lo), float(hi))
+
+
+# ------------------------------------------------------------------------------------------------ quantile bounds (O002 F3)
+QUANTILE_CI_FNS = ("quantile_abs_err", "quantile_rel_err", "pairwise_diff_error_quantile", "quantile_abs_err_ratio",
+                   "max_over_groups")
+
+
+def _unit_index(units: Sequence[Sequence[Any]]) -> tuple[np.ndarray, np.ndarray, int]:
+    """Flattened (term, unit index) incidence of ``units`` (one tuple of unit labels per term) and the unit count."""
+    labels = {u: k for k, u in enumerate(sorted({u for us in units for u in us}, key=str))}
+    t_idx, k_idx = [], []
+    for t, us in enumerate(units):
+        for u in set(us):
+            t_idx.append(t)
+            k_idx.append(labels[u])
+    return np.asarray(t_idx, dtype=int), np.asarray(k_idx, dtype=int), len(labels)
+
+
+def _jackknife_cdf(x: np.ndarray, theta: float, inc: tuple[np.ndarray, np.ndarray, int]) -> Optional[np.ndarray]:
+    """Delete-one-unit values of the share of terms <= theta; None when some unit is in every term."""
+    t_idx, k_idx, n_units = inc
+    ind = (x <= theta).astype(float)
+    s = np.bincount(k_idx, weights=ind[t_idx], minlength=n_units)
+    m = np.bincount(k_idx, minlength=n_units).astype(float)
+    rest = x.size - m
+    if np.any(rest <= 0.0):
+        return None
+    return (ind.sum() - s) / rest
+
+
+def _jk_se(vals: np.ndarray) -> float:
+    k = vals.size
+    return float(math.sqrt((k - 1) / k * float(np.sum((vals - vals.mean()) ** 2))))
+
+
+def _crit(alpha: float, n_units: int, crit: str) -> float:
+    return float(_st.t.ppf(1.0 - alpha, n_units - 1) if crit == "t" else _st.norm.ppf(1.0 - alpha))
+
+
+def woodruff_bound(values: Sequence[float], units: Sequence[Sequence[Any]], q: float, alpha: float, side: str,
+                   crit: str = "t", rounding: str = "outward") -> float:
+    """One-sided (1 - alpha) bound on the q-quantile of ``values`` (O002 F3): the order statistic at q +/- c se, se the
+    delete-one-unit jackknife standard error of the share of terms <= np.quantile(values, q), c the t quantile with
+    (units - 1) degrees of freedom (``crit='z'``: normal), rounded outward (``rounding='linear'``: np.quantile's
+    interpolation). ``units``: one tuple of unit labels (layouts) per term, two for a pair term. +inf (upper) or -inf
+    (lower) with fewer than 2 units, a unit in every term, or a shifted level outside [0, 1]."""
+    if side not in ("upper", "lower"):
+        raise ValueError(f"side must be upper or lower, not {side!r}")
+    x = np.asarray(values, dtype=float)
+    if x.size == 0 or x.size != len(units) or not np.all(np.isfinite(x)):
+        raise ValueError("woodruff_bound needs one finite value per units entry")
+    out = math.inf if side == "upper" else -math.inf
+    inc = _unit_index(units)
+    if inc[2] < 2:
+        return out
+    theta = float(np.quantile(x, q))
+    fj = _jackknife_cdf(x, theta, inc)
+    if fj is None:
+        return out
+    shift = _crit(alpha, inc[2], crit) * _jk_se(fj)
+    lev = q + shift if side == "upper" else q - shift
+    if not 0.0 <= lev <= 1.0:
+        return out
+    method = "linear" if rounding == "linear" else ("higher" if side == "upper" else "lower")
+    return float(np.quantile(x, lev, method=method))
+
+
+def woodruff_ratio_bound(num: Sequence[float], den: Sequence[float], units: Sequence[Sequence[Any]], q: float,
+                         alpha: float, side: str, crit: str = "t", rounding: str = "outward",
+                         ratio: str = "bonferroni") -> float:
+    """One-sided (1 - alpha) bound on Q_q(num) / Q_q(den), both on the same terms (O002 A4/K3: L1's spread error over
+    the stratum-mean-spread null's). The default is the one F3 selected (f3_simulation.json). ``ratio='delta'``: R exp(+/- c se), se of log R from the per-unit jackknife of the
+    Bahadur-linearised log quantiles with Woodruff-implied densities; it falls back to the Bonferroni quotient when a
+    quantile is 0 or a Woodruff level leaves [0, 1]. ``ratio='bonferroni'``: U_num / L_den (upper), L_num / U_den
+    (lower), each at alpha / 2."""
+    x1, x0 = np.asarray(num, dtype=float), np.asarray(den, dtype=float)
+    if x1.size != x0.size:
+        raise ValueError("num and den need the same terms")
+
+    def bonferroni() -> float:
+        if side == "upper":
+            hi, lo = woodruff_bound(x1, units, q, alpha / 2, "upper", crit, rounding), \
+                woodruff_bound(x0, units, q, alpha / 2, "lower", crit, rounding)
+            return math.inf if lo <= 0.0 or not math.isfinite(hi) else hi / lo
+        lo, hi = woodruff_bound(x1, units, q, alpha / 2, "lower", crit, rounding), \
+            woodruff_bound(x0, units, q, alpha / 2, "upper", crit, rounding)
+        return 0.0 if not math.isfinite(hi) or lo <= 0.0 else lo / hi
+
+    if side not in ("upper", "lower"):
+        raise ValueError(f"side must be upper or lower, not {side!r}")
+    if ratio == "bonferroni":
+        return bonferroni()
+    inc = _unit_index(units)
+    if inc[2] < 2:
+        return math.inf if side == "upper" else 0.0
+    c = _crit(alpha, inc[2], crit)
+    lin = []
+    for x in (x1, x0):
+        theta = float(np.quantile(x, q))
+        fj = _jackknife_cdf(x, theta, inc)
+        if theta <= 0.0 or fj is None:
+            return bonferroni()
+        se_f = _jk_se(fj)
+        if se_f == 0.0:
+            lin.append(np.zeros_like(fj))
+            continue
+        if not (0.0 <= q - c * se_f and q + c * se_f <= 1.0):
+            return bonferroni()
+        se_theta = (float(np.quantile(x, q + c * se_f)) - float(np.quantile(x, q - c * se_f))) / (2.0 * c)
+        lin.append(-fj * se_theta / (se_f * theta))  # d log(theta_hat) = -dF / (f theta), f = se_f / se_theta
+    se = _jk_se(lin[0] - lin[1])
+    r = float(np.quantile(x1, q) / np.quantile(x0, q))
+    return float(r * math.exp(c * se if side == "upper" else -c * se))
+
+
+def quantile_terms(fn: str, rows: Rows, *, pred: Optional[str], ref: Optional[str], strata: Sequence[str] = (),
+                   params: Optional[dict[str, Any]] = None, cluster: str = "layout"
+                   ) -> tuple[np.ndarray, Optional[np.ndarray], list[tuple[Any, ...]], float]:
+    """The terms whose q-quantile metric ``fn`` returns, in the order and with the pair rule of that metric, with the
+    ``cluster`` labels of the rows each term involves: (terms, null terms or None, units, q). The null terms are those of
+    quantile_abs_err_ratio's denominator."""
+    p = _p(params)
+    q = float(p.get("q", 0.95))
+    lab = [row[cluster] for row in rows]
+    if fn == "pairwise_diff_error_quantile":
+        pr, rf = _col(rows, pred), _col(rows, ref)
+        u = [row[p["unit"]] for row in rows] if p.get("unit") else None
+        terms, units = [], []
+        for idx in _groups(strata_keys(rows, strata)).values():
+            for i, j in itertools.combinations(idx.tolist(), 2):
+                if u is None or u[i] != u[j]:
+                    terms.append(abs((pr[i] - pr[j]) - (rf[i] - rf[j])))
+                    units.append((lab[i], lab[j]))
+        return np.asarray(terms, dtype=float), None, units, q
+    units = [(v,) for v in lab]
+    pr, rf = _col(rows, pred), _col(rows, ref)
+    if fn == "quantile_abs_err":
+        return np.abs(pr - rf), None, units, q
+    if fn == "quantile_rel_err":
+        return np.abs(pr - rf) / _col(rows, p["scale"]), None, units, q
+    if fn == "quantile_abs_err_ratio":
+        return np.abs(pr - rf), np.abs(_col(rows, p["null"]) - rf), units, q
+    raise ValueError(f"quantile_ci does not support `{fn}`; supported: {QUANTILE_CI_FNS}")
+
+
+def _quantile_bound(fn: str, rows: Rows, alpha: float, side: str, pred: Optional[str], ref: Optional[str],
+                    strata: Sequence[str], params: Optional[dict[str, Any]], cluster: str, **variant: str) -> float:
+    x, x0, units, q = quantile_terms(fn, rows, pred=pred, ref=ref, strata=strata, params=params, cluster=cluster)
+    if x0 is not None:
+        return woodruff_ratio_bound(x, x0, units, q, alpha, side, **variant)
+    if x.size == 0:
+        raise ValueError("no terms")
+    return woodruff_bound(x, units, q, alpha, side, **{k: v for k, v in variant.items() if k != "ratio"})
+
+
+def quantile_ci(fn: str, rows: Rows, *, pred: Optional[str] = None, ref: Optional[str] = None,
+                strata: Sequence[str] = (), group: Optional[str] = None, role: Optional[str] = None,
+                params: Optional[dict[str, Any]] = None, level: float = 0.95, cluster: Optional[str] = None,
+                **variant: str) -> tuple[float, tuple[float, float]]:
+    """(point, (lo, hi)) for a q-quantile metric (O002 F3, CISpec scheme 'woodruff'): point = compute(fn, ...) exactly
+    as the evaluator computes it; lo and hi are one-sided (1 + level) / 2 bounds by woodruff_bound (or
+    woodruff_ratio_bound for quantile_abs_err_ratio), with the rows' ``cluster`` column (the layout) as the independent
+    units. For max_over_groups: hi = max over groups of each group's upper bound, lo = max over groups of each group's
+    lower bound at alpha / (number of groups)."""
+    if not cluster:
+        raise ValueError("quantile_ci needs the cluster (unit) column")
+    if fn not in QUANTILE_CI_FNS:
+        raise ValueError(f"quantile_ci does not support `{fn}`; supported: {QUANTILE_CI_FNS}")
+    point = compute(fn, rows, pred=pred, ref=ref, strata=strata, group=group, role=role, params=params)
+    alpha = (1.0 - level) / 2.0
+    if fn != "max_over_groups":
+        return point, (_quantile_bound(fn, rows, alpha, "lower", pred, ref, strata, params, cluster, **variant),
+                       _quantile_bound(fn, rows, alpha, "upper", pred, ref, strata, params, cluster, **variant))
+    pp = _p(params)
+    inner_fn, by, inner = pp["fn"], pp["by"], pp.get("inner")
+    keys = sorted({row[by] for row in rows}, key=str)
+    subs = [[row for row in rows if row[by] == k] for k in keys]
+    hi = max(_quantile_bound(inner_fn, s, alpha, "upper", pred, ref, strata, inner, cluster, **variant) for s in subs)
+    lo = max(_quantile_bound(inner_fn, s, alpha / len(keys), "lower", pred, ref, strata, inner, cluster, **variant)
+             for s in subs)
     return point, (float(lo), float(hi))
 
 
