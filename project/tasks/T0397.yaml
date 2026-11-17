@@ -4,7 +4,7 @@ title: 'E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, lev
   subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan)'
 type: design_experiment
 agent: scientist
-status: review
+status: todo
 depends_on:
 - T0393
 - T0394
@@ -415,3 +415,53 @@ history:
     - research/o002_e007/f3_simulation.json
     experiment_drafts:
     - experiments/drafts/E007.yaml
+- attempt: 1
+  outcome: review_rejected
+  summary: adversarial review rejected the work
+  failure_output: '- [blocker] Every null is applied to A3 (and A2), so the evaluator marks A3 non-discriminating
+    and E007 can never PASS: In the spec, null_baselines (die_position, stratum_mean, isolated_die) use
+    applies_to = [A1, A2, A3, A4] (anchor &id001), so switch_spread_err_p95_K_max_load and tjavg_local_rel_err_p95_max_load
+    are included. Under rules v2, mfos''s evaluator (evaluate.py _annotate, lines 425-437) treats a pass
+    criterion that any declared null also meets as ''non_discriminating'', and that counts as not satisfied.
+    O002 says the opposite should be tolerated: ''A3 (spread within 1 K) and A5 (speed) are each met by
+    a layout-ignorant predictor on their own'' (objective.yaml line 20), and ''A stratum-mean spread may
+    meet A3 alone ... A4 carries the spread test'' (A3 description). F2 requires the nulls to fail only
+    A1, and the spread nulls to fail A4. The repository''s own development data confirm the conflict.
+    research/notes/o002-l1-design.md (null table) gives the stratum_mean and die_position nulls A3-type
+    p95 of 0.411 K at P_ref and 0.193 K at half load, far under A3''s 1.0 K. So A3 will be non_discriminating
+    and the best possible E007 verdict is INCONCLUSIVE. The draft''s own pre-registration gate (`mfos
+    exp check E007 --rows <dev rows>` must show null discrimination, per founder_decisions_before_registration)
+    would also fail on A3. The selftest never computes a null''s A3 (it reports only A1, A2 and A4 per
+    null), so it cannot catch this.
+
+    - [major] The selftest never runs the real reference path; node-growth and baseplate-mean checks are
+    fakes in selftest: --selftest runs every reference solve through _fake_field. The real thermal_fem
+    child_solve, _bottom_mean, the energy/Picard/CG fields of the real ThermalResult, and child_calibrate
+    on a real solver are never run. In the fake path tb_trapz_K is set equal to tb_flux_K by construction,
+    so baseplate_mean_consistent passes trivially. node_count_growth is forced True when FAKE. I checked
+    these by other means: by reading the code, every attribute and meta key child_solve reads exists in
+    ThermalResult/meta (tj_mean, tj_max, energy_balance as |Q_out/Q_in - 1|, picard_residual, dofs, meta
+    lines/q_in_W/q_out_W/cg_hit_maxiter/cg_max_iterations/amg_gs_sweeps), and units are consistent (nodes
+    and lines both in m). Using FEM.estimate_dofs on 180 layouts (15 strata x 4 die sizes x 3), DOF growth
+    per level is 7.31-7.67, inside the 6.8-9.2 band. My attempt to run one real level-0 calibration and
+    one level-1 solve through the runner was refused by the session''s permission policy, so the real
+    path is still unexecuted by anyone.
+
+    - [minor] Per-stratum A2 bound is likely infinite or at the maximum order statistic with 20 layouts:
+    The per-stratum rule applies the V4 Woodruff bound to one stratum''s rows (20 layout units, t(19)
+    at one-sided 97 %, c ≈ 2.0). For a p95 over 4-12 dies per layout per load, the jackknife se of F(theta)
+    is about 0.024 or more when the dies are independent, and larger when they are clustered. So q + c·se
+    reaches about 1, and the upper bound becomes the maximum or +inf. The ''reported, not gated'' per-stratum
+    bounds will often carry no information. This is analytic reasoning only: my synthetic check was refused
+    by the permission policy.
+
+    - [minor] Seed freshness check covers fewer streams than the spec claims: The sealed_seeds_fresh check
+    compares only sample[''sub_seeds''] (layout and F7 generator seeds) against the forbidden list. The
+    spec says ''the sealed seed and every derived stream seed''. The die_size, timing_order, l2_subset
+    and f7_strata stream seeds are not checked. Those seeds only drive selection RNGs, so leakage risk
+    is negligible, but the check does not do what its description says.
+
+    - [minor] A5 timing is described as ''before any reference solve'', but the level-0 calibration solves
+
+    ...[truncated; full reviews: project/reviews/T0397/]'
+  at: '2026-11-17T09:50:21+00:00'

@@ -4,7 +4,7 @@ title: 'E004 design, part 1: draft spec and registration stage (frozen reference
   F2/F4 checks on L1)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0386
 - T0387
@@ -298,3 +298,161 @@ history:
 
     TIMEOUT after 2700s'
   at: '2026-11-17T07:02:15+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'All three definition-of-done commands exit 0 on the final tree (run in this worktree, 2026-11-17):
+    `uv run mfos exp check E004` exits 0, `uv run python experiments/runners/e004_run.py --smoke --stage
+    registration` exits 0, and `uv run mfos gate --fast` exits 0 ("all gates passed"). `uv run ruff check
+    .` also passes.
+
+
+    Why attempt 1 failed: its own commands all passed, but the orchestrator''s full gate (`pytest -q tests`)
+    timed out at 2700 s. No test imports `e004_run.py` or reads `E004.yaml`. The founder has since raised
+    that timeout to 5400 s on main (commit e0c174e3, "T0388 full-gate timeout beside builders"). I take
+    the timeout to have been load on the machine, not these files; attempt 2 adds no test.
+
+
+    What attempt 2 changed: since attempt 1, reviews T0440 (physics) and T0441 (numerics) a'
+  report:
+    status: partial
+    failure_class: none
+    confidence: 0.8
+    affects_acceptance_criteria: false
+    summary: 'All three definition-of-done commands exit 0 on the final tree (run in this worktree, 2026-11-17):
+      `uv run mfos exp check E004` exits 0, `uv run python experiments/runners/e004_run.py --smoke --stage
+      registration` exits 0, and `uv run mfos gate --fast` exits 0 ("all gates passed"). `uv run ruff
+      check .` also passes.
+
+
+      Why attempt 1 failed: its own commands all passed, but the orchestrator''s full gate (`pytest -q
+      tests`) timed out at 2700 s. No test imports `e004_run.py` or reads `E004.yaml`. The founder has
+      since raised that timeout to 5400 s on main (commit e0c174e3, "T0388 full-gate timeout beside builders").
+      I take the timeout to have been load on the machine, not these files; attempt 2 adds no test.
+
+
+      What attempt 2 changed: since attempt 1, reviews T0440 (physics) and T0441 (numerics) accepted it
+      with caveats, and the founder''s D0024 now records the decisions the spec had cited only from task
+      briefs. Attempt 2 fixes every finding I could fix within scope:
+
+      1. **Freeze coverage (major, both reviews).** The freeze now hashes all 27 moduleforge files the
+      registration path loads, up from 11. The missing ones included L1''s kernels.py, geometry/conductors.py,
+      units.py, l2_dd.py and the package `__init__` files. Registration refuses if a loaded file is not
+      frozen, checked at the start and again at the end of the stage (a new check, `freeze_covers_loaded_sources`).
+      scipy is now pinned.
+
+      2. **The pinned commit.** It is now main commit 42db7eb5, which is an ancestor of HEAD and stays
+      one after a squash merge. Each frozen file''s copy at that commit must carry the frozen hash.
+
+      3. **The seed check could not fail.** `seed_provenance` now replays every draw from the independently
+      read seed (`MFOS_SEED`, or the development seed in smoke) and compares the moves and the resulting
+      geometry.
+
+      4. **Check order.** The reference lattice check is now gated before any draw (a new check, `references_on_lattice`).
+
+      5. **Compound steps.** Every step of a compound is now DRC-checked, not only the final layout.
+
+      6. **Proxy KeyError.** The proxy record is keyed by its slot, so a built proxy pair no longer raises
+      in smoke mode.
+
+      7. **L1 mesh sensitivity.** L1''s mesh is recorded (4 mm for the gate, 2 mm reported beside it),
+      and every ratio near a span or coverage threshold is flagged.
+
+      8. **D0024 citations.** The spec cites D0024 items 1–5.
+
+
+      A counter-test script shows each new or changed check fails on a perturbed input and passes on the
+      frozen one (15 of 15).
+
+
+      Status is partial: the draft is not registrable yet, for reasons outside my scope that the founder
+      or other tasks must settle:
+
+      - **T0438** (the perturb.py fixes) is in review. When it lands, the freeze must be retaken with
+      `--print-freeze`.
+
+      - **T0437** (a step parameter on the proxy descent) needs the founder. Until then the 2D_Case_2R
+      proxy pair is pending, and registered mode refuses.
+
+      - **The span''s lower end and the allocation** are left open in D0024. As drafted, the span check
+      fails on 0 of 400 development draws, so a sealed run would almost surely be refused.
+
+      - **T0389** (the solve stage) is still a stub.
+
+
+      F7''s response trigger has not fired: 0 of 2 complete pairs are excluded and 11 are pending, so
+      it is undecided. I did not redesign around it and did not block on it.'
+    evidence:
+    - 'Commands and exit codes (final tree): `uv run mfos exp check E004` exits 0. `uv run python experiments/runners/e004_run.py
+      --smoke --stage registration` exits 0. `uv run mfos gate --fast` exits 0 (''all gates passed'').
+      `uv run ruff check .` reports ''All checks passed!''. `uv run python research/o004_e004/check_registration_checks.py`
+      exits 0 (15/15). `uv run python experiments/runners/e004_run.py --print-freeze` exits 0. The smoke
+      run wrapped in `/usr/bin/env time -l` exited 1: the sandbox denies `sysctl kern.clockrate`. The
+      same command without the wrapper exits 0, as in attempt 1.'
+    - 'Smoke run: 2D_Case_4 stands in for both judged slots on the development seed (O004 F2). Run status
+      ''complete'', 20 declared sanity checks reported, 7.4 s. All 15 registration checks pass except
+      two. `l1_span` fails (attempt 1''s development draw has no pair below 0.90). `proxy_pair_built`
+      fails (pending, T0437). The five solve-stage checks are reported as not run.'
+    - 'The smoke run''s mesh report: largest ratio shift between 4 mm and 2 mm is 4.7e-3, the span verdict
+      is the same at both meshes, and one pair is flagged near the 0.98 upper end (0.9757 at 4 mm, 0.9732
+      at 2 mm).'
+    - 'Freeze coverage: after the stage''s imports and the reconstruction script, 27 moduleforge files
+      are loaded, and the smoke reports ''27 moduleforge files loaded, all in config.freeze.files''. Every
+      hash attempt 1 froze is unchanged. `git diff aea69183 42db7eb5 -- src` is empty, and `git diff 42db7eb5
+      HEAD -- src` is empty.'
+    - 'Counter-tests (development geometry only). These fail as they should: dropping kernels.py from
+      the freeze (''loaded but not in config.freeze.files''); an altered conductors.py hash (flagged both
+      live and at the pinned commit); pinning T0386''s commit, whose files differ; a wrong scipy version;
+      a replay from DEV_SEED+1 (flagged on both slots); rules with a 1 m minimum width (they flag every
+      pair, intermediate compound steps included); gen2_0 (off the 1 mm lattice; whole-mm failures in
+      the three nets'' traces and dies 0, 2 and 3); a synthetic ratio that crosses 0.90 between meshes.
+      These pass as they should: the frozen config; attempt 1''s commit, whose src files are identical;
+      a built proxy record in smoke, which no longer raises KeyError.'
+    - 'Context (facts): reviews T0440 and T0441 of attempt 1 returned accept_with_caveats. D0024 (main
+      9a54cdb0) records F1''s caps relative to the ratio, the 0.7616 stand-in, the 1 mm proxy pair, compounds
+      under the stagewise rule, and development geometry under F2. It leaves the span and the allocation
+      open. The founder raised the full-gate timeout 2700 → 5400 s in e0c174e3. T0438 (perturb fixes)
+      is in review; T0437 (proxy step_mm) needs the founder.'
+    - 'F7 status from research/notes/o004-f7-l2-pilot.md: F7(b) passed. F7(c): 0 of 2 complete pairs excluded,
+      11 pending; trigger not fired and undecided. F7(a) not run.'
+    alternative_explanations:
+    - explanation: Attempt 1's full-gate timeout came from these files, not from load on the machine (e.g.
+        a test that indirectly imports the runner or scans the 21,906-line span-sim JSON).
+      how_to_discriminate: grep over tests/ finds no import of e004_run.py and no read of E004.yaml or
+        research/o004_e004. The founder's commit e0c174e3 attributes the timeout to running beside builders.
+        A full `pytest -q tests --durations=20` on an idle machine would settle it; I did not run it (over
+        411 s alone, and the orchestrator re-runs it).
+    - explanation: 'Freezing every loaded moduleforge file may make registration brittle: any edit to
+        an unrelated loaded module, e.g. optimize/search.py, voids it.'
+      how_to_discriminate: 'Deliberate trade-off. The reviews asked for the conservative direction (F2:
+        a change after registration voids the run). If brittleness becomes a problem, the founder can
+        narrow FREEZE_IMPORTS; the end-of-stage check would still catch any loaded but unfrozen file.'
+    discriminating_tests:
+    - 'uv run python research/o004_e004/check_registration_checks.py (15 counter-tests: each new or changed
+      check must fail on a perturbed input and pass on the frozen one)'
+    - uv run python experiments/runners/e004_run.py --print-freeze, compared with config.freeze in experiments/drafts/E004.yaml
+      (must be identical on this tree)
+    - Full suite on an idle machine with --durations=20, to confirm the attempt-1 timeout was load, not
+      this task's files
+    recommended_actions:
+    - 'Founder: settle D0024''s open item (the span''s lower end and the allocation) after burst 1''s
+      F7(c) results. As drafted, F4 refuses a sealed draw almost surely (0 of 400 development draws pass,
+      Wilson 95 % upper bound 0.0095).'
+    - 'After T0438 (perturb.py fixes) merges: run `uv run python experiments/runners/e004_run.py --print-freeze`
+      and refreeze config.freeze in E004.yaml: rules hash, file hashes, and the pinned commit set to a
+      main commit containing T0438. Retire rules_supplement_sha256 if the new rules_sha256 covers NETS,
+      SIGNAL_NET, SIGNAL_PADS and the property sources.'
+    - 'After T0437 (proxy_descent step_mm) lands: wire the 2D_Case_2R proxy pair build in proxy_pair_status
+      (1 mm descent from the twin, ratio against the frozen reconstruction), give its record r_L1_check
+      values for the mesh report, and refreeze the optimize/generate sources.'
+    - 'Founder: decide whether T0387''s F7(d) 0.5 mm distribution (11 Case 4 development pairs) meets
+      O004 scope_in''s ''ratio distribution at L1 and at l2_layout 0.5 mm'' requirement, or whether it
+      must be computed on the frozen allocation''s development draws (raised by T0441).'
+    - 'T0389: implement the solve stage on top of this registration stage. F1 uses D0024 item 1''s relative
+      caps (E_R / r).'
+    experiment_drafts:
+    - experiments/drafts/E004.yaml
+    files_written:
+    - experiments/drafts/E004.yaml
+    - experiments/runners/e004_run.py
+    - research/notes/o004-e004-registration-design.md
+    - research/o004_e004/check_registration_checks.py

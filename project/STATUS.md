@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T09:38:14+00:00 from repository state — do not edit_
+_generated 2026-11-17T09:50:31+00:00 from repository state — do not edit_
 
 ## Founder inbox (5 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -13,9 +13,9 @@ _generated 2026-11-17T09:38:14+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | active | - | 0/1 | $65.61/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | active | - | 0/1 | $68.27/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
-| O004 | active | - | 0/1 | $87.48/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
+| O004 | active | - | 0/1 | $90.77/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
@@ -25,9 +25,9 @@ _generated 2026-11-17T09:38:14+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 30 | $65.61 | 1320501 | 693417 | 94 | 0 |
+| O002 | 30 | $68.27 | 1355808 | 716506 | 99 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 45 | $87.48 | 1481524 | 875902 | 115 | 0 |
+| O004 | 47 | $90.77 | 1539207 | 893670 | 118 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -35,23 +35,17 @@ _generated 2026-11-17T09:38:14+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 46, done: 381, failed: 4, needs_founder: 3, review: 1, running: 3, todo: 8
+cancelled: 46, done: 382, failed: 4, needs_founder: 3, review: 1, running: 3, todo: 9
 
-- T0388 `running` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 2)
-- T0397 `review` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 1)
+- T0388 `review` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 2)
 - T0419 `running` scientist/implement: F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review T0411 findings 1-2) (attempt 2)
-- T0436 `running` critic/review: Review T0397 (numerics) (attempt 1)
 - T0437 `needs_founder` builder/implement: E011 source prerequisites: control.py seed-stream tag, proxy_descent step_mm, proxy pins, nulls.py review fixes, slow marks (attempt 1)
 - T0438 `needs_founder` builder/implement: perturb.py fixes before E004's hash freezes (reviews T0416, T0387) (attempt 1)
 - T0442 `needs_founder` builder/implement: FastHenry adapter fixes from reviews T0427/T0428 (retries, Zc.mat checks, version banner, self-test bound, MEM_MARGIN) (attempt 1)
+- T0447 `running` critic/review: Review T0388 (physics) (attempt 1)
+- T0448 `running` critic/review: Review T0388 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-17T08:09:04+00:00 run_finished {"run": "T0442-builder-20261116T230231-3c2d", "status": "completed", "cost": 0.455485, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T08:35:12+00:00 verified {"task": "T0442"}
-- 2026-11-17T08:35:12+00:00 run_finished {"run": "T0438-builder-20261116T215742-1826", "status": "completed", "cost": 0.656029, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T08:54:55+00:00 verified {"task": "T0438"}
-- 2026-11-17T08:55:08+00:00 run_started {"run": "T0445-critic-20261117T005508-575d", "task": "T0445", "role": "critic", "session": "32874ee8-e974-4e6c-8b4e-dbdd3c7a8f49"}
-- 2026-11-17T08:55:10+00:00 run_started {"run": "T0446-critic-20261117T005510-b204", "task": "T0446", "role": "critic", "session": "d1dc9622-5aa8-4e4b-8c94-ed9a92479a2b"}
 - 2026-11-17T08:55:46+00:00 run_finished {"run": "T0444-critic-20261117T000121-30a9", "status": "completed", "cost": 2.259334, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T09:04:48+00:00 inbox_opened {"id": "I0235", "kind": "protected_change", "subject": "T0437: merge needs founder approval"}
 - 2026-11-17T09:05:00+00:00 run_started {"run": "T0388-scientist-20261117T010500-2448", "task": "T0388", "role": "scientist", "session": "a372e806-bf4d-4036-9908-f2bdcfb53e58"}
@@ -61,3 +55,9 @@ cancelled: 46, done: 381, failed: 4, needs_founder: 3, review: 1, running: 3, to
 - 2026-11-17T09:26:24+00:00 run_finished {"run": "T0446-critic-20261117T005510-b204", "status": "completed", "cost": 2.425159, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T09:38:08+00:00 inbox_opened {"id": "I0237", "kind": "protected_change", "subject": "T0438: merge needs founder approval"}
 - 2026-11-17T09:38:14+00:00 run_started {"run": "T0419-scientist-20261117T013814-97d5", "task": "T0419", "role": "scientist", "session": "d44d0181-6b67-44ef-9f58-95cbdaeae8dc"}
+- 2026-11-17T09:38:52+00:00 run_finished {"run": "T0388-scientist-20261117T010500-2448", "status": "completed", "cost": 3.286696, "subtype": "success", "report": "structured_output"}
+- 2026-11-17T09:50:16+00:00 verified {"task": "T0388"}
+- 2026-11-17T09:50:16+00:00 run_finished {"run": "T0436-critic-20261117T012547-cb50", "status": "completed", "cost": 2.66738, "subtype": "success", "report": "structured_output"}
+- 2026-11-17T09:50:21+00:00 task_failed_attempt {"task": "T0397", "signal": "review_rejected", "action": "repair"}
+- 2026-11-17T09:50:29+00:00 run_started {"run": "T0447-critic-20261117T015029-cd15", "task": "T0447", "role": "critic", "session": "24647a16-0188-4866-a061-40b401c9c892"}
+- 2026-11-17T09:50:31+00:00 run_started {"run": "T0448-critic-20261117T015031-70b0", "task": "T0448", "role": "critic", "session": "aa6e1a08-d391-4174-b3c9-e7b9914506af"}
