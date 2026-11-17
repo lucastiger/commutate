@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The test that should pin the Hoer-Love constant doesn't compute it",
+      "detail": "test_self_test_bound_is_the_exact_hoer_love_value says it is 'independent of the adapter' and checks the Hoer-Love value, but it only compares two module constants: |SELF_TEST_HOER_LOVE_NH - SELF_TEST_L_NH| <= 5e-4, plus a check that one tolerance is smaller than the other. Traced by hand: a wrong constant such as 5.7044 nH would pass every test in the file, including the real-binary self-test, because the build's 5.70425 is within 3e-4 of 5.7044. The constant itself is correct (see the independent check). The file already has bar_self_L(), a quadrature of Neumann's formula, and the 10x1x1 mm bar is one of its parametrized cases.",
+      "evidence": "tests/unit/test_fasthenry_run.py:127-131 compares the constants to each other; bar_self_L at :298 is not used for this; my scipy quadrature gives 5.7042536 nH.",
+      "suggested_check": "Assert R.SELF_TEST_HOER_LOVE_NH == pytest.approx(bar_self_L(10e-3, 1e-3, 1e-3) * 1e9, abs=1e-6).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "MEM_MARGIN = 1.30 rests on T0428 measurements that are not in the repository and disagree with the in-repo direct-run data",
+      "detail": "The comment derives 1.30 from T0428's peak_mem_mb / (direct_mem_est_gb * 1024) = 1.24-1.26 'on direct runs above 5k filaments'. Neither T0427 nor T0428 is in the repository, and research/o004_f7 has no peak_mem data. The only in-repo direct runs that have both fields are in research/o006_p4/runs.jsonl. They give ratios of 1.094 (8344 filaments) and 1.011 (14364 filaments), using the same estimate formula and the same x1024 convention. A larger margin is the safe direction (it refuses more decks), so this is not a correctness defect. Still, the stated basis can't be reproduced here, and the spread suggests the ratio depends on the deck or the platform rather than being a constant.",
+      "evidence": "research/o006_p4/runs.jsonl direct rows: case4_base d0 936.0 MB / (0.8355 GB*1024) = 1.094; d1 2562.6 / (2.4759*1024) = 1.011.",
+      "suggested_check": "Commit the peak/estimate rows that 1.30 was fitted to (T0428/T0389) next to the constant, and re-fit once they exist, as the comment itself says.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Some docstrings and comments are stale after the change",
+      "detail": "The new 'killed_external' status is not in the status lists of Attempt (line 112) or FHResult (line 128). The comment in test_self_test_raises_on_a_wrong_build_and_on_a_crash still cites 'the 0.3 % closed-form bound', which the adapter no longer checks. FHResult.log is filled only on success, so failed results carry an empty log, although the field is documented as 'the last attempt's full FastHenry log'.",
+      "evidence": "src/moduleforge/solvers/fasthenry_run.py:112, 128, 145, 321-325; tests/unit/test_fasthenry_run.py:143.",
+      "suggested_check": "Add 'killed_external' to both status docstrings and pass log=log_text in the failure branch.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The recorded-value check can now never fire on its own",
+      "detail": "The Hoer-Love window [5.703954, 5.704554] nH lies entirely inside the recorded window [5.7025, 5.7055] nH. So the 1.5e-3 nH check now has the property T0427 objected to in the closed-form check: anything it rejects, the Hoer-Love check would also reject. This is harmless because it runs first and gives its own message.",
+      "evidence": "fasthenry_run.py:353-357.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Degenerate freqs=() now raises FileNotFoundError when Zc.mat is missing",
+      "detail": "With an empty freqs tuple, _freqs_match({}, ()) is True, so the code goes on to call _all_1x1(zc.read_text()) on a file that does not exist. The old code returned an empty ok result. No caller passes an empty tuple.",
+      "evidence": "fasthenry_run.py:238-239.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands: pytest on test_fasthenry_run.py and test_fasthenry.py gave 86 passed and 0 skipped. The real provisioned binary at ~/.local/bin/fasthenry was used, so test_self_test_passes_on_the_pinned_build checked the real banner and the 3e-4 nH Hoer-Love bound. ruff check: all passed. uv run mfos gate --fast: exit 0, 'all gates passed'.",
+    "Computed the exact uniform-current partial self-inductance of the 10x1x1 mm bar independently: the Neumann double line integral of two parallel filaments, integrated against the closed-form distance pdf for two points in a square, with scipy quad at rtol 1e-13. Result 5.7042536 nH, which matches SELF_TEST_HOER_LOVE_NH = 5.704254. The Ruehli closed form gives 5.69457, matching D0002's 5.695.",
+    "Checked the tolerance arithmetic: 6 significant digits means 5e-6 relative, about 2.9e-5 nH; Cu skin depth at 1 kHz is 2.09 mm; 0.3 % of 5.695 nH is 0.017 nH; the old closed-form window [5.678, 5.712] contains the recorded window [5.7025, 5.7055], so the removed check could indeed never fire.",
+    "Traced by hand what each of these code changes would do to the tests (running them as mutations was denied by the sandbox): disabling _all_1x1, the R>0 / Im>0 checks, _external_kill or _repeated_exit; removing the <=128 bound; emptying or weakening SELF_TEST_BANNER_PARTS; loosening the Hoer-Love tolerance to 1.5e-3; restoring MEM_MARGIN to 1.10. Each one fails at least one new or existing test. A small change to the Hoer-Love constant (e.g. 5.7044) fails none.",
+    "Checked that parse_zc takes Z11 from a 2x2 matrix, so the 2x2 test really depends on _all_1x1, and that NUM_RE parses '0  +0.2j' and '-0.002  +0.2j', so the R<=0 cases depend on the passivity check.",
+    "Computed peak/estimate memory ratios from research/o006_p4/runs.jsonl for comparison with the T0428 basis of MEM_MARGIN.",
+    "Searched src, experiments, tools and research/scripts for callers of fasthenry_run and for code that lists status values: there are none outside the tests, so the new status and the 1x1-only rule break nothing downstream.",
+    "Read D0002: the pinned build's intermittent failure is a segfault (exit 139 or SIGSEGV). Codes above 128 are still retried, and only plain exit codes 1-128 that repeat, or SIGKILL / exit 137, stop the retries."
+  ],
+  "caveats": [
+    "The review reports T0427 and T0428 are not in the repository, so I could not check 'completely' against their full lists of findings. I checked only the five items the claim names: retries, Zc.mat checks, version banner, self-test bound and MEM_MARGIN. All five are implemented and tested.",
+    "MEM_MARGIN = 1.30 is only as good as the T0428 measurements, which are not committed. The in-repo P4 direct runs give ratios of 1.01-1.09, so 1.30 is conservative against those, but whether it covers the decks O004 will actually run is unverified here.",
+    "The banner check is a string match ('FastHenry 3.0wr', 'mod 031424') and does not prove the binary's identity. The sha256 is recorded, not enforced, which is consistent with D0002/D0004 because builds differ by platform.",
+    "The Hoer-Love tolerance (3e-4 nH) was verified on the macOS arm64 build present here. Whether the Linux burst-VM build passes it was not checked; D0002 records only 5.704 to 4 digits there."
+  ]
+}

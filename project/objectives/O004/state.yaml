@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 1
 max_replans: 3
 needs_replan: false
-spent_usd: 83.2933
+spent_usd: 85.0578
 budget_override_usd: null
 log:
 - 'founder answered I0207: (b)+(c): O004 runs the proxy descent in 1 mm steps (on the lattice by construction),
@@ -34,5 +34,10 @@ log:
   ''lowest reachable, r = 0.7616, stands in for r <= 0.75''. The span-reach report was later restricted
   to 2D_Case_4 and gen2_0 (F2)'
 - diagnosis T0387 merged; founder declined a replan (I0233)
+- 'open review items 2026-11-17T09:13:10+00:00 (founder session; review T0445 of T0442, minor, for the
+  next builder task on src/moduleforge/solvers/fasthenry_run.py): (1) test_self_test_bound_is_the_exact_hoer_love_value
+  compares two constants; assert SELF_TEST_HOER_LOVE_NH == bar_self_L(10e-3, 1e-3, 1e-3) * 1e9 within
+  1e-6 instead; (2) add ''killed_external'' to the Attempt and FHResult status docstrings and fill FHResult.log
+  on failure; drop the stale ''0.3 % closed-form bound'' comment; (3) refit MEM_MARGIN from T0389''s research/o004_f7/fh_direct_mem.json'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38

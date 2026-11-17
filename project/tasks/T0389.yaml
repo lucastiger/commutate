@@ -188,6 +188,14 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   lattice, stop and say so: the fix is a builder change in control.py (filter the jumps to multiples of
   step_mm), and D0024''s ''by construction'' wording would need an amendment.
 
+
+
+  Review T0445 of T0442 (founder session, 2026-11-17): T0442 set MEM_MARGIN = 1.30 from T0428''s figures,
+  which are not in the repository; the only in-repo direct runs (research/o006_p4/runs.jsonl) give peak/estimate
+  ratios of 1.094 (8344 filaments) and 1.011 (14364). Commit your direct-run measurements as research/o004_f7/fh_direct_mem.json,
+  with filaments, direct_mem_est_gb, peak_mem_mb and the ratio per run, so that MEM_MARGIN can be refitted
+  on an in-repo basis.
+
   '
 context_files:
 - project/objectives/O004/objective.yaml
