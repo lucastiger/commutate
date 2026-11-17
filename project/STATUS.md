@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-16T23:50:21+00:00 from repository state — do not edit_
+_generated 2026-11-17T00:00:30+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -25,24 +25,24 @@ _generated 2026-11-16T23:50:21+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 20 | $46.34 | 1006543 | 563185 | 58 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 31 | $61.28 | 1098467 | 688649 | 79 | 0 |
+| O004 | 33 | $61.28 | 1098467 | 688649 | 79 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 30 | $52.43 | 1139532 | 668051 | 96 | 0 |
+| O008 | 31 | $52.43 | 1139532 | 668051 | 96 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 45, done: 360, failed: 4, review: 3, todo: 16
+cancelled: 45, done: 360, failed: 4, review: 3, running: 3, todo: 13
 
+- T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 1)
 - T0385 `review` builder/implement: FastHenry run adapter: pinned binary and self-test, multipole with up to 10 retries, Zc.mat parse, closed-form validation (attempt 1)
 - T0395 `review` builder/implement: L1 thermal model in src/moduleforge/thermal/ (n1's chosen design), tested against analytic limits, symmetry and power scaling, with a speed benchmark (attempt 2)
 - T0396 `review` scientist/design_experiment: E007 statistics: F3 coverage and power simulation, bound selection and fixed allocation; protected mfos.metrics additions drafted as a patch (attempt 1)
+- T0427 `running` critic/review: Review T0385 (physics) (attempt 1)
+- T0428 `running` critic/review: Review T0385 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-16T20:37:05+00:00 inbox_resolved {"id": "I0226", "status": "approved", "note": "T0379 merge approved (reviews T0421, T0422 accept with caveats). Foot offsets excluded per O008 scope_in 'one par
-- 2026-11-16T21:29:13+00:00 merged {"task": "T0379"}
-- 2026-11-16T21:29:56+00:00 loop_stopped {"reason": "STOP file"}
 - 2026-11-16T23:05:29+00:00 loop_started {"pid": 9748}
 - 2026-11-16T23:05:31+00:00 run_finished {"run": "T0385-builder-20261116T123616-1b28", "status": "completed", "cost": 1.487164, "subtype": "success", "report": "structured_output"}
 - 2026-11-16T23:12:24+00:00 verified {"task": "T0385"}
@@ -55,3 +55,6 @@ cancelled: 45, done: 360, failed: 4, review: 3, todo: 16
 - 2026-11-16T23:49:37+00:00 inbox_resolved {"id": "I0228", "status": "approved", "note": "Acknowledged; cap not raised. The day resets at 00:00 UTC.", "by": "human"}
 - 2026-11-16T23:50:14+00:00 merged {"task": "T0380"}
 - 2026-11-16T23:50:21+00:00 inbox_opened {"id": "I0229", "kind": "budget_increase", "subject": "daily LLM budget reached"}
+- 2026-11-17T00:00:28+00:00 run_started {"run": "T0427-critic-20261116T160028-9dd1", "task": "T0427", "role": "critic", "session": "c4c88cda-f19d-4353-9be8-b18e76bd8e79"}
+- 2026-11-17T00:00:30+00:00 run_started {"run": "T0428-critic-20261116T160030-ca1a", "task": "T0428", "role": "critic", "session": "f574f800-7638-4347-a287-660d27b3593f"}
+- 2026-11-17T00:00:30+00:00 run_started {"run": "T0382-scientist-20261116T160030-8287", "task": "T0382", "role": "scientist", "session": "0980b0a0-f516-4599-b117-dccd2695249b"}
