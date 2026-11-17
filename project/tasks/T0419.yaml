@@ -4,7 +4,7 @@ title: 'F1 development check: gate the level-1 verdict on the sanity block and p
   T0411 findings 1-2)'
 type: implement
 agent: builder
-status: running
+status: todo
 depends_on: []
 description: 'Harden research/o002_f1/f1_dev_check.py so that the F1 level-1 verdict the founder gets
   from `--analyse`, after the burst level-2 solves (I0212) are copied back, cannot read ''confirmed''
@@ -133,4 +133,81 @@ rationale: F1's detection requires gated sanity checks. The F1 development check
   E007 can judge at level 1 or needs a founder decision under F1's response, and review T0411 showed that
   a broken record (wrong solver hash) still yields 'confirmed'. The fix must land before the founder analyses
   the burst output (I0212).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'f1_dev_check.py now sets level1 to ''pending'' and lists the failed checks in a top-level
+    ''broken'' list when any sanity check, reproduction_check, energy balance or Tj-at-P_ref check fails.
+    ''confirmed'' and ''refuted'' are possible only when ''broken'' is empty. On the committed burst records,
+    --analyse gives status complete, level1 confirmed and broken == []. All 24 stored records pass the
+    new record_provenance check. I ran no solve, and I changed no tolerance, estimator, layout or burst
+    plan.
+
+
+    - **record_provenance:** it checks every record in cache/, burst_out/ and the o007_dev3 level-2 records.
+    The checks are power_W against p_ref x load factor (relative 1e-12), fingerprint, level and load against
+    the key, die count, solver hash a216d5fe3209bcee, and frozen_config_sha256. The o007_dev3 record'
+  report:
+    status: completed
+    summary: 'f1_dev_check.py now sets level1 to ''pending'' and lists the failed checks in a top-level
+      ''broken'' list when any sanity check, reproduction_check, energy balance or Tj-at-P_ref check fails.
+      ''confirmed'' and ''refuted'' are possible only when ''broken'' is empty. On the committed burst
+      records, --analyse gives status complete, level1 confirmed and broken == []. All 24 stored records
+      pass the new record_provenance check. I ran no solve, and I changed no tolerance, estimator, layout
+      or burst plan.
+
+
+      - **record_provenance:** it checks every record in cache/, burst_out/ and the o007_dev3 level-2
+      records. The checks are power_W against p_ref x load factor (relative 1e-12), fingerprint, level
+      and load against the key, die count, solver hash a216d5fe3209bcee, and frozen_config_sha256. The
+      o007_dev3 records carry no solver hash, so their provenance is dev_study.json''s thermal_fem_sha256
+      plus reproduction_check.passed, and the check''s output says so. Failing records are listed by key.
+
+      - **own_solves_frozen_bytes:** it now covers every record in cache/ and burst_out/, whatever its
+      `source` label.
+
+      - **Tests:** 9 pass in research/o002_f1/test_f1_dev_check.py, using synthetic records in tmp_path.
+      They cover all seven requested cases (clean confirmed, 0.3 K bump refuted, wrong solver hash, power
+      off by 1 %, fingerprint mismatch, forced reproduction failure, repository data awaiting level 2).
+      I added two more: a frozen-config hash mismatch, and a cache record whose power is off by 1e-9.
+
+      - **Worst level-1 error over tolerance** (die average / spread / pair difference): at P_ref 0.717
+      / 0.261 / 0.558, and at 0.5 P_ref 0.695 / 0.316 / 0.250. The die-average worst case is side_by_side_6
+      die 11 at both loads.
+
+      - **Note:** research/notes/o002-f1-dev-check.md has a new section 7 with the verdict rule, the result,
+      a ''broken'' list of [] and the worst-error table.'
+    checks_run:
+    - cmd: uv run pytest -q research/o002_f1/test_f1_dev_check.py
+      exit_code: 0
+    - cmd: uv run python research/o002_f1/f1_dev_check.py --analyse
+      exit_code: 0
+    - cmd: uv run python -c <DoD json assertions on f1_dev_check.json>
+      exit_code: 0
+    - cmd: uv run ruff check research/o002_f1
+      exit_code: 0
+    - cmd: test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    files_changed:
+    - research/o002_f1/f1_dev_check.py
+    - research/o002_f1/test_f1_dev_check.py
+    - research/o002_f1/f1_dev_check.json
+    - research/notes/o002-f1-dev-check.md
+    concerns:
+    - record_provenance requires frozen_config_sha256 on every cache/ and burst_out/ record, which is
+      stricter than the packet's 'where the record carries it'. All current records carry it.
+    - The packet's write scope lists src/** and similar paths, while the deliverables are under research/.
+      The hooks allowed the edits.
+- attempt: 1
+  outcome: scope_violation
+  summary: edited files outside its write scope
+  failure_output: 'research/notes/o002-f1-dev-check.md (outside builder write scope)
+
+    research/o002_f1/f1_dev_check.json (outside builder write scope)
+
+    research/o002_f1/f1_dev_check.py (outside builder write scope)
+
+    research/o002_f1/test_f1_dev_check.py (outside builder write scope)'
+  at: '2026-11-17T04:46:25+00:00'

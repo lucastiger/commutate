@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-17T04:45:46+00:00 from repository state — do not edit_
+_generated 2026-11-17T04:46:35+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -10,7 +10,7 @@ _generated 2026-11-17T04:45:46+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | active | - | 0/1 | $55.96/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | active | - | 0/1 | $56.44/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | active | - | 0/1 | $74.03/$100 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
@@ -22,9 +22,9 @@ _generated 2026-11-17T04:45:46+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 27 | $55.96 | 1151522 | 629200 | 88 | 0 |
+| O002 | 27 | $56.44 | 1165244 | 632816 | 88 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 37 | $74.03 | 1291737 | 789492 | 95 | 0 |
+| O004 | 38 | $74.03 | 1291737 | 789492 | 95 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -35,13 +35,10 @@ _generated 2026-11-17T04:45:46+00:00 from repository state — do not edit_
 cancelled: 45, done: 375, failed: 4, running: 3, todo: 7
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 2)
+- T0388 `running` scientist/design_experiment: E004 design, part 1: draft spec and registration stage (frozen references, sealed-seed pairs, F2/F4 checks on L1) (attempt 1)
 - T0397 `running` scientist/design_experiment: E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, level-1 judging with a level-2 subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan) (attempt 1)
-- T0419 `running` builder/implement: F1 development check: gate the level-1 verdict on the sanity block and per-record provenance (review T0411 findings 1-2) (attempt 1)
 
 ## Recent events
-- 2026-11-17T04:02:25+00:00 run_finished {"run": "T0431-critic-20261116T194326-6d60", "status": "completed", "cost": 2.477181, "subtype": "success", "report": "structured_output"}
-- 2026-11-17T04:02:36+00:00 run_started {"run": "T0433-critic-20261116T200236-ec02", "task": "T0433", "role": "critic", "session": "84e1a787-6341-434a-9f01-571ea8386414"}
-- 2026-11-17T04:02:38+00:00 run_started {"run": "T0434-critic-20261116T200238-d529", "task": "T0434", "role": "critic", "session": "728f8554-83c9-4960-9819-d4ae3daca948"}
 - 2026-11-17T04:08:25+00:00 run_finished {"run": "T0433-critic-20261116T200236-ec02", "status": "completed", "cost": 2.174218, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T04:20:01+00:00 inbox_opened {"id": "I0233", "kind": "protected_change", "subject": "T0387: merge needs founder approval"}
 - 2026-11-17T04:20:08+00:00 run_started {"run": "T0419-builder-20261116T202008-a7e3", "task": "T0419", "role": "builder", "session": "a93ed5af-d43b-43bd-b972-d9b7190fa28e"}
@@ -54,3 +51,6 @@ cancelled: 45, done: 375, failed: 4, running: 3, todo: 7
 - 2026-11-17T04:32:06+00:00 run_started {"run": "T0382-scientist-20261116T203206-7d22", "task": "T0382", "role": "scientist", "session": "73706935-ec37-4464-be34-f830d2b13e2b"}
 - 2026-11-17T04:32:07+00:00 run_started {"run": "T0397-scientist-20261116T203207-5b71", "task": "T0397", "role": "scientist", "session": "5072e1f5-521e-4316-9c8d-f94880d2ed87"}
 - 2026-11-17T04:45:37+00:00 merged {"task": "T0387"}
+- 2026-11-17T04:46:25+00:00 run_finished {"run": "T0419-builder-20261116T202008-a7e3", "status": "completed", "cost": 0.488094, "subtype": "success", "report": "structured_output"}
+- 2026-11-17T04:46:25+00:00 task_failed_attempt {"task": "T0419", "signal": "scope_violation", "action": "repair"}
+- 2026-11-17T04:46:35+00:00 run_started {"run": "T0388-scientist-20261116T204635-8522", "task": "T0388", "role": "scientist", "session": "c2354df4-f911-45a7-bcc2-2913c851964c"}
