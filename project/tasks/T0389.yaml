@@ -9,6 +9,7 @@ depends_on:
 - T0384
 - T0385
 - T0388
+- T0438
 description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004.yaml with: (1) the l2_layout
   ladder 1.0 / 0.5 / 0.25 mm on every layout at 10 and 20 MHz, using E010''s mesh-constant pattern for
   1.0 and 0.5 mm and the unpatched refinement 1 for the judged 0.25 mm value; l2_layout''s thickness and
@@ -108,6 +109,13 @@ description: 'Extend experiments/runners/e004_run.py and experiments/drafts/E004
   units) and r the finest ratio. E004''s F1 exclusion check, its smoke mode and its tests use this reading,
   and the spec states it. (T0387''s pilot_l2.py used the absolute reading E_R <= 0.005; it is corrected
   before burst 1''s results are assembled.)
+
+
+
+  Founder session, 2026-11-17: T0438 (a builder) makes the perturb.py fixes T0388 could not (reviews T0416,
+  T0387). After it merges, refreeze E004.yaml''s config.freeze: perturb_rules_sha256 (T0438 reports the
+  new value), the perturb.py file hash, the commit, and the supplement hash if it changes; rerun the registration
+  smoke and the dev-span simulation.
 
   '
 context_files:

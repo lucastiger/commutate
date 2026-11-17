@@ -1,0 +1,84 @@
+id: T0439
+objective: O008
+title: E011 development L1 run on the frozen code, freeze report, and the complete burst job list (I0205)
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0437
+- T0382
+description: 'E011''s development L1 run on the code that will be frozen, and the complete burst job list
+  for I0205 (O008). It runs after T0437 (source prerequisites: the seed-stream tag changes every degradation
+  draw) and T0382 (the runner fixes: dev_solve keyed by (fingerprint, level), purposes per job, E010''s
+  convergence predicate, code-stamped checkpoints). Read T0382''s research/o008_e011_dev/attempt2.md and
+  reviews T0430, T0431 and T0432 first.
+
+
+  1. Rerun `uv run python experiments/runners/e011_run.py --dev` from scratch for 2D_Case_2R and 2D_Case_4
+  (development seeds only, never a sealed seed). A single background command is limited to 2 hours: resume
+  from the checkpoints across several commands until the manifest''s status reads complete for both layouts.
+  Attempt 1''s checkpoints (research/o008_e011_dev/work.attempt1-stale) are refused by the code stamp;
+  do not reuse them.
+
+  2. `e011_run.py --freeze-report`, then fill code_sha256 and frozen_sha256 in experiments/drafts/E011.yaml.
+
+  3. experiments/drafts/E011.dev_jobs.json: status complete, every job with its level and purposes, totals
+  per level, and the VM sizing from the measured or modelled unknowns: 2D_Case_4''s 0.25 mm solves are
+  about 25 GB each (T0382), so state how many run at once on the proposed machine, the makespan and the
+  cost, and whether the registered run fits its timeout (T0382 estimated about 91-136 h for the registered
+  run''s Case 4 solves against timeout_min = 120 h, and about $80-105). Check that `--dev-solve` on the
+  manifest would submit every job (the selftest''s manifest check, run on the real manifest in a dry mode
+  if the runner has one).
+
+  4. Report per layout: (a) the search''s improvement curve, the share of its final L1 gain made in the
+  last 10 % and the last 25 % of the 2000-evaluation budget (attempt 1 on 2R was still improving in its
+  last 10 %); the founder decides the budget before registration from this, so do not change it; (b) for
+  each null and draw, the step count and terminal kind (local_optimum, step_limit or no_moves) and seed_in_domain,
+  at the registered R_D range [1.25, 1.60] (review T0426 item 5); (c) the in-domain proxy''s steps and
+  L1 ratio; (d) the ablation''s l1_evals beside n_draws.
+
+  5. `mfos exp check E011` exits 0 and the selftest passes. Write the facts to research/notes/e011-dev-run.md.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- experiments/drafts/E011*
+- experiments/runners/e011_run.py
+- research/o008_e011_dev/**
+- research/notes/e011-dev-run.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e011_run.py --selftest
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python -c "import json; d = json.load(open('experiments/drafts/E011.dev_jobs.json')); assert
+    str(d['status']).startswith('complete'), d['status']; assert set(d['layouts']) >= {'2D_Case_2R', '2D_Case_4'},
+    d['layouts']"
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/e011-dev-run.md
+  timeout_s: 900
+- cmd: uv run mfos exp check E011
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: medium
+model: null
+budget_usd: 7.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T05:41:35+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session
+history: []

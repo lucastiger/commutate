@@ -1,0 +1,87 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "sealed_seeds_fresh checks only two of the six derived streams",
+      "detail": "The spec says the check covers 'the sealed seed and every derived stream seed'. But seed_checks only compares sample['sub_seeds'] with the forbidden list, and that dict holds just the 'layouts' per-stratum and 'f7' per-pool seeds. The die_size, f7_strata, l2_subset and timing_order sub-seeds are never recorded or checked. A collision with one of the 10 forbidden 32-bit seeds is very unlikely (about 1e-9), and those four streams do not generate layouts, so leakage is still guarded by the fingerprint check. The check is narrower than its description.",
+      "evidence": "e007_run.py build_sample: out['sub_seeds'] is filled only at 'layouts:{sn}' and 'f7:{f}/{b}/{j}'; sub_seed(seed,'die_size',si), sub_seed(seed,'f7_strata'), sub_seed(seed,'l2_subset') and sub_seed(seed,'timing_order') are used inline.",
+      "suggested_check": "Record all six stream seeds in sub_seeds, or reword the sanity-check description.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F7 draw fingerprints are not checked against C004 or development layouts",
+      "detail": "The spec's layouts_distinct_and_unseen says 'judged and F7 fingerprints distinct; none equals C004's development or fresh layouts, T0393's partners or a P_ref development layout'. The code tests that judged and F7 fingerprints are distinct from each other, but only judged fingerprints are intersected with the C004, other-development and P_ref sets. F7 is reported and not gated, so this does not affect A1-A5.",
+      "evidence": "sample_checks: ok = len(set(nonpref)) == len(nonpref) and not (judged_fp & (c004 | dev_seen | pref_fp)).",
+      "suggested_check": "Intersect the F7 draw fingerprints with the same sets.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Not every L1 evaluation goes through the L1-phase checks; tj_max_within_rating skips F7 layouts",
+      "detail": "The half-P_ref L1 evaluations of the F7 optimised layouts run in the parent process during row assembly (line 1022), outside the timed single-thread L1 phase. Their energy balance is not part of the energy_balance check, although the spec says 'every L1 evaluation'. tj_max_within_rating covers only judged die rows, while O002 F1 says 'Tj at P_ref at most 175 \u00b0C on every layout'. F7 layouts are chosen to be the coolest, so the practical impact is nil.",
+      "evidence": "execute(): l1o = l1['f7'][...] if ld == 'P_ref' else l1_eval(lay, ...); l1_ebs is built only from l1['judged'|'constant_k'|'f7'].",
+      "suggested_check": "Move the half-load F7 evaluations into run_l1_phase, after the timed block.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "A5 timing wording contradicts the order of the run",
+      "detail": "config.l1.timing and the design note say the L1 phase runs 'before any reference solve'. In fact the 15 level-0 P_ref calibration solves (45 reference solves) have to finish first, because P_ref is an input to L1. Jobs.run waits for every running job, so the requirement that no solve runs during timing does hold. Only the wording is wrong.",
+      "evidence": "execute(): cal = jobs.run([cal_job...]) precedes l1 = l1_phase(...); the module docstring's 'Order of a run' lists P_ref before the L1 phase.",
+      "suggested_check": "Reword to 'after the P_ref calibration and before any judged reference solve, with none running'.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Cost figures in the design note and spec do not match --plan output",
+      "detail": "The note and config.compute.plan_summary give Option B's local part as 'about 28 h'. --plan reports local_cpu_hours 22.2 and local_wall_hours_one_at_a_time 22.2. The note says only interleaved/6 and u_shaped/6 exceed the 5 GB local cap, but in the expected case --plan also lists side_by_side/6:judged (5.1 GB at the upper size). The headline numbers agree: 717 solves, 56.7/61.1 CPU-h, $15.5/$17.8, $13.8.",
+      "evidence": "--plan JSON: option_B_local_then_burst {local_cpu_hours: 22.2, local_wall_hours_one_at_a_time: 22.2, vm_hours: 22.6, usd: 13.84}; jobs_over_local_5GB (expected) includes side_by_side/6:judged.",
+      "suggested_check": "Regenerate plan_summary and design note \u00a76 from the current --plan output.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The freeze does not hash every module the generator and Layout import",
+      "detail": "halfbridge.py and geometry/layout.py import geometry/__init__.py, geometry/conductors.py and geometry/units.py, and the generate package has its own __init__.py. None of these is in config.freeze.files or code_under_test. They do not affect L1's tuning (F5), but they can change generated geometry, and so the sample, without the freeze check noticing.",
+      "evidence": "geometry/layout.py: 'from .conductors import (...)'; halfbridge.py: 'from moduleforge.geometry import (... arc_wire, default_dbc_stack, mm_to_m)'; freeze.files lists only geometry/stack.py and geometry/layout.py.",
+      "suggested_check": "Add geometry/*.py and generate/__init__.py to the freeze files and code_under_test.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The die-position null's A4 is close to the stratum-mean null's by construction",
+      "detail": "For spreads, the die-position null is the max-min of leave-one-out per-index means. That can never exceed the leave-one-out mean spread (a max of means is at most the mean of maxes). It equals the mean spread exactly when the same die indices are hottest and coolest in every layout of the stratum, which is why the selftest prints 'null die_position: A4 1.000'. F2's requirement that the spread nulls fail A4 is still met, but this null is not an independent test of A4.",
+      "evidence": "selftest output: 'null die_position: A1 2.618 K, A2 0.0328, A4 1.000'; assemble(): switch-row null_pos = spread of the die-row null_pos.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Hottest-node estimates (F6) exist only on the level-2 subset",
+      "detail": "O002 F6 asks for the hottest-node Tj of every die 'with its estimate'. The runner reports tj_max_ref_K and tj_max_l1_K for every die, but the step-floor estimate only for the 12 subset layouts (f1_max_tjmax_gci_K). Levels 0 and 2 on every layout would be far outside the budget, so this is a reasonable reading. It should be stated as a scope limit.",
+      "evidence": "f1_rows_and_checks hottest_node rows; f6_report uses the subset estimates only.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e007_run.py --verify-freeze`: every check OK (11 file hashes, thermal_fem a216d5fe3209bcee, GridRule file hash and key-for-key, fem production constants, L1 grid rule, calibration table and Picard tolerance, allocation hash and bound against f3_simulation.json, code_must_match O007, code_under_test covers the freeze).",
+    "Ran `e007_run.py --selftest`: exit 0, 0 failures. Read what it tests: mutations for a wrong hottest die and a 1 K A1 error, the leave-one-out null, resume, refusal of a foreign work directory, and recompute against mfos.metrics.compute.",
+    "Ran `e007_run.py --plan`: exit 0. Recounted the solves by hand: 600 judged + 24 F7 + 48 subset (levels 0 and 2) + 45 calibration = 717, as reported. 56.7 CPU-h matches the spec's cpu_hours_est of 57.0. The largest level-2 solve in the upper case (59.6 GB) fits the VM's 66 GB usable.",
+    "Ran ruff (clean), the definition-of-done spec-key assertion (all keys present) and `mfos exp check E007` (no error output).",
+    "Re-derived the bound for the max over loads: the max of the per-load upper bounds keeps 1-\u03b1 coverage without Bonferroni, and the lower bound needs \u03b1/2 per load. e007_metrics.quantile_ci implements exactly this, and level 0.94 gives one-sided 97 %.",
+    "Physics check of null (a) on real generator layouts (u_shaped/2 at 5.0 mm, side_by_side/4 at 4.0 mm, interleaved/6 at 5.5 mm): the isolated-die null's local rise matches L1 run with only that die powered to within 0.1-0.6 K (14.08 vs 14.00 K; 18.27 vs 18.82 K; 12.60 vs 12.51 K). The inter-die coupling it leaves out is 5-15 K, so the null can fail A1 as F2 requires.",
+    "Confirmed that LayerStack.layers excludes the die and die attach, so the extra 1D die and attach term in null (a) does not double-count. Confirmed that subtracting T_c + P/(hA) leaves the rise above the mean baseplate-bottom temperature, which agrees with energy balance.",
+    "Read mfos.metrics.gci_step_floor and confirmed f1_rows_and_checks applies O002 F1 as written: |v1 - v2| + estimate, a 0.01 K step floor, 1 % of the level-1 die-local rise, 0.1 K for pairs and spreads, and 0.1 K for the level-1 vs level-2 step.",
+    "Cross-checked the runner's A1-A4, F2 (a/c/d), F4, F6 and F7 definitions against project/objectives/O002/objective.yaml: the hottest die is the reference's by die average for both models, the own-hottest variant is reported, the nulls are leave-one-layout-out per (stratum, switch[, die index]), the F7 rule is the lowest L1 hottest-die average at P_ref, and the F4 ablation runs at both loads."
+  ],
+  "caveats": [
+    "This is a draft, not a registered spec. The A1-A4 recompute entries carry ci: null until e007_metrics.patch (I0211) is applied to tools/mfos. Until then the evaluator would judge every ci-criterion 'missing'.",
+    "The layouts per stratum (m = 20) is still an open founder decision: the state log keeps it pending T0398's measured L1 power, and the joint t3 power at m = 20 is 0.531. Only m in {12, 16, 20, 24, 32} has been simulated.",
+    "F2's null-discrimination requirement has to be shown on T0398's development rows (`mfos exp check E007 --rows ...`) before registration. The selftest uses fake physics and is not evidence that the nulls fail A1 on real data.",
+    "Two longer scratch scripts (a brute-force recompute of A1, A2 and A4, and of the leave-one-out nulls, on synthetic rows) were denied by the sandbox permission mode, so those parts rest on code reading plus the runner's own selftest. The real-physics checks of null (a) and the freeze, plan and lint runs did execute.",
+    "No real reference (scikit-fem) solve was run in this review; the memory and CPU figures come from cached rates."
+  ]
+}

@@ -1,0 +1,73 @@
+id: T0438
+objective: O004
+title: perturb.py fixes before E004's hash freezes (reviews T0416, T0387)
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: 'Source fixes to the perturbation rules before E004 freezes their hash (O004). T0388 (E004
+  design part 1, a scientist) could not make them: they are in src/ and tests/unit/. Each fix comes with
+  a test in tests/unit/test_perturb.py; never weaken an existing test.
+
+
+  Review T0416 of T0386:
+
+  1. rules_sha256() must cover every input that decides which layouts a seed yields: add NETS (its order
+  is indexed by the rng), SIGNAL_NET, SIGNAL_PADS, and the sources of Die.box, BondWire.length and SignalWire.length.
+
+  2. long_sides depends on the polygon''s vertex list (collinear splits), so a compound that canonicalises
+  a net changes the trace_width edge set for the same geometry: compute it on _canonical(poly).
+
+  3. The whole-mm construction rounds absolute coordinates: draw and measured_rules assert that the reference
+  coordinates are whole mm (all three references are), with a clear error otherwise.
+
+  4. test_terminal_copper_declared_changes_closed_form''s positive case is vacuous (its slab lies inside
+  the PHASE column): add a positive-delta case whose slab adds copper, with the closed-form area gain.
+
+  T0387''s report:
+
+  5. perturb._draw_params evaluates long_sides on every net, so draw raises ''edge has copper on both
+  sides'' on any layout where one net''s long side has copper on both sides (gen2_0: DC+ and PHASE; draw(gen2_0,
+  {trace_width: 1}) raises). Evaluate long sides only for the nets the drawn move uses, or handle a both-sided
+  edge by a stated rule. Test it on gen2_0 at the long_sides level (item 3 makes draw reject gen2_0, which
+  is off the 1 mm lattice) and on a synthetic layout. Do not run draw or long_sides on 2D_Case_2R or 2D_Case_6
+  (O004 F2: development work uses 2D_Case_4, gen2_0 and development seeds only).
+
+  Report the new rules_sha256() value; T0389 refreezes E004''s perturbation hash from it.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- src/moduleforge/generate/perturb.py
+- tests/unit/test_perturb.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/test_perturb.py
+  exists: null
+  timeout_s: 1800
+- cmd: uv run ruff check src/moduleforge/generate/perturb.py tests/unit/test_perturb.py
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 2400
+experiment: null
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T05:41:18+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session (T0388 cannot write src/)
+history: []

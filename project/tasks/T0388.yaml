@@ -4,7 +4,7 @@ title: 'E004 design, part 1: draft spec and registration stage (frozen reference
   F2/F4 checks on L1)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0386
 - T0387
@@ -147,4 +147,146 @@ lens: null
 trigger: null
 rationale: Required experiment E004 (design); F2 (frozen inputs, sealed seed); F4 (registration refusals);
   scope_in registration span on L1.
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'E004 part 1 is drafted, and all three definition-of-done commands exit 0 (run in this worktree,
+    2026-11-16):
+
+    - `uv run mfos exp check E004` exits 0.
+
+    - `uv run python experiments/runners/e004_run.py --smoke --stage registration` exits 0. It takes 1.8
+    s, and the run status is `complete` with all 18 declared sanity checks reported.
+
+    - `uv run mfos gate --fast` exits 0 ("all gates passed").
+
+    - Also run: `uv run ruff check experiments/runners/e004_run.py` passed. The development span simulation
+    (`--dev-span-sim 200`) exited 0.
+
+
+    The status is `partial` for three reasons:
+
+    1. **Out-of-scope fixes.** The packet carries review T0416''s perturb.py fixes and T0387''s long_sides
+    fix into this task. These are edits to `src/` and `tests/unit/`, and my write scope forbids both,
+    so I made none of them. Where m'
+  report:
+    summary: 'E004 part 1 is drafted, and all three definition-of-done commands exit 0 (run in this worktree,
+      2026-11-16):
+
+      - `uv run mfos exp check E004` exits 0.
+
+      - `uv run python experiments/runners/e004_run.py --smoke --stage registration` exits 0. It takes
+      1.8 s, and the run status is `complete` with all 18 declared sanity checks reported.
+
+      - `uv run mfos gate --fast` exits 0 ("all gates passed").
+
+      - Also run: `uv run ruff check experiments/runners/e004_run.py` passed. The development span simulation
+      (`--dev-span-sim 200`) exited 0.
+
+
+      The status is `partial` for three reasons:
+
+      1. **Out-of-scope fixes.** The packet carries review T0416''s perturb.py fixes and T0387''s long_sides
+      fix into this task. These are edits to `src/` and `tests/unit/`, and my write scope forbids both,
+      so I made none of them. Where my scope allowed, I added stopgaps (listed in the evidence), but the
+      perturbation-rules hash in the spec must be frozen again once the real fixes land.
+
+      2. **The proxy pair is pending.** O008''s proxy rule exists in `optimize/control.py`, but `proxy_descent`
+      hard-codes 0.5 mm steps and has no step parameter. I0207 asks for a 1 mm step exposed as a parameter
+      of O008''s code. Registered mode refuses to run without the pair; smoke records it as pending with
+      that reason.
+
+      3. **The span check, as specified, will almost certainly refuse a sealed draw.** I simulated it
+      on 2D_Case_4 with 200 development seeds (never E004''s sealed seed). With the allocation fixed beforehand
+      (one pair of each single move type plus 2 compounds per reference), no single-reference draw met
+      the check at any of the four lower ends (0 of 400). The binding constraint is "at least 3 below
+      0.90", not the lower end. The founder needs to decide this before registration.
+
+
+      F7''s response trigger has not fired; per T0387''s notes it is still undecided while the VM solves
+      are pending. I did not redesign around it, and registration waits on the assembled F7 results.'
+    status: partial
+    failure_class: none
+    confidence: 0.8
+    affects_acceptance_criteria: false
+    experiment_drafts:
+    - experiments/drafts/E004.yaml
+    files_written:
+    - experiments/drafts/E004.yaml
+    - experiments/runners/e004_run.py
+    - research/notes/o004-e004-registration-design.md
+    - research/o004_e004/span_sim_case4.json
+    evidence:
+    - 'Commands and exit codes: `uv run mfos exp check E004` exits 0. `uv run python experiments/runners/e004_run.py
+      --smoke --stage registration` exits 0 (1.8 s). `uv run mfos gate --fast` exits 0 (''all gates passed'').
+      `uv run ruff check experiments/runners/e004_run.py` passed. `uv run python experiments/runners/e004_run.py
+      --dev-span-sim 200` exits 0. An earlier smoke attempt wrapped in /usr/bin/time exited 1 because
+      the sandbox denies `sysctl kern.clockrate`; the same command without the wrapper exits 0.'
+    - 'Smoke run (2D_Case_4 standing in for both judged slots, development seed 20261117). Passed: seed_provenance,
+      freeze_hashes_match, references_fingerprints_match (2R 66cb1e19…, Case 6 71e07ae1…, rebuilt by the
+      frozen T0263 script, whose sha256 aa96880c… is checked first), no_powersynth_files_in_tree, references_whole_mm,
+      draws_complete, n_references, pairs_per_reference, move_type_per_reference, layouts_on_lattice,
+      layouts_drc_clean_distinct. Failed: l1_span (pooled min 0.9454, 0 pairs below 0.90) and proxy_pair_built
+      (pending). The five solve-stage checks are reported as not run.'
+    - 'The checks can fail: on gen2_0 (development geometry) the whole-mm check flags all three nets''
+      traces and dies 0, 2 and 3; the 1 mm lattice check is False; and draw_pairs(gen2_0, {trace_width:
+      1}) raises RegistrationRefused naming ''DC+'' and ''PHASE'' (''edge has copper on both sides''),
+      matching T0387.'
+    - 'Hashes frozen in the spec, all at commit aea69183: perturb.rules_sha256 70307210…; rules_supplement_sha256
+      38420f5b… (my stopgap for T0416 item 1: NETS, SIGNAL_NET, SIGNAL_PADS, Die.bounds/box, BondWire.length,
+      SignalWire.length); l2_layout.source_sha256 ed0288b6…; fasthenry.py 0d2c77cd…; fasthenry_run.py
+      a373e493…; control.py f6e7585c…; local.py 0da8d2c4…; numpy 2.5.3; shapely 2.1.2.'
+    - 'Span simulation on 2D_Case_4: 200 development seeds × 2 slots, L1 only, no failed draws. Single-reference
+      pass fraction is 0/400 at lower ends 0.75, 0.78, 0.80 and 0.85 (Wilson 95 % upper bound 0.0095).
+      Pooled over two slots, 0/200 at 0.75, 0.78 and 0.80, and 1/200 at 0.85 (Wilson 95 % [0.0009, 0.028]).'
+    - 'Which constraint binds: max ≥ 0.98 holds in every draw. ''At least 3 below 0.90'' holds in 0/400
+      single draws and 2/200 pooled draws. min ≤ lower end holds in 0/0/1/5 of 400 single draws at 0.75/0.78/0.80/0.85.
+      Each draw''s lowest L1 ratio at 20 MHz: min 0.799, median 0.930, 5th percentile 0.873.'
+    - 'Per pair kind on Case 4, share below 0.90: compound 0.06, die_row_shift 0.11, all other single
+      types 0. Share with |1 - r| ≥ 6 %: compound 0.30, die_row_shift 0.35, trace_width 0.08, wire_landing
+      0.14, terminal_copper 0.05.'
+    - 'F7 status, from research/notes/o004-f7-l2-pilot.md: F7(b) passed; F7(c) has 0 of 2 complete pairs
+      excluded and 11 pending, so the trigger has not fired and is undecided; F7(a) has not been run.'
+    - 'The proxy rule exists but has no step parameter: optimize.control.proxy_descent passes step_mm=0.5
+      to local.descend, and inspect.signature shows no step_mm parameter.'
+    alternative_explanations:
+    - explanation: The zero pass fraction may be specific to 2D_Case_4. 2D_Case_2R and 2D_Case_6 have
+        different rules, gaps and wire lengths, so their per-type chance of a ratio below 0.90 could be
+        higher.
+      how_to_discriminate: 'This cannot be checked before registration without breaking F2 (no draws on
+        2R or Case 6). The only allowed evidence is development geometry, so the inference is limited
+        to an order of magnitude: three of six candidates per reference must each fall below 0.90.'
+    - explanation: Reading the span check per reference instead of pooled would make it even stricter.
+        Pooling, as implemented, is the more lenient of the two readings of O004's text.
+      how_to_discriminate: Founder reading of 'the pairs' L1 ratios must span'. Both variants are reported
+        in span_sim_case4.json.
+    discriminating_tests:
+    - '`uv run python experiments/runners/e004_run.py --smoke --stage registration` must report l1_span
+      false on 2D_Case_4 at a lower end of 0.75, since Case 4''s reachable floor is 0.7616. A pass would
+      show the check is broken.'
+    - 'draw_pairs on gen2_0 with {trace_width: 1} must refuse and name DC+ and PHASE (reproduced).'
+    - '`--dev-span-sim` with the allocation changed would show whether more compound slots make the span
+      reachable. I did not run it: that would be choosing the allocation after seeing results.'
+    recommended_actions:
+    - 'Create a builder task for src/moduleforge/generate/perturb.py and tests/unit/test_perturb.py covering
+      T0416 item 1 (NETS, SIGNAL_NET, SIGNAL_PADS, Die.box, BondWire.length, SignalWire.length inside
+      rules_sha256), item 2 (long_sides on _canonical(poly)), item 3 (an assert in draw/measured_rules),
+      item 4 (a real positive-delta terminal_copper test) and T0387''s fix (evaluate long_sides only for
+      the drawn net, tested on gen2_0 at the long_sides level and on a synthetic layout). Then refreeze
+      config.freeze in E004.yaml: perturb_rules_sha256, the perturb.py file hash, the commit, and the
+      supplement hash if it changes.'
+    - 'O008''s builder: add a step_mm parameter to optimize.control.proxy_descent (I0207). Then wire the
+      2D_Case_2R proxy pair in e004_run (twin, 1 mm descent, ratio against the frozen reconstruction)
+      and refreeze control.py and local.py.'
+    - 'Founder decision before registration: with the frozen allocation, a sealed draw meets the F4 span
+      almost never (Case 4: 0/400 single-reference draws, at most about 3 % pooled even at a lower end
+      of 0.85). Options: more compound slots; a frozen rejection rule on r_L1 inside the sealed stream
+      (L1 is not the tool under test); or relaxing ''at least 3 below 0.90''. Lowering the lower end alone
+      does not rescue the check. The coverage rule would also rarely cover terminal_copper (about 9 %)
+      or trace_width (about 16 %) with one single pair per type per reference.'
+    - 'Founder: confirm the reading of the span check (pooled over all registered pairs, both frequencies)
+      and the coverage rule (single pairs only, |1 - r_L1| ≥ 6 % at both frequencies).'
+    - 'T0389: implement the solve stage, the rows (row_kind pair/layout with columns r_l2, r_fh, excluded_f1,
+      finest_complete, L_l2, L_fh, E_l2, E_fh, matching the spec''s recompute entries), F1 with caps relative
+      to the ratio, and the five declared solve sanity checks.'
+    root_cause: ''

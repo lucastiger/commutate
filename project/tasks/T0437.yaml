@@ -1,0 +1,100 @@
+id: T0437
+objective: O008
+title: 'E011 source prerequisites: control.py seed-stream tag, proxy_descent step_mm, proxy pins, nulls.py
+  review fixes, slow marks'
+type: implement
+agent: builder
+status: todo
+depends_on: []
+description: 'Source prerequisites for E011 (O008), collected from reviews of T0378, T0379 and T0380 and
+  from I0207. Scientists may not write src/ or tests/unit/, so T0382 (E011 design) could not make these;
+  its attempt-2 notes (research/o008_e011_dev/attempt2.md on T0382''s branch) list the current state.
+  Each fix comes with a test; never weaken an existing test or tolerance.
+
+
+  1. Seed streams (review T0414 item 4): numpy''s SeedSequence drops trailing zero entropy words, so [seed,
+  li, j, 0] equals [seed, li, j]. Put a nonzero domain tag first in every entropy list in src/moduleforge/optimize/control.py
+  (the degradation family: draw_degradations seeds attempt a of draw j with SeedSequence([sealed_seed,
+  layout_index, j, a]) today) and keep the search''s sealed-seed stream distinct from the degradation''s,
+  as O008 requires. Add a test that the streams differ, including for a = 0 and j = 0.
+
+  2. proxy_descent step size (I0207, answered (b)): add a step_mm parameter to control.proxy_descent,
+  default 0.5 mm, so O004 can run O008''s rule with 1 mm steps (on the 1 mm lattice by construction).
+  The default keeps today''s behaviour bit for bit; test both the default and a 1 mm run (every visited
+  layout on the 1 mm lattice).
+
+  3. Regression pins for the in-domain proxy (reach=True, the frozen rule, min_gain = MIN_GAIN_H) on both
+  development layouts: its step count and L1 ratio on 2D_Case_2R (T0382 measured 25 steps, 0.9138) and
+  on 2D_Case_4 (measure it), beside the existing reach=False pin (test_control.py, 0.898). These do not
+  depend on any seed.
+
+  4. src/moduleforge/optimize/nulls.py, review T0425: record seed_in_domain and the number of valid neighbours
+  at step 0 in NullResult.stats; give nulls (b) and (d) a distinct terminal ''no_moves'' when the first
+  neighbourhood is empty (today they return D_j unchanged labelled ''local_optimum''); add a test with
+  an out-of-domain D_j.
+
+  5. nulls.py, review T0426: (a) a null that reaches its local optimum on exactly step NULL_STEP_LIMIT
+  is labelled step_limit (the 70x40 fixture, seed 5, compact reaches its optimum at exactly step 200):
+  when the limit is hit, examine the neighbourhood once more and label the run local_optimum if no feasible
+  move improves; test with step_limit equal to the known optimum step count; the returned layout does
+  not change. (b) The compaction constraint (no copper lost, no wire lengthened) is not exercised by any
+  test: add a unit test with a hand-picked or synthetic candidate where the steepest A-W move reduces
+  copper, and assert null_compact rejects it. (c) Give null_widen and null_compact an optional dies_fixed
+  argument (default False) passed through to descend.
+
+  6. Fast-suite time: the fast unit suite takes 740-984 s on the M5 (research/o004_f7/gate_unit_timing_attempt2.txt)
+  and the fast gate''s limit was raised to 1800 s after two timeouts. Mark these tests @pytest.mark.slow
+  (they keep running in the full gate and nightly CI): test_benchmark_smoke_run_with_new_options, test_degrade_error_when_no_move_reaches_the_target,
+  test_compact_local_optimum_has_no_feasible_improving_move, test_widen_ends_where_no_single_widening_move_is_feasible,
+  test_o006_manufactured_case_q2_coarse_levels, test_degrade_is_deterministic_and_raises_when_the_ratio_is_missed,
+  test_determinism, test_degrade_error_carries_the_walk_terminal_state, test_kirchhoff_column_convergence_orders
+  (in tests/unit/solvers/test_thermal_fem.py, tests/unit/generate/test_twin.py, tests/unit/optimize/test_nulls.py
+  and tests/unit/solvers/test_thermal_fem_assembly.py). Where a marked test is the only fast-suite check
+  of a behaviour, add a cheaper fast variant if one takes under 5 s. Report the fast unit suite''s time
+  before and after.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- src/moduleforge/optimize/control.py
+- src/moduleforge/optimize/nulls.py
+- tests/unit/optimize/test_control.py
+- tests/unit/optimize/test_nulls.py
+- tests/unit/generate/test_twin.py
+- tests/unit/solvers/test_thermal_fem.py
+- tests/unit/solvers/test_thermal_fem_assembly.py
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize tests/unit/generate/test_twin.py
+  exists: null
+  timeout_s: 2400
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: '! uv run pytest --collect-only -q -m ''not slow'' tests/unit | grep -E ''(test_benchmark_smoke_run_with_new_options|test_degrade_error_when_no_move_reaches_the_target|test_compact_local_optimum_has_no_feasible_improving_move|test_widen_ends_where_no_single_widening_move_is_feasible|test_o006_manufactured_case_q2_coarse_levels|test_degrade_is_deterministic_and_raises_when_the_ratio_is_missed|test_determinism|test_degrade_error_carries_the_walk_terminal_state|test_kirchhoff_column_convergence_orders)'''
+  exists: null
+  timeout_s: 600
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 2400
+experiment: null
+risk: medium
+model: null
+budget_usd: 4.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-17T05:41:18+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder approved 2026-11-17 in the founder session (scientist tasks T0382/T0388 cannot write
+  src/)
+history: []

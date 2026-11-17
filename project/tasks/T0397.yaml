@@ -4,7 +4,7 @@ title: 'E007 design: draft spec and runner (sealed seeds, per-stratum P_ref, lev
   subset, F2 nulls, F4/F6/F7 reports, code freeze, cost plan)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0393
 - T0394
@@ -233,4 +233,187 @@ lens: null
 trigger: null
 rationale: This is E007's design and runner, the only experiment in acceptance.required_experiments. It
   brings together n2 (judged level), n3 (die size), n4 (frozen L1) and n5 (bound, allocation, metrics).
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'The E007 draft spec, its runner and the design note are written, and every definition-of-done
+    command exits 0. The spec cannot be registered as it stands: its bound needs a protected patch to
+    tools/mfos first, and several design choices are listed for the founder.
+
+
+    **Commands run, all exit 0 on the final files:**
+
+    - `uv run python experiments/runners/e007_run.py --selftest` (0 failures)
+
+    - `uv run python experiments/runners/e007_run.py --verify-freeze`
+
+    - `uv run python experiments/runners/e007_run.py --plan`
+
+    - `uv run ruff check experiments/runners/e007_run.py`
+
+    - the DoD required-strings check on the spec
+
+    - `test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee`
+
+    - `uv run mfos exp check E007`
+
+    - `uv run mfos gate --fast` (''all gates passed''). This star'
+  report:
+    status: completed
+    summary: 'The E007 draft spec, its runner and the design note are written, and every definition-of-done
+      command exits 0. The spec cannot be registered as it stands: its bound needs a protected patch to
+      tools/mfos first, and several design choices are listed for the founder.
+
+
+      **Commands run, all exit 0 on the final files:**
+
+      - `uv run python experiments/runners/e007_run.py --selftest` (0 failures)
+
+      - `uv run python experiments/runners/e007_run.py --verify-freeze`
+
+      - `uv run python experiments/runners/e007_run.py --plan`
+
+      - `uv run ruff check experiments/runners/e007_run.py`
+
+      - the DoD required-strings check on the spec
+
+      - `test "$(shasum -a 256 src/moduleforge/solvers/thermal_fem.py | cut -c1-16)" = a216d5fe3209bcee`
+
+      - `uv run mfos exp check E007`
+
+      - `uv run mfos gate --fast` (''all gates passed''). This started before my last two runner edits
+      (the diversity statistic and the host settings); I re-ran the selftest, verify-freeze, plan, ruff
+      and exp check on the final files, but not the gate.
+
+
+      **What the spec fixes (from the packet and the founder decisions):**
+
+      - **Reference:** requires_passed O007; code_must_match thermal_fem.py with O007; the frozen GridRule
+      checked key for key.
+
+      - **Model under test:** moduleforge.thermal frozen by code hash and by value (the 1.5 mm grid cap
+      and c = 0.98544/0.98284/0.98298/0.98402). I added L1''s own dependencies (thermal_fv.py, thermal_layout.py,
+      layout.py) to the frozen files, because a change there would change L1 silently. The spec records
+      that T0395 changed thermal_layout.py.
+
+      - **Sealed seeds:** layouts, the per-stratum die size, F7 draws, the level-2 subset and the timing
+      order all come from the sealed seed, which must differ from every development seed so far (including
+      20261395 and T0398''s 20261398). C004''s layouts are refused as judged layouts.
+
+      - **Sample and load:** 300 layouts, 20 per stratum, as f3_simulation.json allocates. P_ref per stratum
+      comes from a level-0 calibration on a development layout and is written before any judged solve.
+
+      - **Judging:** at level 1. T0393''s check is complete with level 1 confirmed, so the stop condition
+      does not apply. A frozen level-2 subset (6 cells × 2 same-stratum layouts) carries F1''s gates with
+      the step-floor rule.
+
+      - **Rows:** follow the row contract, with no geometry; recompute entries for A1-A5 (and the own-hottest
+      A1) through mfos.metrics.
+
+      - **Reported, not gated:** the three F2 nulls (die position, stratum mean, isolated die) per stratum;
+      F4, F6 and F7; A2 per stratum and A4 per band; a diversity statistic.
+
+
+      **Checks of the pipeline itself:**
+
+      - The selftest runs the real sample construction (300 layouts), one job through a real child process,
+      resume with no new solves, and refusal of another seed''s work directory.
+
+      - Mutation checks: a wrong hottest die is caught, a 1 K hottest-die error fails A1, and the die-position
+      null is leave-one-out.
+
+      - One real level-0 reference solve through the child process worked: energy balance 2.4e-15, the
+      bottom-temperature integral matches the flux value, 0.49 GB peak.
+
+
+      **Cost (`--plan`):** 717 reference solves, about 57 CPU-hours (61 if every die is 5.5 mm), counted
+      as process CPU time. That is above the policy''s 6 CPU-hour local limit, so the policy sends the
+      run to burst:
+
+      - **Option A**, everything on the VM: about 25 VM-hours, about $15.5.
+
+      - **Option B**, local first: levels 0-1 locally (about 28 h), then the level-2 solves on the VM,
+      about 23 VM-hours, about $13.8.
+
+
+      The largest solves are level 2 of the 4-6 die cells, at 45-49 GB. Level 1 of interleaved/6 and u_shaped/6
+      is about 5.3-5.5 GB, just over the 5 GB local cap. Level 2 is about 26 of the 57 CPU-hours; above
+      roughly 2.6 effective solver threads the 100 CPU-hour budget would be exceeded.
+
+
+      **Registration blocker:** the unpatched schema rejects scheme ''woodruff'', and the orchestrator''s
+      draft validation would then fail. So the recompute entries carry ci: null, and the runner reports
+      the 97 % bound itself. If the evaluator ran as things stand, every ci criterion would come out ''missing''.
+      The patch (approved under I0211) must be applied and ci set on the A1-A4 entries before registration.
+      The draft records this in config.bound.recompute_ci_on_registration.
+
+
+      **Other change:** I corrected coverage_definition in research/o002_e007/f3_simulation.json (review
+      T0420), which changes its hash to 0071c857.
+
+
+      **Founder decisions before registration** (listed in the spec):
+
+      - m: decided at 20, but the state log keeps it open pending T0398''s power figures.
+
+      - The patch, as above.
+
+      - Compute option A or B.
+
+      - The isolated-die null''s fixed 363.15 K conductivity temperature and uniform-substrate simplification.
+
+      - F7''s pool of 40 draws and its pool rule.
+
+      - A5''s warm-up evaluation and timing-phase order.
+
+      - Pair rows: I followed the row contract (no judged pair rows) rather than the packet''s ''per pair''
+      wording.
+
+      - dev_rows is set once T0398 writes them.
+
+      - The yardstick still assumes the 11-27 thesis-review decision.'
+    failure_class: none
+    confidence: 0.8
+    evidence:
+    - The selftest exits 0 with 0 failures. It runs 176 fake reference jobs, one through a real child
+      process; a resume pass makes 0 new solves and reproduces every metric; every declared sanity check
+      is reported; every recompute entry equals mfos.metrics.compute; the mutation checks catch a wrong
+      hottest die, fail A1 on a 1 K hottest-die error, and confirm the die-position null is leave-one-out.
+    - '--verify-freeze exits 0: every frozen file hash, the GridRule file and its keys, thermal_fem''s
+      production constants, L1''s grid rule and calibration table and version, and the f3_simulation allocation
+      and bound.'
+    - '--plan exits 0: 717 reference solves, 56.7 CPU-h expected and 61.1 CPU-h upper; option A about
+      25.4 VM-h ($15.54); option B 22.6 VM-h ($13.84) plus about 28 local CPU-h.'
+    - 'One real level-0 reference solve of u_shaped/2 through the child process: 73,680 DOF, 10 s, 0.49
+      GB peak RSS, energy balance 2.4e-15, bottom-temperature integral equal to the flux value. The real
+      L1 took 0.49 s with energy balance 4.2e-15.'
+    - research/o002_f1/f1_dev_check.json reports status complete and level1 confirmed (commit 87f639df).
+    - Unpatched mfos.models.CISpec.scheme accepts only plain, stratified and cluster; the drafted patch
+      research/o002_e007/e007_metrics.patch adds 'woodruff' and the evaluator dispatch to quantile_ci.
+    - generate_layouts(1, 20261101, 'side_by_side', 6, die_size_mm=5.0)[0] has fingerprint 1f66b68a...,
+      C004's own development layout, so the P_ref calibration rule reproduces C004's calibration on that
+      stratum.
+    - 'uv run mfos gate --fast: ''all gates passed'', exit 0 (started before the last two runner edits;
+      the runner checks were re-run after them).'
+    recommended_actions:
+    - 'Founder: apply research/o002_e007/e007_metrics.patch (I0211), then set ci: {scheme: woodruff, level:
+      0.94, cluster: layout} on the A1-A4 recompute entries (config.bound.recompute_ci_on_registration)
+      before registering.'
+    - 'T0398: run `e007_run.py --dev` (seed 20261398, die sizes chosen so every family sees all four sizes
+      and interleaved/3 is at 4.0 mm, 3 layouts per stratum, level 1, local; interleaved/6 and u_shaped/6
+      at level 1 need a cap of about 5.5 GB under the 10 GB single-process rule). Then run `mfos exp check
+      E007 --rows experiments/drafts/E007.dev_rows.json` and set dev_rows in the spec.'
+    - 'Founder: settle m (open pending T0398''s power figures; only m in {12, 16, 20, 24, 32} has been
+      simulated) and the compute option (A, all on burst per policy; or B, local levels 0-1 then burst
+      level 2 from one checkpoint directory via E007_SKIP_OVER_CAP and E007_WORKDIR).'
+    - 'Founder: review the remaining open choices in config.founder_decisions_before_registration (the
+      isolated-die null''s 363.15 K, F7''s pool of 40, A5''s warm-up, pair rows following the row contract).'
+    - 'Reviewer: check that adding thermal_fv.py, thermal_layout.py and geometry/layout.py to code_under_test
+      beyond the packet''s list is wanted; L1 imports them.'
+    files_written:
+    - experiments/drafts/E007.yaml
+    - experiments/runners/e007_run.py
+    - research/notes/e007-design.md
+    - research/o002_e007/f3_simulation.json
+    experiment_drafts:
+    - experiments/drafts/E007.yaml
