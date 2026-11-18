@@ -4,7 +4,7 @@ title: 'E004 design part 2b: banded acceptance and its simulation, redraw record
   solve-stage review fixes, local FastHenry probe'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0389
 description: "Finish E004 design part 2 (O004). It runs after T0389 has merged; read T0389's report and\
@@ -123,3 +123,161 @@ history:
 - outcome: rebriefed
   summary: 'founder session: attempt 2 continues attempt 1''s WIP; max_turns 80 -> 160'
   at: '2026-11-18T00:53:31+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'I finished E004 design part 2b from attempt 1''s WIP (f7e1cc47). Every definition-of-done
+    command exits 0.
+
+
+    **Variants for the span decision (research only; the frozen rule and the 0.75 lower end are unchanged).**
+    Same 200 development seeds, 2D_Case_4, frozen limits of 100 redraws per slot and 600 in total, Wilson
+    95 % intervals. "Filled" means the bands filled within the limits:
+
+
+    | rule | filled | fill under a total limit of 100 / 200 / 600 | redraws per slot, mean / max |
+
+    |---|---|---|---|
+
+    | frozen | 200/200 | 0.625 / 0.93 / 1.00 | 7.6 / 47 |
+
+    | (a) X = 0.85 | 77/200 [0.32, 0.45] | 0.080 / 0.175 / 0.385 | 38.7 / 100 |
+
+    | (b) X = 0.85 + coverage | 89/200 [0.38, 0.51] | 0.075 / 0.19 / 0.445 | 35.1 / 100 |
+
+    | (a) X = 0.82 | 16/200 [0.05, 0.13] | 0.025 / 0.045 / 0.08 | 47.5 / 100 |
+
+    | (a) X = 0.8'
+  report:
+    summary: "I finished E004 design part 2b from attempt 1's WIP (f7e1cc47). Every definition-of-done\
+      \ command exits 0.\n\n**Variants for the span decision (research only; the frozen rule and the 0.75\
+      \ lower end are unchanged).** Same 200 development seeds, 2D_Case_4, frozen limits of 100 redraws\
+      \ per slot and 600 in total, Wilson 95 % intervals. \"Filled\" means the bands filled within the\
+      \ limits:\n\n| rule | filled | fill under a total limit of 100 / 200 / 600 | redraws per slot, mean\
+      \ / max |\n|---|---|---|---|\n| frozen | 200/200 | 0.625 / 0.93 / 1.00 | 7.6 / 47 |\n| (a) X = 0.85\
+      \ | 77/200 [0.32, 0.45] | 0.080 / 0.175 / 0.385 | 38.7 / 100 |\n| (b) X = 0.85 + coverage | 89/200\
+      \ [0.38, 0.51] | 0.075 / 0.19 / 0.445 | 35.1 / 100 |\n| (a) X = 0.82 | 16/200 [0.05, 0.13] | 0.025\
+      \ / 0.045 / 0.08 | 47.5 / 100 |\n| (a) X = 0.80 | 2/200 [0.003, 0.036] | 0.005 / 0.005 / 0.01 |\
+      \ 49.6 / 100 |\n\n- No rule passes a lower end of 0.78 or below. The lowest pair seen on any seed\
+      \ under any rule is 0.7929.\n- Median lowest r_L1 is 0.875 for the frozen rule, 0.864 for (a) at\
+      \ 0.85 and 0.858 for (b).\n- (b) gets all four move types covered on the pooled slots in every draw.\
+      \ The frozen rule and (a) cover trace_width, terminal_copper and wire_landing in only 9-26 % of\
+      \ draws.\n- Every pair in the extra band is a compound.\n\n**Local FastHenry probes.**\n- A solo\
+      \ repeat of case4_base k0 ran at 1.005x its projection. Attempt 1's 1.47-1.83x was mostly CPU contention,\
+      \ and the plan keeps 1.83 as a conservative calibration.\n- Measured memory is 0.91-1.21x the projection\
+      \ on the four k0 solves, so the cap of 1.5x the projection leaves 24 % headroom over the largest.\n\
+      - Case 4's own g1 deck timed out at 13.4x its projection twice, so the \"gen2_0 15x slow\" miss\
+      \ is not specific to gen2_0.\n- A small 4-deck test (one setting changed at a time) traces the miss\
+      \ to the 0.5 mm trace cell: 1.57x at k0's settings, 2.11x with wire_sub 2, 6.30x with the 0.5 mm\
+      \ cell, and a timeout at 8.0x or more on k1's own lateral settings. So the k1 decks should run at\
+      \ least 5.1x slower than projected, and k2 likely worse.\n\n**Regenerated plan (`vm_jobs_fasthenry.json`).**\n\
+      - Machine e2-highmem-16, memory-packed at 108 GB, at most 6 jobs at once.\n- F7(a): 502 CPU-h, makespan\
+      \ 194 h central and 2042 h upper, USD 141 central and USD 1491 upper, MF_GCP_MAX_HOURS 2553.\n-\
+      \ E004: 518.2 CPU-h (now the spec's `cpu_hours_est`), makespan 64.7 h central and 436 h upper, MF_GCP_MAX_HOURS\
+      \ 546.\n- E004's timeouts no longer fit: the 2D_Case_2R k2 deck's timeout, doubled for its retry,\
+      \ is 1,734,576 s against `timeout_min` 360,000 s. The registered solve stage would refuse.\n- Each\
+      \ pair's FastHenry thickness share of the 1 % cap is still pending. It needs burst results, because\
+      \ no k1 deck fits the local 3 GB rule.\n\n**Runner changes.**\n- The extra band types are research-only.\
+      \ `band_fill` takes an optional band list, and registration never passes it.\n- The variant simulation\
+      \ is checkpointed and can split its seeds across processes.\n- New self-test case `research_band_ops`.\n\
+      - The plan generator now separates the k and g level families, uses the measured k1 slowdown and\
+      \ the small-deck test results, carries an upper envelope for E004, and records a timeout misfit\
+      \ instead of crashing.\n\n**Process incident.** Attempt 1's probe process was still running when\
+      \ this session started. Process listing and kill are blocked in this sandbox, so I could neither\
+      \ see nor stop it, and for about 25 min three of my compute processes ran at once. Total memory\
+      \ stayed far under 5 GB, but this broke the two-process rule. I kept its g1 record as `case4_base__fh_g1@attempt1`.\n\
+      \nNothing is committed; the changes are left in the T0457 worktree. Details are in `research/notes/e004-part2b-banded-acceptance.md`,\
+      \ sections A2.1-A2.7.\n\n**Commands run (exit codes).**\n- `--selftest`: 0 (21/21).\n- `--smoke\
+      \ --stage registration`: 0 (all 18 checks pass, proxy built).\n- `mfos exp check E004`: 0.\n- Job-list\
+      \ assert: 0.\n- `ruff check`: 0.\n- `mfos gate --fast`: 0.\n- Research runs:\n  - `--dev-band-variants\
+      \ 200` (shard 0/2, then pool).\n  - `fh_local_probe.py` on 6 decks.\n  - `--dev-fh-plan`: exit 1\
+      \ the first time, on the timeout assertion; 0 after the fix."
+    status: completed
+    failure_class: none
+    confidence: 0.8
+    affects_acceptance_criteria: false
+    evidence:
+    - 'Variant sim: 200 seeds, files band_variants_case4.shard0of2.json + .pool81526.json, summary band_variants_case4_summary.json;
+      0 duplicate seeds; all 200 first draws equal attempt 1''s; in every (a) variant the single-move
+      final pairs equal the frozen rule''s on every seed; no variant used fewer redraws than the frozen
+      rule'
+    - '(a) X=0.85: filled 77/200 [0.320,0.454]; (b): 89/200 [0.378,0.514]; (a) X=0.82: 16/200 [0.050,0.126];
+      (a) X=0.80: 2/200 [0.003,0.036]; fill fraction at total limits 100/200/600: a0.85 0.080/0.175/0.385,
+      b 0.075/0.19/0.445, a0.82 0.025/0.045/0.08, a0.80 0.005/0.005/0.01; frozen 0.625/0.93/1.00'
+    - 'Pass fraction at lower ends 0.75/0.76/0.78: 0/200 under every rule; at 0.85: frozen 19, a0.85 77,
+      b 89 (of 200); every pair in the extra band is a compound (78/90/16/2)'
+    - 'Lowest r_L1 at 20 MHz after the rule, median: frozen 0.8752, a0.85 0.8643, b 0.8582, a0.82 0.8732,
+      a0.80 0.8750; minimum over all rules 0.7929'
+    - 'Coverage under the 6 % rule, pooled / on each slot: frozen and every (a) die_row_shift 0.96/0.625,
+      trace_width 0.155/0.01, terminal_copper 0.09/0, wire_landing 0.255/0.02; (b) 1.0 pooled for all
+      four types'
+    - 'Local FastHenry: case4_base k0 @solo 764 s against a 760 s projection (factor 1.005, memory 0.91x
+      the projection); standin_compound k0 1131 s (1.42x, 1.20x memory); attempt 1''s k0 runs 1.47x and
+      1.83x; peak memory at most 1.21x the projection'
+    - 'case4_base g1 timed out at 3600 s twice (at least 13.4x); the 4-deck test (one setting changed
+      at a time): base B 1.57x, plus wire_sub 2 2.11x, plus 0.5 mm cell 6.30x (1688 s), k1 lateral at
+      nh 1 timed out at 4581 s (at least 8.0x); on every slow deck the preconditioner built in 24-42 s
+      and cpu_s was within 1 % of wall_s'
+    - 'vm_jobs_fasthenry.json: F7(a) 502.5 CPU-h, makespan 193.7 h central and 2042 h upper, MF_GCP_MAX_HOURS
+      2553; e004_cost_plan 518.2 CPU-h, 64.7 h central and 436.2 h upper, MF_GCP_MAX_HOURS 546; timeouts_fit
+      ok=false (the 2R k2 timeout doubled for its retry is 1,734,576 s against 360,000 s)'
+    - 'Definition of done: selftest 0 (21/21), smoke registration 0 (18/18 checks, proxy built, 133 s),
+      exp check 0, job-list assert 0, ruff 0, mfos gate --fast 0'
+    alternative_explanations:
+    - explanation: The ≥8x k1-lateral miss is CPU contention from the other agent on the shared Mac, not
+        a property of the level.
+      how_to_discriminate: 'Against: the same machine load (1-min load 4.0-4.9) gave 1.005x on the solo
+        k0 repeat, and 1.57x / 2.11x on the small test decks at k0''s 1 mm cell. The miss tracks the 0.5
+        mm cell, not the load. The decisive check is a k1 deck timed on a dedicated VM.'
+    - explanation: The slowdown is specific to nh 1 at the 0.5 mm cell (very thin, wide filaments), so
+        the k1 decks at nh 3/5/9 would not inherit it.
+      how_to_discriminate: 'At the 1 mm cell, nh 1 (base B, 1.57x) and nh 5 (1.0-1.8x) behaved the same,
+        which is evidence against an nh effect, but nothing at the 0.5 mm cell with nh ≥ 3 was measured.
+        Decisive test: a full solve of case4_base k1_nh3 (7.1 GB) as the first VM step, logging FastHenry''s
+        iteration counts.'
+    - explanation: (b) fills more often than (a) only by chance; the 89 vs 77 gap is not a mechanism.
+      how_to_discriminate: The Wilson intervals overlap, so the difference is not established. More development
+        seeds, or a paired per-seed comparison, would settle it.
+    discriminating_tests:
+    - 'VM first step: one full multipole solve of case4_base k1_nh3 (174k filaments, 7.1 GB) with FastHenry
+      iteration logging: a factor near 1-2x would reject the level-risk reading; 5x or more would confirm
+      it'
+    - 'Banded rule restricted to compound slots for the low band (not simulated): if it fills X=0.85 in
+      most draws within 600 redraws, the binding constraint is the cyclic slot choice, not Case 4''s reach'
+    - Paired per-seed comparison of (a) X=0.85 and (b) over the same 200 seeds (McNemar test) to check
+      whether (b)'s higher fill rate is real
+    recommended_actions:
+    - 'Founder, span decision: on Case 4 neither an extra band at X nor a coverage band makes a lower
+      end of 0.80 or below reachable within the frozen limits; 0.85 fills in 39-45 % of draws. Decide
+      the lower end and the band rule, and amend O004 if needed (0.75 stays in the code until then)'
+    - 'Founder, burst 2 (I0209): do not launch F7(a) as planned. The Case 4 k2 decks are projected at
+      97-102 h each (k0 factor 1.83 times the k1 slowdown m1 = 5.08), and up to about 1000 h on the upper
+      envelope. Make one k1 deck the first VM step, then decide whether to keep the k2 decks'
+    - 'Founder, before registration: E004''s timeout rule (10 x the projection), timeout_min (100 h) or
+      the FastHenry ladder needs a decision. timeouts_fit is false under the measured k1 slowdown, and
+      the registered stage''s timeouts, set from the raw projection, would also cut off k1/k2 solves (at
+      least 8x against a 10x timeout), turning judged values into missing ones'
+    - 'Refreeze before registration: add experiments/runners/e010_run.py and experiments/specs/E010.yaml
+      to config.freeze (carried over from attempt 1)'
+    - 'Thickness share of the 1 % cap (T0454 item 6): fill from the F7(a) k1 nh 3/5/9 results once they
+      exist'
+    - 'Orchestrator: the sandbox blocks ps, pgrep and top, so an agent cannot see or stop leftover processes
+      from an earlier attempt. Kill earlier attempts'' children before starting a new attempt'
+    files_written:
+    - experiments/runners/e004_run.py
+    - experiments/drafts/E004.yaml
+    - research/notes/e004-part2b-banded-acceptance.md
+    - research/o004_f7/fh_local_probe.py
+    - research/o004_f7/fh_local_probe.json
+    - research/o004_f7/vm_jobs_fasthenry.json
+    - research/o004_f7/band_variants_case4.shard0of2.json
+    - research/o004_f7/band_variants_case4.pool81526.json
+    - research/o004_f7/band_variants_case4_summary.json
+    - research/o004_f7/band_variants_shard0.out
+    - research/o004_f7/band_variants_pool_a.out
+    - research/o004_f7/fh_local_probe_attempt2.out
+    - research/o004_f7/fh_local_factorial.out
+    - research/o004_f7/fh_local_k1lat.out
+    - research/o004_f7/smoke_registration_attempt2.out
+    experiment_drafts:
+    - experiments/drafts/E004.yaml
+    root_cause: ''
