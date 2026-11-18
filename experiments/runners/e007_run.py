@@ -2,7 +2,7 @@
 
 Modes (spec experiments/drafts/E007.yaml, design note research/notes/e007-design.md):
   (none)           the registered run, under mfos.evidence.ExperimentRun with the sealed seed (MFOS_SEED)
-  --selftest       fake solvers on the registered allocation (m = 20); full sample construction, checkpointed job loop,
+  --selftest       fake solvers on the registered allocation (m = 32, D0027); full sample construction, checkpointed job loop,
                    row assembly, nulls, recompute through research/o002_e007/e007_metrics.py and mfos.metrics, the
                    evaluator's null check (applies_to), mutation checks; then the REAL reference path: one level-0 P_ref
                    calibration of a development layout through a real child process (energy balance, Picard, CG, Q1
@@ -1415,7 +1415,7 @@ def _evaluator_null_check(spec: dict, rows: list) -> tuple[list[str], list[str],
 
 
 def selftest() -> int:
-    """Fake solvers on the registered allocation (m = 20 per stratum, 300 layouts; F7 pools of 3 draws); the real sample
+    """Fake solvers on the registered allocation (m = 32 per stratum, 480 layouts, D0027; F7 pools of 3 draws); the real sample
     construction, job loop (one job through a real child process), resume, rows, nulls, metrics and bounds, and the
     evaluator's null check with the spec's applies_to; mutation checks that a wrong hottest die, a 1 K hottest-die
     error, a null that meets A1, a forbidden stream seed and a seen F7 draw are caught. Then the real physics: L1 and

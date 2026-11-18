@@ -2,8 +2,10 @@
 
 Scientist, 2026-11-16 (attempt 1), revised 2026-11-17 (attempt 2, after reviews T0435 accept-with-caveats and T0436
 reject). Covers `experiments/drafts/E007.yaml` and `experiments/runners/e007_run.py`. A design, **not evidence**.
-Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** speculation. Decision record: **D0025**
-(bound, sample, CPU-hour convention, frozen L1 calibration).
+Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** speculation. Decision records: **D0025**
+(bound, sample, CPU-hour convention, frozen L1 calibration) and **D0027** (2026-11-18, amending D0025 decisions 2 and 4:
+the per-stratum A4 check passed on 9 development layouts and is a reported diagnostic; m = 32 per stratum, 480 layouts).
+Finalised for registration by T0464 (§9).
 
 ## 0. What changed in attempt 2 (by finding)
 | finding | change | how it is checked |
@@ -37,9 +39,10 @@ Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** specul
   size)[0]`, written to `pref.json` before any judged solve; never judged. Second load 0.5 P_ref.
 
 ## 2. Sample and frozen rules
-- **Allocation.** [F] 300 layouts, 20 per (family, dies) stratum, 15 strata (f3_simulation.json), every (family, band)
-  cell drawn. **m is provisional** (D0025 decision 2): the final m comes from T0398's power for the as-measured L1 at
-  m = 20, 24, 32, 40. Only simulated m values are admissible.
+- **Allocation.** [F] 480 layouts, 32 per (family, dies) stratum, 15 strata, every (family, band) cell drawn
+  (D0027 decision 2). The fixed allocation is `research/o002_e007/allocation_m32.json`, which the freeze check reads
+  per stratum with the bound. History: D0025 decision 2's provisional m = 20 (300 layouts, T0396's f3_simulation.json,
+  kept unchanged with its selection-rule disclosure). Power and coverage at m = 32: §9.
 - **Seed streams.** [F] `SeedSequence([seed, stream, *index])` for: die size per stratum (`draw_die_size_mm`), layouts
   per stratum, F7 pool strata, F7 draws per pool, the level-2 subset, the L1 timing order. All are recorded in
   `plan_frozen.json` and checked against `config.seeds.forbidden` (E009/C004 20261101; T0392 20261115/16; F3
@@ -90,7 +93,7 @@ Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** specul
 
 ## 5. Verification run here (commands, exit codes, outcomes)
 - `uv run python experiments/runners/e007_run.py --selftest`: exit 0, 78 s, 0 failures. [F] Fake physics on the
-  registered m = 20 (686 fake reference jobs, resume with 0 new solves, refusal of a foreign work directory), every
+  registered m (686 fake reference jobs at m = 20; 1046 at m = 32, T0464 selftest; resume with 0 new solves, refusal of a foreign work directory), every
   sanity check passing including unbypassed node_count_growth, finite V4 bounds on every entry, the evaluator's null
   check, and mutations: wrong hottest die, 1 K hottest-die error, a null meeting A1, applies_to beyond A1/A4,
   forbidden stream seeds, a seen F7 draw. **Real physics:**
@@ -109,6 +112,7 @@ Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** specul
   `mfos exp check E007 --rows <T0398 dev rows>`, before registration.
 
 ## 6. Cost (`--plan`, development-seed proxies; process CPU time, D0025 decision 3)
+**Superseded at m = 32 by §9.3**; the m = 20 figures below are history.
 - [F] 717 reference solves (600 judged, 24 F7, 48 subset, 45 calibration) and 1,693 L1 evaluations (0.3 CPU-h).
 - [F] 56.7 CPU-h expected (61.1 if every die is 5.5 mm), within O002's 100, above policy `local_cpu_hours_max` 6, so
   burst per policy. Option A: 25.4 VM-h, $15.54 (upper 29.1 h, $17.79). Option B: 22.2 CPU-h locally (one solve
@@ -119,7 +123,8 @@ Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** specul
   CPU-hours" predates this plan; T0398 measures one level-2 solve.
 
 ## 7. Founder decisions before registration (also `config.founder_decisions_before_registration`)
-1. m: 20 provisional (D0025 decision 2), final from T0398's power figures.
+1. m: resolved, 32 per stratum (D0027 decision 2). D0025 decision 4's per-stratum check: resolved, passed on 9
+   layouts and now a diagnostic (D0027 decision 1). Still open: the level-2 timing burst (§9.4).
 2. Registration waits for T0398's dev rows: `dev_rows` set; `mfos exp check E007 --rows ...` shows every null failing
    A1 and A4; D0025 decision 4's per-stratum check (1.8 % A2 guard, A4 ≤ 0.3) passes or the founder decides.
 3. Null `applies_to`: A1 and A4 for all three (narrower or wider readings listed in the spec).
@@ -133,3 +138,66 @@ Labels: **[F]** fact (checked here, or cited), **[I]** inference, **[S]** specul
 (checkpoint and resume), `E007_SKIP_OVER_CAP=1` (option B: solve what fits, stop listing the rest). Swap above
 8 GB stops the run with checkpoints kept. Every reference solve is its own subprocess with an atomic checkpoint; a
 stale checkpoint (other layout, power, level or code hash) is an error, never reused.
+
+## 9. Finalisation at m = 32 (T0464, 2026-11-17; D0025, D0027)
+### 9.1 Allocation
+- [F] `config.allocation`: layouts_per_stratum 32, n_strata 15, n_layouts 480, source `allocation_m32.json` (sha256 in
+  the spec; written by `research/o002_e007/t0464/make_allocation_m32.py`). `--verify-freeze` checks the file hash and
+  that every stratum's count equals 32 and the bound equals `config.bound.ci_spec`.
+- [F] The runner reads m from `config.allocation.layouts_per_stratum` (`build_sample`); the selftest builds the full
+  m = 32 sample from a seed and its `allocation_fixed` check requires 15 strata x 32 judged layouts (§9.5).
+- [F] Seed 20261456 (T0456's development seed) is in `config.seeds.forbidden` (already added by T0456).
+
+### 9.2 Power and coverage evidence at m = 32
+Source: T0456's corrected simulation, `research/o002_e007/a4_strata/sim_corrected.json` (seed 20261456, 1000 reps per
+cell, V4 bound). Its gating consistency check passed: simulated median A4 0.108 (normal) / 0.107 (t3) against 0.107
+measured. [F] Figures copied from the file; intervals are Wilson 95 % on 1000 Bernoulli reps (Monte Carlo only).
+
+| at m = 32 | normal | t3 |
+|---|---|---|
+| joint power (as-measured L1) | 1.000 [0.996, 1] | 1.000 [0.996, 1] |
+| A4 power | 1.000 [0.996, 1] | 1.000 [0.996, 1] |
+| min V4 coverage, power cell (A1-A4, K1-K3) | 0.974 [0.962, 0.982] | 0.981 [0.971, 0.988] |
+| min V4 coverage, kill cell | 0.984 | 0.985 |
+| P(K1 fires), each kill statistic at 1.2 x its threshold | 0.812 [0.787, 0.835] | 0.581 [0.550, 0.611] |
+| P(K2 fires), same | 1.000 [0.996, 1] | 1.000 [0.996, 1] |
+| P(K3 fires), same | 0.576 [0.545, 0.606] | 0.354 [0.325, 0.384] |
+
+- [F] Minimum V4 coverage over every cell at every m from 20 to 40 is 0.971.
+- [I] The kill-side rates are approximate: the simulation over-predicts A3 by 30-40 % (measured A3 is outside the
+  simulated 5-95 % band), and its error model is fitted to 9 + 3 development layouts per stratum. The intervals above do
+  not include that model uncertainty. Under t3 errors a moderately bad L1 (1.2 x K1's threshold) still ends
+  INCONCLUSIVE rather than FAIL with probability about 0.42.
+- [F] T0396's m = 20 simulation (`f3_simulation.json`) and its disclosure (amended selection rule after round 1;
+  `f3_simulation_r1_noselection.json`) are kept unchanged as history; `allocation_m32.json` records its sha256.
+
+### 9.3 Cost at m = 32 (`e007_run.py --plan`, output `research/o002_e007/t0464/plan_m32.{json,txt}`)
+- [F] 1077 reference solves (960 judged, 24 F7, 48 subset levels 0 and 2, 45 calibration) and 2413 L1 evaluations
+  (0.4 CPU-h).
+- [F] 74.1 CPU-h expected (judged 46.0, level-2 subset 26.2), 78.9 CPU-h upper (every die 5.5 mm); process CPU time
+  (D0025 decision 3), **within O002's 100 CPU-hours**. `cpu_hours_est` = 74.1. m = 20 was 56.7 / 61.1, so m = 32
+  adds 17.4 CPU-h at the spec's level-1 rate of 0.195 ms/DOF (D0027's "about 14" used a lower rate; [I] the measured
+  T0398 median is 0.136 ms/DOF, so 17.4 is conservative).
+- [F] Option A packed on the VM: 27.7 VM-h, $16.92 (upper 31.3 h, $19.15). One at a time: 74.6 VM-h, $45.63. Option B
+  (19.5 CPU-h locally, one solve at a time, then the VM): 25.2 VM-h, $15.43 (upper 28.8 h, $17.62).
+- [I] The margin to 100 CPU-h rests on the level-2 rate (585 us/DOF, T0243, not measured on this code): the total
+  exceeds 100 only if level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower. §9.4's burst measures it.
+
+### 9.4 Level-2 burst needed before registration (D0025 decision 3; founder, burst only)
+Two solves, one at a time, by `research/o002_e007/l2_timing/run_l2_jobs.sh`:
+1. `job.json`: side_by_side_2_j00 (T0398, 4.0 mm) at P_ref, est. 3.48 M DOF, 20.2 GB: cpu_s and wall_s.
+2. `job_interleaved_2_j01.json` (review T0463 (5)): interleaved_2_j01 (T0398, 4.5 mm) at P_ref, est. 4.19 M DOF,
+   24.2 GB, est. 41 CPU-min. Chosen by a fixed rule before any level-2 result: the interleaved/2 development layout whose
+   reference spread moved most from level 0 to level 1 (-0.078 K HS / -0.084 K LS; the others -0.044 to -0.073 K,
+   `a4_strata/diag_solves.json`). L1's spread errors in interleaved/2 are -0.019 to -0.055 K. The record, compared with
+   the level-0 and level-1 records named in the job's `compare_to`, shows whether the level-1 spread is within the
+   F1 0.1 K tolerance of level 2 and how much of L1's apparent interleaved bias is reference discretisation.
+
+Command (founder): `scripts/burst_gcp.sh --cmd "bash research/o002_e007/l2_timing/run_l2_jobs.sh" research/o002_e007/l2_timing n2d-custom-8-81920-ext`
+
+### 9.5 Memory admission convention (review T0463 (3))
+- [F] `bytes_per_dof` excludes base RSS: the runner's admission (`Jobs.est_gb`) and `--plan` both estimate
+  DOF x bytes_per_dof x memory_margin (1.15) + base_rss_GB (0.3 GB). Recomputed from `E007.dev_rows.json` (T0398's 90
+  level-1 solves): max 4.32 kB/DOF with base RSS excluded, 4.98 kB/DOF included (side_by_side_2_j02, half load,
+  2.27 GB at 0.455 M DOF); T0456's 36 solves 4.33 / 4.99 kB/DOF. The earlier "4.29 kB/DOF" matched neither convention.
+  4400 >= 4330, and on all 126 measured level-1 solves the admission estimate is 1.15-1.82 x the measured peak.

@@ -1,0 +1,153 @@
+{
+ "task": "T0464",
+ "experiment": "E007",
+ "kind": "fixed allocation (registration input, not evidence of the hypothesis)",
+ "decision": "D0027 decision 2 (founder, 2026-11-18; amends D0025 decision 2): m = 32 layouts per (family, dies) stratum, 480 layouts in all, chosen for kill-side power",
+ "layouts_per_stratum": {
+  "side_by_side/2": 32,
+  "side_by_side/3": 32,
+  "side_by_side/4": 32,
+  "side_by_side/5": 32,
+  "side_by_side/6": 32,
+  "interleaved/2": 32,
+  "interleaved/3": 32,
+  "interleaved/4": 32,
+  "interleaved/5": 32,
+  "interleaved/6": 32,
+  "u_shaped/2": 32,
+  "u_shaped/3": 32,
+  "u_shaped/4": 32,
+  "u_shaped/5": 32,
+  "u_shaped/6": 32
+ },
+ "n_strata": 15,
+ "n_layouts": 480,
+ "bound": {
+  "selected": "V4_t_outward_bonferroni_l094",
+  "variant": {
+   "crit": "t",
+   "rounding": "outward",
+   "ratio": "bonferroni",
+   "level": 0.94
+  },
+  "ci_spec": {
+   "scheme": "woodruff",
+   "level": 0.94,
+   "cluster": "layout"
+  },
+  "decision": "D0025 decision 1 (unchanged)"
+ },
+ "power_coverage_evidence": {
+  "source": "research/o002_e007/a4_strata/sim_corrected.json",
+  "source_sha256": "9f6c1e90590ac63ee91e728b50b07fd78afceb5fdbc5d87b6ab9088f59048049",
+  "task": "T0456",
+  "seed": 20261456,
+  "reps_per_cell": 1000,
+  "truth_reps": 1200,
+  "consistency_check": "passed: simulated median A4 0.108 (normal) / 0.107 (t3) against 0.107 measured on T0398's rows (sim_corrected.json consistency.*.A4); A3 is over-predicted by 30-40 % (measured outside the simulated 5-95 % band), so kill-side rates are approximate (D0027 context)",
+  "scenario_power": "the L1 as measured on development rows (T0398 + T0456; kb = kc = kd = 1)",
+  "scenario_kill": "every error scale raised so that each kill statistic's truth is 1.2 x its kill threshold",
+  "at_m32": {
+   "normal": {
+    "joint_power": 1.0,
+    "joint_power_ci95": [
+     0.9962,
+     1.0
+    ],
+    "A4_power": 1.0,
+    "A4_power_ci95": [
+     0.9962,
+     1.0
+    ],
+    "min_V4_coverage_power_cell": 0.974,
+    "min_V4_coverage_power_cell_ci95": [
+     0.9622,
+     0.9822
+    ],
+    "min_V4_coverage_kill_cell": 0.984,
+    "kill_side_at_1.2x_kill_thresholds": {
+     "K1": {
+      "p_fire": 0.812,
+      "ci95": [
+       0.7866,
+       0.835
+      ]
+     },
+     "K2": {
+      "p_fire": 1.0,
+      "ci95": [
+       0.9962,
+       1.0
+      ]
+     },
+     "K3": {
+      "p_fire": 0.576,
+      "ci95": [
+       0.5451,
+       0.6063
+      ]
+     }
+    },
+    "kill_cell_scale_factors": {
+     "kb": 22.518713590178308,
+     "kc": 4.732040439439719,
+     "kd": 9.720759610093548
+    }
+   },
+   "t3": {
+    "joint_power": 1.0,
+    "joint_power_ci95": [
+     0.9962,
+     1.0
+    ],
+    "A4_power": 1.0,
+    "A4_power_ci95": [
+     0.9962,
+     1.0
+    ],
+    "min_V4_coverage_power_cell": 0.981,
+    "min_V4_coverage_power_cell_ci95": [
+     0.9705,
+     0.9878
+    ],
+    "min_V4_coverage_kill_cell": 0.985,
+    "kill_side_at_1.2x_kill_thresholds": {
+     "K1": {
+      "p_fire": 0.581,
+      "ci95": [
+       0.5502,
+       0.6112
+      ]
+     },
+     "K2": {
+      "p_fire": 1.0,
+      "ci95": [
+       0.9962,
+       1.0
+      ]
+     },
+     "K3": {
+      "p_fire": 0.354,
+      "ci95": [
+       0.325,
+       0.3841
+      ]
+     }
+    },
+    "kill_cell_scale_factors": {
+     "kb": 22.708301741868105,
+     "kc": 4.926669404821026,
+     "kd": 9.74005927242184
+    }
+   }
+  },
+  "min_V4_coverage_all_cells_all_m": 0.971,
+  "mc_interval": "Wilson score 95 % on reps_per_cell Bernoulli trials (Monte Carlo uncertainty only; model uncertainty is not included)"
+ },
+ "history": {
+  "source": "research/o002_e007/f3_simulation.json",
+  "source_sha256": "0071c857c7f9af263cd9f4fd86f8d10ffb179c8250430952a7d6ea1d0dfa1918",
+  "task": "T0396",
+  "note": "T0396's m = 20 allocation and simulation (D0025), with its disclosure of the amended selection rule (round 1 kept in f3_simulation_r1_noselection.json); unchanged, superseded for the allocation by this file"
+ }
+}

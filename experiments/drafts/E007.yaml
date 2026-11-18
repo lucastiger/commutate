@@ -1,12 +1,16 @@
 # E007 draft (T0397 attempt 2, scientist, 2026-11-17). Design note: research/notes/e007-design.md. NOT registered.
-# Decision record: D0025 (bound, sample, CPU-hour convention, frozen L1 calibration), founder 2026-11-17.
+# Decision records: D0025 (bound, sample, CPU-hour convention, frozen L1 calibration), founder 2026-11-17; D0027 (per-stratum
+#   A4 check passed on 9 development layouts, a reported diagnostic; m = 32 per stratum, 480 layouts), founder 2026-11-18,
+#   amending D0025 decisions 2 and 4. Finalised by T0464.
 # Bound: CISpec(scheme='woodruff', level=0.94, cluster='layout') on every recompute entry except A5 -- one-sided 97 %
 #   bounds for A1-A4 and K1-K3, K1/K2 lower bounds at 98.5 % per load (D0025 decision 1; mfos.metrics.quantile_ci,
 #   merged on main in da2118fc). A checkout based before da2118fc rejects scheme 'woodruff' in CISpec: validate this
 #   draft on main (the runner's selftest falls back to the verbatim e007_metrics copy and says so).
 # Nulls: die_position, stratum_mean and isolated_die apply to A1 and A4 only (O002 F2; A3 is met by a layout-ignorant
 #   predictor by the objective's own statement; review T0436).
-# Sample: 300 layouts, 20 per (family, dies) stratum, 15 strata (f3_simulation.json), provisional (D0025 decision 2).
+# Sample: 480 layouts, 32 per (family, dies) stratum, 15 strata (research/o002_e007/allocation_m32.json; D0027 decision 2,
+#   amending D0025 decision 2). Power and coverage at m = 32: T0456's corrected simulation (a4_strata/sim_corrected.json).
+#   T0396's m = 20 simulation (f3_simulation.json) and its disclosure are kept as history.
 # Sealed seeds: layout generation, the per-stratum die-size draw (draw_die_size_mm), the F7 draws, the level-2 subset and
 #   the timing order all derive from the sealed seed, which must differ from every development seed (E009's 20261101,
 #   T0395's 20261395 whose fresh-seed rows chose the 1.5 mm grid and are development rows, never judged evidence,
@@ -20,7 +24,7 @@
 # ---- founder decisions before registration: config.founder_decisions_before_registration
 id: E007
 title: Frozen L1 thermal model (moduleforge.thermal, fv_coarse_xcal) against the frozen scikit-fem reference of C004 at level
-  1 (level-2 subset) on 300 fresh sealed generator layouts, 15 (family, dies) strata with one sealed die size each, at P_ref
+  1 (level-2 subset) on 480 fresh sealed generator layouts, 15 (family, dies) strata with one sealed die size each, at P_ref
   and 0.5 P_ref (O002 A1-A5, K1-K3, F1-F7)
 objective: O002
 status: draft
@@ -65,16 +69,25 @@ config:
     source: O002 F1; research/notes/o002-f1-dev-check.md (T0393; level 1 confirmed, research/o002_f1/f1_dev_check.json status
       complete, commit 87f639df)
   allocation:
-    source: research/o002_e007/f3_simulation.json
-    source_sha256: 0071c857c7f9af263cd9f4fd86f8d10ffb179c8250430952a7d6ea1d0dfa1918
-    layouts_per_stratum: 20
+    source: research/o002_e007/allocation_m32.json
+    source_sha256: 6b3ac73780ee86f1db0af0f96234167b0d3d511aeaa3a8a6508d2a81f2f671e5
+    layouts_per_stratum: 32
     n_strata: 15
-    n_layouts: 300
-    decision: 'D0025 decision 2 (founder, 2026-11-17T01:26:21, made provisional at 04:25:17): m = 20 layouts per (family,
-      dies) stratum, 300 in all, with f3_simulation.json''s fixed allocation, stays in the files; the final m is chosen before
-      registration from T0398''s power figures for the as-measured L1 at m = 20, 24, 32 and 40 under normal and t3 errors
-      and recorded as an amendment of D0025. Changing m changes allocation.layouts_per_stratum, f3_simulation.json''s allocation
-      (and so source_sha256) and cpu_hours_est'
+    n_layouts: 480
+    decision: 'D0027 decision 2 (founder, 2026-11-18; amends D0025 decision 2): m = 32 layouts per (family, dies) stratum,
+      480 in all, for kill-side power. The fixed allocation is research/o002_e007/allocation_m32.json (T0464), which the
+      freeze check reads per stratum together with the bound and which cites T0456. History: D0025 decision 2 had m = 20,
+      300 layouts, provisional, with f3_simulation.json''s allocation (T0396, sha256 0071c857...), kept unchanged'
+    power_coverage_evidence: 'T0456''s corrected simulation, research/o002_e007/a4_strata/sim_corrected.json (seed 20261456,
+      1000 reps per cell, V4 bound; its consistency check passed: simulated median A4 0.108 normal / 0.107 t3 against 0.107
+      measured). At m = 32, for the L1 as measured on development rows: joint power 1.000 (normal) / 1.000 (t3), Wilson 95 %
+      MC interval [0.996, 1]; A4 power 1.000 / 1.000 [0.996, 1]; minimum V4 coverage over A1-A4 and K1-K3 0.974 [0.962, 0.982]
+      (normal) / 0.981 [0.971, 0.988] (t3), 0.984 / 0.985 in the kill cells, and 0.971 or better in every cell at every m
+      from 20 to 40. Kill side, every error scale raised so that each kill statistic''s truth is 1.2 x its kill threshold:
+      P(K1 fires) 0.812 [0.787, 0.835] (normal) / 0.581 [0.550, 0.611] (t3); P(K2 fires) 1.000 / 1.000 [0.996, 1]; P(K3 fires)
+      0.576 [0.545, 0.606] / 0.354 [0.325, 0.384]. Intervals are Monte Carlo only; the simulation over-predicts A3 by 30-40 %
+      (measured A3 outside its 5-95 % band), so the kill-side rates are approximate (D0027 context). Figures and sha256 in
+      allocation_m32.json power_coverage_evidence (research/o002_e007/t0464/make_allocation_m32.py)'
   bound:
     ci_spec:
       scheme: woodruff
@@ -291,9 +304,13 @@ config:
       memory_fraction: 0.85
       usd_per_h: 0.612
       overhead_h: 0.5
-    sources: 'bytes/DOF: level 1 raised from 3400 to 4400 by T0456 (packet item 4): T0398''s 90 level-1 development solves peaked at
-      4.29 kB/DOF (u_shaped_6_j01 P_ref, 5.44 GB at 1.268 M DOF, peak RSS over DOF, base RSS included; experiments/drafts/E007.dev_rows.json
-      meta.reference_cpu_wall); previously T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
+    sources: 'bytes/DOF: level 1 raised from 3400 to 4400 by T0456 (packet item 4). Convention (T0464, review T0463 (3)):
+      bytes_per_dof EXCLUDES base RSS, i.e. (peak RSS - base_rss_GB) / DOF, because the runner''s memory admission (Jobs.est_gb)
+      and --plan both use DOF x bytes_per_dof x memory_margin + base_rss_GB. Recomputed from experiments/drafts/E007.dev_rows.json
+      meta.reference_cpu_wall (T0398''s 90 level-1 solves): max 4.32 kB/DOF with base RSS (0.3 GB) excluded, 4.98 kB/DOF with
+      it included (both side_by_side_2_j02 half_P_ref, 2.27 GB at 0.455 M DOF); T0456''s 36 level-1 solves 4.33 / 4.99 kB/DOF.
+      The earlier source text''s 4.29 kB/DOF was neither of these. On all 126 measured level-1 solves the admission estimate
+      is 1.15 to 1.82 x the measured peak RSS (never below it). Previously T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
       levels 0 and 2 E009 fem_bytes_per_dof (conservative at level 0). CPU s/DOF: levels 0-1 the slowest cached frozen-rule
       solves in research/o002_l1/cache (0.12 and 0.19 ms/DOF, wall = CPU assumed, one effective thread); level 2 T0243''s
       burst rate 585 us/DOF (research/notes/o002-f1-dev-check.md); T0398 measures cpu_s and wall_s of one level-2 solve. VM
@@ -312,7 +329,18 @@ config:
       measured on the 90 development solves (Apple M, one thread): 0.136 ms/DOF median CPU (max 0.262), CPU/wall 0.994, peak
       up to 4.3 kB/DOF (above the 3.4 kB/DOF used here); cpu_s_per_dof is kept because the registered host differs, so --plan''s
       CPU-hours and cpu_hours_est (57.0) are unchanged. No level-2 solve fits the local 10 GB limit (smallest development
-      layout 3.48 M DOF, est. 20.2 GB): its cpu_s / wall_s are listed for the burst (research/o002_e007/l2_timing/job.json)'
+      layout 3.48 M DOF, est. 20.2 GB): its cpu_s / wall_s are listed for the burst (research/o002_e007/l2_timing/job.json).
+      SUPERSEDED at m = 32 by plan_summary_m32'
+    plan_summary_m32: 'e007_run.py --plan at m = 32 (T0464, 2026-11-17; D0027 decision 2; output research/o002_e007/t0464/plan_m32.json
+      and plan_m32.txt; same proxies and per-DOF rates as above): 1077 reference solves (960 judged + 24 F7 + 48 subset levels
+      0 and 2 + 45 calibration); 2413 L1 evaluations (0.4 CPU-h). Expected die-size mix 74.1 CPU-h (judged 46.0, subset level
+      2 26.2, F7 1.1, calibration 0.2, subset level 0 0.1, L1 0.4); upper (every die 5.5 mm) 78.9 CPU-h. Process CPU time
+      (D0025 decision 3), within O002''s 100 CPU-hours; m = 20 was 56.7 / 61.1. Burst per policy (local_cpu_hours_max = 6).
+      Option A, packed on the VM (--max-procs 8 --mem-cap-gb 66.3): 27.7 VM-h, $16.92 (upper 31.3 h, $19.15); one at a time
+      74.6 VM-h, $45.63 (upper 79.4 h, $48.57). Option B (19.5 CPU-h locally, one solve at a time, then the VM): 25.2 VM-h,
+      $15.43 (upper 28.8 h, $17.62). Margin to 100 CPU-h: the 24 level-2 subset solves use T0243''s 585 us/DOF, not yet
+      measured on this code; the total stays within 100 unless level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower,
+      which the level-2 timing burst (research/o002_e007/l2_timing/, two jobs) checks before registration'
   scope_limits:
   - 'F6: the hottest-node discretisation estimate (levels 0-2, step-floor rule) exists only on the 12-layout level-2 subset;
     every other die reports its level-1 hottest node without an error estimate (reviews T0435 (7), T0449/T0450 (6))'
@@ -355,12 +383,14 @@ config:
       0.0064 / 0.0046 / 0.0036 / 0.0031 at 4.0 / 4.5 / 5.0 / 5.5 mm (interleaved lowest; LS bias +0.29 to +0.47 K at 4.0-4.5
       mm). F3 at the dev structure: V4 coverage >= 0.971 for every statistic and model (research/o002_e007/f3_dev_simulation.json)'
   founder_decisions_before_registration:
-  - 'D0025 decision 4 check (T0398): A4 <= 0.3 fails in 3 of 15 strata on 3 development layouts each (interleaved/2 0.352,
-    side_by_side/2 0.340, u_shaped/6 0.951); the 1.8 % A2 guard holds everywhere. Nothing gated was changed: the founder decides
-    whether E007 freezes as is'
-  - 'm (layouts per stratum): 20 is provisional (D0025 decision 2); the final m comes from T0398''s power figures for the
-    as-measured L1 at m = 20, 24, 32 and 40 (normal and t3), recorded as an amendment of D0025. Only simulated m values are
-    admissible; changing m changes allocation.layouts_per_stratum, f3_simulation.json and cpu_hours_est'
+  - 'RESOLVED by D0027 decision 1 (founder, 2026-11-18): D0025 decision 4 check (T0398): A4 <= 0.3 failed in 3 of 15 strata on
+    3 development layouts each (interleaved/2 0.352, side_by_side/2 0.340, u_shaped/6 0.951); on 9 layouts (T0456) A4 is
+    0.286 / 0.223 / 0.096; the check counts as passed and the per-stratum A4 is a reported diagnostic, not a gate'
+  - 'RESOLVED by D0027 decision 2 (founder, 2026-11-18): m = 32 per stratum, 480 layouts (config.allocation, allocation_m32.json;
+    power and coverage evidence: T0456''s corrected simulation)'
+  - 'level-2 timing burst before registration (D0025 decision 3): research/o002_e007/l2_timing/run_l2_jobs.sh runs job.json
+    (side_by_side_2_j00, cpu_s and wall_s of one level-2 solve) and job_interleaved_2_j01.json (review T0463 (5): whether
+    interleaved/2''s reference spread is converged at the scale of L1''s spread errors), one at a time on a burst VM'
   - 'registration waits for T0398''s development rows: set dev_rows to experiments/drafts/E007.dev_rows.json; `mfos exp check
     E007 --rows experiments/drafts/E007.dev_rows.json` must show every null failing A1 and A4 (F2), and D0025 decision 4''s
     per-stratum L1 check (l1_dev_check_D0025 in the rows'' meta) must pass the 1.8 % A2 guard and A4 <= 0.3 in every stratum,
@@ -548,7 +578,7 @@ sanity_checks:
 - name: freeze
   description: 'F5. before any solve: sha256 of every config.freeze file (thermal_fem a216d5fe...), the GridRule file sha256
     and key for key, thermal_fem''s production constants, moduleforge.thermal''s GRID_RULE / CALIBRATION / CALIBRATION_VERSION
-    / PICARD_TOL_K, and the allocation file and bound against f3_simulation.json; a mismatch stops the run'
+    / PICARD_TOL_K, and the allocation file (config.allocation.source, allocation_m32.json) per stratum and its bound; a mismatch stops the run'
 - name: sealed_seeds_fresh
   description: F5. the sealed seed and every derived stream seed (die_size per stratum, layouts per stratum, f7_strata, f7
     per pool, l2_subset, timing_order; all recorded in plan_frozen.json sub_seeds) differ from every development seed used
@@ -601,7 +631,7 @@ sanity_checks:
 - name: recompute_consistency
   description: every recompute entry, recomputed by mfos.metrics.compute on the rows, equals the runner's value
 timeout_min: 4320
-cpu_hours_est: 57.0
+cpu_hours_est: 74.1
 code_under_test:
 - src/moduleforge/thermal/*.py
 - src/moduleforge/generate/halfbridge.py

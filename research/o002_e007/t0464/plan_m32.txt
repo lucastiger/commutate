@@ -1,0 +1,194 @@
+{
+ "convention": "cpu_hours = process CPU time (founder decision 2026-11-17, O002 state log); VM time in $",
+ "policy_local_cpu_hours_max": 6.0,
+ "vm": {
+  "machine": "n2d-custom-8-81920-ext",
+  "ram_GB": 78.0,
+  "vcpus": 8,
+  "memory_fraction": 0.85,
+  "usd_per_h": 0.612,
+  "overhead_h": 0.5
+ },
+ "cases": {
+  "expected": {
+   "n_reference_solves": 1077,
+   "cpu_hours_est": 74.1,
+   "local_or_burst_per_policy": "burst",
+   "jobs_over_local_5GB": [
+    "side_by_side/5:judged",
+    "side_by_side/6:judged",
+    "interleaved/4:judged",
+    "interleaved/5:judged",
+    "interleaved/6:judged",
+    "u_shaped/5:judged",
+    "u_shaped/6:judged",
+    "side_by_side/2-3:subset_L2",
+    "side_by_side/4-6:f7",
+    "side_by_side/4-6:subset_L2",
+    "interleaved/2-3:subset_L2",
+    "interleaved/4-6:f7",
+    "interleaved/4-6:subset_L2",
+    "u_shaped/2-3:subset_L2",
+    "u_shaped/4-6:f7",
+    "u_shaped/4-6:subset_L2"
+   ],
+   "option_A_all_on_burst": {
+    "vm_hours": 27.7,
+    "usd": 16.92,
+    "runner_flags": "--max-procs 8 --mem-cap-gb 66.3",
+    "note": "the packing priced here needs these flags; the defaults (--max-procs 1, 5 GB cap) refuse the over-cap jobs"
+   },
+   "option_A_one_at_a_time": {
+    "vm_hours": 74.6,
+    "usd": 45.63,
+    "runner_flags": "--max-procs 1 --mem-cap-gb 66.3"
+   },
+   "option_B_local_then_burst": {
+    "local_cpu_hours": 19.5,
+    "local_wall_hours_one_at_a_time": 19.5,
+    "vm_hours": 25.2,
+    "usd": 15.43,
+    "runner_flags": "local: E007_SKIP_OVER_CAP=1 --max-procs 1; VM: --max-procs 8 --mem-cap-gb 66.3 (same --workdir)"
+   }
+  },
+  "upper": {
+   "n_reference_solves": 1077,
+   "cpu_hours_est": 78.9,
+   "local_or_burst_per_policy": "burst",
+   "jobs_over_local_5GB": [
+    "side_by_side/5:judged",
+    "side_by_side/6:judged",
+    "interleaved/4:judged",
+    "interleaved/5:judged",
+    "interleaved/6:judged",
+    "u_shaped/5:judged",
+    "u_shaped/6:judged",
+    "side_by_side/2-3:subset_L2",
+    "side_by_side/4-6:f7",
+    "side_by_side/4-6:subset_L2",
+    "interleaved/2-3:subset_L2",
+    "interleaved/4-6:f7",
+    "interleaved/4-6:subset_L2",
+    "u_shaped/2-3:subset_L2",
+    "u_shaped/4-6:f7",
+    "u_shaped/4-6:subset_L2"
+   ],
+   "option_A_all_on_burst": {
+    "vm_hours": 31.3,
+    "usd": 19.15,
+    "runner_flags": "--max-procs 8 --mem-cap-gb 66.3",
+    "note": "the packing priced here needs these flags; the defaults (--max-procs 1, 5 GB cap) refuse the over-cap jobs"
+   },
+   "option_A_one_at_a_time": {
+    "vm_hours": 79.4,
+    "usd": 48.57,
+    "runner_flags": "--max-procs 1 --mem-cap-gb 66.3"
+   },
+   "option_B_local_then_burst": {
+    "local_cpu_hours": 20.0,
+    "local_wall_hours_one_at_a_time": 20.0,
+    "vm_hours": 28.8,
+    "usd": 17.62,
+    "runner_flags": "local: E007_SKIP_OVER_CAP=1 --max-procs 1; VM: --max-procs 8 --mem-cap-gb 66.3 (same --workdir)"
+   }
+  }
+ },
+ "l1_evaluations": 2413,
+ "l1_cpu_h": 0.4021666666666667
+}
+  expected side_by_side/2:calibration   L0 x  3    0.07 M DOF     0.7 GB     0.1 min  local
+  expected side_by_side/2:judged        L1 x 64    0.50 M DOF     2.8 GB     1.6 min  local
+  expected side_by_side/3:calibration   L0 x  3    0.09 M DOF     0.8 GB     0.2 min  local
+  expected side_by_side/3:judged        L1 x 64    0.65 M DOF     3.6 GB     2.1 min  local
+  expected side_by_side/4:calibration   L0 x  3    0.11 M DOF     1.0 GB     0.2 min  local
+  expected side_by_side/4:judged        L1 x 64    0.84 M DOF     4.5 GB     2.7 min  local
+  expected side_by_side/5:calibration   L0 x  3    0.14 M DOF     1.1 GB     0.3 min  local
+  expected side_by_side/5:judged        L1 x 64    1.02 M DOF     5.5 GB     3.3 min  burst
+  expected side_by_side/6:calibration   L0 x  3    0.16 M DOF     1.2 GB     0.3 min  local
+  expected side_by_side/6:judged        L1 x 64    1.21 M DOF     6.4 GB     3.9 min  burst
+  expected interleaved/2:calibration    L0 x  3    0.07 M DOF     0.7 GB     0.2 min  local
+  expected interleaved/2:judged         L1 x 64    0.53 M DOF     3.0 GB     1.7 min  local
+  expected interleaved/3:calibration    L0 x  3    0.10 M DOF     0.9 GB     0.2 min  local
+  expected interleaved/3:judged         L1 x 64    0.73 M DOF     4.0 GB     2.4 min  local
+  expected interleaved/4:calibration    L0 x  3    0.13 M DOF     1.0 GB     0.3 min  local
+  expected interleaved/4:judged         L1 x 64    0.95 M DOF     5.1 GB     3.1 min  burst
+  expected interleaved/5:calibration    L0 x  3    0.15 M DOF     1.2 GB     0.3 min  local
+  expected interleaved/5:judged         L1 x 64    1.11 M DOF     5.9 GB     3.6 min  burst
+  expected interleaved/6:calibration    L0 x  3    0.18 M DOF     1.3 GB     0.4 min  local
+  expected interleaved/6:judged         L1 x 64    1.32 M DOF     7.0 GB     4.3 min  burst
+  expected u_shaped/2:calibration       L0 x  3    0.07 M DOF     0.7 GB     0.1 min  local
+  expected u_shaped/2:judged            L1 x 64    0.51 M DOF     2.9 GB     1.7 min  local
+  expected u_shaped/3:calibration       L0 x  3    0.09 M DOF     0.8 GB     0.2 min  local
+  expected u_shaped/3:judged            L1 x 64    0.69 M DOF     3.8 GB     2.2 min  local
+  expected u_shaped/4:calibration       L0 x  3    0.12 M DOF     1.0 GB     0.2 min  local
+  expected u_shaped/4:judged            L1 x 64    0.87 M DOF     4.7 GB     2.8 min  local
+  expected u_shaped/5:calibration       L0 x  3    0.15 M DOF     1.1 GB     0.3 min  local
+  expected u_shaped/5:judged            L1 x 64    1.07 M DOF     5.7 GB     3.5 min  burst
+  expected u_shaped/6:calibration       L0 x  3    0.17 M DOF     1.3 GB     0.4 min  local
+  expected u_shaped/6:judged            L1 x 64    1.28 M DOF     6.8 GB     4.1 min  burst
+  expected side_by_side/2-3:f7          L1 x  4    0.65 M DOF     3.6 GB     2.1 min  local
+  expected side_by_side/2-3:subset_L0   L0 x  4    0.09 M DOF     0.8 GB     0.2 min  local
+  expected side_by_side/2-3:subset_L2   L2 x  4    4.95 M DOF    28.5 GB    48.2 min  burst
+  expected side_by_side/4-6:f7          L1 x  4    1.02 M DOF     5.5 GB     3.3 min  burst
+  expected side_by_side/4-6:subset_L0   L0 x  4    0.14 M DOF     1.1 GB     0.3 min  local
+  expected side_by_side/4-6:subset_L2   L2 x  4    7.85 M DOF    45.1 GB    76.5 min  burst
+  expected interleaved/2-3:f7           L1 x  4    0.73 M DOF     4.0 GB     2.4 min  local
+  expected interleaved/2-3:subset_L0    L0 x  4    0.10 M DOF     0.9 GB     0.2 min  local
+  expected interleaved/2-3:subset_L2    L2 x  4    5.60 M DOF    32.3 GB    54.6 min  burst
+  expected interleaved/4-6:f7           L1 x  4    1.11 M DOF     5.9 GB     3.6 min  burst
+  expected interleaved/4-6:subset_L0    L0 x  4    0.15 M DOF     1.2 GB     0.3 min  local
+  expected interleaved/4-6:subset_L2    L2 x  4    8.49 M DOF    48.8 GB    82.7 min  burst
+  expected u_shaped/2-3:f7              L1 x  4    0.69 M DOF     3.8 GB     2.2 min  local
+  expected u_shaped/2-3:subset_L0       L0 x  4    0.09 M DOF     0.8 GB     0.2 min  local
+  expected u_shaped/2-3:subset_L2       L2 x  4    5.26 M DOF    30.3 GB    51.3 min  burst
+  expected u_shaped/4-6:f7              L1 x  4    1.07 M DOF     5.7 GB     3.5 min  burst
+  expected u_shaped/4-6:subset_L0       L0 x  4    0.15 M DOF     1.1 GB     0.3 min  local
+  expected u_shaped/4-6:subset_L2       L2 x  4    8.20 M DOF    47.1 GB    80.0 min  burst
+  upper    side_by_side/2:calibration   L0 x  3    0.07 M DOF     0.7 GB     0.1 min  local
+  upper    side_by_side/2:judged        L1 x 64    0.51 M DOF     2.9 GB     1.7 min  local
+  upper    side_by_side/3:calibration   L0 x  3    0.09 M DOF     0.8 GB     0.2 min  local
+  upper    side_by_side/3:judged        L1 x 64    0.66 M DOF     3.7 GB     2.2 min  local
+  upper    side_by_side/4:calibration   L0 x  3    0.12 M DOF     1.0 GB     0.2 min  local
+  upper    side_by_side/4:judged        L1 x 64    0.85 M DOF     4.6 GB     2.8 min  local
+  upper    side_by_side/5:calibration   L0 x  3    0.14 M DOF     1.1 GB     0.3 min  local
+  upper    side_by_side/5:judged        L1 x 64    1.06 M DOF     5.6 GB     3.4 min  burst
+  upper    side_by_side/6:calibration   L0 x  3    0.17 M DOF     1.3 GB     0.3 min  local
+  upper    side_by_side/6:judged        L1 x 64    1.23 M DOF     6.5 GB     4.0 min  burst
+  upper    interleaved/2:calibration    L0 x  3    0.07 M DOF     0.7 GB     0.2 min  local
+  upper    interleaved/2:judged         L1 x 64    0.54 M DOF     3.0 GB     1.7 min  local
+  upper    interleaved/3:calibration    L0 x  3    0.10 M DOF     0.9 GB     0.2 min  local
+  upper    interleaved/3:judged         L1 x 64    0.75 M DOF     4.1 GB     2.4 min  local
+  upper    interleaved/4:calibration    L0 x  3    0.13 M DOF     1.1 GB     0.3 min  local
+  upper    interleaved/4:judged         L1 x 64    0.98 M DOF     5.3 GB     3.2 min  burst
+  upper    interleaved/5:calibration    L0 x  3    0.15 M DOF     1.2 GB     0.3 min  local
+  upper    interleaved/5:judged         L1 x 64    1.12 M DOF     6.0 GB     3.7 min  burst
+  upper    interleaved/6:calibration    L0 x  3    0.18 M DOF     1.3 GB     0.4 min  local
+  upper    interleaved/6:judged         L1 x 64    1.36 M DOF     7.2 GB     4.4 min  burst
+  upper    u_shaped/2:calibration       L0 x  3    0.07 M DOF     0.7 GB     0.1 min  local
+  upper    u_shaped/2:judged            L1 x 64    0.52 M DOF     3.0 GB     1.7 min  local
+  upper    u_shaped/3:calibration       L0 x  3    0.10 M DOF     0.8 GB     0.2 min  local
+  upper    u_shaped/3:judged            L1 x 64    0.70 M DOF     3.8 GB     2.3 min  local
+  upper    u_shaped/4:calibration       L0 x  3    0.12 M DOF     1.0 GB     0.3 min  local
+  upper    u_shaped/4:judged            L1 x 64    0.90 M DOF     4.8 GB     2.9 min  local
+  upper    u_shaped/5:calibration       L0 x  3    0.15 M DOF     1.2 GB     0.3 min  local
+  upper    u_shaped/5:judged            L1 x 64    1.10 M DOF     5.9 GB     3.6 min  burst
+  upper    u_shaped/6:calibration       L0 x  3    0.17 M DOF     1.3 GB     0.4 min  local
+  upper    u_shaped/6:judged            L1 x 64    1.29 M DOF     6.8 GB     4.2 min  burst
+  upper    side_by_side/2-3:f7          L1 x  4    0.66 M DOF     3.7 GB     2.2 min  local
+  upper    side_by_side/2-3:subset_L0   L0 x  4    0.09 M DOF     0.8 GB     0.2 min  local
+  upper    side_by_side/2-3:subset_L2   L2 x  4    5.07 M DOF    29.3 GB    49.5 min  burst
+  upper    side_by_side/4-6:f7          L1 x  4    1.23 M DOF     6.5 GB     4.0 min  burst
+  upper    side_by_side/4-6:subset_L0   L0 x  4    0.17 M DOF     1.3 GB     0.3 min  local
+  upper    side_by_side/4-6:subset_L2   L2 x  4    9.44 M DOF    54.2 GB    92.1 min  burst
+  upper    interleaved/2-3:f7           L1 x  4    0.75 M DOF     4.1 GB     2.4 min  local
+  upper    interleaved/2-3:subset_L0    L0 x  4    0.10 M DOF     0.9 GB     0.2 min  local
+  upper    interleaved/2-3:subset_L2    L2 x  4    5.72 M DOF    32.9 GB    55.7 min  burst
+  upper    interleaved/4-6:f7           L1 x  4    1.36 M DOF     7.2 GB     4.4 min  burst
+  upper    interleaved/4-6:subset_L0    L0 x  4    0.18 M DOF     1.3 GB     0.4 min  local
+  upper    interleaved/4-6:subset_L2    L2 x  4   10.39 M DOF    59.6 GB   101.3 min  burst
+  upper    u_shaped/2-3:f7              L1 x  4    0.70 M DOF     3.8 GB     2.3 min  local
+  upper    u_shaped/2-3:subset_L0       L0 x  4    0.10 M DOF     0.8 GB     0.2 min  local
+  upper    u_shaped/2-3:subset_L2       L2 x  4    5.36 M DOF    30.9 GB    52.2 min  burst
+  upper    u_shaped/4-6:f7              L1 x  4    1.29 M DOF     6.8 GB     4.2 min  burst
+  upper    u_shaped/4-6:subset_L0       L0 x  4    0.17 M DOF     1.3 GB     0.4 min  local
+  upper    u_shaped/4-6:subset_L2       L2 x  4    9.87 M DOF    56.7 GB    96.3 min  burst

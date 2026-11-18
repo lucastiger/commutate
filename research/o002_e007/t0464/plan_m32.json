@@ -1,0 +1,1062 @@
+{
+ "convention": "cpu_hours = process CPU time (founder decision 2026-11-17, O002 state log); VM time in $",
+ "policy_local_cpu_hours_max": 6.0,
+ "vm": {
+  "machine": "n2d-custom-8-81920-ext",
+  "ram_GB": 78.0,
+  "vcpus": 8,
+  "memory_fraction": 0.85,
+  "usd_per_h": 0.612,
+  "overhead_h": 0.5
+ },
+ "cases": {
+  "expected": {
+   "solves": [
+    {
+     "name": "side_by_side/2:calibration",
+     "level": 0,
+     "dofs": 68232.0,
+     "n": 3,
+     "mem_GB": 0.69,
+     "cpu_s_each": 8.529,
+     "cpu_h": 0.007,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2:judged",
+     "level": 1,
+     "dofs": 499931.0,
+     "n": 64,
+     "mem_GB": 2.83,
+     "cpu_s_each": 97.487,
+     "cpu_h": 1.733,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/3:calibration",
+     "level": 0,
+     "dofs": 88059.0,
+     "n": 3,
+     "mem_GB": 0.803,
+     "cpu_s_each": 11.007,
+     "cpu_h": 0.009,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/3:judged",
+     "level": 1,
+     "dofs": 646790.333,
+     "n": 64,
+     "mem_GB": 3.573,
+     "cpu_s_each": 126.124,
+     "cpu_h": 2.242,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4:calibration",
+     "level": 0,
+     "dofs": 114016.333,
+     "n": 3,
+     "mem_GB": 0.951,
+     "cpu_s_each": 14.252,
+     "cpu_h": 0.012,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4:judged",
+     "level": 1,
+     "dofs": 839154.0,
+     "n": 64,
+     "mem_GB": 4.546,
+     "cpu_s_each": 163.635,
+     "cpu_h": 2.909,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/5:calibration",
+     "level": 0,
+     "dofs": 139000.5,
+     "n": 3,
+     "mem_GB": 1.094,
+     "cpu_s_each": 17.375,
+     "cpu_h": 0.014,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/5:judged",
+     "level": 1,
+     "dofs": 1024251.0,
+     "n": 64,
+     "mem_GB": 5.483,
+     "cpu_s_each": 199.729,
+     "cpu_h": 3.551,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/6:calibration",
+     "level": 0,
+     "dofs": 164408.167,
+     "n": 3,
+     "mem_GB": 1.239,
+     "cpu_s_each": 20.551,
+     "cpu_h": 0.017,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/6:judged",
+     "level": 1,
+     "dofs": 1212495.0,
+     "n": 64,
+     "mem_GB": 6.435,
+     "cpu_s_each": 236.437,
+     "cpu_h": 4.203,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/2:calibration",
+     "level": 0,
+     "dofs": 72023.833,
+     "n": 3,
+     "mem_GB": 0.711,
+     "cpu_s_each": 9.003,
+     "cpu_h": 0.008,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2:judged",
+     "level": 1,
+     "dofs": 527702.667,
+     "n": 64,
+     "mem_GB": 2.97,
+     "cpu_s_each": 102.902,
+     "cpu_h": 1.829,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/3:calibration",
+     "level": 0,
+     "dofs": 99594.333,
+     "n": 3,
+     "mem_GB": 0.869,
+     "cpu_s_each": 12.449,
+     "cpu_h": 0.01,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/3:judged",
+     "level": 1,
+     "dofs": 732058.0,
+     "n": 64,
+     "mem_GB": 4.004,
+     "cpu_s_each": 142.751,
+     "cpu_h": 2.538,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4:calibration",
+     "level": 0,
+     "dofs": 128988.667,
+     "n": 3,
+     "mem_GB": 1.036,
+     "cpu_s_each": 16.124,
+     "cpu_h": 0.013,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4:judged",
+     "level": 1,
+     "dofs": 949966.667,
+     "n": 64,
+     "mem_GB": 5.107,
+     "cpu_s_each": 185.243,
+     "cpu_h": 3.293,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/5:calibration",
+     "level": 0,
+     "dofs": 150311.167,
+     "n": 3,
+     "mem_GB": 1.158,
+     "cpu_s_each": 18.789,
+     "cpu_h": 0.016,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/5:judged",
+     "level": 1,
+     "dofs": 1107755.0,
+     "n": 64,
+     "mem_GB": 5.905,
+     "cpu_s_each": 216.012,
+     "cpu_h": 3.84,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/6:calibration",
+     "level": 0,
+     "dofs": 178964.167,
+     "n": 3,
+     "mem_GB": 1.322,
+     "cpu_s_each": 22.371,
+     "cpu_h": 0.019,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/6:judged",
+     "level": 1,
+     "dofs": 1320220.667,
+     "n": 64,
+     "mem_GB": 6.98,
+     "cpu_s_each": 257.443,
+     "cpu_h": 4.577,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/2:calibration",
+     "level": 0,
+     "dofs": 69555.833,
+     "n": 3,
+     "mem_GB": 0.697,
+     "cpu_s_each": 8.694,
+     "cpu_h": 0.007,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2:judged",
+     "level": 1,
+     "dofs": 509568.0,
+     "n": 64,
+     "mem_GB": 2.878,
+     "cpu_s_each": 99.366,
+     "cpu_h": 1.767,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/3:calibration",
+     "level": 0,
+     "dofs": 93551.167,
+     "n": 3,
+     "mem_GB": 0.834,
+     "cpu_s_each": 11.694,
+     "cpu_h": 0.01,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/3:judged",
+     "level": 1,
+     "dofs": 687420.333,
+     "n": 64,
+     "mem_GB": 3.778,
+     "cpu_s_each": 134.047,
+     "cpu_h": 2.383,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4:calibration",
+     "level": 0,
+     "dofs": 117809.167,
+     "n": 3,
+     "mem_GB": 0.973,
+     "cpu_s_each": 14.726,
+     "cpu_h": 0.012,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4:judged",
+     "level": 1,
+     "dofs": 867111.667,
+     "n": 64,
+     "mem_GB": 4.688,
+     "cpu_s_each": 169.087,
+     "cpu_h": 3.006,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/5:calibration",
+     "level": 0,
+     "dofs": 145313.5,
+     "n": 3,
+     "mem_GB": 1.13,
+     "cpu_s_each": 18.164,
+     "cpu_h": 0.015,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/5:judged",
+     "level": 1,
+     "dofs": 1070841.0,
+     "n": 64,
+     "mem_GB": 5.718,
+     "cpu_s_each": 208.814,
+     "cpu_h": 3.712,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/6:calibration",
+     "level": 0,
+     "dofs": 172988.5,
+     "n": 3,
+     "mem_GB": 1.288,
+     "cpu_s_each": 21.624,
+     "cpu_h": 0.018,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/6:judged",
+     "level": 1,
+     "dofs": 1276067.667,
+     "n": 64,
+     "mem_GB": 6.757,
+     "cpu_s_each": 248.833,
+     "cpu_h": 4.424,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/2-3:f7",
+     "level": 1,
+     "dofs": 646790.333,
+     "n": 4,
+     "mem_GB": 3.573,
+     "cpu_s_each": 126.124,
+     "cpu_h": 0.14,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2-3:subset_L0",
+     "level": 0,
+     "dofs": 88059.0,
+     "n": 4,
+     "mem_GB": 0.803,
+     "cpu_s_each": 11.007,
+     "cpu_h": 0.012,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2-3:subset_L2",
+     "level": 2,
+     "dofs": 4946521.0,
+     "n": 4,
+     "mem_GB": 28.538,
+     "cpu_s_each": 2893.715,
+     "cpu_h": 3.215,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/4-6:f7",
+     "level": 1,
+     "dofs": 1024251.0,
+     "n": 4,
+     "mem_GB": 5.483,
+     "cpu_s_each": 199.729,
+     "cpu_h": 0.222,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/4-6:subset_L0",
+     "level": 0,
+     "dofs": 139000.5,
+     "n": 4,
+     "mem_GB": 1.094,
+     "cpu_s_each": 17.375,
+     "cpu_h": 0.019,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4-6:subset_L2",
+     "level": 2,
+     "dofs": 7846809.0,
+     "n": 4,
+     "mem_GB": 45.095,
+     "cpu_s_each": 4590.383,
+     "cpu_h": 5.1,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/2-3:f7",
+     "level": 1,
+     "dofs": 732058.0,
+     "n": 4,
+     "mem_GB": 4.004,
+     "cpu_s_each": 142.751,
+     "cpu_h": 0.159,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2-3:subset_L0",
+     "level": 0,
+     "dofs": 99594.333,
+     "n": 4,
+     "mem_GB": 0.869,
+     "cpu_s_each": 12.449,
+     "cpu_h": 0.014,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2-3:subset_L2",
+     "level": 2,
+     "dofs": 5600756.333,
+     "n": 4,
+     "mem_GB": 32.273,
+     "cpu_s_each": 3276.442,
+     "cpu_h": 3.64,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/4-6:f7",
+     "level": 1,
+     "dofs": 1107755.0,
+     "n": 4,
+     "mem_GB": 5.905,
+     "cpu_s_each": 216.012,
+     "cpu_h": 0.24,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/4-6:subset_L0",
+     "level": 0,
+     "dofs": 150311.167,
+     "n": 4,
+     "mem_GB": 1.158,
+     "cpu_s_each": 18.789,
+     "cpu_h": 0.021,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4-6:subset_L2",
+     "level": 2,
+     "dofs": 8487027.667,
+     "n": 4,
+     "mem_GB": 48.75,
+     "cpu_s_each": 4964.911,
+     "cpu_h": 5.517,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/2-3:f7",
+     "level": 1,
+     "dofs": 687420.333,
+     "n": 4,
+     "mem_GB": 3.778,
+     "cpu_s_each": 134.047,
+     "cpu_h": 0.149,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2-3:subset_L0",
+     "level": 0,
+     "dofs": 93551.167,
+     "n": 4,
+     "mem_GB": 0.834,
+     "cpu_s_each": 11.694,
+     "cpu_h": 0.013,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2-3:subset_L2",
+     "level": 2,
+     "dofs": 5258395.667,
+     "n": 4,
+     "mem_GB": 30.318,
+     "cpu_s_each": 3076.161,
+     "cpu_h": 3.418,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/4-6:f7",
+     "level": 1,
+     "dofs": 1070841.0,
+     "n": 4,
+     "mem_GB": 5.718,
+     "cpu_s_each": 208.814,
+     "cpu_h": 0.232,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/4-6:subset_L0",
+     "level": 0,
+     "dofs": 145313.5,
+     "n": 4,
+     "mem_GB": 1.13,
+     "cpu_s_each": 18.164,
+     "cpu_h": 0.02,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4-6:subset_L2",
+     "level": 2,
+     "dofs": 8203917.0,
+     "n": 4,
+     "mem_GB": 47.133,
+     "cpu_s_each": 4799.291,
+     "cpu_h": 5.333,
+     "fits_local_5GB": false
+    }
+   ],
+   "n_reference_solves": 1077,
+   "cpu_hours_est": 74.1,
+   "local_or_burst_per_policy": "burst",
+   "jobs_over_local_5GB": [
+    "side_by_side/5:judged",
+    "side_by_side/6:judged",
+    "interleaved/4:judged",
+    "interleaved/5:judged",
+    "interleaved/6:judged",
+    "u_shaped/5:judged",
+    "u_shaped/6:judged",
+    "side_by_side/2-3:subset_L2",
+    "side_by_side/4-6:f7",
+    "side_by_side/4-6:subset_L2",
+    "interleaved/2-3:subset_L2",
+    "interleaved/4-6:f7",
+    "interleaved/4-6:subset_L2",
+    "u_shaped/2-3:subset_L2",
+    "u_shaped/4-6:f7",
+    "u_shaped/4-6:subset_L2"
+   ],
+   "option_A_all_on_burst": {
+    "vm_hours": 27.7,
+    "usd": 16.92,
+    "runner_flags": "--max-procs 8 --mem-cap-gb 66.3",
+    "note": "the packing priced here needs these flags; the defaults (--max-procs 1, 5 GB cap) refuse the over-cap jobs"
+   },
+   "option_A_one_at_a_time": {
+    "vm_hours": 74.6,
+    "usd": 45.63,
+    "runner_flags": "--max-procs 1 --mem-cap-gb 66.3"
+   },
+   "option_B_local_then_burst": {
+    "local_cpu_hours": 19.5,
+    "local_wall_hours_one_at_a_time": 19.5,
+    "vm_hours": 25.2,
+    "usd": 15.43,
+    "runner_flags": "local: E007_SKIP_OVER_CAP=1 --max-procs 1; VM: --max-procs 8 --mem-cap-gb 66.3 (same --workdir)"
+   }
+  },
+  "upper": {
+   "solves": [
+    {
+     "name": "side_by_side/2:calibration",
+     "level": 0,
+     "dofs": 69586.0,
+     "n": 3,
+     "mem_GB": 0.697,
+     "cpu_s_each": 8.698,
+     "cpu_h": 0.007,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2:judged",
+     "level": 1,
+     "dofs": 510041.0,
+     "n": 64,
+     "mem_GB": 2.881,
+     "cpu_s_each": 99.458,
+     "cpu_h": 1.768,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/3:calibration",
+     "level": 0,
+     "dofs": 90236.0,
+     "n": 3,
+     "mem_GB": 0.815,
+     "cpu_s_each": 11.28,
+     "cpu_h": 0.009,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/3:judged",
+     "level": 1,
+     "dofs": 663109.0,
+     "n": 64,
+     "mem_GB": 3.655,
+     "cpu_s_each": 129.306,
+     "cpu_h": 2.299,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4:calibration",
+     "level": 0,
+     "dofs": 115927.0,
+     "n": 3,
+     "mem_GB": 0.962,
+     "cpu_s_each": 14.491,
+     "cpu_h": 0.012,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4:judged",
+     "level": 1,
+     "dofs": 853487.0,
+     "n": 64,
+     "mem_GB": 4.619,
+     "cpu_s_each": 166.43,
+     "cpu_h": 2.959,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/5:calibration",
+     "level": 0,
+     "dofs": 143342.0,
+     "n": 3,
+     "mem_GB": 1.118,
+     "cpu_s_each": 17.918,
+     "cpu_h": 0.015,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/5:judged",
+     "level": 1,
+     "dofs": 1056685.0,
+     "n": 64,
+     "mem_GB": 5.647,
+     "cpu_s_each": 206.054,
+     "cpu_h": 3.663,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/6:calibration",
+     "level": 0,
+     "dofs": 166987.0,
+     "n": 3,
+     "mem_GB": 1.253,
+     "cpu_s_each": 20.873,
+     "cpu_h": 0.017,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/6:judged",
+     "level": 1,
+     "dofs": 1231957.0,
+     "n": 64,
+     "mem_GB": 6.534,
+     "cpu_s_each": 240.232,
+     "cpu_h": 4.271,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/2:calibration",
+     "level": 0,
+     "dofs": 73214.0,
+     "n": 3,
+     "mem_GB": 0.718,
+     "cpu_s_each": 9.152,
+     "cpu_h": 0.008,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2:judged",
+     "level": 1,
+     "dofs": 536575.0,
+     "n": 64,
+     "mem_GB": 3.015,
+     "cpu_s_each": 104.632,
+     "cpu_h": 1.86,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/3:calibration",
+     "level": 0,
+     "dofs": 101626.0,
+     "n": 3,
+     "mem_GB": 0.88,
+     "cpu_s_each": 12.703,
+     "cpu_h": 0.011,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/3:judged",
+     "level": 1,
+     "dofs": 747219.0,
+     "n": 64,
+     "mem_GB": 4.081,
+     "cpu_s_each": 145.708,
+     "cpu_h": 2.59,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4:calibration",
+     "level": 0,
+     "dofs": 133021.0,
+     "n": 3,
+     "mem_GB": 1.059,
+     "cpu_s_each": 16.628,
+     "cpu_h": 0.014,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4:judged",
+     "level": 1,
+     "dofs": 980071.0,
+     "n": 64,
+     "mem_GB": 5.259,
+     "cpu_s_each": 191.114,
+     "cpu_h": 3.398,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/5:calibration",
+     "level": 0,
+     "dofs": 152367.0,
+     "n": 3,
+     "mem_GB": 1.17,
+     "cpu_s_each": 19.046,
+     "cpu_h": 0.016,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/5:judged",
+     "level": 1,
+     "dofs": 1123219.0,
+     "n": 64,
+     "mem_GB": 5.983,
+     "cpu_s_each": 219.028,
+     "cpu_h": 3.894,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/6:calibration",
+     "level": 0,
+     "dofs": 183692.0,
+     "n": 3,
+     "mem_GB": 1.349,
+     "cpu_s_each": 22.962,
+     "cpu_h": 0.019,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/6:judged",
+     "level": 1,
+     "dofs": 1355513.0,
+     "n": 64,
+     "mem_GB": 7.159,
+     "cpu_s_each": 264.325,
+     "cpu_h": 4.699,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/2:calibration",
+     "level": 0,
+     "dofs": 71577.0,
+     "n": 3,
+     "mem_GB": 0.709,
+     "cpu_s_each": 8.947,
+     "cpu_h": 0.007,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2:judged",
+     "level": 1,
+     "dofs": 524633.0,
+     "n": 64,
+     "mem_GB": 2.955,
+     "cpu_s_each": 102.303,
+     "cpu_h": 1.819,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/3:calibration",
+     "level": 0,
+     "dofs": 95284.0,
+     "n": 3,
+     "mem_GB": 0.844,
+     "cpu_s_each": 11.911,
+     "cpu_h": 0.01,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/3:judged",
+     "level": 1,
+     "dofs": 700395.0,
+     "n": 64,
+     "mem_GB": 3.844,
+     "cpu_s_each": 136.577,
+     "cpu_h": 2.428,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4:calibration",
+     "level": 0,
+     "dofs": 121884.0,
+     "n": 3,
+     "mem_GB": 0.996,
+     "cpu_s_each": 15.236,
+     "cpu_h": 0.013,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4:judged",
+     "level": 1,
+     "dofs": 897481.0,
+     "n": 64,
+     "mem_GB": 4.841,
+     "cpu_s_each": 175.009,
+     "cpu_h": 3.111,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/5:calibration",
+     "level": 0,
+     "dofs": 149740.0,
+     "n": 3,
+     "mem_GB": 1.155,
+     "cpu_s_each": 18.718,
+     "cpu_h": 0.016,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/5:judged",
+     "level": 1,
+     "dofs": 1103829.0,
+     "n": 64,
+     "mem_GB": 5.885,
+     "cpu_s_each": 215.247,
+     "cpu_h": 3.827,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/6:calibration",
+     "level": 0,
+     "dofs": 174571.0,
+     "n": 3,
+     "mem_GB": 1.297,
+     "cpu_s_each": 21.821,
+     "cpu_h": 0.018,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/6:judged",
+     "level": 1,
+     "dofs": 1287971.0,
+     "n": 64,
+     "mem_GB": 6.817,
+     "cpu_s_each": 251.154,
+     "cpu_h": 4.465,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/2-3:f7",
+     "level": 1,
+     "dofs": 663109.0,
+     "n": 4,
+     "mem_GB": 3.655,
+     "cpu_s_each": 129.306,
+     "cpu_h": 0.144,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2-3:subset_L0",
+     "level": 0,
+     "dofs": 90236.0,
+     "n": 4,
+     "mem_GB": 0.815,
+     "cpu_s_each": 11.28,
+     "cpu_h": 0.013,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/2-3:subset_L2",
+     "level": 2,
+     "dofs": 5072705.0,
+     "n": 4,
+     "mem_GB": 29.258,
+     "cpu_s_each": 2967.532,
+     "cpu_h": 3.297,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/4-6:f7",
+     "level": 1,
+     "dofs": 1231957.0,
+     "n": 4,
+     "mem_GB": 6.534,
+     "cpu_s_each": 240.232,
+     "cpu_h": 0.267,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "side_by_side/4-6:subset_L0",
+     "level": 0,
+     "dofs": 166987.0,
+     "n": 4,
+     "mem_GB": 1.253,
+     "cpu_s_each": 20.873,
+     "cpu_h": 0.023,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "side_by_side/4-6:subset_L2",
+     "level": 2,
+     "dofs": 9444169.0,
+     "n": 4,
+     "mem_GB": 54.214,
+     "cpu_s_each": 5524.839,
+     "cpu_h": 6.139,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/2-3:f7",
+     "level": 1,
+     "dofs": 747219.0,
+     "n": 4,
+     "mem_GB": 4.081,
+     "cpu_s_each": 145.708,
+     "cpu_h": 0.162,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2-3:subset_L0",
+     "level": 0,
+     "dofs": 101626.0,
+     "n": 4,
+     "mem_GB": 0.88,
+     "cpu_s_each": 12.703,
+     "cpu_h": 0.014,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/2-3:subset_L2",
+     "level": 2,
+     "dofs": 5717701.0,
+     "n": 4,
+     "mem_GB": 32.94,
+     "cpu_s_each": 3344.855,
+     "cpu_h": 3.717,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/4-6:f7",
+     "level": 1,
+     "dofs": 1355513.0,
+     "n": 4,
+     "mem_GB": 7.159,
+     "cpu_s_each": 264.325,
+     "cpu_h": 0.294,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "interleaved/4-6:subset_L0",
+     "level": 0,
+     "dofs": 183692.0,
+     "n": 4,
+     "mem_GB": 1.349,
+     "cpu_s_each": 22.962,
+     "cpu_h": 0.026,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "interleaved/4-6:subset_L2",
+     "level": 2,
+     "dofs": 10392425.0,
+     "n": 4,
+     "mem_GB": 59.627,
+     "cpu_s_each": 6079.569,
+     "cpu_h": 6.755,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/2-3:f7",
+     "level": 1,
+     "dofs": 700395.0,
+     "n": 4,
+     "mem_GB": 3.844,
+     "cpu_s_each": 136.577,
+     "cpu_h": 0.152,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2-3:subset_L0",
+     "level": 0,
+     "dofs": 95284.0,
+     "n": 4,
+     "mem_GB": 0.844,
+     "cpu_s_each": 11.911,
+     "cpu_h": 0.013,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/2-3:subset_L2",
+     "level": 2,
+     "dofs": 5358661.0,
+     "n": 4,
+     "mem_GB": 30.891,
+     "cpu_s_each": 3134.817,
+     "cpu_h": 3.483,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/4-6:f7",
+     "level": 1,
+     "dofs": 1287971.0,
+     "n": 4,
+     "mem_GB": 6.817,
+     "cpu_s_each": 251.154,
+     "cpu_h": 0.279,
+     "fits_local_5GB": false
+    },
+    {
+     "name": "u_shaped/4-6:subset_L0",
+     "level": 0,
+     "dofs": 174571.0,
+     "n": 4,
+     "mem_GB": 1.297,
+     "cpu_s_each": 21.821,
+     "cpu_h": 0.024,
+     "fits_local_5GB": true
+    },
+    {
+     "name": "u_shaped/4-6:subset_L2",
+     "level": 2,
+     "dofs": 9873709.0,
+     "n": 4,
+     "mem_GB": 56.666,
+     "cpu_s_each": 5776.12,
+     "cpu_h": 6.418,
+     "fits_local_5GB": false
+    }
+   ],
+   "n_reference_solves": 1077,
+   "cpu_hours_est": 78.9,
+   "local_or_burst_per_policy": "burst",
+   "jobs_over_local_5GB": [
+    "side_by_side/5:judged",
+    "side_by_side/6:judged",
+    "interleaved/4:judged",
+    "interleaved/5:judged",
+    "interleaved/6:judged",
+    "u_shaped/5:judged",
+    "u_shaped/6:judged",
+    "side_by_side/2-3:subset_L2",
+    "side_by_side/4-6:f7",
+    "side_by_side/4-6:subset_L2",
+    "interleaved/2-3:subset_L2",
+    "interleaved/4-6:f7",
+    "interleaved/4-6:subset_L2",
+    "u_shaped/2-3:subset_L2",
+    "u_shaped/4-6:f7",
+    "u_shaped/4-6:subset_L2"
+   ],
+   "option_A_all_on_burst": {
+    "vm_hours": 31.3,
+    "usd": 19.15,
+    "runner_flags": "--max-procs 8 --mem-cap-gb 66.3",
+    "note": "the packing priced here needs these flags; the defaults (--max-procs 1, 5 GB cap) refuse the over-cap jobs"
+   },
+   "option_A_one_at_a_time": {
+    "vm_hours": 79.4,
+    "usd": 48.57,
+    "runner_flags": "--max-procs 1 --mem-cap-gb 66.3"
+   },
+   "option_B_local_then_burst": {
+    "local_cpu_hours": 20.0,
+    "local_wall_hours_one_at_a_time": 20.0,
+    "vm_hours": 28.8,
+    "usd": 17.62,
+    "runner_flags": "local: E007_SKIP_OVER_CAP=1 --max-procs 1; VM: --max-procs 8 --mem-cap-gb 66.3 (same --workdir)"
+   }
+  }
+ },
+ "l1_evaluations": 2413,
+ "l1_cpu_h": 0.4021666666666667
+}

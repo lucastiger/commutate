@@ -25,8 +25,10 @@ isolated_die's A4 on the extra layouts (P_ref, point):
 | side_by_side/2 | 1.99 | 2.07 |
 | u_shaped/6 | 10.19 | 10.74 |
 
-Pooled over the new rows it is 10.16. In both 2-die strata, isolated_die's A4 is near 1: in those strata, knowing the
-isolated-die spreading gives about as much as knowing the stratum-mean spread.
+Pooled over the new rows it is 10.16. In interleaved/2 only, isolated_die's A4 is near 1 (1.06 / 1.08): there, knowing
+the isolated-die spreading gives about as much as knowing the stratum-mean spread. In side_by_side/2 it is about 2
+(1.99 / 2.07), so the isolated-die null is about twice as bad as the stratum mean there. (Corrected by T0464, review
+T0463 (2); an earlier version said "near 1 in both 2-die strata".)
 
 ## 1. u_shaped/6 (A4 0.951 on T0398's 3 layouts): cause
 Facts, from T0398's rows (`diag_t0398.json`):
@@ -163,8 +165,12 @@ A3 0.13 / 0.12 K.
 
 | errors | joint power | A4 alone | min V4 coverage over all 7 statistics |
 |---|---|---|---|
-| normal | 1.000 / 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 0.999 / 0.997 | 0.980 / 0.987 / 0.974 / 0.976 |
+| normal | 1.000 / 1.000 / 1.000 / 1.000 | 1.000 at every m | 0.980 / 0.987 / 0.974 / 0.976 |
 | t3 | 0.998 / 1.000 / 1.000 / 1.000 | 1.000 at every m | 0.971 / 0.979 / 0.981 / 0.973 |
+
+Correction (T0464, review T0463 (1)): an earlier version of the normal row's "A4 alone" column showed
+1.000 / 1.000 / 0.999 / 0.997, which is A4's V4 *coverage* at m = 20 / 24 / 32 / 40, not its power. A4 power is 1.000 at
+every m under both error models (`a4_strata/sim_corrected.json` cells `power|*|m`, `power_each.A4`).
 
 **Coverage at the registered m (review T0459 (1)).** This, not T0398's m = 3 figure (which is 1.0 by construction),
 is the registration evidence.
