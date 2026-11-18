@@ -1,11 +1,10 @@
 # ModuleForge status
-_generated 2026-11-18T06:27:47+00:00 from repository state — do not edit_
+_generated 2026-11-18T06:28:35+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0255** [decision] E007 needs burst compute (~84.5 CPU-h)
-- **I0256** [protected_change] T0457: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -26,7 +25,7 @@ _generated 2026-11-18T06:27:47+00:00 from repository state — do not edit_
 |---|---|---|---|---|---|---|
 | O002 | 41 | $99.38 | 1794921 | 884897 | 131 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
-| O004 | 56 | $126.95 | 2035204 | 1110965 | 147 | 0 |
+| O004 | 57 | $126.95 | 2035204 | 1110965 | 147 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
@@ -34,16 +33,12 @@ _generated 2026-11-18T06:27:47+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 410, failed: 4, needs_founder: 2, todo: 3
+cancelled: 47, done: 411, failed: 4, needs_founder: 1, running: 1, todo: 2
 
+- T0390 `running` scientist/design_experiment: E004 design, part 3: reported diagnostics F3 (per conductor group, round vs square wire), F6 (die contact, terminal tabs), F8 (L1 beside l2_layout) (attempt 1)
 - T0399 `needs_founder` none/experiment: Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts at P_ref and 0.5 P_ref (attempt 0)
-- T0457 `needs_founder` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
 
 ## Recent events
-- 2026-11-18T03:40:31+00:00 run_finished {"run": "T0465-critic-20261117T193503-66c1", "status": "completed", "cost": 2.193401, "subtype": "success", "report": "structured_output"}
-- 2026-11-18T03:40:38+00:00 inbox_opened {"id": "I0253", "kind": "protected_change", "subject": "T0464: merge needs founder approval"}
-- 2026-11-18T03:45:08+00:00 inbox_resolved {"id": "I0253", "status": "approved", "note": "T0464 merge approved, review T0465 accepts with caveats. E007 finalised at m = 32, 480 layouts, cost 74 to 79 CPU
-- 2026-11-18T03:45:13+00:00 merged {"task": "T0464"}
 - 2026-11-18T03:45:14+00:00 inbox_opened {"id": "I0254", "kind": "experiment_registration", "subject": "register E007 (pre-registration)"}
 - 2026-11-18T04:44:19+00:00 experiment_registered {"id": "E007", "hash": "sha256:3b6d1b778d668cf5502c565592a478077a277c5b5b5dc06960d4a52a97087680", "by": "founder"}
 - 2026-11-18T04:44:19+00:00 inbox_resolved {"id": "I0254", "status": "approved", "note": "Register E007: design complete (T0397, T0398, T0456, T0464), m = 32 per D0027, Woodruff 97 % bounds per D0025, le
@@ -55,3 +50,7 @@ cancelled: 47, done: 410, failed: 4, needs_founder: 2, todo: 3
 - 2026-11-18T05:16:13+00:00 run_started {"run": "T0466-critic-20261117T211613-8302", "task": "T0466", "role": "critic", "session": "4777f8db-4dff-47c0-b9c8-1b3ee7c3af2d"}
 - 2026-11-18T05:23:24+00:00 run_finished {"run": "T0466-critic-20261117T211613-8302", "status": "completed", "cost": 2.158309, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T05:29:02+00:00 inbox_opened {"id": "I0256", "kind": "protected_change", "subject": "T0457: merge needs founder approval"}
+- 2026-11-18T06:28:09+00:00 inbox_resolved {"id": "I0256", "status": "approved", "note": "T0457 merge approved, review T0466 accepts with caveats, logged in O004 state. E004 part 2b: banded acceptance an
+- 2026-11-18T06:28:26+00:00 merged {"task": "T0457"}
+- 2026-11-18T06:28:27+00:00 registration_deferred {"task": "T0457", "experiment": "E004", "reason": "design task T0390 of E004 is still todo"}
+- 2026-11-18T06:28:35+00:00 run_started {"run": "T0390-scientist-20261117T222835-1c59", "task": "T0390", "role": "scientist", "session": "2771237f-fdfa-4bc6-9f07-b025fc20d8f6"}
