@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-18T02:32:53+00:00 from repository state — do not edit_
+_generated 2026-11-18T02:33:41+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -32,15 +32,13 @@ _generated 2026-11-18T02:32:53+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 405, failed: 4, review: 1, running: 2, todo: 4
+cancelled: 47, done: 405, failed: 4, review: 1, running: 2, todo: 5
 
 - T0456 `review` scientist/design_experiment: E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra development layouts in 3 strata, corrected power simulation (attempt 1)
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
 - T0463 `running` critic/review: Review T0456 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-18T00:53:01+00:00 run_started {"run": "T0460-critic-20261117T165301-7328", "task": "T0460", "role": "critic", "session": "46ff50b6-29ff-4d13-b5c8-e23afccf26be"}
-- 2026-11-18T00:53:05+00:00 run_started {"run": "T0461-critic-20261117T165305-7d2e", "task": "T0461", "role": "critic", "session": "80ce883a-18c0-4a10-8933-217f769259c3"}
 - 2026-11-18T01:08:24+00:00 run_finished {"run": "T0461-critic-20261117T165305-7d2e", "status": "completed", "cost": 2.672621, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T01:08:39+00:00 run_started {"run": "T0462-critic-20261117T170839-8c52", "task": "T0462", "role": "critic", "session": "c0135254-c5a8-475a-b158-98d80b621595"}
 - 2026-11-18T01:19:40+00:00 run_finished {"run": "T0460-critic-20261117T165301-7328", "status": "completed", "cost": 2.539493, "subtype": "success", "report": "structured_output"}
@@ -54,3 +52,5 @@ cancelled: 47, done: 405, failed: 4, review: 1, running: 2, todo: 4
 - 2026-11-18T02:29:29+00:00 inbox_opened {"id": "I0251", "kind": "experiment_registration", "subject": "register E011 (pre-registration)"}
 - 2026-11-18T02:29:40+00:00 run_started {"run": "T0463-critic-20261117T182940-d3e0", "task": "T0463", "role": "critic", "session": "9e7dcb8d-48d0-4f14-af53-c3281206fcdb"}
 - 2026-11-18T02:32:48+00:00 inbox_resolved {"id": "I0251", "status": "rejected", "note": "Premature: E011 needs its development burst (I0205), the development L2 analysis, and founder decisions on the se
+- 2026-11-18T02:33:12+00:00 founder_decision_recorded {"objective": "O002", "summary": "E007: per-stratum A4 check passed on 9 layouts; m = 32 (480 layouts)"}
+- 2026-11-18T02:33:12+00:00 task_added {"task": "T0464", "note": "founder decision 2026-11-18"}

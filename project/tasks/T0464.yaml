@@ -1,0 +1,84 @@
+id: T0464
+objective: O002
+title: 'E007 pre-registration finalisation: m = 32 per stratum (480 layouts), power and coverage evidence
+  from T0456, plan and cost, level-2 timing job'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0456
+description: 'E007 pre-registration finalisation (O002), after T0456 merges. Founder decisions 2026-11-18
+  (O002 state log; decision record D0027, amending D0025 items 2 and 4):
+
+  - The per-stratum A4 check counts as passed on 9 development layouts (T0456: interleaved/2 0.286, side_by_side/2
+  0.223, u_shaped/6 0.096). The per-stratum A4 is a reported diagnostic.
+
+  - m = 32 layouts per (family, dies) stratum, 480 in all.
+
+  Do not change the L1, its calibration, the criteria, thresholds or the bound.
+
+  1. Set allocation.layouts_per_stratum 32 and n_layouts 480 in experiments/drafts/E007.yaml, and record
+  the fixed allocation where the runner reads it (f3_simulation.json''s allocation, or a new allocation
+  entry that cites T0456). Check that the runner draws 32 per stratum from the sealed seed.
+
+  2. Name T0456''s corrected simulation (research/o002_e007/, its consistency check passed) as the registration''s
+  power and coverage evidence at m = 32: joint power, A4 power, minimum V4 coverage, and kill-side rates
+  at 1.2 x each kill threshold. Keep T0396''s m = 20 simulation and its disclosure as history.
+
+  3. Regenerate `e007_run.py --plan` at m = 32. Set cpu_hours_est and the cost plan from it, and check
+  the total against O002''s 100 CPU-hours (process CPU time, D0025 item 3). If it exceeds 100, stop and
+  report.
+
+  4. List the level-2 timing job (research/o002_e007/l2_timing/job.json, one level-2 solve, cpu_s and
+  wall_s) as a founder burst in your report, with the command; it is needed before registration (D0025
+  item 3).
+
+  5. Add T0456''s development seed 20261456 to seeds.forbidden if it is not there. Update research/notes/e007-design.md,
+  and cite D0025 and D0027.
+
+  '
+context_files: []
+deliverables: []
+touches:
+- experiments/drafts/E007.yaml
+- experiments/runners/e007_*.py
+- research/o002_e007/**
+- research/notes/e007-design.md
+definition_of_done:
+- cmd: uv run python -c "import yaml; d = yaml.safe_load(open('experiments/drafts/E007.yaml')); a = d['config']['allocation']
+    if 'allocation' in d.get('config', {}) else d['allocation']; assert a['layouts_per_stratum'] == 32
+    and a['n_layouts'] == 480, a"
+  exists: null
+  timeout_s: 900
+- cmd: uv run python experiments/runners/e007_run.py --selftest
+  exists: null
+  timeout_s: 2400
+- cmd: uv run python experiments/runners/e007_run.py --verify-freeze
+  exists: null
+  timeout_s: 1200
+- cmd: uv run python experiments/runners/e007_run.py --plan
+  exists: null
+  timeout_s: 1200
+- cmd: uv run mfos exp check E007
+  exists: null
+  timeout_s: 900
+experiment: E007
+risk: medium
+model: null
+budget_usd: 3.0
+max_turns: 80
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: session
+created_at: '2026-11-18T02:33:12+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: founder decision 2026-11-18 in the founder session
+history: []

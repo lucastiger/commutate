@@ -42,5 +42,13 @@ log:
   0.951, pooled A4 0.107): diagnose before deciding; task T0456 investigates u_shaped/6, adds 6 development
   layouts in each of the 3 strata, and redoes the per-cell power simulation; the founder then decides
   (accept or revise L1) and chooses m'
+- 'founder decision 2026-11-18T02:33:12+00:00 (recorded by the founder session; amends D0025 items 2 and
+  4, record D0027): (1) the per-stratum A4 check is treated as passed: on 9 development layouts (T0456)
+  A4 is 0.286 (interleaved/2), 0.223 (side_by_side/2) and 0.096 (u_shaped/6), all at or below 0.3; the
+  per-stratum A4 is a diagnostic (its bounds are unbounded at these sizes), and T0398''s u_shaped/6 0.951
+  was a small-denominator artefact; (2) E007 uses m = 32 layouts per (family, dies) stratum, 480 in all,
+  for kill-side power (at 1.2 x each kill threshold K1 fires with probability 0.81 normal / 0.58 t3 and
+  K3 0.58 / 0.35, against 0.42 / 0.31 and 0.29 / 0.17 at m = 20; pass power about 1.0; T0456''s corrected
+  simulation)'
 evidence_rules: 2
 frozen_hash: sha256:f52c33de4a6472294c7bb3f5801c7bee97f9225b143175b28ab905f15f258134
