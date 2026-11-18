@@ -182,6 +182,8 @@ measured. [F] Figures copied from the file; intervals are Wilson 95 % on 1000 Be
   (19.5 CPU-h locally, one solve at a time, then the VM): 25.2 VM-h, $15.43 (upper 28.8 h, $17.62).
 - [I] The margin to 100 CPU-h rests on the level-2 rate (585 us/DOF, T0243, not measured on this code): the total
   exceeds 100 only if level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower. §9.4's burst measures it.
+- [F] Dollars against m = 20 (review T0465, reconciling D0027's 'about $9 more VM'): option A packed costs $1.38 more ($15.54 to $16.92); one solve at a time costs $10.63 more ($35.00 to $45.63). D0027's figure matches the one-at-a-time case.
+- [F] The level-2 job files (research/o002_e007/l2_timing/job*.json) embed copies of the spec config from before this finalisation (m = 20 allocation, old memory text). run_child reads only their physics fields and re-checks the layout fingerprint, so the solves are unaffected; the registered config is E007.yaml (review T0465).
 
 ### 9.4 Level-2 burst needed before registration (D0025 decision 3; founder, burst only)
 Two solves, one at a time, by `research/o002_e007/l2_timing/run_l2_jobs.sh`:
@@ -200,4 +202,4 @@ Command (founder): `scripts/burst_gcp.sh --cmd "bash research/o002_e007/l2_timin
   DOF x bytes_per_dof x memory_margin (1.15) + base_rss_GB (0.3 GB). Recomputed from `E007.dev_rows.json` (T0398's 90
   level-1 solves): max 4.32 kB/DOF with base RSS excluded, 4.98 kB/DOF included (side_by_side_2_j02, half load,
   2.27 GB at 0.455 M DOF); T0456's 36 solves 4.33 / 4.99 kB/DOF. The earlier "4.29 kB/DOF" matched neither convention.
-  4400 >= 4330, and on all 126 measured level-1 solves the admission estimate is 1.15-1.82 x the measured peak.
+  4400 >= 4330, and on all 126 measured level-1 solves the admission estimate is 1.15-2.24 x the measured peak (1.82 at most over T0398's 90 solves, 2.24 over T0456's 36; review T0465).
