@@ -1,16 +1,17 @@
 # ModuleForge status
-_generated 2026-11-18T03:39:55+00:00 from repository state — do not edit_
+_generated 2026-11-18T03:40:45+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
+- **I0253** [protected_change] T0464: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | active | - | 0/1 | $97.19/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | active | - | 0/1 | $99.38/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | active | - | 0/1 | $118.73/$148 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
@@ -22,7 +23,7 @@ _generated 2026-11-18T03:39:55+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 41 | $97.19 | 1770261 | 874633 | 127 | 0 |
+| O002 | 41 | $99.38 | 1794921 | 884897 | 131 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 55 | $118.73 | 1881647 | 1038213 | 142 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -32,15 +33,12 @@ _generated 2026-11-18T03:39:55+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 407, failed: 4, review: 1, running: 2, todo: 4
+cancelled: 47, done: 408, failed: 4, needs_founder: 1, running: 1, todo: 4
 
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
-- T0464 `review` scientist/design_experiment: E007 pre-registration finalisation: m = 32 per stratum (480 layouts), power and coverage evidence from T0456, plan and cost, level-2 timing job (attempt 1)
-- T0465 `running` critic/review: Review T0464 (general) (attempt 1)
+- T0464 `needs_founder` scientist/design_experiment: E007 pre-registration finalisation: m = 32 per stratum (480 layouts), power and coverage evidence from T0456, plan and cost, level-2 timing job (attempt 1)
 
 ## Recent events
-- 2026-11-18T02:29:27+00:00 merged {"task": "T0382"}
-- 2026-11-18T02:29:29+00:00 inbox_opened {"id": "I0251", "kind": "experiment_registration", "subject": "register E011 (pre-registration)"}
 - 2026-11-18T02:29:40+00:00 run_started {"run": "T0463-critic-20261117T182940-d3e0", "task": "T0463", "role": "critic", "session": "9e7dcb8d-48d0-4f14-af53-c3281206fcdb"}
 - 2026-11-18T02:32:48+00:00 inbox_resolved {"id": "I0251", "status": "rejected", "note": "Premature: E011 needs its development burst (I0205), the development L2 analysis, and founder decisions on the se
 - 2026-11-18T02:33:12+00:00 founder_decision_recorded {"objective": "O002", "summary": "E007: per-stratum A4 check passed on 9 layouts; m = 32 (480 layouts)"}
@@ -54,3 +52,5 @@ cancelled: 47, done: 407, failed: 4, review: 1, running: 2, todo: 4
 - 2026-11-18T03:24:26+00:00 run_finished {"run": "T0464-scientist-20261117T185436-0c97", "status": "completed", "cost": 2.515331, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T03:34:48+00:00 verified {"task": "T0464"}
 - 2026-11-18T03:35:03+00:00 run_started {"run": "T0465-critic-20261117T193503-66c1", "task": "T0465", "role": "critic", "session": "f95309b9-e3d1-4784-8426-24d524d66885"}
+- 2026-11-18T03:40:31+00:00 run_finished {"run": "T0465-critic-20261117T193503-66c1", "status": "completed", "cost": 2.193401, "subtype": "success", "report": "structured_output"}
+- 2026-11-18T03:40:38+00:00 inbox_opened {"id": "I0253", "kind": "protected_change", "subject": "T0464: merge needs founder approval"}
