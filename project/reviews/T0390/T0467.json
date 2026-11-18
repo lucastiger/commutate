@@ -1,0 +1,73 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The terminal 'bound' is too loose to answer O004 F3's 1 % question, and the founder flag ignores it",
+      "detail": "O004 F3 says that a model choice changing L by more than 1 % needs a founder decision. The terminal group gets no measured term, only a bound from a k0 step that grows the contact from a 1 mm cell to a 3 mm x 3 mm patch. The spec presents this as an inference, not a proof. In my smoke run that bound was 3.4 % on both Case 4 layouts, so it cannot show whether the real judged-level term (equipotential versus equal split over a 0.5 mm patch) is below 1 %. F3_founder_decision_needed then stays false even though the terminal attribution is undecided; only the separate flag F3_terminals_bound_above_L_threshold is raised. This is disclosed and does not touch A1, A2, K1 or K2, but the terminal attribution is effectively 'unresolved' rather than attributed.",
+      "evidence": "--smoke --diagnostics output: F3_terminals_bound_max 0.03415, F3_terminals_bound_above_L_threshold true, F3_founder_decision_needed false. dev_pair0: L_grow / L_point - 1 = 24.4925 / 25.3585 nH - 1 = -3.41 % (the sign is correct, so monotonicity holds).",
+      "suggested_check": "Either set F3_founder_decision_needed (or a distinct 'undetermined' state) when the terminal bound exceeds F3_founder_L_rel, or tighten the bound with a judged-level-like contact step (for example k1 with a 2x patch).",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "Diagnostics run before the rows and solve.json are written, so a wall-time kill during them loses the judged run",
+      "detail": "stage_solve emits the A1/A2/K1/K2 metrics before run_model_diagnostics, but run.rows(rows) and solve.json are written after it (lines 2023-2030). try/except Exception covers exceptions only. It does not cover the experiment-level timeout_min (6000 min) killing the process, or a SIGKILL. diag_jobs skips a job only when 2 x its own timeout exceeds timeout_min; it never checks the wall time left. The spec adds about 4-6 h of makespan, and the judged plan's upper envelope (2575.5 CPU-h) can already approach the limit. In that case the diagnostics could cost the evaluator its rows, which contradicts the spec's statement that no diagnostic can change the run's validity. The probability is low but not zero.",
+      "evidence": "e004_run.py lines 2006-2030: the metrics come first, then the with_diagnostics block, then run.rows and solve.json.",
+      "suggested_check": "Write the rows and a first solve.json (or a checkpoint) before running the diagnostics, or give the diagnostic jobs a budget of the remaining wall time.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Wire term is the high-frequency limit; at 10-20 MHz the skin depth is not negligible, and FastHenry's k0 substitution does not independently confirm the closed form",
+      "detail": "For a 0.3 mm Al wire (sigma 3.5e7 S/m), the skin depth is about 27 um at 10 MHz, so r/delta is about 5.6. Shape-dependent internal-inductance corrections of order delta/r therefore enter the round-versus-square difference at a size comparable to the 0.028 log term; their sign depends on corner current crowding. At k0, FastHenry's 2x2 filaments cannot resolve skin effect, so the substitution measures only the self-similar scaling ln(1/0.97264). That is the same number as the closed form's ln(g_sq / r) by construction (both equal ln(2 x CAP x 0.8711)). The agreement (FastHenry +0.29 % against my closed-form estimate of about 0.35 % of loop L on dev_pair0) checks the plumbing, not the physics of the term. This is unlikely to matter for the decision: wires are a fraction of loop L, and the measured term is about 0.3 %, against the 1 % threshold.",
+      "evidence": "dev_pair0 f3_wire: 25.4317 / 25.3585 nH - 1 = +0.289 %. My hand closed form for 4 wires of 0.3 mm, about 16 mm long, in 2 nets gives about 0.35 %.",
+      "suggested_check": "State in config.diagnostics.F3 that the wire term is HF-limit only, and that r/delta of about 6 leaves an O(delta/r) shape term in the residual.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Cost plan: the 2D_Case_2R direct_default time does not match its filament count",
+      "detail": "119.7 s x (26546 / 9992)^3 = 2245 s, but the spec gives 2226 s. The other three direct entries reproduce exactly (2510, 919 and 1067 s). The difference (19 s per layout) is immaterial to the 23.7 CPU-h total.",
+      "evidence": "Recomputed: 2R total 58416 s, Case 6 total 26970 s, 77 jobs and 23.7 h all reproduce from the listed per-job figures.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "cpu_hours_est (541.9) is already about twice O004's budget of 260 CPU-hours",
+      "detail": "The overrun predates this change (518.2 judged); this change adds 23.7 CPU-h. It is outside the claim's scope, but the founder should see it next to the diagnostics' added cost.",
+      "evidence": "project/objectives/O004/objective.yaml: budget {usd: 100, cpu_hours: 260}.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The new self-tests check plumbing only",
+      "detail": "diagnostics_zero_terms_on_equal_values uses a stub that returns equal values for every variant, so it cannot detect a sign or baseline error in any term. diagnostics_do_not_change_criteria is a useful isolation test. I checked the signs and the algebra by derivation instead (see the checks performed).",
+      "evidence": "--selftest: 23/23 PASS.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "uv run mfos exp check E004: exit 0",
+    "uv run python experiments/runners/e004_run.py --smoke --diagnostics: exit 0. 8 diagnostic multipole jobs ok; the 4 direct jobs were skipped as burst-VM jobs; no deck re-export mismatch; F3 max model term 0.31 %, F6 max |dr/r| 0.06 %, terminal bound 3.4 % (flag raised), F8 summary produced; MF_E004_MAX_PROCS=2 observed (two solver processes at a time)",
+    "experiments/runners/e004_run.py --selftest: 23/23 PASS, including both new T0390 checks",
+    "Independent boundary-element solution of the logarithmic capacity of a unit square (1600 panels, exact log panel integrals): 0.590156, against the Gamma(1/4)^2/(4 pi^1.5) value of 0.590170 used by CAP_SQUARE",
+    "Recomputed the side factor 1/(2 CAP) / 0.8711 = 0.97264 and the closed-form check for 16 mm, 0.3 mm: 0.6284 % (matches the claim of 0.628 %; T0364 gives 0.637 %)",
+    "Applied deck_edit to the Case 4 k0 deck at nh 1 and nh 5: all 24 'Ew' lines get w and h scaled by exactly 0.97264 and nothing else changes; terminal_grow adds one 9-node .equiv (3x3 patch) per port, and the deck differs from the baseline",
+    "Checked on all three references (2D_Case_4, 2D_Case_2R, 2D_Case_6), from geometry only with no inductance computed: both ports lie on 0.25 mm lattice corners (4 tied cells at k2) and on single 1 mm cell centres at k0, which supports the 'same support at the judged level' premise",
+    "Derived by hand the signs of the thickness term (c_fh - thk_l2, since the finest values carry no thickness correction), the residual factorisation, dr/r = (1+a)/(1+b) - 1, and the loop weighting sum s_k^2 dL_kk; all match the code",
+    "From the raw dev_pair0 solve JSONs: wire term +0.289 % (my closed-form estimate is about 0.35 %); terminal grow -3.41 % (sign is <= 0 as monotonicity requires)",
+    "Recomputed the cost-plan totals (58416 s, 26970 s, 77 jobs, 23.7 CPU-h) from the per-job figures",
+    "Compared the implementation with the frozen O004 F3, F6 and F8 detection and response text; the F6 rule at 2 % and F3 at 1 % match, and F8 records whether L1 alone meets A1"
+  ],
+  "caveats": [
+    "Every diagnostic number above comes from the smoke run (k0 at nh 1, one Case 4 development pair) and is not evidence. The direct-solver F6 'distributed die' variant and its direct baseline were not run anywhere (burst-VM only), so that path is untested end to end.",
+    "The F3 terminal group is reported only as a loose bound (3.4 % in smoke). The diagnostic therefore cannot establish whether the terminal model choice is below O004 F3's 1 % threshold, and F3_founder_decision_needed does not include it.",
+    "The wire term is the high-frequency limit; at r/delta of about 6 there is an O(delta/r) shape correction, which goes into the residual.",
+    "The guarantee that 'no diagnostic can change the run's validity' covers exceptions only, not wall-time exhaustion: the rows and solve.json are written after the diagnostics.",
+    "The terms are combined as independent first-order factors, and interactions are not measured (stated in the spec)."
+  ]
+}
