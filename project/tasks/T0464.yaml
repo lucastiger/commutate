@@ -4,7 +4,7 @@ title: 'E007 pre-registration finalisation: m = 32 per stratum (480 layouts), po
   from T0456, plan and cost, level-2 timing job'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0456
 description: 'E007 pre-registration finalisation (O002), after T0456 merges. Founder decisions 2026-11-18
@@ -99,8 +99,8 @@ runs:
 - T0464-scientist-20261117T185436-0c97
 created_by: session
 created_at: '2026-11-18T02:33:12+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0253
 target: null
 lens: null
 trigger: null
@@ -231,3 +231,7 @@ history:
       (thresholds 1.99 x expected, 1.71 x upper)'
     - 'Level-2 burst: interleaved_2_j01''s spread at levels 0, 1 and 2 decides whether the interleaved/2
       reference is converged at the 0.02-0.05 K scale of L1''s errors'
+- outcome: merge_approved
+  summary: I0253
+  replan: false
+  at: '2026-11-18T03:45:08+00:00'
