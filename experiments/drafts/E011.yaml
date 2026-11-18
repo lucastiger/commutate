@@ -1,0 +1,376 @@
+id: E011
+title: 'O008 control: from sealed degraded copies D_j of a designer proxy W* (2D_Case_2R, 2D_Case_4; gen2_0 reported),
+  the seeded local search returns a candidate within 2 % of L_sub(W*) at 0.25 mm on >= 7 of 8 draws per layout and beats
+  the inductance-blind nulls (widen, compaction) by a resolved margin (A1, A2, A3, K1; F1-F7)'
+objective: O008
+status: draft
+runner: uv run python experiments/runners/e011_run.py
+sealed_seed: true
+config:
+  design_task: T0382 (scientist, 2026-11-16). Development-only draft; nothing here has seen a sealed draw.
+  layouts: [2D_Case_2R, 2D_Case_4, gen2_0]
+  counted_layouts: [2D_Case_2R, 2D_Case_4]
+  reported_not_counted: [gen2_0]
+  layout_index: {2D_Case_2R: 1, 2D_Case_4: 2, gen2_0: 3}  # nonzero, enters every sub-seed of its layout
+  layout_sources:
+    2D_Case_2R: 'e010_run.judged_reference (frozen T0263 reconstruction script, fingerprint first) on E010.yaml
+      config.references; development geometry under D0023 (its E010 values are known), never a judged reference'
+    2D_Case_4: e010_run.dev_reference('case4', E010 config), O006 pilot geometry
+    gen2_0: e010_run.dev_reference('gen2_0', E010 config), generator housing 70 x 40 mm, dev seed 20261110
+  W: twin.twin(reference, spec) (T0349, T0377); the reference's spec carries e010_run.e008_rules
+  rules: each layout's own e008_rules (drc.rules.measure_rules with min_signal_wire_length dropped, D0018 item 1); no
+    relaxed floor (E010's 1.5 mm D power-width floor, D0018 decision 1, is not used anywhere in E011)
+  parameter_set: 'Params.NAMES[twin.WALK_FIRST:twin.WALK_END] = indices 4-39 (columns, slots, die rows, landing lines),
+    local.movable_indices(); the four power-wire foot offsets foot_{HS,LS}_land_{du,dv} do not move (D0026 item 1,
+    founder decision 2026-11-16). The proxy descent, the degradation family, the search and nulls (b), (d) all move exactly this set, die
+    rows included (no dies-fixed arm except the Tj fallback of the proxy, which then holds the die rows of the proxy
+    only; O008 scope_in). Every row records movable_indices() in its provenance column movable_indices'
+  levels:
+    production: lat0.25  # L_sub: l2_layout at 0.25 mm cells, 10/6/6 layers (E010 EM_LEVELS, P3)
+    band: [lat0.25, lat0.5, thk_c, thk_f, fil_f]  # D0008 / P3 band order (e010_run.BAND)
+    freq_hz: 2.0e+7
+  frozen:
+    n_draws: 8
+    tolerance: 0.02
+    proxy:
+      rule: 'control.proxy_descent(spec, params_of(W), twin._l1, step_limit, reach=True): steepest single-parameter L1
+        descent from W over local.movable_indices(); the neighbourhood is the search''s own single-parameter moves:
+        +-0.5 mm steps of every movable parameter and the twin''s reach jumps (twin._walk_candidates(reach=True): a slot
+        end to the column edge or the outline limit, a column edge to the limit or back to its pad); every state built,
+        DRC-clean under the layout''s e008_rules and inside derivative.in_domain(reach=True); a step must lower L1 by
+        more than min_gain; to a local optimum or step_limit. W* = control.choose_proxy(W, result, L_sub at 0.25 mm):
+        the descent''s end only if its L_sub is strictly lower than W''s (F3). D0026 item 2 (founder decision 2026-11-16
+        20:30 UTC, reviews T0421/T0422): the reach jumps and the in-domain test are part of the rule because O008 makes the target
+        an optimum of the search''s own domain (review T0358); O008''s text says 0.5 mm steps'
+      reach: true
+      step_mm: 0.5
+      min_gain_H: 1.0e-12  # control.MIN_GAIN_H (T0379 finding 2; confirmed by the founder at T0379's merge)
+      step_limit: 500
+      dies_fixed: false
+      tj_fallback: 'if Tj(W*) - Tj(W) > 2 K (hottest die, thermal reference level 0) the proxy is the same descent with
+        die rows held fixed (dies_fixed=True), then choose_proxy again'
+      dc_minus_reading: 'frozen: twin._net_side as built (2D_Case_2R reads (-1, -1, 1)). The proxy descent is
+        deterministic (no seed): frozen reading on 2R 25 steps, L1(W*)/L1(W) 0.9138, on 2D_Case_4 73 steps, 0.6533
+        (T0437 regression pins, tests/unit/optimize/test_control.py); 2R with DC- read +1 gave 23 steps, 0.9149, a
+        different layout (T0382 attempt 1). Why the built reading is frozen: it is the code under test as hashed
+        (twin.py) and it gives the deeper proxy on 2R (the harder control target). The development run on T0437''s code
+        reports both readings for the proxy and for the search of draw 0 on both layouts (config.dev_run and
+        research/notes/e011-dev-run.md); the L2 comparison of the two W* and the two bests is in the dev L2 run (burst
+        VM). A reversal there reopens this entry before registration'
+    tj_fallback_K: 2.0
+    degradation:
+      family: 'control.draw_degradations / degrade_draw: stochastic L1 ascent from W* by joint moves of k_lo..k_hi
+        parameters of movable_indices(), each by +-mags_mm, a move accepted if the result builds, is DRC-clean, lies in
+        in_domain(reach=True) and has a higher L1; stops at target_ratio (L1(D)/L1(W*)) or after max_proposals. Uses L1
+        only; l2_layout is called once per attempt, only to accept or reject it (window, at the production level). A D_j
+        outside in_domain(reach=True) is a defect of the family (T0414): reported, treated as out of window and redrawn
+        within the limit, never scored'
+      target_ratio: 1.3875  # control.FROZEN_L1_TARGET = 1.25 x 1.11 (twin.DEGRADE_RATIO, DEGRADE_MARGIN)
+      max_proposals: 400
+      k_lo: 2
+      k_hi: 4
+      mags_mm: [0.5, 1.0, 1.5, 2.0]
+      window: [1.25, 1.60]  # R_D = L_sub(D_j) / L_sub(W*) at 0.25 mm (O008)
+      redraw_limit: 4  # at most 5 attempts per draw; a draw that exhausts it is excluded (F6)
+    search:  # local.LocalConfig, every field (its hash below is LocalConfig.hash())
+      budget: 2000
+      shortlist: 8
+      step_mm: 0.5
+      n_joint: 12
+      joint_k_max: 4
+      joint_steps_max: 4
+      perturb_k_max: 6
+      perturb_steps_max: 8
+      perturb_tries: 200
+      max_iters: 100000
+      dies_fixed: false
+    search_cfg_hash: bdefe640d8cac683
+    nulls:
+      step_limit: 200  # nulls.NULL_STEP_LIMIT; a capped null run is never a resolved failure (A3)
+      no_moves_rule: 'review T0444 (proposed; the founder confirms with this spec): a null (b)/(d) run that ends with
+        terminal nulls.NO_MOVES (its first neighbourhood held no DRC-clean in-domain move, so it returned D_j unchanged)
+        is recorded with terminal_kind no_moves and capped true: it is never a resolved failure for A3 (the null never
+        moved, like a capped run), it may still be a paired win, and it is reported per layout and draw. The search''s
+        stop_reason no_moves (local.py: the perturbation found no valid layout in perturb_tries proposals) maps the same
+        way (terminal_kind no_moves, capped true); capped does not enter A1 or K1. e011_metrics refuses no_moves,
+        step_limit or budget with capped false'
+      gating: [widen, compact]
+      dies_fixed: false  # both nulls move movable_indices(), die rows free, as the search (T0426 item 3)
+    ablation_c: {budget: 2000, shortlist: 8}  # nulls.ablation_random_screen: budget counted in sampler draws
+    ablation_e: {budget: 2000, step_limit: 100000}  # control.proxy_alone: only the L1 budget ends it
+    seeds:
+      rule: 'sub_seed(seed, purpose, *k) = SeedSequence([tag, seed, *k]).generate_state(1)[0] with a nonzero tag first
+        (numpy drops trailing zero words, so [s, li, j, 0] == [s, li, j]; founder 2026-11-16 item 4). degradation:
+        draw_degradations(sealed_seed = sub_seed(seed, degrade), layout_index, ...), attempt a of draw j on
+        SeedSequence(control.degrade_entropy(that, layout_index, j, a)) = SeedSequence([control.DEGRADE_TAG =
+        0x4D460D01, that, layout_index, j, a]) (T0437, on main); search of draw j: sub_seed(seed, search, layout_index, j); ablation (c)
+        of draw j: sub_seed(seed, random_screen, layout_index, j). The search''s seed is never the degradation''s'
+      tags: {degrade: 0x0E011D01, search: 0x0E011D02, random_screen: 0x0E011D03}
+    band_rule: 'b_j = 2 e_R(best_j, W*), e_R = mfos.metrics.ratio_band_estimate over the five band levels of best_j and
+      W* (D0008, P3); each role''s own solves'
+    band_bound:
+      median_max: 0.01
+      max_max: 0.02
+      applies_to: per counted layout, the search's b_j over its draws (sanity check band_bound)
+      development_value: null  # filled from the dev L2 run (later task, after the founder's burst run)
+    f2_pool_n: 2000  # draws per sampler (legacy and reach) for the coordinate-range test and the L1 lower tail
+  frozen_sha256: 61c7abc9f2075dbfee4f4fa1606429cf177d1505c51f74c221304ca424417d3b
+  code_sha256:
+    src/moduleforge/generate/derivative.py: 2be5db7e37217427c944c8dfa849de10b18222eb0c24903a359d30ee0fb9ea22
+    src/moduleforge/generate/twin.py: 26a77a60130d95e4b5e087f30806ff2e26086757668d7d7e7fdecbb681a123e5
+    src/moduleforge/optimize/local.py: 0da8d2c4efd8e4aa5af211875b9de9cd67d9edf126a1237abea7ea0af9205085
+    src/moduleforge/optimize/control.py: de00f8c97342e1f6ff2b4d5b34292e76bc16e5e17086d56c9c2951074ab7a0a1
+    src/moduleforge/optimize/nulls.py: da30f8e613c90f296131e82c2f6a62f7bb9920c19a42b7211aeeedd32dce36e7
+  joint_operating_characteristic:
+    status: method stated here; numbers filled after the dev L2 run (later task)
+    method: 'Per counted layout k, from the development rows at L2: the search''s s_kj and b_kj, and each gating null''s
+      s and b, j = 1..n_dev. (1) Common mode: every draw on a layout shares the one solve L_sub(W*); its error enters
+      every s_kj as the same factor. Model s_kj = (1 + s*_kj)(1 + c_k) - 1 with c_k ~ N(0, sigma_k^2), sigma_k = e_R of
+      W* against itself is 0, so sigma_k is taken from the band: sigma_k = median_j b_kj / 2 / 1.96 (the band b = 2 e_R
+      is read as a 95 % half-width; a stated assumption, reported with sensitivity at 2 sigma_k). (2) Per-draw
+      idiosyncratic part: the development draws'' s*_kj = (1 + s_kj)/(1 + c) - 1, resampled with replacement (bootstrap,
+      B = 20000, seed 20261116). (3) For each bootstrap replicate: draw c_k once per layout, draw 8 s per layout and the
+      paired null values (same draw index resampled jointly with the search), compute A1, A3 (null_beaten_min) and K1
+      with e011_metrics on the replicate rows. P(PASS) = P(A1 >= 0.875 and A3 = 1 and K1 <= 0.05) over replicates; also
+      P(A1), P(A3), P(not K1) alone and P(INCONCLUSIVE), P(FAIL). (4) Report with a 95 % interval from an outer
+      bootstrap over the development draws, and the analytic A1-only figure (independent draws) from
+      e011_metrics.a1_operating_characteristic at the estimated per-draw pass probability for comparison with
+      O008''s table (0.94 / 0.81 / 0.66 / 0.26 per layout). Development draws are few (8 per layout), so the result is
+      a planning figure, not evidence'
+    interpretation: 'review T0432 note: W* is deterministic, so the registered run''s L_sub(W*) at the production level
+      is the same number as the development value at that level. Its error against the truth is a fixed offset that
+      the development s_kj already contain, not a fresh draw. Sampling c_k on every replicate therefore estimates
+      P(PASS) against the true L_sub ratios, as O008 asks; it does not estimate the reproducibility of the development
+      outcome. The c_k = 0 figure (the development rows as they are) is reported beside it'
+    values: null
+  sensitivity_rows_dev:
+    - 'proxy without the gain threshold (min_gain 0): steps, L1 ratio, L_sub at the development resolution'
+    - 'the probe''s DRC-only proxy (reach=False): known limit of the search: on 2D_Case_2R it lies outside the domain
+      (in_domain fails at row_LS_gap, the die-row gap cap gmin + 2 mm); recorded for O009 and the thesis review'
+    - the dies-fixed descent (the Tj fallback candidate) with its level-0 Tj
+    - the proxy and the search of draw 0 under the other DC- reading (T0379 finding 1)
+    - per null and draw, steps and terminal kind (NULL_STEP_LIMIT 200; T0425/T0426 asked whether Case 4 nulls reach a
+      local optimum)
+  dev:
+    rule: development seeds and development draws only; never the sealed draws; L1 stages locally, L2 on a burst VM
+    dev_seed: 20261116
+    layouts: [2D_Case_2R, 2D_Case_4]
+    screen_level: lat0.5  # T0379: development shortlist and R_D screening at 0.5 mm; keys carry the level
+    manifest: experiments/drafts/E011.dev_jobs.json
+    provisional: 'locally W* is taken as the descent''s end (T0376: lower than W at 0.5 mm on both layouts) and each
+      draw''s attempt 0 as accepted; the dev L2 analysis confirms or redoes both'
+    registration_check: 'mfos exp check E011 --rows <dev rows>: A3 met on development draws against this in-domain
+      proxy (the probe''s null margins were measured against the deeper reach=False proxy and do not carry over)'
+    workdir_stamp: 'every work directory carries code_stamp.json (sha256 over src/moduleforge/**/*.py, e010_run.py and
+      e011_run.py, and the config blocks frozen, levels, dev, smoke, layout_index, layouts, counted_layouts); the runner
+      refuses a directory whose stamp differs or whose checkpoints have no stamp (founder 2026-11-17 item 3), so no
+      development row mixes stages from two code versions'
+    manifest: 'schema e011.dev_jobs/2: one job per (fingerprint, level), with every purpose that asked for it and, for
+      shortlist members, the L1 rank inside each shortlist; the code_stamp of the L1 stages; totals.jobs_wave1,
+      jobs_by_level and shortlist_groups'
+    dev_solve: 'refuses a manifest whose status is not complete or whose code_stamp differs from the checkout; submits
+      every job (count asserted equal to totals.jobs_wave1 and to the number of distinct (fingerprint, level) outputs);
+      rebuilds each shortlist group from all purposes, so a layout in two shortlists belongs to both; selects each
+      best by local_search''s rule (lowest L at screen_level, ties by L1 rank); bands each best at the five levels;
+      writes dev_solve_summary.json and exits 3 unless every job has a result that passes l2_converged''s predicate.
+      With --dry-run it makes the same refusals, rebuilds and count checks and solves nothing
+      (dev_solve_dryrun.json)'
+    search_budget_curve: 'per counted layout and draw, the share of the search''s final L1 gain made in the last 10 %
+      and the last 25 % of its 2000-evaluation budget, and the medians per layout (e011_run.improvement_curve). Exact
+      when last_improve_eval is at or before the cut (share 0) or when a shortlist member was evaluated by the cut
+      (the shortlist holds the K lowest-L1 visited layouts, and LocalResult.visited gives each one''s evaluation
+      index); otherwise reported as a bracket between the shortlist''s highest L1 and the trajectory''s running
+      minimum, with exact false. Reported for the founder''s budget decision before registration; this design does
+      not change the budget'
+  prerequisites:
+    status: 'satisfied in this branch (T0382 attempt 4, 2026-11-17): the founder merged main into it (commit 8a8b8fc1),
+      so it has builder task T0437''s source fixes (D0026 item 3). Checked by reading the sources before the run:
+      control.DEGRADE_TAG = 0x4D460D01 first in every degradation entropy list (control.degrade_entropy); nulls.py
+      returns NO_MOVES = no_moves and records seed_in_domain and n_neighbours_step0 in NullResult.stats; the reach=True
+      proxy pins (2R 25 steps, 0.91379; 2D_Case_4 73 steps, 0.65327) are in tests/unit/optimize/test_control.py. The
+      development run reproduced both pins and recorded DEGRADE_TAG first in all 16 degradation entropy lists'
+    stale_development_state: 'attempt 1''s checkpoints (research/o008_e011_dev/work.attempt1-stale) and a run aborted by
+      a sizing bug in this attempt (work.attempt4-aborted-sizingbug) and the earlier complete run of this attempt
+      (work.attempt4-run1-listlayouts) carry other code stamps, are refused and were not reused; the development rows
+      come only from research/o008_e011_dev/work'
+  dev_run:
+    status: 'complete for the L1 stages (2026-11-17 11:12-13:10 local, one command, exit 0, on the final runner code);
+      L2 pending (burst VM, I0205). An earlier complete run (09:23-11:08, runner before the manifest''s layouts were
+      keyed by name) gave the same 611 (fingerprint, level) jobs with the same purposes and identical per-layout
+      records: the development stages reproduce. Facts in research/notes/e011-dev-run.md; tables in
+      research/o008_e011_dev/dev_summary.md'
+    workdir: research/o008_e011_dev/work (code_stamp tree 33dac5c7b2fc7a5e..., config 96d37c745505fde9...)
+    manifest: 'experiments/drafts/E011.dev_jobs.json, status complete: 611 wave-1 jobs (lat0.5 339, lat0.25 / thk_c /
+      thk_f / fil_f 68 each), 34 shortlist groups, 170 wave-2 jobs. e011_run.py --dev-solve <manifest> --dry-run: every
+      (fingerprint, level) job submitted once (611 of 611, 339 fingerprints rebuilt and checked), 34 groups, 170 wave-2
+      jobs, exit 0'
+    proxy_reach_true: '2D_Case_2R 25 steps, L1(W*)/L1(W) 0.9138; 2D_Case_4 73 steps, 0.6533; both local optima, W*
+      DRC-clean and in in_domain(reach=True); W* provisional (= the descent''s end) until the L2 choice'
+    proxy_sensitivity: '2R: threshold-free 35 steps 0.9136; reach=False (probe) 27 steps 0.8979; dies-fixed 17 steps
+      0.9302; DC- read +1 23 steps 0.9149 (a different layout). Case 4: threshold-free 81 steps 0.6532; reach=False
+      120 steps 0.6280; dies-fixed 63 steps 0.7014; DC- read +1 73 steps 0.6533, the same layout as the frozen reading'
+    dc_minus_search_draw0: 'on both layouts the search of draw 0 under the other DC- reading reaches the same lowest L1
+      (relative difference 0) with a different shortlist; the L2 comparison waits for the burst'
+    tj_level0_K: '2R: W 398.10, W* 396.49 (fallback not fired); Case 4: W 398.08, W* 396.05 (not fired)'
+    degradation: '2R: 8 attempts, L1(D_j)/L1(W*) 1.309-1.538 (median 1.403), 7 of 8 reached the 1.3875 L1 target (one
+      stalled at 1.309 and still costs an L2 call); Case 4: 8 attempts, 1.390-1.421, 8 of 8 reached it; no draw
+      outside in_domain(reach=True). R_D at L2 and the redraw rate are pending (every draw is provisionally accepted
+      locally)'
+    search_budget_curve: 'all 16 searches stop at the 2000-evaluation budget and improve after evaluation 1800 (last
+      improving evaluation 1860-2000). Share of the final L1 gain made in the last 10 % / 25 % of the budget (upper
+      end of each bracket; no draw is exact): 2R median 0.001 / 0.013, max 0.009 / 0.030; Case 4 median 0.028 / 0.109,
+      max 0.060 / 0.162. The founder decides the budget before registration; unchanged here'
+    l1_indicator_not_evidence: 'L1(search lowest-L1 layout)/L1(W*) = L1(D_j)/L1(W*) x (1 - L1 gain): 2R 0.9965-1.0552
+      (5 of 8 at or below 1.02); Case 4 0.9938-1.0142 (8 of 8). A1 is judged on L_sub at L2, which the burst decides'
+    nulls: 'all 32 null runs (widen and compact, 8 draws, 2 layouts) end at local_optimum, seed_in_domain true; none
+      capped, none no_moves. Steps: 2R widen 14-26, compact 21-36; Case 4 widen 30-58, compact 53-73 (NULL_STEP_LIMIT
+      200 not approached); valid neighbours at step 0: 56-74'
+    ablations: '(c) random screen: l1_evals 2000 and n_draws 2000 on every draw; (e) proxy alone: 2R 28-42 steps (4
+      budget, 4 local_optimum), Case 4 29-35 steps (all budget)'
+  smoke:
+    level: thk_c  # 0.5 mm cells, 5/3/3 layers: E010's cheapest frozen level; 0.5 mm is the coarsest cell the grid allows
+    n_draws: 1
+    window: [0.0, 1.0e+9]  # smoke only: any R_D accepted
+    frozen_overrides:
+      proxy: {step_limit: 3}
+      search: {budget: 25, shortlist: 1}
+      ablation_c: {budget: 15, shortlist: 1}
+      ablation_e: {budget: 25}
+      nulls: {step_limit: 3}
+      degradation: {max_proposals: 40, redraw_limit: 0}
+      f2_pool_n: 10
+  reporting:
+    per_draw: changed-parameter count and Manhattan distance from D_j and from W* (over movable_indices) for the search
+      and every null; the search's steps, moves, L1 evaluations, whether it stopped at its budget and was still
+      improving in the last 10 %; F4's Spearman rank correlation L1 vs L_sub within the shortlist and the L2/L1 range
+    per_layout: W, W* and each best_j hottest-die Tj at the thermal reference's level 0 (E010's scikit-fem GridRule and
+      operating point, P_ref calibrated on the reference); L1(W*)/L1(W) and L_sub(W*)/L_sub(W); W*'s DRC; the L1 stop
+      distribution of the degradations, the rate of reaching the L1 target, the redraw and exclusion counts (F6), and
+      the attempts that missed the L1 target but still cost an L2 call; the search's improvement curve
+      (dev.search_budget_curve)
+    ablations: (c) random screen (l1_evals beside n_draws) and (e) proxy alone, each with its A1, A3 and K1 computed as
+      if it were the search (e011_metrics), beside the search's
+    reported_not_gated: conservative A1 (s + b <= 0.02), draws within their band of the line, the pooled one-sided 95 %
+      Clopper-Pearson bound, the per (layout, null) resolved and paired counts
+  cost_estimate:
+    basis: 'E010 cost model (e010_run.em_unknowns / em_cost; n2d-custom-8 VM at 0.612 $/h, four 0.25 mm Case 4 solves
+      at once); unknowns at 0.25 mm: 2D_Case_2R 1.49 M (about 6.2 GB), 2D_Case_4 4.11 M (15.8 GB), gen2_0 about 0.33 M'
+    registered_run_solves_per_layout: 'W and W* bands (10); R_D at 0.25 mm per attempt (8 x (1 + redraw rate)); the
+      search and the random-screen shortlists at 0.25 mm (2 x 8 x 8 = 128); widen, compact and proxy-alone end points
+      (24); the four 0.5 mm band levels of six scored layouts per draw (192): about 360 solves, 170 of them at 0.25 mm'
+    registered_run_usd: 'Case 4: 170 x 0.25 mm at about $0.24 (four at once) = $41 plus 190 x 0.5 mm at about $0.04 =
+      $8; 2R about 40 % of Case 4 ($20); gen2_0 about $5: about $75 of VM, within O008''s $50-100. Development run: the
+      manifest''s own totals (experiments/drafts/E011.dev_jobs.json)'
+    cpu_hours_est: 110
+    sizing_check_attempt2: 'T0382 attempt 2, from E010''s cost model (e010_run.em_unknowns / em_cost and
+      cost_model.em_level_mem_prior) on each layout''s area. These are model figures, not measurements. Usable memory
+      on the VM is 0.85 x 78 GB = 66.3 GB. 2D_Case_4: lat0.25 4.11 M unknowns, 1.60 h, 15.8 GB model, 25.3 GB with the
+      level prior 1.6, 2 at once; thk_f 2.05 M, 0.90 h, 14.9 GB, 4 at once; fil_f 1.03 M, 0.46 h, 11.8 GB, 5 at once;
+      lat0.5 1.03 M, 0.22 h, 7.3 GB, 9 at once; thk_c 0.51 M, 0.11 h, 4.0 GB. 2D_Case_2R: lat0.25 1.54 M, 0.39 h,
+      10.3 GB, 6 at once; the other levels are 2.3-6.5 GB. Inference: E010''s Scheduler admits a job by the
+      prior-inflated figure until it has measured a ratio, so 2, not 4, Case 4 0.25 mm solves run at once at first.
+      At about 170 such solves (272 solve-hours) that is about 136 h of makespan and about $83 for that part alone,
+      above timeout_min (7200 min = 120 h) and pushing the registered run to about $105. If the measured memory
+      matches the model (x 1.1 = 17.4 GB), 3 run at once: about 91 h and $55 for that part, about $80 in total. The
+      registered_run_usd line above assumed 4 at once at 15.8 GB. The founder decides the VM shape and the timeout
+      before registration; this design does not change them. The development manifest''s vm_sizing block states the
+      same per (layout, level) from the jobs it lists'
+    sizing_check_attempt4: 'T0382 attempt 4, from the complete development manifest (E011.dev_jobs.json vm_sizing,
+      e011_run.vm_sizing / registered_model; E010 cost model on each layout''s unknowns, list scheduling with E010''s
+      simulate). Facts: the founder''s VM calibration (research/l2_thread_calib/summary.txt) measured 15.8-15.9 GB peak
+      RSS for 2D_Case_4 at 0.25 mm (4.11 M unknowns; 6268-6360 s pinned) and 4.1 GB at 0.5 mm, i.e. 1.007 and 0.90 of
+      E010''s model. The 25.3 GB figure is E010''s scheduling prior (model 15.8 GB x em_level_mem_prior 1.6), applied
+      only until the first Case 4 0.25 mm solve finishes; then the Scheduler admits at model x 1.1 x 1.007 = 17.5 GB.
+      On n2d-custom-8-81920 (66.3 GB usable, 8 vCPUs, 2 threads per solve, so at most 4 solves by vCPUs): Case 4 at
+      0.25 mm runs 2 at once under the prior and 3 after learning; every other (layout, level) runs 4 (vCPU-bound). This
+      attempt''s smoke measured gen2_0 at thk_c with 228,567 unknowns against the model''s 281,064 (model 23 % high),
+      about 1.8 M at 0.25 mm, so the 0.33 M in the basis line above is wrong. Development burst: 611 wave-1 + 170 wave-2
+      jobs, makespan 61.4 h (learned) to 71.5 h (prior), $38-44 with the 0.5 h overhead. Registered run (model: phases
+      P, D, L1, S1, S2 in order and layouts one after another, as run_all executes them): 170 h (learned memory, no
+      redraws) to 246 h (prior memory, every draw redrawn in all 4 redraw waves), $104-151 (170.2 / 198.0 / 212.3 /
+      246.4 h for learned / learned with redraws / prior / prior with redraws); no scenario fits timeout_min
+      7200 (120 h). Case 4 alone is about 109 h under the learned figure, 81 h of it for its 152 shortlist and end-point
+      solves at 0.25 mm, 3 at a time. Inference: the registered_run_usd line above (four Case 4 solves at once,
+      phases overlapped) understates both time and cost. The founder decides the timeout, the VM shape or a split of
+      the run before registration; this design changes none of them'
+  expected_outcome:
+    note: 'expectations, not criteria; they say what a wrong model would look like'
+    A2: 'met (0): both twins are in in_domain(reach=True) (T0377 tests); F2 shows 2R false under the legacy generator'
+    A1: 'uncertain. L1 probe (reach=False proxy): the guided descent came within 2 % on 2R but not on Case 4 at 60
+      steps. Against the in-domain proxy (shallower: 0.914 on 2R, 0.653 on Case 4) and with 2000 L1 evaluations, A1
+      on Case 4 is the open question; a miss there is a search-budget or misranking question first (F4)'
+    A3: 'uncertain on 2R: T0376 found compaction +2.29 % above the reach=False proxy at 0.5 mm, inside the band;
+      against the shallower in-domain proxy compaction may come closer, so A3 on 2R may fail (INCONCLUSIVE). The dev
+      L2 rows decide before registration'
+    K1: 'not expected to fire unless the search fails broadly'
+    what_would_prove_the_design_wrong: 'the seed null meeting A1 (s computed against D_j, not W*); a draw scored with
+      D_j outside the domain; a band median above 0.01 (the resolution cannot judge a 2 % line)'
+metrics:
+  - {name: control_layout_pass_min, description: 'A1: min over counted layouts of #(search s_j <= 0.02) / 8; CI = the
+      min of the Bonferroni-simultaneous per-layout Clopper-Pearson 95 % intervals'}
+  - {name: reach_outside_max, description: 'A2: max over the development layouts of 1 - in_domain(W) (reach); a
+      deterministic predicate, CI = the point'}
+  - {name: null_beaten_min, description: 'A3: 1 if widen and compact are each beaten on every counted layout (>= 4 of 8
+      resolved failures s - b > 0.02, not capped, where step_limit and no_moves are capped; >= 7 of 8 paired wins by more than b_search + b_null), else 0; CI =
+      the point (an indicator), the counts are reported'}
+  - {name: control_shortfall_median_max, description: 'K1: max over counted layouts of the median search s_j; CI = (max
+      of the per-layout minima, max of the per-layout maxima): the order-statistic interval (x(1), x(8)) of each median,
+      coverage 1 - 2 x 0.5^8 = 0.992 per layout (binomial order statistics; Conover 1999, Practical Nonparametric
+      Statistics, 3rd ed., section 3.2)'}
+sanity_checks:
+  - {name: F1a_seed_null_fails_A1, description: 'null (a), D_j returned unchanged, must fail A1 (s_j = R_D - 1 >= 0.25 by
+      construction); meeting it is INVALID'}
+  - {name: F2_W_rebuild, description: 'every layout: W rebuilt from params_of(W) is DRC-clean under its rules and
+      reproduces its fingerprint'}
+  - {name: F2_in_domain_reach, description: 'every layout: in_domain(W, reach=True) (A2 is then 0)'}
+  - {name: F2_legacy_outside_2R, description: 'in_domain(W) is false for 2D_Case_2R under E010''s generator (legacy
+      domain, reach=False), so A2 is not met by construction'}
+  - {name: F2_symdiff_reported, description: 'the twin-versus-reconstruction power-copper symmetric difference (mm2) is
+      computed for every layout (twin.difference_record)'}
+  - {name: F2_coordinate_range_attached_form_2R, description: 'T0349 section 2.2 on 2R: W lies outside the legacy pool''s
+      drawn range in at least one coordinate and has slots that straddle or overlap their column (the sampler''s
+      attached form cannot produce it)'}
+  - {name: F2_l1_lower_tail_reported, description: 'per layout and sampler (legacy, reach), the L1 lower tail of a
+      2000-draw pool relative to L1(W) (min excess, counts within 0-15 %), D0023'}
+  - {name: F6_two_counted_layouts, description: 'at least 2 counted layouts supply 8 draws with R_D in [1.25, 1.60]
+      within the redraw limit; else INVALID'}
+  - {name: Wstar_drc_clean, description: 'W* of every layout is DRC-clean under its rules and in in_domain(reach=True)'}
+  - {name: draws_seed_in_domain, description: 'every scored D_j has the search''s stats[seed_in_domain] true (T0414)'}
+  - {name: seed_streams_distinct, description: 'on the streams this run used (T0432): the integer sub-seeds of every
+      purpose, layout and draw are pairwise distinct; the SeedSequence state of every degradation attempt''s recorded
+      entropy list is distinct from every other and from the first streams of every search (local.py [seed, 1, it],
+      [seed, 2, n]) and random screen (search.candidate_stream [seed, k]); the runner''s domain tags are nonzero and
+      distinct. Reported: whether control.py''s entropy lists start with a domain tag (T0414 item 4)'}
+  - {name: metrics_agree, description: 'the runner''s values (e011_metrics, n7) equal mfos.metrics on the same rows'}
+  - {name: recompute_agrees, description: 'every recompute entry, evaluated as mfos.evaluate does, equals the runner''s
+      value'}
+  - {name: l2_converged, description: 'every l2_layout result passes E010''s predicate (e010_run.band_solve_failures,
+      T0318 finding 0): L_H finite, a convergence record with every GMRES flag 0, solver_tol_rel_L_max finite; a missing
+      key or a failed solve record fails closed'}
+  - {name: band_bound, description: 'per counted layout, median b_j <= 0.01 and max b_j <= 0.02 over the search''s draws
+      (frozen.band_bound): the resolution can judge the 2 % line'}
+  - {name: F5_frozen_and_code, description: 'canonical sha256 of config.frozen equals frozen_sha256; LocalConfig.hash()
+      equals frozen.search_cfg_hash; the sha256 of derivative.py, twin.py, local.py, control.py, nulls.py equal
+      config.code_sha256'}
+  - {name: artifacts_resolve, description: 'every registered artifact resolves as tools/mfos/mfos/evaluate.py resolves it:
+      <run_dir>/<name> with its sha256 (run-dir-relative names; T0349 finding 2)'}
+timeout_min: 7200
+cpu_hours_est: 110
+code_under_test:
+  - src/moduleforge/generate/derivative.py
+  - src/moduleforge/generate/twin.py
+  - src/moduleforge/optimize/local.py
+  - src/moduleforge/optimize/control.py
+  - src/moduleforge/optimize/nulls.py
+rows: {artifact: rows.json}
+recompute:
+  - {metric: control_layout_pass_min, fn: control_layout_pass_min, pred: s, group: layout,
+     where: {role: search, counted: true}, params: {tol: 0.02, n_draws: 8}}
+  - {metric: reach_outside_max, fn: max_col, pred: reach_outside}
+  - {metric: null_beaten_min, fn: null_beaten_min, pred: s, group: layout, role: role, where: {counted: true},
+     params: {nulls: [widen, compact], search: search, draw: draw, b: b, capped: capped, tol: 0.02, k_resolved: 4,
+              k_paired: 7, n_draws: 8}}
+  - {metric: control_shortfall_median_max, fn: control_shortfall_median_max, pred: s, group: layout,
+     where: {role: search, counted: true}, params: {n_draws: 8}}
+null_baselines: []
+recompute_exempt: {}

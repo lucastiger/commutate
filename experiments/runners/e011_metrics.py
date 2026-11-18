@@ -18,10 +18,14 @@ Row schema (``mfos.rows/1``; one row per layout x role x draw; the runner, n5, e
                          failed (shortfall +inf), it does not void the run
 ``b``             float  band b_j = 2 e_R(best_j, W*) by the D0008 band rule (dimensionless, >= 0); finite whenever
                          ``s`` is finite
-``capped``        bool   the run stopped at its frozen step limit (or budget) rather than at its own local optimum.
-                         A capped null draw is never a resolved failure (A3)
-``terminal_kind`` str    reported beside ``capped``: ``local_optimum``, ``step_limit``, ``budget``, ``seed`` or
-                         ``no_candidate``; ``step_limit`` and ``budget`` require ``capped`` true
+``capped``        bool   the run did not end at its own local optimum: it stopped at its frozen step limit (or
+                         budget), or it found no valid move (``no_moves``). A capped null draw is never a resolved
+                         failure (A3); it is reported
+``terminal_kind`` str    reported beside ``capped``: ``local_optimum``, ``step_limit``, ``budget``, ``no_moves``,
+                         ``seed`` or ``no_candidate``; ``step_limit``, ``budget`` and ``no_moves`` require ``capped``
+                         true. ``no_moves`` (review T0444): a null (b)/(d) whose first neighbourhood held no valid
+                         in-domain move (nulls.NO_MOVES; it never moved), or a search whose perturbation found no valid
+                         layout (local.py stop_reason 'no_moves')
 ``in_domain_W``   bool   in_domain(params_of(W)) for the layout's twin W, from the parameterisation's and the
                          sampler's own construction. Constant within a layout
 ``reach_outside`` float  1.0 - in_domain_W, so A2 is ``max_col`` over this column; must equal 1 - in_domain_W
@@ -62,7 +66,8 @@ MIN_RESOLVED = 4  # A3: resolved failures on at least 4 of 8 draws
 MIN_PAIRED = 7  # A3: paired wins on at least 7 of 8 draws
 ROLES = ("search", "seed", "widen", "compact", "random_screen", "proxy_alone")
 GATING_NULLS = ("widen", "compact")
-TERMINAL_KINDS = ("local_optimum", "step_limit", "budget", "seed", "no_candidate")
+TERMINAL_KINDS = ("local_optimum", "step_limit", "budget", "no_moves", "seed", "no_candidate")
+CAPPED_KINDS = ("step_limit", "budget", "no_moves")  # kinds that require capped true (never a resolved failure)
 COLUMNS = ("layout", "counted", "draw", "role", "s", "b", "capped", "terminal_kind", "in_domain_W", "reach_outside")
 
 
@@ -121,7 +126,7 @@ def _table(rows: Rows, n_draws: int = N_DRAWS) -> dict[str, dict[str, Any]]:
                 raise ValueError(f"{where}: {c} must be a bool, got {r[c]!r}")
         if r["terminal_kind"] not in TERMINAL_KINDS:
             raise ValueError(f"{where}: terminal_kind must be one of {TERMINAL_KINDS}")
-        if r["terminal_kind"] in ("step_limit", "budget") and not r["capped"]:
+        if r["terminal_kind"] in CAPPED_KINDS and not r["capped"]:
             raise ValueError(f"{where}: terminal_kind {r['terminal_kind']} with capped false")
         if r["terminal_kind"] == "local_optimum" and r["capped"]:
             raise ValueError(f"{where}: terminal_kind local_optimum with capped true")
@@ -194,7 +199,8 @@ def null_beaten_table(rows: Rows, nulls: Sequence[str] = GATING_NULLS, tol: floa
                       min_resolved: int = MIN_RESOLVED, min_paired: int = MIN_PAIRED) -> dict[tuple[str, str], dict]:
     """Per (counted layout, null): resolved-failure count, paired-win count and the beaten indicator (A3).
 
-    Resolved failure on draw j: the null's run is not capped and s_j(null) - b_j(null) > tol.
+    Resolved failure on draw j: the null's run is not capped and s_j(null) - b_j(null) > tol.  A ``no_moves`` null
+    (it never moved) is capped by the validator, so it is never a resolved failure (review T0444).
     Paired win on draw j: s_j(null) - s_j(search) > b_j(search) + b_j(null), both finite (a draw where either run
     returned no candidate is not a win). Capped null draws may still be paired wins: the objective excludes them from
     the resolved-failure count only.
