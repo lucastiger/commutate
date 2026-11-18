@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 1
 max_replans: 3
 needs_replan: false
-spent_usd: 124.792
+spent_usd: 126.9503
 budget_override_usd: 147.8508
 log:
 - 'founder answered I0207: (b)+(c): O004 runs the proxy descent in 1 mm steps (on the lattice by construction),
@@ -57,5 +57,15 @@ log:
   or narrow draw''s docstring to trace_width; (2) the inline comment at perturb.py:557-559 still lists
   only Die.box, BondWire.length and SignalWire.length. E004''s registration report records every redraw
   with its exception (T0389), which covers (1) for registration'
+- 'open review items 2026-11-18T05:23:37+00:00 (founder session; review T0466 of T0457, for the next E004
+  design task, after the founder''s FastHenry ladder and span decisions): (1) major: assert_timeouts_fit
+  checks each job, but mfos applies timeout_min to the whole run; the sum of all solves plus the full-memory
+  retry pass must fit, and the plan''s 64.7 h is a lower bound; (2) major: registered-mode FastHenry timeouts
+  use the uncalibrated rule (10 x projection), barely above the calibrated time, so k2 and k1_nh9 solves
+  would likely time out (missing finest values, INVALID); with calibrated timeouts timeouts_fit is False;
+  (3) major: the spec says memory kills are not retried, while memory_cap_policy and the runner retry
+  once at full memory; (4) the proxy context reference is not compared with E004''s 2R slot reference;
+  (5) hmax three-level estimate missing for the proxy pair; registration.json truncates internal redraws
+  at 5000'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38

@@ -1,0 +1,70 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The T0453 timeout fix checks each job, but mfos applies timeout_min to the whole run",
+      "detail": "assert_timeouts_fit only checks that the worst single FastHenry job's timeout, doubled for its retry, is within the experiment's timeout_min. Its docstring says this means 'an mfos-level timeout cannot kill the run before F1's missing-value path is reached'. But mfos applies timeout_min to the whole runner process, so the sum of all solves (plus the full-memory retry pass) is what counts. The runner's own cost plan puts the run at 64.7 h makespan, and that figure is a lower bound because the k1/k2 calibration is one. The upper-envelope makespan is 436 h, against a whole-run limit of 6000 min (100 h). A run killed by mfos writes no result.json and ends in status error. It does not reach F1's missing-value / INVALID path, so the stated guarantee does not hold.",
+      "evidence": "tools/mfos/mfos/experiments.py:213-217: subprocess.run(spec.runner, ..., timeout=spec.timeout_min*60) wraps the whole runner, and TimeoutExpired gives code -9. e004_run.py:1207-1215 compares only max(2*timeout_s) with timeout_min. In research/o004_f7/vm_jobs_fasthenry.json, e004_cost_plan has makespan_h=64.69, makespan_upper_h=436.2 and MF_GCP_MAX_HOURS=546, while timeout_min=6000 min.",
+      "suggested_check": "Also check the plan's projected makespan (upper envelope, with retries) against timeout_min, or raise timeout_min to cover it.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Frozen FastHenry timeouts contradict the calibration; the conflict is missing from the open-before-registration list",
+      "detail": "In registered mode, solve_jobs uses fh_sizing's uncalibrated timeout, 10 x t_ref x (F/f_ref)^1.4. For the finest decks this is barely above the calibrated time, which is itself a lower bound, and far below the upper envelope. So k2 and k1_nh9 solves are likely to hit their timeout, giving missing finest values and an INVALID run. With the calibrated timeouts the runner's own plan records timeouts_fit ok=False, meaning the registered solve stage would refuse before any solve. Either way the frozen solve stage is not runnable as configured. sizing_meaning says F7(a) will recalibrate, but design_status's list of what is open before registration does not name this conflict, although the job file says it 'needs a founder decision before registration'.",
+      "evidence": "vm_jobs_fasthenry.json e004_cost_plan.reference_deck_sizes, as (timeout_s, calibrated time, upper-envelope time) in seconds: 2D_Case_2R k2_nh5 (93,432; 86,729; 678,597); 2D_Case_2R k1_nh9 (29,910; 27,764; 33,494); 2D_Case_6 k2_nh5 (64,505; 59,877; 432,745). timeouts_fit: 'timeout x 2 ... 1734576 s exceeds the experiment's timeout_min (360000 s)'.",
+      "suggested_check": "Add the timeout rule/timeout_min conflict as an explicit open item in design_status, or freeze calibrated timeouts together with a timeout_min that fits them.",
+      "impact": "scope"
+    },
+    {
+      "severity": "major",
+      "title": "The spec still says memory kills are not retried, which contradicts the new retry rule",
+      "detail": "The new memory_cap_policy text, fh_sizing and run_jobs all retry a FastHenry run killed at its memory cap once, alone, at the full budget. The unchanged sizing_meaning sentence in the same block still says 'A timeout or a memory kill is not retried and leaves a missing value'. A spec meant to be pre-registered would then state two incompatible rules for the same event.",
+      "evidence": "experiments/drafts/E004.yaml line 298 (sizing_meaning) versus lines 279-288 (memory_cap_policy). Code: e004_run.py:1364-1375 (the __fullmem retry).",
+      "suggested_check": "Restate the sizing_meaning sentence as: a timeout is not retried; a memory kill is retried once at full memory (memory_cap_policy).",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The proxy's context reference is recorded but never compared with E004's reference slot",
+      "detail": "build_proxy starts the descent from the twin of E010's context reference (judged_reference(2D_Case_2R), or dev_reference('case4') in smoke). It then takes r_L1 against E004's own slot reference. The context reference's fingerprint is recorded, but nothing checks it against slot_reference_fingerprints or judged_fingerprints. In this smoke the two layouts differ, so the proxy's r_L1 of 0.663 is the descent end from one Case 4 construction divided by L1 of another. l1_span passes in smoke only because of this proxy: the drawn pairs' minimum is 0.875, and the band simulation reaches 0.75 in 0 of 200 seeds without the proxy. Comparing against the reconstruction is by design (D0024 item 3), but an unflagged mismatch between E010's and E004's 2R reconstructions would pass silently in registered mode.",
+      "evidence": "Smoke registration.json: proxy.record.sources.context_reference_fingerprint f4862196..., slot_reference_fingerprints 7566b7a3... for both slots, proxy r_L1_20MHz 0.6633, l1_span min 0.663. band_sim_case4.json: pass_fraction_by_lower_end['0.75'] k=0/200.",
+      "suggested_check": "In registered mode, require E010's judged 2R fingerprint to equal judged_fingerprints['2D_Case_2R'], or record a stated reason why they differ.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Small gaps in the record compared with what the spec text promises",
+      "detail": "(a) hmax_fine_meaning says the near-threshold flag uses the three-level (4/2/1 mm) estimate, but build_proxy computes only the 4 mm and 2 mm L1. The proxy pair, which l1_mesh_report includes, therefore always gets est3=0. (b) The spec says every internal redraw is recorded, but registration.json keeps internal[:5000]. The summary counts stay complete. Smoke has 1312 entries; with up to 600 band redraws a registered run could exceed 5000.",
+      "evidence": "e004_run.py build_proxy (h, h2 only); stage_registration rec['redraws']['internal'] = internal[:5000].",
+      "suggested_check": "Compute r_L1_fine for the proxy, and write the full internal redraw list (or state the cap in the spec).",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "freeze_hashes_match fails in this checkout because the pinned commit is missing",
+      "detail": "The registration smoke reports freeze_hashes_match=false because pinned commit 3f60b2f4 is not an ancestor of HEAD: the review checkout is a single snapshot commit. I recomputed sha256 for all 27 config.freeze.files in the working tree and none differ. The failure comes from the review environment, not from the change.",
+      "evidence": "Smoke registration.json checks.freeze_hashes_match: 'pinned commit 3f60b2f4... is not an ancestor of HEAD'. Scratch recompute: 27 files, 0 mismatches.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all five definition-of-done commands: --selftest gave SELFTEST OK 21/21; --smoke --stage registration exited 0 (every gate true except freeze_hashes_match, a snapshot artifact); mfos exp check E004 exited 0; the job file has 24 jobs; ruff is clean.",
+    "Mocked test of band_fill (fake draws, L1 and geometry): it filled the 'below' band with 4 redraws, 3 accepted, in cyclic slot order. Each slot kept its move type. It skipped the protected sole covering wire_landing slot, rejected a 0.99 pair because the upper band had no deficit, and refused without looping when the only slot was protected. Band edges behave as specified: 0.90 is not below, 0.98 counts as at or above, and a pair below at only one frequency does not count. A same-kind covering pair on another reference does not lift protection.",
+    "Read perturb._draw_single, _draw_compound, _draw_params and apply. The DrawObserver attribution is sound: neither _draw_params nor apply calls apply or check internally, and the short-circuit on an already-seen geometry correctly leaves the event 'pending', so it is classed as a duplicate.",
+    "Checked the order of gci_capped's arguments (coarsest, medium, finest) against the call gci_capped(r_4mm, r_2mm, r_1mm): correct.",
+    "Checked registry_seed_record against mfos.experiments.commitment and evaluate.py's minted-record test: same formula and same field names.",
+    "Recomputed the working-tree sha256 of all 27 frozen files: no mismatch.",
+    "Checked the memory arithmetic: 0.91 x 1.3 = 1.18 and 1.21 x 1.3 = 1.57, and 1.5 / 1.21 = 1.24 (the stated 24 % headroom). Both match the memory_cap_policy text.",
+    "Compared the per-job timeouts, calibrated times and upper envelopes in vm_jobs_fasthenry.json with the whole-run timeout_min, and confirmed in mfos experiments.py that timeout_min applies to the whole runner process.",
+    "Inspected the smoke registration.json: the proxy context fingerprint differs from the slot reference fingerprint; l1_span is met only through the proxy (0.663); the replay re-derived 12 slot draws and 79 banded redraws."
+  ],
+  "caveats": [
+    "The design is explicitly a draft and not registrable. The acceptance holds for the registration-stage machinery (band rule, redraw record, proxy build, seed provenance), not for a registrable solve stage: as frozen now, the FastHenry timeouts either refuse at plan time or are likely to lose the k2/k1_nh9 values, and the whole-run timeout_min can kill the run.",
+    "The registered path (sealed seed, judged 2R/Case 6 references, positive registry commitment) was not exercised. Only the smoke and selftest paths ran, and the selftest tests only the failing branch of registry_seed_record.",
+    "The restriction census and redraws_classified have not been run on the judged 2R/Case 6 reconstructions. A net without exactly one trace there would refuse registration.",
+    "The single-commit review snapshot means I could not verify the chronology claims (limits fixed before the 200-seed simulation was run, refreeze at 3f60b2f4)."
+  ]
+}
