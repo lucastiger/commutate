@@ -4,7 +4,7 @@ title: 'E007 development rows: local dev run, F2 null check via mfos exp check, 
   the dev structure'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0397
 description: 'Prerequisite: the founder has applied research/o002_e007/e007_metrics.patch to the protected
@@ -205,8 +205,8 @@ runs:
 - T0398-scientist-20261117T133141-2750
 created_by: planner:T0373
 created_at: '2026-11-16T01:46:31+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0249
 target: null
 lens: null
 trigger: null
@@ -456,3 +456,7 @@ history:
     - 'Founder (via T0456): decide on the D0025 stop (A4 > 0.3 in interleaved/2, side_by_side/2 and u_shaped/6)
       before E007 freezes; also decide m, which stays at 20 until then.'
     affects_acceptance_criteria: false
+- outcome: merge_approved
+  summary: I0249
+  replan: false
+  at: '2026-11-18T00:22:48+00:00'
