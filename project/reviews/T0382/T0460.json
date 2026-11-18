@@ -1,0 +1,70 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Drafted registered run cannot finish within its own timeout_min; stale cost fields remain",
+      "detail": "The spec's attempt-4 sizing (and the manifest's vm_sizing.registered_run) model the registered run at 170.2-246.4 h makespan and $104-151, with fits_timeout false in every scenario, while the spec still carries timeout_min 7200 (120 h), cost_estimate.registered_run_usd of about $75 and cpu_hours_est 110. This is disclosed and deferred to the founder, but as drafted the run would time out before producing a result.",
+      "evidence": "E011.dev_jobs.json vm_sizing.registered_run.by_scenario: all fits_timeout false (170.2/198.0/212.3/246.4 h); E011.yaml timeout_min 7200, cpu_hours_est 110, registered_run_usd text '$75'",
+      "suggested_check": "Before registration, set timeout_min, VM shape or run split from the vm_sizing model and update or mark superseded registered_run_usd and cpu_hours_est.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Manifest per-draw r_d = 1.425 is the runner's optimistic placeholder but looks like a measurement",
+      "detail": "In dev, r_d() returns the window midpoint 0.5*(1.25+1.60)=1.425 for any D_j not yet solved, so every draw is recorded with r_d 1.425 and in_window true. Only the layout-level Wstar.provisional flag marks the stage as provisional; the per-draw records carry no flag.",
+      "evidence": "e011_run.py lines 613-616; manifest layouts.*.draws[*].r_d == 1.425 and attempt_log in_window true for all 16 draws",
+      "suggested_check": "Write r_d null (or add provisional: true) on draws whose R_D has not been solved.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Physics risk: the degradation family's L1 target sits at the L2 window edge, and redraws cannot fix a systematic offset",
+      "detail": "The family aims L1(D)/L1(W*) at 1.3875 = 1.25 x 1.11, and all eight Case 4 draws sit at 1.390-1.421 (2R draw 1 at 1.309). If L_sub ratios fall further below L1 ratios than the assumed 1.11 factor on a layout, most draws land below 1.25. Redraws use the same family and target, so they would likely miss again, and F6 would make the run INVALID. This is pending the dev L2 run and is disclosed as pending.",
+      "evidence": "My recomputation of L1(D_j)/L1(W*) from manifest params: Case 4 1.390012-1.421243; spec frozen.degradation.target_ratio 1.3875, window [1.25, 1.60]",
+      "suggested_check": "From the burst rows, compare each seed's lat0.25 L_sub(D_j)/L_sub(W*) with its L1 ratio per layout before freezing target_ratio.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Two dev-mode gaps: DC- alternative proxy solved only at 0.5 mm; Tj fallback cannot fire",
+      "detail": "Proxy sensitivity layouts, including dcm_alt_reading, are submitted only at screen_level lat0.5 (line 568), while W* is chosen by L_sub at 0.25 mm. So 'the L2 comparison of the two W*' the spec promises can only be made at 0.5 mm. Separately, the 2 K Tj fallback is gated on 'not provisional' (line 584), so it can never fire in dev. Here Tj(W*) < Tj(W) on both layouts, so there is no effect.",
+      "evidence": "e011_run.py lines 568-569 and 584; manifest tj_K 2R W 398.10 / W* 396.49 K",
+      "suggested_check": "Add lat0.25 for the dcm_alt proxy to the manifest if the founder wants that comparison at the production level.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Some sources the note cites are not in the checkout",
+      "detail": "research/notes/e011-dev-run.md cites the stage checkpoints in research/o008_e011_dev/work/stages and the log research/o008_e011_dev/work_dev.log. Neither is tracked (only 5 files under research/o008_e011_dev). The improvement-curve brackets and the run-1 vs run-2 reproducibility claim cannot be re-derived from the repository. The manifest-level values can, and I re-derived the L1 ones.",
+      "evidence": "git ls-files research/o008_e011_dev -> 5 files (attempt2.md, attempt3.md, dev_summary.md, summarize.py, ...)",
+      "suggested_check": "Archive the stage checkpoints (content store) or state in the note that they are local-only.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "Distance from D_j and distance from W* are measured over different parameter ranges",
+      "detail": "changed_from_D uses range(4, len(v)) (indices 4-59) while changed_from_Wstar uses movable_indices (4-39). Since non-movable parameters never change (verified: 0 differences across all widen/compact/proxy_alone end points and W* vs D_0), the values are unaffected.",
+      "evidence": "e011_run.py line 683-684; my check: nonmovable diffs total 0",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: spec validation one-liner, ruff, manifest one-liner, note existence and mfos exp check E011 all pass; --selftest exit 0 (SELFTEST PASS); --smoke exit 0 in 643 s, verdict preview INVALID, failed checks only the 2R-specific F2 checks, which is expected for gen2_0-only smoke. The first smoke attempt was killed by my 10-minute background limit, not by an error, and was rerun.",
+    "Ran --dev-solve on the committed manifest with --dry-run: exit 0, 611/611 wave-1 jobs submitted once, 339 fingerprints rebuilt and checked, 34 groups, 170 wave-2 jobs. This confirms the manifest's code_stamp matches this checkout.",
+    "Ran --freeze-report: frozen_sha256, all five code_sha256 and search_cfg_hash match the spec.",
+    "Independent L1 recomputation: rebuilt W, W* and all 16 D_j from manifest params; fingerprints, L1(W*)/L1(W) (0.913788 on 2R, 0.653274 on Case 4) and all 16 L1(D_j)/L1(W*) ratios match the manifest exactly; all DRC-clean and in in_domain(reach=True).",
+    "Verified the one-parameter-set scope rule: no widen, compact or proxy_alone end point differs from its D_j outside indices 4-39.",
+    "Cross-checked VM sizing against research/l2_thread_calib/summary.txt: memory ratios 0.90 (lat0.5) and 1.007 (lat0.25) reproduce; two-thread wall 5678-5862 s vs model 5770 s; learned admission 15.8 x 1.1 x 1.0066 = 17.49 GB reproduces 3 at once within 66.3 GB.",
+    "Arithmetic checks on the manifest: jobs_by_level sums to 611; wave2_sum_wall_h_vm 69.57 and dev_burst USD (makespan + 0.5 h) x 0.612 reproduce; K1 order-statistic coverage 1 - 2 x 0.5^8 = 0.992 is correct; the note's L1 indicator 1.4032 x (1 - 0.28311) = 1.0059 reproduces.",
+    "Tested the tests: the selftest's hand checks compare s, b, the selection rule and the improvement curve against planted values rather than re-calling the same code, and its scenarios force INCONCLUSIVE and INVALID outcomes."
+  ],
+  "caveats": [
+    "No L2 values exist yet. A1, A3, K1, the band bound, choose_proxy at 0.25 mm, the R_D window and redraw rate, and the joint operating characteristic all wait on the burst VM. W* is provisional, and a reversal would mean redoing the degradations.",
+    "The registered run as drafted exceeds its own timeout_min under the runner's own model. The founder must change the timeout, the VM shape or the run split before registration.",
+    "All 16 dev searches end at the 2000-evaluation budget and are still improving, more so on Case 4. The budget decision is open.",
+    "Smoke covers only gen2_0, one draw, at thk_c, where b_j = 0 by construction. It exercises the code path, not the physics or the band.",
+    "I reviewed the runner and spec only. The code under test (control.py, nulls.py, local.py, twin.py, derivative.py) and e011_metrics were not reviewed here."
+  ]
+}
