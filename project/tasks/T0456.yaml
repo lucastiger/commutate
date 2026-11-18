@@ -4,7 +4,7 @@ title: 'E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra develo
   corrected power simulation'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0398
 description: 'Diagnose E007''s per-stratum A4 misses before E007 freezes (O002; founder decision 2026-11-17,
@@ -90,4 +90,257 @@ target: null
 lens: null
 trigger: null
 rationale: founder decision 2026-11-17 in the founder session (Diagnose, then decide)
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Nothing gated was changed: L1, c(s), criteria, thresholds, bound and m are untouched. These
+    are development rows and design-time simulation only, not evidence.
+
+
+    **1. u_shaped/6 (A4 0.951 on T0398''s 3 layouts)**
+
+    - **Cause:** the ratio is 0.0950 / 0.0998 K. T0398''s three layouts have almost the same reference
+    spread (about 10 K, sd 0.089 K, CV 0.9 %). The same dies (die_index 2 hottest, 5 coldest) set every
+    spread, so the leave-one-out stratum-mean null is almost exact. No single layout or die position dominates.
+
+    - **L1''s error is systematic:** −0.086 to −0.099 K (about −0.9 %) in all 18 rows on 9 layouts.
+
+    - **Calibration:** recalibrating to the stratum''s implied factor changes A4 only from 0.951 to 0.924.
+    But the form of the calibration accounts for most of the error. The raw coarse-FV spre'
+  report:
+    status: completed
+    failure_class: none
+    summary: 'Nothing gated was changed: L1, c(s), criteria, thresholds, bound and m are untouched. These
+      are development rows and design-time simulation only, not evidence.
+
+
+      **1. u_shaped/6 (A4 0.951 on T0398''s 3 layouts)**
+
+      - **Cause:** the ratio is 0.0950 / 0.0998 K. T0398''s three layouts have almost the same reference
+      spread (about 10 K, sd 0.089 K, CV 0.9 %). The same dies (die_index 2 hottest, 5 coldest) set every
+      spread, so the leave-one-out stratum-mean null is almost exact. No single layout or die position
+      dominates.
+
+      - **L1''s error is systematic:** −0.086 to −0.099 K (about −0.9 %) in all 18 rows on 9 layouts.
+
+      - **Calibration:** recalibrating to the stratum''s implied factor changes A4 only from 0.951 to
+      0.924. But the form of the calibration accounts for most of the error. The raw coarse-FV spread
+      is +0.07 K high, and the fixed rise factor c = 0.98402 shrinks a 10 K spread by 0.16 K.
+
+      - **Grid rule:** a finer L1 grid lowers the raw error (+0.04 K) but makes the calibrated error worse
+      (−0.12 K), so the grid rule does not explain it.
+
+      - **Reference:** the level-0 to level-1 spread change is only +0.012 to +0.019 K, so the reference''s
+      own error is far below 0.09 K.
+
+      - **Comparison with u_shaped/2** (calibrated family): A4 0.254. Its spreads are small and vary between
+      layouts (sd 0.28 K). Its errors are grid-sensitive, and its reference changes by up to 0.10 K between
+      levels.
+
+      - **New layouts:** two of the 6 new layouts have spreads of 9.3–9.4 K and 11.1 K. The null''s error
+      p95 rises to 1.0 K and A4 falls to 0.092 (new 6) and 0.096 (all 9).
+
+      - **Inference:** T0398''s 0.951 was a small-denominator artefact; the numerator is a real but small
+      bias.
+
+
+      **2. Six more layouts per stratum** (seed 20261456, added to `seeds.forbidden`)
+
+      - 36 level-1 solves, 1.15 CPU-h, peak 4.75 GB, P_ref reused from T0398 to within 1e-12. All checks
+      passed except `allocation_fixed`, which fails by design (3 strata, not 15).
+
+      - Per-stratum results (A4 at P_ref, A2 at the max over loads; V4 upper bound in brackets where reported):
+
+
+      | stratum | A4, all 9 layouts / 18 switch rows (new 6 only) | A2, all 9 | A4 > 0.3? |
+
+      |---|---|---|---|
+
+      | interleaved/2 | 0.286 (0.272) | 0.0085 | no |
+
+      | side_by_side/2 | 0.223 (0.243) | 0.0066 | no |
+
+      | u_shaped/6 | 0.096 (0.092) | 0.0059 [0.0075] | no |
+
+
+      - No per-stratum A4 upper bound is finite.
+
+      - interleaved/2 is 0.014 below the 0.3 line. The corrected model gives about a 0.25–0.28 chance
+      of exceeding 0.3 at 9 layouts.
+
+      - HS/LS bias at P_ref (K): interleaved/2 +0.085 / **+0.364**; side_by_side/2 +0.216 / −0.103; u_shaped/6
+      −0.020 / +0.041. Each roughly halves at 0.5 P_ref.
+
+      - isolated_die A4 on the extra layouts: 1.06 / 1.99 / 10.19 on the new 6, 1.08 / 2.07 / 10.74 on
+      all 9.
+
+      - Of the three A4 nulls only isolated_die is informative: stratum_mean is A4''s own denominator
+      (exactly 1) and die_position is about 1 by construction (measured 0.99999999999995).
+
+
+      **3. Corrected power simulation**
+
+      - **Model:** die deviations around the (layout, switch) mean with fixed die-position profiles; HS/LS
+      offsets as fixed effects; reference variation measured and pooled per cell.
+
+      - **Consistency check** (declared before running, gating): **pass**. Simulated median A4 is 0.108
+      (normal) and 0.107 (t3) against 0.107 measured, inside the 5–95 % range.
+
+      - **Not gated, but the model falls short here:** it over-predicts A3 (0.127 K simulated vs 0.091
+      K measured, outside the range). It matches the per-stratum A4 at m = 9 only for interleaved/2; side_by_side/2
+      and u_shaped/6 fall outside.
+
+      - **Power, m = 20 / 24 / 32 / 40:**
+
+
+      | errors | joint power | A4 alone | min V4 coverage over all 7 statistics |
+
+      |---|---|---|---|
+
+      | normal | 1.000 at every m | 1.000 / 1.000 / 0.999 / 0.997 | 0.974–0.987 |
+
+      | t3 | 0.998 / 1.000 / 1.000 / 1.000 | 1.000 at every m | 0.971–0.981 |
+
+
+      - The lowest coverage is A1 under t3 at m = 20 (0.971, nominal 0.97). Per review T0459 (1), these
+      coverages at the registered m are the registration evidence, not T0398''s m = 3 figure.
+
+      - **Kill side at 1.2 × each kill threshold** (truth achieved: A1 1.80–1.82 K, A2 0.180, A4 1.19–1.20),
+      m = 20 / 24 / 32 / 40:
+
+
+      | errors | P(K1 fires) | P(K2 fires) | P(K3 fires) |
+
+      |---|---|---|---|
+
+      | normal | 0.418 / 0.575 / 0.812 / 0.885 | 1.0 | 0.291 / 0.405 / 0.576 / 0.764 |
+
+      | t3 | 0.306 / 0.426 / 0.581 / 0.669 | 1.0 | 0.168 / 0.198 / 0.354 / 0.486 |
+
+
+      **4. Memory:** `bytes_per_dof[''1'']` raised from 3400 to 4400. Across all 126 measured level-1
+      solves, (peak − 0.3 GB)/DOF is at most 4.33 kB. With 3400 the admission estimate was exceeded by
+      up to 9 %; with 4400 every peak is at most 0.87 of the estimate.
+
+
+      **5. Note:** `research/notes/e007-a4-strata.md`, with facts and inferences separated and what would
+      change the conclusions.
+
+
+      **Commands run and exit codes:**
+
+      - `uv run python research/o002_e007/a4_strata/run_extra.py --cap-gb 7.5`: 0 (final run; the first
+      two attempts failed on a patching KeyError and a layout-name collision, both fixed, and the solves
+      resumed from checkpoints)
+
+      - `uv run python research/o002_e007/a4_strata/diag_solves.py both`: 0
+
+      - `uv run python research/o002_e007/a4_strata/sim_corrected.py --reps 1000 --t-reps 300`: 0
+
+      - `uv run mfos exp check E007`: 0
+
+      - `uv run python experiments/runners/e007_run.py --selftest`: 0 (0 failures)
+
+      - the definition-of-done rows check: 0
+
+      - `uv run ruff check .`: 0
+
+      - `uv run mfos gate --fast`: 0 (all gates passed)
+
+
+      `sysctl vm.swapusage` is blocked in this sandbox, so I checked swap by hand: no swap file in `/private/var/vm`,
+      and memory_pressure was ≥ 44 % free throughout. Nothing was committed.'
+    root_cause: 'u_shaped/6''s A4 of 0.951 is mainly a small-denominator artefact: T0398''s three layouts
+      had nearly the same 10 K reference spread (sd 0.089 K), so the stratum-mean null''s error was only
+      0.10 K. On top of that sits a small, systematic L1 spread bias of −0.09 K (−0.9 %), mostly from
+      applying the rise-proportional calibration c(s) to a large inter-die spread. On 9 layouts the null''s
+      error is 1.0 K and A4 is 0.096. The 2-die trips (0.352, 0.340) fall to 0.286 and 0.223 on 9 layouts.'
+    confidence: 0.8
+    evidence:
+    - 'T0398 rows, u_shaped/6 at P_ref: A4 = 0.0950/0.0998 K; reference spreads 9.93-10.16 K (sd 0.089);
+      hottest/coldest die_index 2/5 in every row; L1 spread error -0.086 to -0.095 K in all 6 rows (diag_t0398.json)'
+    - '6 new u_shaped/6 layouts: reference spreads 9.30-11.08 K; null error p95 1.00 K over 9 layouts;
+      L1 error -0.072 to -0.099 K; A4 0.092 (new 6) / 0.096 (all 9) (dev_rows_a4_strata.json meta, diag_combined9.json)'
+    - 'L1 grid test on T0398''s u_shaped/6 layouts: raw FV spread error +0.066 to +0.077 K, calibrated
+      -0.086 to -0.095 K; at 0.5 mm, lat_frac 32, z_cells 4: raw +0.038 to +0.047, calibrated -0.113 to
+      -0.125 K (diag_solves.json)'
+    - 'Reference test: level-0 to level-1 spread change for u_shaped/6 is +0.012 to +0.019 K; for 2-die
+      strata up to 0.10 K (diag_solves.json ref_levels)'
+    - Recalibrating u_shaped/6 to its implied factor (1.00027 x c) changes A4 only from 0.951 to 0.924
+    - '9-layout per-stratum A4 at P_ref: interleaved/2 0.286, side_by_side/2 0.223, u_shaped/6 0.096;
+      V4 upper bound +inf for all three'
+    - 'Bias at P_ref (9 layouts): interleaved/2 LS +0.364 K vs HS +0.085 K'
+    - 'isolated_die A4 on the extra layouts: 1.06 / 1.99 / 10.19 (new 6); 1.08 / 2.07 / 10.74 (9); die_position
+      A4 0.99999999999995'
+    - 'Simulation consistency: simulated median pooled A4 at T0398''s structure 0.108 (normal) / 0.107
+      (t3) vs measured 0.107. Not gated: A3 over-predicted (0.127 vs 0.091 K); per-stratum A4 at m=9 matches
+      only for interleaved/2'
+    - 'Power at m=20/24/32/40: joint 1.000 (normal), 0.998-1.000 (t3); A4 alone 0.997-1.000; min coverage
+      0.971-0.987'
+    - 'Kill side at 1.2x: P(K3) normal 0.291/0.405/0.576/0.764, t3 0.168/0.198/0.354/0.486; P(K1) normal
+      0.418-0.885, t3 0.306-0.669; P(K2) 1.0'
+    - 'Memory: max (peak - 0.3 GB)/DOF over 126 level-1 solves is 4.33 kB; with 3400 B/DOF the estimate
+      was exceeded by up to 9 %, with 4400 every peak is at most 0.87 of the estimate'
+    alternative_explanations:
+    - explanation: 'u_shaped/6''s A4 is driven by L1''s grid rule: the coarse lateral FV grid mis-resolves
+        the 6-die spread.'
+      how_to_discriminate: 'Re-evaluate the same layouts with finer FV grids. Done: the raw error shrinks
+        (+0.07 to +0.04 K) but the calibrated error grows (-0.09 to -0.12 K), so the grid rule does not
+        explain the calibrated miss.'
+    - explanation: The reference's level-1 discretization error, not L1, makes up the 0.09 K spread error.
+      how_to_discriminate: 'Level-0 vs level-1 reference spreads on the same layouts. Done: the change
+        is <= 0.019 K, so the level-1 error is about 0.005-0.02 K. Rejected for u_shaped/6; it may still
+        be material for interleaved/2 (0.04-0.08 K change), which needs level 2 (a burst VM).'
+    - explanation: A mis-set calibration factor for 5.5 mm (u_shaped/6 is outside c(s)'s calibration families).
+      how_to_discriminate: 'Compare the implied factor with c_table. Done: 1.00027 x c, A4 0.951 to 0.924.
+        The size of c is right for mean rise; the miss comes from applying one rise factor to the spread.'
+    - explanation: The 0.951 is sampling noise in a ratio of near-maxima over 6 switch rows.
+      how_to_discriminate: 'More layouts. Done: on 9 layouts A4 is 0.096. The denominator was atypically
+        small and the numerator is stable, so it was sampling luck in the denominator, not noise in L1''s
+        error.'
+    discriminating_tests:
+    - 'L1 on finer FV grids (raw and calibrated) on T0398''s u_shaped/6 and 2-die layouts: run, in diag_solves.json'
+    - 'Level-0 reference solves beside T0398''s level-1 solves, to bound reference discretization in the
+      spread: run'
+    - 'Recalibration counterfactual (implied c) on per-stratum A4: run'
+    - '6 more layouts per stratum on a fresh seed; per-stratum A4 on 9 layouts: run'
+    - 'Not run (needs a burst VM): a level-2 reference on interleaved/2, to see whether its -0.02 to -0.055
+      K L1 spread error is partly reference error'
+    recommended_actions:
+    - 'Founder: decide whether E007 freezes. On 9 layouts all three strata are at or below 0.3 on points
+      (0.286, 0.223, 0.096), but per-stratum upper bounds are unbounded and interleaved/2 is 0.014 below
+      the line.'
+    - Read the per-stratum A4 (D0025 decision 4) as a diagnostic only. At m <= 9 it is a ratio of near-maxima
+      whose denominator is set by the one or two most atypical layouts; the pooled criterion does not
+      have this problem.
+    - Treat the corrected simulation's pooled-A4 power (about 1.0 at every m) as adequately modelled.
+      Its kill-side rates and its A3 rest on a model that over-predicts A3 by 30-40 % and misses 2 of
+      3 per-stratum A4s.
+    - 'If m is chosen for kill-side power: K3 at 1.2x fires with probability 0.29 (normal) / 0.17 (t3)
+      at m = 20 and 0.76 / 0.49 at m = 40. An INCONCLUSIVE outcome is likely for a moderately bad L1 at
+      m = 20.'
+    - 'Possible future L1 version (a model change, not for E007): apply the calibration to the die-local
+      rise only, not to inter-die differences, or calibrate per family. That would target the -0.9 % u_shaped/6
+      spread bias and the interleaved LS offset (+0.36 K).'
+    - 'If the interleaved/2 question matters: one level-2 reference solve of an interleaved/2 layout on
+      a burst VM. research/o002_e007/l2_timing/job.json is the template.'
+    files_written:
+    - research/notes/e007-a4-strata.md
+    - research/o002_e007/dev_rows_a4_strata.json
+    - research/o002_e007/a4_strata/diag_rows.py
+    - research/o002_e007/a4_strata/diag_solves.py
+    - research/o002_e007/a4_strata/run_extra.py
+    - research/o002_e007/a4_strata/sim_corrected.py
+    - research/o002_e007/a4_strata/diag_t0398.json
+    - research/o002_e007/a4_strata/diag_combined9.json
+    - research/o002_e007/a4_strata/diag_solves.json
+    - research/o002_e007/a4_strata/sim_corrected.json
+    - research/o002_e007/a4_strata/sim_corrected_checkpoint.json
+    - research/o002_e007/a4_strata/work/ (checkpointed solves, plan_frozen.json, l1_phase.json, combined_9_rows.json)
+    - research/o002_e007/a4_strata/work_l0/ (level-0 reference solves)
+    - research/o002_e007/a4_strata/*.log
+    - experiments/drafts/E007.yaml (compute.bytes_per_dof['1'] 3400 -> 4400 with source note; seeds.forbidden
+      += 20261456 with source)
+    experiment_drafts:
+    - experiments/drafts/E007.yaml
+    affects_acceptance_criteria: false

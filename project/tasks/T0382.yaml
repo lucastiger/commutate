@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0377
 - T0378
@@ -264,8 +264,8 @@ runs:
 - T0382-scientist-20261117T160031-53cd
 created_by: planner:T0375
 created_at: '2026-11-16T01:43:45+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0250
 target: null
 lens: null
 trigger: null
@@ -1074,3 +1074,7 @@ history:
 - outcome: full_gate_passed
   summary: 3bad284054b3986ad2f4ea704a1df834638b51fd
   at: '2026-11-18T02:19:51+00:00'
+- outcome: merge_approved
+  summary: I0250
+  replan: false
+  at: '2026-11-18T02:26:43+00:00'
