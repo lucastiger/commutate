@@ -1,10 +1,10 @@
 # ModuleForge status
-_generated 2026-11-18T03:44:33+00:00 from repository state — do not edit_
+_generated 2026-11-18T03:45:22+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0253** [protected_change] T0464: merge needs founder approval
+- **I0254** [experiment_registration] register E007 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,15 +33,11 @@ _generated 2026-11-18T03:44:33+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 408, failed: 4, needs_founder: 1, running: 1, todo: 4
+cancelled: 47, done: 409, failed: 4, running: 1, todo: 4
 
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
-- T0464 `needs_founder` scientist/design_experiment: E007 pre-registration finalisation: m = 32 per stratum (480 layouts), power and coverage evidence from T0456, plan and cost, level-2 timing job (attempt 1)
 
 ## Recent events
-- 2026-11-18T02:29:40+00:00 run_started {"run": "T0463-critic-20261117T182940-d3e0", "task": "T0463", "role": "critic", "session": "9e7dcb8d-48d0-4f14-af53-c3281206fcdb"}
-- 2026-11-18T02:32:48+00:00 inbox_resolved {"id": "I0251", "status": "rejected", "note": "Premature: E011 needs its development burst (I0205), the development L2 analysis, and founder decisions on the se
-- 2026-11-18T02:33:12+00:00 founder_decision_recorded {"objective": "O002", "summary": "E007: per-stratum A4 check passed on 9 layouts; m = 32 (480 layouts)"}
 - 2026-11-18T02:33:12+00:00 task_added {"task": "T0464", "note": "founder decision 2026-11-18"}
 - 2026-11-18T02:36:32+00:00 run_finished {"run": "T0463-critic-20261117T182940-d3e0", "status": "completed", "cost": 1.828217, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T02:44:01+00:00 inbox_opened {"id": "I0252", "kind": "protected_change", "subject": "T0456: merge needs founder approval"}
@@ -54,3 +50,6 @@ cancelled: 47, done: 408, failed: 4, needs_founder: 1, running: 1, todo: 4
 - 2026-11-18T03:35:03+00:00 run_started {"run": "T0465-critic-20261117T193503-66c1", "task": "T0465", "role": "critic", "session": "f95309b9-e3d1-4784-8426-24d524d66885"}
 - 2026-11-18T03:40:31+00:00 run_finished {"run": "T0465-critic-20261117T193503-66c1", "status": "completed", "cost": 2.193401, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T03:40:38+00:00 inbox_opened {"id": "I0253", "kind": "protected_change", "subject": "T0464: merge needs founder approval"}
+- 2026-11-18T03:45:08+00:00 inbox_resolved {"id": "I0253", "status": "approved", "note": "T0464 merge approved, review T0465 accepts with caveats. E007 finalised at m = 32, 480 layouts, cost 74 to 79 CPU
+- 2026-11-18T03:45:13+00:00 merged {"task": "T0464"}
+- 2026-11-18T03:45:14+00:00 inbox_opened {"id": "I0254", "kind": "experiment_registration", "subject": "register E007 (pre-registration)"}
