@@ -4,7 +4,7 @@ title: 'E004 design, part 3: reported diagnostics F3 (per conductor group, round
   contact, terminal tabs), F8 (L1 beside l2_layout)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0389
 - T0457
@@ -68,3 +68,96 @@ history:
   summary: agent ended with error_max_budget_usd
   failure_output: ''
   at: '2026-11-18T08:43:14+00:00'
+- attempt: 2
+  outcome: agent_finished
+  summary: 'Completed E004 design part 3 (T0390): F3/F6/F8 reported, non-gating diagnostics in experiments/drafts/E004.yaml
+    (config.diagnostics, 5 reported metrics, cost plan 77 jobs / 23.7 CPU-h / ~$4, cpu_hours_est 541.9)
+    and experiments/runners/e004_run.py. Attempt 1 left a near-complete implementation; a fresh review
+    plus a smoke run found one real defect: the F3 terminal-contact substitution was a no-op (deck sha256
+    identical to the baseline) because at FastHenry k0 (1 mm cells) both Case 4 ports sit exactly on a
+    cell centre (13.5, 64.5 / 13.5, 36.5 mm) and the patch rule (neighbours strictly within one pitch)
+    selected no extra cell. Redesigned: at the judged 0.25 mm level both tools share the same 4-cell support
+    (port on a lattice corner; l2_layout.Contact bilinear 1/4 vs FastHenry merged ties),'
+  report:
+    summary: 'Completed E004 design part 3 (T0390): F3/F6/F8 reported, non-gating diagnostics in experiments/drafts/E004.yaml
+      (config.diagnostics, 5 reported metrics, cost plan 77 jobs / 23.7 CPU-h / ~$4, cpu_hours_est 541.9)
+      and experiments/runners/e004_run.py. Attempt 1 left a near-complete implementation; a fresh review
+      plus a smoke run found one real defect: the F3 terminal-contact substitution was a no-op (deck sha256
+      identical to the baseline) because at FastHenry k0 (1 mm cells) both Case 4 ports sit exactly on
+      a cell centre (13.5, 64.5 / 13.5, 36.5 mm) and the patch rule (neighbours strictly within one pitch)
+      selected no extra cell. Redesigned: at the judged 0.25 mm level both tools share the same 4-cell
+      support (port on a lattice corner; l2_layout.Contact bilinear 1/4 vs FastHenry merged ties), so
+      their terminal model difference (equal split vs equipotential) is bounded, by energy minimisation
+      and convexity, by a single-cell-to-patch contact-size step; that step is now measured at k0 by growing
+      each port contact one ring (3x3 mm patch, deck_edit ''terminal_grow''), reported as F3_terminals_contact_bound
+      with a monotonicity sign check, kept out of the residual and the founder flag. Also added: diagnostics
+      wrapped so any failure is recorded, never raised (judged rows/metrics/solve.json always written);
+      per-job export failures skipped with cause; optional MF_E004_MAX_PROCS process cap (smoke default
+      2; registered unchanged). Smoke (Case 4, coarse, not evidence): wire round-vs-square term FastHenry
+      0.308 % vs closed form 0.301 % (independent cross-check); terminal grow step -3.3 to -3.4 % on L
+      (sign correct) but 0.16 % on the pair ratio; F6 tab +0.28 to 0.34 % on L, 0.06 % on the ratio; F8
+      recorded. Commands run, exit codes: `uv run mfos exp check E004` -> 0 (final run after last edit);
+      `uv run python experiments/runners/e004_run.py --smoke --diagnostics` -> 0 (run twice: attempt-1
+      code 17.3 min; final code 20.4 min, 8 diag jobs ok, 4 direct jobs recorded skipped); `uv run python
+      experiments/runners/e004_run.py --selftest` -> 0 (23/23); `uv run mfos gate --fast` -> 0; `uv run
+      ruff check experiments/runners/e004_run.py` -> 0. Files left uncommitted.'
+    status: completed
+    failure_class: none
+    confidence: 0.8
+    experiment_drafts:
+    - experiments/drafts/E004.yaml
+    files_written:
+    - experiments/drafts/E004.yaml
+    - experiments/runners/e004_run.py
+    evidence:
+    - 'FACT: attempt-1 smoke: 2D_Case_4__diag_f3_term_nh1 deck_sha256 5567d3a29222... identical to the
+      smoke_base deck, so F3_terminals_contact_patch = 0.0 was a no-op, not a measurement'
+    - 'FACT: Case 4 port points (13.5, 64.5) and (13.5, 36.5) mm: fractional lattice offset (0.5, 0.5)
+      at 1 mm cells (1 nearest cell); (0, 0) at 0.5 and 0.25 mm (4 tied cells) (script in $TMPDIR, FastHenry
+      exporter lattice functions)'
+    - 'FACT: src/moduleforge/solvers/l2_layout.py lines 35-37 and 1831: bilinear point contacts over the
+      four surrounding cell centres'
+    - 'FACT: the terminal_grow edit on Case 4 at k0 nh1 adds two .equiv lines of 9 cells each (3x3 patch)
+      around Nt13y64 and Nt13y36'
+    - 'FACT: final smoke: F3_wires_xs_fasthenry 0.00308 vs closed form 0.00301 (Case 4), 0.00289 vs 0.00281
+      (dev_pair0); F3_terminals_contact_grow_k0 -0.0326 / -0.0342 (no sign violations); terminal bound
+      pair-ratio effect 0.0016; F6_terminal_tab 0.0034 / 0.0028 on L, 0.0006 on the ratio; F8 L1 0.00027
+      vs l2 0.0038 on the same pair'
+    - 'FACT: independent check (Grover exact GMD form): HF round-vs-equal-GMD-square partial self-L difference
+      0.630 % for a 16 mm, 0.3 mm wire; runner''s check 0.628 %; T0364 0.637 %; logarithmic capacity of
+      a square Gamma(1/4)^2/(4 pi^1.5) = 0.59017 a, HF-equivalent side 0.8472 d'
+    - 'FACT: selftest 23/23 including diagnostics_do_not_change_criteria and diagnostics_zero_terms_on_equal_values'
+    - 'FACT: the direct-solver adapter''s memory screen (est x 1.30) is below the job cap (est x 1.3 x
+      1.5), so the burst-VM direct jobs are not refused by construction'
+    - 'INFERENCE: using the k0 grow step as an upper bound on the judged-level terminal term assumes spreading
+      inductance roughly logarithmic in contact size (size ratio 3 at k0 vs 2 at the judged level); stated
+      in the spec as inference, not proof'
+    alternative_explanations:
+    - explanation: The zero terminal term was caused by a units or net-name mismatch in deck_edit (empty
+        cell selection), not by the port's position on the lattice
+      how_to_discriminate: 'Compute the port''s fractional lattice offset and the nearest-cell set at
+        1.0 / 0.5 / 0.25 mm (done: offset 0.5 at 1 mm, 1 nearest cell; corners at finer levels), and check
+        that the regrown edit selects same-net cells (done: 8 extra cells per port)'
+    - explanation: The F3 wire term is not the round-versus-square effect but a side effect of changing
+        the square's side (resistance, filament coupling)
+      how_to_discriminate: 'Compare the FastHenry deck-edit term with the independent closed-form HF partial
+        self-L sum (done: 0.308 % vs 0.301 % on Case 4, 0.289 % vs 0.281 % on dev_pair0)'
+    discriminating_tests:
+    - Port-lattice offset script on Case 4 at 1.0/0.5/0.25 mm (run)
+    - 'Deck sha256 comparison of f3_term against smoke_base (run: identical before the fix, different
+      after)'
+    - 'Sign check: the grow step must be <= 0 by monotonicity (run: -3.3 to -3.4 %, no violations)'
+    - 'FastHenry wire deck edit against the closed form (run: agreement within 3 % relative)'
+    recommended_actions:
+    - 'Founder: the spec''s cpu_hours_est (541.9; 518.2 judged before this task) exceeds O004''s budget
+      of 260 CPU-h; decide before registration'
+    - 'Before the judged VM jobs, run one Case 4 k0 F6 die_model=''distributed'' direct pre-flight on
+      the burst VM: locally it is projected ~6.4 GB at nh1 (above the 5 GB budget) and was only exercised
+      with None values in the selftest'
+    - 'Founder: the terminal contact bound (3.4 % on L at k0, 0.16 % on the ratio) is loose; if F3_terminals_bound_above_L_threshold
+      matters for A2/K2 interpretation, a tighter measurement needs a level whose cells match l2_layout''s
+      0.25 mm support'
+    - 'Founder: F3_traces_thickness counts toward the 1 % founder flag although it partly measures discretisation;
+      keep (conservative) or move it beside the residual'
+    - At the refreeze before registration, record e004_run.py's new sha256 (config.freeze)
+    affects_acceptance_criteria: false
