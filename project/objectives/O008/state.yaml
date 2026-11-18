@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 2
 max_replans: 3
 needs_replan: false
-spent_usd: 88.9839
+spent_usd: 91.4814
 budget_override_usd: null
 log:
 - 'founder approved I0204: Written in a founder session in mfos.metrics (commit 2fea4a6e); A2 uses max_col;
@@ -29,5 +29,20 @@ log:
 - 'founder answered I0244: Resolved: agents cannot merge, so the founder merged main into the T0382 branch,
   which now has the T0437 code. Attempt 4 runs the development L1 run on that code. (no replan)'
 - diagnosis:T0458 of T0382 (implementation)
+- 'open review items 2026-11-18T01:24:15+00:00 (founder session; reviews T0460-T0462 of T0382, for E011''s
+  pre-registration revision after the development burst): (1) T0462 major: the joint operating characteristic
+  does not define c in s*_kj = (1+s_kj)/(1+c) - 1, and its stated interpretation (P(PASS) against the
+  true L_sub ratios) does not follow; define the method before the dev L2 analysis; (2) the registered
+  run does not fit timeout_min (170-246 h vs 120 h; $104-151 plus the $38-44 dev burst, above O008''s
+  budget): founder decision on timeout, VM shape or a split; correct registered_run_usd, cpu_hours_est
+  and timeout_min; (3) dev selection and the four sensitivity proxies are at lat0.5, the registered rule
+  at lat0.25: state it, or solve the top shortlist members at 0.25 mm in the dev L2 analysis to measure
+  ranking stability; (4) the per-draw r_d = 1.425 placeholder is unflagged; (5) changed_from_D uses indices
+  4..len while changed_from_Wstar uses movable_indices; em_job hard-codes freq_hz; (6) expected_outcome
+  names Case 4 as the A1 risk, the L1 indicator points at 2R; (7) the degradation L1 target 1.3875 sits
+  at the L2 window edge, so a systematic L2/L1 offset would push draws below 1.25 and redraws from the
+  same family would not fix it (the dev burst measures R_D); (8) research/o008_e011_dev/work stage checkpoints
+  and log are untracked, so the improvement-curve brackets cannot be re-derived from the repository; (9)
+  the Tj fallback cannot fire in dev mode'
 evidence_rules: 2
 frozen_hash: sha256:9e948c4b2861f22f1bdbcf2f54d0330fe6f90df2106eb5cdef158b6aeb530387

@@ -1,0 +1,69 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Joint operating characteristic method is ambiguous, and its stated interpretation does not follow",
+      "detail": "config.joint_operating_characteristic step (2) defines s*_kj = (1+s_kj)/(1+c) - 1 without saying what c is. If c is the replicate's own c_k, step (3) multiplies the same factor back in and the common mode has no effect. If c is 0, step (3) adds fresh common-mode noise on top of development s_kj that already contain the realised offset of the single L_sub(W*) solve. The 'interpretation' text claims that sampling c_k 'estimates P(PASS) against the true L_sub ratios'. That does not follow: convolving the biased measured values with a fresh N(0, sigma_k^2) widens their spread but does not remove the fixed offset. The procedure is a sensitivity analysis, not an estimate against the truth. O008 scope_in requires the spec to state this figure. It is not gated, its values are null, and it is not implemented yet (no bootstrap code in e011_run.py or summarize.py), so it cannot change a verdict now.",
+      "evidence": "E011.yaml lines 124-145; grep for bootstrap/operating_char/20000 in e011_run.py and research/o008_e011_dev/summarize.py returns nothing",
+      "suggested_check": "Before registration, define c in step (2) and restate the interpretation as a sensitivity band around the c_k = 0 figure.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Development L2 rows will use selection and proxy comparisons at 0.5 mm, not the registered 0.25 mm rule",
+      "detail": "dev_solve picks each shortlist's best by L at screen_level lat0.5 and only then bands it at all five levels. The registered rule picks the lowest L_sub at lat0.25. So development s_j are at or above the registered-rule values on the same shortlist: conservative for A1 and for A3's paired wins, but not the same statistic. The four sensitivity proxies (threshold_free, reach_false_probe, dies_fixed, dcm_alt_reading) are in the manifest only at lat0.5. So the 'L2 comparison of the two W*' that frozen.dc_minus_reading says could reopen the frozen reading is made at the development resolution, not at the 0.25 mm choose_proxy level.",
+      "evidence": "Manifest purpose counts: proxy_* purposes appear only at lat0.5 (one job each per layout); W_band, descent_band, seed/widen/compact/proxy_alone bands appear at all five levels; dev_solve line 1857 selects min over (sv.L(lay, screen_level), rank)",
+      "suggested_check": "State in config.dev that the development s_j use 0.5 mm selection, and add lat0.25 jobs for the DC- alternative proxy if that comparison is to decide the frozen reading.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Development draws are attempt 0 only, accepted provisionally; out-of-window draws cannot be redone from this manifest",
+      "detail": "Every development D_j is attempt 0. R_D at L2 and the redraw rate are unmeasured. Draw 4 on 2R overshoots to an L1 ratio of 1.538, and draw 1 stalls at 1.309. A draw that falls outside [1.25, 1.60] at 0.25 mm would need new L1 stages and another burst; the manifest has no redraw attempts. The spec's phrase 'the dev L2 analysis confirms or redoes both' understates this. W* is also provisional: if choose_proxy at 0.25 mm keeps W, every development row is scored against the wrong target and all of them must be rerun.",
+      "evidence": "E011.dev_jobs.json draws[*].attempts == 1 for all 16; degradation_report redraws 0; note section 3 'Limit'",
+      "suggested_check": "After the burst, report how many development draws fall outside the window and whether choose_proxy kept the descent, before the joint OC is computed.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Improvement-curve bracket verified valid",
+      "detail": "I checked whether the lower end of the bracket (the shortlist's highest L1, identical for the 10 % and 25 % cuts) is a valid bound. local.py's visited dict holds distinct fingerprints in evaluation order, and the shortlist is the K lowest-score (= L1) visited layouts with ties broken by order. If no member was evaluated by n_x, every earlier layout has L1 at or above max(shortlist), so the bound holds. The upper end (trajectory running minimum recorded at scan ends) bounds best(n_x) from above. Spot checks: 2R median last-10 % share 0.001336 reproduces from the per-draw values, and L1(D_j)/L1(W*) x (1 - gain) for draw 0 gives 1.0059, as the note states.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Weak definition-of-done items",
+      "detail": "The manifest check passes on status 'complete: L1 stages done, L2 pending (burst VM)', so it checks only that the job list is complete, not that the development run is. The DoD item 'research/notes/e011-dev-run.md' is a bare path, not a command. The file exists.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Registered run exceeds timeout_min in every modelled scenario",
+      "detail": "The manifest's own model gives 170-246 h against a 120 h timeout. This is disclosed in the spec and the note and left to the founder. It does not affect the draft's correctness, but registration cannot proceed as written.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e011_run.py --selftest`: exit 0, SELFTEST PASS. All six verdict scenarios (PASS, INCONCLUSIVE when a null recovers on one layout, INVALID for the seed-null defect and for fewer than two layouts, INCONCLUSIVE for a 2R miss, FAIL for K1), plus the manifest/dry-run/refusal checks.",
+    "Ran `e011_run.py --smoke`: exit 0 in 666 s. Verdict preview INVALID, as expected with only gen2_0 (F2 2R checks fail by construction); 6 rows; the required checks (metrics_agree, recompute_agrees, l2_converged, artifacts_resolve) passed.",
+    "Ran `ruff check` on the runner (clean), `mfos exp check E011` (no errors), and the ExperimentSpec validation of the draft (id E011, objective O008, sealed_seed, all four metric names).",
+    "Recomputed `code_stamp(spec)` in this checkout: it equals the manifest's code_stamp, so `--dev-solve` would accept the manifest. `freeze_report` returns ok: frozen_sha256 61c7abc9..., code hashes match, LocalConfig hash bdefe640d8cac683.",
+    "Checked the Clopper-Pearson intervals at Bonferroni level 0.975, n=8: binomial tails at the bounds equal 0.0125 for k=6, 7, 8. `a1_operating_characteristic` reproduces O008's table (0.943/0.813/0.657/0.255; two layouts 0.889/0.661/0.432/0.065). K1 order-statistic coverage 1 - 2 x 0.5^8 = 0.9922, as stated.",
+    "Read local.py's visited/shortlist construction to confirm the improvement-curve bracket bounds, and recomputed the 2R median gain share and the draw-0 L1 indicator from the manifest.",
+    "Counted manifest job purposes per layout and level. W, W*, 8 D_j, 8 widen, 8 compact and 8 proxy_alone are banded at all five levels (34 jobs per level per layout). There are 17 shortlist groups per layout (8 search + 8 random screen + 1 DC- alt), giving 34 groups and 170 wave-2 jobs, consistent with the totals. The sensitivity proxies appear only at lat0.5."
+  ],
+  "caveats": [
+    "Valid as a development-only draft: no L2 value exists yet. A1, A3, K1, the band bound and the joint operating characteristic are all unmeasured, and the registration check (A3 on development draws) is pending the burst.",
+    "Development s_j will be computed with the best selected at 0.5 mm and draws accepted at attempt 0 without the L2 window, so they are conservative planning inputs, not replicas of the registered rule.",
+    "The joint operating characteristic method needs its common-mode term defined before it is computed or registered.",
+    "As modelled, the registered run does not fit timeout_min = 7200 min; the founder must change the timeout, the VM shape or the run split before registration.",
+    "A randomised cross-check of e011_metrics against mfos.metrics and an independent re-implementation could not run: the sandbox's permission filter refused every script containing comparison operators. Agreement of the two implementations rests on the selftest's six scenarios (metrics_agree, recompute_agrees) and on my reading of the code."
+  ]
+}

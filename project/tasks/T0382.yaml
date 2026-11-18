@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: review
+status: merge
 depends_on:
 - T0377
 - T0378
@@ -1071,3 +1071,6 @@ history:
     - 'Orchestrator: list only spec files (E0xx.yaml) under experiment_drafts. Non-spec drafts such as
       the job manifest go under files_written; this is the tooling quirk that failed attempt 4 and T0398.'
     affects_acceptance_criteria: false
+- outcome: full_gate_passed
+  summary: 3bad284054b3986ad2f4ea704a1df834638b51fd
+  at: '2026-11-18T02:19:51+00:00'
