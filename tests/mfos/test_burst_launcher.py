@@ -78,3 +78,16 @@ def test_the_single_vm_launcher_copies_the_store_back_and_checks_the_run():
     text = (REPO / "scripts" / "burst_gcp.sh").read_text()
     assert '"$NAME:mf/.mfos/artifacts"' in text
     assert 'python3 scripts/check_run_artifacts.py "$FETCH/$RUN_ID" .mfos/artifacts' in text
+
+
+def test_the_single_vm_launcher_exports_mf_gcp_env_into_the_job_and_refuses_a_malformed_one():
+    """2026-11-18: in experiment mode the launcher passed no environment, so E007's registered run would have run one
+    solve at a time (E007_MAX_PROCS defaults to 1), about 85 VM-h instead of 36. MF_GCP_ENV now carries NAME=VALUE pairs
+    into job.sh; a malformed one stops the launcher before anything has side effects (no gcloud call, no run minted)."""
+    script = REPO / "scripts" / "burst_gcp.sh"
+    text = script.read_text()
+    assert 'ENV_LINE="export $JOB_ENV"' in text and '"$ENV_LINE" "$JOB" > "$WORK/job.sh"' in text
+    for bad in ("E007_MAX_PROCS=8 oops", "lower=1", "E007_X=a b", "E007_X=$(id)", "E007_X='1'"):
+        env = dict(os.environ, MF_GCP_ENV=bad, PATH="/usr/bin:/bin")
+        r = subprocess.run(["bash", str(script), "--cmd", "true", "x"], capture_output=True, text=True, cwd=REPO, env=env)
+        assert r.returncode == 2 and "MF_GCP_ENV:" in r.stderr, (bad, r.returncode, r.stderr)
