@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-18T15:03:59+00:00 from repository state — do not edit_
+_generated 2026-11-18T15:20:27+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -38,7 +38,6 @@ cancelled: 47, done: 414, failed: 4, needs_founder: 1, todo: 2
 - T0399 `needs_founder` none/experiment: Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts at P_ref and 0.5 P_ref (attempt 0)
 
 ## Recent events
-- 2026-11-18T06:28:35+00:00 run_started {"run": "T0390-scientist-20261117T222835-1c59", "task": "T0390", "role": "scientist", "session": "2771237f-fdfa-4bc6-9f07-b025fc20d8f6"}
 - 2026-11-18T08:43:14+00:00 run_finished {"run": "T0390-scientist-20261117T222835-1c59", "status": "error", "cost": 4.035547, "subtype": "error_max_budget_usd", "report": "transcript"}
 - 2026-11-18T08:43:14+00:00 task_failed_attempt {"task": "T0390", "signal": "agent_error", "action": "repair"}
 - 2026-11-18T08:43:22+00:00 run_started {"run": "T0390-scientist-20261118T004322-d913", "task": "T0390", "role": "scientist", "session": "5fcfe529-dbde-4739-8c19-7f02af3f2501"}
@@ -53,3 +52,4 @@ cancelled: 47, done: 414, failed: 4, needs_founder: 1, todo: 2
 - 2026-11-18T15:02:22+00:00 merged {"task": "T0390"}
 - 2026-11-18T15:02:23+00:00 inbox_opened {"id": "I0258", "kind": "experiment_registration", "subject": "register E004 (pre-registration)"}
 - 2026-11-18T15:03:28+00:00 inbox_resolved {"id": "I0258", "status": "rejected", "note": "Premature: E004 needs the founder decisions on the FastHenry ladder, the span lower end, the CPU budget and timeo
+- 2026-11-18T15:19:49+00:00 founder_decision_recorded {"objective": "O004", "summary": "measure FastHenry k0/k1 on Case 4, then decide at the thesis review; E004 agent work paused"}
