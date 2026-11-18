@@ -1,0 +1,54 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "The asserted F3 coverage is at m = 3, where several bounds are infinite, so the coverage assertion can hardly fail",
+      "detail": "meta.f3_dev.coverage, the value the definition-of-done asserts is >= 0.95, is defined in f3_dev_simulation.json as the minimum over scenarios at m = 3 ('15 strata x 3 layouts'). At m = 3 the V4 upper bounds for A1 and A4 are mostly +inf (the rows' own A1 CI is [0.149, inf], per-band A4 is [0, inf]). Their coverage is therefore exactly 1.0 by construction, and the DoD assertion tests little for A1, A4 and K3. Coverage that matters for registration (m = 20-40) is in the same file's cells and does pass: minimum 0.959 for A3, 0.963 for A1, 0.972 for K2. But at m >= 20 it exists only for the scenarios n1, dev, dev_cells and beyond_kill. The alt, edge and kill scenarios (truth at 0.6x, 1x and the kill thresholds) were re-run only at m = 3.",
+      "evidence": "f3_dev_simulation.json: f3_dev.m = 3; cells keys exist for m in {3, 20, 24, 32, 40}, with alt/edge/kill only at m = 3; minimum coverage for m >= 20 is A1 0.963, A2 0.979, A3 0.959, A4 0.997, K1 0.973, K2 0.972, K3 0.996.",
+      "suggested_check": "Before m is fixed, report coverage at the chosen m for the edge and kill scenarios too, and do not read the m = 3 figure as an F3 result.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "F2 for A4 holds only at the point estimate; two of the three A4 nulls are about 1 by construction",
+      "detail": "`mfos exp check` shows A1 not_satisfied for all three nulls. All three A4 nulls are 'undetermined' at the bound (with 3 layouts per stratum the ratio bound is [0, inf]). F2's rule is about point estimates, and those exceed 0.5: 1.0000, 1.0, 11.42, so the requirement is met. However, the stratum_mean null's A4 is exactly 1 because it is A4's own denominator, and die_position's is 0.99999999999998. Only isolated_die is an informative A4 test. The spec's scope_limits already record this.",
+      "evidence": "exp check output: 'null die_position: 0.999999999999985 -> undetermined', 'null stratum_mean: 1.0 -> undetermined', 'null isolated_die: 11.418813569749735 -> undetermined'.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "These dev rows do not clear the spec's own registration conditions",
+      "detail": "The rows' meta shows D0025 decision 4's per-stratum check failing A4 <= 0.3 in interleaved/2 (0.352), side_by_side/2 (0.340) and u_shaped/6 (0.951). The meta and the note report this openly as STOP / founder decision. That is honest, but it means the deliverable is complete as dev rows, not as clearance for E007 to freeze. Per-stratum A4 values are ratios of p95s over 6 rows each and are very noisy.",
+      "evidence": "meta.l1_dev_check_summary.strata_missing_A4_0.3 = ['interleaved/2', 'side_by_side/2', 'u_shaped/6']",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The dev statistics are thin and A5 was timed on the development host",
+      "detail": "A1 is a p95 over 45 same-stratum pairs (3 per stratum) and its V4 upper bound is +inf. A5 = 0.440 s was measured on the founder's Mac (arm64), not on the registered burst VM. The runner's swap guard read 0 because sysctl is blocked in the sandbox; swap was watched by hand, per the note. All of this is documented in the artifacts.",
+      "evidence": "meta.metrics.dtj_pair_err_p95_K_max_load.ci = [0.149, inf]; meta.l1_phase_host.node = Lucas-MacBook-Air-3.local",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command myself. `mfos exp check E007 --rows ...` exits 0. The null_check one-liner gives bad = []. The meta assertion passes. `e007_run.py --selftest` reports 0 failures, including mutation tests. `--verify-freeze` is all OK. `ruff check experiments/runners` is clean. The thermal_fem.py hash prefix is a216d5fe3209bcee.",
+    "Recomputed A1-A5 and every F2 null from the rows with my own numpy code, without the runner's helpers. A1 0.229822 K (45 pairs), A2 0.0080952, A3 0.090964 K, A4 0.106901, A5 0.440005 s (90 layout-loads). Null A1: die_position 5.69298, stratum_mean 5.49614, isolated_die 3.82399 K. Null A4: 1.0000, 1.0, 11.4188. All match the meta and the exp check output exactly.",
+    "Checked the rows' internal consistency: rise_ref = tj_ref - tb_ref exactly. Layout rows' hottest die, L1 value at that die, own-hottest value and null values all agree with the die rows (0 mismatches). Switch spreads (ref, L1, null_pos, null_iso) equal max - min of the die rows. The leave-one-layout-out null_pos, null_smean and spread_null_K columns reproduce to within 2e-13 K. Exactly 3 layouts in each of the 15 strata, with 2 x dies die rows per layout-load.",
+    "Regenerated side_by_side_2_j00 from dev seed 20261398 (sub_seed 'layouts') and re-ran the frozen L1 (moduleforge.thermal.evaluate) at the recorded P_ref. All 4 die averages equal the rows to 1e-9 K. The fingerprint is not among C004's development, fresh or other development fingerprints.",
+    "Re-ran an independent level-1 reference FEM solve (thermal_fem.solve_layout, frozen rule) on the same layout: 456,155 DOF, 74 s, 2.25 GB peak RSS, energy balance 2.4e-13. Every tj_ref_K, tj_max_ref_K and the Q1 baseplate mean tb_ref_K match the rows to the printed precision.",
+    "Inspected f3_dev_simulation.json. Its rows_sha256 equals the hash of the rows array in the delivered file, so the simulation used these rows. Its measured targets equal the dev metrics. The meta's coverage equals the file's f3_dev.coverage. Found that this coverage is at m = 3, and computed the minimum coverage for m >= 20 separately (>= 0.959).",
+    "Confirmed that all 15 gated sanity checks in meta.checks have passed = true, and that smoke = false and fake = false."
+  ],
+  "caveats": [
+    "The rows are development data at 3 layouts per stratum. Every V4 upper bound for A1 and A4 is +inf there, so they support point checks (F2) and simulation inputs, not any judged claim about L1.",
+    "The F3 'coverage on the dev structure' in the meta is at m = 3 and is trivially 1.0 for A1, A4 and K3. Coverage at m = 20-40 (>= 0.959) exists only for the n1, dev, dev_cells and beyond_kill scenarios, not for alt, edge or kill.",
+    "F2 for A4 is shown only at the point estimate (all A4 nulls are 'undetermined' at the bound). The stratum_mean and die_position A4 nulls are about 1 by construction, so only isolated_die tests A4 meaningfully.",
+    "D0025 decision 4's per-stratum A4 <= 0.3 check fails in 3 of 15 strata. The rows correctly flag a founder decision; they do not clear E007 for freezing.",
+    "The packet's diff was truncated inside the rows file. I could not see whether the change also edits the spec (dev_rows, dev.result, forbidden seed 20261399) or research files beyond the single listed deliverable. If it does, those edits are outside the stated deliverables and were not reviewed as part of the diff.",
+    "I reproduced only one layout of 45, at P_ref, end to end (L1 and the level-1 reference). Every other row is checked for internal consistency and recomputation only."
+  ]
+}

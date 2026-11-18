@@ -38,6 +38,15 @@ description: 'Diagnose E007''s per-stratum A4 misses before E007 freezes (O002; 
   change the conclusion. The extra rows go to research/o002_e007/dev_rows_a4_strata.json (meta.smoke false);
   do not overwrite E007.dev_rows.json.
 
+
+
+  Review T0459 of T0398 (founder session, 2026-11-18): (1) The F3 coverage that T0398''s definition of
+  done asserts is taken at m = 3, where the V4 upper bounds for A1 and A4 are mostly +inf, so it is 1.0
+  by construction. In your corrected simulation, report coverage at the registered m values (20, 24, 32,
+  40) and treat that, not the m = 3 figure, as the registration evidence. (2) Of the three A4 nulls, stratum_mean
+  is A4''s own denominator (exactly 1) and die_position is about 1 by construction; only isolated_die
+  is an informative A4 null. State this in the note, and report isolated_die''s A4 on the extra layouts.
+
   '
 context_files: []
 deliverables: []
