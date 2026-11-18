@@ -113,8 +113,8 @@ config:
   per_stratum_rule: 'fixed before the run (F3, review T0420 (3)): A2 per (family, dies) stratum (statistic: max over loads
     of the p95 of |Tj,avg,L1 - Tj,avg,ref| / die-local rise over the stratum''s dies; bound: the same V4 Woodruff bound on
     the stratum''s rows, layouts as units); A4 per die-count band 2-3 and 4-6 (statistic: A4''s ratio on the band''s switch
-    rows at P_ref; bound: V4 ratio bound). Reported, not gated. With 20 layouts per stratum the per-stratum A2 upper bound
-    is expected to sit at the stratum maximum or at +inf (q + t(19) se of the share near 1; review T0436): reports.json gives
+    rows at P_ref; bound: V4 ratio bound). Reported, not gated. With 32 layouts per stratum the per-stratum A2 upper bound
+    is expected to sit at the stratum maximum or at +inf (q + t(31) se of the share near 1; review T0436; t(19) at the former m = 20): reports.json gives
     each stratum''s point, bound, maximum and an upper_informative flag, and the counts of infinite and informative upper
     bounds; a per-stratum bound is never read as precise'
   seeds:
@@ -202,7 +202,7 @@ config:
       '5.5': 0.98402
     calibration_version: o002-l1-cal-v2
     picard_tol_K: 0.01
-    timing: A5 = median wall time of L1.evaluate per (layout, load) over the 600 judged evaluations, in one subprocess with
+    timing: A5 = median wall time of L1.evaluate per (layout, load) over the 960 judged evaluations (32 x 15 strata x 2 loads), in one subprocess with
       OMP/OPENBLAS/MKL/VECLIB/NUMEXPR thread variables = 1, after every P_ref calibration solve (level 0, development layouts)
       has finished and before any judged reference solve, with no solve running, in the sealed timing order, after one uncounted
       warm-up evaluation on a P_ref development layout. Every other L1 evaluation of the run (F4 constant-k ablation, F7 pools,
@@ -310,7 +310,7 @@ config:
       meta.reference_cpu_wall (T0398''s 90 level-1 solves): max 4.32 kB/DOF with base RSS (0.3 GB) excluded, 4.98 kB/DOF with
       it included (both side_by_side_2_j02 half_P_ref, 2.27 GB at 0.455 M DOF); T0456''s 36 level-1 solves 4.33 / 4.99 kB/DOF.
       The earlier source text''s 4.29 kB/DOF was neither of these. On all 126 measured level-1 solves the admission estimate
-      is 1.15 to 1.82 x the measured peak RSS (never below it). Previously T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
+      is 1.15 to 2.24 x the measured peak RSS (never below it; 1.82 is the maximum over T0398''s 90 solves, 2.24 over T0456''s 36; review T0465). Previously T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
       levels 0 and 2 E009 fem_bytes_per_dof (conservative at level 0). CPU s/DOF: levels 0-1 the slowest cached frozen-rule
       solves in research/o002_l1/cache (0.12 and 0.19 ms/DOF, wall = CPU assumed, one effective thread); level 2 T0243''s
       burst rate 585 us/DOF (research/notes/o002-f1-dev-check.md); T0398 measures cpu_s and wall_s of one level-2 solve. VM
@@ -437,7 +437,7 @@ metrics:
     bound V4 ratio (Bonferroni)
   unit: ''
 - name: l1_eval_s_p50
-  description: A5. median wall time per L1 evaluation on one thread over the 600 judged evaluations (config.l1.timing); point,
+  description: A5. median wall time per L1 evaluation on one thread over the 960 judged evaluations (config.l1.timing); point,
     with a distribution-free 95 % order-statistic interval, computed and recorded at level 0.95 (runner A5_CI_LEVEL; reviews
     T0449/T0450 (1)); timed on the host fixed in config.l1.timing
   unit: s
