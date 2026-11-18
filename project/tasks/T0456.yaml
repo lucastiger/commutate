@@ -4,7 +4,7 @@ title: 'E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra develo
   corrected power simulation'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0398
 description: 'Diagnose E007''s per-stratum A4 misses before E007 freezes (O002; founder decision 2026-11-17,
@@ -84,8 +84,8 @@ runs:
 - T0456-scientist-20261117T162335-b347
 created_by: session
 created_at: '2026-11-17T20:58:50+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0252
 target: null
 lens: null
 trigger: null
@@ -344,3 +344,7 @@ history:
     experiment_drafts:
     - experiments/drafts/E007.yaml
     affects_acceptance_criteria: false
+- outcome: merge_approved
+  summary: I0252
+  replan: false
+  at: '2026-11-18T02:54:03+00:00'
