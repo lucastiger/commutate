@@ -4,7 +4,7 @@ title: 'E007 pre-registration finalisation: m = 32 per stratum (480 layouts), po
   from T0456, plan and cost, level-2 timing job'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0456
 description: 'E007 pre-registration finalisation (O002), after T0456 merges. Founder decisions 2026-11-18
@@ -105,4 +105,129 @@ target: null
 lens: null
 trigger: null
 rationale: founder decision 2026-11-18 in the founder session
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'E007''s pre-registration is finalised at m = 32 layouts per (family, dies) stratum, 480 layouts
+    in all (D0027 decision 2, which amends D0025 decision 2). The regenerated cost plan comes to 74.1
+    CPU-hours expected and 78.9 upper (every die 5.5 mm), counted as process CPU time. Both are within
+    O002''s 100 CPU-hours, so there was no reason to stop. The plan and the margin to 100 both depend
+    on a level-2 rate that has never been measured on this code; the founder''s level-2 burst below measures
+    it.
+
+
+    What was done:
+
+    1. **Allocation.** A new file, research/o002_e007/allocation_m32.json, sets 32 layouts in each of
+    the 15 strata, the unchanged V4 bound, and the T0456 evidence with its sha256. T0396''s f3_simulation.json
+    and its disclosure are kept unchanged as history. E007.yaml''s config.allocation now'
+  report:
+    summary: "E007's pre-registration is finalised at m = 32 layouts per (family, dies) stratum, 480 layouts\
+      \ in all (D0027 decision 2, which amends D0025 decision 2). The regenerated cost plan comes to 74.1\
+      \ CPU-hours expected and 78.9 upper (every die 5.5 mm), counted as process CPU time. Both are within\
+      \ O002's 100 CPU-hours, so there was no reason to stop. The plan and the margin to 100 both depend\
+      \ on a level-2 rate that has never been measured on this code; the founder's level-2 burst below\
+      \ measures it.\n\nWhat was done:\n1. **Allocation.** A new file, research/o002_e007/allocation_m32.json,\
+      \ sets 32 layouts in each of the 15 strata, the unchanged V4 bound, and the T0456 evidence with\
+      \ its sha256. T0396's f3_simulation.json and its disclosure are kept unchanged as history. E007.yaml's\
+      \ config.allocation now points to the new file. The runner's freeze check confirms the file hash,\
+      \ the per-stratum counts and the bound. The selftest drew exactly 32 layouts in each stratum from\
+      \ the seed (j00 to j31), and its allocation_fixed check passed.\n2. **Power and coverage evidence\
+      \ at m = 32.** This is T0456's a4_strata/sim_corrected.json (1000 repetitions per cell; its consistency\
+      \ check passed, simulated median A4 0.108 / 0.107 against 0.107 measured). Ranges in brackets are\
+      \ Wilson 95 % Monte Carlo intervals:\n   - Joint power and A4 power are 1.000 [0.996, 1] under both\
+      \ normal and t3 errors.\n   - Minimum V4 coverage is 0.974 [0.962, 0.982] (normal) and 0.981 [0.971,\
+      \ 0.988] (t3). It is at least 0.971 in every simulated cell from m = 20 to 40.\n   - At 1.2 x each\
+      \ kill threshold: K1 fires with probability 0.812 [0.787, 0.835] (normal) and 0.581 [0.550, 0.611]\
+      \ (t3). K2 fires with probability 1.0. K3 fires with probability 0.576 [0.545, 0.606] (normal) and\
+      \ 0.354 [0.325, 0.384] (t3).\n   - These intervals cover Monte Carlo error only. The simulation\
+      \ over-predicts A3 by 30-40 %, so the kill-side rates are approximate.\n3. **Cost plan.** 1077 reference\
+      \ solves and 2413 L1 evaluations. The level-2 subset solves are 26.2 CPU-h (29.8 upper) of the total,\
+      \ priced at T0243's rate, which has not been measured on this code. The total stays within 100 CPU-h\
+      \ unless level 2 turns out more than 1.99 x slower (1.71 x in the upper case). The VM cost is $16.92\
+      \ packed (option A; $19.15 upper) or $15.43 if what fits locally runs here first (option B). I raised\
+      \ cpu_hours_est from 57.0 to 74.1. m = 32 adds 17.4 CPU-h over m = 20, not D0027's \"about 14\"\
+      : the plan uses the spec's conservative level-1 rate of 0.195 ms/DOF, while the measured median\
+      \ is 0.136.\n4. **Level-2 burst.** This is a founder burst, needed before registration. It runs\
+      \ two solves one at a time: job.json (side_by_side_2_j00, about 3.48 M DOF and 20.2 GB) and a new\
+      \ job_interleaved_2_j01.json (about 4.19 M DOF and 24.2 GB). I picked interleaved_2_j01 by a fixed\
+      \ rule before any level-2 result exists: it is the interleaved/2 development layout whose reference\
+      \ spread moved most from level 0 to level 1 (-0.078 / -0.084 K).\n5. **Seed 20261456** was already\
+      \ in seeds.forbidden. The design note now has a §9 for this finalisation and cites D0025 and D0027.\n\
+      \nFixes from review T0463:\n- **(1)** In e007-a4-strata.md, the normal-error 'A4 alone' row showed\
+      \ A4 coverage. It now shows A4 power, which is 1.000 at every m under both error models.\n- **(2)**\
+      \ The note now says isolated_die's A4 is near 1 only in interleaved/2 (1.06 / 1.08). In side_by_side/2\
+      \ it is about 2 (1.99 / 2.07).\n- **(3)** bytes_per_dof = 4400 excludes base RSS. The runner's memory\
+      \ admission (Jobs.est_gb) and --plan both add base_rss_GB (0.3 GB) separately, so they apply that\
+      \ same convention.\n  - Recomputed maxima: 4.32 kB/DOF excluding base RSS and 4.98 including it\
+      \ over T0398's 90 level-1 solves; 4.33 / 4.99 over T0456's 36.\n  - On all 126 solves the admission\
+      \ estimate is 1.15 to 1.82 x the measured peak memory, never below it.\n  - The old '4.29' matched\
+      \ neither convention.\n- **(4)** The 36 level-1 solve keys in dev_rows_a4_strata.json are renamed\
+      \ to the *_t456jNN names, none of which now collides with T0398's keys. new_solves is now 36 (4149\
+      \ CPU-s). The three calibration entries are T0398's records, reused unchanged.\n- **(5)** The interleaved/2\
+      \ level-2 solve is now in the burst list (item 4).\n\nCommands run, with exit codes:\n- `uv run\
+      \ python -c` (definition-of-done allocation assert): 0\n- `uv run python experiments/runners/e007_run.py\
+      \ --selftest`: 0 (71 checks ok, 0 failures, 1046 fake reference jobs at m = 32)\n- `uv run python\
+      \ experiments/runners/e007_run.py --verify-freeze`: 0 (28 OK)\n- `uv run python experiments/runners/e007_run.py\
+      \ --plan`: 0 (also with --plan-out research/o002_e007/t0464/plan_m32.json: 0)\n- `uv run mfos exp\
+      \ check E007`: 0\n- `uv run mfos gate --fast`: 0 ('all gates passed')\n- `uv run ruff check research/o002_e007/t0464\
+      \ experiments/runners/e007_run.py`: 1, then 0 after fixing two semicolon errors\n- One earlier --plan\
+      \ run wrapped in /usr/bin/time exited 1 because the sandbox blocked /usr/bin/time; the plan itself\
+      \ completed.\n\nEverything is committed in e67e0287 on the task branch."
+    status: completed
+    failure_class: none
+    confidence: 0.85
+    affects_acceptance_criteria: false
+    evidence:
+    - allocation_m32.json sha256 6b3ac737...; regenerating it reproduces the same hash; --verify-freeze
+      OK allocation_file_sha256 and allocation_matches_f3 (32 per stratum, bound woodruff/0.94/layout)
+    - 'selftest log: exactly 32 judged layouts in each of 15 strata (j00-j31); ''ok run at m = 32 solved
+      1046 reference jobs''; ''selftest: 0 failure(s)'''
+    - 'sim_corrected.json cells power|*|32 and kill|*|32 (reps 1000): joint 1.0/1.0, A4 power 1.0/1.0,
+      min coverage 0.974/0.981, P(K1) 0.812/0.581, P(K2) 1.0/1.0, P(K3) 0.576/0.354 (normal/t3); minimum
+      coverage over all cells 0.971'
+    - 'plan_m32.json: expected 74.1 CPU-h (judged 46.0, level-2 subset 26.2, F7 1.1, calibration 0.2,
+      level-0 subset 0.1, L1 0.4), upper 78.9; option A packed $16.92 / one at a time $45.63; option B
+      $15.43'
+    - 'E007.dev_rows.json reference_cpu_wall (90 level-1 solves): max 4983 bytes/DOF including base RSS,
+      4324 excluding (side_by_side_2_j02 half_P_ref); runner admission estimate / measured peak 1.148-1.821'
+    - 'sim_corrected.json power cells: A4 coverage is 1.0/1.0/0.999/0.997 at m = 20/24/32/40 (normal),
+      the values the note''s ''A4 alone'' column had shown; power_each.A4 is 1.0 at every m'
+    - 'diag_solves.json ref_levels: interleaved_2_j00/j01/j02 level 0 -> 1 spread change -0.068/-0.073,
+      -0.078/-0.084, -0.044/-0.047 K (HS/LS)'
+    recommended_actions:
+    - 'Founder: run the level-2 burst before registration: scripts/burst_gcp.sh --cmd "bash research/o002_e007/l2_timing/run_l2_jobs.sh"
+      research/o002_e007/l2_timing n2d-custom-8-81920-ext (two solves one at a time, about 20 and 24 GB
+      each, about 34 + 41 CPU-min at the assumed rate; records: record.json and record_interleaved_2_j01.json)'
+    - 'After the burst: re-run --plan with the measured level-2 cpu_s/DOF. If level 2 is more than 1.71
+      x the assumed 585 us/DOF, the upper case exceeds O002''s 100 CPU-h and the founder must decide before
+      registration'
+    - 'After the burst: compare interleaved_2_j01''s level-2 spread with its level-0 and level-1 records
+      (job.compare_to). If the level-1 spread is more than F1''s 0.1 K from level 2, or level 2 explains
+      most of L1''s -0.019 to -0.055 K interleaved/2 spread error, flag it before freezing (a reference-convergence
+      finding, not an L1 change)'
+    - 'Registration record: cite allocation_m32.json and sim_corrected.json as the m = 32 power and coverage
+      evidence, and disclose that the kill-side rates are approximate (A3 over-predicted by 30-40 %) and
+      that under t3 errors an L1 at 1.2 x K1''s threshold still ends INCONCLUSIVE with probability about
+      0.42'
+    files_written:
+    - experiments/drafts/E007.yaml
+    - experiments/runners/e007_run.py
+    - research/notes/e007-design.md
+    - research/notes/e007-a4-strata.md
+    - research/o002_e007/dev_rows_a4_strata.json
+    - research/o002_e007/allocation_m32.json
+    - research/o002_e007/l2_timing/job_interleaved_2_j01.json
+    - research/o002_e007/l2_timing/run_l2_jobs.sh
+    - research/o002_e007/t0464/make_allocation_m32.py
+    - research/o002_e007/t0464/fix_a4_strata_meta.py
+    - research/o002_e007/t0464/make_l2_job.py
+    - research/o002_e007/t0464/plan_m32.json
+    - research/o002_e007/t0464/plan_m32.txt
+    experiment_drafts:
+    - experiments/drafts/E007.yaml
+    discriminating_tests:
+    - 'Level-2 burst: measured cpu_s/DOF against 585 us/DOF decides whether the 100 CPU-h budget holds
+      (thresholds 1.99 x expected, 1.71 x upper)'
+    - 'Level-2 burst: interleaved_2_j01''s spread at levels 0, 1 and 2 decides whether the interleaved/2
+      reference is converged at the 0.02-0.05 K scale of L1''s errors'
