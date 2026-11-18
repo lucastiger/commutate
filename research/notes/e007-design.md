@@ -197,6 +197,19 @@ Two solves, one at a time, by `research/o002_e007/l2_timing/run_l2_jobs.sh`:
 
 Command (founder): `scripts/burst_gcp.sh --cmd "bash research/o002_e007/l2_timing/run_l2_jobs.sh" research/o002_e007/l2_timing n2d-custom-8-81920-ext`
 
+**Result (founder burst, 2026-11-18; `research/o002_e007/l2_timing/record*.json`).**
+- [F] side_by_side_2_j00: 3.48 M DOF, 2384 CPU-s, 929 s wall (cpu/wall 2.57), 10.9 GB peak, 685 us/DOF.
+- [F] interleaved_2_j01: 4.19 M DOF, 3423 CPU-s, 1358 s wall (2.52), 13.4 GB peak, 817 us/DOF. Energy balance at most 1.7e-12.
+- [F] Level 2 is 1.17-1.40 x the assumed 585 us/DOF. `cpu_s_per_dof['2']` is set to the slower 818 us/DOF; the
+  regenerated plan is 84.5 CPU-h expected and 90.7 upper (within 100), option A packed $22.06 (upper $25.14).
+- [F] interleaved_2_j01 at P_ref, spread (HS / LS): level 0 0.349 / 0.353 K, level 1 0.271 / 0.269 K, level 2
+  0.243 / 0.238 K; L1 0.231 / 0.221 K. L1's error is -0.040 / -0.048 K against level 1 and -0.012 / -0.017 K against
+  level 2. Die-average L1 minus reference: HS +0.05 / +0.09 K and LS +0.33 / +0.37 K against level 1; HS -0.06 / -0.04 K
+  and LS +0.19 / +0.21 K against level 2.
+- [I] About 70 % of L1's apparent interleaved/2 spread error, and about 40 % of its low-side bias, is level-1 reference
+  discretisation on this layout. Judging at level 1 (F1, confirmed by I0212) is therefore conservative for A4 and A2 here.
+  The level-1-to-level-2 spread change (0.03 K) is within F1's 0.1 K.
+
 ### 9.5 Memory admission convention (review T0463 (3))
 - [F] `bytes_per_dof` excludes base RSS: the runner's admission (`Jobs.est_gb`) and `--plan` both estimate
   DOF x bytes_per_dof x memory_margin (1.15) + base_rss_GB (0.3 GB). Recomputed from `E007.dev_rows.json` (T0398's 90
