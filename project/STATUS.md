@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-18T02:29:40+00:00 from repository state — do not edit_
+_generated 2026-11-18T02:32:53+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0251** [experiment_registration] register E011 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -40,7 +39,6 @@ cancelled: 47, done: 405, failed: 4, review: 1, running: 2, todo: 4
 - T0463 `running` critic/review: Review T0456 (general) (attempt 1)
 
 ## Recent events
-- 2026-11-18T00:52:39+00:00 task_failed_attempt {"task": "T0457", "signal": "agent_error", "action": "repair"}
 - 2026-11-18T00:53:01+00:00 run_started {"run": "T0460-critic-20261117T165301-7328", "task": "T0460", "role": "critic", "session": "46ff50b6-29ff-4d13-b5c8-e23afccf26be"}
 - 2026-11-18T00:53:05+00:00 run_started {"run": "T0461-critic-20261117T165305-7d2e", "task": "T0461", "role": "critic", "session": "80ce883a-18c0-4a10-8933-217f769259c3"}
 - 2026-11-18T01:08:24+00:00 run_finished {"run": "T0461-critic-20261117T165305-7d2e", "status": "completed", "cost": 2.672621, "subtype": "success", "report": "structured_output"}
@@ -55,3 +53,4 @@ cancelled: 47, done: 405, failed: 4, review: 1, running: 2, todo: 4
 - 2026-11-18T02:29:27+00:00 merged {"task": "T0382"}
 - 2026-11-18T02:29:29+00:00 inbox_opened {"id": "I0251", "kind": "experiment_registration", "subject": "register E011 (pre-registration)"}
 - 2026-11-18T02:29:40+00:00 run_started {"run": "T0463-critic-20261117T182940-d3e0", "task": "T0463", "role": "critic", "session": "9e7dcb8d-48d0-4f14-af53-c3281206fcdb"}
+- 2026-11-18T02:32:48+00:00 inbox_resolved {"id": "I0251", "status": "rejected", "note": "Premature: E011 needs its development burst (I0205), the development L2 analysis, and founder decisions on the se
