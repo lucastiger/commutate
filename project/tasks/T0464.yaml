@@ -36,6 +36,29 @@ description: 'E007 pre-registration finalisation (O002), after T0456 merges. Fou
   5. Add T0456''s development seed 20261456 to seeds.forbidden if it is not there. Update research/notes/e007-design.md,
   and cite D0025 and D0027.
 
+
+
+  Review T0463 of T0456 (founder session, 2026-11-18), fix with the finalisation:
+
+  (1) In research/notes/e007-a4-strata.md, the normal-error ''A4 alone'' row shows A4 coverage (0.999,
+  0.997), not A4 power, which is 1.0 at every m. Correct it.
+
+  (2) The note says isolated_die''s A4 is near 1 in both 2-die strata. That holds for interleaved/2 only
+  (1.06 / 1.08); side_by_side/2 is 1.99 / 2.07. Correct it.
+
+  (3) The spec''s memory source text says 4.29 kB/DOF. Recomputed from E007.dev_rows.json, the maximum
+  is 4.98 kB/DOF with base RSS included and 4.32 kB/DOF with it excluded. State which convention bytes_per_dof
+  = 4400 uses, and check that the runner''s memory admission applies that same convention.
+
+  (4) dev_rows_a4_strata.json''s meta.reference_cpu_wall uses pre-rename layout names that collide with
+  T0398''s keys, and reports new_solves = 0. Rename the keys to the *_t456jNN names and record the 36
+  solves.
+
+  (5) In the 2-die strata the reference is not converged at the scale of L1''s errors: interleaved/2''s
+  reference spread moves by 0.044-0.084 K from level 0 to level 1, while L1''s spread errors are 0.019-0.055
+  K. Add one interleaved/2 development layout''s level-2 reference solve to the level-2 burst job list
+  (item 4), so the founder''s burst also checks this.
+
   '
 context_files: []
 deliverables: []

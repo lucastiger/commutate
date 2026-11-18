@@ -1,0 +1,66 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Power table's 'A4 alone' column under normal errors shows A4 coverage, not A4 power",
+      "detail": "In section 3 of research/notes/e007-a4-strata.md, the normal-error row gives 'A4 alone' as 1.000 / 1.000 / 0.999 / 0.997 at m = 20/24/32/40. In sim_corrected.json, power_each['A4'] is 1.0 at every m. The figures 0.999 and 0.997 are coverage['A4'] at m = 32 and 40. The row is also inconsistent with itself: joint power, given as 1.000, cannot exceed the power of any single criterion. The conclusion (A4 power is about 1) does not change.",
+      "evidence": "sim_corrected.json, cells 'power|normal|32' and 'power|normal|40': power_each.A4 = 1.0; coverage.A4 = 0.999 and 0.997; power_joint = 1.0.",
+      "suggested_check": "Regenerate the table from cells.*.power_each.A4.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Note says isolated_die's A4 is near 1 in both 2-die strata, but its own table gives about 2 for side_by_side/2",
+      "detail": "The note says 'In both 2-die strata, isolated_die's A4 is near 1'. Its own table, and meta.new_6 / combined_9, give side_by_side/2 at 1.99 (new 6) and 2.07 (all 9). The statement holds only for interleaved/2 (1.06 and 1.08).",
+      "evidence": "The note's table; dev_rows_a4_strata.json meta.combined_9['side_by_side/2'].isolated_die_A4_P_ref.",
+      "suggested_check": "Restrict the sentence to interleaved/2.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "The memory source text in the spec misstates the peak bytes per DOF",
+      "detail": "The new config.compute.sources text says T0398's 90 level-1 solves 'peaked at 4.29 kB/DOF (u_shaped_6_j01 P_ref, 5.44 GB at 1.268 M DOF, peak RSS over DOF, base RSS included)'. I recomputed from experiments/drafts/E007.dev_rows.json meta.reference_cpu_wall. With base RSS included, the maximum is 4.98 kB/DOF (side_by_side_2_j02 half_P_ref: 2.268 GB at 455 k DOF). With base RSS excluded it is 4.32 kB/DOF. 4.29 kB/DOF is only the ratio of the largest solve. The chosen 4400 is still adequate: with 4400 every peak is at most 0.871 of the admission estimate, and with 3400 the estimate was exceeded by up to 1.091. The note's \u00a74 figures (4.33 kB, 0.87, 9 %) are correct. The cited provenance in a spec that will become immutable is not.",
+      "evidence": "Recomputed: T0398 max (pk-0.3 GB)/DOF = 4324 B; T0456 max = 4326 B; max pk/DOF = 4983 B; ratio to estimate 1.091 at 3400 and 0.871 at 4400.",
+      "suggested_check": "Reword the source to '(peak - 0.3 GB)/DOF at most 4.33 kB (side_by_side_2_j02)' before registration.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The rows file's metadata uses pre-rename layout names and reports new_solves = 0",
+      "detail": "In dev_rows_a4_strata.json, meta.reference_cpu_wall has 36 level-1 records named interleaved_2_j00\u2026u_shaped_6_j05. These are pipeline-internal names, not the *_t456jNN names the rows use, so they collide with T0398's u_shaped_6_j00\u2013j02 and related keys. meta.new_solves = 0, although the note says 36 solves were run, apparently because the final pass was assembled from checkpoints. Anyone who joins the two files' solve records by key will mix up layouts.",
+      "evidence": "git grep on the __L1 keys; meta.new_solves == 0; the side_by_side_2_j02 keys differ in DOF between the files (455187 vs 455771).",
+      "suggested_check": "Rename the record keys to the t456 names, or record a mapping.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "In the 2-die strata the reference is not converged at the scale of the L1 errors",
+      "detail": "From diag_solves.json, the reference spread in interleaved/2 changes by -0.044 to -0.084 K from level 0 to level 1. L1's spread errors are -0.019 to -0.055 K. So interleaved/2's A4 numerator (and its 0.286, close to the 0.3 line) is partly reference error. The note acknowledges this and leaves it unchecked, since level 2 does not fit locally. This limits how firmly 'interleaved/2 is below 0.3' can be read.",
+      "evidence": "diag_solves.json ref_levels: interleaved_2_j00/j01/j02 dS_L0_to_L1 from -0.044 to -0.084 K.",
+      "suggested_check": "Run one level-2 interleaved/2 solve on a burst VM before relying on this stratum's A4.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. The dev_rows assertion passes (348 rows, 3 strata, smoke False). `e007_run.py --selftest` reports 0 failures. `mfos exp check E007` exits cleanly. `ruff check` passes on the new scripts.",
+    "Recomputed per-stratum A4 (np.quantile 0.95 of |err_l1| over the stratum-mean null) from diag_combined9.json. All 9 layouts: 0.0960, 0.2855 and 0.2235 at P_ref; 0.1043, 0.2798 and 0.2211 at half P_ref. These match the note.",
+    "Recomputed the leave-one-layout-out stratum-mean null independently from the reference spreads (same switch). Maximum difference from the stored spread_null is 0. Checked err_l1 = spread_l1 - spread_ref exactly.",
+    "Recomputed the new-6-only A4 from the raw die rows in dev_rows_a4_strata.json with my own leave-one-layout-out null: 0.2716, 0.2432 and 0.0919. These match the note's 0.272, 0.243 and 0.092.",
+    "Reproduced T0398's 3-layout per-stratum A4 from the T0398 subset: 0.951, 0.352 and 0.340. Reproduced the spread sd 0.089 K and CV 0.9 % (3 layouts) and CV 4.25 % (9 layouts) for u_shaped/6.",
+    "Checked the u_shaped/6 calibration arithmetic by hand. (c-1)*ref + c*raw_err = -0.016*10.1 + 0.984*0.07 \u2248 -0.09 K, and with refined grids \u2248 -0.12 K. Richardson check: dS from level 0 to level 1 is 0.012-0.019 K, giving \u0394/3 \u2248 0.004-0.006 K at p = 2.",
+    "Read the level-0 to level-1 reference changes for all 12 layouts in diag_solves.json. They match the note's u_shaped/6, u_shaped/2 and interleaved/2 figures.",
+    "Recomputed bytes per DOF over the 90 + 36 level-1 records. Base-excluded maximum is 4.33 kB. Peak over the admission estimate is 1.091 at 3400 and 0.871 at 4400. This found that the spec's '4.29 kB peak, base included' text is wrong.",
+    "Checked CPU-h (1.153) and peak RSS (4.75 GB) of the 36 new solves. Checked die sizes identical across T0398 and the new rows (4.5, 4.0 and 5.5 mm). Checked pref_equal_to_T0398 is True. Listed the checks: only allocation_fixed fails.",
+    "Checked the 18 fingerprints are distinct and that none appears elsewhere under experiments/, research/ or project/ (git grep).",
+    "Read sim_corrected.py: generative model, fit and consistency gate. Checked sim_corrected.json against the note: consistency medians, per-stratum m = 9 ranges, joint power, minimum coverage (0.971, A1 under t3 at m = 20), kill-side rates and scale factors. This found the mislabelled A4-alone column.",
+    "Checked the Monte Carlo SE claims: sqrt(.95*.05/1000) = 0.0069 and sqrt(.25/1000) = 0.0158."
+  ],
+  "caveats": [
+    "The diagnosis that u_shaped/6's 0.951 is a small-denominator artefact is well supported by the 9-layout data. It still rests on development rows only. Every per-stratum A4 upper bound is unbounded at 6 or 9 layouts, so 'all three strata are at or below 0.3' holds on point values only.",
+    "interleaved/2 at 0.286 sits 0.014 below the D0025 line. Its numerator is partly reference discretization error: level-0 to level-1 changes are of the same size as L1's error, and level 2 is unchecked.",
+    "The power simulation reproduces only the pooled A4 at T0398's structure. It over-predicts A3 by 30-40 % and misses two of the three per-stratum A4s, so kill-side rates (K1 and K3 power at m = 20) depend on the model. The note states these limits.",
+    "I did not rerun any thermal solves or the 1000-rep simulation. Solver outputs, solve-time memory and the claim that swap was checked by hand are taken from the committed artefacts.",
+    "The sandbox denied several of my scratch scripts without explanation. Equivalent shorter scripts ran, so no check was skipped for that reason."
+  ]
+}
