@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-18T04:44:51+00:00 from repository state — do not edit_
+_generated 2026-11-18T04:52:36+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -39,7 +39,6 @@ cancelled: 47, done: 409, failed: 4, needs_founder: 1, running: 1, todo: 3
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
 
 ## Recent events
-- 2026-11-18T02:54:24+00:00 merged {"task": "T0456"}
 - 2026-11-18T02:54:26+00:00 registration_deferred {"task": "T0456", "experiment": "E007", "reason": "design task T0464 of E007 is still todo"}
 - 2026-11-18T02:54:36+00:00 run_started {"run": "T0464-scientist-20261117T185436-0c97", "task": "T0464", "role": "scientist", "session": "e8a9a16f-8452-401c-8c0e-11fb73c6bc2b"}
 - 2026-11-18T03:24:26+00:00 run_finished {"run": "T0464-scientist-20261117T185436-0c97", "status": "completed", "cost": 2.515331, "subtype": "success", "report": "structured_output"}
@@ -54,3 +53,4 @@ cancelled: 47, done: 409, failed: 4, needs_founder: 1, running: 1, todo: 3
 - 2026-11-18T04:44:19+00:00 inbox_resolved {"id": "I0254", "status": "approved", "note": "Register E007: design complete (T0397, T0398, T0456, T0464), m = 32 per D0027, Woodruff 97 % bounds per D0025, le
 - 2026-11-18T04:44:51+00:00 inbox_opened {"id": "I0255", "kind": "decision", "subject": "E007 needs burst compute (~84.5 CPU-h)"}
 - 2026-11-18T04:44:51+00:00 burst_requested {"task": "T0399", "experiment": "E007", "cpu_hours": 84.5}
+- 2026-11-18T04:52:35+00:00 experiment_minted {"id": "E007", "run": "E007-20261117T205235-8a84"}
