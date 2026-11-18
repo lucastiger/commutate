@@ -4,7 +4,7 @@ title: 'E004 design part 2b: banded acceptance and its simulation, redraw record
   solve-stage review fixes, local FastHenry probe'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on:
 - T0389
 description: "Finish E004 design part 2 (O004). It runs after T0389 has merged; read T0389's report and\
@@ -108,8 +108,8 @@ runs:
 - T0457-scientist-20261117T171959-9768
 created_by: session
 created_at: '2026-11-17T21:00:49+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0256
 target: null
 lens: null
 trigger: null
@@ -281,3 +281,7 @@ history:
     experiment_drafts:
     - experiments/drafts/E004.yaml
     root_cause: ''
+- outcome: merge_approved
+  summary: I0256
+  replan: false
+  at: '2026-11-18T06:28:09+00:00'
