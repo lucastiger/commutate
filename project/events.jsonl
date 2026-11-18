@@ -2932,3 +2932,6 @@
 {"ts": "2026-11-18T02:36:32+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0463-critic-20261117T182940-d3e0", "status": "completed", "cost": 1.828217, "subtype": "success", "report": "structured_output"}
 {"ts": "2026-11-18T02:44:01+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0252", "kind": "protected_change", "subject": "T0456: merge needs founder approval"}
 {"ts": "2026-11-18T02:54:03+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0252", "status": "approved", "note": "T0456 merge approved, review T0463 accepts with caveats, routed to T0464. On 9 layouts all three strata meet A4 at or below 0.3; corrected power simulation passes its consistency check. Founder decisions recorded: per-stratum check passed, m = 32. Per D0025 and D0027.", "by": "human"}
+{"ts": "2026-11-18T02:54:24+00:00", "event": "merged", "actor": "orchestrator", "task": "T0456"}
+{"ts": "2026-11-18T02:54:26+00:00", "event": "registration_deferred", "actor": "orchestrator", "task": "T0456", "experiment": "E007", "reason": "design task T0464 of E007 is still todo"}
+{"ts": "2026-11-18T02:54:36+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0464-scientist-20261117T185436-0c97", "task": "T0464", "role": "scientist", "session": "e8a9a16f-8452-401c-8c0e-11fb73c6bc2b"}
