@@ -341,6 +341,16 @@ config:
       $15.43 (upper 28.8 h, $17.62). Margin to 100 CPU-h: the 24 level-2 subset solves use T0243''s 585 us/DOF, not yet
       measured on this code; the total stays within 100 unless level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower,
       which the level-2 timing burst (research/o002_e007/l2_timing/, two jobs) checks before registration'
+    level2_measured: 'founder level-2 burst 2026-11-18 (research/o002_e007/l2_timing/record*.json, frozen runner,
+      n2d-custom-8-81920): side_by_side_2_j00 3.48 M DOF, 2384 CPU-s, 929 s wall, 10.9 GB peak (685 us/DOF);
+      interleaved_2_j01 4.19 M DOF, 3423 CPU-s, 1358 s wall, 13.4 GB peak (817 us/DOF), energy balance <= 1.7e-12.
+      cpu_s_per_dof level 2 set to the slower 818 us/DOF (1.40 x the 585 assumed). Regenerated --plan at m = 32:
+      84.5 CPU-h expected, 90.7 upper, process CPU time, within O002''s 100; option A packed 36.1 VM-h, $22.06
+      (upper 41.1 h, $25.14); option B 33.6 VM-h, $20.57; one at a time 85.0 VM-h, $52.02. Supersedes
+      plan_summary_m32''s figures. Reference convergence on interleaved_2_j01 (review T0463 (5)): the level-1
+      reference spread is 0.271 / 0.269 K (HS / LS) against 0.243 / 0.238 K at level 2, within F1''s 0.1 K; L1''s
+      spread error is -0.040 / -0.048 K against level 1 but -0.012 / -0.017 K against level 2, so about 70 % of it
+      on this layout is level-1 reference discretisation, which makes level-1 judging of A4 conservative'
   scope_limits:
   - 'F6: the hottest-node discretisation estimate (levels 0-2, step-floor rule) exists only on the 12-layout level-2 subset;
     every other die reports its level-1 hottest node without an error estimate (reviews T0435 (7), T0449/T0450 (6))'
@@ -631,7 +641,7 @@ sanity_checks:
 - name: recompute_consistency
   description: every recompute entry, recomputed by mfos.metrics.compute on the rows, equals the runner's value
 timeout_min: 4320
-cpu_hours_est: 74.1
+cpu_hours_est: 84.5
 code_under_test:
 - src/moduleforge/thermal/*.py
 - src/moduleforge/generate/halfbridge.py
