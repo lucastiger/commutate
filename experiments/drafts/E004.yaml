@@ -7,18 +7,18 @@ status: draft
 runner: uv run python experiments/runners/e004_run.py
 config:
   design_status: >-
-    DRAFT, NOT REGISTRABLE YET (T0389, 2026-11-17). Done in T0389: the solve stage (l2_layout and FastHenry ladders,
-    estimators, F1, A1/A2/K1/K2, the INVALID rule, coverage, zero-failure bounds, F8), its smoke, the F7(a) FastHenry job
-    list (research/o004_f7/vm_jobs_fasthenry.json) and the refreeze at 3f60b2f4 (after T0451; perturb.rules_sha256 =
-    2dbd9977..., the value T0451 reported). Open before registration: (i) the founder's banded-acceptance rule
-    (2026-11-17T15:58 UTC) in the registration stage, its 200-seed development simulation, and T0451's redraw record
-    (every redraw with exception type and message, per reference and move type; the perturbation_rules_text sentence 'never
-    redrawn around' predates LongSideError and is to be restated with it); (ii) the 2D_Case_2R proxy pair (proxy_descent now
-    has step_mm; wiring and T0444's check that every visited layout and the end point are on the 1 mm lattice);
-    (iii) F7(a) results (founder burst): they fix nh_lateral (provisional 5) and the thin-stack gap (config.stacks);
-    (iv) the F3 per-conductor-group and F6 diagnostics are not yet in the runner (reported, not judged); (v) seed_provenance
-    against the registry's sealed seed (reviews T0440/T0441 item 3). The span's lower end stays 0.75 until the founder
-    amends O004.
+    DRAFT, NOT REGISTRABLE YET (T0457, 2026-11-17). Done in T0389: the solve stage, estimators, F1, A1/A2/K1/K2, the
+    INVALID rule, the F7(a) job list and the refreeze at 3f60b2f4 (perturb.rules_sha256 = 2dbd9977...). Done in T0457: the
+    founder's banded-acceptance rule (config.banded_acceptance) and its 200-seed development simulation
+    (research/o004_f7/band_sim_case4.json), the redraw record and restriction census (redraws_classified), the 2D_Case_2R
+    proxy pair (build_proxy; T0444 lattice check proxy_on_lattice), seed_provenance against the registry's minted
+    commitment with a replay of every draw and redraw, reference fingerprints against the registration record in the
+    solve stage, the solve-stage review fixes (T0453-T0455) and the runner's --selftest. Open before registration: (i) the
+    founder picks the span's lower end from the simulation and amends O004 (0.75 stays in the code until then); (ii) F7(a)
+    results (founder burst) fix nh_lateral (provisional 5) and the thin-stack gap; (iii) the F3 per-conductor-group and F6
+    diagnostics are not yet in the runner (reported, not judged); (iv) refreeze: the proxy context imports
+    experiments/runners/e010_run.py and reads experiments/specs/E010.yaml (their sha256 are recorded in the proxy record;
+    to be added to config.freeze at the refreeze before registration).
   decisions:
   - {id: D0024, items: '1 F1 caps relative to the ratio; 2 the 0.7616 compound stands in for "r <= 0.75"; 3 the 2R proxy
       pair at 1 mm against the reconstruction (I0207); 4 compounds (I0217) under the stagewise rule; 5 development geometry
@@ -104,8 +104,13 @@ config:
     compound component the net is canonicalised (perturb._canonical), so a later trace_width index counts the canonical
     polygon's long sides. Whole-mm rule (T0416 item 3): perturb rounds absolute coordinates to whole mm, so the
     registration stage requires every reference coordinate it rounds to be whole mm and every layout on the 1.0, 0.5 and
-    0.25 mm lattices before any solve. A draw that raises (e.g. 'edge has copper on both sides', T0387) refuses the design
-    and names the net; it is never redrawn around.
+    0.25 mm lattices before any solve. Redraws (T0451, restated by T0457): inside perturb.draw a
+    LongSideError (a net with no readable long side, e.g. 'edge has copper on both sides') and apply's ValueErrors are
+    redrawn; every such redraw is recorded with move type, reference, exception type and message (registration.json
+    redraws), the move types a reference restricts are named (restrictions), and a reference defect ('must have exactly one
+    trace in the reference', 'no HS/LS die', 'dies are not on one row') or an unclassified exception fails
+    redraws_classified, which refuses the registration. A draw that raises out of perturb.draw refuses the design and names
+    the net.
   allocation: {die_row_shift: 1, trace_width: 1, terminal_copper: 1, wire_landing: 1, compound: 2}
   allocation_rationale: >-
     Pre-registered (T0388), fixed before the development span simulation was run: the minimum single moves for per-type
@@ -127,8 +132,52 @@ config:
       so its l2_layout ratio may be known before registration (review T0363); no FastHenry solve on 2R or Case 6 is made
       before registration.
     step_mm: 1.0
-    registered_mode: refuses to run without the built pair
+    step_limit: 400
+    step_limit_meaning: >-
+      a cap, not a target: the descent stops at a local optimum (the in-domain pins of tests/unit/optimize/test_control.py
+      end after 25 and 73 steps at 0.5 mm with step_limit 400); reaching it is recorded in the pair's params.end
+    lattice_rule: >-
+      review T0444 (T0457): every visited layout (rebuilt from the trajectory, fingerprint checked) and the end point must
+      pass perturb.on_lattice at 1 mm (end point also 0.5 and 0.25 mm), sanity check proxy_on_lattice; registered mode
+      refuses otherwise (the fix is a builder change in optimize/control.py and a D0024 amendment). Reported beside it:
+      steps that are not whole multiples of step_mm (reach jumps) and the twin-start parameters off whole mm. Development
+      result (Case 4 twin, T0457): 39 states, all on the lattice; land_HS / land_LS are off whole mm from the twin start
+      (wire landing points, which on_lattice does not test), so D0024 item 3's 'on the 1 mm lattice by construction' holds
+      for the l2_layout lattice, not for every generator parameter
+    context: >-
+      E010's judged_reference(2D_Case_2R) (in smoke, F2, E010's dev_reference('case4')), then twin.twin(with_l1=False); the
+      descent's score is twin._l1
     smoke_mode: records the pair as pending, with the reason
+  banded_acceptance:
+    decision: >-
+      founder decision 2026-11-17T15:58:20 UTC (O004 state log; D0024's open item, decided in principle; implemented T0457)
+    rule: >-
+      e004_run.band_fill. After the first draw of every slot (perturb.draw with the allocation and reference_seed, as
+      before), while a band has a deficit: take the next redrawable slot in cyclic slot order (config.references order,
+      then perturb.draw's order) whose redraw count is below max_redraws_per_slot; redraw it with perturb.draw(reference,
+      {kind: 1}, redraw_seed(s, slot, pos, n)), the slot keeping its kind (every move type keeps its pair on each
+      reference, compounds stay compounds); accept the new pair only if its geometry is new on that reference and it lies
+      in a band with a deficit, else keep the old pair. A slot is redrawable iff every band its pair is in keeps its
+      minimum without it and (protect_sole_coverer) it is not the only single pair covering its move type on its
+      reference under the 6 % rule. Registration refuses (banded_acceptance_filled) when no slot can be redrawn or
+      max_redraws_total is reached with a deficit. L1 at config.l1.hmax_m is the only quantity consulted (F2); the proxy
+      pair counts toward the bands and is never redrawn. Every redraw is recorded (registration.json banded_acceptance.log:
+      slot, seed, parameters, r_L1, accepted, reason; redraws: perturb.draw's internal rejections with move type,
+      reference, class, exception type and message)
+    bands_meaning: >-
+      at least span.n_below pairs below span.below and at least n_at_or_above_upper at or above span.upper_end (both read
+      from O004's span sentence), a pair counting for a band only if it is in it at both frequencies. The lower end is not
+      a band: the l1_span check still requires min r <= span.lower_end (0.75 until the founder amends O004)
+    n_at_or_above_upper: 1
+    max_redraws_per_slot: 100
+    max_redraws_total: 600
+    protect_sole_coverer: true
+    limits_meaning: >-
+      fixed by T0457 before the development simulation was run (research/o004_f7/band_sim_case4.json reports the
+      redraws a fill needed, so the founder can set them); each redraw costs two L1 solves (seconds)
+    statistics_note: >-
+      with the rule the registered sample is drawn from the sealed seed but conditioned on the bands, so the zero-failure
+      bounds describe the band-conditioned population of re-layouts, not a simple random sample of the rules' draws
   min_references: 2
   min_pairs_per_reference: 6
   span: {lower_end: 0.75, upper_end: 0.98, n_below: 3, below: 0.90}
@@ -136,6 +185,10 @@ config:
     model: moduleforge.physics.peec.model.loop_inductance
     hmax_m: 4.0e-3
     hmax_check_m: 2.0e-3
+    hmax_fine_m: 1.0e-3
+    hmax_fine_meaning: >-
+      reviews T0447 / T0448 item 2 (T0457): the near-threshold flag uses the larger of |r_hmax - r_check| and the
+      three-level estimate |r_4mm - r_1mm| + gci_capped(r_4mm, r_2mm, r_1mm) of the gate value's mesh error (reported)
     near_threshold_abs: 0.005
     meaning: >-
       the F4 gates and the coverage rule are decided on L1 at hmax_m (its default mesh; deterministic, frozen; L1 is not the
@@ -164,6 +217,7 @@ config:
   f1_caps: {l2_layout: 0.005, fasthenry: 0.01}
   f1_caps_meaning: E_R / r caps of F1 (D0024 item 1), E_R the ratio estimate including the thickness terms, r the finest ratio
   kill: {K1: 0.05, K2: 0.15}
+  pass: {A1: 0.02, A2: 1.0}
   solve:
     meaning: >-
       T0389. Every registered layout (2 references, 12 drawn pairs, the 2R proxy pair) is solved by both tools on the
@@ -220,8 +274,21 @@ config:
         caused its k0-to-k1 ratio step), and the wire section refined with the traces (wire_n filaments per side and
         wire_sub pieces per polyline segment, review T0362); wire_n = wire_sub = 1 is never used (T0385: NaN impedance)
       thickness: {at: k1, nh: [3, 5, 9]}
-      sizing: {kb_per_filament: 31.1, mem_margin: 1.3, t_ref_s: 1246, f_ref: 102192, exponent: 1.4, timeout_factor: 10.0,
-        min_timeout_s: 1800, min_mem_cap_mb: 2000}
+      sizing: {kb_per_filament: 31.1, mem_margin: 1.3, cap_factor: 1.5, t_ref_s: 1246, f_ref: 102192, exponent: 1.4,
+        exponent_uncertainty: 0.3, timeout_factor: 10.0, min_timeout_s: 1800, min_mem_cap_mb: 2000}
+      memory_cap_policy: >-
+        review T0455 / T0457 item 11: cap = projection x cap_factor (1.5), the projection being kb_per_filament x exporter
+        filaments x mem_margin 1.30 (the adapter's MEM_MARGIN; research/o004_f7/fh_direct_mem.json: direct-mode peaks
+        1.01-1.09 x the dense estimate in-repo, 1.24-1.26 in T0428's runs; T0457's four local multipole solves of
+        the Case 4 k0 nh5 decks in research/o004_f7/fh_local_probe.json (case4_base twice, dev03_trace_width,
+        standin_compound) peaked at 0.91-1.21 x the projection = 1.18-1.58 x the raw 31.1 kB/filament figure, so a cap at
+        the projection would have killed three of the four; cap_factor 1.5 leaves 24 % over the largest measurement for
+        the extrapolation to the k1 / k2 decks, which are not measured locally). A run killed at its cap (killed_memory) is retried ONCE, alone, at the
+        machine's full budget (0.97 x MF_E004_MEM_GB) before its value is recorded as missing, so a mis-projected cap cannot
+        by itself turn a judged value into a missing one and the run into INVALID; both attempts are recorded
+      timeout_rule: >-
+        review T0453 / T0457 item 10: at plan time every FastHenry job's timeout, doubled for its full-memory retry, must fit
+        the spec's timeout_min (assert_timeouts_fit); the stage refuses before any solve otherwise
       sizing_meaning: >-
         explicit mem_cap_mb and timeout_s per job (reviews T0427/T0428 B(2)): projected peak = 31.1 kB per exporter
         filament (P4's largest per-filament multipole peak, 0.78 GB at 25,056) x 1.3 margin for FastHenry's own refinement
@@ -310,6 +377,13 @@ sanity_checks:
     reference''s measured rules (stagewise rule, D0024 item 4), every step changing the geometry, the stepwise result equal
     to perturb.apply''s, all distinct; re-run on the materialised layouts with the same drc.check (not an independent DRC)'}
 - {name: l1_span, description: 'F4: pooled L1 ratios span [lower_end, 0.98] with at least 3 below 0.90 at both frequencies'}
+- {name: proxy_on_lattice, description: 'review T0444: every layout proxy_descent visited and the end point on the 1 mm
+    lattice (end point also 0.5 and 0.25 mm); registered mode refuses otherwise (config.proxy.lattice_rule)'}
+- {name: banded_acceptance_filled, description: 'founder 2026-11-17T15:58 UTC: the frozen banded-acceptance rule filled
+    every band within config.banded_acceptance limits; registration refuses otherwise'}
+- {name: redraws_classified, description: 'T0451 / reviews T0446, T0452: every redraw inside perturb.draw recorded with
+    move type, reference, exception type and message; fails (refuses) on a reference defect or an unclassified exception,
+    so a reference defect never passes as a silent redraw; restricted move types are named in the detail'}
 - {name: proxy_pair_built, description: 'the 2D_Case_2R designer-proxy pair built (I0207); registered mode refuses without
     it'}
 - {name: freeze_covers_loaded_sources, description: 'F2: at the end of the stage, before any solve, every moduleforge
@@ -330,7 +404,7 @@ sanity_checks:
     value is a missing value (+inf estimate or missing finest), reported, never an INVALID check of its own (review T0364:
     no check that depends on solver values makes the run INVALID)'}
 timeout_min: 6000
-cpu_hours_est: 60.0
+cpu_hours_est: 518.2  # T0457 a2: e004_cost_plan.cpu_h of research/o004_f7/vm_jobs_fasthenry.json (k0 factor 1.83; k1/k2 x m1 = 5.08, a lower bound from the local k1-lateral timeout; upper envelope 2575.5 CPU-h)
 code_under_test:
 - src/moduleforge/geometry/layout.py
 - src/moduleforge/geometry/stack.py

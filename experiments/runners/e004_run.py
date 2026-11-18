@@ -69,6 +69,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -127,6 +128,11 @@ def spec_config(run_config: dict) -> dict:
         return run_config
     import yaml
     return yaml.safe_load(SPEC_DRAFT.read_text())["config"]
+
+
+def yaml_timeout_min() -> float:
+    import yaml
+    return float(yaml.safe_load(SPEC_DRAFT.read_text())["timeout_min"])
 
 
 def sha256_file(path: Path) -> str:
@@ -343,7 +349,8 @@ def l1_H(lay, hmax_m: float) -> list[float]:
     return [float(v) for v in peec.loop_inductance(lay, list(FREQS_HZ), hmax=float(hmax_m)).L_H]
 
 
-def pair_records(rid: str, slot: int, ref, rules, moves, l1cfg: dict, with_geometry_checks: bool = True) -> list[dict]:
+def pair_records(rid: str, slot: int, ref, rules, moves, l1cfg: dict, with_geometry_checks: bool = True,
+                 l_ref: list[float] | None = None) -> list[dict]:
     """One record per drawn pair: kind, components, fingerprint, L1 and r_L1 per frequency at config.l1.hmax_m and (with
     the geometry checks) at hmax_check_m, and the re-checks on the materialised layout: DRC under the reference's rules
     of the final layout and of every compound intermediate (stagewise rule, D0024 item 4), each step changing the
@@ -351,9 +358,10 @@ def pair_records(rid: str, slot: int, ref, rules, moves, l1cfg: dict, with_geome
     the same drc.check the draw used, run again on the materialised geometry; it is not an independent DRC."""
     from moduleforge.drc import check
     from moduleforge.generate import perturb as P
-    h, h2 = l1cfg["hmax_m"], l1cfg["hmax_check_m"]
-    l_ref = l1_H(ref, h)
+    h, h2, h3 = l1cfg["hmax_m"], l1cfg["hmax_check_m"], l1cfg.get("hmax_fine_m")
+    l_ref = l1_H(ref, h) if l_ref is None else l_ref
     l_ref2 = l1_H(ref, h2) if with_geometry_checks else None
+    l_ref3 = l1_H(ref, h3) if with_geometry_checks and h3 else None
     keys = {P.geometry_key(ref)}
     out = []
     for i, mv in enumerate(moves):
@@ -367,6 +375,9 @@ def pair_records(rid: str, slot: int, ref, rules, moves, l1cfg: dict, with_geome
         if with_geometry_checks:
             lv2 = l1_H(lay, h2)
             rec.update({f"r_L1_check_{k}": v / r for k, v, r in zip(FK, lv2, l_ref2, strict=True)})
+            if l_ref3:
+                lv3 = l1_H(lay, h3)
+                rec.update({f"r_L1_fine_{k}": v / r for k, v, r in zip(FK, lv3, l_ref3, strict=True)})
             cur, steps = ref, []
             for t, q in P.components(mv.move_type, mv.params):
                 nxt = P.apply(cur, t, q)
@@ -384,47 +395,463 @@ def pair_records(rid: str, slot: int, ref, rules, moves, l1cfg: dict, with_geome
     return out
 
 
-def replay_mismatches(slots: list, alloc: dict, source_seed: int, drawn: dict) -> list[str]:
-    """seed_provenance: the draws replayed from ``source_seed`` (read independently of the seed the stage drew with:
-    MFOS_SEED in registered mode, DEV_SEED in smoke) must reproduce every slot's moves and their geometry exactly."""
+def replay_mismatches(slots_def: list, alloc: dict, source_seed: int, final: list[dict], fill: dict, fixed: list[dict],
+                      cfg: dict) -> list[str]:
+    """seed_provenance (reviews T0440 / T0441, T0453 item 5, T0454 item 8): from ``source_seed`` (read independently of the
+    seed the stage drew with: MFOS_SEED in registered mode, DEV_SEED in smoke) re-derive each slot's draw seed, its first
+    draw (WITHOUT the DrawObserver), and the whole banded-acceptance sequence (every redraw's seed, parameters and
+    decision); every final move and its geometry must be reproduced exactly."""
     from moduleforge.generate import perturb as P
     bad = []
-    for slot, (rid, lay, rules) in enumerate(slots):
-        if rid not in drawn:
-            continue
-        try:
-            again = P.draw(lay, alloc, reference_seed(source_seed, slot), rules)
-        except (ValueError, RuntimeError) as e:
-            bad.append(f"{rid}: replay raised {e!r}")
-            continue
-        a = [(m.move_type, json.dumps(m.params, sort_keys=True)) for m in drawn[rid]]
-        b = [(m.move_type, json.dumps(m.params, sort_keys=True)) for m in again]
-        if a != b:
-            bad.append(f"{rid}: replayed moves differ from the drawn ones")
-        elif any(P.geometry_key(P.apply(lay, m.move_type, m.params)) != P.geometry_key(P.apply(lay, n.move_type, n.params))
-                 for m, n in zip(drawn[rid], again, strict=True)):
-            bad.append(f"{rid}: replayed geometry differs")
+    try:
+        again, _, errs = initial_slots(slots_def, alloc, source_seed, cfg, geometry_checks=False, observe=False)
+        if errs:
+            return [f"replay: a draw raised: {errs}"]
+        refs = {rid: (lay, rules) for rid, lay, rules in slots_def}
+        f2 = band_fill(again, fixed, refs, source_seed, cfg, geometry_checks=False, observe=False)
+    except (RegistrationRefused, ValueError, RuntimeError) as e:
+        return [f"replay raised {e!r}"]
+    for k, (rid, _lay, _r) in enumerate(slots_def):
+        if fill.get("slot_seeds", {}).get(rid, reference_seed(source_seed, k)) != reference_seed(source_seed, k):
+            bad.append(f"{rid}: slot draw seed differs from SeedSequence(seed, spawn_key=({k},))")
+    sig = [(e["slot"], e["redraw"], e["seed"], json.dumps(e.get("params"), sort_keys=True), e["accepted"]) for e in fill["log"]]
+    sig2 = [(e["slot"], e["redraw"], e["seed"], json.dumps(e.get("params"), sort_keys=True), e["accepted"]) for e in f2["log"]]
+    if sig != sig2:
+        bad.append(f"the banded-acceptance sequence replays differently ({len(sig)} vs {len(sig2)} redraws)")
+    for a_, b_ in zip(final, again, strict=False):
+        if (a_["move"].move_type, json.dumps(a_["move"].params, sort_keys=True)) != \
+                (b_["move"].move_type, json.dumps(b_["move"].params, sort_keys=True)):
+            bad.append(f"{a_['rid']}/{a_['pos']}: replayed move differs")
+        elif P.geometry_key(P.apply(slots_def[a_["k"]][1], a_["move"].move_type, a_["move"].params)) != \
+                P.geometry_key(P.apply(slots_def[b_["k"]][1], b_["move"].move_type, b_["move"].params)):
+            bad.append(f"{a_['rid']}/{a_['pos']}: replayed geometry differs")
+    if len(final) != len(again):
+        bad.append(f"replay has {len(again)} slots, the stage {len(final)}")
     return bad
 
 
+def registry_seed_record(run) -> dict:
+    """Registered mode: the seed ExperimentRun records (run.seed) against the sealed-seed commitment minted for this run id
+    in the registry (mfos.experiments.commitment(run_id, seed), the evaluator's own test), read independently of MFOS_SEED."""
+    from mfos.experiments import commitment
+    from mfos.store import Store
+    minted = [r for r in Store(ROOT).registry() if r.get("event") == "minted" and r.get("run_id") == run.run_id
+              and r.get("experiment") == EID]
+    if not minted:
+        return {"ok": False, "detail": f"run {run.run_id} has no 'minted' record for {EID} in the registry"}
+    want = minted[0].get("commitment")
+    got = commitment(run.run_id, int(run.seed)) if run.seed is not None else None
+    return {"ok": bool(want) and got == want, "detail": f"registry commitment {str(want)[:16]}..., "
+            f"sha256(run_id:run.seed) {str(got)[:16]}...", "run_id": run.run_id}
+
+
+# ------------------------------------------------------------------------------------- redraw record (T0451, T0446/T0452)
+# perturb.draw redraws silently inside _draw_single: a LongSideError from _draw_params (a net with no readable long side,
+# legitimate, T0438/T0451), any ValueError from apply (a move whose copper stops being one polygon is legitimate; a
+# reference defect such as 'net X must have exactly one trace in the reference', 'no HS die' or 'the LS dies are not on one
+# row' is NOT, review T0452), a geometry already seen, or a DRC violation.  DrawObserver records every one of them.
+REFERENCE_DEFECT_FRAGMENTS = ("must have exactly one trace in the reference", "no HS die", "no LS die",
+                              "dies are not on one row")
+LEGITIMATE_REDRAWS = ("long_side", "not_one_polygon", "duplicate", "drc", "accepted_component_of_repeated_compound")
+
+
+class DrawObserver:
+    """Context manager recording every internal draw of perturb.draw without changing it: perturb's module attributes
+    _draw_params, apply and check are wrapped (and restored on exit), so the frozen code runs unchanged on the same rng
+    stream; seed_provenance replays every draw WITHOUT the observer and must reproduce every move."""
+
+    def __init__(self):
+        self.events: list[dict] = []
+
+    def __enter__(self):
+        from moduleforge.generate import perturb as P
+        self.P, self.orig = P, (P._draw_params, P.apply, P.check)
+        dp, ap, ck = self.orig
+        ev = self.events
+
+        def _dp(reference, move_type, rng):
+            e = {"move_type": move_type, "outcome": "pending"}
+            ev.append(e)
+            try:
+                q = dp(reference, move_type, rng)
+            except Exception as x:
+                e.update(outcome="draw_params_error", exc_type=type(x).__name__, message=str(x)[:300])
+                raise
+            e["params"] = q
+            return q
+
+        def _ap(reference, move_type, params):
+            try:
+                return ap(reference, move_type, params)
+            except Exception as x:
+                if ev and ev[-1]["outcome"] == "pending":
+                    ev[-1].update(outcome="apply_error", exc_type=type(x).__name__, message=str(x)[:300])
+                raise
+
+        def _ck(layout, rules):
+            v = ck(layout, rules)
+            if ev and ev[-1]["outcome"] == "pending":
+                ev[-1].update(outcome="drc" if v else "accepted", drc=[x.rule for x in v][:5])
+            return v
+        P._draw_params, P.apply, P.check = _dp, _ap, _ck
+        return self
+
+    def __exit__(self, *exc):
+        self.P._draw_params, self.P.apply, self.P.check = self.orig
+        for e in self.events:
+            if e["outcome"] == "pending":  # applied, but check() not reached: the geometry was already seen
+                e["outcome"] = "duplicate"
+        return False
+
+
+def redraw_class(e: dict) -> str:
+    """Class of one rejected internal draw: long_side / not_one_polygon / duplicate / drc (legitimate), reference_defect
+    (review T0452: never a silent redraw) or unclassified (treated as a reference defect)."""
+    o = e["outcome"]
+    if o in ("duplicate", "drc", "accepted"):
+        return o
+    t, msg = e.get("exc_type"), e.get("message", "")
+    if t == "LongSideError":
+        return "long_side"
+    if any(f in msg for f in REFERENCE_DEFECT_FRAGMENTS):
+        return "reference_defect"
+    if t == "ValueError" and "copper is not a single polygon after the move" in msg:
+        return "not_one_polygon"
+    return "unclassified"
+
+
+def observed_draw(rid: str, ref, rules, allocation: dict, seed: int) -> tuple[list, list[dict]]:
+    """draw_pairs under a DrawObserver: (moves, every internal rejection with move type, reference, outcome class,
+    exception type and message).  The accepted components of a compound that was redrawn whole (its geometry repeated)
+    are recorded as such."""
+    with DrawObserver() as ob:
+        moves = draw_pairs(rid, ref, rules, allocation, seed)
+    n_final = sum(len(m.params["moves"]) if m.move_type == "compound" else 1 for m in moves)
+    acc = [e for e in ob.events if e["outcome"] == "accepted"]
+    extra = len(acc) - n_final  # accepted components of compounds whose whole geometry repeated (redrawn whole)
+    out = []
+    for e in ob.events:
+        c = redraw_class(e)
+        if c == "accepted":
+            continue
+        out.append({"reference": rid, "move_type": e["move_type"], "class": c, "outcome": e["outcome"],
+                    "exc_type": e.get("exc_type"), "message": e.get("message"), "drc": e.get("drc"),
+                    "choice": {k: v for k, v in (e.get("params") or {}).items() if k in ("net", "switch", "side")}})
+    if extra > 0:
+        out.append({"reference": rid, "move_type": "compound", "class": "accepted_component_of_repeated_compound",
+                    "outcome": "compound_repeated", "count": extra, "exc_type": None, "message": None})
+    return moves, out
+
+
+def move_type_restrictions(ref) -> dict:
+    """Static census (geometry only, no inductance) of the discrete choices that can never yield a move on ``ref``:
+    trace_width nets whose long-side scan raises or is empty (T0438/T0451), die_row_shift switches without a die row,
+    terminal_copper / trace_width nets without exactly one trace (a reference defect, review T0452)."""
+    from moduleforge.generate import perturb as P
+    from moduleforge.geometry import NETS
+    out: dict = {t: {"unavailable": []} for t in P.MOVE_TYPES}
+    for n in NETS:
+        try:
+            poly = P._net_poly(ref, n)
+        except ValueError as e:
+            for t in ("trace_width", "terminal_copper"):
+                out[t]["unavailable"].append({"net": n, "exc_type": type(e).__name__, "message": str(e),
+                                              "reference_defect": True})
+            continue
+        try:
+            if not P.long_sides(poly):
+                out["trace_width"]["unavailable"].append({"net": n, "exc_type": "LongSideError",
+                                                          "message": f"net {n} has no long side", "reference_defect": False})
+        except P.LongSideError as e:
+            out["trace_width"]["unavailable"].append({"net": n, "exc_type": type(e).__name__, "message": str(e),
+                                                      "reference_defect": False})
+    for sw in P.SWITCHES:
+        try:
+            P.row_axis(ref, sw)
+        except ValueError as e:
+            out["die_row_shift"]["unavailable"].append({"switch": sw, "exc_type": type(e).__name__, "message": str(e),
+                                                        "reference_defect": True})
+    for v in out.values():
+        v["restricted"] = bool(v["unavailable"])
+        v["reference_defect"] = any(u["reference_defect"] for u in v["unavailable"])
+    return out
+
+
+def summarize_redraws(events: list[dict]) -> dict:
+    """Counts per reference, move type and class, and the distinct (class, exception type, message) seen."""
+    cnt: dict = {}
+    msgs: dict = {}
+    for e in events:
+        k = f"{e['reference']}|{e['move_type']}|{e['class']}"
+        cnt[k] = cnt.get(k, 0) + int(e.get("count", 1))
+        if e.get("exc_type"):
+            mk = f"{e['class']}|{e['exc_type']}|{e.get('message')}"
+            msgs[mk] = msgs.get(mk, 0) + 1
+    return {"counts": dict(sorted(cnt.items())), "messages": dict(sorted(msgs.items())),
+            "n_reference_defect_or_unclassified": sum(int(e.get("count", 1)) for e in events
+                                                      if e["class"] in ("reference_defect", "unclassified"))}
+
+
+# ------------------------------------------------------------------------------ banded acceptance (founder 2026-11-17)
+def bands(cfg: dict) -> list[dict]:
+    """The frozen L1-ratio bands (founder decision 2026-11-17T15:58 UTC, O004 state log; D0024 open item): at least
+    SPAN.n_below pairs below SPAN.below and at least n_at_or_above_upper at or above SPAN.upper_end, a pair counting for
+    a band only if it is in it at BOTH frequencies (so each frequency's count meets the band)."""
+    b = cfg["banded_acceptance"]
+    return [dict(name="below", op="<", value=SPAN["below"], min_pairs=int(SPAN["n_below"])),
+            dict(name="at_or_above_upper", op=">=", value=SPAN["upper_end"], min_pairs=int(b["n_at_or_above_upper"]))]
+
+
+def in_band(p: dict, b: dict) -> bool:
+    """A pair is in a band iff it is in it at BOTH frequencies.  The frozen rule uses '<' and '>='; '<=' and 'cover' (a
+    single pair of move type b['kind'] with |1 - r_L1| >= b['value']) exist only for the research variants
+    (dev_band_variants, T0457 attempt 2) and are not in the frozen rule."""
+    if b["op"] == "cover":
+        return p.get("kind") == b["kind"] and covers(p, b["value"])
+    ops = {"<": lambda x, v: x < v, ">=": lambda x, v: x >= v, "<=": lambda x, v: x <= v}
+    return all(ops[b["op"]](p[f"r_L1_{k}"], b["value"]) for k in FK)
+
+
+def band_deficits(pool: list[dict], bl: list[dict]) -> dict:
+    return {b["name"]: max(0, b["min_pairs"] - sum(in_band(p, b) for p in pool)) for b in bl}
+
+
+def covers(p: dict, min_effect: float) -> bool:
+    return all(abs(1.0 - p[f"r_L1_{k}"]) >= min_effect for k in FK)
+
+
+def redraw_seed(seed: int, slot: int, pos: int, n: int) -> int:
+    """Seed of redraw ``n`` of allocation position ``pos`` on reference slot ``slot``: SeedSequence(seed, spawn_key=(slot, 1,
+    pos, n)), a stream independent of the slot's first draw (spawn_key (slot,)) and of every other redraw."""
+    return int(np.random.SeedSequence(entropy=int(seed), spawn_key=(int(slot), 1, int(pos), int(n)))
+               .generate_state(1, dtype=np.uint64)[0])
+
+
+def _redrawable(i: int, sl: list[dict], fixed: list[dict], bl: list[dict], min_effect: float, protect: bool) -> bool:
+    """Slot i may be redrawn iff its pair is not needed by a band (every band it is in keeps its minimum without it) and,
+    with ``protect``, it is not the only single pair covering its move type on its reference (6 % rule at both
+    frequencies; the coverage rule is reported, the rule never takes coverage away)."""
+    pool = [s["rec"] for s in sl] + fixed
+    p = sl[i]["rec"]
+    for b in bl:
+        if in_band(p, b) and sum(in_band(q, b) for q in pool) - 1 < b["min_pairs"]:
+            return False
+    if protect and sl[i]["kind"] != "compound" and covers(p, min_effect):
+        others = [s for j, s in enumerate(sl) if j != i and s["rid"] == sl[i]["rid"] and s["kind"] == sl[i]["kind"]
+                  and covers(s["rec"], min_effect)]
+        if not others:
+            return False
+    return True
+
+
+def band_fill(slots: list[dict], fixed: list[dict], refs: dict, seed: int, cfg: dict, geometry_checks: bool = True,
+              observe: bool = True, band_list: list[dict] | None = None) -> dict:
+    """The frozen banded-acceptance rule (founder 2026-11-17T15:58 UTC).  ``slots``: one per allocation position per
+    reference (config.references order, then perturb.draw's order), each {rid, k, pos, kind, move, rec}; ``fixed``: pairs
+    that are never redrawn (the proxy pair).  While a band has a deficit: take the next redrawable slot in cyclic slot order
+    whose redraw count is below max_redraws_per_slot; redraw it with perturb.draw(reference, {kind: 1}, redraw_seed(...))
+    (the slot keeps its kind, so every move type keeps its pair on each reference); accept the new pair only if it is
+    distinct from every registered geometry of its reference and lies in a band that has a deficit, else keep the old pair
+    and record the redraw with its reason.  Stops 'filled' when no band has a deficit, 'refused' when no slot can be redrawn
+    or max_redraws_total is reached.  L1 at config.l1.hmax_m is the only quantity consulted (F2).  ``band_list`` replaces
+    the frozen bands for the research variants only (dev_band_variants); registration never passes it."""
+    from moduleforge.generate import perturb as P
+    bc = cfg["banded_acceptance"]
+    bl = bands(cfg) if band_list is None else band_list
+    me, protect = float(cfg["coverage_min_effect"]), bool(bc["protect_sole_coverer"])
+    per_max, tot_max = int(bc["max_redraws_per_slot"]), int(bc["max_redraws_total"])
+    for s in slots:
+        s.setdefault("n_redraws", 0)
+    log, internal, total, cursor = [], [], 0, 0
+    l_ref = {rid: l1_H(r[0], cfg["l1"]["hmax_m"]) for rid, r in refs.items()}
+    status = "filled"
+    while True:
+        d = band_deficits([s["rec"] for s in slots] + fixed, bl)
+        if not any(d.values()):
+            break
+        if total >= tot_max:
+            status = "refused: max_redraws_total reached"
+            break
+        cand = [i for i in range(len(slots)) if slots[i]["n_redraws"] < per_max and
+                _redrawable(i, slots, fixed, bl, me, protect)]
+        if not cand:
+            status = "refused: no slot can be redrawn (all needed by a band, protected, or at max_redraws_per_slot)"
+            break
+        i = next((c for c in cand if c >= cursor), cand[0])
+        cursor = (i + 1) % len(slots)
+        s = slots[i]
+        ref, rules = refs[s["rid"]]
+        n = s["n_redraws"]
+        s["n_redraws"] += 1
+        total += 1
+        sd = redraw_seed(seed, s["k"], s["pos"], n)
+        entry = {"slot": f"{s['rid']}/{s['pos']}", "kind": s["kind"], "redraw": n, "seed": sd, "deficits": d}
+        try:
+            if observe:
+                mv, ev = observed_draw(s["rid"], ref, rules, {s["kind"]: 1}, sd)
+                internal += ev
+            else:
+                mv = draw_pairs(s["rid"], ref, rules, {s["kind"]: 1}, sd)
+        except RegistrationRefused as e:  # a raise inside perturb.draw: recorded; the slot keeps its pair
+            log.append(dict(entry, accepted=False, reason=f"perturb.draw raised: {e}"))
+            continue
+        mv = mv[0]
+        keys = {P.geometry_key(ref)} | {P.geometry_key(P.apply(ref, t["move"].move_type, t["move"].params))
+                                        for t in slots if t["rid"] == s["rid"]}
+        new_key = P.geometry_key(P.apply(ref, mv.move_type, mv.params))
+        if new_key in keys:
+            log.append(dict(entry, accepted=False, reason="duplicate of a registered geometry of this reference"))
+            continue
+        rec = pair_records(s["rid"], s["k"], ref, rules, [mv], cfg["l1"], with_geometry_checks=False,
+                           l_ref=l_ref[s["rid"]])[0]
+        hit = [b["name"] for b in bl if d[b["name"]] > 0 and in_band(rec, b)]
+        e2 = dict(entry, params=mv.params, r_L1={k: rec[f"r_L1_{k}"] for k in FK})
+        if hit:
+            log.append(dict(e2, accepted=True, reason=f"fills band(s) {hit}", replaced={k: s["rec"][f"r_L1_{k}"]
+                                                                                         for k in FK}))
+            if geometry_checks:  # the accepted pair gets the full record (L1 mesh checks, DRC re-check, lattices)
+                rec = pair_records(s["rid"], s["k"], ref, rules, [mv], cfg["l1"], with_geometry_checks=True)[0]
+            rec["pair"] = s["rec"]["pair"]
+            s["move"], s["rec"] = mv, rec
+        else:
+            log.append(dict(e2, accepted=False, reason=f"in no band with a deficit ({[k for k, v in d.items() if v]})"))
+    per_slot = [s["n_redraws"] for s in slots]
+    return {"status": status, "filled": status == "filled", "total_redraws": total, "per_slot_redraws":
+            {f"{s['rid']}/{s['pos']}:{s['kind']}": s["n_redraws"] for s in slots},
+            "mean_redraws_per_slot": float(np.mean(per_slot)) if per_slot else 0.0,
+            "max_redraws_per_slot": max(per_slot, default=0), "log": log, "internal_redraws": internal,
+            "final_deficits": band_deficits([s["rec"] for s in slots] + fixed, bl),
+            "bands": bl, "limits": {"max_redraws_per_slot": per_max, "max_redraws_total": tot_max}}
+
+
+def initial_slots(slots_def: list, alloc: dict, seed: int, cfg: dict, geometry_checks: bool, observe: bool):
+    """The first draw of every reference slot (perturb.draw with reference_seed(seed, k), as before the banded rule) as
+    band slots: (slots, internal redraws recorded, draw errors; a draw that raises names the net, T0387)."""
+    out, internal, errors = [], [], []
+    for k, (rid, lay, rules) in enumerate(slots_def):
+        try:
+            if observe:
+                moves, ev = observed_draw(rid, lay, rules, alloc, reference_seed(seed, k))
+                internal += ev
+            else:
+                moves = draw_pairs(rid, lay, rules, alloc, reference_seed(seed, k))
+        except RegistrationRefused as e:
+            errors.append(str(e))
+            continue
+        recs = pair_records(rid, k, lay, rules, moves, cfg["l1"], with_geometry_checks=geometry_checks)
+        out += [dict(rid=rid, k=k, pos=i, kind=m.move_type, move=m, rec=r) for i, (m, r) in enumerate(zip(moves, recs,
+                                                                                                         strict=True))]
+    return out, internal, errors
+
+
 # ---------------------------------------------------------------------------------------------------------------- proxy
-def proxy_pair_status() -> dict:
-    """I0207: the 2D_Case_2R proxy pair is O008's proxy descent from the twin in 1 mm steps (on the 1 mm lattice by
-    construction), its ratio against the frozen 2R reconstruction.  The step must be a parameter of O008's implementation
-    (not a copy of its code).  Until optimize.control.proxy_descent exposes it, the pair is pending."""
+E010_RUNNER = "experiments/runners/e010_run.py"  # O008's reference contexts (judged_reference / dev_reference), by path
+E010_SPEC = "experiments/specs/E010.yaml"
+
+
+def proxy_context(smoke: bool):
+    """(spec, twin layout, the reference the twin was built from, source record) for the designer-proxy pair (I0207, D0024
+    item 3), built exactly as O008 builds its contexts (E010's judged_reference for 2D_Case_2R; in smoke, F2, E010's
+    dev_reference('case4') on development geometry), then twin.twin(with_l1=False).  No copy of O008's code."""
+    import yaml
+    from moduleforge.generate import twin as W
+    e10 = _load("e010_run_for_e004", E010_RUNNER)
+    cfg10 = yaml.safe_load((ROOT / E010_SPEC).read_text())["config"]
+    if smoke:
+        rc = e10.dev_reference("case4", cfg10)
+    else:
+        entry = next(x for x in cfg10["references"] if x["reference_id"] == "2D_Case_2R")
+        rc = e10.judged_reference(entry, cfg10)
+    tw, _p, _rec = W.twin(rc.reference, rc.spec, with_l1=False)
+    src = {"e010_runner_sha256": sha256_file(ROOT / E010_RUNNER), "e010_spec_sha256": sha256_file(ROOT / E010_SPEC),
+           "context": "E010 dev_reference('case4') (smoke, development geometry)" if smoke else
+           "E010 judged_reference(2D_Case_2R)", "context_reference_fingerprint": rc.reference.fingerprint(),
+           "twin_fingerprint": tw.fingerprint()}
+    return rc.spec, tw, rc.reference, src
+
+
+def proxy_lattice_record(spec, desc, step_mm: float) -> dict:
+    """Review T0444: every layout proxy_descent visited (its trajectory, rebuilt from each state's parameter vector, the
+    rebuilt fingerprint checked against the trajectory's) and the end point on the step_mm lattice (perturb.on_lattice:
+    trace and plane edges and die footprints; the end point also on 0.5 and 0.25 mm): this decides 'passed'.  Reported
+    beside it: every step's change of the movable parameters as a multiple of step_mm (a reach jump to an x.5 mm limit
+    shows here), and the parameters that are off whole steps already at the twin start (inherited, not a jump)."""
+    from moduleforge.generate import derivative as D
+    from moduleforge.generate import perturb as P
+    from moduleforge.optimize import local as LO
+    mov = list(LO.movable_indices(False))
+    names = list(D.Params.NAMES)
+    off, fp_bad, jumps, prev = [], [], [], None
+    v0 = np.asarray(desc.trajectory[0]["vec"], dtype=float) if desc.trajectory else None
+    for i, t in enumerate(desc.trajectory):
+        v = np.asarray(t["vec"], dtype=float)
+        lay = D.build(spec, D.Params.from_vector(v))
+        if t.get("fingerprint") is not None and lay.fingerprint() != t["fingerprint"]:
+            fp_bad.append(i)
+        if not P.on_lattice(lay, step_mm * MM):
+            off.append({"state": i, "move": t.get("move")})
+        if prev is not None:
+            q = (v[mov] - prev[mov]) / step_mm
+            bad = np.flatnonzero(np.abs(q - np.round(q)) >= 1e-9)
+            if bad.size:
+                jumps.append({"state": i, "move": t.get("move"), "params": [names[mov[j]] for j in bad][:8]})
+        prev = v
+    start_off = [names[j] for j in mov if v0 is not None and abs(v0[j] / step_mm - round(v0[j] / step_mm)) >= 1e-9]
+    end = desc.layout
+    end_lat = {f"{c / MM:g}mm": P.on_lattice(end, c) for c in LATTICES_M}
+    return {"n_states": len(desc.trajectory), "states_off_lattice": off, "trajectory_fingerprint_mismatch": fp_bad,
+            "end_on_lattice": end_lat, "passed": not off and not fp_bad and all(end_lat.values()),
+            "steps_not_whole_multiples": jumps, "start_params_off_whole_steps": start_off,
+            "start_params_meaning": "movable parameters of the twin start that are not whole multiples of step_mm "
+                                    "(inherited from twin.twin, carried unchanged unless a step moves them); "
+                                    "perturb.on_lattice does not test wire landing points",
+            "moves": sorted({str(t.get("move")) for t in desc.trajectory})}
+
+
+def build_proxy(cfg: dict, ratio_ref, rid_slot: str, smoke: bool) -> dict:
+    """The designer-proxy pair (I0207, D0024 item 3): control.proxy_descent (O008's implementation; reach domain, die rows
+    included, MIN_GAIN_H) from the twin in config.proxy.step_mm steps with twin._l1 as O008's score, to a local optimum or
+    config.proxy.step_limit steps; its L1 ratio against ``ratio_ref`` (registered: the frozen 2R reconstruction; smoke: the
+    2D_Case_4 development reference), the T0444 lattice record, DRC under the context's rules and under perturb's measured
+    rules of ``ratio_ref``.  Returns {'status': 'built' | 'off_lattice' | 'failed', 'record': ..., 'layout': Layout}."""
+    from moduleforge.drc import check
+    from moduleforge.generate import perturb as P
+    from moduleforge.generate import twin as W
+    from moduleforge.optimize import control as C
+    pc = cfg["proxy"]
+    t0 = time.time()
     try:
-        from moduleforge.optimize import control
-    except ImportError as e:
-        return {"status": "pending", "reason": f"moduleforge.optimize.control not importable ({e})"}
-    params = inspect.signature(control.proxy_descent).parameters
-    if "step_mm" not in params:
-        return {"status": "pending", "reason": "optimize.control.proxy_descent fixes step_mm = 0.5 (it passes step_mm=0.5 "
-                "to local.descend) and exposes no step parameter; I0207 needs the descent in 1 mm steps through a step "
-                "parameter of O008's implementation (a src change outside T0388's scope). The pair's build is wired once "
-                "that parameter exists; registered mode refuses until then"}
-    return {"status": "pending", "reason": "proxy_descent exposes step_mm, but this runner does not yet build the pair "
-            "(twin of 2D_Case_2R -> 1 mm descent -> pair against the frozen reconstruction): to be wired before "
-            "registration, and the proxy rule's sources re-frozen in config.freeze"}
+        spec, tw, ctx_ref, src = proxy_context(smoke)
+        from moduleforge.generate import derivative as D
+        desc = C.proxy_descent(spec, D.params_of(tw), W._l1, step_limit=int(pc["step_limit"]), step_mm=float(pc["step_mm"]))
+    except Exception as e:  # recorded with its cause; registered mode refuses on a status other than 'built'
+        return {"status": "failed", "reason": f"{type(e).__name__}: {e}", "wall_s": time.time() - t0}
+    lat = proxy_lattice_record(spec, desc, float(pc["step_mm"]))
+    lay = desc.layout
+    h, h2 = cfg["l1"]["hmax_m"], cfg["l1"]["hmax_check_m"]
+    lr, lv, lr2, lv2 = l1_H(ratio_ref, h), l1_H(lay, h), l1_H(ratio_ref, h2), l1_H(lay, h2)
+    try:
+        rules_ref = P.measured_rules(ratio_ref, CASE4_OVERRIDES if smoke else None)
+        drc_ref = [v.rule for v in check(lay, rules_ref)]
+    except ValueError as e:
+        drc_ref = [f"measured_rules raised: {e}"]
+    rec = {"reference": rid_slot, "slot": "proxy", "pair": f"{rid_slot}#proxy", "kind": "proxy", "components": ["proxy"],
+           "params": {"step_mm": float(pc["step_mm"]), "step_limit": int(pc["step_limit"]), "steps": int(desc.steps),
+                      "end": str(desc.kind), "l1_ratio_vs_twin_twin_l1": float(desc.l1_ratio)},
+           "fingerprint": lay.fingerprint(), **{f"L1_ref_H_{k}": v for k, v in zip(FK, lr, strict=True)},
+           **{f"L1_H_{k}": v for k, v in zip(FK, lv, strict=True)},
+           **{f"r_L1_{k}": v / r for k, v, r in zip(FK, lv, lr, strict=True)},
+           **{f"r_L1_check_{k}": v / r for k, v, r in zip(FK, lv2, lr2, strict=True)},
+           "steps": [], "stepwise_equals_apply": True, "drc_violations": [v.rule for v in check(lay, spec.rules)],
+           "drc_violations_under_reference_measured_rules": drc_ref,
+           "distinct": P.geometry_key(lay) != P.geometry_key(ratio_ref),
+           "on_lattice": {f"{c / MM:g}mm": P.on_lattice(lay, c) for c in LATTICES_M}, "lattice_T0444": lat,
+           "sources": src, "smoke_label": "SMOKE: Case 4 twin's proxy, development geometry (F2)" if smoke else ""}
+    status = "built" if lat["passed"] else "off_lattice"
+    reason = "" if lat["passed"] else ("T0444: a visited layout or the end point is off the 1 mm lattice; needs a builder "
+                                       "change in optimize/control.py (filter reach jumps to multiples of step_mm) and a "
+                                       f"D0024 amendment: {lat['states_off_lattice'][:3]} end {lat['end_on_lattice']}")
+    return {"status": status, "reason": reason, "record": rec, "layout": lay, "wall_s": time.time() - t0}
 
 
 # --------------------------------------------------------------------------------------------------- registration checks
@@ -459,11 +886,12 @@ def registration_checks(cfg: dict, pairs: list[dict], ref_ids: list[str], ref_la
     c["move_type_per_reference"] = dict(passed=not missing, value=sum(len(v) for v in missing.values()), threshold=0,
                                         detail=f"single move types missing per reference: {missing}" if missing else
                                         "each single move type on each reference (compounds not counted, I0217)")
-    off = [p["pair"] for p in pairs if not all(p["on_lattice"].values())]
+    allp = pairs + ([proxy["record"]] if proxy.get("status") == "built" else [])
+    off = [p["pair"] for p in allp if not all(p["on_lattice"].values())]
     off += [f"{r} (reference)" for r, ok in ref_lattice.items() if not all(ok.values())]
     c["layouts_on_lattice"] = dict(passed=not off, value=len(off), threshold=0,
                                    detail=f"off a lattice of {[f'{x / MM:g} mm' for x in LATTICES_M]}: {off}")
-    dirty = [p["pair"] for p in pairs if p["drc_violations"] or not p["distinct"] or not p["stepwise_equals_apply"]
+    dirty = [p["pair"] for p in allp if p["drc_violations"] or not p["distinct"] or not p["stepwise_equals_apply"]
              or any(st["drc_violations"] or not st["changes_geometry"] for st in p["steps"])]
     c["layouts_drc_clean_distinct"] = dict(passed=not dirty, value=len(dirty), threshold=0,
                                            detail=f"a step or the final layout not DRC-clean, a step not changing the "
@@ -507,13 +935,24 @@ def l1_mesh_report(pairs: list[dict], span: dict, min_effect: float, tol: float)
     it at hmax_check_m, is flagged: a gate or coverage verdict that rests on such a value is mesh-sensitive."""
     thr = {"span_lower_end": span["lower_end"], "span_below": span["below"], "span_upper_end": span["upper_end"],
            "coverage_low": 1.0 - min_effect, "coverage_high": 1.0 + min_effect}
+    from mfos.metrics import gci_capped
     flagged, shifts = [], []
     for p in pairs:
         for k in FK:
             r, r2 = p[f"r_L1_{k}"], p[f"r_L1_check_{k}"]
             shifts.append(abs(r - r2))
+            # reviews T0447 / T0448 item 2: |r_4mm - r_2mm| underestimates the 4 mm error; the three-level estimate of
+            # the 4 mm value's error is |r_4mm - r_1mm| + gci_capped(r_4mm, r_2mm, r_1mm) (the 1 mm value's estimate;
+            # 3 max|d| if that is not finite), and the flag uses the larger of the two
+            r3 = p.get(f"r_L1_fine_{k}")
+            if r3 is not None:
+                g = gci_capped(r, r2, r3)
+                est3 = abs(r - r3) + (g if math.isfinite(g) else 3.0 * max(abs(r - r2), abs(r2 - r3)))
+            else:
+                est3 = 0.0
+            p.setdefault("l1_mesh_estimate", {})[k] = {"two_level": abs(r - r2), "three_level": est3}
             for name, t in thr.items():
-                if abs(r - t) <= max(tol, abs(r - r2)) or (r - t) * (r2 - t) < 0:
+                if abs(r - t) <= max(tol, abs(r - r2), est3) or (r - t) * (r2 - t) < 0:
                     flagged.append({"pair": p["pair"], "freq": k, "threshold": name, "t": t, "r": r, "r_check": r2})
     at_h = {k: span_check([p[f"r_L1_{k}"] for p in pairs], span)["passed"] for k in FK} if pairs else {}
     at_h2 = {k: span_check([p[f"r_L1_check_{k}"] for p in pairs], span)["passed"] for k in FK} if pairs else {}
@@ -575,6 +1014,7 @@ def stage_registration(run, cfg: dict, smoke: bool, seed: int) -> dict:
             slots.append((rid, refs[rid], rules))
     slot_of = {e["reference_id"]: sl[0] for e, sl in zip(cfg["references"], slots, strict=True)}
     rec["slots"] = [sl[0] for sl in slots]
+    rec["slot_reference_fingerprints"] = {sl[0]: sl[1].fingerprint() for sl in slots}
     # 3. reference coordinates whole mm, and each reference on the three lattices: both gated before any draw
     wmm = {rid: whole_mm_failures(lay) for rid, lay, _ in slots}
     gate("references_whole_mm", not any(wmm.values()), value=sum(map(len, wmm.values())), threshold=0,
@@ -584,42 +1024,70 @@ def stage_registration(run, cfg: dict, smoke: bool, seed: int) -> dict:
     off = {r: v for r, v in off.items() if v}
     gate("references_on_lattice", not off, value=sum(map(len, off.values())), threshold=0,
          detail=f"references off a lattice: {off}" if off else "every reference on the 1.0, 0.5 and 0.25 mm lattices")
-    # 4. draws (seed per slot), then the replay from the independently read seed, L1 and the geometry re-checks
+    # 4. first draws (seed per slot; every internal redraw recorded, T0451 / T0452) and the restriction census
     alloc = cfg["allocation"]
-    drawn, draw_errors = {}, []
     rec["slot_seeds"] = {rid: reference_seed(seed, k) for k, (rid, _, _) in enumerate(slots)}
-    for slot, (rid, lay, rules) in enumerate(slots):
-        try:
-            drawn[rid] = draw_pairs(rid, lay, rules, alloc, reference_seed(seed, slot))
-        except RegistrationRefused as e:
-            draw_errors.append(str(e))
+    rec["restrictions"] = {rid: move_type_restrictions(lay) for rid, lay, _ in slots}
+    bslots, internal, draw_errors = initial_slots(slots, alloc, seed, cfg, geometry_checks=True, observe=True)
     gate("draws_complete", not draw_errors, value=len(draw_errors), threshold=0,
          detail=draw_errors or f"allocation {alloc} drawn on every reference")
+    # 5. the designer-proxy pair (I0207, D0024 item 3), with review T0444's lattice record; pooled in the bands and span
+    pslot = slot_of[cfg["proxy"]["reference"]]
+    proxy = build_proxy(cfg, next(lay for rid, lay, _ in slots if rid == pslot), pslot, smoke)
+    rec["_proxy_layout"] = proxy.pop("layout", None)
+    rec["proxy"] = proxy
+    lat = (proxy.get("record") or {}).get("lattice_T0444", {})
+    gate("proxy_on_lattice", bool(lat.get("passed")), value=len(lat.get("states_off_lattice", [])), threshold=0,
+         detail=proxy.get("reason") or f"{lat.get('n_states')} visited layouts and the end point on the "
+                f"{cfg['proxy']['step_mm']:g} mm lattice (end {lat.get('end_on_lattice')}; moves {lat.get('moves')})")
+    fixed = [proxy["record"]] if proxy.get("status") == "built" else []
+    # 4b. the frozen banded-acceptance rule (founder 2026-11-17T15:58 UTC): redraws within the frozen limits
+    refs_b = {rid: (lay, rules) for rid, lay, rules in slots}
+    fill = band_fill(bslots, fixed, refs_b, seed, cfg, geometry_checks=True, observe=True) if not draw_errors else \
+        {"status": "not run: a draw raised", "filled": False, "total_redraws": 0, "log": [], "internal_redraws": []}
+    internal += fill.pop("internal_redraws")
+    fill["slot_seeds"] = rec["slot_seeds"]
+    rec["banded_acceptance"] = fill
+    gate("banded_acceptance_filled", fill["filled"], value=fill["total_redraws"],
+         threshold=cfg["banded_acceptance"]["max_redraws_total"],
+         detail=f"{fill['status']}; final deficits {fill.get('final_deficits')}; redraws per slot mean "
+                f"{fill.get('mean_redraws_per_slot', 0):.2f}, max {fill.get('max_redraws_per_slot', 0)}")
+    summ = summarize_redraws(internal)
+    rec["redraws"] = {"internal": internal[:5000], "n_internal": len(internal), "summary": summ,
+                      "band_redraws": len(fill["log"])}
+    restricted = {rid: {t: v["unavailable"] for t, v in r.items() if v["restricted"]} for rid, r in
+                  rec["restrictions"].items()}
+    ref_defect = {rid: [t for t, v in r.items() if v["reference_defect"]] for rid, r in rec["restrictions"].items()}
+    n_bad = summ["n_reference_defect_or_unclassified"] + sum(map(len, ref_defect.values()))
+    gate("redraws_classified", n_bad == 0, value=n_bad, threshold=0,
+         detail={"restricted_move_types": restricted or "none", "reference_defects": {r: v for r, v in ref_defect.items()
+                 if v} or "none", "internal_redraw_counts": summ["counts"], "messages": summ["messages"]})
+    # seed provenance: the registry's sealed-seed record, then a replay of every draw and redraw from the seed read again
     source_seed = DEV_SEED if smoke else int(os.environ["MFOS_SEED"])
-    mism = replay_mismatches(slots, alloc, source_seed, drawn)
+    reg_rec = {"ok": True, "detail": "smoke: no sealed seed, registry not read"} if smoke else registry_seed_record(run)
+    rec["seed_registry"] = reg_rec
+    mism = replay_mismatches(slots, alloc, source_seed, bslots, fill, fixed, cfg) if bslots else []
     seed_ok = (seed == DEV_SEED and source_seed == DEV_SEED) if smoke else (seed == run.seed == source_seed)
     if not seed_ok:
         seed_detail = f"draw seed {seed} is not the expected source"
+    elif not reg_rec["ok"]:
+        seed_detail = reg_rec["detail"]
     elif mism:
         seed_detail = mism
-    elif smoke:
-        seed_detail = "smoke: drawn from DEV_SEED, MFOS_SEED never read; a replay from DEV_SEED reproduces every move"
     else:
-        seed_detail = "registered: drawn from run.seed (sealed); a replay from MFOS_SEED reproduces every move"
-    gate("seed_provenance", seed_ok and not mism and bool(drawn), value=len(mism), threshold=0, detail=seed_detail)
-    pairs = []
-    for slot, (rid, lay, rules) in enumerate(slots):
-        if rid in drawn:
-            pairs += pair_records(rid, slot, lay, rules, drawn[rid], cfg["l1"])
-    # 5. proxy pair
-    proxy = proxy_pair_status()
-    rec["proxy"] = proxy
+        seed_detail = (("smoke: drawn from DEV_SEED, MFOS_SEED never read" if smoke else
+                        f"registered: run.seed matches the registry's minted commitment ({reg_rec['detail']})") +
+                       f"; a replay from the seed read again re-derives {len(bslots)} slot draws and "
+                       f"{len(fill['log'])} banded redraws exactly")
+    gate("seed_provenance", seed_ok and reg_rec["ok"] and not mism and bool(bslots), value=len(mism), threshold=0,
+         detail=seed_detail)
+    pairs = [s["rec"] for s in bslots]
     # 6. F4 checks, the coverage report and the L1 mesh report
     for name, c in registration_checks(cfg, pairs, rec["slots"], ref_lattice, proxy,
                                        slot_of[cfg["proxy"]["reference"]]).items():
         gate(name, c["passed"], c["value"], c["threshold"], c["detail"])
     rec["coverage"] = coverage(pairs, rec["slots"], cfg["coverage_min_effect"])
-    rec["l1_mesh"] = l1_mesh_report(pairs, SPAN, cfg["coverage_min_effect"], cfg["l1"]["near_threshold_abs"])
+    rec["l1_mesh"] = l1_mesh_report(pairs + fixed, SPAN, cfg["coverage_min_effect"], cfg["l1"]["near_threshold_abs"])
     rec["diversity"] = diversity(pairs) if pairs else {}
     rec["pairs"] = pairs
     # 7. every moduleforge source file loaded by the whole stage is frozen (lazy imports included)
@@ -638,7 +1106,7 @@ def stage_registration(run, cfg: dict, smoke: bool, seed: int) -> dict:
         run.metric("l1_n_near_threshold", len({f["pair"] for f in rec["l1_mesh"]["flagged"]}), n=len(r20))
     run.metric("n_move_types_covered_l1", n_cov, n=len(rec["coverage"]))
     out = run.run_dir / "registration.json"
-    out.write_text(json.dumps(rec, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+    out.write_text(json.dumps({k: v for k, v in rec.items() if not k.startswith("_")}, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
     run.artifact("registration.json", out)
     return rec
 
@@ -712,7 +1180,7 @@ def l2_level(cfg: dict, name: str) -> dict:
     return cfg["solve"]["l2_layout"]["levels"][name]
 
 
-def fh_level(cfg: dict, k: str, nh: int, smoke_nh: bool = False) -> dict:
+def fh_level(cfg: dict, k: str, nh: int) -> dict:
     """FHLevel kwargs of lateral level ``k`` at ``nh`` thickness filaments (traces and planes alike)."""
     f = cfg["solve"]["fasthenry"]
     lv = f["lateral"][k]
@@ -724,13 +1192,27 @@ def fh_level(cfg: dict, k: str, nh: int, smoke_nh: bool = False) -> dict:
 
 def fh_sizing(cfg_or_sizing: dict, n_fil: int) -> dict:
     """Projected multipole peak (GB, with the stated margin), wall time (s), and the explicit mem_cap_mb / timeout_s passed
-    to the adapter (review T0427/T0428 B(2)); frozen rule config.solve.fasthenry.sizing (P4's measured runs)."""
+    to the adapter (review T0427/T0428 B(2)); frozen rule config.solve.fasthenry.sizing (P4's measured runs).  Memory
+    policy (review T0455, T0457): cap = projection (kb_per_filament x filaments x mem_margin 1.30, the adapter's
+    MEM_MARGIN, research/o004_f7/fh_direct_mem.json) x cap_factor; a run killed at that cap is retried ONCE at the
+    machine's full budget (run_jobs) before its value is recorded as missing."""
     s = cfg_or_sizing["solve"]["fasthenry"]["sizing"] if "solve" in cfg_or_sizing else cfg_or_sizing
     mem = s["kb_per_filament"] * n_fil * 1e3 / 1e9
     t = s["t_ref_s"] * (n_fil / s["f_ref"]) ** s["exponent"]
     return dict(mem_raw_gb=mem, mem_proj_gb=mem * s["mem_margin"], time_proj_s=t,
-                mem_cap_mb=max(s["min_mem_cap_mb"], mem * s["mem_margin"] * 1024),
+                mem_cap_mb=max(s["min_mem_cap_mb"], mem * s["mem_margin"] * s.get("cap_factor", 1.0) * 1024),
                 timeout_s=max(s["min_timeout_s"], s["timeout_factor"] * t))
+
+
+def assert_timeouts_fit(jobs: list[dict], cfg: dict) -> dict:
+    """Review T0453: at plan time every FastHenry job's timeout (and its one full-memory retry, item 11) fits the
+    experiment's timeout_min, so an mfos-level timeout cannot kill the run before F1's missing-value path is reached."""
+    lim = float(cfg.get("_timeout_min", 6000)) * 60.0
+    worst = max((2.0 * float(j["timeout_s"]) for j in jobs if j["solver"] == "fasthenry"), default=0.0)
+    if worst > lim:
+        raise RuntimeError(f"a FastHenry job's timeout x 2 (with its full-memory retry) {worst:.0f} s exceeds the "
+                           f"experiment's timeout_min ({lim:.0f} s)")
+    return {"max_fh_timeout_with_retry_s": worst, "experiment_timeout_s": lim}
 
 
 def solve_jobs(cfg: dict, layouts: dict, smoke: bool) -> list[dict]:
@@ -739,6 +1221,8 @@ def solve_jobs(cfg: dict, layouts: dict, smoke: bool) -> list[dict]:
     from moduleforge.solvers.fasthenry import FHLevel, export
     f = cfg["solve"]["fasthenry"]
     nh_lat, nh_list, at = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]], f["thickness"]["at"]
+    if at not in FH_LADDER:
+        raise ValueError(f"thickness.at {at!r} is not a lateral level {FH_LADDER}")
     if 1 in nh_list or nh_lat == 1 or nh_lat not in nh_list:
         raise ValueError("FastHenry nh = 1 is a smoke-test level (T0417): never in E004's ladder; nh_lateral must be in it")
     jobs = []
@@ -877,6 +1361,18 @@ def run_jobs(jobs: list[dict], layouts: dict, work: Path, mem_budget_gb: float, 
                 out[j["id"]] = dict(id=j["id"], ok=False, status=f"child_exit_{p.returncode}", job_hash=j["job_hash"],
                                     log_tail=(work / "solves" / f"{j['id']}.log").read_text()[-1500:])
             log(f"done {j['id']}: {out[j['id']].get('status')} ({time.time() - j['_t0']:.0f} s)")
+    # review T0455 (item 11): a FastHenry run killed at its projected cap is retried once, alone, at the full budget
+    retry = [j for j in jobs if j["solver"] == "fasthenry" and out.get(j["id"], {}).get("status") == "killed_memory"
+             and not j.get("retry_of")]
+    if retry:
+        rj = [dict(j, id=f"{j['id']}__fullmem", retry_of=j["id"], mem_cap_mb=mem_budget_gb * 1024 * 0.97,
+                   mem_proj_gb=mem_budget_gb) for j in retry]
+        res2 = run_jobs(rj, layouts, work, mem_budget_gb, log)
+        for j in rj:
+            r2 = res2[j["id"]]
+            first = out[j["retry_of"]]
+            out[j["retry_of"]] = dict(r2, id=j["retry_of"], first_attempt_killed_memory=first,
+                                      retried_at_full_memory_mb=j["mem_cap_mb"])
     return out
 
 
@@ -904,14 +1400,16 @@ def l2_terms(v: dict, ratio: bool, step_fn) -> dict:
     return dict(finest=lat[2], lateral=e_lat, thickness=e_thk, filament=e_fil, total=e_lat + e_thk + e_fil)
 
 
-def fh_terms(v: dict, nh_lat: int, nh_list: list[int], ratio: bool, step_fn) -> dict:
+def fh_terms(v: dict, nh_lat: int, nh_list: list[int], at: str, ratio: bool, step_fn) -> dict:
     """FastHenry estimate of the finest (k2 at nh_lateral) value: lateral (as l2) + thickness term from the 3 / 5 / 9 ladder
     at the thickness level: |f(nh_lateral) - f(9)| + gci_capped(f3, f5, f9) (the ratio-step rule for ratios; O004 scope_in:
     gci_capped on the thickness ladder stays conservative while its steps contract, T0368).  Missing -> +inf."""
     from mfos.metrics import gci_capped
+    if at not in FH_LADDER:  # review T0454: the thickness ladder's lateral level is config.solve.fasthenry.thickness.at
+        raise ValueError(f"thickness.at {at!r} is not a lateral level {FH_LADDER}")
     lat = [v.get(k) for k in FH_LADDER]
     e_lat = INF if None in lat else (step_fn(*lat, STEP_FLOOR_REL, relative=True) if ratio else gci_capped(*lat))
-    thk = [v.get("k1" if nh == nh_lat else f"t{nh}") for nh in nh_list]
+    thk = [v.get(at if nh == nh_lat else f"t{nh}") for nh in nh_list]
     if None in thk:
         e_thk = INF
     else:
@@ -931,7 +1429,7 @@ def assemble(cfg: dict, pairs: list[dict], ref_of: dict, res: dict, jobs: list[d
     ``ref_of``: pair layout name -> reference layout name.  Smoke: every ladder has one level, so 'finest' is the coarsest
     level solved (labelled) and every estimate is +inf (missing levels), which F1 turns into exclusions."""
     f = cfg["solve"]["fasthenry"]
-    nh_lat, nh_list = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]]
+    nh_lat, nh_list, at = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]], f["thickness"]["at"]
     by_key = {(j["layout"], j["key"]): j["id"] for j in jobs}
     l2_keys = ("lat1.0",) if smoke else L2_ALL
     fh_keys = ("k0",) if smoke else FH_LADDER + tuple(f"t{n}" for n in nh_list if n != nh_lat)
@@ -944,7 +1442,7 @@ def assemble(cfg: dict, pairs: list[dict], ref_of: dict, res: dict, jobs: list[d
         if smoke:
             return (dict(finest=l2v.get(fin_l2), total=INF, note="smoke: one level"),
                     dict(finest=fhv.get(fin_fh), total=INF, note="smoke: one level"))
-        return l2_terms(l2v, ratio, step_fn), fh_terms(fhv, nh_lat, nh_list, ratio, step_fn)
+        return l2_terms(l2v, ratio, step_fn), fh_terms(fhv, nh_lat, nh_list, at, ratio, step_fn)
     cap_l2, cap_fh = cfg["f1_caps"]["l2_layout"], cfg["f1_caps"]["fasthenry"]
     layout_rows, pair_rows = [], []
     for lay in layouts:
@@ -968,6 +1466,8 @@ def assemble(cfg: dict, pairs: list[dict], ref_of: dict, res: dict, jobs: list[d
                                   freq=fk, r_l2=a["finest"] if done else math.nan, r_fh=b["finest"] if done else math.nan,
                                   r_L1=p[f"r_L1_{fk}"], E_R_l2=a["total"], E_R_fh=b["total"], E_R_l2_rel=rel_l2,
                                   E_R_fh_rel=rel_fh, excluded_f1=bool(excl), finest_complete=done,
+                                  fh_thickness_share_of_cap=(b.get("thickness", INF) / b["finest"] / cap_fh
+                                                             if done and b["finest"] else INF),
                                   ratio_per_level_l2=rl2, ratio_per_level_fh=rfh, terms_l2=a, terms_fh=b))
     return dict(layout_rows=layout_rows, pair_rows=pair_rows, finest_levels={"l2_layout": fin_l2, "fasthenry": fin_fh},
                 smoke_label="SMOKE: coarsest levels only; 'finest' = the one level solved; not evidence" if smoke else "")
@@ -984,6 +1484,13 @@ def criteria(asm: dict, cfg: dict) -> dict:
         done = [r for r in pr if r["finest_complete"]]
         out["K1"] = max_rel_err([r["r_l2"] for r in done], [r["r_fh"] for r in done]) if done else math.nan
         out["K1_fires"] = bool(done) and out["K1"] > cfg["kill"]["K1"]
+        if done:  # O004 F1 (review T0454): which pair reaches K1, and whether F1 excluded it
+            am = max(done, key=lambda r: abs(r["r_l2"] / r["r_fh"] - 1.0))
+            out["K1_argmax"] = {"pair": am["pair"], "freq": am["freq"], "excluded_f1": bool(am["excluded_f1"]),
+                                "value": abs(am["r_l2"] / am["r_fh"] - 1.0),
+                                "reading": "a K1 that fires on an F1-excluded pair is a failed comparison, not a "
+                                           "refutation of l2_layout, until the diagnosis (O004 F1)"
+                                if am["excluded_f1"] else "the pair is counted (not F1-excluded)"}
         out["pairs_missing_finest"] = sorted({r["pair"] for r in pr if not r["finest_complete"]})
     if lr:
         out["A2"] = max_consistency_capped([r["L_l2"] for r in lr], [r["L_fh"] for r in lr], [r["E_l2"] for r in lr],
@@ -1007,33 +1514,60 @@ def ratio_band(rows: list[dict], key: str, ekeys: tuple[str, str]) -> tuple[floa
 
 
 def diagnostics(asm: dict, cfg: dict) -> dict:
-    """Reported, not judged: coverage after exclusion per move type with one-sided zero-failure bounds (per type, pooled,
-    and the clustered bound by reference), the covered ratio range on FastHenry's finest ratios beside the L1 span, and
-    F8 (L1's ratio agreement with FastHenry beside l2_layout's)."""
+    """Reported, not judged (reviews T0454 / T0455): coverage after exclusion per move type, with the O004 6 % effect rule
+    re-applied to the counted single pairs (min over both frequencies of |1 - r_L1| >= coverage_min_effect); one-sided
+    zero-failure bounds per type, pooled and clustered by reference, emitted ONLY for strata whose counted pairs all meet
+    A1's threshold (else labelled conditional, value null); the covered ratio range on FastHenry's finest ratios of counted
+    pairs only (every frequency of a pair excluded at either one is left out); F8 beside them."""
     from moduleforge.generate import perturb as P
     pr = asm["pair_rows"]
-    counted = {}
+    a1 = float(cfg["pass"]["A1"])
+    counted: dict = {}
     for r in pr:
-        counted.setdefault(r["pair"], {"kind": r["kind"], "components": r["components"], "reference": r["reference"],
-                                       "ok": True})
-        counted[r["pair"]]["ok"] &= not r["excluded_f1"]
+        c = counted.setdefault(r["pair"], {"kind": r["kind"], "components": r["components"], "reference": r["reference"],
+                                           "ok": True, "meets_A1": True, "r_L1": {}, "r_fh": {}})
+        c["ok"] &= not r["excluded_f1"]
+        d = abs(r["r_l2"] / r["r_fh"] - 1.0) if math.isfinite(r["r_l2"]) and math.isfinite(r["r_fh"]) else INF
+        c["meets_A1"] &= d <= a1
+        c["r_L1"][r["freq"]], c["r_fh"][r["freq"]] = r["r_L1"], r["r_fh"]
     ok = {k: v for k, v in counted.items() if v["ok"]}
+    me = float(cfg["coverage_min_effect"])
+
+    def bound(group: list[dict], n: int) -> dict:
+        fails = sum(not v["meets_A1"] for v in group)
+        if fails:
+            return {"zero_failure_bound95": None, "bound_status": f"conditional: {fails} counted pair(s) exceed A1's "
+                    f"{a1:g}; a zero-failure bound does not apply"}
+        return {"zero_failure_bound95": zero_failure_bound(n), "bound_status": "valid: every counted pair meets A1"}
     per_type = {}
-    for t in [*P.MOVE_TYPES, P.COMPOUND]:
-        n_all = sum(v["kind"] == t for v in counted.values())
-        n_ok = sum(v["kind"] == t for v in ok.values())
-        per_type[t] = {"pairs": n_all, "counted": n_ok, "excluded": n_all - n_ok,
-                       "zero_failure_bound95": zero_failure_bound(n_ok)}
+    for t in [*P.MOVE_TYPES, P.COMPOUND, "proxy"]:
+        g_all = [v for v in counted.values() if v["kind"] == t]
+        g_ok = [v for v in ok.values() if v["kind"] == t]
+        per_type[t] = {"pairs": len(g_all), "counted": len(g_ok), "excluded": len(g_all) - len(g_ok),
+                       **bound(g_ok, len(g_ok))}
+        if t in P.MOVE_TYPES:
+            per_type[t]["covered_after_exclusion_6pct"] = any(
+                min(abs(1.0 - x) for x in v["r_L1"].values()) >= me for v in g_ok)
     refs = sorted({v["reference"] for v in ok.values()})
-    rfh = [r["r_fh"] for r in pr if not r["excluded_f1"] and math.isfinite(r["r_fh"])]
+    rfh = [x for v in ok.values() for x in v["r_fh"].values() if math.isfinite(x)]
     rl1 = [r["r_L1"] for r in pr]
     l1_vs_fh = [abs(r["r_L1"] / r["r_fh"] - 1) for r in pr if math.isfinite(r["r_fh"])]
+    pooled, clustered = bound(list(ok.values()), len(ok)), bound(list(ok.values()), len(refs))
     return {"n_pairs": len(counted), "n_counted": len(ok), "coverage_after_exclusion": len(ok) / max(1, len(counted)),
-            "per_move_type": per_type, "pooled_zero_failure_bound95": zero_failure_bound(len(ok)),
-            "clustered_zero_failure_bound95": zero_failure_bound(len(refs)),
-            "covered_range_fh_finest": [min(rfh), max(rfh)] if rfh else None,
+            "per_move_type": per_type, "pooled_zero_failure_bound95": pooled["zero_failure_bound95"],
+            "pooled_bound_status": pooled["bound_status"],
+            "clustered_zero_failure_bound95": clustered["zero_failure_bound95"],
+            "covered_range_fh_finest_counted": [min(rfh), max(rfh)] if rfh else None,
             "registered_range_l1": [min(rl1), max(rl1)] if rl1 else None,
-            "F8_l1_max_ratio_diff_vs_fasthenry": max(l1_vs_fh) if l1_vs_fh else None}
+            "F8_l1_max_ratio_diff_vs_fasthenry": max(l1_vs_fh) if l1_vs_fh else None,
+            "fh_thickness_share_of_cap": {f"{r['pair']}@{r['freq']}": r.get("fh_thickness_share_of_cap") for r in pr}}
+
+
+def finest_values_check(crit: dict, pairs: list) -> tuple[bool, list, bool]:
+    """O004 F1's missing-data rule: INVALID only if a pair lacks a finest value and no completed pair fires K1."""
+    missing = crit.get("pairs_missing_finest", [p["name"] for p in pairs])
+    k1 = bool(crit.get("K1_fires", False))
+    return (not missing and bool(pairs)) or k1, missing, k1
 
 
 def fh_selftest_record(work: Path) -> dict:
@@ -1073,23 +1607,32 @@ def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
         if not pick:  # review T0447/T0448 (3): no pair drawn -> a failed draw, recorded, not a crash
             rec["failed_draw"] = "no development pair drawn in slot 0"
         pairs = [dict(p, name="dev_pair0", ref_name="2D_Case_4") for p in pick]
+        want_ref = {"2D_Case_4": reg.get("slot_reference_fingerprints", {}).get(reg["pairs"][0]["reference"])
+                    if reg.get("pairs") else None}
     else:
         refs = {}
         recon = recon_module()
         for e in cfg["references"]:
             refs[e["reference_id"]] = recon.snapped(e["reference_id"])[0]
         pairs = [dict(p, name=p["pair"].replace("#", "_p"), ref_name=p["reference"]) for p in reg["pairs"]]
-        if reg["proxy"].get("status") == "built":
-            pairs.append(dict(reg["proxy"]["record"], name="2D_Case_2R_proxy", ref_name="2D_Case_2R"))
+        want_ref = dict(reg.get("judged_fingerprints", {}))
+    if reg["proxy"].get("status") == "built":  # T0454 item 4: the built proxy record (smoke: the Case 4 twin's proxy)
+        pairs.append(dict(reg["proxy"]["record"], name="2D_Case_2R_proxy" if not smoke else "dev_proxy",
+                          ref_name="2D_Case_2R" if not smoke else "2D_Case_4", layout=reg.get("_proxy_layout")))
     layouts = dict(refs)
     geo_bad = []
+    for rid, lay in refs.items():  # reviews T0453 item 5 / T0454 item 8: references against the registration record
+        if want_ref.get(rid) != lay.fingerprint():
+            geo_bad.append(f"reference {rid}: fingerprint {lay.fingerprint()[:16]} != registration record "
+                           f"{str(want_ref.get(rid))[:16]}")
     for p in pairs:
         lay = P.apply(refs[p["ref_name"]], p["kind"], p["params"]) if p["kind"] != "proxy" else p["layout"]
-        if lay.fingerprint() != p["fingerprint"]:
+        if lay is None or lay.fingerprint() != p["fingerprint"]:
             geo_bad.append(f"{p['name']}: rebuilt fingerprint differs from the registration record")
         layouts[p["name"]] = lay
     jobs = solve_jobs(cfg, layouts, smoke)
     rec["jobs"] = jobs
+    rec["plan_timeouts"] = assert_timeouts_fit(jobs, cfg)
     budget = float(os.environ.get("MF_E004_MEM_GB", cfg["solve"]["mem_budget_gb_default"]))
     st = fh_selftest_record(work)
     rec["fh_selftest"] = {st.get("binary_sha256", "none"): st}
@@ -1128,9 +1671,8 @@ def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
     ref_of = {p["name"]: p["ref_name"] for p in pairs}
     asm = assemble(cfg, [dict(p) for p in pairs], ref_of, res, jobs, smoke, step_fn)
     crit = criteria(asm, cfg) if pairs else {}
-    missing = crit.get("pairs_missing_finest", [p["name"] for p in pairs])
-    k1_fires = crit.get("K1_fires", False)
-    run.sanity("finest_values_present", passed=(not missing and bool(pairs)) or k1_fires, value=len(missing), threshold=0,
+    fv_ok, missing, k1_fires = finest_values_check(crit, pairs)
+    run.sanity("finest_values_present", passed=fv_ok, value=len(missing), threshold=0,
                detail=("every pair has both finest values" if not missing else
                        f"pairs lacking a finest value: {missing}; K1 fires on a completed pair: {k1_fires}") +
                       " (F1: INVALID only if a pair lacks a finest value and no completed pair fires K1)")
@@ -1142,17 +1684,23 @@ def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
         rec["diagnostics"] = diag
         pr = asm["pair_rows"]
         cnt = [r for r in pr if r["finest_complete"]]
-        b1 = ratio_band([r for r in pr if not r["excluded_f1"]], ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel"))
-        run.metric("max_ratio_diff_vs_fasthenry", crit["A1"], ci=b1 if math.isfinite(crit["A1"]) else None, n=len(pr))
-        run.metric("max_ratio_diff_vs_fasthenry_all", crit["K1"],
-                   ci=ratio_band(cnt, ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel")), n=len(cnt))
-        run.metric("max_abs_consistency", crit["A2"], n=len(asm["layout_rows"]))
         lcnt = [dict(r, el=r["E_l2"] / r["L_l2"], ef=r["E_fh"] / r["L_fh"]) for r in asm["layout_rows"]
                 if r["finest_complete"]]
-        run.metric("max_rel_diff_vs_fasthenry", crit["K2"], ci=ratio_band(lcnt, ("L_l2", "L_fh"), ("el", "ef")),
-                   n=len(lcnt))
+        # review T0455: the solvers' deterministic discretisation band beside each point value, recorded in solve.json
+        # as a band (not a statistical interval, so not passed as ci= to run.metric, whose ci is a 95 % confidence level)
+        diag["discretisation_bands"] = {
+            "meaning": "deterministic band [max(0, |d| - u), |d| + u] from the two solvers' discretisation estimates; NOT a "
+                       "confidence interval; O004's criteria use point values",
+            "A1": ratio_band([r for r in pr if not r["excluded_f1"]], ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel")),
+            "K1": ratio_band(cnt, ("r_l2", "r_fh"), ("E_R_l2_rel", "E_R_fh_rel")),
+            "K2": ratio_band(lcnt, ("L_l2", "L_fh"), ("el", "ef"))}
+        run.metric("max_ratio_diff_vs_fasthenry", crit["A1"], n=len(pr))
+        run.metric("max_ratio_diff_vs_fasthenry_all", crit["K1"], n=len(cnt))
+        run.metric("max_abs_consistency", crit["A2"], n=len(asm["layout_rows"]))
+        run.metric("max_rel_diff_vs_fasthenry", crit["K2"], n=len(lcnt))
         run.metric("n_counted_pairs", diag["n_counted"], n=diag["n_pairs"])
-        run.metric("pooled_zero_failure_bound95", diag["pooled_zero_failure_bound95"], n=diag["n_counted"])
+        if diag["pooled_zero_failure_bound95"] is not None:  # only when every counted pair meets A1 (review T0455)
+            run.metric("pooled_zero_failure_bound95", diag["pooled_zero_failure_bound95"], n=diag["n_counted"])
         if diag["F8_l1_max_ratio_diff_vs_fasthenry"] is not None:
             run.metric("l1_max_ratio_diff_vs_fasthenry", diag["F8_l1_max_ratio_diff_vs_fasthenry"], n=len(cnt))
     run.metric("n_l2_gmres_flagged", len(gm), n=sum(j["solver"] == "l2_layout" for j in jobs))
@@ -1237,6 +1785,299 @@ def summarize_span_sim(state: dict, lower_ends=(0.75, 0.78, 0.80, 0.85)) -> dict
                                               ("0.0", "0.05", "0.25", "0.5", "0.75", "0.95", "1.0")}
             res[name]["n_below_0p90_counts"] = {str(i): int((nb == i).sum()) for i in range(int(nb.max()) + 1)}
             res[name]["fraction_max_ge_upper"] = float((mx >= SPAN["upper_end"]).mean())
+    return res
+
+
+def dev_band_sim(n_seeds: int, out: Path, cfg: dict) -> dict:
+    """Research only, NOT EVIDENCE (F2: 2D_Case_4, development seeds, L1 only): the frozen banded-acceptance rule (founder
+    2026-11-17T15:58 UTC) on development seed i = DEV_SEED + 1000 + k for k < n_seeds (the span simulation's seeds), both
+    reference slots on 2D_Case_4 (two independent streams pooled for the two-reference check), without the proxy pair.
+    Per seed: the first draws, every banded redraw (slot, reason, accepted), the final r_L1, the internal redraw counts by
+    class.  Checkpointed per seed to ``out`` (resumes)."""
+    from moduleforge.generate import perturb as P
+    ref, rules = case4_reference()
+    state = json.loads(out.read_text()) if out.exists() else {"seeds": {}}
+    state.update({"label": "RESEARCH ONLY, NOT EVIDENCE (T0457): banded-acceptance rule on 2D_Case_4, development seeds, "
+                           "L1 only (O004 F2); no proxy pair", "allocation": cfg["allocation"],
+                  "rules_sha256": P.rules_sha256(), "banded_acceptance": cfg["banded_acceptance"], "bands": bands(cfg),
+                  "seed_rule": "seed_k = DEV_SEED + 1000 + k; slot k draws reference_seed(seed_k, slot); redraws "
+                               "redraw_seed(seed_k, slot, pos, n)", "dev_seed": DEV_SEED, "l1": cfg["l1"],
+                  "reference_fingerprint": ref.fingerprint(), "rule_overrides": CASE4_OVERRIDES})
+    slots_def = [("case4_slot0", ref, rules), ("case4_slot1", ref, rules)]
+    refs = {rid: (lay, r) for rid, lay, r in slots_def}
+    for k in range(n_seeds):
+        sk = DEV_SEED + 1000 + k
+        if str(sk) in state["seeds"]:
+            continue
+        t0 = time.time()
+        sl, internal, errs = initial_slots(slots_def, cfg["allocation"], sk, cfg, geometry_checks=False, observe=True)
+        if errs:
+            state["seeds"][str(sk)] = {"error": errs, "wall_s": time.time() - t0}
+            continue
+        first = [{"slot": f"{s['rid']}/{s['pos']}", "kind": s["kind"], **{f"r_L1_{f}": s["rec"][f"r_L1_{f}"] for f in FK}}
+                 for s in sl]
+        fill = band_fill(sl, [], refs, sk, cfg, geometry_checks=False, observe=True)
+        internal += fill.pop("internal_redraws")
+        state["seeds"][str(sk)] = {
+            "first": first, "final": [{"slot": f"{s['rid']}/{s['pos']}", "rid": s["rid"], "kind": s["kind"],
+                                       "components": s["rec"]["components"], "n_redraws": s["n_redraws"],
+                                       **{f"r_L1_{f}": s["rec"][f"r_L1_{f}"] for f in FK}} for s in sl],
+            "status": fill["status"], "filled": fill["filled"], "total_redraws": fill["total_redraws"],
+            "n_to_fill": fill["total_redraws"] if fill["filled"] else None,
+            "band_log": [{k2: e.get(k2) for k2 in ("slot", "redraw", "accepted", "reason", "r_L1")} for e in fill["log"]],
+            "internal_counts": summarize_redraws(internal)["counts"],
+            "internal_bad": summarize_redraws(internal)["n_reference_defect_or_unclassified"],
+            "wall_s": time.time() - t0}
+        out.write_text(json.dumps(state, indent=1))
+        print(f"seed {sk}: {fill['status']} after {fill['total_redraws']} redraws, {time.time() - t0:.1f} s", flush=True)
+    state["summary"] = summarize_band_sim(state, cfg)
+    out.write_text(json.dumps(state, indent=1))
+    return state["summary"]
+
+
+def summarize_band_sim(state: dict, cfg: dict, lower_ends=(0.75, 0.76, 0.78, 0.80, 0.82, 0.85)) -> dict:
+    """The founder's requested figures: the fraction of draws passing the registration check (bands filled within the
+    limits AND O004's span check at both frequencies with the given lower end) with a Wilson 95 % interval; the
+    distribution of each draw's lowest r_L1 (20 MHz) before and after the rule; mean and maximum redraws per slot;
+    per-type coverage under the 6 % rule; and the fill fraction against a smaller total-redraw limit."""
+    from statistics import NormalDist
+    z = NormalDist().inv_cdf(0.975)
+
+    def wilson(k, n):
+        if n == 0:
+            return (math.nan, math.nan)
+        p, d = k / n, 1 + z * z / n
+        c, h = (p + z * z / (2 * n)) / d, z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+        return (max(0.0, c - h), min(1.0, c + h))
+    recs = [r for r in state["seeds"].values() if "final" in r]
+    n = len(recs)
+    res: dict = {"n_draws": n, "n_failed_draws": len(state["seeds"]) - n, "n_filled": sum(r["filled"] for r in recs)}
+    res["fill_fraction"] = {"k": res["n_filled"], "n": n, "wilson95": wilson(res["n_filled"], n)}
+    res["pass_fraction_by_lower_end"] = {}
+    for lo in lower_ends:
+        k = sum(r["filled"] and all(span_check([p[f"r_L1_{f}"] for p in r["final"]], SPAN, lo)["passed"] for f in FK)
+                for r in recs)
+        res["pass_fraction_by_lower_end"][f"{lo:.2f}"] = {"k": k, "n": n, "fraction": k / n if n else math.nan,
+                                                          "wilson95": wilson(k, n)}
+    qs = ("0.0", "0.05", "0.25", "0.5", "0.75", "0.95", "1.0")
+    for tag, key in (("after_rule", "final"), ("first_draw", "first")):
+        mins = np.array([min(p["r_L1_20MHz"] for p in r[key]) for r in recs]) if recs else np.array([])
+        if mins.size:
+            res[f"lowest_r_L1_20MHz_{tag}"] = {q: float(np.quantile(mins, float(q))) for q in qs}
+            res[f"lowest_r_L1_20MHz_{tag}_cdf"] = {f"{x:.2f}": float((mins <= x).mean()) for x in lower_ends + (0.90,)}
+    per = [p["n_redraws"] for r in recs for p in r["final"]]
+    res["redraws_per_slot"] = {"mean": float(np.mean(per)) if per else math.nan, "max": max(per, default=0)}
+    kinds = sorted({p["kind"] for r in recs for p in r["final"]})
+    res["redraws_per_slot_by_kind"] = {t: {"mean": float(np.mean(v)), "max": int(max(v))} for t in kinds
+                                       if (v := [p["n_redraws"] for r in recs for p in r["final"] if p["kind"] == t])}
+    tot = np.array([r["total_redraws"] for r in recs]) if recs else np.array([])
+    if tot.size:
+        res["total_redraws_per_draw"] = {q: float(np.quantile(tot, float(q))) for q in qs} | {"mean": float(tot.mean())}
+    lim = int(cfg["banded_acceptance"]["max_redraws_total"])
+    res["fill_fraction_if_total_limit"] = {str(L): sum(r["filled"] and r["total_redraws"] <= L for r in recs) / n
+                                           for L in (25, 50, 100, 200, lim) if n}
+    me = float(cfg["coverage_min_effect"])
+    from moduleforge.generate import perturb as P
+    cov = {}
+    for t in P.MOVE_TYPES:
+        both = [all(any(p["kind"] == t and p["rid"] == rid and covers(p, me) for p in r["final"])
+                    for rid in ("case4_slot0", "case4_slot1")) for r in recs]
+        anyr = [any(p["kind"] == t and covers(p, me) for p in r["final"]) for r in recs]
+        first = [any(p["kind"] == t and covers(p, me) for p in r["first"]) for r in recs]
+        cov[t] = {"covered_pooled_after_rule": float(np.mean(anyr)) if n else math.nan,
+                  "covered_on_each_slot_after_rule": float(np.mean(both)) if n else math.nan,
+                  "covered_pooled_first_draw": float(np.mean(first)) if n else math.nan}
+    res["coverage_6pct_rule"] = cov
+    res["internal_reference_defect_or_unclassified"] = sum(r.get("internal_bad", 0) for r in recs)
+    return res
+
+
+BAND_VARIANTS = {  # T0457 attempt 2, research for the founder's span decision; NOT the frozen rule
+    "a_x0.85": {"x": 0.85, "cover": False}, "b_x0.85_cover": {"x": 0.85, "cover": True},
+    "a_x0.82": {"x": 0.82, "cover": False}, "a_x0.80": {"x": 0.80, "cover": False}}
+
+
+def variant_bands(cfg: dict, x: float, cover: bool) -> list[dict]:
+    """(a) the frozen bands plus 'at least 1 pair at or below x' (both frequencies); (b) also, for each move type, 'at
+    least 1 single pair of that type with |1 - r_L1| >= coverage_min_effect' (both frequencies, pooled over references)."""
+    from moduleforge.generate import perturb as P
+    bl = bands(cfg) + [dict(name=f"at_or_below_{x:.2f}", op="<=", value=float(x), min_pairs=1)]
+    if cover:
+        bl += [dict(name=f"cover_{t}", op="cover", kind=t, value=float(cfg["coverage_min_effect"]), min_pairs=1)
+               for t in P.MOVE_TYPES]
+    return bl
+
+
+class _Memo:
+    """Research-only memo of draw_pairs and pair_records (L1 only, no geometry checks) across the variants of one seed:
+    the n-th redraw of a slot has the same seed in every variant, so its move and L1 are computed once.  Installed and
+    removed around the variants (the frozen functions are restored); results are deep-copied on every hit."""
+
+    def __init__(self):
+        self.draw, self.recs, self.hits, self.miss = {}, {}, 0, 0
+
+    def __enter__(self):
+        import copy
+        g = globals()
+        self._orig = (g["draw_pairs"], g["pair_records"])
+        o_draw, o_recs = self._orig
+
+        def draw(rid, ref, rules, allocation, seed):
+            k = (rid, json.dumps(allocation, sort_keys=True), int(seed))
+            if k not in self.draw:
+                try:
+                    self.draw[k] = ("ok", o_draw(rid, ref, rules, allocation, seed))
+                except RegistrationRefused as e:
+                    self.draw[k] = ("raise", e)
+            st, v = self.draw[k]
+            if st == "raise":
+                raise v
+            return copy.deepcopy(v)
+
+        def recs(rid, slot, ref, rules, moves, l1cfg, with_geometry_checks=True, l_ref=None):
+            from moduleforge.generate import perturb as P
+            if with_geometry_checks or len(moves) != 1:
+                return o_recs(rid, slot, ref, rules, moves, l1cfg, with_geometry_checks, l_ref)
+            k = (rid, int(slot), P.geometry_key(P.apply(ref, moves[0].move_type, moves[0].params)))
+            if k in self.recs:
+                self.hits += 1
+            else:
+                self.miss += 1
+                self.recs[k] = o_recs(rid, slot, ref, rules, moves, l1cfg, False, l_ref)
+            return copy.deepcopy(self.recs[k])
+        g["draw_pairs"], g["pair_records"] = draw, recs
+        return self
+
+    def __exit__(self, *exc):
+        g = globals()
+        g["draw_pairs"], g["pair_records"] = self._orig
+        return False
+
+
+def _variant_seed_order(n_seeds: int, shard: tuple[int, int] | None) -> list[int]:
+    """Shard (i, m): k = i mod m ascending.  Pool (None): odd k ascending, then even k descending (a pool process starts
+    beside shard 0/2 and meets it at the end; a seed is skipped if any variant file has it or another process claimed it)."""
+    if shard is not None:
+        return [k for k in range(n_seeds) if k % shard[1] == shard[0]]
+    return [k for k in range(n_seeds) if k % 2 == 1] + [k for k in reversed(range(n_seeds)) if k % 2 == 0]
+
+
+def _seeds_done() -> set[str]:
+    done: set[str] = set()
+    for q in F7_DIR.glob("band_variants_case4.*.json"):
+        try:
+            done |= set(json.loads(q.read_text())["seeds"])
+        except (json.JSONDecodeError, KeyError, OSError):  # a file being written by another process: re-read next seed
+            pass
+    return done
+
+
+def dev_band_variants(n_seeds: int, out: Path, cfg: dict, shard: tuple[int, int] | None = (0, 1)) -> dict:
+    """Research only, NOT EVIDENCE (F2: 2D_Case_4, development seeds, L1 only; T0457 attempt 2, for the founder's span
+    decision; the frozen rule is unchanged): the frozen banded rule with the extra bands of BAND_VARIANTS, on the same
+    development seeds as dev_band_sim (seed_k = DEV_SEED + 1000 + k, k < n_seeds, k = shard[0] mod shard[1]), both
+    slots on 2D_Case_4, no proxy pair, the frozen limits (config.banded_acceptance), observe=False (the observer is
+    transparent: selftest observer_transparent).  Checkpointed per seed to ``out`` (resumes)."""
+    import copy
+
+    from moduleforge.generate import perturb as P
+    ref, rules = case4_reference()
+    state = json.loads(out.read_text()) if out.exists() else {"seeds": {}}
+    state.update({"label": "RESEARCH ONLY, NOT EVIDENCE (T0457 attempt 2): banded-acceptance VARIANTS (not the frozen "
+                           "rule) on 2D_Case_4, development seeds, L1 only (O004 F2); no proxy pair",
+                  "variants": {k: dict(v, bands=variant_bands(cfg, v["x"], v["cover"])) for k, v in BAND_VARIANTS.items()},
+                  "rules_sha256": P.rules_sha256(), "banded_acceptance": cfg["banded_acceptance"],
+                  "allocation": cfg["allocation"], "dev_seed": DEV_SEED, "l1": cfg["l1"],
+                  "shard": list(shard) if shard else "pool",
+                  "reference_fingerprint": ref.fingerprint(), "rule_overrides": CASE4_OVERRIDES})
+    slots_def = [("case4_slot0", ref, rules), ("case4_slot1", ref, rules)]
+    refs = {rid: (lay, r) for rid, lay, r in slots_def}
+    claims = F7_DIR / "band_variants_claims"
+    claims.mkdir(exist_ok=True)
+    for k in _variant_seed_order(n_seeds, shard):
+        sk = DEV_SEED + 1000 + k
+        if str(sk) in state["seeds"]:
+            continue
+        if shard is None:
+            if str(sk) in _seeds_done():
+                continue
+            try:
+                os.close(os.open(claims / str(sk), os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            except FileExistsError:
+                continue
+        t0 = time.time()
+        sl0, _int, errs = initial_slots(slots_def, cfg["allocation"], sk, cfg, geometry_checks=False, observe=False)
+        if errs:
+            state["seeds"][str(sk)] = {"error": errs}
+            continue
+        first = [{"slot": f"{s['rid']}/{s['pos']}", "rid": s["rid"], "kind": s["kind"],
+                  **{f"r_L1_{f}": s["rec"][f"r_L1_{f}"] for f in FK}} for s in sl0]
+        rec = {"first": first, "variants": {}}
+        with _Memo() as memo:
+            for vn, v in BAND_VARIANTS.items():
+                sl = copy.deepcopy(sl0)
+                fill = band_fill(sl, [], refs, sk, cfg, geometry_checks=False, observe=False,
+                                 band_list=variant_bands(cfg, v["x"], v["cover"]))
+                rec["variants"][vn] = {
+                    "final": [{"slot": f"{s['rid']}/{s['pos']}", "rid": s["rid"], "kind": s["kind"],
+                               "n_redraws": s["n_redraws"], **{f"r_L1_{f}": s["rec"][f"r_L1_{f}"] for f in FK}}
+                              for s in sl],
+                    "status": fill["status"], "filled": fill["filled"], "total_redraws": fill["total_redraws"],
+                    "final_deficits": fill["final_deficits"]}
+            rec["memo"] = {"hits": memo.hits, "misses": memo.miss}
+        rec["wall_s"] = time.time() - t0
+        state["seeds"][str(sk)] = rec
+        out.write_text(json.dumps(state, indent=1))
+        print(f"seed {sk}: " + ", ".join(f"{vn} {r['status'][:7]} {r['total_redraws']}" for vn, r in
+                                         rec["variants"].items()) + f"; {rec['wall_s']:.0f} s, max rss "
+              f"{_maxrss_mb():.0f} MB", flush=True)
+    return state
+
+
+def _maxrss_mb() -> float:
+    import resource
+    r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return r / 2**20 if sys.platform == "darwin" else r / 1024  # bytes on macOS, kB on Linux
+
+
+def summarize_band_variants(paths: list[Path], cfg: dict) -> dict:
+    """The frozen-rule summary (summarize_band_sim) per variant over every shard file, plus the fill fraction under total
+    limits 100 / 200 / 600 (exact post hoc: the rule's sequence does not depend on the limit until it stops), the reasons
+    for refusal, and the move types of the pairs in the extra band."""
+    seeds: dict = {}
+    dup, dup_bad = 0, []
+    for p in paths:
+        for sk, r in json.loads(p.read_text())["seeds"].items():
+            if sk in seeds:  # computed by two processes: the rule is deterministic, so the records must agree
+                dup += 1
+                if json.dumps({k: v for k, v in seeds[sk].items() if k not in ("wall_s", "memo")}, sort_keys=True) != \
+                        json.dumps({k: v for k, v in r.items() if k not in ("wall_s", "memo")}, sort_keys=True):
+                    dup_bad.append(sk)
+            seeds[sk] = r
+    res: dict = {"n_seeds": len(seeds), "seeds": sorted(int(k) for k in seeds), "files": [q.name for q in paths],
+                 "duplicates": {"n": dup, "disagreeing": dup_bad}, "variants": {}}
+    for vn, v in BAND_VARIANTS.items():
+        st = {"seeds": {sk: dict(r["variants"][vn], first=r["first"]) for sk, r in seeds.items() if "variants" in r}}
+        sm = summarize_band_sim(st, cfg)
+        sm.pop("internal_reference_defect_or_unclassified", None)  # observe=False in the variant runs
+        recs = list(st["seeds"].values())
+        sm["fill_fraction_if_total_limit"] = {str(L): sum(r["filled"] and r["total_redraws"] <= L for r in recs) /
+                                              len(recs) for L in (100, 200, 600)} if recs else {}
+        sm["status_counts"] = {}
+        for r in recs:
+            sm["status_counts"][r["status"]] = sm["status_counts"].get(r["status"], 0) + 1
+        sm["unfilled_band_counts"] = {}
+        for r in recs:
+            for b, dv in r["final_deficits"].items():
+                if dv:
+                    sm["unfilled_band_counts"][b] = sm["unfilled_band_counts"].get(b, 0) + 1
+        kinds: dict = {}
+        for r in recs:
+            for p in r["final"]:
+                if all(p[f"r_L1_{f}"] <= v["x"] for f in FK):
+                    kinds[p["kind"]] = kinds.get(p["kind"], 0) + 1
+        sm["extra_band_pair_kinds"] = kinds
+        res["variants"][vn] = sm
     return res
 
 
@@ -1391,19 +2232,21 @@ def dev_fh_direct_mem(out_p: Path) -> dict:
     return rec
 
 
-def makespan(jobs: list[dict], budget_gb: float) -> float:
-    """Greedy list schedule by projected memory (largest first) on one machine: projected wall time (s)."""
-    t, running, pend = 0.0, [], sorted(jobs, key=lambda j: -j["mem_proj_gb"])
+def makespan(jobs: list[dict], budget_gb: float, key: str = "time_proj_s", with_peak: bool = False):
+    """Greedy list schedule by projected memory (largest first) on one machine (run_jobs' rule): projected wall time (s),
+    and with ``with_peak`` also the largest number of jobs running at once (the parallelism)."""
+    t, running, pend, peak = 0.0, [], sorted(jobs, key=lambda j: -j["mem_proj_gb"]), 0
     while pend or running:
         for j in list(pend):
             if sum(m for _e, m in running) + j["mem_proj_gb"] <= budget_gb:
-                running.append((t + j["time_proj_s"], j["mem_proj_gb"]))
+                running.append((t + j[key], j["mem_proj_gb"]))
                 pend.remove(j)
+        peak = max(peak, len(running))
         if not running:
             raise RuntimeError("a job does not fit the machine")
         running.sort()
         t = running.pop(0)[0]
-    return t
+    return (t, peak) if with_peak else t
 
 
 def dev_fh_plan(cfg: dict) -> dict:
@@ -1433,13 +2276,150 @@ def dev_fh_plan(cfg: dict) -> dict:
         for a in pr.get("attempts", []):
             if a["status"] == "past_preconditioner":
                 fac[j["layout"]] = max(fac.get(j["layout"], 1.0), a["wall_s"] / j["time_proj_s"])
+    # T0457 item 13: full local solves of the small Case 4 decks (research/o004_f7/fh_local_probe.json): measured wall
+    # time over the projection, per layout; the largest measured factor on Case 4 calibrates every Case 4 layout (same stack)
+    loc_p = F7_DIR / "fh_local_probe.json"
+    local = json.loads(loc_p.read_text())["decks"] if loc_p.exists() else {}
+    # keyed by probe entry (a deck re-solved under a tag, e.g. '@solo', is its own entry; T0457 attempt 2)
+    loc_ok = {k: v for k, v in local.items() if v.get("time_ratio_measured_over_projected") and not v.get("custom")}
+    loc_fac = {k: v["time_ratio_measured_over_projected"] for k, v in loc_ok.items()}
+    # level families (T0457 attempt 2): 'k' = the E004 ladder (k0 / k1 / k2 / k1w), 'g' = the gen2_0 diagnostic levels;
+    # a local timeout gives a LOWER bound wall / projection on its deck's factor
+    loc_lb = {k: v["wall_s_total"] / v["time_proj_s"] for k, v in local.items()
+              if v.get("status") == "timeout" and v.get("time_proj_s") and not v.get("custom")}
+
+    def _fam(level: str) -> str:
+        return "g" if str(level).startswith("g") else "k"
+    c4_fac = max((f for k, f in loc_fac.items() if loc_ok[k]["layout"] != "gen2_0" and _fam(loc_ok[k]["level"]) == "k"),
+                 default=None)
+    c4_fac_g = max([f for k, f in loc_fac.items() if loc_ok[k]["layout"] != "gen2_0" and _fam(loc_ok[k]["level"]) == "g"]
+                   + [f for k, f in loc_lb.items() if local[k]["layout"] != "gen2_0" and _fam(local[k]["level"]) == "g"],
+                   default=None)
     for j in jobs:
-        if j["solver"] == "fasthenry" and fac.get(j["layout"], 1.0) > 1.0:
-            j["time_calibration"] = fac[j["layout"]]
-            j["time_proj_s"] *= fac[j["layout"]]
+        if j["solver"] == "fasthenry":
+            lvs = [dict(entry=k, **{q: v.get(q) for q in ("status", "wall_s_ok", "peak_mem_mb", "time_ratio_measured_"
+                                                        "over_projected", "mem_ratio_measured_over_raw",
+                                                        "mem_ratio_measured_over_projected", "load_avg_before", "L_H")})
+                   for k, v in local.items() if v.get("deck_sha256") == j["deck_sha256"]]
+            if lvs:
+                j["local_solve"] = lvs
+            jf = c4_fac_g if (_fam(j["key"]) == "g" and c4_fac_g) else c4_fac
+            if j["layout"] == "gen2_0" and c4_fac_g:  # gen2_0 runs only g levels: the larger of its probe and Case 4's g
+                fac[j["id"]] = max(fac.get(j["layout"], 1.0), c4_fac_g)
+            elif j["layout"] != "gen2_0" and jf:
+                fac[j["id"]] = max(fac.get(j["layout"], 1.0), jf)
+    # refit of the time rule's exponent from the local full solves (T0457 item 13): log(measured / rule) against
+    # log(F / f_ref) by least squares; the slope b is the exponent's miss over the measured range.  The k2 envelope
+    # uses max(exponent_uncertainty, |b| + its standard error) (the widening from the measured misses)
+    pts = [(math.log(v["n_filaments_exporter"] / s["f_ref"]), math.log(v["time_ratio_measured_over_projected"]))
+           for v in loc_ok.values() if v["layout"] != "gen2_0"]
+    refit: dict = {"n_points": len(pts), "points": {k: {"n_filaments": v["n_filaments_exporter"], "factor": loc_fac[k],
+                                                         "load_avg_before": v.get("load_avg_before")}
+                                                     for k, v in loc_ok.items()}}
+    xs = np.array([x for x, _ in pts])
+    ext0 = s.get("exponent_uncertainty", 0.3)
+    if len(pts) >= 3 and np.ptp(xs) > 0.1:
+        A = np.vstack([np.ones_like(xs), xs]).T
+        ys = np.array([y for _, y in pts])
+        coef, *_ = np.linalg.lstsq(A, ys, rcond=None)
+        resid = ys - A @ coef
+        dof = len(pts) - 2
+        s2 = float(resid @ resid / dof) if dof > 0 else math.nan
+        se_b = math.sqrt(s2 * np.linalg.inv(A.T @ A)[1, 1]) if dof > 0 else math.nan
+        b = float(coef[1])
+        refit.update(slope_b=b, slope_se=se_b, exponent_refit=s["exponent"] + b, residual_sd_log=math.sqrt(s2)
+                     if dof > 0 else None, filament_range=[int(math.exp(xs.min()) * s["f_ref"]),
+                                                           int(math.exp(xs.max()) * s["f_ref"])])
+        ext = max(ext0, abs(b) + (se_b if math.isfinite(se_b) else 0.0))
+    else:
+        refit["note"] = "fewer than 3 local points over a filament range wider than 10 %: no slope fitted"
+        ext = ext0
+    refit["exponent_uncertainty_used"] = ext
+    refit["rule"] = ("the k2 upper envelope is time_proj_s x (F / f_ref)^u with u = max(the spec's exponent_uncertainty, "
+                     "|b| + se(b)); the calibration factor itself is the largest measured Case 4 factor (load averages "
+                     "recorded: the Mac was shared with another agent, so part of each factor is contention)")
+    mem_r = {k: v["mem_ratio_measured_over_projected"] for k, v in local.items()
+             if v.get("mem_ratio_measured_over_projected")}
+    mem_cal = {"measured_peak_over_projection": mem_r, "max": max(mem_r.values(), default=None),
+               "cap_factor": s.get("cap_factor", 1.0),
+               "cap_headroom_over_max_measured": (s.get("cap_factor", 1.0) / max(mem_r.values())) if mem_r else None,
+               "rule": "cap = projection (kb_per_filament x F x mem_margin 1.30) x cap_factor; a run killed at its cap is "
+                       "retried once alone at the machine's full budget (memory_cap_policy)"}
+    for j in jobs:
+        jf = fac.get(j["id"], fac.get(j["layout"], 1.0))
+        if j["solver"] == "fasthenry" and jf != 1.0:
+            j["time_calibration"] = jf
+            j["time_proj_s"] *= jf
             j["timeout_s"] = max(s["min_timeout_s"], s["timeout_factor"] * j["time_proj_s"])
+    # the level factorial (research/o004_f7/fh_local_probe.py CUSTOM): which g feature is slow, and so which k levels
+    # inherit the g miss in their upper envelope.  A one-feature deck is 'slow' if it timed out or its factor is >= 4 x the
+    # base deck's; if the factorial is incomplete every k level finer than k0 carries the risk (conservative)
+    cx = {k.split("__fhx_")[1]: v for k, v in local.items() if v.get("custom")}
+
+    def _xf(v):
+        if v is None:
+            return None
+        return v.get("time_ratio_measured_over_projected") or (v["wall_s_total"] / v["time_proj_s"]
+                                                               if v.get("status") == "timeout" else None)
+    fb, fw, fcl = (_xf(cx.get(n)) for n in ("B_k0lat_nh1_w2s1", "B_plus_wiresub2", "B_plus_cell0.5"))
+    def slow(x: str, v) -> bool:
+        return v is not None and (cx[x].get("status") == "timeout" or bool(fb and v >= 4 * fb))
+    if None in (fb, fw, fcl):
+        risky, why = {"wire_sub", "cell"}, "factorial incomplete: every k level finer than k0 carries the g miss"
+    else:
+        risky = {n for n, x, v in (("wire_sub", "B_plus_wiresub2", fw), ("cell", "B_plus_cell0.5", fcl)) if slow(x, v)}
+        if slow("B_k0lat_nh1_w2s1", fb):
+            risky.add("nh1")
+        why = f"factorial: slow features {sorted(risky) or 'none'}"
+    level_mult = (c4_fac_g / c4_fac) if (c4_fac_g and c4_fac) else 1.0
+    # direct calibration (preferred, T0457 attempt 2): k1's own lateral level at nh 1 (fhx_k1lat_nh1) over the base deck B
+    # (k0's lateral at nh 1): m1 = f(k1lat) / f(B) is the k1 decks' per-filament slowdown beyond the k0 rule (a lower
+    # bound if it timed out).  It replaces the one-feature threshold reading: the cell-0.5 deck came out at 4.0 x B, on the
+    # pre-set 4 x threshold, so that binary reading is not relied on.  k1 decks: time_proj_s x m1; k2 decks (one more
+    # halving of the cell): time_proj_s x m1 and time_hi_s x m1^2 (geometric extrapolation per halving, an assumption)
+    fk1 = _xf(cx.get("k1lat_nh1"))
+    direct = bool(fk1 and fb)
+    m1 = max(1.0, fk1 / fb) if direct else None
+    if direct:
+        why = (f"direct: k1 lateral at nh 1 runs at {fk1:.2f} x the rule against {fb:.2f} x for k0's lateral (m1 = {m1:.2f}"
+               f"{', a lower bound: timeout' if cx['k1lat_nh1'].get('status') == 'timeout' else ''}); " + why)
+
+    def _at_risk(lv: dict) -> bool:
+        if direct:
+            return lv.get("cell_mm", 1.0) <= 0.5
+        return (("wire_sub" in risky and lv.get("wire_sub", 1) >= 2) or ("cell" in risky and lv.get("cell_mm", 1) <= 0.5)
+                or ("nh1" in risky and lv.get("nh_trace", 5) == 1))
+
+    def _mults(lv: dict) -> tuple[float, float]:
+        """(central, upper) multipliers of a k-family level: direct m1 (k1) / m1, m1^2 (k2); else (1, g / k)."""
+        if not _at_risk(lv):
+            return 1.0, 1.0
+        if direct:
+            return (m1, m1) if lv.get("cell_mm", 1.0) > 0.3 else (m1, m1 * m1)
+        return 1.0, level_mult
+    level_risk = {"factorial": {n: ({q: v.get(q) for q in ("status", "n_filaments_exporter", "wall_s_total",
+                                                           "time_proj_s", "peak_mem_mb", "fh_level", "load_avg_before")}
+                                    | {"factor_or_lower_bound": _xf(v)}) for n, v in cx.items()},
+                  "risky_features": sorted(risky), "reading": why, "k_factor": c4_fac, "g_factor_or_lower_bound": c4_fac_g,
+                  "multiplier_g_over_k": level_mult, "direct_k1_multiplier": m1,
+                  "rule": "direct (k1lat measured): k1 jobs x m1 in time_proj_s and time_hi_s, k2 jobs x m1 in "
+                          "time_proj_s and x m1^2 in time_hi_s; otherwise the upper envelope of every job with a risky "
+                          "feature (wire_sub >= 2 / cell <= 0.5 mm / nh 1) x g_factor / k_factor"}
     fh = [j for j in jobs if j["solver"] == "fasthenry"]
-    span = makespan(jobs, VM["usable_gb"])
+    for j in jobs:  # the upper envelope: exponent + ext over the extrapolation beyond P4's largest run (f_ref)
+        j["time_hi_s"] = j["time_proj_s"] * max(1.0, j.get("n_filaments_exporter", 0) / s["f_ref"]) ** ext \
+            if j["solver"] == "fasthenry" else j["time_proj_s"]
+        if j["solver"] == "fasthenry" and _fam(j["key"]) == "k" and _at_risk(j["fh_level"]):
+            mc, mu = _mults(j["fh_level"])
+            j["time_hi_s"] *= mu
+            if mc != 1.0:
+                j["time_proj_s"] *= mc
+                j["timeout_s"] = max(s["min_timeout_s"], s["timeout_factor"] * j["time_proj_s"])
+            j["level_risk"] = f"x{mc:.2f} in time_proj_s, x{mu:.2f} in time_hi_s ({why})"
+        if j["solver"] == "fasthenry":
+            j["timeout_covers_upper_envelope"] = j["timeout_s"] >= j["time_hi_s"]
+    span, par = makespan(jobs, VM["usable_gb"], with_peak=True)
+    span_hi = makespan(jobs, VM["usable_gb"], key="time_hi_s")
     # E004 cost plan: per judged reference, the k2 / t9 deck sizes (export only); 15 layouts (2 references, 12 pairs, proxy)
     recon = recon_module()
     ref_sizes = {}
@@ -1451,14 +2431,23 @@ def dev_fh_plan(cfg: dict) -> dict:
             ref_sizes[e["reference_id"]][f"{k}_nh{nh}"] = dict(n_filaments=fc["n_filaments"],
                                                                 **fh_sizing(cfg, fc["n_filaments"]))
     e004_jobs = []
-    for rid, s in ref_sizes.items():
+    for rid, rs in ref_sizes.items():
         n_lay = 7 if rid == "2D_Case_6" else 8  # 6 pairs + reference (+ the 2R proxy pair)
-        for key, v in s.items():
+        for key, v in rs.items():
             if key != "stack":
-                e004_jobs += [dict(mem_proj_gb=v["mem_proj_gb"], time_proj_s=v["time_proj_s"])] * n_lay
+                tc = v["time_proj_s"] * (c4_fac or 1.0)  # the Case 4 local factor (2R has Case 4's stack; Case 6: labelled)
+                kk, nh = key.split("_nh")
+                mc, mu = _mults(fh_level(cfg, kk, int(nh)))
+                tc *= mc
+                th = tc / mc * max(1.0, v["n_filaments"] / s["f_ref"]) ** ext * mu
+                tmo = max(s["min_timeout_s"], s["timeout_factor"] * tc)
+                v.update(time_calibrated_s=tc, timeout_calibrated_s=tmo, time_hi_s=th, timeout_covers_upper_envelope=tmo >= th)
+                e004_jobs += [dict(mem_proj_gb=v["mem_proj_gb"], time_proj_s=tc, time_hi_s=th)] * n_lay
         l2 = cfg["solve"]["l2_layout"]
-        e004_jobs += [dict(mem_proj_gb=l2["peak_gb"][lv], time_proj_s=l2["wall_s"][lv]) for lv in L2_ALL] * n_lay
-    e_span = makespan(e004_jobs, VM["usable_gb"])
+        e004_jobs += [dict(mem_proj_gb=l2["peak_gb"][lv], time_proj_s=l2["wall_s"][lv], time_hi_s=l2["wall_s"][lv])
+                      for lv in L2_ALL] * n_lay
+    e_span, e_par = makespan(e004_jobs, VM["usable_gb"], with_peak=True)
+    e_span_hi = makespan(e004_jobs, VM["usable_gb"], key="time_hi_s")
     plan = {
         "label": "F7(a) FastHenry job list for the founder's burst VM (T0389). RESEARCH / DEVELOPMENT ONLY (O004 F2): "
                  "2D_Case_4 and gen2_0, development seeds; no FastHenry on 2D_Case_2R or 2D_Case_6 before registration",
@@ -1487,12 +2476,51 @@ def dev_fh_plan(cfg: dict) -> dict:
                        "margin covers FastHenry's post-refinement growth, unknown before the run, T0385 (3)); every "
                        "attempt's peak_mem_mb and wall_s are recorded",
         "jobs": jobs,
-        "projection": {"vm": VM, "n_jobs": len(jobs), "fh_cpu_h": sum(j["time_proj_s"] for j in fh) / 3600,
-                       "makespan_h": span / 3600, "usd": span / 3600 * VM["usd_per_h"],
-                       "uncertainty": "time +-25 % (P4 contention) and the 1.40 exponent extrapolated from 25k-102k "
-                                      "filaments to ~1M: treat k2 times as +-50 %"},
+        "projection": {"vm": VM, "machine": VM["machine"], "memory_budget_gb": VM["usable_gb"],
+                       "parallelism": f"memory-packed (run_jobs, MF_E004_MEM_GB={VM['usable_gb']:g}): at most {par} jobs "
+                                      "at once in the projected schedule; never by CPU count",
+                       "n_jobs": len(jobs), "fh_cpu_h": sum(j["time_proj_s"] for j in fh) / 3600,
+                       "makespan_h": span / 3600, "makespan_upper_h": span_hi / 3600,
+                       "usd": span / 3600 * VM["usd_per_h"], "usd_upper": span_hi / 3600 * VM["usd_per_h"],
+                       "MF_GCP_MAX_HOURS": int(math.ceil(1.25 * span_hi / 3600)),
+                       "max_hours_rule": "ceil(1.25 x the upper-envelope makespan): burst_gcp.sh's default of 6 h stopped "
+                                         "burst 1 early; launch with MF_GCP_MAX_HOURS set to this value",
+                       "time_calibration": {"local_full_solves": loc_fac, "case4_factor": c4_fac,
+                                            "gen2_0_probe_lower_bound": fac.get("gen2_0"),
+                                            "rule": "time = t_ref x (F / f_ref)^exponent x the layout's measured factor "
+                                                    "(Case 4 layouts: the largest local full-solve factor; gen2_0: the "
+                                                    "preconditioner probe's lower bound)",
+                                            "exponent_refit": refit},
+                       "memory_calibration": mem_cal, "level_risk": level_risk,
+                       "uncertainty": f"exponent {s['exponent']} +- {ext:.2f} beyond P4's largest run ({s['f_ref']} "
+                                      "filaments; " + (f"widened from the spec's {ext0} by the local refit" if ext > ext0
+                                                       else "not widened by the refit: the k-level local points span "
+                                                            "71-74k filaments, no slope") +
+                                      "): the k2 decks (~1.2 M filaments, 11x past calibration) carry a factor "
+                                      f"{(1.2e6 / s['f_ref']) ** ext:.1f} up or down; the widening from the measured "
+                                      "misses is the level risk (level_risk: the k1 lateral level measured at >= 8x the "
+                                      "rule against 1.6x at k0's lateral, so k1 decks x m1 in time_proj_s and k2 decks x "
+                                      "m1 in time_proj_s and x m1^2 in time_hi_s); time_hi_s is the upper envelope; the "
+                                      "measured misses (gen2_0 >= 15x, a lower bound, so gen2_0's time_hi_s is NOT an "
+                                      "upper bound; Case 4 local factor above) are applied as calibration and timeouts are "
+                                      "10 x the calibrated projection"},
+        "thickness_share_rule": "T0454 item 6: the F7(a) report gives, per pair X in {standin_compound, "
+                                "dev03_trace_width} against case4_base and per frequency, FastHenry's ratio thickness term "
+                                "(e004_run.fh_terms(ratio=True)['thickness']) / r_fh(k2) / 0.01, the share of F1's 1 % cap "
+                                "(rows field fh_thickness_share_of_cap in the solve stage); the current values are in "
+                                "'thickness_share' (pending until the burst results exist)",
+        "thickness_share": f7a_thickness_share(cfg, F7_DIR / "fh_solves"),
         "e004_cost_plan": {"reference_deck_sizes": ref_sizes, "n_layouts": 15,
                            "cpu_h": sum(j["time_proj_s"] for j in e004_jobs) / 3600, "makespan_h": e_span / 3600,
+                           "parallelism": e_par, "machine": VM["machine"], "time_calibration_applied": c4_fac,
+                           "timeouts_fit": _timeouts_fit_record(
+                               [{"solver": "fasthenry", "timeout_s": v["timeout_calibrated_s"]} for rs in ref_sizes.values()
+                                for k, v in rs.items() if k != "stack"]),
+                           "makespan_upper_h": e_span_hi / 3600, "usd_upper": e_span_hi / 3600 * VM["usd_per_h"],
+                           "cpu_h_upper": sum(j["time_hi_s"] for j in e004_jobs) / 3600,
+                           "MF_GCP_MAX_HOURS": int(math.ceil(1.25 * e_span_hi / 3600)),
+                           "max_hours_rule": "ceil(1.25 x the upper-envelope makespan: the exponent envelope and the "
+                                             "level risk of projection.level_risk)",
                            "usd": e_span / 3600 * VM["usd_per_h"],
                            "note": "pairs sized as their reference; l2_layout at the measured Case 4 peaks (15.9 GB at "
                                    "0.25 mm, T0387), a conservative bound for 2R / Case 6 (Case 6 0.25 mm: 4.75 GB)"},
@@ -1500,6 +2528,44 @@ def dev_fh_plan(cfg: dict) -> dict:
     }
     (F7_DIR / "vm_jobs_fasthenry.json").write_text(json.dumps(plan, indent=1, default=str))
     return plan["projection"] | {"e004": {k: v for k, v in plan["e004_cost_plan"].items() if k != "reference_deck_sizes"}}
+
+
+def _timeouts_fit_record(jobs: list[dict]) -> dict:
+    """assert_timeouts_fit for the research plan: the plan records a misfit instead of stopping (the registered solve
+    stage keeps the hard assertion and refuses)."""
+    try:
+        return assert_timeouts_fit(jobs, {"_timeout_min": yaml_timeout_min()})
+    except RuntimeError as e:
+        worst = max(2 * j["timeout_s"] for j in jobs)
+        return {"ok": False, "error": str(e), "worst_timeout_x2_s": worst, "timeout_min_s": 60 * yaml_timeout_min(),
+                "consequence": "the registered solve stage would refuse before any solve (assert_timeouts_fit); the "
+                               "timeout rule, timeout_min or the ladder needs a founder decision before registration"}
+
+
+def f7a_thickness_share(cfg: dict, work: Path) -> dict:
+    """T0454 item 6: per F7(a) pair and frequency, FastHenry's ratio thickness term over r and over F1's 1 % cap, from
+    the results under ``work`` (research/o004_f7/fh_solves); 'pending' where a level is missing."""
+    f = cfg["solve"]["fasthenry"]
+    nh_lat, nh_list, at = int(f["nh_lateral"]), [int(x) for x in f["thickness"]["nh"]], f["thickness"]["at"]
+    out = {}
+    for pair in ("standin_compound", "dev03_trace_width"):
+        for fk in FK:
+            v = {}
+            for k in [*FH_LADDER, *(f"t{n}" for n in nh_list if n != nh_lat)]:
+                level = f"{k}_nh{nh_lat}" if k in FH_LADDER else f"{at}_nh{k[1:]}"
+                vals = []
+                for lay in (pair, "case4_base"):
+                    pth = work / "solves" / f"{lay}__fh_{level}.json"
+                    r = json.loads(pth.read_text()) if pth.exists() else {}
+                    vals.append(r["L_H"][fk] if r.get("ok") and r.get("L_H") else None)
+                v[k] = None if None in vals else vals[0] / vals[1]
+            if None in [v.get(at), *(v.get(f"t{n}") for n in nh_list if n != nh_lat)]:
+                out[f"{pair}@{fk}"] = "pending (burst results missing)"
+                continue
+            t = fh_terms({k: x for k, x in v.items() if x is not None} | {k: v.get(k) or 1.0 for k in FH_LADDER}, nh_lat,
+                         nh_list, at, True, step_rule(True)[0])["thickness"]
+            out[f"{pair}@{fk}"] = {"thickness_term": t, "over_r": t / v[at], "share_of_1pct_cap": t / v[at] / 0.01}
+    return out
 
 
 def dev_fh_run(job_file: Path) -> None:
@@ -1517,15 +2583,237 @@ def dev_fh_run(job_file: Path) -> None:
     run_jobs(plan["jobs"], lays, work, float(os.environ.get("MF_E004_MEM_GB", "5")))
 
 
+# ------------------------------------------------------------------------------------------------------------ selftest
+class _StubRun:
+    """Records metric / sanity / rows / artifact calls (selftest only; no evidence)."""
+
+    def __init__(self, run_dir: Path):
+        self.run_dir, self.metrics, self.checks, self.seed, self.run_id, self.spec = run_dir, {}, {}, None, "selftest", {}
+
+    def metric(self, name, value, ci=None, n=None, **_kw):
+        self.metrics[name] = (value, ci, n)
+
+    def sanity(self, name, passed, value=None, threshold=None, detail=""):
+        self.checks[name] = bool(passed)
+
+    def rows(self, rows):
+        self.rows_ = rows
+
+    def artifact(self, name, path):
+        pass
+
+
+def _synthetic(cfg: dict, layouts: dict, ladders: dict, smoke: bool = False) -> tuple[list, dict]:
+    """Jobs for ``layouts`` and results whose L (H) per level key is ladders[layout][key] (a float for both frequencies,
+    None = missing); every key absent from ladders[layout] is missing."""
+    jobs = [dict(id=f"{n}__{k}", layout=n, key=k, solver="x") for n in layouts
+            for k in (L2_ALL + FH_LADDER + tuple(f"t{h}" for h in cfg["solve"]["fasthenry"]["thickness"]["nh"]))]
+    res = {}
+    for j in jobs:
+        v = ladders.get(j["layout"], {}).get(j["key"])
+        res[j["id"]] = {"ok": v is not None, "L_H": {k: v for k in FK} if v is not None else None}
+    return jobs, res
+
+
+def selftest() -> int:
+    """Checks of the finite-estimate paths (review T0454 / T0457 item 12) and of the registration helpers, on hand-built
+    inputs with values derived here from O004's formulas (not from the code under test).  Exit 0 iff all pass."""
+    import yaml
+    from mfos.metrics import gci_capped, gci_step_floor
+    cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
+    nh = [int(x) for x in cfg["solve"]["fasthenry"]["thickness"]["nh"]]
+    res_all: list[tuple[str, bool, str]] = []
+
+    def ok(name, cond, detail=""):
+        res_all.append((name, bool(cond), str(detail)))
+
+    def lad(l2, fh, thk=None, fil=None, fh_t=None):
+        """l2 = (lat1.0, lat0.5, lat0.25); fh = (k0, k1, k2); thk = (thk_c, thk_f); fh_t = {nh: value}."""
+        d = dict(zip(L2_LADDER, l2, strict=True)) | dict(zip(FH_LADDER, fh, strict=True))
+        d.update(thk_c=(thk or (l2[1], l2[1]))[0], thk_f=(thk or (l2[1], l2[1]))[1], fil_f=fil if fil is not None else l2[1])
+        for h in nh:
+            if h != int(cfg["solve"]["fasthenry"]["nh_lateral"]):
+                d[f"t{h}"] = (fh_t or {}).get(h, fh[1])
+        return d
+    ref = lad((10e-9,) * 3, (10e-9,) * 3)
+    pair = lambda n, kind="trace_width": {"name": n, "kind": kind, "components": [kind], "r_L1_10MHz": 0.9,  # noqa: E731
+                                         "r_L1_20MHz": 0.9}
+    # 1. a monotone ladder: E_R_l2 = gci_step_floor of the ratio ladder (+0 thickness, +0 filament); counted
+    l2r, fhr = (0.9100, 0.9050, 0.9025), (0.9150, 0.9070, 0.9030)
+    lads = {"ref": ref, "a": lad(tuple(x * 10e-9 for x in l2r), tuple(x * 10e-9 for x in fhr))}
+    jobs, res = _synthetic(cfg, lads, lads)
+    asm = assemble(cfg, [pair("a")], {"a": "ref"}, res, jobs, False, gci_step_floor)
+    row = asm["pair_rows"][0]
+    want_l2 = gci_step_floor(*l2r, STEP_FLOOR_REL, relative=True)
+    want_fh = gci_step_floor(*fhr, STEP_FLOOR_REL, relative=True)
+    ok("monotone_ladder_estimates", math.isclose(row["E_R_l2"], want_l2, rel_tol=1e-9) and
+       math.isclose(row["E_R_fh"], want_fh, rel_tol=1e-9) and math.isfinite(want_l2),
+       f"E_R_l2 {row['E_R_l2']:.3e} (hand {want_l2:.3e}), E_R_fh {row['E_R_fh']:.3e} (hand {want_fh:.3e})")
+    ok("monotone_ladder_gci_capped_finite", math.isfinite(gci_capped(*l2r)), f"gci_capped {gci_capped(*l2r):.3e}")
+    excl_want = not (want_l2 / l2r[2] <= cfg["f1_caps"]["l2_layout"] and want_fh / fhr[2] <= cfg["f1_caps"]["fasthenry"])
+    cr = criteria(asm, cfg)
+    ok("monotone_ladder_A1", row["excluded_f1"] == excl_want and (math.isinf(cr["A1"]) if excl_want else
+       math.isclose(cr["A1"], abs(l2r[2] / fhr[2] - 1), rel_tol=1e-12)), f"excluded {row['excluded_f1']}, A1 {cr['A1']}")
+    # 2. the F1 cap boundary: l2's E_R / r just below and just above 0.5 % (lateral 0, thickness 0, filament 3|fil - r|)
+    r0 = 0.9
+    for tag, frac, want_ex in (("below", 0.0049999, False), ("above", 0.0050001, True)):
+        fil = r0 + frac * r0 / 3.0
+        lads = {"ref": ref, "b": lad((r0 * 10e-9,) * 3, (r0 * 10e-9,) * 3, fil=fil * 10e-9)}
+        jobs, res = _synthetic(cfg, lads, lads)
+        rw = assemble(cfg, [pair("b")], {"b": "ref"}, res, jobs, False, gci_step_floor)["pair_rows"][0]
+        ok(f"f1_cap_{tag}", rw["excluded_f1"] == want_ex and math.isclose(rw["E_R_l2_rel"], frac, rel_tol=1e-6),
+           f"E_R/r {rw['E_R_l2_rel']:.7f}, excluded {rw['excluded_f1']}")
+    # 3. a missing FastHenry finest value on one pair, K1 firing on another (6 % off): F1's INVALID rule passes (K1 saves)
+    lads = {"ref": ref, "c": lad((0.8e-8,) * 3, (0.8e-8 / 1.06,) * 3),
+            "d": {k: v for k, v in lad((0.9e-8,) * 3, (0.9e-8,) * 3).items() if k != "k2"}}
+    jobs, res = _synthetic(cfg, lads, lads)
+    asm = assemble(cfg, [pair("c"), pair("d")], {"c": "ref", "d": "ref"}, res, jobs, False, gci_step_floor)
+    cr = criteria(asm, cfg)
+    fv, miss, k1 = finest_values_check(cr, [{"name": "c"}, {"name": "d"}])
+    ok("missing_finest_with_K1_elsewhere", miss == ["d"] and k1 and fv and math.isinf(cr["A1"]) and
+       math.isclose(cr["K1"], 0.06, rel_tol=1e-9) and cr["K1_argmax"]["pair"] == "c",
+       f"missing {miss}, K1 {cr['K1']:.4f} fires {k1}, finest_values_present {fv}, argmax {cr['K1_argmax']}")
+    # 4. the same without K1 firing (2 % off): INVALID (finest_values_present fails)
+    lads["c"] = lad((0.8e-8,) * 3, (0.8e-8 / 1.02,) * 3)
+    jobs, res = _synthetic(cfg, lads, lads)
+    cr = criteria(assemble(cfg, [pair("c"), pair("d")], {"c": "ref", "d": "ref"}, res, jobs, False, gci_step_floor), cfg)
+    fv, miss, k1 = finest_values_check(cr, [{"name": "c"}, {"name": "d"}])
+    ok("missing_finest_no_K1_is_invalid", not fv and not k1 and miss == ["d"], f"fv {fv}, K1 {cr['K1']:.4f}")
+    # 5. K1 on an excluded pair is flagged as such (O004 F1)
+    lads = {"ref": ref, "e": lad((0.80e-8, 0.81e-8, 0.80e-8), (0.85e-8,) * 3)}
+    jobs, res = _synthetic(cfg, lads, lads)
+    cr = criteria(assemble(cfg, [pair("e")], {"e": "ref"}, res, jobs, False, gci_step_floor), cfg)
+    ok("K1_argmax_excluded_flag", cr["K1_argmax"]["excluded_f1"] and cr["K1_fires"], str(cr["K1_argmax"]))
+    # 6. zero-failure bounds only for strata whose counted pairs all meet A1 (review T0455)
+    lads = {"ref": ref, "f": lad((0.9e-8,) * 3, (0.9e-8 / 1.04,) * 3), "g": lad((0.9e-8,) * 3, (0.9e-8,) * 3)}
+    jobs, res = _synthetic(cfg, lads, lads)
+    dg = diagnostics(assemble(cfg, [pair("f"), pair("g", "die_row_shift")], {"f": "ref", "g": "ref"}, res, jobs, False,
+                              gci_step_floor), cfg)
+    ok("zero_failure_bound_conditional", dg["pooled_zero_failure_bound95"] is None and
+       dg["per_move_type"]["trace_width"]["zero_failure_bound95"] is None and
+       math.isclose(dg["per_move_type"]["die_row_shift"]["zero_failure_bound95"], 0.95, rel_tol=1e-12) and
+       dg["per_move_type"]["trace_width"]["covered_after_exclusion_6pct"],
+       f"pooled {dg['pooled_zero_failure_bound95']} ({dg['pooled_bound_status']})")
+    # 7. thickness.at is honoured and checked (review T0454)
+    v = {"k0": 1.0, "k1": 1.0, "k2": 1.0, "t3": 1.01, "t9": 1.0}
+    t_k1 = fh_terms(v, 5, nh, "k1", False, gci_step_floor)["thickness"]
+    try:
+        fh_terms(v, 5, nh, "k9", False, gci_step_floor)
+        bad_at = False
+    except ValueError:
+        bad_at = True
+    ok("fh_thickness_at", bad_at and math.isclose(t_k1, gci_capped(1.01, 1.0, 1.0), abs_tol=1e-15), f"thk {t_k1}")
+    # 8. banded acceptance helpers (synthetic r_L1): deficits, redrawable, the sole-coverer protection
+    rp = lambda r, kind="compound", rid="A": {"kind": kind, "rid": rid, **{f"r_L1_{k}": r for k in FK}}  # noqa: E731
+    bl = bands(cfg)
+    pool = [rp(0.85), rp(0.95), rp(0.99, "terminal_copper"), rp(0.93, "die_row_shift")]
+    ok("band_deficits", band_deficits(pool, bl) == {"below": 2, "at_or_above_upper": 0}, band_deficits(pool, bl))
+    sl = [dict(rid=p["rid"], kind=p["kind"], rec=p) for p in pool]
+    rd = [_redrawable(i, sl, [], bl, 0.06, True) for i in range(len(sl))]
+    ok("band_redrawable", rd == [False, True, False, False], f"{rd} (0.85 needed by the band; 0.99 the only one at or "
+       "above 0.98; 0.93 the sole covering die_row_shift)")
+    ok("band_two_frequencies", not in_band({"r_L1_10MHz": 0.89, "r_L1_20MHz": 0.905}, bl[0]))
+    cb = {"name": "cover_trace_width", "op": "cover", "kind": "trace_width", "value": 0.06, "min_pairs": 1}
+    lb = {"name": "at_or_below_0.85", "op": "<=", "value": 0.85, "min_pairs": 1}
+    ok("research_band_ops", in_band({"kind": "trace_width", "r_L1_10MHz": 0.94, "r_L1_20MHz": 1.07}, cb)
+       and not in_band({"kind": "trace_width", "r_L1_10MHz": 0.95, "r_L1_20MHz": 0.93}, cb)
+       and not in_band({"kind": "compound", "r_L1_10MHz": 0.8, "r_L1_20MHz": 0.8}, cb)
+       and in_band({"r_L1_10MHz": 0.85, "r_L1_20MHz": 0.85}, lb) and not in_band({"r_L1_10MHz": 0.85,
+                                                                                "r_L1_20MHz": 0.8501}, lb),
+       "cover: kind and |1 - r| >= 6 % at both frequencies; '<=' inclusive at both frequencies")
+    # 9. redraw classes (T0451 / review T0452)
+    cls = [redraw_class(e) for e in (
+        {"outcome": "draw_params_error", "exc_type": "LongSideError", "message": "edge has copper on both sides"},
+        {"outcome": "apply_error", "exc_type": "ValueError", "message": "net PHASE must have exactly one trace in the "
+                                                                        "reference"},
+        {"outcome": "apply_error", "exc_type": "ValueError", "message": "DC+ copper is not a single polygon after the move"},
+        {"outcome": "apply_error", "exc_type": "ValueError", "message": "something else"},
+        {"outcome": "duplicate"}, {"outcome": "drc"})]
+    ok("redraw_classes", cls == ["long_side", "reference_defect", "not_one_polygon", "unclassified", "duplicate", "drc"],
+       cls)
+    # 10. the observer does not change perturb.draw (same moves as an unobserved draw), and records rejections
+    from moduleforge.generate import perturb as P
+    c4, c4r = case4_reference()
+    m1, ev = observed_draw("c4", c4, c4r, {"trace_width": 1, "compound": 1}, 12345)
+    m2 = P.draw(c4, {"trace_width": 1, "compound": 1}, 12345, c4r)
+    same = [(m.move_type, json.dumps(m.params, sort_keys=True)) for m in m1] == \
+        [(m.move_type, json.dumps(m.params, sort_keys=True)) for m in m2]
+    ok("observer_transparent", same and P._draw_params.__name__ == "_draw_params" and P.apply.__name__ == "apply",
+       f"{len(ev)} internal rejections recorded")
+    rs = move_type_restrictions(c4)
+    ok("restriction_census_runs", set(rs) == set(P.MOVE_TYPES), {t: v["restricted"] for t, v in rs.items()})
+    # 11. stage_solve with a built proxy record (T0454 item 4), solvers stubbed with synthetic values
+    import tempfile
+    td = Path(tempfile.mkdtemp(prefix="e004-selftest-", dir=os.environ.get("TMPDIR")))
+    mv = P.draw(c4, {"die_row_shift": 1}, 7, c4r)[0]
+    prx = P.apply(c4, "wire_landing", {"switch": "HS", "dx_mm": 1, "dy_mm": 0})
+    prec = {"reference": "slot0", "slot": 0, "pair": "slot0#0", "kind": mv.move_type, "components": [mv.move_type],
+            "params": mv.params, "fingerprint": P.apply(c4, mv.move_type, mv.params).fingerprint(),
+            "r_L1_10MHz": 0.95, "r_L1_20MHz": 0.95}
+    reg = {"pairs": [prec], "slot_reference_fingerprints": {"slot0": c4.fingerprint()},
+           "proxy": {"status": "built", "record": {"reference": "slot1", "pair": "slot1#proxy", "kind": "proxy",
+                                                   "components": ["proxy"], "params": {}, "fingerprint": prx.fingerprint(),
+                                                   "r_L1_10MHz": 0.97, "r_L1_20MHz": 0.97}},
+           "_proxy_layout": prx}
+    g = globals()
+    saved = (g["run_jobs"], g["fh_selftest_record"])
+    pinned = cfg["solve"]["fasthenry"]["pinned_binary_sha256"]
+
+    def fake_run_jobs(jobs, layouts, work, budget, log=print):
+        base = {"2D_Case_4": 20e-9, "dev_pair0": 19e-9, "dev_proxy": 18e-9}
+        return {j["id"]: {"id": j["id"], "ok": True, "status": "ok", "fingerprint": layouts[j["layout"]].fingerprint(),
+                          "L_H": {k: base[j["layout"]] * (1.01 if j["solver"] == "fasthenry" else 1.0) for k in FK},
+                          "binary_sha256": pinned} for j in jobs}
+    g["run_jobs"] = fake_run_jobs
+    g["fh_selftest_record"] = lambda work: {"ok": True, "binary_sha256": pinned, "L_nH_1kHz": 5.704254, "host": "stub"}
+    try:
+        run = _StubRun(td)
+        sol = stage_solve(run, dict(cfg, _timeout_min=6000), True, reg)
+        names = sorted({r["pair"] for r in sol["assembly"]["pair_rows"]})
+        rp_ = [r for r in sol["assembly"]["pair_rows"] if r["pair"] == "dev_proxy"]
+        ok("stage_solve_with_proxy", names == ["dev_pair0", "dev_proxy"] and run.checks["exported_geometry_identical"] and
+           rp_ and math.isclose(rp_[0]["r_l2"], 0.9, rel_tol=1e-12) and math.isclose(rp_[0]["r_fh"], 0.9, rel_tol=1e-12),
+           f"pairs {names}; checks {run.checks}")
+        reg_bad = dict(reg, slot_reference_fingerprints={"slot0": "0" * 64})
+        run2 = _StubRun(td)
+        stage_solve(run2, dict(cfg, _timeout_min=6000), True, reg_bad)
+        ok("reference_fingerprint_vs_registration_can_fail", not run2.checks["exported_geometry_identical"])
+    finally:
+        g["run_jobs"], g["fh_selftest_record"] = saved
+    # 12. timeouts at plan time (review T0453)
+    try:
+        assert_timeouts_fit([{"solver": "fasthenry", "timeout_s": 200000.0}], {"_timeout_min": 6000})
+        to_bad = False
+    except RuntimeError:
+        to_bad = True
+    ok("timeout_assert_can_fail", to_bad)
+    # 13. the registry check can fail (a run id never minted)
+    rr = registry_seed_record(SimpleNamespace(run_id="E004-never-minted", seed=1))
+    ok("registry_seed_record_can_fail", not rr["ok"], rr["detail"])
+    for name, passed, detail in res_all:
+        print(f"{'PASS' if passed else 'FAIL'} {name}: {detail}"[:400])
+    n_bad = sum(not p for _, p, _ in res_all)
+    print(f"SELFTEST {'OK' if not n_bad else 'FAILED'}: {len(res_all) - n_bad}/{len(res_all)}")
+    return 0 if not n_bad else 1
+
+
 # ------------------------------------------------------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--smoke", action="store_true", help="development seed, development geometry, L1 only, temp run dir")
     ap.add_argument("--stage", choices=("registration", "solve", "all"), default="all")
     ap.add_argument("--dev-span-sim", type=int, default=0, metavar="N", help="research: span check on N dev seeds")
+    ap.add_argument("--dev-band-sim", type=int, default=0, metavar="N",
+                    help="research: the banded-acceptance rule on N dev seeds (2D_Case_4, L1 only)")
+    ap.add_argument("--dev-band-variants", type=int, default=0, metavar="N",
+                    help="research: the banded rule's variants (BAND_VARIANTS) on N dev seeds (2D_Case_4, L1 only)")
+    ap.add_argument("--shard", default="0/1", metavar="I/M",
+                    help="research: seeds k with k mod M == I; 'pool' claims seeds (odd up, then even down)")
+    ap.add_argument("--summarize-only", action="store_true", help="research: summarise the variant files only")
     ap.add_argument("--out", default=str(ROOT / "research" / "o004_e004" / "span_sim_case4.json"))
     ap.add_argument("--print-freeze", action="store_true", help="print the current tree's freeze values (not evidence)")
     ap.add_argument("--child", metavar="JOB_JSON", help=argparse.SUPPRESS)
+    ap.add_argument("--selftest", action="store_true", help="hand-built checks of the estimators, F1, criteria, bands")
     ap.add_argument("--dev-fh-plan", action="store_true", help="research: write research/o004_f7/vm_jobs_fasthenry.json")
     ap.add_argument("--dev-fh-probe", type=float, default=0.0, metavar="GB",
                     help="research: preconditioner probe of the F7(a) decks projected below GB")
@@ -1534,6 +2822,8 @@ def main() -> int:
     a = ap.parse_args()
     if a.child:
         return child_solve(a.child)
+    if a.selftest:
+        return selftest()
     if a.dev_fh_plan or a.dev_fh_probe or a.dev_fh_direct_mem or a.dev_fh_run:
         import yaml
         cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
@@ -1550,6 +2840,27 @@ def main() -> int:
     if a.print_freeze:
         print(json.dumps(print_freeze(), indent=1))
         return 0
+    if a.dev_band_sim:
+        import yaml
+        cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
+        out = Path(a.out if a.out != ap.get_default("out") else F7_DIR / "band_sim_case4.json")
+        print(json.dumps(dev_band_sim(a.dev_band_sim, out, cfg), indent=1))
+        return 0
+    if a.dev_band_variants:
+        import yaml
+        cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
+        if a.shard == "pool":
+            shard, out = None, F7_DIR / f"band_variants_case4.pool{os.getpid()}.json"
+        else:
+            i, m = (int(x) for x in a.shard.split("/"))
+            shard, out = (i, m), F7_DIR / f"band_variants_case4.shard{i}of{m}.json"
+        if not a.summarize_only:
+            dev_band_variants(a.dev_band_variants, out, cfg, shard)
+        summ = summarize_band_variants(sorted(F7_DIR.glob("band_variants_case4.*.json")), cfg)
+        (F7_DIR / "band_variants_case4_summary.json").write_text(json.dumps(summ, indent=1))
+        print(json.dumps({vn: {k: v[k] for k in ("fill_fraction", "redraws_per_slot", "fill_fraction_if_total_limit")}
+                          for vn, v in summ["variants"].items()}, indent=1))
+        return 0
     if a.dev_span_sim:
         import yaml
         cfg = yaml.safe_load(SPEC_DRAFT.read_text())["config"]
@@ -1561,6 +2872,7 @@ def main() -> int:
     run_dir = tempfile.mkdtemp(prefix="e004-smoke-") if a.smoke else None
     with ExperimentRun(experiment_id=EID, run_dir=run_dir) as run:
         cfg = spec_config(run.config)
+        cfg["_timeout_min"] = run.spec.get("timeout_min") if run.spec else yaml_timeout_min()
         if a.smoke:
             seed = DEV_SEED  # nothing is drawn from the sealed seed in smoke mode
         else:
