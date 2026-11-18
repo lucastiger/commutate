@@ -1,0 +1,789 @@
+{
+ "label": "FASTHENRY MEASUREMENT BURST (founder decision 2026-11-18, O004 state log): the k0 and k1 levels (nh 5) of the three Case 4 F7(a) layouts only, a subset of research/o004_f7/vm_jobs_fasthenry.json, to measure k1's run time and the k0-to-k1 ratio step before the founder chooses the FastHenry route at the 2026-11-27 thesis review. RESEARCH ONLY.",
+ "command": "uv run python experiments/runners/e004_run.py --dev-fh-run research/o004_f7/vm_jobs_fasthenry.json (on the VM: MF_E004_MEM_GB=108; resumes from research/o004_f7/fh_solves)",
+ "first_vm_step": "the probe of every deck marked precond_probe = vm_first: `e004_run.py --dev-fh-probe 108` before the full runs (review T0427/T0428 A)",
+ "binary": {
+  "pinned_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+  "rule": "fasthenry_run.self_test() once per host, stored keyed by binary_sha256 beside every result"
+ },
+ "levels": {
+  "pinned_binary_sha256": "eaa6d6fc62957c3bce5cd605a10e9f2724641d127bd692a99cafeb3233ae2d14",
+  "pinned_meaning": "D0002's provisioned FastHenry 3.0wr (research/o006_p4/binary_check.json); self_test() once per host, its record stored keyed by binary_sha256 beside every FHResult",
+  "self_test_exact_nH": 5.704254,
+  "self_test_exact_tol_nH": 0.0003,
+  "mode": "multipole",
+  "order": 4,
+  "tol": 0.0001,
+  "max_retries": 10,
+  "no_direct_fallback": "O004 F1. Direct LU needs 8 F^2 bytes (P4), about 41 GB at k0's 72k filaments on Case 4",
+  "die_model": "short",
+  "terminal_model": "point",
+  "rh": 2.0,
+  "nw_trace": 1,
+  "nh_lateral": 5,
+  "nh_lateral_meaning": "the lateral ladder's thickness filaments (traces and planes), a level of the 3 / 5 / 9 ladder and never 1 (founder, T0417/T0418: nh = 1 is +24 % on a thin-ceramic stack). PROVISIONAL: F7(a)'s thickness ladder decides it before registration (founder); 5 is the middle of the ladder, so its thickness term is the error of the value judged",
+  "lateral": {
+   "k0": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 2.0,
+    "wire_n": 2,
+    "wire_sub": 1
+   },
+   "k1": {
+    "cell_mm": 0.5,
+    "plane_cell_mm": 1.0,
+    "wire_n": 4,
+    "wire_sub": 2
+   },
+   "k2": {
+    "cell_mm": 0.25,
+    "plane_cell_mm": 0.5,
+    "wire_n": 8,
+    "wire_sub": 4
+   }
+  },
+  "lateral_meaning": "three levels at ratio 2 in every lateral knob: trace cell, plane pitch (coarsest 2 mm, F7(a); P4's 4 mm plane cell caused its k0-to-k1 ratio step), and the wire section refined with the traces (wire_n filaments per side and wire_sub pieces per polyline segment, review T0362); wire_n = wire_sub = 1 is never used (T0385: NaN impedance)",
+  "thickness": {
+   "at": "k1",
+   "nh": [
+    3,
+    5,
+    9
+   ]
+  },
+  "sizing": {
+   "kb_per_filament": 31.1,
+   "mem_margin": 1.3,
+   "cap_factor": 1.5,
+   "t_ref_s": 1246,
+   "f_ref": 102192,
+   "exponent": 1.4,
+   "exponent_uncertainty": 0.3,
+   "timeout_factor": 10.0,
+   "min_timeout_s": 1800,
+   "min_mem_cap_mb": 2000
+  },
+  "memory_cap_policy": "review T0455 / T0457 item 11: cap = projection x cap_factor (1.5), the projection being kb_per_filament x exporter filaments x mem_margin 1.30 (the adapter's MEM_MARGIN; research/o004_f7/fh_direct_mem.json: direct-mode peaks 1.01-1.09 x the dense estimate in-repo, 1.24-1.26 in T0428's runs; T0457's four local multipole solves of the Case 4 k0 nh5 decks in research/o004_f7/fh_local_probe.json (case4_base twice, dev03_trace_width, standin_compound) peaked at 0.91-1.21 x the projection = 1.18-1.58 x the raw 31.1 kB/filament figure, so a cap at the projection would have killed three of the four; cap_factor 1.5 leaves 24 % over the largest measurement for the extrapolation to the k1 / k2 decks, which are not measured locally). A run killed at its cap (killed_memory) is retried ONCE, alone, at the machine's full budget (0.97 x MF_E004_MEM_GB) before its value is recorded as missing, so a mis-projected cap cannot by itself turn a judged value into a missing one and the run into INVALID; both attempts are recorded",
+  "timeout_rule": "review T0453 / T0457 item 10: at plan time every FastHenry job's timeout, doubled for its full-memory retry, must fit the spec's timeout_min (assert_timeouts_fit); the stage refuses before any solve otherwise",
+  "sizing_meaning": "explicit mem_cap_mb and timeout_s per job (reviews T0427/T0428 B(2)): projected peak = 31.1 kB per exporter filament (P4's largest per-filament multipole peak, 0.78 GB at 25,056) x 1.3 margin for FastHenry's own refinement (the post-refinement count is known only once a run starts, T0385 (3)); time = 1,246 s x (F / 102,192)^1.40 (P4 k1 and its k0 -> k1 exponent), timeout 10 x that (T0389: gen2_0 reached the preconditioner only after 15 x the projected total, so the time rule is layout-dependent; F7(a) recalibrates it per reference before registration). A timeout or a memory kill is not retried and leaves a missing value",
+  "always_crash_rule": "review T0427/T0428 A: a deck that crashes on every multipole attempt has no value; no direct fallback, no other level substituted; F1 makes the estimate it feeds +inf (exclusion) and a missing finest value goes to the INVALID rule. Decks probed before registration: research/o004_f7/fh_probe.json and vm_jobs_fasthenry.json (precond_probe)"
+ },
+ "gen2_diag_levels": {
+  "cell_mm": 0.5,
+  "plane_cell_mm": 2.0,
+  "wire_n": 2,
+  "wire_sub": 2,
+  "nh": [
+   1,
+   3,
+   5
+  ]
+ },
+ "die_model": "short on every job (no distributed-die deck: no direct solve is needed or projected, T0385 (2))",
+ "wire_rule": "no job uses wire_n = 1 with wire_sub = 1 (T0385 (1)); each job records wire_n and wire_sub",
+ "layouts": {
+  "case4_base": {
+   "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+   "stack": {
+    "kind": "PowerSynth_2D_Case_4",
+    "layers_mm": {
+     "baseplate": 1.0,
+     "solder": 0.001,
+     "backside_cu": 0.2,
+     "ceramic": 0.835,
+     "top_cu": 0.2
+    }
+   }
+  },
+  "dev03_trace_width": {
+   "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2",
+   "stack": {
+    "kind": "PowerSynth_2D_Case_4",
+    "layers_mm": {
+     "baseplate": 1.0,
+     "solder": 0.001,
+     "backside_cu": 0.2,
+     "ceramic": 0.835,
+     "top_cu": 0.2
+    }
+   }
+  },
+  "standin_compound": {
+   "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53",
+   "stack": {
+    "kind": "PowerSynth_2D_Case_4",
+    "layers_mm": {
+     "baseplate": 1.0,
+     "solder": 0.001,
+     "backside_cu": 0.2,
+     "ceramic": 0.835,
+     "top_cu": 0.2
+    }
+   }
+  }
+ },
+ "gap_rule": {
+  "quantity": "g(X) = L_FH(X, nh 5 at cell 0.5 mm, plane 2 mm, wire 2/2) / L_l2(X, lat0.5) - 1 at 10 and 20 MHz, X in {gen2_0, case4_base}; T(X) = 3 |L_FH(nh 5) - L_FH(nh 3)| / L_FH(nh 5) (two-level, p = 1)",
+  "closes_if": "|g(gen2_0)| <= |g(case4_base)| + 0.02 (Case 4's few percent, measured at identical levels) AND T(gen2_0) <= 0.01 (the thickness term inside the 1 % estimate), at both frequencies",
+  "otherwise": "the thin-stack gap stays open: no non-Case-4 FastHenry deck is relied on and E004's nh_lateral is revisited by the founder before registration (T0417/T0418)"
+ },
+ "always_crash_rule": "a multipole deck that crashes on every attempt (retries up to 10; the adapter stops early on a repeated identical exit) has no value: no direct fallback (O004 F1: direct needs 8 F^2 bytes, far above any machine for these decks), no other level substituted; F1 makes the affected estimate +inf (exclusion), a missing finest value goes to the INVALID rule",
+ "memory_rule": "mem_proj_gb = kb_per_filament x exporter filaments x mem_margin (config.solve.fasthenry.sizing; margin covers FastHenry's post-refinement growth, unknown before the run, T0385 (3)); every attempt's peak_mem_mb and wall_s are recorded",
+ "jobs": [
+  {
+   "id": "case4_base__fh_k0_nh5",
+   "solver": "fasthenry",
+   "layout": "case4_base",
+   "level": "k0_nh5",
+   "key": "k0",
+   "fh_level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 2.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 2,
+    "wire_sub": 1
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 71796,
+   "deck_sha256": "c786df44cf4285535861424ab8c9c0aba360868062dd70cebb9d400f5a12604c",
+   "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+   "mem_raw_gb": 2.2328556,
+   "mem_proj_gb": 2.9027122800000003,
+   "time_proj_s": 1388.637555992996,
+   "mem_cap_mb": 4458.566062080001,
+   "timeout_s": 13886.375559929962,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "local_solve": [
+    {
+     "entry": "case4_base__fh_k0_nh5",
+     "status": "ok",
+     "wall_s_ok": 1114.9426424170379,
+     "peak_mem_mb": 3039.09375,
+     "time_ratio_measured_over_projected": 1.4668232781582042,
+     "mem_ratio_measured_over_raw": 1.3291790970425381,
+     "mem_ratio_measured_over_projected": 1.0224454592634908,
+     "load_avg_before": null,
+     "L_H": {
+      "10MHz": 2.4301686570587682e-08,
+      "20MHz": 2.4228554874236954e-08
+     }
+    },
+    {
+     "entry": "case4_base__fh_k0_nh5@solo",
+     "status": "ok",
+     "wall_s_ok": 764.1040244579781,
+     "peak_mem_mb": 2705.546875,
+     "time_ratio_measured_over_projected": 1.0052585015311462,
+     "mem_ratio_measured_over_raw": 1.183298920054296,
+     "mem_ratio_measured_over_projected": 0.9102299385033047,
+     "load_avg_before": [
+      4.41650390625,
+      4.75146484375,
+      5.08154296875
+     ],
+     "L_H": {
+      "10MHz": 2.4301686570587682e-08,
+      "20MHz": 2.4228554874236954e-08
+     }
+    }
+   ],
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 1388.637555992996,
+   "timeout_covers_upper_envelope": true
+  },
+  {
+   "id": "case4_base__fh_k1_nh5",
+   "solver": "fasthenry",
+   "layout": "case4_base",
+   "level": "k1_nh5",
+   "key": "k1",
+   "fh_level": {
+    "cell_mm": 0.5,
+    "plane_cell_mm": 1.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 4,
+    "wire_sub": 2
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 290168,
+   "deck_sha256": "e57d3d61a10c7f87ff7eb64b059385ad66251ea1b28ccf27b33b915d915919da",
+   "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+   "mem_raw_gb": 9.0242248,
+   "mem_proj_gb": 11.731492240000001,
+   "time_proj_s": 49855.33787627092,
+   "mem_cap_mb": 18019.572080640002,
+   "timeout_s": 498553.3787627092,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 68183.83887105004,
+   "level_risk": "x5.08 in time_proj_s, x5.08 in time_hi_s (direct: k1 lateral at nh 1 runs at 8.00 x the rule against 1.57 x for k0's lateral (m1 = 5.08, a lower bound: timeout); factorial: slow features none)",
+   "timeout_covers_upper_envelope": true
+  },
+  {
+   "id": "standin_compound__fh_k0_nh5",
+   "solver": "fasthenry",
+   "layout": "standin_compound",
+   "level": "k0_nh5",
+   "key": "k0",
+   "fh_level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 2.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 2,
+    "wire_sub": 1
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 74346,
+   "deck_sha256": "a94e0e1ab7de866702a328b890522f3a3c26b212dcd952dafb7b64e24373bbd9",
+   "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53",
+   "mem_raw_gb": 2.3121606,
+   "mem_proj_gb": 3.00580878,
+   "time_proj_s": 1458.1735240744256,
+   "mem_cap_mb": 4616.92228608,
+   "timeout_s": 14581.735240744256,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "local_solve": [
+    {
+     "entry": "standin_compound__fh_k0_nh5",
+     "status": "ok",
+     "wall_s_ok": 1130.7135083328467,
+     "peak_mem_mb": 3696.484375,
+     "time_ratio_measured_over_projected": 1.416633626234339,
+     "mem_ratio_measured_over_raw": 1.561244501121997,
+     "mem_ratio_measured_over_projected": 1.2009573085553824,
+     "load_avg_before": [
+      3.72705078125,
+      4.60595703125,
+      4.9013671875
+     ],
+     "L_H": {
+      "10MHz": 1.978295942632259e-08,
+      "20MHz": 1.971874040678501e-08
+     }
+    }
+   ],
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 1458.1735240744256,
+   "timeout_covers_upper_envelope": true
+  },
+  {
+   "id": "standin_compound__fh_k1_nh5",
+   "solver": "fasthenry",
+   "layout": "standin_compound",
+   "level": "k1_nh5",
+   "key": "k1",
+   "fh_level": {
+    "cell_mm": 0.5,
+    "plane_cell_mm": 1.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 4,
+    "wire_sub": 2
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 300428,
+   "deck_sha256": "01026a46dbca3d218f0589af86dd120f0c68b72767fb1891f659efa1d496380c",
+   "fingerprint": "e7554493c68fca067f461a31115fa9813cb22683650037dc6b1863342cadec53",
+   "mem_raw_gb": 9.3433108,
+   "mem_proj_gb": 12.14630404,
+   "time_proj_s": 52340.625725845195,
+   "mem_cap_mb": 18656.72300544,
+   "timeout_s": 523406.25725845195,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 72332.91420010106,
+   "level_risk": "x5.08 in time_proj_s, x5.08 in time_hi_s (direct: k1 lateral at nh 1 runs at 8.00 x the rule against 1.57 x for k0's lateral (m1 = 5.08, a lower bound: timeout); factorial: slow features none)",
+   "timeout_covers_upper_envelope": true
+  },
+  {
+   "id": "dev03_trace_width__fh_k0_nh5",
+   "solver": "fasthenry",
+   "layout": "dev03_trace_width",
+   "level": "k0_nh5",
+   "key": "k0",
+   "fh_level": {
+    "cell_mm": 1.0,
+    "plane_cell_mm": 2.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 2,
+    "wire_sub": 1
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 71176,
+   "deck_sha256": "be07900914836e48dd9aa1f0e4e55007be59cb0195ab9c2dc99bd2b24c10c54b",
+   "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2",
+   "mem_raw_gb": 2.2135736,
+   "mem_proj_gb": 2.87764568,
+   "time_proj_s": 1371.8782374581788,
+   "mem_cap_mb": 4420.06376448,
+   "timeout_s": 13718.782374581788,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "local_solve": [
+    {
+     "entry": "dev03_trace_width__fh_k0_nh5",
+     "status": "ok",
+     "wall_s_ok": 1371.8782374581788,
+     "peak_mem_mb": 3579.65625,
+     "time_ratio_measured_over_projected": 1.8268974694873656,
+     "mem_ratio_measured_over_raw": 1.5792373276590508,
+     "mem_ratio_measured_over_projected": 1.214797944353116,
+     "load_avg_before": null,
+     "L_H": {
+      "10MHz": 2.57407655660246e-08,
+      "20MHz": 2.565927823516155e-08
+     }
+    }
+   ],
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 1371.8782374581788,
+   "timeout_covers_upper_envelope": true
+  },
+  {
+   "id": "dev03_trace_width__fh_k1_nh5",
+   "solver": "fasthenry",
+   "layout": "dev03_trace_width",
+   "level": "k1_nh5",
+   "key": "k1",
+   "fh_level": {
+    "cell_mm": 0.5,
+    "plane_cell_mm": 1.0,
+    "nh_trace": 5,
+    "nh_plane": 5,
+    "rh": 2.0,
+    "nw_trace": 1,
+    "wire_n": 4,
+    "wire_sub": 2
+   },
+   "mode": "multipole",
+   "order": 4,
+   "tol": 0.0001,
+   "max_retries": 10,
+   "die_model": "short",
+   "terminal_model": "point",
+   "n_filaments_exporter": 287728,
+   "deck_sha256": "f9c05ebece46fe3250017106acead203d0d91401459b7a3f978e977fe7f3214f",
+   "fingerprint": "acd43d45f218458e950b53657acc60939eb14dbaa38815eaa3b1b17a6b660ff2",
+   "mem_raw_gb": 8.9483408,
+   "mem_proj_gb": 11.632843040000001,
+   "time_proj_s": 49269.40512979533,
+   "mem_cap_mb": 17868.046909440003,
+   "timeout_s": 492694.05129795324,
+   "precond_probe": "vm_first: not probed locally (T0389's wall time), probed by the first VM step",
+   "probe_peak_rss_mb": null,
+   "time_calibration": 1.8268974694873656,
+   "time_hi_s": 67212.01059049835,
+   "level_risk": "x5.08 in time_proj_s, x5.08 in time_hi_s (direct: k1 lateral at nh 1 runs at 8.00 x the rule against 1.57 x for k0's lateral (m1 = 5.08, a lower bound: timeout); factorial: slow features none)",
+   "timeout_covers_upper_envelope": true
+  }
+ ],
+ "projection": {
+  "vm": {
+   "machine": "e2-highmem-16",
+   "ram_gib": 128,
+   "usable_gb": 108.0,
+   "usd_per_h": 0.73,
+   "source": "project/memory/lessons.md 2026-11-04 (e2-highmem-16 $0.73/h; n2-highmem-32 $2.10/h)"
+  },
+  "machine": "e2-highmem-16",
+  "memory_budget_gb": 108.0,
+  "parallelism": "memory-packed (run_jobs, MF_E004_MEM_GB=108): at most 6 jobs at once in the projected schedule; never by CPU count",
+  "n_jobs": 24,
+  "fh_cpu_h": 502.4901821325021,
+  "makespan_h": 193.69590182456105,
+  "makespan_upper_h": 2041.9685295092013,
+  "usd": 141.39800833192956,
+  "usd_upper": 1490.637026541717,
+  "MF_GCP_MAX_HOURS": 2553,
+  "max_hours_rule": "ceil(1.25 x the upper-envelope makespan): burst_gcp.sh's default of 6 h stopped burst 1 early; launch with MF_GCP_MAX_HOURS set to this value",
+  "time_calibration": {
+   "local_full_solves": {
+    "case4_base__fh_k0_nh5": 1.4668232781582042,
+    "dev03_trace_width__fh_k0_nh5": 1.8268974694873656,
+    "case4_base__fh_k0_nh5@solo": 1.0052585015311462,
+    "standin_compound__fh_k0_nh5": 1.416633626234339
+   },
+   "case4_factor": 1.8268974694873656,
+   "gen2_0_probe_lower_bound": 15.225425682168458,
+   "rule": "time = t_ref x (F / f_ref)^exponent x the layout's measured factor (Case 4 layouts: the largest local full-solve factor; gen2_0: the preconditioner probe's lower bound)",
+   "exponent_refit": {
+    "n_points": 4,
+    "points": {
+     "case4_base__fh_k0_nh5": {
+      "n_filaments": 71796,
+      "factor": 1.4668232781582042,
+      "load_avg_before": null
+     },
+     "dev03_trace_width__fh_k0_nh5": {
+      "n_filaments": 71176,
+      "factor": 1.8268974694873656,
+      "load_avg_before": null
+     },
+     "case4_base__fh_k0_nh5@solo": {
+      "n_filaments": 71796,
+      "factor": 1.0052585015311462,
+      "load_avg_before": [
+       4.41650390625,
+       4.75146484375,
+       5.08154296875
+      ]
+     },
+     "standin_compound__fh_k0_nh5": {
+      "n_filaments": 74346,
+      "factor": 1.416633626234339,
+      "load_avg_before": [
+       3.72705078125,
+       4.60595703125,
+       4.9013671875
+      ]
+     }
+    },
+    "note": "fewer than 3 local points over a filament range wider than 10 %: no slope fitted",
+    "exponent_uncertainty_used": 0.3,
+    "rule": "the k2 upper envelope is time_proj_s x (F / f_ref)^u with u = max(the spec's exponent_uncertainty, |b| + se(b)); the calibration factor itself is the largest measured Case 4 factor (load averages recorded: the Mac was shared with another agent, so part of each factor is contention)"
+   }
+  },
+  "memory_calibration": {
+   "measured_peak_over_projection": {
+    "case4_base__fh_k0_nh5": 1.0224454592634908,
+    "dev03_trace_width__fh_k0_nh5": 1.214797944353116,
+    "case4_base__fh_g1": 0.61356029319997,
+    "case4_base__fh_k0_nh5@solo": 0.9102299385033047,
+    "standin_compound__fh_k0_nh5": 1.2009573085553824,
+    "case4_base__fh_g1@attempt1": 0.4545353023006074,
+    "case4_base__fhx_B_k0lat_nh1_w2s1": 0.537256008086208,
+    "case4_base__fhx_B_plus_wiresub2": 0.5368753139846295,
+    "case4_base__fhx_B_plus_cell0.5": 0.6403040206893206,
+    "case4_base__fhx_k1lat_nh1": 0.34956092735049854
+   },
+   "max": 1.214797944353116,
+   "cap_factor": 1.5,
+   "cap_headroom_over_max_measured": 1.2347732451907918,
+   "rule": "cap = projection (kb_per_filament x F x mem_margin 1.30) x cap_factor; a run killed at its cap is retried once alone at the machine's full budget (memory_cap_policy)"
+  },
+  "level_risk": {
+   "factorial": {
+    "B_k0lat_nh1_w2s1": {
+     "status": "ok",
+     "n_filaments_exporter": 14436,
+     "wall_s_total": 126.68071985244751,
+     "time_proj_s": 80.45629078066247,
+     "peak_mem_mb": 321.09375,
+     "fh_level": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "load_avg_before": [
+      4.0751953125,
+      3.943359375,
+      4.1103515625
+     ],
+     "factor_or_lower_bound": 1.5745043631241193
+    },
+    "B_plus_wiresub2": {
+     "status": "ok",
+     "n_filaments_exporter": 14532,
+     "wall_s_total": 171.46250534057617,
+     "time_proj_s": 81.20633845428895,
+     "peak_mem_mb": 323.0,
+     "fh_level": {
+      "cell_mm": 1.0,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 2
+     },
+     "load_avg_before": [
+      4.02734375,
+      3.939453125,
+      4.07958984375
+     ],
+     "factor_or_lower_bound": 2.1114129509047173
+    },
+    "B_plus_cell0.5": {
+     "status": "ok",
+     "n_filaments_exporter": 34096,
+     "wall_s_total": 1687.6390171051025,
+     "time_proj_s": 267.990370608285,
+     "peak_mem_mb": 903.84375,
+     "fh_level": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 2.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 2,
+      "wire_sub": 1
+     },
+     "load_avg_before": [
+      4.90625,
+      4.37744140625,
+      4.22705078125
+     ],
+     "factor_or_lower_bound": 6.297210017451013
+    },
+    "k1lat_nh1": {
+     "status": "timeout",
+     "n_filaments_exporter": 58648,
+     "wall_s_total": 4581.27671289444,
+     "time_proj_s": 572.6494831529978,
+     "peak_mem_mb": 848.75,
+     "fh_level": {
+      "cell_mm": 0.5,
+      "plane_cell_mm": 1.0,
+      "nh_trace": 1,
+      "nh_plane": 1,
+      "rh": 2.0,
+      "nw_trace": 1,
+      "wire_n": 4,
+      "wire_sub": 2
+     },
+     "load_avg_before": [
+      3.9794921875,
+      4.26708984375,
+      4.20166015625
+     ],
+     "factor_or_lower_bound": 8.000141181774952
+    }
+   },
+   "risky_features": [],
+   "reading": "direct: k1 lateral at nh 1 runs at 8.00 x the rule against 1.57 x for k0's lateral (m1 = 5.08, a lower bound: timeout); factorial: slow features none",
+   "k_factor": 1.8268974694873656,
+   "g_factor_or_lower_bound": 13.381122792673867,
+   "multiplier_g_over_k": 7.324506720362725,
+   "direct_k1_multiplier": 5.0810536757746,
+   "rule": "direct (k1lat measured): k1 jobs x m1 in time_proj_s and time_hi_s, k2 jobs x m1 in time_proj_s and x m1^2 in time_hi_s; otherwise the upper envelope of every job with a risky feature (wire_sub >= 2 / cell <= 0.5 mm / nh 1) x g_factor / k_factor"
+  },
+  "uncertainty": "exponent 1.4 +- 0.30 beyond P4's largest run (102192 filaments; not widened by the refit: the k-level local points span 71-74k filaments, no slope): the k2 decks (~1.2 M filaments, 11x past calibration) carry a factor 2.1 up or down; the widening from the measured misses is the level risk (level_risk: the k1 lateral level measured at >= 8x the rule against 1.6x at k0's lateral, so k1 decks x m1 in time_proj_s and k2 decks x m1 in time_proj_s and x m1^2 in time_hi_s); time_hi_s is the upper envelope; the measured misses (gen2_0 >= 15x, a lower bound, so gen2_0's time_hi_s is NOT an upper bound; Case 4 local factor above) are applied as calibration and timeouts are 10 x the calibrated projection"
+ },
+ "thickness_share_rule": "T0454 item 6: the F7(a) report gives, per pair X in {standin_compound, dev03_trace_width} against case4_base and per frequency, FastHenry's ratio thickness term (e004_run.fh_terms(ratio=True)['thickness']) / r_fh(k2) / 0.01, the share of F1's 1 % cap (rows field fh_thickness_share_of_cap in the solve stage); the current values are in 'thickness_share' (pending until the burst results exist)",
+ "thickness_share": {
+  "standin_compound@10MHz": "pending (burst results missing)",
+  "standin_compound@20MHz": "pending (burst results missing)",
+  "dev03_trace_width@10MHz": "pending (burst results missing)",
+  "dev03_trace_width@20MHz": "pending (burst results missing)"
+ },
+ "e004_cost_plan": {
+  "reference_deck_sizes": {
+   "2D_Case_2R": {
+    "stack": {
+     "kind": "PowerSynth_2D_Case_2R",
+     "layers_mm": {
+      "baseplate": 1.0,
+      "solder": 0.001,
+      "backside_cu": 0.2,
+      "ceramic": 0.835,
+      "top_cu": 0.2
+     }
+    },
+    "k0_nh5": {
+     "n_filaments": 26546,
+     "mem_raw_gb": 0.8255806000000001,
+     "mem_proj_gb": 1.07325478,
+     "time_proj_s": 188.77005834984374,
+     "mem_cap_mb": 2000,
+     "timeout_s": 1887.7005834984375,
+     "time_calibrated_s": 344.8635419143119,
+     "timeout_calibrated_s": 3448.635419143119,
+     "time_hi_s": 344.8635419143119,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh5": {
+     "n_filaments": 106458,
+     "mem_raw_gb": 3.3108438000000007,
+     "mem_proj_gb": 4.304096940000001,
+     "time_proj_s": 1319.422871534122,
+     "mem_cap_mb": 6611.092899840001,
+     "timeout_s": 13194.228715341218,
+     "time_calibrated_s": 12247.627383454814,
+     "timeout_calibrated_s": 122476.27383454813,
+     "time_hi_s": 12398.820889751974,
+     "timeout_covers_upper_envelope": true
+    },
+    "k2_nh5": {
+     "n_filaments": 430924,
+     "mem_raw_gb": 13.4017364,
+     "mem_proj_gb": 17.42225732,
+     "time_proj_s": 9343.193417379527,
+     "mem_cap_mb": 26760.58724352,
+     "timeout_s": 93431.93417379528,
+     "time_calibrated_s": 86728.79181983539,
+     "timeout_calibrated_s": 867287.9181983538,
+     "time_hi_s": 678597.4359494076,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh3": {
+     "n_filaments": 64182,
+     "mem_raw_gb": 1.9960602000000003,
+     "mem_proj_gb": 2.5948782600000007,
+     "time_proj_s": 649.7000925737162,
+     "mem_cap_mb": 3985.733007360001,
+     "timeout_s": 6497.000925737162,
+     "time_calibrated_s": 6030.882756782035,
+     "timeout_calibrated_s": 60308.82756782035,
+     "time_hi_s": 6030.882756782035,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh9": {
+     "n_filaments": 191010,
+     "mem_raw_gb": 5.940411,
+     "mem_proj_gb": 7.7225343,
+     "time_proj_s": 2990.9760151068053,
+     "mem_cap_mb": 11861.812684800001,
+     "timeout_s": 29909.760151068054,
+     "time_calibrated_s": 27763.926589574286,
+     "timeout_calibrated_s": 277639.26589574286,
+     "time_hi_s": 33494.43444806908,
+     "timeout_covers_upper_envelope": true
+    }
+   },
+   "2D_Case_6": {
+    "stack": {
+     "kind": "PowerSynth_2D_Case_6",
+     "layers_mm": {
+      "baseplate": 1.0,
+      "solder": 0.001,
+      "backside_cu": 0.2,
+      "ceramic": 0.64,
+      "top_cu": 0.2
+     }
+    },
+    "k0_nh5": {
+     "n_filaments": 19712,
+     "mem_raw_gb": 0.6130432000000001,
+     "mem_proj_gb": 0.7969561600000001,
+     "time_proj_s": 124.43924017946823,
+     "mem_cap_mb": 2000,
+     "timeout_s": 1800,
+     "time_calibrated_s": 227.33773298880104,
+     "timeout_calibrated_s": 2273.3773298880105,
+     "time_hi_s": 227.33773298880104,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh5": {
+     "n_filaments": 80636,
+     "mem_raw_gb": 2.5077796,
+     "mem_proj_gb": 3.2601134800000002,
+     "time_proj_s": 894.2829497372412,
+     "mem_cap_mb": 5007.53430528,
+     "timeout_s": 8942.829497372411,
+     "time_calibrated_s": 8301.238806800027,
+     "timeout_calibrated_s": 83012.38806800028,
+     "time_hi_s": 8301.238806800027,
+     "timeout_covers_upper_envelope": true
+    },
+    "k2_nh5": {
+     "n_filaments": 330728,
+     "mem_raw_gb": 10.2856408,
+     "mem_proj_gb": 13.37133304,
+     "time_proj_s": 6450.505270306383,
+     "mem_cap_mb": 20538.36754944,
+     "timeout_s": 64505.05270306383,
+     "time_calibrated_s": 59877.22866579165,
+     "timeout_calibrated_s": 598772.2866579165,
+     "time_hi_s": 432744.6365608336,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh3": {
+     "n_filaments": 48996,
+     "mem_raw_gb": 1.5237756,
+     "mem_proj_gb": 1.9809082800000002,
+     "time_proj_s": 445.2042077718996,
+     "mem_cap_mb": 3042.67511808,
+     "timeout_s": 4452.042077718996,
+     "time_calibrated_s": 4132.636597390839,
+     "timeout_calibrated_s": 41326.36597390839,
+     "time_hi_s": 4132.636597390839,
+     "timeout_covers_upper_envelope": true
+    },
+    "k1_nh9": {
+     "n_filaments": 143916,
+     "mem_raw_gb": 4.475787600000001,
+     "mem_proj_gb": 5.818523880000002,
+     "time_proj_s": 2012.2739062339197,
+     "mem_cap_mb": 8937.252679680003,
+     "timeout_s": 20122.7390623392,
+     "time_calibrated_s": 18679.061526609876,
+     "timeout_calibrated_s": 186790.61526609876,
+     "time_hi_s": 20699.635922452133,
+     "timeout_covers_upper_envelope": true
+    }
+   }
+  },
+  "n_layouts": 15,
+  "cpu_h": 518.2225722332097,
+  "makespan_h": 64.68979143094964,
+  "parallelism": 14,
+  "machine": "e2-highmem-16",
+  "time_calibration_applied": 1.8268974694873656,
+  "timeouts_fit": {
+   "ok": false,
+   "error": "a FastHenry job's timeout x 2 (with its full-memory retry) 1734576 s exceeds the experiment's timeout_min (360000 s)",
+   "worst_timeout_x2_s": 1734575.8363967077,
+   "timeout_min_s": 360000.0,
+   "consequence": "the registered solve stage would refuse before any solve (assert_timeouts_fit); the timeout rule, timeout_min or the ladder needs a founder decision before registration"
+  },
+  "makespan_upper_h": 436.24630807529854,
+  "usd_upper": 318.45980489496793,
+  "cpu_h_upper": 2575.505527786294,
+  "MF_GCP_MAX_HOURS": 546,
+  "max_hours_rule": "ceil(1.25 x the upper-envelope makespan: the exponent envelope and the level risk of projection.level_risk)",
+  "usd": 47.22354774459323,
+  "note": "pairs sized as their reference; l2_layout at the measured Case 4 peaks (15.9 GB at 0.25 mm, T0387), a conservative bound for 2R / Case 6 (Case 6 0.25 mm: 4.75 GB)"
+ },
+ "direct_mem": "research/o004_f7/fh_direct_mem.json",
+ "source": "research/o004_f7/vm_jobs_fasthenry.json"
+}
