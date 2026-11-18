@@ -15,6 +15,7 @@
 # after MF_GCP_SPOT_TRIES Spot attempts (default 2). With --cmd the output directory is cached on this machine every
 # MF_GCP_SYNC_POLLS x 30 s (default 4, ~2-3 min); MF_GCP_RESUME=1 uploads that cache on the first VM too.
 # MF_GCP_PROVISION=0 skips the FastHenry/ngspice build for jobs that do not need them (faster relaunches).
+# MF_GCP_ENV="NAME=VALUE ..." exports settings into the job on the VM (e.g. a registered runner's packing).
 # MF_GCP_DISK_GB sets the boot disk (default 20 GB). Size the machine by memory: the thermal solvers run on one core.
 # Setup (once): docs/INFRASTRUCTURE.md, "Burst compute on Google Cloud".
 set -euo pipefail
@@ -34,6 +35,14 @@ TYPE="${1:-n2-highmem-32}"; ZONE="${2:-us-central1-a}"; REGION="${ZONE%-*}"; REF
 SPOT_MODE="${MF_GCP_SPOT:-0}"
 case "$SPOT_MODE" in 0|1|auto) ;; *) echo "MF_GCP_SPOT must be 0, 1 or auto" >&2; exit 2 ;; esac
 if [ "$MODE" = exp ] && [ "$SPOT_MODE" = auto ]; then echo "MF_GCP_SPOT=auto is for --cmd runs only" >&2; exit 2; fi
+# Extra environment for the job on the VM, e.g. MF_GCP_ENV="E007_MAX_PROCS=8 E007_MEM_CAP_GB=66.3" for a registered run's
+# packing: the orchestrator starts a registered runner without arguments and the host sets these (2026-11-18: with none,
+# E007 would have run one solve at a time, about 85 VM-h instead of 36). NAME=VALUE pairs separated by spaces, values
+# without quotes or spaces, checked here before anything has side effects.
+JOB_ENV="${MF_GCP_ENV:-}"
+for kv in $JOB_ENV; do
+  [[ "$kv" =~ ^[A-Z][A-Z0-9_]*=[A-Za-z0-9._:/+-]*$ ]] || { echo "MF_GCP_ENV: $kv is not NAME=VALUE (value: letters, digits and ._:/+-)" >&2; exit 2; }
+done
 command -v gcloud > /dev/null || { echo "gcloud is not installed: brew install --cask google-cloud-sdk" >&2; exit 1; }
 PROJECT="$(gcloud config get-value project 2> /dev/null || true)"
 [ -n "$PROJECT" ] || { echo "no gcloud project set: gcloud config set project <PROJECT_ID>" >&2; exit 1; }
@@ -119,7 +128,8 @@ if [ "$MODE" = exp ]; then
 else
   JOB="$CMD"
 fi
-printf 'set -uo pipefail\nexport PATH="$HOME/.local/bin:$PATH"\ncd ~/mf\n%s\n' "$JOB" > "$WORK/job.sh"
+ENV_LINE=""; if [ -n "$JOB_ENV" ]; then ENV_LINE="export $JOB_ENV"; fi
+printf 'set -uo pipefail\nexport PATH="$HOME/.local/bin:$PATH"\ncd ~/mf\n%s\n%s\n' "$ENV_LINE" "$JOB" > "$WORK/job.sh"
 # Spot resume (--cmd runs only; a registered experiment is never seeded with earlier results): while the job runs, its
 # output directory, checkpoints included, is copied every SYNC_POLLS x 30 s to a cache on this machine; a relaunch (or a
 # rerun with MF_GCP_RESUME=1) uploads that cache before the job starts, so a script that resumes from its checkpoints
