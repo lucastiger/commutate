@@ -1,11 +1,10 @@
 # ModuleForge status
-_generated 2026-11-18T11:23:34+00:00 from repository state — do not edit_
+_generated 2026-11-18T15:01:42+00:00 from repository state — do not edit_
 
-## Founder inbox (4 open)
+## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0255** [decision] E007 needs burst compute (~84.5 CPU-h)
-- **I0257** [protected_change] T0390: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -34,13 +33,12 @@ _generated 2026-11-18T11:23:34+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 413, failed: 4, needs_founder: 2, todo: 2
+cancelled: 47, done: 413, failed: 4, merge: 1, needs_founder: 1, todo: 2
 
-- T0390 `needs_founder` scientist/design_experiment: E004 design, part 3: reported diagnostics F3 (per conductor group, round vs square wire), F6 (die contact, terminal tabs), F8 (L1 beside l2_layout) (attempt 2)
+- T0390 `merge` scientist/design_experiment: E004 design, part 3: reported diagnostics F3 (per conductor group, round vs square wire), F6 (die contact, terminal tabs), F8 (L1 beside l2_layout) (attempt 2)
 - T0399 `needs_founder` none/experiment: Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts at P_ref and 0.5 P_ref (attempt 0)
 
 ## Recent events
-- 2026-11-18T05:29:02+00:00 inbox_opened {"id": "I0256", "kind": "protected_change", "subject": "T0457: merge needs founder approval"}
 - 2026-11-18T06:28:09+00:00 inbox_resolved {"id": "I0256", "status": "approved", "note": "T0457 merge approved, review T0466 accepts with caveats, logged in O004 state. E004 part 2b: banded acceptance an
 - 2026-11-18T06:28:26+00:00 merged {"task": "T0457"}
 - 2026-11-18T06:28:27+00:00 registration_deferred {"task": "T0457", "experiment": "E004", "reason": "design task T0390 of E004 is still todo"}
@@ -55,3 +53,4 @@ cancelled: 47, done: 413, failed: 4, needs_founder: 2, todo: 2
 - 2026-11-18T10:51:57+00:00 run_finished {"run": "T0467-critic-20261118T021818-450b", "status": "completed", "cost": 2.82753, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T10:53:27+00:00 run_finished {"run": "T0468-critic-20261118T021820-5d1e", "status": "completed", "cost": 2.607875, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T11:23:29+00:00 inbox_opened {"id": "I0257", "kind": "protected_change", "subject": "T0390: merge needs founder approval"}
+- 2026-11-18T15:01:37+00:00 inbox_resolved {"id": "I0257", "status": "approved", "note": "T0390 merge approved, reviews T0467 and T0468 accept with caveats, logged in O004 state. E004 part 3: F3, F6, F8 
