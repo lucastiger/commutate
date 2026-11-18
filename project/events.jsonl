@@ -2905,3 +2905,6 @@
 {"ts": "2026-11-18T00:09:29+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0248", "status": "approved", "note": "Acknowledged after the 00:00 UTC reset; cap not raised.", "by": "human"}
 {"ts": "2026-11-18T00:16:28+00:00", "event": "inbox_opened", "actor": "orchestrator", "id": "I0249", "kind": "protected_change", "subject": "T0398: merge needs founder approval"}
 {"ts": "2026-11-18T00:22:48+00:00", "event": "inbox_resolved", "actor": "founder", "id": "I0249", "status": "approved", "note": "T0398 merge approved, review T0459 accepts with caveats. E007 development rows: all criteria met pooled, F2 nulls fail A1 and A4, D0025 per-stratum A4 check stopped in 3 strata. Diagnosis and the corrected power simulation in T0456; caveats routed there. Per D0025.", "by": "human"}
+{"ts": "2026-11-18T00:23:22+00:00", "event": "merged", "actor": "orchestrator", "task": "T0398"}
+{"ts": "2026-11-18T00:23:24+00:00", "event": "registration_deferred", "actor": "orchestrator", "task": "T0398", "experiment": "E007", "reason": "design task T0456 of E007 is still todo"}
+{"ts": "2026-11-18T00:23:35+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0456-scientist-20261117T162335-b347", "task": "T0456", "role": "scientist", "session": "d976bc9f-5c90-49df-a63a-4bbb33114849"}

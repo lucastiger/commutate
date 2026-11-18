@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-18T00:22:41+00:00 from repository state — do not edit_
+_generated 2026-11-18T00:23:35+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0249** [protected_change] T0398: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -23,7 +22,7 @@ _generated 2026-11-18T00:22:41+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 37 | $88.05 | 1629405 | 826307 | 118 | 0 |
+| O002 | 38 | $88.05 | 1629405 | 826307 | 118 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 54 | $111.36 | 1760637 | 987261 | 142 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -33,17 +32,13 @@ _generated 2026-11-18T00:22:41+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 400, failed: 4, needs_founder: 1, running: 2, todo: 5
+cancelled: 47, done: 401, failed: 4, running: 3, todo: 4
 
 - T0382 `running` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 5)
-- T0398 `needs_founder` scientist/design_experiment: E007 development rows: local dev run, F2 null check via mfos exp check, F3 coverage re-run on the dev structure (attempt 2)
+- T0456 `running` scientist/design_experiment: E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra development layouts in 3 strata, corrected power simulation (attempt 1)
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 1)
 
 ## Recent events
-- 2026-11-17T21:46:00+00:00 investigation_spawned {"task": "T0458", "about": "T0382", "cls": "implementation"}
-- 2026-11-17T21:46:05+00:00 merged {"task": "T0389"}
-- 2026-11-17T21:46:06+00:00 registration_deferred {"task": "T0389", "experiment": "E004", "reason": "design task T0390 of E004 is still todo"}
-- 2026-11-17T21:46:13+00:00 inbox_opened {"id": "I0248", "kind": "budget_increase", "subject": "daily LLM budget reached"}
 - 2026-11-17T21:46:26+00:00 task_rebriefed {"task": "T0382", "note": "T0458 cancelled; experiment_drafts quirk; retry"}
 - 2026-11-17T21:47:34+00:00 run_finished {"run": "T0398-scientist-20261117T133141-2750", "status": "completed", "cost": 0.395608, "subtype": "success", "report": "structured_output"}
 - 2026-11-17T21:54:01+00:00 verified {"task": "T0398"}
@@ -55,3 +50,7 @@ cancelled: 47, done: 400, failed: 4, needs_founder: 1, running: 2, todo: 5
 - 2026-11-18T00:08:49+00:00 run_finished {"run": "T0459-critic-20261117T160034-f27d", "status": "completed", "cost": 2.380552, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T00:09:29+00:00 inbox_resolved {"id": "I0248", "status": "approved", "note": "Acknowledged after the 00:00 UTC reset; cap not raised.", "by": "human"}
 - 2026-11-18T00:16:28+00:00 inbox_opened {"id": "I0249", "kind": "protected_change", "subject": "T0398: merge needs founder approval"}
+- 2026-11-18T00:22:48+00:00 inbox_resolved {"id": "I0249", "status": "approved", "note": "T0398 merge approved, review T0459 accepts with caveats. E007 development rows: all criteria met pooled, F2 nulls
+- 2026-11-18T00:23:22+00:00 merged {"task": "T0398"}
+- 2026-11-18T00:23:24+00:00 registration_deferred {"task": "T0398", "experiment": "E007", "reason": "design task T0456 of E007 is still todo"}
+- 2026-11-18T00:23:35+00:00 run_started {"run": "T0456-scientist-20261117T162335-b347", "task": "T0456", "role": "scientist", "session": "d976bc9f-5c90-49df-a63a-4bbb33114849"}
