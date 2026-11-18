@@ -1,7 +1,8 @@
 id: E004
 title: 'l2_layout 0.25 mm against the pinned FastHenry on the inductance ratios and absolute loop inductance of sealed-seed
   re-layouts of the frozen PowerSynth 2D_Case_2R and 2D_Case_6 reconstructions (O004 A1/A2/K1/K2, F1-F8). Draft parts 1
-  (T0388: references, freeze, allocation, registration checks) and 2 (T0389: solve stage, estimators, metrics)'
+  (T0388: references, freeze, allocation, registration checks), 2 (T0389: solve stage, estimators, metrics) and 3
+  (T0390: F3, F6, F8 diagnostics)'
 objective: O004
 status: draft
 runner: uv run python experiments/runners/e004_run.py
@@ -15,8 +16,8 @@ config:
     commitment with a replay of every draw and redraw, reference fingerprints against the registration record in the
     solve stage, the solve-stage review fixes (T0453-T0455) and the runner's --selftest. Open before registration: (i) the
     founder picks the span's lower end from the simulation and amends O004 (0.75 stays in the code until then); (ii) F7(a)
-    results (founder burst) fix nh_lateral (provisional 5) and the thin-stack gap; (iii) the F3 per-conductor-group and F6
-    diagnostics are not yet in the runner (reported, not judged); (iv) refreeze: the proxy context imports
+    results (founder burst) fix nh_lateral (provisional 5) and the thin-stack gap; (iii) done in T0390: the F3, F6 and F8
+    diagnostics (config.diagnostics; reported, not judged); (iv) refreeze: the proxy context imports
     experiments/runners/e010_run.py and reads experiments/specs/E010.yaml (their sha256 are recorded in the proxy record;
     to be added to config.freeze at the refreeze before registration).
   decisions:
@@ -320,6 +321,98 @@ config:
     D0024 item 5 / O004 F2: span-reach, rule-range and pilot work use 2D_Case_4, gen2_0 and development seeds only; nothing
     is drawn and no inductance is computed on 2D_Case_2R or 2D_Case_6 before registration, except F7(b)'s l2_layout 0.25 mm
     solve of 2D_Case_6's reconstruction
+  diagnostics:
+    meaning: >-
+      T0390. O004 F3, F6 and F8, REPORTED AND NEVER JUDGED: A1, A2, K1 and K2 are computed from the judged ladders' raw
+      values before any diagnostic job starts; the diagnostic jobs have their own keys (assemble and criteria never read
+      them), skip rather than refuse when they do not fit (memory budget or timeout_min) or when a variant's export cannot
+      be built (recorded with the cause), any exception of theirs is recorded in solve.json and never raised (the judged rows,
+      metrics and solve.json are written regardless), and they feed no gating sanity check, so no diagnostic can change
+      a criterion or the run's validity. Registered mode always runs them; smoke only with
+      --diagnostics (coarsest level, one Case 4 development pair and its reference, labelled, not evidence). Output:
+      solve.json diagnostics.F3_F6_F8 (per layout, per pair, F8 rows, the closed-form record, every job and skip).
+    level: k0
+    level_check: k1
+    level_meaning: >-
+      every F6 and F3 substitution solve is FastHenry at lateral level k0 (cell 1 mm, plane 2 mm, wire 2x2 filaments x 1
+      piece) at nh_lateral, the deck otherwise identical to the judged k0 deck, whose value (multipole, default models) is
+      the baseline; a difference of two decks at one level cancels their common discretisation error to first order
+      (the residual is not estimated from one level; stated limitation). k0 because the distributed die needs FastHenry's
+      direct solver (its multipole solver segfaulted on that variant, review T0409; exporter solver_notes) and a dense
+      solve fits only at k0 (2D_Case_2R 27.6k filaments, about 16 GB estimated). Level check: the tab variant (multipole)
+      also at k1 on both judged references, against the judged k1 value, so the k0 figure's level dependence is shown
+      for L (not for pair ratios)
+    F6:
+      variants: {terminal_tab: 'terminal_model=tab (2 mm Cu posts, TabSpec default), multipole, baseline the judged k0 value',
+        die_distributed: 'die_model=distributed (Cu die_sigma, exporter default), direct solver, baseline the default deck
+        solved by the same direct solver at the same level'}
+      solver_mode_term: the default deck direct against multipole at k0, reported so the distributed baseline's solver change is visible
+      layouts: every registered layout (both judged references, every drawn pair, the 2R proxy), so every pair ratio has both
+      reported: per layout and frequency dL/L; per pair and frequency dr/r = (1 + dL_pair/L_pair) / (1 + dL_ref/L_ref) - 1
+      combined_variant: not run (one shared choice at a time, as O004 F6 lists them)
+    F6_founder_ratio_rel: 0.02
+    F6_rule: if any |dr/r| of a variant exceeds 0.02 on any pair, F6_founder_decision_needed_before_O009 is set (O004 F6 response)
+    F3:
+      method: >-
+        attribution of D = L_l2(0.25 mm) / L_FH(finest) - 1 per layout and frequency, and of d = r_l2 / r_FH - 1 per pair,
+        by one-group substitution: each term is the relative change in FastHenry's L when that group's model alone is
+        moved to l2_layout's, so a term that explains the difference equals it with the same sign. wires (cross-section):
+        (a) FastHenry, every wire segment's square side changed from the equal-GMD 0.8711 d to 0.8472 d = d / (2 x 0.59017),
+        whose high-frequency self-GMD (logarithmic capacity 0.59017 a; Polya and Szego 1951) equals the round wire's r,
+        nothing else changed (deck edit of the 'Ew' lines, runner deck_edit); (b) closed form beside it, the HF-limit
+        partial self-inductance difference mu0 l / (2 pi) [ln(g_sq / r) + (r - g_sq) / l] per straight segment (Rosa 1908;
+        Grover 1946) summed per wire, loop-weighted by s^2 with the current shared equally among the wires of one net
+        (first-order perturbation; stated approximation), check: 0.628 % for a 16 mm, 0.3 mm wire against T0364's 0.637 %.
+        terminals (contact), a BOUND, not a term: at the judged levels both tools inject each port over the same support
+        (the port point is a multiple of 0.25 mm from the whole-mm lattice origin, Case 4's at x = 13.5 mm, so it lies on a
+        0.25 mm lattice corner: FastHenry k2 merges the 4 tied nearest cells and l2_layout's
+        bilinear contact splits 1/4 to the same 4 cells, l2_layout.Contact), so they differ only in equipotential
+        (FastHenry) against equal split (l2_layout) over a 0.5 mm patch. By energy minimisation (Thomson; the split that
+        minimises the inductive energy is the equipotential one) and convexity of the energy in the injection, 0 <=
+        L_split - L_equipotential <= max over the support's cells of L_point(cell) - L_equipotential(patch): a single-cell
+        to patch contact-size step. It is measured at k0 (runner deck_edit 'terminal_grow'): each port's point contact
+        grown by one ring of same-net cells (1 mm cell -> 3 mm x 3 mm equipotential patch), F3_terminals_contact_grow_k0 =
+        L_grow / L_point - 1, which must be <= 0 (monotonicity; violations listed, not gating); |grow| is reported as
+        F3_terminals_contact_bound (inference, not proof: the k0 step's contact-size ratio 3 exceeds the judged-level
+        ratio 2, assuming a spreading inductance logarithmic in contact size). T0390 smoke found the previous design (cells
+        within one pitch, strictly, of the port point) a no-op at k0, where the port lies on a 1 mm cell centre (deck
+        sha256 identical to the baseline). The bound is kept out of the residual and of F3_rule; above F3_founder_L_rel
+        it is reported (F3_terminals_bound_above_L_threshold) for the founder to see. traces (thickness model), from the judged solves, no extra job: (FH(nh 9) /
+        FH(nh_lateral) - 1 at thickness.at) - (l2(thk_f) / l2(lat0.5) - 1), FastHenry's thickness correction minus
+        l2_layout's. residual = (1 + D) / ((1 + wire term (a)) (1 + traces thickness)) - 1, attributed to the traces' lateral and kernel
+        model and both solvers' remaining discretisation, reported beside (E_l2 + E_fh) / L_FH. Pair ratios: each term's
+        effect (1 + t_pair) / (1 + t_ref) - 1. Terms are measured separately and combined as independent first-order
+        factors (interactions not measured; stated)
+      groups: {wires: [F3_wires_xs_fasthenry, F3_wires_xs_closed_form_hf], terminals: [F3_terminals_contact_bound (bound, from F3_terminals_contact_grow_k0)],
+        traces: [F3_traces_thickness, F3_residual_traces_kernel_discretisation]}
+    F3_founder_L_rel: 0.01
+    F3_rule: if any model-choice term (the three named terms F3_wires_xs_fasthenry, F3_wires_xs_closed_form_hf and F3_traces_thickness; not the residual, not the terminal bound) changes some layout's L by more than 1 %, F3_founder_decision_needed is set (O004 F3 response)
+    F8:
+      method: >-
+        per pair and frequency |r_L1 / r_FH - 1| beside |r_l2 / r_FH - 1|, r_L1 the registration L1 ratio (config.l1, not
+        re-solved), r_FH FastHenry's finest; maxima over the same pairs (both finite). L1 alone would meet A1 iff every
+        pre-registered pair has FastHenry's finest ratio within FastHenry's F1 cap (l2_layout's half of F1 does not apply to
+        L1, which has no ladder) and max |r_L1 / r_FH - 1| <= A1's 0.02; recorded either way (O004 F8: the verdict stands)
+    cost_plan:
+      meaning: >-
+        extra FastHenry solves of the diagnostics on the burst VM after the judged jobs (export-only sizing, T0390; no solve
+        on 2R or Case 6 before registration, F2). Pairs sized as their reference (as e004_cost_plan). Multipole k0 times
+        are e004_cost_plan's calibrated values; direct time 119.7 s x (F / 9,992)^3 (dense LU, research/o004_f7/fh_direct_mem.json),
+        direct memory the exporter's dense estimate x 1.3; k1 tab the calibrated k1_nh5 time
+      per_reference:
+        2D_Case_2R: {layouts: 8, k0_multipole_s: 345, k0_jobs_multipole_per_layout: 3, direct_default: {filaments: 26546,
+          est_gb: 14.56, proj_gb: 18.9, time_s: 2226}, direct_distributed: {filaments: 27554, est_gb: 15.70, proj_gb: 20.4,
+          time_s: 2510}, k1_tab_s: 12248, total_s: 58416}
+        2D_Case_6: {layouts: 7, k0_multipole_s: 227, k0_jobs_multipole_per_layout: 3, direct_default: {filaments: 19712,
+          est_gb: 7.99, proj_gb: 10.4, time_s: 919}, direct_distributed: {filaments: 20720, est_gb: 8.84, proj_gb: 11.5,
+          time_s: 1067}, k1_tab_s: 8301, total_s: 26970}
+      jobs: 77
+      cpu_h: 23.7
+      cpu_h_upper: 71
+      usd: 4
+      usd_upper: 15
+      usd_meaning: e2-highmem-16 at $0.73/h; memory-packed (direct 2R jobs about 20 GB, at most 5 at once in 108 GB), about 4-6 h of added makespan; upper = 3 x the times (the multipole exponent envelope)
+      mac_smoke: '--smoke --diagnostics: k0 at nh 1 (T0417 smoke-test level) with its own nh 1 baseline, one Case 4 development pair and its reference, no proxy; the direct-solver decks (Case 4 k0 about 35 GB at nh 3) are burst-VM jobs, recorded as skipped; four multipole jobs per layout; at most two solver processes at once (MF_E004_MAX_PROCS, which --smoke sets to 2 unless given; registered runs: unset, memory packing only)'
   a2_cap_rel: 0.05
   f7_status: >-
     research/notes/o004-f7-l2-pilot.md (T0387): F7(b) passed (Case 6 0.25 mm solve completed); F7(c) exclusion rate 0 of
@@ -341,6 +434,15 @@ metrics:
     (the clustered bound by reference beside it in solve.json)'}
 - {name: l1_max_ratio_diff_vs_fasthenry, description: 'F8, reported: max |r_L1 / r_FH - 1| over pairs with a FastHenry finest
     value'}
+- {name: f3_max_model_term_rel, description: 'F3, reported: max over layouts and frequencies of |term| of the three F3
+    model-choice terms (config.diagnostics.F3); above 0.01 the founder decides'}
+- {name: f3_terminals_bound_max, description: 'F3, reported: max over layouts and frequencies of the terminal contact bound
+    |F3_terminals_contact_grow_k0| (config.diagnostics.F3; a bound, not a term)'}
+- {name: f6_max_ratio_change_rel, description: 'F6, reported: max over pairs, frequencies and both variants of |dr / r| at
+    config.diagnostics.level; above 0.02 the founder decides before O009 relies on l2_layout'}
+- {name: f6_max_L_change_rel, description: 'F6, reported: max over layouts, frequencies and both variants of |dL / L|'}
+- {name: f8_l1_alone_meets_a1, description: 'F8, reported: 1 if L1''s ratios alone meet A1 against FastHenry on every pair
+    (config.diagnostics.F8), else 0'}
 - {name: n_l2_gmres_flagged, description: 'solve: l2_layout solves with a GMRES flag, treated as missing values'}
 - {name: n_fh_decks_crashed_every_attempt, description: 'solve: FastHenry decks that crashed on every multipole attempt,
     treated as missing values (no direct fallback, no other level)'}
@@ -404,7 +506,7 @@ sanity_checks:
     value is a missing value (+inf estimate or missing finest), reported, never an INVALID check of its own (review T0364:
     no check that depends on solver values makes the run INVALID)'}
 timeout_min: 6000
-cpu_hours_est: 518.2  # T0457 a2: e004_cost_plan.cpu_h of research/o004_f7/vm_jobs_fasthenry.json (k0 factor 1.83; k1/k2 x m1 = 5.08, a lower bound from the local k1-lateral timeout; upper envelope 2575.5 CPU-h)
+cpu_hours_est: 541.9  # 518.2 judged + 23.7 diagnostics (config.diagnostics.cost_plan, T0390); T0457 a2: e004_cost_plan.cpu_h of research/o004_f7/vm_jobs_fasthenry.json (k0 factor 1.83; k1/k2 x m1 = 5.08, a lower bound from the local k1-lateral timeout; upper envelope 2575.5 CPU-h)
 code_under_test:
 - src/moduleforge/geometry/layout.py
 - src/moduleforge/geometry/stack.py

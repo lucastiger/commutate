@@ -47,6 +47,11 @@ Modes
   --print-freeze               print the freeze values of the current tree (the act of freezing; not evidence).
   --smoke                      (stage all) also the solve stage at the coarsest level of each ladder (l2 1.0 mm, FastHenry
                                k0 at nh 3) on one Case 4 development pair and 2D_Case_4, through the metrics (labelled).
+  --smoke --diagnostics        also the F3 / F6 / F8 diagnostics (T0390, config.diagnostics; registered mode always runs
+                               them, after the judged jobs; reported, never judged) at the coarsest level (k0 at the smoke
+                               nh = 1, T0417's smoke-test level, with its own nh = 1 baseline) on one Case 4 development
+                               pair and its reference, the proxy pair left out (plain --smoke solves it); the direct-solver
+                               decks (F6 distributed, ~35-47 GB on Case 4) are burst-VM jobs, recorded as skipped.
   --dev-fh-plan / --dev-fh-probe GB / --dev-fh-direct-mem / --dev-fh-run FILE
                                research only (F7(a), development geometry): the FastHenry job list, the multipole
                                preconditioner probe, the direct-mode memory runs, and the job list's runner (burst VM).
@@ -1290,6 +1295,9 @@ def child_solve(job_path: str) -> int:
         from moduleforge.solvers.fasthenry import FHLevel, export
         lev = FHLevel(**job["fh_level"])
         deck, facts = export(lay, lev, die_model=job["die_model"], terminal_model=job["terminal_model"])
+        if job.get("deck_edit"):  # F3 diagnostic substitutions only (never a judged job): see deck_edit()
+            deck = deck_edit(deck, job["deck_edit"], lay, lev)
+            facts = dict(facts, deck_sha256=hashlib.sha256(deck.encode()).hexdigest())
         res = FR.solve_deck(deck, mode=job["mode"], order=job["order"], tol=job["tol"], max_retries=job["max_retries"],
                             timeout_s=float(job["timeout_s"]), mem_cap_mb=float(job["mem_cap_mb"]), facts=facts)
         rec.update(ok=res.ok, status=res.status, reason=res.reason, binary_sha256=res.binary_sha256,
@@ -1338,8 +1346,13 @@ def run_jobs(jobs: list[dict], layouts: dict, work: Path, mem_budget_gb: float, 
             pending.append(j)
     pending.sort(key=lambda j: -j["mem_proj_gb"])
     running: dict = {}
+    # Optional process cap (MF_E004_MAX_PROCS; unset or 0 = memory packing only, the registered default). --smoke sets 2
+    # unless the variable is given (workstation rule: at most two compute processes at once); a cap never changes a value.
+    max_procs = int(os.environ.get("MF_E004_MAX_PROCS", "0") or 0)
     while pending or running:
         for j in list(pending):
+            if max_procs and len(running) >= max_procs:
+                break
             if sum(r["mem_proj_gb"] for r in running.values()) + j["mem_proj_gb"] <= mem_budget_gb:
                 jp = work / "solves" / f"{j['id']}.job.json"
                 jp.write_text(json.dumps(j, default=str))
@@ -1586,7 +1599,303 @@ def fh_selftest_record(work: Path) -> dict:
     return rec
 
 
-def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
+# --------------------------------------------------------------------------------------- F3 / F6 / F8 diagnostics (T0390)
+# Reported, never judged: none of these jobs has a ladder key, so assemble() / criteria() never read them (A1, A2, K1, K2
+# are judged on the raw values of the judged ladders only), and no gating sanity check depends on them.
+MU0 = 4e-7 * math.pi  # H/m (the conventional value; the 2019 SI value differs by ~1e-10 relative, immaterial here)
+# Logarithmic capacity (transfinite diameter) of a square of side a: Gamma(1/4)^2 / (4 pi^(3/2)) a = 0.59017 a
+# (Polya & Szego, Isoperimetric Inequalities in Mathematical Physics, 1951; Ransford, Potential Theory in the Complex
+# Plane, 1995, table 5.1).  In the high-frequency limit the 2D current on a conductor's boundary is the equilibrium charge,
+# whose self-GMD is the logarithmic capacity; a disc's is its radius r (review T0364).
+CAP_SQUARE = math.gamma(0.25) ** 2 / (4.0 * math.pi ** 1.5)
+DIAG_KEYS = {"f6_tab": dict(terminal_model="tab", mode="multipole"),
+             "f6_dist": dict(die_model="distributed", mode="direct"),
+             "f6_basedir": dict(mode="direct"),
+             "f3_wire": dict(mode="multipole", deck_edit="wire_hf_square"),
+             "f3_term": dict(mode="multipole", deck_edit="terminal_grow")}
+DIRECT_T_REF_S, DIRECT_F_REF = 119.7, 9992  # research/o004_f7/fh_direct_mem.json: case4_base direct, 9,992 filaments
+
+
+def wire_hf_side_factor() -> float:
+    """Side of the square whose HF self-GMD (CAP_SQUARE a) equals a disc's (r = d / 2), over the exporter's equal-GMD side
+    (SQUARE_PER_DIAMETER d): (1 / (2 CAP_SQUARE)) / 0.8711 = 0.8472 / 0.8711."""
+    from moduleforge.solvers.fasthenry import SQUARE_PER_DIAMETER
+    return (1.0 / (2.0 * CAP_SQUARE)) / SQUARE_PER_DIAMETER
+
+
+def deck_edit(deck: str, kind: str, lay, lev) -> str:
+    """F3 group substitutions on an exported deck (diagnostic decks only; the exporter in src/ is not changed):
+    'wire_hf_square'  every bond-wire segment (lines 'Ew...') gets the HF-equivalent square side 0.8472 d instead of the
+                      equal-GMD 0.8711 d, nothing else changed: FastHenry's own measure of the round-versus-square term;
+    'terminal_grow'   each port's point contact (the exporter's nearest cell(s), ties merged) grown by one ring: the port
+                      node merged ('.equiv') with every same-net cell adjacent (8-neighbourhood) to the contact set (1 mm
+                      cell -> 3 mm x 3 mm equipotential patch at k0): a contact-size step, the bound of the terminal
+                      term (config.diagnostics.F3); it never reproduces l2_layout's contact, see run_model_diagnostics."""
+    import re as _re
+
+    from moduleforge.geometry import DC_MINUS, DC_PLUS
+    from moduleforge.solvers import fasthenry as FHm
+    lines = deck.splitlines()
+    if kind == "wire_hf_square":
+        k = wire_hf_side_factor()
+        n = 0
+        for i, ln in enumerate(lines):
+            if ln.startswith("Ew"):
+                lines[i] = _re.sub(r"\b([wh])=([0-9.eE+-]+)", lambda m: f"{m.group(1)}={FHm._fmt(float(m.group(2)) * k)}", ln)
+                n += 1
+        if n == 0:
+            raise ValueError("wire_hf_square: no wire segment in the deck")
+        return "\n".join(lines) + ("\n" if deck.endswith("\n") else "")
+    if kind == "terminal_grow":
+        cm = lay.to_conductors()
+        c = lev.cell_mm * MM
+        origin = FHm.lattice_origin(cm)
+        cells = FHm.lattice(cm, c, origin)
+        ext = [i for i, ln in enumerate(lines) if ln.startswith(".external")]
+        if len(ext) != 1:
+            raise ValueError("terminal_grow: the deck must have exactly one .external line")
+        port = lines[ext[0]].split()[1:3]
+        defined = {ln.split()[0] for ln in lines if ln[:1] == "N" and " x=" in ln}
+        add = []
+        for node, net, p in ((port[0], DC_PLUS, cm.port.p_pos), (port[1], DC_MINUS, cm.port.p_neg)):
+            ks0 = FHm._nearest(cells, c, origin, net, p[0], p[1])  # the exporter's point contact (ties merged)
+            if FHm._tn(ks0[0]) != node:
+                raise ValueError(f"terminal_grow: port node {node} is not the exporter's contact {FHm._tn(ks0[0])}")
+            grown = {(i + di, j + dj) for i, j in ks0 for di in (-1, 0, 1) for dj in (-1, 0, 1)}
+            new_k = sorted(k for k in grown - set(ks0) if k in cells and cells[k][0] == net and FHm._tn(k) in defined)
+            if not new_k:
+                raise ValueError(f"terminal_grow: no same-net cell around the {net} contact")
+            add += FHm.equiv_lines([node] + [FHm._tn(k) for k in new_k])
+        return "\n".join(lines[:ext[0]] + add + lines[ext[0]:]) + ("\n" if deck.endswith("\n") else "")
+    raise ValueError(f"unknown deck_edit {kind!r}")
+
+
+def wire_xs_closed_form(lay) -> dict:
+    """Round-versus-square wire term in the HF limit, closed form: partial self-inductance of a straight segment of length l
+    and self-GMD g, L = mu0 l / (2 pi) [ln(2 l / g) - 1 + g / l] (Rosa 1908; Grover, Inductance Calculations, 1946, ch. 3),
+    so L_round - L_square = mu0 l / (2 pi) [ln(g_sq / r) + (r - g_sq) / l], g_sq = CAP_SQUARE a, a = 0.8711 d, r = d / 2
+    (mutuals between distinct segments do not depend on the section to first order).  Loop weight: first-order
+    perturbation dL_loop = sum_k s_k^2 dL_kk, s_k the wire's share of the loop current, taken as equal among the wires of one
+    net (stated approximation; unequal sharing raises sum s_k^2).  Returns H; the check reproduces T0364's 0.637 %."""
+    from moduleforge.solvers.fasthenry import SQUARE_PER_DIAMETER
+
+    def d_self(length: float, d: float) -> float:
+        r, g = d / 2.0, CAP_SQUARE * SQUARE_PER_DIAMETER * d
+        return MU0 * length / (2 * math.pi) * (math.log(g / r) + (r - g) / length)
+
+    def l_round(length: float, d: float) -> float:
+        r = d / 2.0
+        return MU0 * length / (2 * math.pi) * (math.log(2 * length / r) - 1 + r / length)
+    per_wire: dict = {}
+    for s in lay.to_conductors().wires:
+        ln = float(np.linalg.norm(np.asarray(s.p1, float) - np.asarray(s.p0, float)))
+        w = per_wire.setdefault(s.wire_index, {"net": s.net, "dL": 0.0, "len": 0.0, "d": s.diameter})
+        w["dL"] += d_self(ln, s.diameter)
+        w["len"] += ln
+    n_net: dict = {}
+    for w in per_wire.values():
+        n_net[w["net"]] = n_net.get(w["net"], 0) + 1
+    loop = sum(w["dL"] / n_net[w["net"]] ** 2 for w in per_wire.values())
+    chk = d_self(16e-3, 0.3e-3) / l_round(16e-3, 0.3e-3)
+    return {"dL_loop_H": loop, "n_wires": len(per_wire), "wires_per_net": n_net,
+            "max_dL_over_Lself_round": max((w["dL"] / l_round(w["len"], w["d"]) for w in per_wire.values()), default=None),
+            "check_16mm_0p3mm": {"value": chk, "T0364": 0.00637, "ok": abs(chk - 0.00637) < 2e-4}}
+
+
+def diag_jobs(cfg: dict, layouts: dict, ref_names: list[str], smoke: bool, budget_gb: float) -> tuple[list, list]:
+    """The diagnostic FastHenry jobs (config.diagnostics): every DIAG_KEYS variant on every layout at the F6 / F3 level (k0
+    at nh_lateral; smoke: k0 at the smoke nh), and the tab variant at k1 on the references (level check; not in smoke).
+    A job projected above the memory budget, or whose timeout doubled exceeds timeout_min, is skipped and recorded (a
+    diagnostic never refuses the stage).  Smoke: one development pair and its reference only (no proxy)."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    f, dcfg = cfg["solve"]["fasthenry"], cfg["diagnostics"]
+    nh = 1 if smoke else int(f["nh_lateral"])  # smoke: nh = 1, T0417's smoke-test level (never in E004's ladder)
+    lim = float(cfg.get("_timeout_min", 6000)) * 60.0
+    s = f["sizing"]
+    plan = [(name, k, dcfg["level"], key) for name in layouts for k, key in ((k, k) for k in DIAG_KEYS)]
+    if smoke:  # its own default-deck baseline at the smoke nh (the judged smoke k0 is at nh 3)
+        plan += [(name, "smoke_base", dcfg["level"], "smoke_base") for name in layouts]
+    else:
+        plan += [(name, "f6_tab", dcfg["level_check"], "f6_tab_" + dcfg["level_check"]) for name in ref_names]
+    jobs, skipped = [], []
+    for name, var, lvk, key in plan:
+        o = DIAG_KEYS.get(var, {"mode": "multipole"})
+        kw = fh_level(cfg, lvk, nh)
+        dm, tm = o.get("die_model", f["die_model"]), o.get("terminal_model", f["terminal_model"])
+        try:  # an export the variant cannot build (e.g. a die footprint off the lattice) skips that job, recorded
+            deck, facts = export(layouts[name], FHLevel(**kw), die_model=dm, terminal_model=tm)
+            if o.get("deck_edit"):
+                deck = deck_edit(deck, o["deck_edit"], layouts[name], FHLevel(**kw))
+        except ValueError as exc:
+            skipped.append(dict(id=f"{name}__diag_{key}_nh{nh}", layout=name, key=key, diag=var,
+                                skipped=f"export failed: {exc}"))
+            continue
+        nf = facts["n_filaments"]
+        if o["mode"] == "direct":
+            mem = facts["direct_mem_est_gb"] * s["mem_margin"]
+            t = DIRECT_T_REF_S * (nf / DIRECT_F_REF) ** 3
+            sz = dict(mem_raw_gb=facts["direct_mem_est_gb"], mem_proj_gb=mem, time_proj_s=t,
+                      mem_cap_mb=max(s["min_mem_cap_mb"], mem * s.get("cap_factor", 1.0) * 1024),
+                      timeout_s=max(s["min_timeout_s"], s["timeout_factor"] * t))
+        else:
+            sz = fh_sizing(cfg, nf)
+        j = dict(id=f"{name}__diag_{key}_nh{nh}", solver="fasthenry", layout=name, level=f"{lvk}_nh{nh}", key=key,
+                 diag=var, fh_level=kw, mode=o["mode"], order=f["order"], tol=f["tol"], max_retries=f["max_retries"],
+                 die_model=dm, terminal_model=tm, deck_edit=o.get("deck_edit"), n_filaments_exporter=nf,
+                 deck_sha256=hashlib.sha256(deck.encode()).hexdigest(), fingerprint=layouts[name].fingerprint(), **sz)
+        why = ("smoke: direct-solver decks are burst-VM jobs" if smoke and o["mode"] == "direct" else
+               f"projected {j['mem_proj_gb']:.1f} GB > memory budget {budget_gb:g} GB" if j["mem_proj_gb"] > budget_gb
+               else f"timeout x 2 = {2 * j['timeout_s']:.0f} s > timeout_min" if 2 * j["timeout_s"] > lim else None)
+        (skipped if why else jobs).append(dict(j, skipped=why) if why else j)
+    return jobs, skipped
+
+
+def _rel(a, b):
+    return None if a is None or b is None or not b else a / b - 1.0
+
+
+def _ratio_eff(x_pair, x_ref):
+    """Change in a pair ratio of a relative L term: (1 + x_pair) / (1 + x_ref) - 1."""
+    return None if x_pair is None or x_ref is None else (1.0 + x_pair) / (1.0 + x_ref) - 1.0
+
+
+def run_model_diagnostics(run, cfg, smoke, layouts, pairs, ref_of, jobs, res, asm, work, budget) -> dict:
+    """F3 (per conductor group), F6 (shared die / terminal choices) and F8 (L1 beside l2_layout), config.diagnostics."""
+    from moduleforge.solvers.fasthenry import FHLevel, export
+    dcfg, f = cfg["diagnostics"], cfg["solve"]["fasthenry"]
+    if smoke:
+        keep = {p["name"] for p in pairs if p["kind"] != "proxy"}
+        keep = set(sorted(keep)[:1])
+        keep |= {ref_of[n] for n in keep}
+    else:
+        keep = set(layouts)
+    lays = {k: v for k, v in layouts.items() if k in keep}
+    refs = sorted({ref_of[p["name"]] for p in pairs})
+    djobs, skipped = diag_jobs(cfg, lays, [r for r in refs if r in lays], smoke, budget)
+    dres = run_jobs(djobs, lays, work, budget) if djobs else {}
+    geo = []  # diagnostic decks re-export (and re-edit) to the solved sha256: reported, not a gating check
+    for j in djobs:
+        r = dres.get(j["id"]) or {}
+        if r.get("deck_sha256"):
+            d, _ = export(lays[j["layout"]], FHLevel(**j["fh_level"]), die_model=j["die_model"],
+                          terminal_model=j["terminal_model"])
+            if j.get("deck_edit"):
+                d = deck_edit(d, j["deck_edit"], lays[j["layout"]], FHLevel(**j["fh_level"]))
+            if hashlib.sha256(d.encode()).hexdigest() != r["deck_sha256"]:
+                geo.append(j["id"])
+    by_key = {(j["layout"], j["key"]): j["id"] for j in jobs}
+    dkey = {(j["layout"], j["key"]): j["id"] for j in djobs}
+    at = f["thickness"]["at"]
+    nh_max = max(int(x) for x in f["thickness"]["nh"])
+    t_key = at if nh_max == int(f["nh_lateral"]) else f"t{nh_max}"  # fh_terms' key rule
+
+    def main_v(lay, key, fk):
+        return _v(res, by_key, lay, key, fk)
+
+    def diag_v(lay, key, fk):
+        return _v(dres, dkey, lay, key, fk)
+    lrows = {(r["layout"], r["freq"]): r for r in asm["layout_rows"]}
+    per_layout, cf = {}, {}
+    for lay in sorted(lays):
+        cf[lay] = wire_xs_closed_form(lays[lay])
+        for fk in FK:
+            base = diag_v(lay, "smoke_base", fk) if smoke else main_v(lay, "k0", fk)  # registered: the judged ladder's k0 (multipole, default models) = the diagnostic baseline
+            row = lrows.get((lay, fk), {})
+            lfh = row.get("L_fh") if row.get("finest_complete") else None
+            l2 = main_v(lay, "lat0.25" if not smoke else "lat1.0", fk)
+            fin = lfh if lfh is not None else base
+            c_fh = None if smoke else _rel(main_v(lay, t_key, fk), main_v(lay, at, fk))
+            thk_l2 = None if smoke else _rel(main_v(lay, "thk_f", fk), main_v(lay, "lat0.5", fk))
+            t_thk = None if c_fh is None or thk_l2 is None else c_fh - thk_l2
+            e = {"D_rel": None if l2 is None or lfh is None else l2 / lfh - 1.0,
+                 "F3_wires_xs_fasthenry": _rel(diag_v(lay, "f3_wire", fk), base),
+                 "F3_wires_xs_closed_form_hf": cf[lay]["dL_loop_H"] / fin if fin else None,
+                 "F3_terminals_contact_grow_k0": _rel(diag_v(lay, "f3_term", fk), base),
+                 "F3_traces_thickness": t_thk,
+                 "F6_terminal_tab": _rel(diag_v(lay, "f6_tab", fk), base),
+                 "F6_die_distributed": _rel(diag_v(lay, "f6_dist", fk), diag_v(lay, "f6_basedir", fk)),
+                 "F6_solver_mode_direct_vs_multipole": _rel(diag_v(lay, "f6_basedir", fk), base)}
+            lc = dcfg["level_check"]
+            if not smoke:
+                e[f"F6_terminal_tab_{lc}"] = _rel(diag_v(lay, f"f6_tab_{lc}", fk), main_v(lay, lc, fk))
+            # terminals: a bound, not a term (config.diagnostics.F3): |grow step| beside, out of the residual; merging nodes
+            # cannot raise the inductive energy minimum (Thomson / Rayleigh monotonicity), so the step must be <= 0
+            g = e["F3_terminals_contact_grow_k0"]
+            e["F3_terminals_contact_bound"] = None if g is None else abs(g)
+            e["F3_terminals_grow_sign_ok"] = None if g is None else bool(g <= 1e-4)  # 1e-4: multipole tol margin
+            parts = [e["F3_wires_xs_fasthenry"], e["F3_traces_thickness"]]
+            e["F3_residual_traces_kernel_discretisation"] = (None if e["D_rel"] is None or None in parts else
+                                                             (1 + e["D_rel"]) / math.prod(1 + x for x in parts) - 1)
+            e["E_rel_combined"] = (row["E_l2"] + row["E_fh"]) / lfh if lfh and row.get("finest_complete") else None
+            per_layout[f"{lay}@{fk}"] = e
+    f3_terms = ("F3_wires_xs_fasthenry", "F3_wires_xs_closed_form_hf", "F3_traces_thickness")
+    f6_terms = ("F6_terminal_tab", "F6_die_distributed")
+    per_pair = {}
+    for r in asm["pair_rows"]:
+        lay, ref, fk = r["pair"], r["reference"], r["freq"]
+        a, b = per_layout.get(f"{lay}@{fk}"), per_layout.get(f"{ref}@{fk}")
+        if a is None or b is None:
+            continue
+        q = {t: _ratio_eff(a[t], b[t]) for t in (*f3_terms, *f6_terms, "F3_residual_traces_kernel_discretisation",
+                                                 "F3_terminals_contact_grow_k0")}
+        q["d_ratio"] = r["r_l2"] / r["r_fh"] - 1 if math.isfinite(r["r_l2"]) and math.isfinite(r["r_fh"]) else None
+        per_pair[f"{lay}@{fk}"] = q
+
+    def vmax(d, keys):
+        v = [abs(x[k]) for x in d.values() for k in keys if x.get(k) is not None and math.isfinite(x[k])]
+        return max(v) if v else None
+    th3, th6 = float(dcfg["F3_founder_L_rel"]), float(dcfg["F6_founder_ratio_rel"])
+    f3_flag = sorted({f"{k}:{t}" for k, x in per_layout.items() for t in f3_terms
+                      if x.get(t) is not None and abs(x[t]) > th3})
+    f6_flag = sorted({f"{k}:{t}" for k, x in per_pair.items() for t in f6_terms if x.get(t) is not None and abs(x[t]) > th6})
+    # F8: L1 beside l2_layout on the same pairs, against FastHenry's finest ratios
+    cap_fh = cfg["f1_caps"]["fasthenry"]
+    f8 = []
+    for r in asm["pair_rows"]:
+        ok = math.isfinite(r["r_fh"]) and r["r_fh"]
+        f8.append({"pair": r["pair"], "freq": r["freq"], "r_L1": r["r_L1"], "r_l2": r["r_l2"], "r_fh": r["r_fh"],
+                   "L1_vs_fh": abs(r["r_L1"] / r["r_fh"] - 1) if ok else None,
+                   "l2_vs_fh": abs(r["r_l2"] / r["r_fh"] - 1) if ok and math.isfinite(r["r_l2"]) else None,
+                   "fh_half_of_F1_ok": bool(r["E_R_fh_rel"] <= cap_fh), "excluded_f1": r["excluded_f1"]})
+    same = [x for x in f8 if x["L1_vs_fh"] is not None and x["l2_vs_fh"] is not None]
+    a1 = float(cfg["pass"]["A1"])
+    l1_all = [x["L1_vs_fh"] for x in f8]
+    l1_meets = bool(f8) and None not in l1_all and all(x["fh_half_of_F1_ok"] for x in f8) and max(l1_all) <= a1
+    summary = {
+        "label": "REPORTED, NOT JUDGED (O004 F3/F6/F8); A1/A2/K1/K2 use the raw judged values only"
+                 + ("; SMOKE: coarsest level, one development pair, not evidence" if smoke else ""),
+        "n_diag_jobs": len(djobs), "n_skipped": len(skipped), "skipped": {j["id"]: j["skipped"] for j in skipped},
+        "diag_status": {k: v.get("status") for k, v in dres.items()}, "diag_decks_reexport_mismatch": geo,
+        "F3_max_model_term_L_rel": vmax(per_layout, f3_terms), "F3_founder_decision_needed": bool(f3_flag),
+        "F3_flagged": f3_flag[:40], "F3_max_ratio_effect": vmax(per_pair, f3_terms),
+        "F3_terminals_bound_max": vmax(per_layout, ("F3_terminals_contact_bound",)),
+        "F3_terminals_bound_ratio_max": vmax(per_pair, ("F3_terminals_contact_grow_k0",)),
+        "F3_terminals_bound_above_L_threshold": any((x.get("F3_terminals_contact_bound") or 0) > th3
+                                                    for x in per_layout.values()),
+        "F3_terminals_grow_sign_violations": sorted(k for k, x in per_layout.items()
+                                                    if x.get("F3_terminals_grow_sign_ok") is False),
+        "F6_max_L_change_rel": vmax(per_layout, f6_terms), "F6_max_ratio_change_rel": vmax(per_pair, f6_terms),
+        "F6_founder_decision_needed_before_O009": bool(f6_flag), "F6_flagged": f6_flag[:40],
+        "F6_solver_mode_term_max": vmax(per_layout, ("F6_solver_mode_direct_vs_multipole",)),
+        "F8_same_pairs_n": len(same), "F8_l1_max_on_same_pairs": max((x["L1_vs_fh"] for x in same), default=None),
+        "F8_l2_max_on_same_pairs": max((x["l2_vs_fh"] for x in same), default=None),
+        "F8_l1_alone_would_meet_A1": l1_meets,
+        "wire_closed_form_check": next(iter(cf.values()))["check_16mm_0p3mm"] if cf else None}
+    if summary["F3_max_model_term_L_rel"] is not None:
+        run.metric("f3_max_model_term_rel", summary["F3_max_model_term_L_rel"], n=len(per_layout))
+    if summary["F3_terminals_bound_max"] is not None:
+        run.metric("f3_terminals_bound_max", summary["F3_terminals_bound_max"], n=len(per_layout))
+    if summary["F6_max_ratio_change_rel"] is not None:
+        run.metric("f6_max_ratio_change_rel", summary["F6_max_ratio_change_rel"], n=len(per_pair))
+    if summary["F6_max_L_change_rel"] is not None:
+        run.metric("f6_max_L_change_rel", summary["F6_max_L_change_rel"], n=len(per_layout))
+    if f8:
+        run.metric("f8_l1_alone_meets_a1", float(l1_meets), n=len(f8))
+    return {"summary": summary, "per_layout": per_layout, "per_pair": per_pair, "F8_rows": f8, "wire_closed_form": cf,
+            "jobs": djobs, "skipped_jobs": skipped, "results": dres}
+
+
+def stage_solve(run, cfg: dict, smoke: bool, reg: dict, with_diagnostics: bool = False, drop_proxy: bool = False) -> dict:
     """Solve stage (T0389): l2_layout ladder and P3 terms, FastHenry ladder and thickness ladder on every layout (smoke:
     the coarsest level of each ladder on one Case 4 development pair and its reference), estimators, F1, rows, criteria,
     INVALID rule, diagnostics.  F2: in smoke nothing is solved on 2D_Case_2R or 2D_Case_6."""
@@ -1616,7 +1925,7 @@ def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
             refs[e["reference_id"]] = recon.snapped(e["reference_id"])[0]
         pairs = [dict(p, name=p["pair"].replace("#", "_p"), ref_name=p["reference"]) for p in reg["pairs"]]
         want_ref = dict(reg.get("judged_fingerprints", {}))
-    if reg["proxy"].get("status") == "built":  # T0454 item 4: the built proxy record (smoke: the Case 4 twin's proxy)
+    if reg["proxy"].get("status") == "built" and not drop_proxy:  # T0454 item 4 (--smoke --diagnostics: left out): the built proxy record (smoke: the Case 4 twin's proxy)
         pairs.append(dict(reg["proxy"]["record"], name="2D_Case_2R_proxy" if not smoke else "dev_proxy",
                           ref_name="2D_Case_2R" if not smoke else "2D_Case_4", layout=reg.get("_proxy_layout")))
     layouts = dict(refs)
@@ -1703,6 +2012,14 @@ def stage_solve(run, cfg: dict, smoke: bool, reg: dict) -> dict:
             run.metric("pooled_zero_failure_bound95", diag["pooled_zero_failure_bound95"], n=diag["n_counted"])
         if diag["F8_l1_max_ratio_diff_vs_fasthenry"] is not None:
             run.metric("l1_max_ratio_diff_vs_fasthenry", diag["F8_l1_max_ratio_diff_vs_fasthenry"], n=len(cnt))
+        if with_diagnostics:  # F3 / F6 / F8 (T0390): reported, never judged; separate jobs after the judged ones
+            try:  # a diagnostic failure is recorded, never raised: it cannot cost the judged rows, metrics or solve.json
+                diag["F3_F6_F8"] = run_model_diagnostics(run, cfg, smoke, layouts, pairs, ref_of, jobs, res, asm, work,
+                                                         budget)
+                diag["F3_F6_F8_summary"] = diag["F3_F6_F8"]["summary"]
+            except Exception as exc:  # noqa: BLE001 - reported diagnostic only
+                diag["F3_F6_F8_summary"] = {"error": f"{type(exc).__name__}: {exc}",
+                                            "label": "REPORTED, NOT JUDGED (O004 F3/F6/F8): diagnostics failed"}
     run.metric("n_l2_gmres_flagged", len(gm), n=sum(j["solver"] == "l2_layout" for j in jobs))
     run.metric("n_fh_decks_crashed_every_attempt", len(crashed), n=len(fh_jobs))
     rows = [{k: v for k, v in r.items() if not k.startswith(("terms_", "ratio_per_level"))}
@@ -2774,6 +3091,21 @@ def selftest() -> int:
         ok("stage_solve_with_proxy", names == ["dev_pair0", "dev_proxy"] and run.checks["exported_geometry_identical"] and
            rp_ and math.isclose(rp_[0]["r_l2"], 0.9, rel_tol=1e-12) and math.isclose(rp_[0]["r_fh"], 0.9, rel_tol=1e-12),
            f"pairs {names}; checks {run.checks}")
+        # T0390: the F3 / F6 / F8 diagnostics leave every criterion and check unchanged; with equal FastHenry values for
+        # every variant (the stub) every measured F3 / F6 term is exactly 0; the direct jobs (~35 GB) are skipped at 5 GB
+        run3 = _StubRun(td)
+        sol3 = stage_solve(run3, dict(cfg, _timeout_min=6000), True, reg, with_diagnostics=True)
+        d3 = sol3["diagnostics"]["F3_F6_F8"]
+        pl = d3["per_layout"].values()
+        same_crit = json.dumps(sol3["criteria"], sort_keys=True, default=str) == json.dumps(sol["criteria"], sort_keys=True,
+                                                                                           default=str)
+        ok("diagnostics_do_not_change_criteria", same_crit and run3.checks == run.checks,
+           f"criteria equal {same_crit}; checks equal {run3.checks == run.checks}")
+        ok("diagnostics_zero_terms_on_equal_values",
+           bool(pl) and all(x["F3_wires_xs_fasthenry"] == 0.0 and x["F3_terminals_contact_grow_k0"] == 0.0
+                            and x["F6_terminal_tab"] == 0.0 and x["F6_die_distributed"] is None for x in pl)
+           and d3["summary"]["n_skipped"] == 2 * len(pl) // len(FK) and d3["summary"]["wire_closed_form_check"]["ok"],
+           json.dumps(d3["summary"], default=str)[:300])
         reg_bad = dict(reg, slot_reference_fingerprints={"slot0": "0" * 64})
         run2 = _StubRun(td)
         stage_solve(run2, dict(cfg, _timeout_min=6000), True, reg_bad)
@@ -2819,6 +3151,8 @@ def main() -> int:
                     help="research: preconditioner probe of the F7(a) decks projected below GB")
     ap.add_argument("--dev-fh-direct-mem", action="store_true", help="research: direct-mode peak / estimate runs")
     ap.add_argument("--dev-fh-run", metavar="JOB_LIST", help="research (burst VM): run the F7(a) job list")
+    ap.add_argument("--diagnostics", action="store_true",
+                    help="with --smoke: also the F3 / F6 / F8 diagnostics at the coarsest level (registered: always run)")
     a = ap.parse_args()
     if a.child:
         return child_solve(a.child)
@@ -2869,6 +3203,8 @@ def main() -> int:
         print(json.dumps(dev_span_sim(a.dev_span_sim, out, cfg), indent=1))
         return 0
     from mfos.evidence import ExperimentRun
+    if a.smoke:
+        os.environ.setdefault("MF_E004_MAX_PROCS", "2")  # smoke runs on a workstation: at most two solver processes
     run_dir = tempfile.mkdtemp(prefix="e004-smoke-") if a.smoke else None
     with ExperimentRun(experiment_id=EID, run_dir=run_dir) as run:
         cfg = spec_config(run.config)
@@ -2887,7 +3223,8 @@ def main() -> int:
                 raise RegistrationRefused(f"the 2D_Case_2R proxy pair is not built: {rec['proxy'].get('reason')}")
         sol = {}
         if a.stage in ("solve", "all"):
-            sol = stage_solve(run, cfg, a.smoke, rec)
+            sol = stage_solve(run, cfg, a.smoke, rec, with_diagnostics=a.diagnostics or not a.smoke,
+                              drop_proxy=a.smoke and a.diagnostics)  # plain --smoke still solves the proxy pair
         else:
             for name in SOLVE_CHECKS:
                 run.sanity(name, passed=False, detail="not run: --stage registration")
@@ -2895,7 +3232,8 @@ def main() -> int:
                           "coverage": {k: v["covered"] for k, v in rec["coverage"].items()},
                           "proxy": rec["proxy"]["status"], "wall_s": round(rec["wall_s"], 1),
                           "solve": {k: v for k, v in sol.get("criteria", {}).items()},
-                          "solve_status": {r["id"]: r.get("status") for r in sol.get("results", {}).values()}},
+                          "solve_status": {r["id"]: r.get("status") for r in sol.get("results", {}).values()},
+                          "diagnostics_F3_F6_F8": sol.get("diagnostics", {}).get("F3_F6_F8_summary")},
                          indent=1, default=str))
     return 0
 
