@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-18T00:54:03+00:00 from repository state — do not edit_
+_generated 2026-11-18T01:08:39+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -16,7 +16,7 @@ _generated 2026-11-18T00:54:03+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $83.77/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $86.44/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -28,20 +28,18 @@ _generated 2026-11-18T00:54:03+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 42 | $83.77 | 1466707 | 799681 | 108 | 0 |
+| O008 | 43 | $86.44 | 1471665 | 799894 | 108 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 401, failed: 4, review: 1, running: 3, todo: 6
+cancelled: 47, done: 402, failed: 4, review: 1, running: 3, todo: 5
 
 - T0382 `review` scientist/design_experiment: Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest) (attempt 5)
 - T0456 `running` scientist/design_experiment: E007: diagnose the per-stratum A4 misses (u_shaped/6 0.95), extra development layouts in 3 strata, corrected power simulation (attempt 1)
 - T0460 `running` critic/review: Review T0382 (physics) (attempt 1)
-- T0461 `running` critic/review: Review T0382 (numerics) (attempt 1)
+- T0462 `running` critic/review: Review T0382 (statistics) (attempt 1)
 
 ## Recent events
-- 2026-11-18T00:00:32+00:00 run_started {"run": "T0457-scientist-20261117T160032-2c24", "task": "T0457", "role": "scientist", "session": "13f462d5-81d1-4bd8-8cad-7beaa37ee672"}
-- 2026-11-18T00:00:34+00:00 run_started {"run": "T0459-critic-20261117T160034-f27d", "task": "T0459", "role": "critic", "session": "d6c2249f-27d0-4bc2-aec1-0610a0fb46d5"}
 - 2026-11-18T00:08:49+00:00 run_finished {"run": "T0459-critic-20261117T160034-f27d", "status": "completed", "cost": 2.380552, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T00:09:29+00:00 inbox_resolved {"id": "I0248", "status": "approved", "note": "Acknowledged after the 00:00 UTC reset; cap not raised.", "by": "human"}
 - 2026-11-18T00:16:28+00:00 inbox_opened {"id": "I0249", "kind": "protected_change", "subject": "T0398: merge needs founder approval"}
@@ -55,3 +53,5 @@ cancelled: 47, done: 401, failed: 4, review: 1, running: 3, todo: 6
 - 2026-11-18T00:52:39+00:00 task_failed_attempt {"task": "T0457", "signal": "agent_error", "action": "repair"}
 - 2026-11-18T00:53:01+00:00 run_started {"run": "T0460-critic-20261117T165301-7328", "task": "T0460", "role": "critic", "session": "46ff50b6-29ff-4d13-b5c8-e23afccf26be"}
 - 2026-11-18T00:53:05+00:00 run_started {"run": "T0461-critic-20261117T165305-7d2e", "task": "T0461", "role": "critic", "session": "80ce883a-18c0-4a10-8933-217f769259c3"}
+- 2026-11-18T01:08:24+00:00 run_finished {"run": "T0461-critic-20261117T165305-7d2e", "status": "completed", "cost": 2.672621, "subtype": "success", "report": "structured_output"}
+- 2026-11-18T01:08:39+00:00 run_started {"run": "T0462-critic-20261117T170839-8c52", "task": "T0462", "role": "critic", "session": "c0135254-c5a8-475a-b158-98d80b621595"}

@@ -1,0 +1,79 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Registered run does not fit its own timeout or O008's budget according to the spec's own sizing",
+      "detail": "The machine-readable fields timeout_min: 7200 (120 h) and cpu_hours_est: 110 contradict the spec's own config.cost_estimate.sizing_check_attempt4 and the manifest's vm_sizing.registered_run. Those give a makespan of 170.2 to 246.4 h and $104 to $151, and say no scenario fits timeout_min. The registered_run_usd text ('about $75, within O008's $50-100') is stale. Add the $38-44 development burst and the total is above O008's budget of usd 140, cpu_hours 120. The text admits this and leaves the decision to the founder, so this is a design-level limit, not a runner bug. Registered as it stands, though, the run would time out.",
+      "evidence": "E011.yaml lines 255-295 and 357-358; E011.dev_jobs.json vm_sizing.registered_run.by_scenario all fits_timeout false; O008 objective.yaml line 148 budget {usd: 140, cpu_hours: 120}",
+      "suggested_check": "Before registration, make timeout_min, cpu_hours_est and registered_run_usd agree with registered_model, or split the run.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Development selects each shortlist's best at 0.5 mm; the registered rule selects at 0.25 mm",
+      "detail": "In dev mode screen = lat0.5. dev_solve chooses each shortlist's best by L at lat0.5, and only that best gets a 0.25 mm solve. The registered run takes the argmin at lat0.25 over the whole shortlist. The development s_kj that feed the joint operating characteristic therefore come from a different selection rule. On the same shortlist they are biased upward (conservative for the search). How rankings depend on discretization (0.5 mm vs 0.25 mm argmin) cannot be measured from the planned burst, because no shortlist member other than the chosen best is solved at 0.25 mm.",
+      "evidence": "make_ctx: screen = cfg['dev']['screen_level'] in dev; dev_solve best = min(g, key=(sv.L(lay, screen_level), rank)); jobs_by_level lat0.25 = 68 = 2 x (2 + 8x4), with no shortlist members",
+      "suggested_check": "Solve a few full shortlists at lat0.25 in the burst and report how often the 0.5 mm and 0.25 mm argmins agree.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The expected outcome points at Case 4 for A1, but the development L1 indicator points at 2R",
+      "detail": "expected_outcome.A1 says 'A1 on Case 4 is the open question'. The development L1 indicator (L1 of the search's lowest-L1 layout over L1(W*)) puts 2R at 5 of 8 within 2% and Case 4 at 8 of 8. I recomputed this from the manifest and it matches dev_run.l1_indicator_not_evidence. On L1 alone, 2R is the likely A1 miss (7 of 8 needed), and all 8 of its searches are still improving at the budget.",
+      "evidence": "Recomputed per draw: 2R [1.0059, 1.0453, 1.0233, 1.0552, 1.008, 0.9965, 1.0112, 0.9987]; Case 4 [1.0142, 0.9938, 0.9944, 1.0102, 1.0011, 1.004, 1.006, 1.0056]",
+      "suggested_check": "Update the expected_outcome text after the development L2 run.",
+      "impact": "none"
+    },
+    {
+      "severity": "minor",
+      "title": "Placeholder R_D values look like measurements in the manifest",
+      "detail": "In dev every attempt's r_d is the window midpoint 1.425 and is logged with in_window: true (the r_d closure returns 0.5*(lo+hi) while unsolved). Nothing in the per-draw record marks it as provisional, so anyone reading draws[] could take it for a measured R_D.",
+      "evidence": "E011.dev_jobs.json layouts.*.draws[*].r_d == 1.425, attempt_log in_window true; e011_run.py line 616",
+      "suggested_check": "Record r_d as null or add provisional: true when the L2 value is pending.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "Small inconsistencies in reporting and config",
+      "detail": "changed_from_D and manhattan_from_D use indices 4..len(v), while changed_from_Wstar uses movable_indices (4-39). The spec asks for movable_indices for both, and derived parameters past index 39 can differ after a rebuild. em_job hard-codes freq_hz 2.0e7 instead of reading levels.freq_hz, even though levels is part of the code stamp. The wave-2 cost counts 34 lat0.5 best-band jobs that were already solved in wave 1, which overstates the burst by about 4.6 VM-h (negligible and conservative).",
+      "evidence": "e011_run.py lines 683-684 and 331; selftest output wave2_already_solved 34",
+      "suggested_check": "Use ops.movable() for both distances and read freq_hz from the spec.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The seed-rule comment about numpy dropping trailing zeros is only true for short entropy lists",
+      "detail": "SeedSequence pads entropy up to its 4-word pool, so [a,b,c] == [a,b,c,0]. A fifth word is mixed in, so [a,b,c,d,0] != [a,b,c,d]. The 5-word degradation entropies are therefore not affected. streams_distinct checks the real states either way, and I found no collision.",
+      "evidence": "Checked: SeedSequence([5,6,7]) state == [5,6,7,0] True; [5,6,7,8] == [5,6,7,8,0] False",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The five-level band path has only been run on fake solvers",
+      "detail": "In smoke, all five band levels are the same level, so b_j = 0 by construction. b_j = 2*ratio_band_estimate over five different real solves, and the band_bound check, will run on real data for the first time in the burst. I checked by hand that the band order matches ratio_band_estimate's expected order and EM_LEVELS (thk_c 5/3/3, thk_f 20/12/12, r = 2) and that the middle-term formula is right.",
+      "evidence": "make_ctx smoke: band = (sm['level'],)*5; E.BAND == cfg levels.band",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `e011_run.py --selftest`: SELFTEST PASS. It covers PASS, INCONCLUSIVE and INVALID scenarios, the dry-run manifest (388 jobs, 34 groups, 170 wave-2 jobs) and a planted unconverged result that is correctly refused.",
+    "Ran `e011_run.py --smoke` to completion: rc=0 in 761.8 s on gen2_0 at thk_c. It produced 6 rows (every role) with finite metrics. The verdict preview is INVALID, as expected for gen2_0, because only F2_legacy_outside_2R and F2_coordinate_range_attached_form_2R failed, and both are 2R-specific. None of the checks smoke must pass failed.",
+    "Ran the definition-of-done checks: ExperimentSpec validation and the metric names, manifest exists, ruff on the runner, manifest status 'complete\u2026' and its layouts keys, note file exists, `mfos exp check E011` (rc 0). All passed.",
+    "Recomputed code_stamp(spec) from this checkout. It equals the manifest's code_stamp, so dev-solve will not refuse it. freeze_report is ok (frozen_sha256, the five code_sha256 values and LocalConfig hash bdefe640d8cac683).",
+    "Recomputed the development sub-seeds from dev_seed 20261116: the degrade seed 1234377963 and every search and random_screen seed for both layouts and all 8 draws match the manifest. The degradation entropies start with DEGRADE_TAG 0x4D460D01.",
+    "Checked numpy SeedSequence zero padding: a 3-word list equals the same list with a trailing 0; a 4-word list does not equal it with a fifth word 0.",
+    "From the manifest, checked 611 jobs = 611 distinct (fingerprint, level) = totals.jobs_wave1. Recomputed the L1 indicator per draw: 2R 5/8 and Case 4 8/8 within 1.02, matching the spec text.",
+    "Derived ratio_middle_term by hand (error of the middle level = |e21| r^p/(r^p-1), with r^p = e32/e21) and checked the band order mapping cfg.levels.band -> ratio_band_estimate -> EM_LEVELS.",
+    "Proved by hand, against local.py's visited/order/shortlist definitions, that improvement_curve's 'exact' case and its [max shortlist L1, running trajectory min] bracket are valid bounds on best(n_x). My brute-force scratch script was blocked by the permission layer.",
+    "Checked that the degradation wave loop is long enough: redraw_limit+2 waves resolve all redraw_limit+1 attempts before scoring.",
+    "Checked fail-closed behaviour: Scheduler.done raises on a non-ok record, and em_failures flags a missing L_H, GMRES flags or tolerance."
+  ],
+  "caveats": [
+    "No L2 result exists yet. Convergence under refinement, the band median against the 0.01 bound, R_D at L2, the W* choice and A1/A3 cannot be judged. Everything in the manifest is L1-stage and provisional: W* is the descent's end, and every draw's attempt 0 is accepted with a placeholder R_D.",
+    "The draft is fit for the development burst. It is not ready to register until timeout_min, cpu_hours_est and the cost line agree with its own registered_model, and the founder settles the budget (O008 usd 140), the timeout, the VM shape and the search budget.",
+    "The brute-force check of improvement_curve was blocked by the permission layer, so its correctness rests on a hand proof plus the runner's own two unit cases."
+  ]
+}
