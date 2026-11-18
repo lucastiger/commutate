@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Spec text still uses m = 20 counts in the definitions of A5 and the per-stratum rule",
+      "detail": "The draft that is meant to be frozen still describes the m = 20 sample in its definitions. config.l1.timing and the l1_eval_s_p50 recompute description both define A5 as the median 'over the 600 judged evaluations'; at m = 32 there are 960 (32 x 15 x 2). config.per_stratum_rule still says 'With 20 layouts per stratum ... q + t(19) se'; at m = 32 that is t(31). The runner has no hard-coded 600 and computes over whatever judged evaluations exist, so no result changes. The pre-registration text and the allocation disagree, so 'completely implements' is not quite true.",
+      "evidence": "experiments/drafts/E007.yaml lines 205 and 440 ('600 judged evaluations') and lines 116-117 ('With 20 layouts per stratum', 't(19)'). A grep of e007_run.py finds no 600/300 constant on the A5 path.",
+      "suggested_check": "Before registration, grep the spec for 600, 300, 't(19)' and '20 layouts' and restate them for m = 32.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The admission-to-peak memory range is wrong for the 126 solves it names",
+      "detail": "The spec's compute.sources and design note \u00a79.5 say 'on all 126 measured level-1 solves the admission estimate is 1.15 to 1.82 x the measured peak RSS'. The estimate is DOF x 4400 x 1.15 + 0.3 GB, against the peak RSS in the two dev-row files. Recomputed that way, 1.82 is the maximum over T0398's 90 solves only. On T0456's 36 solves the ratio reaches 2.24 (u_shaped_6_t456j03 half_P_ref: 2.99 GB measured, 6.72 GB estimated). The lower end (1.147, never below 1) and the bytes-per-DOF maxima (4.32/4.98 and 4.33/4.99 kB/DOF) are correct. The error is on the safe side: it affects VM packing efficiency, not admission safety.",
+      "evidence": "Scratch recomputation over E007.dev_rows.json meta.reference_cpu_wall and the *_t456j* entries of dev_rows_a4_strata.json: T0398 ratio 1.148-1.821, T0456 ratio 1.147-2.245.",
+      "suggested_check": "Recompute the ratio range over all 126 solves and state it as 1.15-2.24.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "note",
+      "title": "D0027's '$9 more VM' is not reconciled against the regenerated plan",
+      "detail": "D0027 decision 2 says T0464 'checks this against the regenerated plan' for both 'about 14 more CPU-hours' and 'about $9 more VM'. Design note \u00a79.3 reconciles the CPU-hours (17.4, explained by the level-1 rate) but not the dollars. Against the m = 20 plan: option A packed costs $1.38 more ($15.54 to $16.92), and one solve at a time costs $10.63 more ($35.00 to $45.63).",
+      "evidence": "plan_m32.json against the spec's m = 20 plan_summary; D0027 lines 34-36.",
+      "suggested_check": "Add one sentence giving the dollar difference for each option.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The level-2 job files carry stale copies of the spec config",
+      "detail": "job.json embeds a cfg with the m = 20 allocation (f3_simulation.json). job_interleaved_2_j01.json embeds the old compute.sources text (the superseded '4.29 kB/DOF'), so it was generated before the final spec edit. run_child uses only the physics fields of cfg (coolant, h, fem_rule, thermal_fem_path), and get_layout re-checks the layout fingerprint, so the solves are unaffected. Anyone reading a job's cfg as the registered config would be misled.",
+      "evidence": "Read of research/o002_e007/l2_timing/job.json (cfg.allocation.layouts_per_stratum = 20); e007_run.py run_child and child_solve, lines 367-421.",
+      "suggested_check": "",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command. Each exits 0: the allocation assertion (32 per stratum, 480 layouts), --verify-freeze (all OK, including allocation_file_sha256 6b3ac737... and the per-stratum match), --plan, `mfos exp check E007`, and --selftest ('0 failure(s)', 'run at m = 32 solved 1046 reference jobs', 1968 L1 energy-balance evaluations, real level-0 child solve OK).",
+    "Re-ran --plan into $TMPDIR and compared it with the committed research/o002_e007/t0464/plan_m32.json: identical. Recomputed the counts by hand: 960 judged + 24 F7 + 48 subset + 45 calibration = 1077; L1 evaluations 1920 + 480 + 12 + 1 = 2413. Recomputed the totals: 74.1 / 78.9 CPU-h, option A $16.92, option B $15.43. Recomputed the level-2 margin: (100 - 74.1 + 26.22) / 26.22 = 1.99 and (100 - 78.9 + 29.81) / 29.81 = 1.71.",
+    "Hashed sim_corrected.json (9f6c1e90...), allocation_m32.json (6b3ac737...) and f3_simulation.json (0071c857...): all match the hashes recorded in the spec and the allocation file.",
+    "Recomputed every m = 32 figure from sim_corrected.json cells power|*|32 and kill|*|32, with my own Wilson intervals. All match: joint and A4 power 1.0 [0.9962, 1]; minimum coverage 0.974 [0.9622, 0.9822] (normal) and 0.981 [0.9705, 0.9878] (t3); kill-cell minimum coverage 0.984 / 0.985; P(fire) for K1 0.812 / 0.581, K2 1.0, K3 0.576 / 0.354 with the stated intervals. Minimum coverage over all cells is 0.971 (power|t3|20, A1). A4 power is 1.0 at every m under both error models, which confirms the correction to the note.",
+    "Mutation-tested freeze_checks in memory. Setting allocation.layouts_per_stratum to 31 fails allocation_matches_f3. Pointing the source back to f3_simulation.json fails both allocation checks.",
+    "Checked the level-2 job: the layout fingerprint 9326e189..., the power 46.0746 W, and the compare_to level-0 and level-1 records all agree. Confirmed from diag_solves.json that interleaved_2_j01 has the largest level-0 to level-1 spread change in interleaved/2 (-0.078 / -0.084 K, against -0.044 to -0.072 K for the others). Confirmed that run_child regenerates and fingerprint-checks the layout, and that the files run_l2_jobs.sh needs are tracked, since the burst script clones a git bundle.",
+    "Checked the key rename in dev_rows_a4_strata.json: all 36 *_t456j* entries equal T0456's work/solves records (cpu_s and dofs), none equals a T0398 record, and their cpu_s sum is 4149.271 as stated.",
+    "Recomputed the bytes/DOF convention from both dev-row files: maxima 4.324 / 4.983 kB/DOF (T0398, side_by_side_2_j02 half_P_ref, 2.27 GB at 455 k DOF) and 4.326 / 4.985 kB/DOF (T0456). 4400 bytes/DOF covers both."
+  ],
+  "caveats": [
+    "The level-2 timing burst is set up but has not been run. The 100 CPU-h margin rests on T0243's 585 us/DOF level-2 rate, which has not been measured on this code. The total stays under 100 CPU-h only if level 2 is no more than 1.99x (expected) / 1.71x (upper) slower than that rate.",
+    "The power and coverage evidence is simulated (1000 reps per cell, Monte Carlo intervals only). The simulation over-predicts A3 by 30-40 % (measured A3 lies outside its 5-95 % band), so the kill-side probabilities are approximate. Under t3 errors K1 fires with probability 0.58 and K3 with 0.35 at 1.2x their thresholds, so a moderately bad L1 can still end INCONCLUSIVE. This is the founder's accepted trade-off (D0027) and is disclosed.",
+    "The CPU-hour plan uses development-seed proxy layouts and a level-1 rate of 0.195 ms/DOF, not the registered host's measured rate.",
+    "The review covers the draft's consistency at m = 32. Registration itself still waits on the open founder items: the level-2 burst and the dev_rows/exp check gate."
+  ]
+}
