@@ -1,0 +1,74 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Diagnostics run before the judged rows, metrics and solve.json are written, so an mfos timeout during them loses the judged outputs",
+      "detail": "The spec says no diagnostic can change 'the run's validity' and that 'the judged rows, metrics and solve.json are written regardless'. That holds for exceptions, but not for wall time. run_model_diagnostics runs inside stage_solve before run.rows() and before solve.json is written. mfos runs the experiment under a subprocess timeout of timeout_min x 60 (tools/mfos/mfos/experiments.py:214). The skip rule in diag_jobs checks each job's own timeout, not the remaining time of the whole run. The diagnostics add about 4-6 h of makespan (12-18 h at the 3x upper envelope) to a judged makespan of 64.7 h (point) or 436 h (upper), against 100 h. If the kill lands during the diagnostic phase, the judged run ends with no rows. Per-job checkpoints allow a resume. At the point estimate the total fits, and the judged upper envelope already breaks timeout_min (timeouts_fit ok=false, an open pre-registration item). So this narrows the claim rather than refuting it.",
+      "evidence": "stage_solve lines 2015-2027: run_model_diagnostics is called before run.rows(rows); research/o004_f7/vm_jobs_fasthenry.json e004_cost_plan: makespan_h 64.7, makespan_upper_h 436, timeouts_fit.ok false; timeout_min 6000.",
+      "suggested_check": "Write rows, metrics and solve.json (or a judged checkpoint) before starting the diagnostic jobs, or skip diagnostics that would exceed the remaining run time.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "F3 wire term is a high-frequency-limit idealisation, and its FastHenry 'measurement' matches the closed form by scale invariance",
+      "detail": "Shrinking FastHenry's square from 0.8711 d to 0.8472 d changes each wire's self-inductance by mu0 l/(2 pi) ln(1/0.97264) = mu0 l/(2 pi) x 0.02774, whatever current distribution FastHenry's 2x2 filaments carry. So F3_wires_xs_fasthenry is not an independent measure of the actual round-versus-square difference between l2_layout's annulus-meshed round wire and FastHenry's square at 10/20 MHz. It reproduces the closed form (0.308 % vs 0.301 % on Case 4), which validates only the loop weighting. The wires are Al (sigma 3.5e7), so delta/r is about 0.18 at 10 MHz and 0.13 at 20 MHz, not the high-frequency limit. My first-order estimate: the internal-inductance difference from the perimeters (round pi d vs square 3.484 d) adds about +20-30 % to the term. The approximation is stated, and the measured term (about 0.3 %) is far below the 1 % flag, so this does not change F3_founder_decision_needed here.",
+      "evidence": "Independent calculation: ln(0.8711 x 2 x 0.59017) = 0.02774. Smoke: Case 4 F3_wires_xs_fasthenry 0.003082 vs closed form 0.003011; dev_pair0 0.002887 vs 0.002812.",
+      "suggested_check": "Say in the spec that the FastHenry wire term checks the loop weighting of the high-frequency-limit term, not the finite-frequency round-versus-square difference.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The new self-test checks only plumbing (equal stub values give zero terms)",
+      "detail": "diagnostics_zero_terms_on_equal_values passes for any arithmetic that returns 0 on equal inputs. diagnostics_do_not_change_criteria is meaningful. No test covers deck_edit (which lines change, the scale factor, the .equiv patch), _ratio_eff, the residual, or the sign of the thickness term with non-trivial values. My independent checks below cover deck_edit and the wire-term agreement, but a regression would go unnoticed.",
+      "evidence": "selftest lines 3094-3108; stub FastHenry returns equal L for every variant.",
+      "suggested_check": "Add a self-test that runs deck_edit on the Case 4 k0 deck and checks the edited lines, the 0.97264 factor and the 3x3 patch, plus a non-zero-value test of _ratio_eff and the residual.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "The terminal contact bound is above the 1 % founder threshold already in smoke",
+      "detail": "Smoke (k0, nh 1): F3_terminals_contact_grow_k0 is -3.26 % (Case 4) and -3.41 % (dev pair). The sign is correct (<= 0) and F3_terminals_bound_above_L_threshold is true. Scaled by the spec's own logarithmic inference (ln 2 / ln 3 = 0.63), it is still about 2 %, so the terminal group is not bounded below F3_founder_L_rel. This follows the design (a reported bound, kept out of F3_rule) and is not a defect, but the founder should see it.",
+      "evidence": "Smoke solve.json diagnostics.F3_F6_F8.per_layout.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Small inconsistency in the cost plan",
+      "detail": "For 2D_Case_2R, direct_default time_s is 2226 s, but the stated formula 119.7 x (26546 / 9992)^3 gives 2245 s. The other three direct times reproduce exactly (2510, 919, 1067 s). This makes no difference to the 23.7 CPU-h, 77 jobs or the $4 estimate.",
+      "evidence": "Recomputed in a scratch script.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Diagnostic jobs run even when the FastHenry self-test fails",
+      "detail": "When st['ok'] is false, stage_solve drops the judged FastHenry jobs, but run_model_diagnostics still starts all diagnostic FastHenry jobs. Their terms then have no registered baseline (None), so this wastes burst-VM time but changes no value.",
+      "evidence": "stage_solve line 1949 vs run_model_diagnostics, which has no st check.",
+      "suggested_check": "Skip the diagnostic jobs (record the reason) when the FastHenry self-test fails.",
+      "impact": "maintainability"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran `uv run mfos exp check E004`: passes (exit 0).",
+    "Ran `uv run python experiments/runners/e004_run.py --smoke --diagnostics` with MF_E004_MAX_PROCS defaulting to 2: exit 0 after about 30 min. 8 diagnostic jobs ok, 4 direct-solver jobs skipped as specified, diag_decks_reexport_mismatch empty, judged criteria reported normally.",
+    "Ran `e004_run.py --selftest`: all checks pass, including the two new diagnostics checks.",
+    "Checked CAP_SQUARE = Gamma(1/4)^2 / (4 pi^1.5) = 0.590170 with an independent 800-panel boundary-element equilibrium solve on the unit square boundary: 0.590244 (corner discretisation error 1e-4).",
+    "Recomputed the side factor 1 / (2 x 0.59017) / 0.87104 = 0.972642 (ln = 0.02774) and the closed-form check 0.628 % against T0364's 0.637 % (within the 2e-4 tolerance).",
+    "Re-derived L_round - L_square = mu0 l / (2 pi) [ln(g_sq / r) + (r - g_sq) / l] from the Rosa/Grover straight-segment formula, the first-order loop weight sum s_k^2 dL_kk, the ratio effect (1 + x_p) / (1 + x_r) - 1, and the sign of the thickness term (c_fh - thk_l2 adds to D). All are consistent with the code.",
+    "Ran deck_edit directly on the exported Case 4 k0 nh 1 deck: 'wire_hf_square' changes exactly the 24 Ew lines, with w and h scaled by 0.9726415 and nothing else. 'terminal_grow' inserts two 9-node .equiv patches centred on the port cells (13,64) and (13,36) and removes nothing. The ports lie on 1 mm cell centres (13.5, 64.5) and (13.5, 36.5), so the earlier no-op diagnosis in the spec holds.",
+    "Compared the smoke FastHenry wire term with the closed form: Case 4 0.3082 % vs 0.3011 %, dev pair 0.2887 % vs 0.2812 % (about 2.5 % relative). The terminal grow step is negative everywhere (monotonicity holds).",
+    "Inspected the bond-wire nets of 2D_Case_4, 2D_Case_2R and 2D_Case_6 (geometry only, no inductance): only DC- and PHASE groups (2/2, 2/2, 4/4), with no gate wires, so the equal-share loop weighting is not contaminated by wires that carry no current.",
+    "Recomputed the cost plan: 2R total 8 x (3 x 345 + 2226 + 2510) + 12248 = 58416 s; Case 6 26970 s; 77 jobs; 23.7 CPU-h; memory x 1.3 projections. All reproduce except a 0.8 % time difference (see the note finding).",
+    "Confirmed that the registered-mode keys read by run_model_diagnostics (k0, k1, lat0.25, lat0.5, thk_f, t9 via the fh_terms rule) match those created by solve_jobs, and that F8's pair set matches A1's (proxy included, F1 exclusion through the FastHenry half only).",
+    "Confirmed that mfos enforces timeout_min as a subprocess timeout (tools/mfos/mfos/experiments.py:214)."
+  ],
+  "caveats": [
+    "The registered-mode branch is checked only by reading the code, because the smoke does not reach it: the judged k0 baseline, the k1 tab level check, F3_traces_thickness, the residual, the direct-solver F6 variants and F8 with finite estimates. A key or units error there would show up only at registration.",
+    "The spec's premise that every judged port lies on a 0.25 mm lattice corner, so both tools inject over the same 4-cell support, was confirmed for Case 4 only. My geometry check of the 2D_Case_2R and 2D_Case_6 port positions was denied by the harness, so the premise is unverified for the judged references.",
+    "The F3 wire term is the high-frequency-limit idealisation. At the actual delta/r (about 0.13-0.18, Al wire), the finite-frequency difference is probably 20-30 % larger. The term is about 0.3 %, well under the 1 % flag.",
+    "In smoke the terminal contact bound (about 3.3 %) is above F3_founder_L_rel. By design it is reported and not judged, but it means the terminal group is not shown to be negligible.",
+    "Diagnostics run before the judged outputs are written, so they rely on the total makespan fitting timeout_min, which is already an open pre-registration item."
+  ]
+}

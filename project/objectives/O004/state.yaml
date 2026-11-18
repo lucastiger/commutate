@@ -10,7 +10,7 @@ pending_review_ref: null
 replans: 1
 max_replans: 3
 needs_replan: false
-spent_usd: 136.6105
+spent_usd: 139.2184
 budget_override_usd: 147.8508
 log:
 - 'founder answered I0207: (b)+(c): O004 runs the proxy descent in 1 mm steps (on the lattice by construction),
@@ -77,5 +77,8 @@ log:
   at 10-20 MHz r/delta is about 5.6 for a 0.3 mm Al wire, and FastHenry''s 2x2 filaments at k0 cannot
   resolve skin effect, so the ''independent cross-check'' is only the scaling; (4) the self-tests check
   plumbing only; (5) cpu_hours_est 541.9 is about twice O004''s 260 CPU-h'
+- 'open review items 2026-11-18T10:54:52+00:00 (founder session; review T0468 of T0390, beyond T0467''s):
+  diagnostic FastHenry jobs still run when the FastHenry self-test fails; skip them then (their terms
+  have no registered baseline)'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
