@@ -50,6 +50,7 @@ BANDS = {"2-3": (2, 3), "4-6": (4, 5, 6)}
 STREAMS = {"die_size": 1, "layouts": 2, "f7": 3, "timing_order": 4, "l2_subset": 5, "f7_strata": 6}
 THREAD_VARS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS",
                "NUMEXPR_NUM_THREADS")
+A5_CI_LEVEL = 0.95  # A5's median interval: computed and recorded at this level (reviews T0449/T0450 (1))
 FAKE = False  # set by --selftest / --fake: analytic stand-ins for both solvers (never evidence)
 
 
@@ -564,6 +565,8 @@ def run_l1_phase(spec_path: Path) -> int:
             if load != "P_ref":
                 out["f7_other_loads"][f"{name}__{load}"] = l1_eval(get_layout(d), pref[d["stratum"]] * fac, cfg)
     out["cpu_s"], out["peak_rss_GB"] = time.process_time(), peak_rss_gb()
+    out["host"] = {"node": platform.node(), "platform": platform.platform(), "machine": platform.machine(),
+                   "processor": platform.processor()}
     write_json(Path(jp["out"]), out)
     return 0
 
@@ -585,7 +588,9 @@ def l1_phase(cfg: dict, workdir: Path, sample: dict, pref: dict, in_process: boo
           "warmup": next(iter(sample["strata"].values()))["pref_layout"]["name"],
           "f7_pools": [{"cell": p["cell"], "pool": p["pool"], "draws": [x["name"] for x in p["draws"]]}
                        for p in sample["f7_pools"]]}
-    key = sha256_obj({k: v for k, v in jp.items() if k != "out"})
+    phys = {k: cfg[k] for k in ("coolant_K", "h_W_m2K", "loads")} | {"l1": {k: v for k, v in cfg["l1"].items()
+                                                                          if k not in ("timing", "freeze_note")}}
+    key = sha256_obj({**{k: v for k, v in jp.items() if k not in ("out", "cfg")}, "cfg_l1": phys})
     if out.exists() and read_json(out).get("key") == key:
         return read_json(out)
     write_json(workdir / "l1_phase.job.json", jp)
@@ -771,9 +776,9 @@ def metric_with_bound(rows: list, e: dict, level: float) -> tuple[float, tuple[f
                     params=e.get("params", {}))
     if e["fn"] == "median_col":
         v = np.sort([r[e["pred"]] for r in sub])
-        n = v.size  # distribution-free 95 % interval for the median: binomial order statistics
+        n = v.size  # distribution-free A5_CI_LEVEL interval for the median: binomial order statistics
         from scipy.stats import binom
-        k = int(binom.ppf(0.025, n, 0.5))
+        k = int(binom.ppf((1.0 - A5_CI_LEVEL) / 2.0, n, 0.5))
         return point, (float(v[max(k - 1, 0)]), float(v[min(n - k, n - 1)])), n
     _, ci = quantile_ci(e["fn"], sub, pred=e.get("pred"), ref=e.get("ref"), strata=e.get("strata", []),
                         params=e.get("params", {}), level=level, cluster="layout")
@@ -849,6 +854,7 @@ def all_metrics(rows: list, spec: dict, cfg: dict, loads: list[str]) -> tuple[di
                                            "threshold": c["threshold"], "meets": bool(bound <= c["threshold"])}
         e1, e2 = per_load(E[A1], "P_ref"), per_load(E[A2], "P_ref")
         r0["A1_P_ref_K"] = compute_point(rows, {**e1, "pred": col})
+        r0["A1_point_K"] = r0["A1_P_ref_K"]  # T0398 packet name: A1's point estimate at P_ref
         r0["A2_P_ref"] = compute_point(rows, {**e2, "pred": col})
         r0["A3_P_ref_K"] = compute_point(rows, {**per_load(E[A3], "P_ref"), "pred": col})
         r0["A4_point"] = compute_point(rows, {**E[A4], "pred": col})
@@ -862,10 +868,11 @@ def all_metrics(rows: list, spec: dict, cfg: dict, loads: list[str]) -> tuple[di
         met[f"null_{nul}_A1_K_P_ref"] = (r0["A1_P_ref_K"], None, None)
         met[f"null_{nul}_A2_P_ref"] = (r0["A2_P_ref"], None, None)
         met[f"null_{nul}_A4"] = (r0["A4_point"], None, None)
-    rep["l1_dev_check"] = l1_dev_check(rows, cfg, E[A2], E[A4])
+    rep["l1_dev_check"] = l1_dev_check(rows, cfg, E[A2], E[A4], E[A1])
+    rep["implied_c_family_spread"] = implied_c_spread(rows, cfg)
     ckmap = {"tj_hot_l1_K": "tj_l1_constk_K", "tj_l1_K": "tj_l1_constk_K", "spread_l1_K": "tj_l1_constk_K"}
-    tested = False
-    thr = {"A1": 0.5, "A2": 0.03, "A3": 1.0, "A4": 0.5}
+    tested = False  # F4 rule (spec f4_kT_tested): 1 if any constant-k POINT estimate exceeds its O002 pass threshold
+    thr = {k: float(thr_of[cfg["metric_names"][k]]["threshold"]) for k in ("A1", "A2", "A3", "A4")}  # from O002
     for ld in loads:  # F4: the constant-k ablation at both loads, A1-A4 type
         for k, nm in (("A1", A1), ("A2", A2), ("A3", A3)):
             e = per_load(E[nm], ld)
@@ -892,7 +899,7 @@ def objective_criteria(spec: dict) -> dict:
     return obj["acceptance"]
 
 
-def l1_dev_check(rows: list, cfg: dict, eA2: dict, eA4: dict) -> dict:
+def l1_dev_check(rows: list, cfg: dict, eA2: dict, eA4: dict, eA1: dict | None = None) -> dict:
     """D0025 decision 4 (reported, never gated): per stratum, the implied calibration factor beside c(s)
     (c * sum(rise_ref) / sum(rise_L1), rise_L1 = tj_l1 - tb_ref: T_bp is the same exact energy-balance value in both
     models), the mean per-die bias tj_l1 - tj_ref for HS and LS dies, A2-type per load (point) against the model's
@@ -912,9 +919,37 @@ def l1_dev_check(rows: list, cfg: dict, eA2: dict, eA4: dict) -> dict:
             rec[f"A2_{ld}"] = compute_point([r for r in rows if r.get("stratum") == sn], per_load(eA2, ld))
         rec["A2_max_load"] = max(v for k, v in rec.items() if k.startswith("A2_") and k != "A2_max_load")
         rec["A4_P_ref"] = compute_point([r for r in rows if r.get("stratum") == sn], eA4)
+        if eA1 is not None:
+            rec["A1_K_max_load"] = compute_point([r for r in rows if r.get("stratum") == sn], eA1)
+        lr = [r for r in rows if r["kind"] == "layout" and r.get("stratum") == sn and "l1_eval_s" in r]
+        if lr:
+            rec["A5_s_p50"] = float(np.median([r["l1_eval_s"] for r in lr]))
+        # A2 had L1 used this stratum's implied factor instead of c(s) (rise_L1 x implied / c): the calibration's share
+        ic = rec["implied_c_P_ref"]
+        rec["A2_recalibrated_max_load"] = max(float(np.quantile([abs(r["tb_ref_K"] + (r["tj_l1_K"] - r["tb_ref_K"]) * ic / c
+                                                                    - r["tj_ref_K"]) / r["rise_ref_K"] for r in dr
+                                                                if r["load"] == ld], 0.95)) for ld in {r["load"] for r in dr})
         rec["meets_guard_A2_0.018"] = rec["A2_max_load"] <= 0.018
         rec["meets_A4_0.3"] = rec["A4_P_ref"] <= 0.3
         out[sn] = rec
+    return out
+
+
+def implied_c_spread(rows: list, cfg: dict) -> dict:
+    """D0025 decision 4 / T0395: per die size, the implied factor per family (pooled over that family's strata at that
+    size, P_ref: c * sum rise_ref / sum rise_L1) and its spread over families (max - min; T0395: 0.0059 at 4.0 mm)."""
+    cal = {float(k): float(v) for k, v in cfg["l1"]["calibration"].items()}
+    out: dict = {}
+    for s in sorted({float(r["die_size_mm"]) for r in rows if r["kind"] == "die"}):
+        fam = {}
+        for f in FAMILIES:
+            x = [r for r in rows if r["kind"] == "die" and r["load"] == "P_ref" and float(r["die_size_mm"]) == s
+                 and r["family"] == f]
+            if x:
+                fam[f] = cal[s] * sum(r["rise_ref_K"] for r in x) / sum(r["tj_l1_K"] - r["tb_ref_K"] for r in x)
+        out[str(s)] = {"c_table": cal[s], "implied_by_family": fam,
+                       "family_spread": (max(fam.values()) - min(fam.values())) if len(fam) > 1 else float("nan"),
+                       "strata": sorted({r["stratum"] for r in rows if r["kind"] == "die" and float(r["die_size_mm"]) == s})}
     return out
 
 
@@ -1183,6 +1218,17 @@ def execute(cfg: dict, spec: dict, seed: int, mode: str, workdir: Path, *, m: in
     return out
 
 
+def metric_units(spec: dict) -> dict:
+    """Every metric's unit from the spec's metrics list (reviews T0449/T0450 (2): F4's A1/A3 are in K)."""
+    return {m["name"]: m.get("unit", "") for m in spec.get("metrics", [])}
+
+
+def metric_level(name: str, ci, cfg: dict) -> float:
+    if ci is None:
+        return 0.0
+    return A5_CI_LEVEL if name == cfg["metric_names"]["A5"] else float(cfg["bound"]["ci_spec"]["level"])
+
+
 def report_rows(res: dict) -> list:
     return res["rows"] + res["f7_die_rows"] + res["f7_lay_rows"] + res["f1_rows"]
 
@@ -1196,11 +1242,9 @@ def full(args) -> int:
         wd = Path(args.workdir) if args.workdir else run.run_dir / "work"
         res = execute(cfg, spec, int(run.seed), "sealed", wd, max_procs=args.max_procs, cap_gb=args.mem_cap_gb)
         run.rows(report_rows(res))
-        lev = float(cfg["bound"]["ci_spec"]["level"])
-        units = {"l1_eval_s_p50": "s"}
+        units = metric_units(spec)
         for name, (v, ci, n) in res["metrics"].items():
-            run.metric(name, v, ci=ci, n=n, level=lev if ci is not None else 0.0,
-                       unit=units.get(name, "K" if name.endswith("_K") or "_K_" in name else ""))
+            run.metric(name, v, ci=ci, n=n, level=metric_level(name, ci, cfg), unit=units[name])
         for c in res["checks"]:
             run.sanity(c["name"], c["passed"], value=c.get("value"), threshold=c.get("threshold"), detail=c["detail"][:4000])
         for nm, obj in (("reports.json", res["reports"]), ("plan_frozen.json", res["sample"]), ("pref.json", res["pref"]),
@@ -1226,12 +1270,30 @@ def dev(args) -> int:
     wd = Path(args.workdir or ROOT / cfg["dev"]["workdir"])
     res = execute(cfg, spec, seed, "dev", wd, m=args.dev_layouts or cfg["dev"]["layouts_per_stratum"],
                   max_procs=args.max_procs, cap_gb=args.mem_cap_gb)
-    met = {k: {"value": v, "ci": ci, "n": n} for k, (v, ci, n) in res["metrics"].items()}
+    units = metric_units(spec)
+    met = {k: {"value": v, "ci": ci, "n": n, "level": metric_level(k, ci, cfg), "unit": units.get(k, "")}
+           for k, (v, ci, n) in res["metrics"].items()}
+    simp = ROOT / "research" / "o002_e007" / "f3_dev_simulation.json"  # T0398's stats_sim_dev.py (run on these rows)
+    sim = read_json(simp) if simp.exists() else {}
     meta = {"experiment": EID, "smoke": False, "fake": FAKE, "seed_role": "development", "dev_seed": seed,
             "judged_level": cfg["judged_level"], "pref_W_per_die": res["pref"], "metrics": met,
             "f2_nulls": res["reports"]["nulls"], "per_stratum_A2": res["reports"]["per_stratum_A2"],
             "per_band_A4": res["reports"]["per_band_A4"], "f6": res["reports"]["f6"],
             "l1_dev_check_D0025": res["reports"]["l1_dev_check"],
+            "implied_c_family_spread": res["reports"]["implied_c_family_spread"],
+            "l1_dev_check_summary": {"strata_missing_A2_guard_0.018": sorted(
+                k for k, v in res["reports"]["l1_dev_check"].items() if not v["meets_guard_A2_0.018"]),
+                "strata_missing_A4_0.3": sorted(k for k, v in res["reports"]["l1_dev_check"].items()
+                                                if not v["meets_A4_0.3"])},
+            "f3_dev": {"coverage": sim.get("f3_dev", {}).get("coverage", {}), "source": str(simp.relative_to(ROOT)),
+                       "bound": sim.get("bound"), "reps_per_cell": sim.get("reps_per_cell"),
+                       "scenarios": sim.get("f3_dev", {}).get("scenarios"), "power": sim.get("power", {}),
+                       "kill_side": sim.get("kill_side", {})} if sim else {},
+            "l1_phase_host": res["l1"].get("host"), "l1_phase_threads_env": res["l1"].get("threads_env"),
+            "reference_cpu_wall": {k: {"cpu_s": v["cpu_s"] if "cpu_s" in v else sum(h["cpu_s"] for h in v["history"]),
+                                       "wall_s": v["wall_s"] if "wall_s" in v else sum(h["wall_s"] for h in v["history"]),
+                                       "dofs": v.get("dofs", v.get("level0", {}).get("dofs")),
+                                       "peak_rss_GB": v["peak_rss_GB"]} for k, v in res["recs"].items()},
             "l1_eval_s_p50": met[cfg["metric_names"]["A5"]]["value"], "checks": res["checks"],
             "die_size_mm": {k: v["die_size_mm"] for k, v in res["sample"]["strata"].items()}}
     out = Path(args.rows_out or ROOT / "experiments" / "drafts" / "E007.dev_rows.json")
@@ -1312,10 +1374,18 @@ def plan(args) -> int:
             "n_reference_solves": int(sum(j["n"] for j in J)), "cpu_hours_est": round(cpu, 1),
             "local_or_burst_per_policy": "burst" if cpu > local_max else "local",
             "jobs_over_local_5GB": [j["name"] for j in big],
-            "option_A_all_on_burst": {"vm_hours": round(a_vm_h, 1), "usd": round(a_vm_h * vm["usd_per_h"], 2)},
+            "option_A_all_on_burst": {"vm_hours": round(a_vm_h, 1), "usd": round(a_vm_h * vm["usd_per_h"], 2),
+                                      "runner_flags": f"--max-procs {vm['vcpus']} --mem-cap-gb {usable:.1f}",
+                                      "note": "the packing priced here needs these flags; the defaults (--max-procs 1, "
+                                              "5 GB cap) refuse the over-cap jobs"},
+            "option_A_one_at_a_time": {"vm_hours": round(cpu + vm["overhead_h"], 1),
+                                       "usd": round((cpu + vm["overhead_h"]) * vm["usd_per_h"], 2),
+                                       "runner_flags": f"--max-procs 1 --mem-cap-gb {usable:.1f}"},
             "option_B_local_then_burst": {"local_cpu_hours": round(loc_h, 1), "local_wall_hours_one_at_a_time":
                                           round(loc_h, 1), "vm_hours": round(b_vm_h, 1),
-                                          "usd": round(b_vm_h * vm["usd_per_h"], 2)}}
+                                          "usd": round(b_vm_h * vm["usd_per_h"], 2),
+                                          "runner_flags": f"local: E007_SKIP_OVER_CAP=1 --max-procs 1; VM: --max-procs "
+                                                          f"{vm['vcpus']} --mem-cap-gb {usable:.1f} (same --workdir)"}}
     print(json.dumps({k: v for k, v in out.items()} | {"cases": {c: {k: v for k, v in d.items() if k != "solves"}
                                                                   for c, d in out["cases"].items()}}, indent=1))
     for c, d in out["cases"].items():

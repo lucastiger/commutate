@@ -122,10 +122,12 @@ config:
     - 831496695
     - 7
     - 20261103
+    - 20261399
     forbidden_sources: '20261101 E009/C004 development seed; 20261115 T0392 development seed; 20261116 T0392 bootstrap seed;
       20261117 and 20261118 F3 simulation seeds (T0396 rounds 1 and 2); 20261395 T0395 fresh development seed (chose the 1.5
       mm grid: development rows, never judged evidence); 20261398 T0398 development seed (config.dev.dev_seed); 831496695
-      E009''s sealed seed (C004''s fresh layouts); 7 E009 smoke seed; 20261103 thermal_fem AMG seed'
+      E009''s sealed seed (C004''s fresh layouts); 7 E009 smoke seed; 20261103 thermal_fem AMG seed; 20261399 T0398 F3 follow-up simulation
+      seed (research/o002_e007/stats_sim_dev.py)'
   c004:
     dev_fingerprints:
     - 1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b
@@ -189,7 +191,12 @@ config:
       OMP/OPENBLAS/MKL/VECLIB/NUMEXPR thread variables = 1, after every P_ref calibration solve (level 0, development layouts)
       has finished and before any judged reference solve, with no solve running, in the sealed timing order, after one uncounted
       warm-up evaluation on a P_ref development layout. Every other L1 evaluation of the run (F4 constant-k ablation, F7 pools,
-      F7 optimised layouts at half load) follows in the same process, untimed for A5
+      F7 optimised layouts at half load) follows in the same process, untimed for A5. Host (reviews T0449/T0450 (5)) -
+      A5 is timed on the host that runs the registered run's L1 phase, fixed here as the burst VM of compute option A
+      (config.compute.vm.machine, the policy's route; the L1 phase records node, platform and processor in l1_phase.json and
+      the run's domain records cpu). If the founder chooses option B, the host of the L1 phase is fixed in that decision
+      before registration. T0398's development A5 was timed on the founder's Mac (Apple silicon), a development figure,
+      not the registered host
     freeze_note: 'frozen at T0395''s merged design (lateral grid cap 1.5 mm; calibration table from benchmarks/thermal_l1_calibration.py).
       T0395''s fresh-seed rows (seed 20261395) chose the grid: development rows, never judged evidence'
   fem_rule_path: research/o007_dev3/frozen_config.json
@@ -296,8 +303,19 @@ config:
       B, what fits 5 GB locally one at a time (22.2 CPU-h, about 22 h wall) then the rest on the VM: 22.6 VM-h, $13.84 (upper
       26.3 h, $16.11). Over the 5 GB local cap: level 1 of side_by_side/6, interleaved/6 and u_shaped/6 (5.0-5.5 GB with the
       0.3 GB base RSS; F7''s 4-6 band too in the upper case) and every level-2 subset solve (28-45 GB expected, 48-77 min
-      each; one at a time on the VM''s 66 GB usable). D0025''s ''about 52 CPU-hours'' predates this plan; T0398 measures cpu
-      and wall of one level-2 solve'
+      each; one at a time on the VM''s 66 GB usable). D0025''s ''about 52 CPU-hours'' predates this plan. T0398: option A''s
+      packed VM figure needs --max-procs 8 --mem-cap-gb 66.3 (one at a time: 57.2 VM-h, $35.00; --plan prints both). Level 1
+      measured on the 90 development solves (Apple M, one thread): 0.136 ms/DOF median CPU (max 0.262), CPU/wall 0.994, peak
+      up to 4.3 kB/DOF (above the 3.4 kB/DOF used here); cpu_s_per_dof is kept because the registered host differs, so --plan''s
+      CPU-hours and cpu_hours_est (57.0) are unchanged. No level-2 solve fits the local 10 GB limit (smallest development
+      layout 3.48 M DOF, est. 20.2 GB): its cpu_s / wall_s are listed for the burst (research/o002_e007/l2_timing/job.json)'
+  scope_limits:
+  - 'F6: the hottest-node discretisation estimate (levels 0-2, step-floor rule) exists only on the 12-layout level-2 subset;
+    every other die reports its level-1 hottest node without an error estimate (reviews T0435 (7), T0449/T0450 (6))'
+  - 'F2: the die-position null is not independent of the stratum-mean null for A4: its spread is the max - min of leave-one-out
+    per-index means, at most the mean of the per-layout spreads by construction (equal when the same die indices are hottest
+    and coldest in every layout), so its A4 adds little beyond the stratum-mean null (review T0435 (7))'
+  - 'A5 is measured on one host (config.l1.timing); a claim about another machine needs its own timing'
   dev:
     dev_seed: 20261398
     layouts_per_stratum: 3
@@ -325,7 +343,17 @@ config:
       D0025 decision 4''s per-stratum check (l1_dev_check_D0025: the implied factor c * sum(rise_ref) / sum(rise_L1) beside
       c(s), the mean HS and LS die bias, A2-type against the model''s 1.8 % guard, A4-type against 0.3). Development rows
       are never judged'
+    result: 'T0398 (2026-11-17, research/notes/e007-dev-rows.md): 45 layouts (3 per stratum), 90 level-1 solves, every sanity
+      check passed. A1 0.230 K, A2 0.0081, A3 0.091 K, A4 0.107, A5 0.440 s (Mac, alone). F2: every null fails A1 (die_position
+      5.69, stratum_mean 5.50, isolated_die 3.82 K) and A4 (1.00, 1.00, 11.42). D0025 check: the 1.8 % A2 guard holds in
+      every stratum (max 1.16 %, interleaved/3); A4 <= 0.3 FAILS in interleaved/2 (0.352), side_by_side/2 (0.340) and u_shaped/6
+      (0.951), each a ratio of p95s over 6 switch rows: STOP, founder decision before E007 freezes. Implied-c family spread
+      0.0064 / 0.0046 / 0.0036 / 0.0031 at 4.0 / 4.5 / 5.0 / 5.5 mm (interleaved lowest; LS bias +0.29 to +0.47 K at 4.0-4.5
+      mm). F3 at the dev structure: V4 coverage >= 0.971 for every statistic and model (research/o002_e007/f3_dev_simulation.json)'
   founder_decisions_before_registration:
+  - 'D0025 decision 4 check (T0398): A4 <= 0.3 fails in 3 of 15 strata on 3 development layouts each (interleaved/2 0.352,
+    side_by_side/2 0.340, u_shaped/6 0.951); the 1.8 % A2 guard holds everywhere. Nothing gated was changed: the founder decides
+    whether E007 freezes as is'
   - 'm (layouts per stratum): 20 is provisional (D0025 decision 2); the final m comes from T0398''s power figures for the
     as-measured L1 at m = 20, 24, 32 and 40 (normal and t3), recorded as an amendment of D0025. Only simulated m values are
     admissible; changing m changes allocation.layouts_per_stratum, f3_simulation.json and cpu_hours_est'
@@ -376,7 +404,8 @@ metrics:
   unit: ''
 - name: l1_eval_s_p50
   description: A5. median wall time per L1 evaluation on one thread over the 600 judged evaluations (config.l1.timing); point,
-    with a distribution-free 95 % order-statistic interval
+    with a distribution-free 95 % order-statistic interval, computed and recorded at level 0.95 (runner A5_CI_LEVEL; reviews
+    T0449/T0450 (1)); timed on the host fixed in config.l1.timing
   unit: s
 - name: dtj_pair_err_ownhot_p95_K_max_load
   description: 'reported beside A1: the same statistic with each model''s own hottest die (max of L1''s die averages against
@@ -471,8 +500,10 @@ metrics:
     V4 bound (reported, not gated)'
   unit: ''
 - name: f4_kT_tested
-  description: 'F4: 1 if any constant-k statistic exceeds its threshold at either load, else 0 (k(T) not tested at this operating
-    point)'
+  description: 'F4 (rule fixed before the run, reviews T0449/T0450 (3)): 1 if the POINT estimate of any constant-k statistic
+    (A1-, A2-, A3- or A4-type, at either load) exceeds the matching O002 pass threshold read from the objective file (0.5 K,
+    0.03, 1.0 K, 0.5), else 0 (k(T) not tested at this operating point). Point estimates by rule, so the flag does not
+    depend on the sample size; the V4 bounds of the f4_constant_k_* metrics are reported beside it'
   unit: ''
 - name: diversity_min_sd_tj_hot_ref_K
   description: 'sample diversity: min over strata of the standard deviation over layouts of the reference hottest-die average
@@ -722,3 +753,4 @@ null_baselines:
   - dtj_pair_err_p95_K_max_load
   - switch_spread_err_ratio_vs_stratum_mean
 recompute_exempt: {}
+dev_rows: experiments/drafts/E007.dev_rows.json
