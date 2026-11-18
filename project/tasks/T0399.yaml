@@ -4,7 +4,7 @@ title: 'Run E007: frozen L1 thermal model against the verified scikit-fem refere
   at P_ref and 0.5 P_ref'
 type: experiment
 agent: none
-status: todo
+status: needs_founder
 depends_on:
 - T0398
 - T0395
@@ -37,4 +37,8 @@ lens: null
 trigger: null
 rationale: This is the required experiment task for E007, the only evidence for O002's verdict. It depends
   on the frozen L1 (n4), the generator option (n3) and the finished design (n7).
-history: []
+history:
+- outcome: awaiting_burst
+  summary: ~84.5 CPU-h exceeds local limit
+  at: '2026-11-18T04:44:51+00:00'
+  since: 1794977091.586951

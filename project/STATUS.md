@@ -1,10 +1,10 @@
 # ModuleForge status
-_generated 2026-11-18T04:36:25+00:00 from repository state — do not edit_
+_generated 2026-11-18T04:44:51+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0254** [experiment_registration] register E007 (pre-registration)
+- **I0255** [decision] E007 needs burst compute (~84.5 CPU-h)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,15 +33,12 @@ _generated 2026-11-18T04:36:25+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 409, failed: 4, running: 1, todo: 4
+cancelled: 47, done: 409, failed: 4, needs_founder: 1, running: 1, todo: 3
 
+- T0399 `needs_founder` none/experiment: Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts at P_ref and 0.5 P_ref (attempt 0)
 - T0457 `running` scientist/design_experiment: E004 design part 2b: banded acceptance and its simulation, redraw record, 2R proxy pair, provenance, solve-stage review fixes, local FastHenry probe (attempt 2)
 
 ## Recent events
-- 2026-11-18T02:33:12+00:00 task_added {"task": "T0464", "note": "founder decision 2026-11-18"}
-- 2026-11-18T02:36:32+00:00 run_finished {"run": "T0463-critic-20261117T182940-d3e0", "status": "completed", "cost": 1.828217, "subtype": "success", "report": "structured_output"}
-- 2026-11-18T02:44:01+00:00 inbox_opened {"id": "I0252", "kind": "protected_change", "subject": "T0456: merge needs founder approval"}
-- 2026-11-18T02:54:03+00:00 inbox_resolved {"id": "I0252", "status": "approved", "note": "T0456 merge approved, review T0463 accepts with caveats, routed to T0464. On 9 layouts all three strata meet A4 a
 - 2026-11-18T02:54:24+00:00 merged {"task": "T0456"}
 - 2026-11-18T02:54:26+00:00 registration_deferred {"task": "T0456", "experiment": "E007", "reason": "design task T0464 of E007 is still todo"}
 - 2026-11-18T02:54:36+00:00 run_started {"run": "T0464-scientist-20261117T185436-0c97", "task": "T0464", "role": "scientist", "session": "e8a9a16f-8452-401c-8c0e-11fb73c6bc2b"}
@@ -53,3 +50,7 @@ cancelled: 47, done: 409, failed: 4, running: 1, todo: 4
 - 2026-11-18T03:45:08+00:00 inbox_resolved {"id": "I0253", "status": "approved", "note": "T0464 merge approved, review T0465 accepts with caveats. E007 finalised at m = 32, 480 layouts, cost 74 to 79 CPU
 - 2026-11-18T03:45:13+00:00 merged {"task": "T0464"}
 - 2026-11-18T03:45:14+00:00 inbox_opened {"id": "I0254", "kind": "experiment_registration", "subject": "register E007 (pre-registration)"}
+- 2026-11-18T04:44:19+00:00 experiment_registered {"id": "E007", "hash": "sha256:3b6d1b778d668cf5502c565592a478077a277c5b5b5dc06960d4a52a97087680", "by": "founder"}
+- 2026-11-18T04:44:19+00:00 inbox_resolved {"id": "I0254", "status": "approved", "note": "Register E007: design complete (T0397, T0398, T0456, T0464), m = 32 per D0027, Woodruff 97 % bounds per D0025, le
+- 2026-11-18T04:44:51+00:00 inbox_opened {"id": "I0255", "kind": "decision", "subject": "E007 needs burst compute (~84.5 CPU-h)"}
+- 2026-11-18T04:44:51+00:00 burst_requested {"task": "T0399", "experiment": "E007", "cpu_hours": 84.5}
