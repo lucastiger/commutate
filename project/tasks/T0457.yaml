@@ -48,7 +48,27 @@ description: "Finish E004 design part 2 (O004). It runs after T0389 has merged; 
   \ was 15x slow). Regenerate research/o004_f7/vm_jobs_fasthenry.json with --dev-fh-plan. The plan reports\
   \ the machine, the parallelism and the expected makespan, and burst_gcp.sh's MF_GCP_MAX_HOURS set above\
   \ that makespan with margin (the default of 6 h stopped burst 1 early). It also reports each pair's\
-  \ FastHenry thickness-term share of the 1 % cap (T0454 item 6).\n"
+  \ FastHenry thickness-term share of the 1 % cap (T0454 item 6).\n\n\nAttempt 2 (founder session, 2026-11-18):\
+  \ attempt 1 ran out of agent turns (80) after doing most of the work, committed as WIP f7e1cc47 on this\
+  \ branch. That WIP includes the banded-acceptance rule and its gates in e004_run.py, the 200-seed simulation\
+  \ (research/o004_f7/band_sim_case4.json), the local FastHenry probe of three small Case 4 decks (fh_local_probe.json:\
+  \ time 1.47-1.83x and memory 1.02-1.21x the projection), a 1 mm proxy trial on Case 4 (proxy_case4_try.out),\
+  \ a regenerated vm_jobs_fasthenry.json, and about 1,100 lines of runner changes. Do not redo any of\
+  \ that. Read the branch diff, finish the items of A-C that are missing or partial, regenerate the FastHenry\
+  \ plan with the probe's measured time and memory ratios, run the selftest, the registration smoke and\
+  \ the definition of done, and report. Put the simulation's results in the report: pass fraction by lower\
+  \ end, the distribution of the lowest r_L1, redraws per slot, per-type coverage, and the fill fraction\
+  \ if the total-redraw limit is 25, 50, 100, 200 or 600. Keep the turn count low: one long command per\
+  \ step, and no repeated reading of large files. This attempt has 160 turns.\n\nAlso, for the founder's\
+  \ span decision (research only; do not change the frozen rule): attempt 1's simulation shows the rule\
+  \ fills its bands in 200 of 200 draws, but it does not push the lowest ratio down. The lowest r_L1 has\
+  \ median 0.875 and minimum 0.799, the pass fraction is 9.5 % at a lower end of 0.85 and 0.5 % at 0.80,\
+  \ and the 6 % coverage rule covers trace_width, terminal_copper and wire_landing in only 9-26 % of draws.\
+  \ Simulate two variants on the same 200 development seeds and report the same summary for each:\n(a)\
+  \ the frozen rule plus a band 'at least 1 pair at or below X', for X = 0.80, 0.82 and 0.85;\n(b) (a)\
+  \ at X = 0.85 plus a coverage band 'for each move type, at least 1 pair with |1 - r_L1| >= 6 %'.\nReport\
+  \ the fill fraction, the redraws per slot (mean and maximum) and the fill fraction under total-redraw\
+  \ limits of 100, 200 and 600. If time is short, do (a) at X = 0.85 and (b) first.\n"
 context_files: []
 deliverables: []
 touches:
@@ -77,7 +97,7 @@ experiment: E004
 risk: medium
 model: null
 budget_usd: 9.0
-max_turns: 80
+max_turns: 160
 wall_minutes: null
 attempts: 1
 max_attempts: 3
@@ -99,3 +119,6 @@ history:
   summary: agent ended with error_max_turns
   failure_output: ''
   at: '2026-11-18T00:52:39+00:00'
+- outcome: rebriefed
+  summary: 'founder session: attempt 2 continues attempt 1''s WIP; max_turns 80 -> 160'
+  at: '2026-11-18T00:53:31+00:00'
