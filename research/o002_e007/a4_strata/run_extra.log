@@ -1,0 +1,49 @@
+warning: `VIRTUAL_ENV=/Users/lukeskywalker/mf/main/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[16:28:44] P_ref fixed: {'interleaved/2': 46.07464882931077, 'side_by_side/2': 38.97926544165825, 'u_shaped/6': 34.98863419438927}
+[16:32:35]   u_shaped_6_j00__P_ref__L1: 200 s, 1278703 DOF, peak 3.31 GB
+[16:35:26]   u_shaped_6_j00__half_P_ref__L1: 170 s, 1278703 DOF, peak 3.28 GB
+[16:38:56]   u_shaped_6_j04__P_ref__L1: 210 s, 1271363 DOF, peak 3.73 GB
+[16:42:06]   u_shaped_6_j04__half_P_ref__L1: 190 s, 1271363 DOF, peak 4.32 GB
+[16:45:06]   u_shaped_6_j05__P_ref__L1: 180 s, 1271363 DOF, peak 4.75 GB
+[16:48:06]   u_shaped_6_j05__half_P_ref__L1: 180 s, 1271363 DOF, peak 4.36 GB
+[16:51:22]   u_shaped_6_j01__P_ref__L1: 195 s, 1268123 DOF, peak 3.99 GB
+[16:54:22]   u_shaped_6_j01__half_P_ref__L1: 180 s, 1268123 DOF, peak 3.35 GB
+[16:58:22]   u_shaped_6_j03__P_ref__L1: 240 s, 1268123 DOF, peak 3.11 GB
+[17:01:37]   u_shaped_6_j03__half_P_ref__L1: 195 s, 1268123 DOF, peak 2.99 GB
+[17:05:38]   u_shaped_6_j02__P_ref__L1: 240 s, 1260159 DOF, peak 3.60 GB
+[17:07:38]   u_shaped_6_j02__half_P_ref__L1: 120 s, 1260159 DOF, peak 4.47 GB
+[17:09:08]   interleaved_2_j01__P_ref__L1: 90 s, 557727 DOF, peak 2.55 GB
+[17:10:48]   interleaved_2_j01__half_P_ref__L1: 100 s, 557727 DOF, peak 2.55 GB
+[17:12:38]   interleaved_2_j03__P_ref__L1: 110 s, 548195 DOF, peak 2.22 GB
+[17:14:29]   interleaved_2_j03__half_P_ref__L1: 110 s, 548195 DOF, peak 1.80 GB
+[17:16:44]   interleaved_2_j04__P_ref__L1: 135 s, 548195 DOF, peak 1.87 GB
+[17:18:24]   interleaved_2_j04__half_P_ref__L1: 100 s, 548195 DOF, peak 2.19 GB
+[17:20:14]   interleaved_2_j00__P_ref__L1: 110 s, 536575 DOF, peak 2.16 GB
+[17:21:49]   interleaved_2_j00__half_P_ref__L1: 95 s, 536575 DOF, peak 2.03 GB
+[17:23:04]   interleaved_2_j02__P_ref__L1: 75 s, 536575 DOF, peak 2.29 GB
+[17:24:24]   interleaved_2_j02__half_P_ref__L1: 80 s, 536575 DOF, peak 2.19 GB
+[17:25:54]   interleaved_2_j05__P_ref__L1: 90 s, 536575 DOF, peak 2.37 GB
+[17:27:19]   interleaved_2_j05__half_P_ref__L1: 85 s, 536575 DOF, peak 2.52 GB
+[17:28:45]   side_by_side_2_j01__P_ref__L1: 85 s, 467527 DOF, peak 2.31 GB
+[17:30:00]   side_by_side_2_j01__half_P_ref__L1: 75 s, 467527 DOF, peak 2.18 GB
+[17:31:20]   side_by_side_2_j02__P_ref__L1: 80 s, 455771 DOF, peak 2.27 GB
+[17:32:35]   side_by_side_2_j02__half_P_ref__L1: 75 s, 455771 DOF, peak 1.80 GB
+[17:33:45]   side_by_side_2_j04__P_ref__L1: 70 s, 434467 DOF, peak 2.15 GB
+[17:35:00]   side_by_side_2_j04__half_P_ref__L1: 75 s, 434467 DOF, peak 2.11 GB
+[17:36:20]   side_by_side_2_j03__P_ref__L1: 80 s, 433923 DOF, peak 1.72 GB
+[17:37:30]   side_by_side_2_j03__half_P_ref__L1: 70 s, 433923 DOF, peak 1.67 GB
+[17:38:35]   side_by_side_2_j00__P_ref__L1: 65 s, 432051 DOF, peak 2.09 GB
+[17:39:35]   side_by_side_2_j00__half_P_ref__L1: 60 s, 432051 DOF, peak 2.09 GB
+[17:40:35]   side_by_side_2_j05__P_ref__L1: 60 s, 423951 DOF, peak 2.07 GB
+[17:41:30]   side_by_side_2_j05__half_P_ref__L1: 55 s, 423951 DOF, peak 2.07 GB
+Traceback (most recent call last):
+  File "/Users/lukeskywalker/mf/wt/T0456/research/o002_e007/a4_strata/run_extra.py", line 167, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0456/research/o002_e007/a4_strata/run_extra.py", line 137, in main
+    comb = combine(rows)
+           ^^^^^^^^^^^^^
+  File "/Users/lukeskywalker/mf/wt/T0456/research/o002_e007/a4_strata/run_extra.py", line 104, in combine
+    assert len({(r["layout"], r["load"], r["switch"], r["die_index"]) for r in die}) == len(die), "duplicate die rows"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: duplicate die rows

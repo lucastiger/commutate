@@ -123,11 +123,13 @@ config:
     - 7
     - 20261103
     - 20261399
+    - 20261456
     forbidden_sources: '20261101 E009/C004 development seed; 20261115 T0392 development seed; 20261116 T0392 bootstrap seed;
       20261117 and 20261118 F3 simulation seeds (T0396 rounds 1 and 2); 20261395 T0395 fresh development seed (chose the 1.5
       mm grid: development rows, never judged evidence); 20261398 T0398 development seed (config.dev.dev_seed); 831496695
       E009''s sealed seed (C004''s fresh layouts); 7 E009 smoke seed; 20261103 thermal_fem AMG seed; 20261399 T0398 F3 follow-up simulation
-      seed (research/o002_e007/stats_sim_dev.py)'
+      seed (research/o002_e007/stats_sim_dev.py); 20261456 T0456 development seed (6 extra layouts in interleaved/2, side_by_side/2
+      and u_shaped/6, research/o002_e007/dev_rows_a4_strata.json) and its power-simulation streams'
   c004:
     dev_fingerprints:
     - 1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b
@@ -270,7 +272,7 @@ config:
   compute:
     bytes_per_dof:
       '0': 4964.065014991321
-      '1': 3400.0
+      '1': 4400.0
       '2': 4964.065014991321
     memory_margin: 1.15
     base_rss_GB: 0.3
@@ -289,7 +291,9 @@ config:
       memory_fraction: 0.85
       usd_per_h: 0.612
       overhead_h: 0.5
-    sources: 'bytes/DOF: level 1 from T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
+    sources: 'bytes/DOF: level 1 raised from 3400 to 4400 by T0456 (packet item 4): T0398''s 90 level-1 development solves peaked at
+      4.29 kB/DOF (u_shaped_6_j01 P_ref, 5.44 GB at 1.268 M DOF, peak RSS over DOF, base RSS included; experiments/drafts/E007.dev_rows.json
+      meta.reference_cpu_wall); previously T0392''s 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md);
       levels 0 and 2 E009 fem_bytes_per_dof (conservative at level 0). CPU s/DOF: levels 0-1 the slowest cached frozen-rule
       solves in research/o002_l1/cache (0.12 and 0.19 ms/DOF, wall = CPU assumed, one effective thread); level 2 T0243''s
       burst rate 585 us/DOF (research/notes/o002-f1-dev-check.md); T0398 measures cpu_s and wall_s of one level-2 solve. VM
