@@ -2908,3 +2908,9 @@
 {"ts": "2026-11-18T00:23:22+00:00", "event": "merged", "actor": "orchestrator", "task": "T0398"}
 {"ts": "2026-11-18T00:23:24+00:00", "event": "registration_deferred", "actor": "orchestrator", "task": "T0398", "experiment": "E007", "reason": "design task T0456 of E007 is still todo"}
 {"ts": "2026-11-18T00:23:35+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0456-scientist-20261117T162335-b347", "task": "T0456", "role": "scientist", "session": "d976bc9f-5c90-49df-a63a-4bbb33114849"}
+{"ts": "2026-11-18T00:30:58+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0382-scientist-20261117T160031-53cd", "status": "completed", "cost": 0.968663, "subtype": "success", "report": "structured_output"}
+{"ts": "2026-11-18T00:52:39+00:00", "event": "verified", "actor": "orchestrator", "task": "T0382"}
+{"ts": "2026-11-18T00:52:39+00:00", "event": "run_finished", "actor": "orchestrator", "run": "T0457-scientist-20261117T160032-2c24", "status": "error", "cost": 7.374897, "subtype": "error_max_turns", "report": "missing"}
+{"ts": "2026-11-18T00:52:39+00:00", "event": "task_failed_attempt", "actor": "orchestrator", "task": "T0457", "signal": "agent_error", "action": "repair"}
+{"ts": "2026-11-18T00:53:01+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0460-critic-20261117T165301-7328", "task": "T0460", "role": "critic", "session": "46ff50b6-29ff-4d13-b5c8-e23afccf26be"}
+{"ts": "2026-11-18T00:53:05+00:00", "event": "run_started", "actor": "orchestrator", "run": "T0461-critic-20261117T165305-7d2e", "task": "T0461", "role": "critic", "session": "80ce883a-18c0-4a10-8933-217f769259c3"}

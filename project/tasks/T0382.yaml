@@ -3,7 +3,7 @@ objective: O008
 title: 'Design E011: draft spec and runner (selftest, smoke, development mode with the burst job manifest)'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on:
 - T0377
 - T0378
@@ -925,3 +925,149 @@ history:
   summary: 'founder session: diagnosis T0458 cancelled (tooling quirk: a non-spec file listed as an experiment
     draft); retry to re-report'
   at: '2026-11-17T21:46:26+00:00'
+- attempt: 5
+  outcome: agent_finished
+  summary: "Attempt 5 is a re-report of attempt 4, with no new runs and no changed results. All definition-of-done\
+    \ commands pass on the committed attempt-4 work (HEAD 08821056), and the working tree is still clean.\
+    \ Experiment drafts now lists only experiments/drafts/E011.yaml; the job list is under files written.\n\
+    \n**Code stamp still matches.** The manifest's code stamp equals what code_stamp(spec) computes on\
+    \ this checkout, field by field (tree hash 33dac5c7…, config hash 96d37c74…, 38 files, the five code_under_test\
+    \ hashes). So does the development work directory's code_stamp.json.\n\n**Results from attempt 4.**\
+    \ I spot-checked the headline numbers against the manifest and they match the note.\n- **Proxy (reach=True,\
+    \ minimum gain 1e-12 H):**\n  - 2D_Case_2R: 25 steps, L1(W*)/L1(W) = 0.9138.\n  - 2D_Case_4:"
+  report:
+    summary: "Attempt 5 is a re-report of attempt 4, with no new runs and no changed results. All definition-of-done\
+      \ commands pass on the committed attempt-4 work (HEAD 08821056), and the working tree is still clean.\
+      \ Experiment drafts now lists only experiments/drafts/E011.yaml; the job list is under files written.\n\
+      \n**Code stamp still matches.** The manifest's code stamp equals what code_stamp(spec) computes\
+      \ on this checkout, field by field (tree hash 33dac5c7…, config hash 96d37c74…, 38 files, the five\
+      \ code_under_test hashes). So does the development work directory's code_stamp.json.\n\n**Results\
+      \ from attempt 4.** I spot-checked the headline numbers against the manifest and they match the\
+      \ note.\n- **Proxy (reach=True, minimum gain 1e-12 H):**\n  - 2D_Case_2R: 25 steps, L1(W*)/L1(W)\
+      \ = 0.9138.\n  - 2D_Case_4: 73 steps, ratio 0.6533.\n  - Both end at local_optimum and equal T0437's\
+      \ pins.\n  - Threshold-free descent: 35 / 0.9136 and 81 / 0.6532. Probe proxy (reach=False): 27\
+      \ / 0.8979 and 120 / 0.6280.\n  - The other DC- reading changes the proxy on 2R only.\n- **Hottest-die\
+      \ Tj (W, W*):** 398.10 / 396.49 K on 2R and 398.08 / 396.05 K on Case 4. The 2 K fallback never\
+      \ fired.\n- **Degradations:** 7 of 8 draws reached the 1.3875 L1 target on 2R (draw 1 stalled at\
+      \ 1.309); 8 of 8 on Case 4. None is outside the search domain.\n- **Search improvement curve:**\
+      \ all 16 searches stop at the 2000-evaluation budget, and all were still improving after evaluation\
+      \ 1800.\n  - Share of the final L1 gain in the last 10 % (median / max, upper end): 2R 0.001 / 0.009;\
+      \ Case 4 0.028 / 0.060.\n  - Last 25 %: 2R 0.013 / 0.030; Case 4 0.109 / 0.162.\n  - These are brackets,\
+      \ not exact values. The founder decides the budget; it is unchanged.\n- **Nulls (b) widen and (d)\
+      \ compact:** all 32 runs end at local_optimum with an in-domain seed. None is capped and none is\
+      \ no_moves.\n  - Widen: 14–26 steps on 2R, 30–58 on Case 4.\n  - Compact: 21–36 on 2R, 53–73 on\
+      \ Case 4.\n  - So the 200-step limit is not approached.\n- **Ablations:** the random screen used\
+      \ l1_evals = n_draws = 2000 on every draw. The proxy-alone ablation took 28–42 steps on 2R and 29–35\
+      \ on Case 4.\n- **Burst job list:** 611 wave-1 jobs, one per (fingerprint, level): 339 at lat0.5\
+      \ and 68 at each of lat0.25, thk_c, thk_f and fil_f. There are 34 shortlist groups and 170 wave-2\
+      \ jobs.\n- **VM sizing (n2d-custom-8-81920):** Case 4's 0.25 mm solves run 2 at once under the 25\
+      \ GB prior and 3 under the learned 17.5 GB. The development burst takes 61–72 h and $38–44.\n- **The\
+      \ registered run does not fit its 120 h timeout in any modelled scenario.** The cost model gives\
+      \ 170–246 h and $104–151.\n\n**Two non-zero exits in this attempt, neither a defect in the deliverables.**\n\
+      - The first selftest call, wrapped in /usr/bin/time -l, returned 1 because the sandbox blocks that\
+      \ tool's system call. The selftest itself had printed SELFTEST PASS, and the unwrapped rerun exits\
+      \ 0.\n- The first dry-run check returned 1 because it reused a temporary directory left by an earlier\
+      \ dry run under another code stamp (4a1600ef…). The stale-checkpoint guard refused it, as designed.\
+      \ In a fresh directory it exits 0."
+    status: completed
+    failure_class: none
+    confidence: 0.9
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    files_written:
+    - experiments/drafts/E011.yaml
+    - experiments/runners/e011_run.py
+    - experiments/drafts/E011.dev_jobs.json
+    - research/notes/e011-dev-run.md
+    - research/o008_e011_dev/dev_summary.md
+    - research/o008_e011_dev/summarize.py
+    - research/o008_e011_dev/.gitignore
+    evidence:
+    - 'Fact, code stamp: a Python call to e011_run.code_stamp(spec) exited 0 and printed manifest==checkout
+      True and workdir==checkout True. Every field matches: code_tree_sha256 33dac5c7b2fc7a5e…, config_sha256
+      96d37c745505fde9…, n_files 38, and the code_under_test hashes.'
+    - 'Fact, spec validation: the spec-validation one-liner from the definition of done exited 0.'
+    - 'Fact, manifest file: `test -f experiments/drafts/E011.dev_jobs.json` exited 0.'
+    - 'Fact, lint: `uv run ruff check experiments/runners/e011_run.py` exited 0 (''All checks passed!'').'
+    - 'Fact, manifest one-liner: it exited 0. Status is ''complete: L1 stages done, L2 pending (burst
+      VM)'', and layouts include 2D_Case_2R and 2D_Case_4.'
+    - 'Fact, notes file: `test -f research/notes/e011-dev-run.md` exited 0.'
+    - 'Fact, experiment check: `uv run mfos exp check E011` exited 0.'
+    - 'Fact, selftest, first call: `/usr/bin/time -l uv run python experiments/runners/e011_run.py --selftest`
+      returned 1. Stderr shows ''time: sysctl kern.clockrate: Operation not permitted'' (the sandbox),
+      and the log ends with SELFTEST PASS.'
+    - 'Fact, selftest, rerun without the wrapper: `uv run python experiments/runners/e011_run.py --selftest`
+      exited 0, with 0 FAIL lines and SELFTEST PASS.'
+    - 'Fact, dry run, first call: `--dev-solve experiments/drafts/E011.dev_jobs.json --dry-run --workdir
+      $TMPDIR/e011_dryrun` returned 1 with StaleCheckpoint. That directory was left by an earlier dry
+      run with code_tree_sha256 4a1600ef…, so the refusal is the code-stamp guard working.'
+    - 'Fact, dry run in a fresh mktemp directory: it exited 0. It submitted 611 of 611 wave-1 jobs (611
+      distinct outputs) and rebuilt 339 fingerprints. Its counts per level match the manifest. It rebuilt
+      34 shortlist groups and would submit 170 of 170 wave-2 jobs; complete is true.'
+    - 'Fact, freeze report: `uv run python experiments/runners/e011_run.py --freeze-report` exited 0 with
+      ok true. frozen_sha256 is 61c7abc9f2075dbf… (equal to the recorded value), code_mismatch is empty,
+      and search_cfg_hash bdefe640d8cac683 equals the recorded one. The command only reads the spec, and
+      git status stayed clean.'
+    - 'Fact, smoke: `uv run python experiments/runners/e011_run.py --smoke` exited 0 after 498.5 s, with
+      6 rows.'
+    - 'Fact, smoke metrics: control_layout_pass_min 0.0, reach_outside_max 0.0, null_beaten_min 0.0, control_shortfall_median_max
+      0.1258.'
+    - 'Fact, smoke verdict: the preview is INVALID, as expected for smoke''s single uncounted gen2_0 layout.
+      The failed checks are F2_legacy_outside_2R and F2_coordinate_range_attached_form_2R, which test
+      2D_Case_2R, and 2D_Case_2R is not in the smoke run.'
+    - 'Fact, fast gate: `uv run mfos gate --fast` exited 0 (''all gates passed'').'
+    - 'Fact, unchanged files: git status was clean before and after all checks, so no deliverable or result
+      changed in attempt 5.'
+    - 'Fact, spot checks (python3 over the manifest): proxy 25 steps, ratio 0.91379, local_optimum on
+      2R; 73 steps, 0.65327, local_optimum on Case 4.'
+    - 'Fact, spot checks, nulls: widen 14–26 and compact 21–36 steps on 2R; widen 30–58 and compact 53–73
+      on Case 4. All 32 runs are local_optimum with seed_in_domain true.'
+    - 'Fact, spot checks, improvement curve: last-10 % median / max 0.001 / 0.009 on 2R and 0.028 / 0.060
+      on Case 4; last-25 % 0.013 / 0.030 and 0.109 / 0.162.'
+    - 'Fact, spot checks, Tj: W 398.10 K and W* 396.49 K on 2R; 398.08 K and 396.05 K on Case 4. The fallback
+      did not fire.'
+    - 'Fact, from attempt 4''s manifest, registered run: the phase-sequential model gives 170.2 h / $104
+      (learned memory, no redraws), 198.0 h / $121, 212.3 h / $130, and 246.4 h / $151 (prior memory,
+      every redraw). None fits timeout_min = 120 h.'
+    - 'Fact, from attempt 4''s manifest, development burst: 61.4–71.5 h and $38–44 on n2d-custom-8-81920.'
+    - 'Inference: Case 4''s 0.25 mm solves alone take about 81 of its roughly 109 h under the learned
+      memory figure, so the timeout gap comes mainly from Case 4''s 0.25 mm solves, which run only 3 at
+      a time.'
+    - 'Fact, memory: I could not read per-process RSS, because the sandbox blocks pgrep and ps process
+      lists. memory_pressure reported 67 % free before smoke and the gate ran together, and smoke''s L2
+      solves were estimated at 2.5–2.7 GB.'
+    alternative_explanations:
+    - explanation: The registered-run makespan (170–246 h) may be overstated. The wall times come from
+        E010's cost model (alpha 1.44, calibrated on Case 4). That model is 23 % high in unknowns on gen2_0,
+        and the L1 stage time on the VM is an assumed 1.8 times the Mac's.
+      how_to_discriminate: Compare the burst run's measured wall times per (layout, level) with the manifest's
+        est_wall_h_each and with the measured Case 4 0.25 mm peak RSS. If the walls are about 30 % lower,
+        the learned-memory scenario with no redraws comes near 120 h.
+    - explanation: The L1 indicator (5 of 8 draws within 2 % on 2R, 8 of 8 on Case 4) may not predict
+        A1, which is judged on L_sub at 0.25 mm. The speculation that 2R is the layout at risk could reverse
+        if the L2 ranking within a shortlist departs from L1 (F4).
+      how_to_discriminate: 'The burst''s L2 rows: compare the F4 rank correlation within each shortlist
+        with L_sub(best_j)/L_sub(W*) per draw.'
+    discriminating_tests:
+    - On the burst VM, measured wall time and peak RSS per job against the manifest's cost model. This
+      decides whether the 120 h timeout is the binding problem.
+    - The burst's L2 R_D per draw against the window [1.25, 1.60]. If most draws fall outside it, the
+      null step counts were measured at unrepresentative draws.
+    - A real `--dev-solve` on the burst submitting exactly 611 wave-1 jobs and 170 wave-2 jobs, as the
+      dry run predicts.
+    recommended_actions:
+    - 'Founder: the registered run does not fit timeout_min = 120 h in any modelled scenario (170–246
+      h, $104–151). Choose a longer timeout, a larger VM (more Case 4 0.25 mm solves at once), or parallel
+      or split layouts before registration.'
+    - 'Founder: decide the search budget from the improvement curve. Both layouts still improve at the
+      end of the 2000 evaluations, by under 1 % of the final gain in the last 10 % on 2R and up to about
+      6 % on Case 4. It is unchanged here.'
+    - 'Founder: confirm the spec''s rule that a null or search run ending in no_moves counts like a capped
+      run for A3 (never a resolved failure). Also confirm the frozen DC- reading, which changes the proxy
+      on 2R only.'
+    - Run the I0205 burst with `uv run python experiments/runners/e011_run.py --dev-solve experiments/drafts/E011.dev_jobs.json
+      --workdir <dir>` on n2d-custom-8-81920. Then run the later dev L2 analysis task (band bound, joint
+      operating characteristic, dev_rows, the A3 margins against the in-domain proxy).
+    - 'Orchestrator: list only spec files (E0xx.yaml) under experiment_drafts. Non-spec drafts such as
+      the job manifest go under files_written; this is the tooling quirk that failed attempt 4 and T0398.'
+    affects_acceptance_criteria: false
