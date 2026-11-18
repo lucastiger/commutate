@@ -67,5 +67,15 @@ log:
   once at full memory; (4) the proxy context reference is not compared with E004''s 2R slot reference;
   (5) hmax three-level estimate missing for the proxy pair; registration.json truncates internal redraws
   at 5000'
+- 'open review items 2026-11-18T10:52:10+00:00 (founder session; review T0467 of T0390, for the next E004
+  design task): (1) major: the F3 terminal ''bound'' (k0 contact grown from a 1 mm cell to a 3 x 3 mm
+  patch, 3.4 % on L in smoke) is too loose to answer F3''s 1 % question, and the founder flag ignores
+  it; measure the judged-level term (equipotential vs equal split over the 0.5 mm patch) or state that
+  F3''s terminal question stays open; (2) major: run_model_diagnostics runs before run.rows and solve.json
+  are written, so a timeout_min kill or SIGKILL during the 4-6 h of diagnostics loses the judged run;
+  write rows and solve.json first; (3) the round-vs-square wire term is the high-frequency limit, while
+  at 10-20 MHz r/delta is about 5.6 for a 0.3 mm Al wire, and FastHenry''s 2x2 filaments at k0 cannot
+  resolve skin effect, so the ''independent cross-check'' is only the scaling; (4) the self-tests check
+  plumbing only; (5) cpu_hours_est 541.9 is about twice O004''s 260 CPU-h'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
