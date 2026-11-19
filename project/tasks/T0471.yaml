@@ -4,7 +4,7 @@ title: 'E011 dev L2 analysis: R_D, band bound, joint operating characteristic an
   draft for registration'
 type: design_experiment
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "The E011 development burst is done (I0205; the founder ran it on GCP, 2026-11-18 and 19):\
   \ 743 EM solves, all ok and L2-converged, none missing. Results: research/o008_e011_dev/dev_l2 (dev_solve_summary.json\
@@ -110,4 +110,130 @@ lens: null
 trigger: null
 rationale: 'T0382 deferred the dev L2 analysis until after the founder''s burst (I0205); E011 cannot be
   registered without it. Critical risk: physics, numerics and statistics reviews, founder merge.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'I built E011''s development rows from the I0205 burst results with no new solves (e011_run.py
+    --dev-rows). The result: E011 is not ready to register as designed. On the dev draws the frozen design
+    gives A1 = 0.25 and A3 = 0, which is an INCONCLUSIVE verdict. O008 F1 requires A3 to be met on development
+    rows at registration, so E011 would fail its own registration check. The draft now says so, and the
+    founder decisions are listed in it and in the note.
+
+
+    Facts, all traceable to research/o008_e011_dev/dev_l2/dev_rows.json:
+
+    - **W\*.** At 0.25 mm the proxy choice keeps the descent on both layouts, so the provisional W* holds.
+    L_sub(W*)/L_sub(W) is 0.9376 on 2R and 0.7176 on Case 4.
+
+    - **R_D (a1).** At 0.25 mm, 2R ranges 1.209 to 1.406 (7 of 8 in [1.25, 1.60]) and Case 4 ranges 1.279
+    to 1.305 (8 o'
+  report:
+    summary: "I built E011's development rows from the I0205 burst results with no new solves (e011_run.py\
+      \ --dev-rows). The result: E011 is not ready to register as designed. On the dev draws the frozen\
+      \ design gives A1 = 0.25 and A3 = 0, which is an INCONCLUSIVE verdict. O008 F1 requires A3 to be\
+      \ met on development rows at registration, so E011 would fail its own registration check. The draft\
+      \ now says so, and the founder decisions are listed in it and in the note.\n\nFacts, all traceable\
+      \ to research/o008_e011_dev/dev_l2/dev_rows.json:\n- **W\\*.** At 0.25 mm the proxy choice keeps\
+      \ the descent on both layouts, so the provisional W* holds. L_sub(W*)/L_sub(W) is 0.9376 on 2R and\
+      \ 0.7176 on Case 4.\n- **R_D (a1).** At 0.25 mm, 2R ranges 1.209 to 1.406 (7 of 8 in [1.25, 1.60])\
+      \ and Case 4 ranges 1.279 to 1.305 (8 of 8). The out-of-window rate is 1/16. Review item 7 is confirmed:\
+      \ L2 sees 0.68 to 0.79 of the L1 headroom, so the L1 target 1.3875 lands near 1.28, just above the\
+      \ 1.25 floor. Redraws aim at the same target and do not correct this.\n- **Band bound (a2).** It\
+      \ holds for the search: 2R median 0.0034, max 0.0061; Case 4 median 0.0023, max 0.0027. Compact\
+      \ would also hold. Widen would not (median 0.012 to 0.019), but widen's s values are far from the\
+      \ line. Bound unchanged.\n- **Gated metrics (a3).** A1 = 0.25: 2R passes 2 of 8, Case 4 passes 8\
+      \ of 8. A2 = 0. A3 = 0: compact on 2R has 6 resolved failures and 6 paired wins, below the 7 needed;\
+      \ Case 4 compact sits exactly at the 4-resolved line. K1 = 0.0297, so it does not fire. 2R is the\
+      \ A1 risk (review item 6). Its misses come from L1 and L2 disagreeing near the optimum: within-shortlist\
+      \ Spearman is -0.95 to 0.25, and late L1 gains were under 1 %, so budget is not the limit.\n- **Ranking\
+      \ stability (a4).** The burst solved only each shortlist's best at 0.25 mm, so a direct comparison\
+      \ is impossible. The extra jobs would be 231 solves, about 129 solve-hours and about $25 to $30;\
+      \ not run. The level ratio q = L(0.25)/L(0.5) spans 0.25 % (2R) and 0.49 % (Case 4). That bounds\
+      \ the selection error at 0.25 and 0.48 percentage points. Every dev search s is an upper bound on\
+      \ the registered rule's s, because the registered rule takes the minimum over the same shortlist.\n\
+      - **Joint operating characteristic (b).** I defined c_k as the relative re-solve error of the single\
+      \ W* solve. W* is deterministic, so c_k ~ U(±solver tolerance), about 2e-5. The estimand is P(verdict)\
+      \ over the sealed seed as the evaluator judges it, not against exact inductance. Results: P(PASS)\
+      \ = 0, P(A1) = 0.0003, P(A3) = 0.23, P(INCONCLUSIVE) = 1. I report Clopper-Pearson and Bonferroni\
+      \ bounds beside these numbers because the bootstrap is degenerate with 8 draws.\n- **Registered-run\
+      \ size (d).** Measured 0.25 mm walls are 925 s (2R) and 3046 s (Case 4), 0.53 to 0.66 of the old\
+      \ model. Peak memory is 6.4 GB and 16.5 GB. Options, with a full-load sensitivity in brackets:\n\
+      \  - A: current 8-vCPU, 80 GB shape, 105 to 122 h, $65 to $75 (144 to 170 h, $89 to $104).\n  -\
+      \ B: 8 vCPUs with 96 GB, 92 to 105 h, $69 to $79.\n  - C: 16 vCPUs, 53 to 63 h, $66 to $78; only\
+      \ possible when no other burst runs.\n  The draft now has timeout_min 10800, which covers A in every\
+      \ scenario, and cpu_hours_est 495. The choice is left open.\n\nReview items:\n- **4, 5, 9: fixed\
+      \ in the runner.** The R_D placeholder is now recorded as None with a provisional flag. changed_from_D\
+      \ uses movable_indices. freq_hz comes from the spec. The Tj fallback is now reachable in dev mode;\
+      \ it is not due on either layout (Tj difference -1.62 K and -2.02 K).\n- **8: not done.** The research/o008_e011_dev/work\
+      \ checkpoints and the run log no longer exist anywhere on this machine. I recorded the hashes of\
+      \ what does exist (the manifest, dev_summary.md, the results tree).\n\nThe only change to the frozen\
+      \ block is filling band_bound.development_value, so frozen_sha256 was refreshed. Every design value\
+      \ is unchanged.\n\nCommands run, with exit codes:\n- `uv run python experiments/runners/e011_run.py\
+      \ --selftest` → 0 (SELFTEST PASS, run twice)\n- `uv run python experiments/runners/e011_run.py --dev-rows\
+      \ experiments/drafts/E011.dev_jobs.json --workdir research/o008_e011_dev/dev_l2` → 0 (run several\
+      \ times; the final run is on the committed code)\n- `uv run python experiments/runners/e011_run.py\
+      \ --freeze-report` → 0, ok true after the hash refresh\n- the spec-validation one-liner → 0\n- `uv\
+      \ run mfos exp check E011` → 0\n- `uv run mfos exp check E011 --rows research/o008_e011_dev/dev_l2/dev_rows.json`\
+      \ → 0; it reports A1 and A3 not satisfied\n- `uv run ruff check experiments/runners/e011_run.py\
+      \ experiments/runners/e011_metrics.py` → 0\n- `uv run mfos gate --fast` → 0 (\"all gates passed\"\
+      )\n- Committed as f594a465."
+    status: partial
+    failure_class: none
+    affects_acceptance_criteria: true
+    confidence: 0.85
+    evidence:
+    - 'dev_rows.json metrics: A1 control_layout_pass_min 0.25 (2R 2/8, Case 4 8/8), A2 0, A3 null_beaten_min
+      0 (2R compact resolved 6, paired 6), K1 0.0297; n7 and mfos.metrics agree; recompute_check empty'
+    - 'uv run mfos exp check E011 --rows research/o008_e011_dev/dev_l2/dev_rows.json: A1 not_satisfied,
+      A2 satisfied, A3 not_satisfied'
+    - 'per_layout: choose_proxy at lat0.25 keeps the descent on both layouts (L_sub ratio 0.9376 / 0.7176);
+      Wstar_equals_provisional true'
+    - 'R_D at 0.25 mm: 2R 1.209-1.406 (7/8 in window), Case 4 1.279-1.305 (8/8); (R_D-1)/(L1-1) 0.68-0.79'
+    - 'band_bound search: 2R median 0.0034 max 0.0061, Case 4 median 0.0023 max 0.0027 (holds)'
+    - 'joint_oc (B=20000, seed 20261119, 0 mismatches against e011_metrics on 200 replicates): P_PASS
+      0, P_A1 0.0003, P_A3 0.226, P_INCONCLUSIVE 1'
+    - 'rank_stability: one shortlist member per group solved at both levels; q spread 0.25 % (2R), 0.49
+      % (Case 4)'
+    - 'measured_sizing: Case 4 lat0.25 wall median 3046 s, peak max 16.5 GB; option A 105-122 h $65-75,
+      B 92-105 h $69-79, C 53-63 h $66-78'
+    - all 34 shortlist bests re-derived at lat0.5 equal the burst's dev_solve_summary selection
+    - research/o008_e011_dev/work and work_dev.log are absent from this worktree, main and every other
+      worktree under ~/mf/wt (find over the home directory found nothing)
+    recommended_actions:
+    - 'Founder decision 1 (blocking): do not register E011 as designed; the dev rows give A1 0.25 and
+      A3 0, and O008 F1 requires A3 met on dev rows. Choose between (a) a pre-registration redesign aimed
+      at 2R''s L1/L2 disagreement (for example L2 re-ranking of a larger shortlist, or a proxy that is
+      optimal at L2), which needs new dev rows and a new burst, or (b) taking the dev finding to the 11-27
+      thesis review without a registered run'
+    - 'Founder decision 2: keep the L1 degradation target 1.3875 (R_D about 1.28 at L2) or raise it to
+      about 1.59 so R_D centres in the window, if a redesign happens anyway'
+    - 'Founder decision 3: keep the search budget at 2000 (2R''s misses are not budget-limited)'
+    - 'Founder decision 4: adopt the T0444 no_moves rule as written (it bound on no dev run)'
+    - 'Founder decision 5: accept the manifest''s recorded improvement-curve brackets, or rerun --dev
+      deterministically on the stamped code (about 2 h local, including level-0 thermal solves) to commit
+      the checkpoint hashes (review item 8)'
+    - 'Founder decision 6: no registered-run VM money until decision 1 is made; after a redesign, option
+      C when no other burst runs, otherwise B, with a cap of about $110'
+    files_written:
+    - research/notes/e011-dev-l2-analysis.md
+    - research/o008_e011_dev/dev_l2/dev_rows.json
+    - experiments/drafts/E011.yaml
+    - experiments/runners/e011_run.py
+    experiment_drafts:
+    - experiments/drafts/E011.yaml
+    alternative_explanations:
+    - explanation: The 2R A1 misses come from selecting the shortlist best at 0.5 mm in dev instead of
+        0.25 mm, not from a real search shortfall
+      how_to_discriminate: Ruled out as the main cause by construction and by measurement. The 0.25 mm
+        best has L_sub no higher than the dev-selected member's, and q spread bounds the error at 0.25
+        points. Only one of six 2R misses (draw 0, s 0.0220) is within that. A direct check would solve
+        the 113 non-best 2R shortlist members at 0.25 mm (about 29 solve-hours)
+    - explanation: The 8 dev draws (one dev seed) are atypical, and registered draws would pass on 2R
+      how_to_discriminate: Cannot be excluded with 8 draws. Even at the one-sided 95 % upper bound on
+        2R's per-draw pass rate (0.59), P(A1 on 2R) is about 0.09. A second dev seed's draws would test
+        it, at the cost of another burst
+    discriminating_tests:
+    - Solve the 113 (2R) + 118 (Case 4) non-best shortlist members at 0.25 mm to measure ranking stability
+      directly (about 129 solve-hours, about $25-30); not run
+    - Re-solve L_sub(W*) at 0.25 mm on the registered VM shape and compare with the dev value, to check
+      c_k is within solver tolerance

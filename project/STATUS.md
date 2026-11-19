@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-19T15:23:04+00:00 from repository state — do not edit_
+_generated 2026-11-19T15:46:25+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -16,7 +16,7 @@ _generated 2026-11-19T15:23:04+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $91.48/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $96.74/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -28,20 +28,18 @@ _generated 2026-11-19T15:23:04+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 44 | $91.48 | 1532378 | 830907 | 120 | 0 |
+| O008 | 47 | $96.74 | 1631308 | 876332 | 120 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 417, failed: 4, running: 1, todo: 2
+cancelled: 47, done: 417, failed: 4, review: 1, running: 3, todo: 2
 
-- T0471 `running` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
+- T0471 `review` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
+- T0472 `running` critic/review: Review T0471 (physics) (attempt 1)
+- T0473 `running` critic/review: Review T0471 (numerics) (attempt 1)
+- T0474 `running` critic/review: Review T0471 (statistics) (attempt 1)
 
 ## Recent events
-- 2026-11-19T08:31:03+00:00 evaluation {"objective": "O002", "id": "EV-O002-01", "verdict": "PASS"}
-- 2026-11-19T08:31:19+00:00 run_started {"run": "T0469-critic-20261119T003119-af79", "task": "T0469", "role": "critic", "session": "52cddc6d-f0fb-4245-aac7-69750409fe98"}
-- 2026-11-19T08:31:23+00:00 run_started {"run": "T0470-critic-20261119T003123-e023", "task": "T0470", "role": "critic", "session": "ac00b5d3-dfb0-4c6d-9762-c5ba0e7297dc"}
-- 2026-11-19T08:36:10+00:00 run_finished {"run": "T0469-critic-20261119T003119-af79", "status": "completed", "cost": 1.789299, "subtype": "success", "report": "structured_output"}
-- 2026-11-19T08:37:38+00:00 run_finished {"run": "T0470-critic-20261119T003123-e023", "status": "completed", "cost": 2.541435, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T08:37:42+00:00 claim_recorded {"id": "C005", "status": "proposed"}
 - 2026-11-19T08:37:42+00:00 inbox_opened {"id": "I0259", "kind": "claim_approval", "subject": "[O002] approve the wording of claim C005"}
 - 2026-11-19T08:37:44+00:00 objective_passed {"objective": "O002", "evaluation": "EV-O002-01"}
@@ -52,3 +50,8 @@ cancelled: 47, done: 417, failed: 4, running: 1, todo: 2
 - 2026-11-19T15:12:20+00:00 run_started {"run": "T0471-scientist-20261119T071220-5fd9", "task": "T0471", "role": "scientist", "session": "ac5c8c88-b457-4163-b242-e4365faf745c"}
 - 2026-11-19T15:18:14+00:00 session_note_recorded {"objective": "O004", "about": "D0028 Linux self-test"}
 - 2026-11-19T15:22:27+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry k1 memory"}
+- 2026-11-19T15:40:26+00:00 run_finished {"run": "T0471-scientist-20261119T071220-5fd9", "status": "completed", "cost": 5.260949, "subtype": "success", "report": "structured_output"}
+- 2026-11-19T15:46:04+00:00 verified {"task": "T0471"}
+- 2026-11-19T15:46:17+00:00 run_started {"run": "T0472-critic-20261119T074617-b753", "task": "T0472", "role": "critic", "session": "0a54789d-3dd1-49d5-8116-405f4f96b0d1"}
+- 2026-11-19T15:46:21+00:00 run_started {"run": "T0473-critic-20261119T074621-827a", "task": "T0473", "role": "critic", "session": "4a88ca8f-d712-447a-a280-9a7a16b23216"}
+- 2026-11-19T15:46:25+00:00 run_started {"run": "T0474-critic-20261119T074625-c079", "task": "T0474", "role": "critic", "session": "ddc8e60e-42bf-4b4e-b75b-7db844655af8"}
