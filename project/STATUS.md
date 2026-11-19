@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-19T08:37:50+00:00 from repository state — do not edit_
+_generated 2026-11-19T08:39:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
@@ -37,7 +37,6 @@ cancelled: 47, done: 417, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-18T10:53:27+00:00 run_finished {"run": "T0468-critic-20261118T021820-5d1e", "status": "completed", "cost": 2.607875, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T11:23:29+00:00 inbox_opened {"id": "I0257", "kind": "protected_change", "subject": "T0390: merge needs founder approval"}
 - 2026-11-18T15:01:37+00:00 inbox_resolved {"id": "I0257", "status": "approved", "note": "T0390 merge approved, reviews T0467 and T0468 accept with caveats, logged in O004 state. E004 part 3: F3, F6, F8 
 - 2026-11-18T15:02:22+00:00 merged {"task": "T0390"}
@@ -52,3 +51,4 @@ cancelled: 47, done: 417, failed: 4, todo: 2
 - 2026-11-19T08:37:42+00:00 claim_recorded {"id": "C005", "status": "proposed"}
 - 2026-11-19T08:37:42+00:00 inbox_opened {"id": "I0259", "kind": "claim_approval", "subject": "[O002] approve the wording of claim C005"}
 - 2026-11-19T08:37:44+00:00 objective_passed {"objective": "O002", "evaluation": "EV-O002-01"}
+- 2026-11-19T08:39:27+00:00 founder_decision_recorded {"objective": "O002", "summary": "C005 approval after the 11-27 thesis review; final statement drafted with the reviews' limits"}
