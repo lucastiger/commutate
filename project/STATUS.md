@@ -1,10 +1,9 @@
 # ModuleForge status
-_generated 2026-11-19T17:12:08+00:00 from repository state — do not edit_
+_generated 2026-11-19T17:26:30+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0259** [claim_approval] [O002] approve the wording of claim C005
-- **I0261** [experiment_registration] register E011 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -37,7 +36,6 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-19T15:22:27+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry k1 memory"}
 - 2026-11-19T15:40:26+00:00 run_finished {"run": "T0471-scientist-20261119T071220-5fd9", "status": "completed", "cost": 5.260949, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T15:46:04+00:00 verified {"task": "T0471"}
 - 2026-11-19T15:46:17+00:00 run_started {"run": "T0472-critic-20261119T074617-b753", "task": "T0472", "role": "critic", "session": "0a54789d-3dd1-49d5-8116-405f4f96b0d1"}
@@ -52,3 +50,4 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 - 2026-11-19T16:57:30+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry burst limit 60 h"}
 - 2026-11-19T17:12:01+00:00 merged {"task": "T0471"}
 - 2026-11-19T17:12:02+00:00 inbox_opened {"id": "I0261", "kind": "experiment_registration", "subject": "register E011 (pre-registration)"}
+- 2026-11-19T17:26:00+00:00 inbox_resolved {"id": "I0261", "status": "rejected", "note": "Not registering now. T0471 finds E011 as designed expected INCONCLUSIVE (dev rows A1 0.25, A3 0, P(PASS) about 0)
