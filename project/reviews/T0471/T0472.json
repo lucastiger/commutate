@@ -1,0 +1,66 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Dev rows say A3 fails on 2R, but that rests on one draw's margin at a selection level the registered rule does not use",
+      "detail": "The development run picked each shortlist's best at 0.5 mm; the registered rule picks it at 0.25 mm. On 2R, compaction loses A3 by one paired win (6 of 7 needed). The deciding draw is draw 2: compact s minus search s is 0.0042, and the rule needs more than b_search + b_compact = 0.0029 + 0.0040 = 0.0069. The note's own selection_error_bound for 2R is 0.25 points (draw 2's 0.5 mm gap is 0), so under the registered rule draw 2's search s could fall to about 0.0229, a margin of about 0.0067. If the 0.25 mm best also had a smaller band than 0.0029 (2R search b ranges 0.0010-0.0061), the pair flips. That gives 7 paired wins, and with 6 resolved failures compaction would be beaten on 2R. Section 4 only asks whether the selection error can rescue A1, never A3. Because every dev search s is an upper bound, the joint P(A3) = 0.23 is biased low, and expected_outcome.A3 ('expected NOT met') is firmer than the data allow. P(PASS) \u2248 0 still holds: A1 on 2R is 2 of 8, with only draw 0 inside the 0.25-point reach.",
+      "evidence": "Recomputed from dev_rows.json: 2R draw 2 search s 0.0254 b 0.0029, compact s 0.0296 b 0.0040; draw 6 compact 0.0139 < search 0.0165 (cannot flip). rank_stability q_spread_rel 2R \u2248 0.0025; draw-2 screen gap 0.00000.",
+      "suggested_check": "Solve draw 2's 2R search shortlist (8 members) at 0.25 mm, or state in the note that A3 on 2R is within selection error of flipping on one draw.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Gated dev-row metrics and the joint OC count a draw the registered protocol would never score",
+      "detail": "2R draw 1 has R_D = 1.209, outside the frozen window [1.25, 1.60]. A registered run would redraw it and never score it. It is still in the A1/A3/K1 values on the dev rows (the `mfos exp check --rows` result) and in the bootstrap, where it is resampled with probability 1/8 per slot. Neither the note nor the spec says the gated values include an out-of-window draw. Without it, 2R A1 is 2/7 and compact paired wins are 5/7, so the conclusion does not change.",
+      "evidence": "Independent recompute: R_D 2R = [1.290, 1.209, 1.281, 1.296, 1.406, 1.285, 1.288, 1.310]; rows carry R_D_in_window false for draw 1, yet it is included in metrics and joint_oc arrays.",
+      "suggested_check": "Report the gated values and the OC with out-of-window draws excluded beside the current figures.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "P(FAIL) = 0 and P(INCONCLUSIVE) = 1 are degenerate bootstrap values, reported without the caveat",
+      "detail": "No dev 2R search s is above 0.05 (max 0.0497; three draws lie in 0.042-0.050). The resampling therefore cannot make K1 fire, and P(K1 not fired) = 1.0 and P(FAIL) = 0 follow automatically. The runner's own oc_lower_bounds give a one-sided 95 % lower bound of 0.78 per layout on 'K1 not', so P(FAIL) could be about 0.2 or more. config.joint_operating_characteristic.values and expected_outcome.joint state 'P(INCONCLUSIVE) 1' with no note of this. The note's degeneracy caveat covers only A1 at 8/8 and 0/8. The FAIL-vs-INCONCLUSIVE split matters for founder decision 1(b).",
+      "evidence": "dev_rows.json oc_lower_bounds.each.events['2D_Case_2R|K1_not'] P_event_at_p_L 0.783; joint_oc P_FAIL 0.0, P_INCONCLUSIVE 1.0.",
+      "suggested_check": "Report the K1 bound as an upper bound on P(FAIL) next to the plug-in value in the spec and the note.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Small numeric misstatement of the R_D level difference",
+      "detail": "The note says R_D at 0.5 mm differs from R_D at 0.25 mm by at most 0.0013. Recomputed from the raw solves, the maximum is 0.00146. This has no effect on any conclusion.",
+      "evidence": "max |L(D,0.5)/L(W*,0.5) - L(D,0.25)/L(W*,0.25)| = 0.0014626 over the 16 seed rows.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "The OC method was changed in the same task that produced its numbers",
+      "detail": "The c_k model changed from sigma = median b / 3.92 to U(-tau, tau) with tau the GMRES tolerance. That change and the values are in one snapshot, so 'method defined before the numbers' cannot be verified. Under the old sigma (about 0.0009), c_k shifts s by about 0.1 points, which cannot move P(PASS) away from about 0. There is no material forking-path effect.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran every definition-of-done command: `e011_run.py --selftest` (SELFTEST PASS), ExperimentSpec validation (id E011, objective O008, sealed_seed), `mfos exp check E011` (exit 0), ruff (clean). Also ran `mfos exp check E011 --rows dev_rows.json` (A1 0.25 not satisfied, A2 satisfied, A3 0 not satisfied).",
+    "Read raw `em_<level>_<fp>.json` L_H values directly, bypassing L2Table. All 96 rows' s match dev_rows.json exactly (max diff 0). The W* choice holds: descent strictly below W at 0.25 mm on both layouts, ratios 0.93759 and 0.71757.",
+    "Re-derived all 16 search shortlist bests (min L at 0.5 mm, ties broken by L1 rank) from the manifest's job purposes: all match the rows' fingerprints.",
+    "Recomputed b = 2\u00b7ratio_band_estimate from raw band-level L for all 96 rows (max diff 0), and R_D at 0.25 mm (max diff 0). Checked the (R_D-1)/(L1-1) ranges by hand: 2R 0.68-0.79, Case 4 0.70-0.74, as claimed.",
+    "Frozen hash: canon_sha(config.frozen) equals the recorded 5f540d0a\u2026. With band_bound.development_value set back to null, it reproduces the previous 61c7abc9\u2026 exactly, so only that value changed in frozen.",
+    "Checked O008 F1 (the registration check must show A3 met on development draws) and A3's paired rule (b_search + b_null). Both match e011_metrics and the vectorised joint_oc.",
+    "Recomputed the per-draw resolved and paired counts for compaction from the rows: 2R 6 resolved / 6 paired; Case 4 4 resolved / 8 paired. Both match.",
+    "Checked the bootstrap analytically: P(Bin(8, .25) \u2265 7) = 3.8e-4 (reported 0.0003/0.0004); P(Bin(8, .75) \u2265 7) = 0.367 (reported 0.36); P(Bin(8, .5) \u2265 4) = 0.637 (reported 0.63); product 0.23 (reported P_A3 0.226). Clopper-Pearson tails at p_L = 0.688 \u2192 0.23, and at the 2/8 upper bound of 0.59 \u2192 0.096. All as stated.",
+    "Measured sizing: from the raw 0.25 mm result files, median walls are 925 s (2R) and 3046 s (Case 4), max peak 6.43 GB and 16.53 GB, CPU/wall about 1.4 at 2 threads. All match the claims. The W* solves converged (gmres flag 0) with tol 1.85e-5 and 2.65e-5, which equals the tau used.",
+    "Tj: Tj(W*) - Tj(W) is -1.62 K and -2.02 K, so the fallback is not due. Spearman of L1 rank vs L(0.5 mm) on 2R ranges -0.95 to 0.25 (median -0.35). Both as claimed.",
+    "Read the R_D-provisional runner change (prov_fp cleared per wave; None plus provisional flag in record mode). The logic is consistent, and the selftest asserts it on fakes."
+  ],
+  "caveats": [
+    "The dev-row conclusion that A3 fails on 2R is within the 0.5 mm \u2192 0.25 mm selection error on one draw (draw 2). A1 failing on 2R (2 of 8) is robust, so 'do not register as is' and P(PASS) \u2248 0 stand. 'A3 expected NOT met' and P(A3) = 0.23 are conservative, not firm.",
+    "The OC figures are plug-in bootstraps from 8 draws per layout. P(FAIL) = 0 and P(INCONCLUSIVE) = 1 cannot be told apart from bootstrap support limits. The runner's own Clopper-Pearson K1 bound leaves P(FAIL) up to about 0.2 per layout.",
+    "The dev-row gated values include one out-of-window draw (2R draw 1, R_D 1.209) that a registered run would redraw.",
+    "Review item 8 (work-checkpoint hashes) is not done; the files are missing, which the work discloses and leaves as founder decision 5. The deliverable is complete only in the sense of being flagged.",
+    "Sizing and cost rest on burst walls measured at unrecorded concurrency, an assumed 16-vCPU price of 2 \u00d7 0.612 $/h and an unchecked extended-memory rate. The full-load sensitivity bounds the first of these. I did not re-run E010.simulate for the makespan figures.",
+    "Runner logic was checked on the selftest fakes and on the stored dev results. No new L2 solve was made, and I did not re-run `--dev-rows` end to end (its outputs were recomputed independently from the raw files instead)."
+  ]
+}

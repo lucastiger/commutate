@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The stated cause of the 2R misses rests on Spearman correlations over near-identical shortlist members, and the redesign example it suggests cannot fix 2R",
+      "detail": "The spec (expected_outcome.A1) and note \u00a73 attribute the 2R A1 misses to 'an L1/L2 disagreement near the optimum', citing within-shortlist Spearman correlations of L1 rank vs L(0.5 mm) of \u22120.95 to 0.25. In every 2R search shortlist, all 8 members' L(0.5 mm)/L(W*) \u2212 1 lie within 0.0000\u20130.0012 of each other (5 of 8 shortlists within 0.0003). That is below the 0.25 % level-to-level q spread the note itself reports, so those correlations rank noise between near-duplicates. For example, draw 7 has \u03c1 = \u22120.20 on a spread under 1e-5. The misses themselves are 0.2\u20133 points above the 2 % line. Re-ranking any existing 2R shortlist at L2 could change s by about 0.1 point at most. The data do support a different statement: the search's L1 basin sits 2\u20135 % above W* at L2 (L1 indicator 5/8 within 2 % vs L2 2/8; 2R search \u2248 proxy-alone s). They do not support within-shortlist misranking. The note's Speculation ('a larger L2 shortlist, or an L2 re-ranking step on 2R, would address F4') and founder decision 1(a)'s example ('L2 re-ranking of a larger shortlist') therefore point the founder's redesign choice at a remedy the dev data show to be ineffective, at least for re-ranking alone. The headline numbers are unaffected.",
+      "evidence": "From the solves (screen lat0.5), per 2R search_short_d0..d7, min/max of L/L(W*)\u22121: 0.0220/0.0228, 0.0446/0.0448, 0.0250/0.0253, 0.0492/0.0493, 0.0416/0.0417, \u22120.0100/\u22120.0087, 0.0166/0.0175, 0.0338/0.0338. rank_stability q spread 2R 0.25 %.",
+      "suggested_check": "Replace the Spearman argument with the shortlist L spread vs the miss size, and qualify decision 1(a) so that within-shortlist re-ranking is not presented as a candidate fix for 2R.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "The spec promises 'fixed-shift stress rows' for the common-mode error that do not exist",
+      "detail": "config.joint_operating_characteristic.c_definition says the old \u03c3_k construction 'is replaced by the fixed-shift stress rows below'. No such rows exist in the spec, in dev_rows.json (joint_oc has no shift key) or in the note. joint_oc's `shift` argument is never exercised. O008 scope_in asks the joint OC to include the common-mode error of the single L_sub(W*) solve. Under the revised estimand that error is only the solver tolerance (~2e-5), so the promised stress test is the only remaining sensitivity to a common-mode offset. My own bootstrap (B = 20000) with c_k = \u00b1median b_k/2, \u00b1median b_k and +max b_k gives P(PASS) \u2264 0.0004 in every case, because a shift that lifts A1 on 2R also removes Case 4 compact's resolved failures. The decision is therefore unaffected; this is a completeness defect.",
+      "evidence": "grep 'stress|shift' in E011.yaml finds only line 144. dev_rows.json joint_oc keys have no stress entry. Independent shift bootstrap: P(PASS) 0 / 0 / 0.00025 / 0.0004.",
+      "suggested_check": "Add the joint_oc(shift=\u00b1median b) rows to dev_rows.json and the spec, or delete the sentence.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "The upper-bound figure for P(A1 on 2R) is slightly understated",
+      "detail": "Note \u00a75 says the one-sided 95 % upper bound on 2R's per-draw pass rate (2 of 8) is 0.59 and gives P(A1 on 2R) of about 0.09. The exact Clopper-Pearson upper bound is Beta\u207b\u00b9(0.95; 3, 6) = 0.5997, and P(Bin(8, 0.5997) \u2265 7) = 0.106. This is the decision-relevant (upper) bound on P(PASS), and it is about 0.11, not 0.09. The conclusion (do not register as is) stands.",
+      "evidence": "scipy: beta.ppf(0.95, 3, 6) = 0.59969; binom.sf(6, 8, 0.59969) = 0.10605.",
+      "suggested_check": "Recompute with the unrounded bound and state P(PASS) \u2264 ~0.11 at 95 %.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "note",
+      "title": "The spec records only an uninformative lower bound on P(PASS)",
+      "detail": "joint_operating_characteristic.values gives bonferroni_lower_bound_P_PASS 0.0. A recommendation not to register needs an upper confidence bound on \u03c0, which appears only in the note's prose (and is slightly misstated, see above). The plug-in bootstrap is degenerate at 0/8 and 8/8, as the note acknowledges.",
+      "evidence": "",
+      "suggested_check": "Add a one-sided upper bound on \u03c0 (\u22480.11 from 2R A1 alone) to config.joint_operating_characteristic.values.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The selection-error bound is extrapolated from layouts that are not shortlist members",
+      "detail": "The 0.25 % (2R) and 0.48 % (Case 4) bound on how much the registered 0.25 mm selection could lower s uses q = L(0.25)/L(0.5) over 51 and 50 other layouts. No non-best shortlist member was solved at 0.25 mm. The direction is right (dev s is an upper bound on the registered s, so the OC is conservative for A1 and A3). For 2R draw 2, a paired win over compact needs s to drop by 0.27 points, against a 0.25 bound, so A3 on 2R is closer to flipping than the text suggests. The verdict is not affected, because 2R misses A1 regardless.",
+      "evidence": "",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all DoD commands: `e011_run.py --selftest` (SELFTEST PASS), the ExperimentSpec model_validate one-liner (via exp check), `mfos exp check E011` (exit 0), `mfos exp check E011 --rows dev_rows.json` (A1 0.25 not satisfied, A2 satisfied, A3 0 not satisfied), and ruff (clean).",
+    "Regenerated dev_rows.json with `--dev-rows ... --out $TMPDIR/...` and diffed it recursively against the committed file: 0 differences. The rerun left the worktree clean.",
+    "Recomputed s for all 96 rows and R_D from the raw em_lat0.25_<fp>.json solver files, independent of L2Table: max abs difference 0.0. Confirmed choose_proxy keeps the descent on both layouts (ratios 0.9376, 0.7176).",
+    "Hand-recomputed A1 (2R 2/8, Case 4 8/8), K1 (2R median 0.0297) and the A3 counts (2R compact 6 resolved / 6 paired; Case 4 compact 4 resolved / 8 paired; widen 8/8 on both) from the s, b and capped columns. Also checked ablation A1/K1 (c: 0, 0.093; e: 0, 0.059).",
+    "Independent joint-OC bootstrap (my own code, seed 12345, B = 20000): P(A1) 0.00025, P(A3) 0.234, P(PASS) 0, against the reported 0.0003, 0.226, 0. Exact binomials: 3.8e-4 for A1 at p = 0.25, 0.367 for paired 6/8, 0.637 for resolved 4/8. These match the per-layout figures within Monte Carlo error.",
+    "Checked Clopper-Pearson figures: 8/8 lower bound 0.6877 with tail 0.2317 \u2713; 1/16 upper bound 0.264 \u2713; Bonferroni A1 CI (0.022, 0.694) \u2713; 2/8 upper bound 0.5997 with tail 0.106 (the note says 0.59 / 0.09).",
+    "Common-mode shift stress that the spec promised and omitted: c_k = \u00b1median b/2, \u00b1median b and +max b. P(PASS) \u2264 0.0004 in all cases.",
+    "Recomputed frozen_sha256 with canon_sha: it matches 5f540d0a\u2026; setting band_bound.development_value back to null reproduces the old 61c7abc9\u2026, so no other frozen value changed.",
+    "Computed the L(0.5 mm) spread inside every search shortlist. 2R spreads are 0.0000\u20130.0012, which undermines the within-shortlist Spearman / L1-L2 misranking inference and the re-ranking redesign example.",
+    "Spot-checked measured sizing from the solve files: 0.25 mm median wall 925 s (2R) and 3046 s (Case 4), max peak 6.43 and 16.53 GB, 743 em results. All match the note."
+  ],
+  "caveats": [
+    "The headline result (on the dev draws: A1 0.25, A3 0, verdict INCONCLUSIVE; joint OC P(PASS) \u2248 0, so do not register as is) is reproduced and robust. The mechanism attributed to the 2R misses (within-shortlist L1/L2 misranking) is not supported by the data, and L2 re-ranking of the existing shortlist should not be treated as a candidate fix for 2R in founder decision 1(a).",
+    "The joint OC rests on 8 development draws per layout, resampled as i.i.d. given W* and independently across layouts. It is a planning figure, and the decision-relevant 95 % upper bound on P(PASS) is about 0.11 (from 2R's A1 alone), not 0.09.",
+    "The common-mode-error sensitivity that O008 scope_in asks for and the spec says is 'below' is absent. My independent stress shows it would not change the conclusion.",
+    "Dev search s uses 0.5 mm shortlist selection, whereas the registered rule selects at 0.25 mm. The joint OC is therefore conservative for A1 and A3. The bound on the difference (0.25 % / 0.48 %) is extrapolated from layouts outside the shortlists.",
+    "Cost and makespan options (A/B/C) were checked only for their measured inputs (walls, peaks), not for the scheduling simulation or pricing assumptions, which the note itself flags as unchecked."
+  ]
+}
