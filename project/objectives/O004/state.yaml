@@ -120,5 +120,14 @@ log:
   the cache (first-pass records: dev03 k0 ok, 25.74 nH at 10 MHz, 3893 s, 4.39 GB; case4 and standin k0
   killed_memory at 4.46 and 4.72 GB after 2036 and 3075 s; all three k1 killed_memory at 18.0-18.8 GB
   after 145-230 s)'
+- 'founder-session finding 2026-11-19 (no decision yet): FastHenry k0 on Linux with the D0028 build matches
+  the Mac exactly. case4_base k0_nh5 at full memory (alone, e2-highmem-8): ok, L 24.3017 nH at 10 MHz
+  and 24.2286 nH at 20 MHz, bit-identical to the unpatched Mac run (research/o004_f7/fh_local_probe.json),
+  3680 s, peak 4.47 GB (Mac 1115 s, 3.04 GB). The VM runs this deck 3.3x slower than the Mac even alone,
+  and 2.6x the job list''s projection (1389 s). Inference: k1 per deck on this VM is far above its 49,855
+  s projection; with D0002/T0389''s evidence that 0.5 mm cells run at least 5x their projection, case4
+  k1 may not finish within the burst''s 60 h, in which case the review gets a lower bound on k1''s run
+  time and no k0-to-k1 ratio step. FastHenry''s stdout is block-buffered into the job log, so a run cut
+  at the deadline leaves no progress record'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
