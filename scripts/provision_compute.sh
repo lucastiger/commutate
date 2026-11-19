@@ -2,7 +2,7 @@
 # Install and self-test the reference solvers ModuleForge experiments need.
 # Idempotent. macOS (Apple Silicon, Apple clang) and Ubuntu (gcc). Usage: scripts/provision_compute.sh [--force]
 #   ngspice   : Homebrew / apt
-#   FastHenry : built from the pinned wr tarball (project/decisions/D0002) into ~/.local/bin, then checked
+#   FastHenry : built from the pinned wr tarball (project/decisions/D0002) with one source fix (D0028) into ~/.local/bin, then checked
 #               against a closed-form inductance. --force rebuilds it.
 # FEniCSx is installed only when an objective needs it: see docs/INFRASTRUCTURE.md §5.
 set -euo pipefail
@@ -31,6 +31,27 @@ build_fasthenry() {
     exit 1
   fi
   tar -xzf "$work/fasthenry.tar.gz" -C "$work"
+  # D0028: the tarball's only source fix. spBuild.c's matStats reads the sparse package's MatrixPtr, but FastHenry
+  # passes it solver_sparse.c's spm wrapper, so it read past the wrapper and dereferenced what followed (SIGSEGV under
+  # glibc after every sparse preconditioner build; D0002's intermittent crash). Rename it and unwrap in solver_sparse.c.
+  python3 - "$src/src" << 'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+def edit(rel, old, new):
+    p = root / rel
+    t = p.read_text()
+    if t.count(old) != 1:
+        sys.exit(f"D0028 fix: anchor not found exactly once in {rel}")
+    p.write_text(t.replace(old, new))
+sig = "(void *mp, unsigned int *sz, unsigned int *nm, unsigned int *rc)"
+edit("sparse/spBuild.c", "void matStats" + sig, "void spMatStats" + sig)
+anchor = "char *matCreate(int size, int cplx, int *err)"
+edit("fasthenry/solver_sparse.c", anchor,
+     "void spMatStats(void*, unsigned int*, unsigned int*, unsigned int*);\n\n"
+     "void matStats(void *c, unsigned int *sz, unsigned int *nm, unsigned int *rc)\n"
+     "{\n    spm *m = (spm*)c;\n    spMatStats(m ? m->matrix : 0, sz, nm, rc);\n}\n\n" + anchor)
+PY
   # FastHenry is K&R-era C. Modern compilers reject it by default: clang >= 16 (including Apple's) and
   # gcc >= 14 turn implicit declarations, pointer mismatches and `return;` in implicit-int functions
   # into errors, and both default to
@@ -76,13 +97,17 @@ E1 N1 N2 w=0.001 h=0.001 nwinc=1 nhinc=1
 .end
 INP
 (cd "$t" && "$BIN/fasthenry" bar.inp > run.log 2>&1) || { echo "FastHenry self-test could not run:" >&2; tail -5 "$t/run.log" >&2; exit 1; }
-python3 - "$t/Zc.mat" << 'PY'
-import math, sys
+python3 - "$t/Zc.mat" "$t/run.log" << 'PY'
+import math, re, sys
 v = open(sys.argv[1]).read().splitlines()[2].split()
 L = float(v[1].rstrip("j")) / (2 * math.pi * 1e3) * 1e9
 ok = abs(L - 5.695) / 5.695 < 0.01
 print(f"FastHenry self-test: L = {L:.3f} nH (closed form 5.695 nH) -> {'PASS' if ok else 'FAIL'}")
-sys.exit(0 if ok else 1)
+# D0028: the unpatched build reads the preconditioner statistics from the wrong struct and prints matsize 0.
+m = re.search(r"matsize (\d+)", open(sys.argv[2]).read())
+fixed = m is not None and int(m.group(1)) >= 1
+print(f"FastHenry D0028 fix: matsize {m.group(1) if m else 'missing'} -> {'PASS' if fixed else 'FAIL (rebuild with --force)'}")
+sys.exit(0 if ok and fixed else 1)
 PY
 echo "ngspice:   $(command -v ngspice)"
 echo "fasthenry: $BIN/fasthenry"
