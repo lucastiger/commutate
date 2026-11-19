@@ -1,8 +1,7 @@
 # ModuleForge status
-_generated 2026-11-19T09:19:41+00:00 from repository state — do not edit_
+_generated 2026-11-19T15:08:46+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
-- **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
+## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0259** [claim_approval] [O002] approve the wording of claim C005
 
@@ -37,7 +36,6 @@ cancelled: 47, done: 417, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-18T15:01:37+00:00 inbox_resolved {"id": "I0257", "status": "approved", "note": "T0390 merge approved, reviews T0467 and T0468 accept with caveats, logged in O004 state. E004 part 3: F3, F6, F8 
 - 2026-11-18T15:02:22+00:00 merged {"task": "T0390"}
 - 2026-11-18T15:02:23+00:00 inbox_opened {"id": "I0258", "kind": "experiment_registration", "subject": "register E004 (pre-registration)"}
 - 2026-11-18T15:03:28+00:00 inbox_resolved {"id": "I0258", "status": "rejected", "note": "Premature: E004 needs the founder decisions on the FastHenry ladder, the span lower end, the CPU budget and timeo
@@ -52,3 +50,4 @@ cancelled: 47, done: 417, failed: 4, todo: 2
 - 2026-11-19T08:37:44+00:00 objective_passed {"objective": "O002", "evaluation": "EV-O002-01"}
 - 2026-11-19T08:39:27+00:00 founder_decision_recorded {"objective": "O002", "summary": "C005 approval after the 11-27 thesis review; final statement drafted with the reviews' limits"}
 - 2026-11-19T09:19:15+00:00 session_note_recorded {"objective": "O004", "summary": "FastHenry Linux crash root-caused (matStats overflow); D0028 proposed; E004 binary pin must be per-platform"}
+- 2026-11-19T15:08:44+00:00 inbox_resolved {"id": "I0205", "status": "approved", "note": "Done. The founder ran the E011 development burst on GCP (2026-11-18 and 19, phases 1 and 2): 743 EM solves, all o
