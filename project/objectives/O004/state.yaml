@@ -100,5 +100,11 @@ log:
   E004 design item for the thesis review: config.solve.fasthenry.pinned_binary_sha256 pins the Mac binary
   and can never match a Linux VM build; it must become per-platform (or tarball plus fix with each host''s
   sha256 recorded) before registration.'
+- 'founder-session finding 2026-11-19 (no decision yet): D0028 on Linux. The FastHenry rerun burst (e2-highmem-8,
+  ref session/fasthenry-d0028-2026-11-19 at 3f464c01) built the patched binary, passed the provisioning
+  D0028 check (matsize >= 1) and the runner self-test (5.704 nH, closed form 5.695 nH). Linux x86-64 patched
+  binary sha256 076689243ccf57a192dbccf0e4799b9fb179cba8b57842143bbf39f97142e546 (unpatched Linux build
+  68113939..., Mac patched efe594de..., Mac unpatched eaa6d6fc...). All six k0/k1 jobs started 15:17 UTC;
+  the earlier crashed burst''s records are in research/o004_f7/fh_solves_unpatched_crash'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38

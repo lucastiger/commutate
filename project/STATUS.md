@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-19T15:12:20+00:00 from repository state — do not edit_
+_generated 2026-11-19T15:18:13+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -37,7 +37,6 @@ cancelled: 47, done: 417, failed: 4, running: 1, todo: 2
 - T0471 `running` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
 
 ## Recent events
-- 2026-11-18T15:03:28+00:00 inbox_resolved {"id": "I0258", "status": "rejected", "note": "Premature: E004 needs the founder decisions on the FastHenry ladder, the span lower end, the CPU budget and timeo
 - 2026-11-18T15:19:49+00:00 founder_decision_recorded {"objective": "O004", "summary": "measure FastHenry k0/k1 on Case 4, then decide at the thesis review; E004 agent work paused"}
 - 2026-11-19T08:31:03+00:00 evaluation {"objective": "O002", "id": "EV-O002-01", "verdict": "PASS"}
 - 2026-11-19T08:31:19+00:00 run_started {"run": "T0469-critic-20261119T003119-af79", "task": "T0469", "role": "critic", "session": "52cddc6d-f0fb-4245-aac7-69750409fe98"}
@@ -52,3 +51,4 @@ cancelled: 47, done: 417, failed: 4, running: 1, todo: 2
 - 2026-11-19T15:08:44+00:00 inbox_resolved {"id": "I0205", "status": "approved", "note": "Done. The founder ran the E011 development burst on GCP (2026-11-18 and 19, phases 1 and 2): 743 EM solves, all o
 - 2026-11-19T15:12:01+00:00 task_added {"task": "T0471"}
 - 2026-11-19T15:12:20+00:00 run_started {"run": "T0471-scientist-20261119T071220-5fd9", "task": "T0471", "role": "scientist", "session": "ac5c8c88-b457-4163-b242-e4365faf745c"}
+- 2026-11-19T15:18:14+00:00 session_note_recorded {"objective": "O004", "about": "D0028 Linux self-test"}
