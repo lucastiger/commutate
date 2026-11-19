@@ -1,10 +1,10 @@
 # ModuleForge status
-_generated 2026-11-19T16:35:24+00:00 from repository state — do not edit_
+_generated 2026-11-19T17:12:08+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0259** [claim_approval] [O002] approve the wording of claim C005
-- **I0260** [protected_change] T0471: merge needs founder approval
+- **I0261** [experiment_registration] register E011 (pre-registration)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -33,15 +33,10 @@ _generated 2026-11-19T16:35:24+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 420, failed: 4, needs_founder: 1, todo: 2
+cancelled: 47, done: 421, failed: 4, todo: 2
 
-- T0471 `needs_founder` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
 
 ## Recent events
-- 2026-11-19T15:08:44+00:00 inbox_resolved {"id": "I0205", "status": "approved", "note": "Done. The founder ran the E011 development burst on GCP (2026-11-18 and 19, phases 1 and 2): 743 EM solves, all o
-- 2026-11-19T15:12:01+00:00 task_added {"task": "T0471"}
-- 2026-11-19T15:12:20+00:00 run_started {"run": "T0471-scientist-20261119T071220-5fd9", "task": "T0471", "role": "scientist", "session": "ac5c8c88-b457-4163-b242-e4365faf745c"}
-- 2026-11-19T15:18:14+00:00 session_note_recorded {"objective": "O004", "about": "D0028 Linux self-test"}
 - 2026-11-19T15:22:27+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry k1 memory"}
 - 2026-11-19T15:40:26+00:00 run_finished {"run": "T0471-scientist-20261119T071220-5fd9", "status": "completed", "cost": 5.260949, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T15:46:04+00:00 verified {"task": "T0471"}
@@ -53,3 +48,7 @@ cancelled: 47, done: 420, failed: 4, needs_founder: 1, todo: 2
 - 2026-11-19T15:52:48+00:00 run_finished {"run": "T0472-critic-20261119T074617-b753", "status": "completed", "cost": 1.977752, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T16:23:40+00:00 inbox_opened {"id": "I0260", "kind": "protected_change", "subject": "T0471: merge needs founder approval"}
 - 2026-11-19T16:29:23+00:00 session_note_recorded {"objective": "O008", "about": "T0471 review items"}
+- 2026-11-19T16:35:39+00:00 inbox_resolved {"id": "I0260", "status": "approved", "note": "Merge T0471 (E011 development L2 analysis). Reviews T0472-T0474 accept with caveats, logged in O008 state. This i
+- 2026-11-19T16:57:30+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry burst limit 60 h"}
+- 2026-11-19T17:12:01+00:00 merged {"task": "T0471"}
+- 2026-11-19T17:12:02+00:00 inbox_opened {"id": "I0261", "kind": "experiment_registration", "subject": "register E011 (pre-registration)"}
