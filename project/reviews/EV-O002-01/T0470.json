@@ -1,0 +1,62 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Pooled A1 hides a stratum where L1 misses the 0.5 K pair-difference criterion (interleaved/2)",
+      "detail": "A1 is a p95 pooled over all 7440 same-stratum pairs of the 15 strata. Per stratum at P_ref, interleaved/2 has p95 0.503 K, max 0.599 K, and a layout-cluster bootstrap 97% upper bound of 0.569 K. Every other stratum's p95 is at most 0.322 K. This stratum also has the lowest reference diversity (SD of the hottest-die average 0.86 K), and L1's per-layout error there is noisy (SD 0.10-0.12 K on LS die 1), not a hottest-die switch effect. In the derivative regime a user works inside one stratum, so 'difference between two layouts of the same stratum within 0.5 K' holds pooled but not per stratum for interleaved/2. Ranking is still right: Spearman 0.997, and every pair with a reference difference above 0.5 K is ordered correctly. The pre-registered per-stratum reporting rule covers only A2 and A4, so this was not surfaced.",
+      "evidence": "Recomputed from rows.json (kind=layout, load=P_ref, pairs i<j within stratum): interleaved/2 p95 0.503, max 0.599, boot97 0.569; u_shaped/2 0.322 (boot 0.380); u_shaped/6 0.311; all others <= 0.237. Pooled 0.23645 reproduces the runner exactly.",
+      "suggested_check": "Report per-stratum A1 with its V4 bound and limit any per-stratum reading of the claim, or exclude interleaved/2.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Per-stratum A4 is near the 0.5 threshold in the 2-die strata",
+      "detail": "The pooled A4 is 0.116 (bound 0.133), but the per-stratum point ratios at P_ref are 0.470 for side_by_side/2 and 0.418 for u_shaped/2. The 2-3 band's reported upper bound is 0.46. With 32 layouts (64 switch rows), per-stratum bounds in these strata very likely exceed 0.5, so 'within half the error of a stratum-mean predictor' is not established per 2-die stratum.",
+      "evidence": "Per-stratum p95|spread_L1 - spread_ref| / p95|spread_null - spread_ref| from switch rows: side_by_side/2 0.197/0.419 = 0.470; u_shaped/2 0.343/0.821 = 0.418; all other strata <= 0.181. reports.json per_band_A4 '2-3' ci upper 0.4616.",
+      "suggested_check": "State the per-stratum A4 values beside the claim; do not read A4 as holding per 2-die stratum.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Hottest-node Tj (the rated quantity) is outside the claim and poorly predicted and resolved",
+      "detail": "L1's coarse hottest node reads 0.86 K high on average (p95 |err| 1.40 K, max 1.99 K, uncalibrated). The reference's own hottest-node error estimate is infinite on 9 subset rows because the hot spot moves. The hottest-node minus die-average gap exceeds 2 K in all 15 strata (max 5.9 K), which the spec names as a founder-decision trigger. The die-average yardstick ASSUMES founder decision 5, due at the 11-27 thesis review, which has not happened yet.",
+      "evidence": "rows.json die rows at P_ref: mean(tj_max_l1 - tj_max_ref) 0.858 K, p95 1.403, max 1.987; reports.json f6 n_strata_gap_over_2K 15, hottest_node_estimate_n_infinite 9; metrics f1_max_tjmax_gci_K = Infinity.",
+      "suggested_check": "Keep the claim explicitly die-average-only until decision 5 is taken; do not use L1 hot-node values for rating checks.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Judging at level 1 does not flatter L1",
+      "detail": "On the 12-layout level-2 subset, L1's errors against level 2 are the same as or smaller than against level 1. A2-type p95 goes from 0.0070 to 0.0062, A3-type p95 from 0.072 to 0.077 K, and 10 of 12 pair-difference errors shrink (e.g. u_shaped_3 -0.209 to -0.169 K; extrapolated -0.137 K). The largest level-1 reference error in a pair difference is 0.089 K, well inside A1's margin (bound 0.263 vs 0.5).",
+      "evidence": "f1 rows (lv0, lv1, lv2) joined with layout, die and switch rows; observed orders p = 0.7-1.7.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "L1 has a small systematic low-side bias and slightly exaggerates layout differences",
+      "detail": "Low-side dies read hotter: u_shaped/6 has bias +0.25 K when LS is hottest against about 0 when HS is hottest; interleaved strata have mean hottest-die biases of +0.2 to +0.46 K. The regression slope of L1 on the reference's hottest-die average is 1.02-1.07. Neither changes the gated criteria, but L1's own choice of hottest switch can flip on close HS/LS ties.",
+      "evidence": "Per-stratum grouping by (hot_switch, hot_die_index) and polyfit on layout rows.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed A1 from rows.json with my own pair construction, not mfos.metrics: pooled p95 0.2364472949587166 at P_ref and 0.1101 at 0.5 P_ref, equal to the runner's values; per-stratum p95, max and a 2000-rep layout-cluster bootstrap 97% bound for all 15 strata",
+    "Regenerated 5 judged layouts from plan_frozen.json sealed sub-seeds (interleaved_2_j00/j07/j19, u_shaped_6_j03, side_by_side_5_j11); fingerprints match; re-ran moduleforge.thermal.evaluate locally (macOS ARM vs the Linux x86 VM): max |L1 - rows tj_l1_K| <= 6.5e-11 K at both loads; 0.23-0.33 s per evaluation",
+    "Re-solved the frozen scikit-fem reference (E007 fem_rule, level 1) on interleaved_2_j07 at P_ref locally: 548195 DOF (same as the VM), 59 s, 2.1 GB peak; die averages and hottest nodes match the cached solve to 1.4e-12 K; energy balance 6e-15",
+    "Compared L1 against reference levels 1, 2 and Richardson-extrapolated values on the F1 subset (pair differences, die averages, spreads) to test whether level-1 judging flatters L1: it does not",
+    "Per-stratum A4 point ratios from switch rows at P_ref",
+    "Per-stratum ranking agreement (Spearman, pairwise order, pairs with |dref| > 0.5 K) and regression slope of L1 on the reference's hottest-die average",
+    "A5 timing distribution and host from work/l1_phase.json (median 0.602 s, p95 0.88 s, max 0.98 s, n = 960, all thread variables = 1, gcp x86_64 burst host)",
+    "L1 hottest-node error and reference hottest-node minus die-average gap from die rows"
+  ],
+  "caveats": [
+    "Every criterion holds pooled over strata. Per stratum, A1 is not met in interleaved/2 (p95 0.503 K, bootstrap upper about 0.57 K), and A4 is near 0.5 in side_by_side/2 (0.47) and u_shaped/2 (0.42). The claim must not be read as a per-stratum guarantee.",
+    "The claim covers die-average Tj only. L1's hottest node reads 0.86 K high on average (max 2.0 K) and the reference's hottest node is not converged on 9 subset rows. The yardstick depends on founder decision 5 at the 11-27 thesis review, which has not happened yet.",
+    "A5 (0.60 s median) was measured on the single gcp n2d burst host; other hosts need their own timing (spec scope_limits).",
+    "The reference's level-1 discretisation error is measured only on the 12-layout level-2 subset (max 0.089 K for pair differences). Elsewhere it is inferred, though the A1 margin (0.263 bound vs 0.5) absorbs it.",
+    "This was a numerics review: I verified the reference's reproducibility, not its physics against analytic or experimental values (that rests on C004/O007)."
+  ]
+}

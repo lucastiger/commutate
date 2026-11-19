@@ -1,0 +1,55 @@
+id: I0259
+kind: claim_approval
+subject: '[O002] approve the wording of claim C005'
+summary: 'Draft statement (the hypothesis): On DRC-valid wire-bonded half-bridge layouts from moduleforge.generate
+  on the default DBC stack (with die-attach and SiC die layers), with one die size per (family, dies)
+  stratum (the derivative regime: the die is fixed), in steady state with temperature-dependent conductivity,
+  coolant at 65 °C and a uniform heat-transfer coefficient of 5000 W/(m² K) at the baseplate, at two load
+  levels (P_ref, equal power per die such that the hottest node of the stratum''s development layout rises
+  60 K above the coolant at the reference''s level 0, the calibration rule of claim C004; and 0.5 P_ref),
+  a fast L1 thermal model (median at most 1 s per evaluation on one core) predicts, against the verified
+  scikit-fem thermal reference of claim C004 and at each load level, for the die-average junction temperature
+  (the yardstick): the difference between two layouts of the same stratum within 0.5 K; each die''s value
+  within 3 % of its die-local rise; and the spread across each switch''s paralleled dies within 1 K and
+  within half the error of a stratum-mean predictor (each as a 95th percentile, upper 95 % bound), on
+  fresh sealed seeds. The claim is for these criteria jointly: A3 (spread within 1 K) and A5 (speed) are
+  each met by a layout-ignorant predictor on their own; A1 and A4 are the criteria that separate L1 from
+  the F2 nulls (reviews T0371, T0372).
+
+  Scope from the sampled domain: Sampled: coolant_K: 338.15; cpu: x86_64; die_size_mm: 4.0, 4.5, 5.0,
+  5.5; dies_per_switch: 2, 3, 4, 5, 6; family: interleaved, side_by_side, u_shaped; h_W_m2K: 5000.0; judged_level:
+  1; load: P_ref, half_P_ref; stack: default DBC (Al2O3 0.38 mm) with SAC305 die attach and 4H-SiC die.
+  Declared scope_in (not checked against the samples): generator families of moduleforge.generate, 2-6
+  parallel dies per switch, the default DBC stack and housing with die-attach and SiC die layers added;
+  one die size drawn per stratum and used for every layout in it; C004''s scope. Every (family, die-count
+  band) cell is sampled, the bands being 2-3 and 4-6 dies per switch; a claim beyond the strata drawn
+  is not made; steady state; k(T) for every layer material from cited sources; coolant 65 °C; uniform
+  h = 5000 W/(m² K) at the baseplate bottom; equal power per die, uniform over each die''s top area, at
+  P_ref and 0.5 P_ref per stratum, P_ref fixed before any judged solve by the calibration rule above;
+  Tj at P_ref within the SiC rating (sanity check); the yardstick is each die''s average junction temperature
+  over its top face (a Galerkin integral on the reference, the L1 model''s own average), with the spread
+  per switch over its paralleled dies; the hottest die of a layout is the die the reference ranks hottest
+  by its die average at the judged level, for L1 and the reference alike; the hottest-node Tj of each
+  die is reported, not gated. This ASSUMES the founder''s decision 5 at the 11-27 thesis review (die-average
+  gated, hottest node reported); if the review decides otherwise, this draft is revised before approval;
+  the reference is solvers.thermal_fem at its frozen grid rule (O007; code_must_match on the files of
+  EV-O007-01), judged at level 1 with level-2 checks on a frozen subset (F1), or at level 2 if the development
+  check of F1 shows level 1 insufficient. E010''s three-level solves on 2D_Case_2R (research/notes/o002-reference-convergence.md)
+  give level-2 estimates of 0.11-0.16 K for absolute die averages but only up to 0.044 K for pair differences
+  and 0.049 K for spreads, and level-1-to-level-2 steps of pair differences of at most 0.036 K
+
+  Critic caveats: 11. Approve at a terminal with `uv run mfos claim approve C005` (optionally --statement-file
+  / --scope).'
+refs:
+- C005
+- O002
+- EV-O002-01
+options:
+- approve as drafted
+- approve with a narrower wording
+recommendation: ''
+status: open
+response: ''
+created_at: '2026-11-19T08:37:42+00:00'
+resolved_at: null
+resolved_by: null

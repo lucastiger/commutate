@@ -1,0 +1,107 @@
+id: C005
+statement: 'On DRC-valid wire-bonded half-bridge layouts from moduleforge.generate on the default DBC
+  stack (with die-attach and SiC die layers), with one die size per (family, dies) stratum (the derivative
+  regime: the die is fixed), in steady state with temperature-dependent conductivity, coolant at 65 °C
+  and a uniform heat-transfer coefficient of 5000 W/(m² K) at the baseplate, at two load levels (P_ref,
+  equal power per die such that the hottest node of the stratum''s development layout rises 60 K above
+  the coolant at the reference''s level 0, the calibration rule of claim C004; and 0.5 P_ref), a fast
+  L1 thermal model (median at most 1 s per evaluation on one core) predicts, against the verified scikit-fem
+  thermal reference of claim C004 and at each load level, for the die-average junction temperature (the
+  yardstick): the difference between two layouts of the same stratum within 0.5 K; each die''s value within
+  3 % of its die-local rise; and the spread across each switch''s paralleled dies within 1 K and within
+  half the error of a stratum-mean predictor (each as a 95th percentile, upper 95 % bound), on fresh sealed
+  seeds. The claim is for these criteria jointly: A3 (spread within 1 K) and A5 (speed) are each met by
+  a layout-ignorant predictor on their own; A1 and A4 are the criteria that separate L1 from the F2 nulls
+  (reviews T0371, T0372).'
+scope: 'Sampled: coolant_K: 338.15; cpu: x86_64; die_size_mm: 4.0, 4.5, 5.0, 5.5; dies_per_switch: 2,
+  3, 4, 5, 6; family: interleaved, side_by_side, u_shaped; h_W_m2K: 5000.0; judged_level: 1; load: P_ref,
+  half_P_ref; stack: default DBC (Al2O3 0.38 mm) with SAC305 die attach and 4H-SiC die. Declared scope_in
+  (not checked against the samples): generator families of moduleforge.generate, 2-6 parallel dies per
+  switch, the default DBC stack and housing with die-attach and SiC die layers added; one die size drawn
+  per stratum and used for every layout in it; C004''s scope. Every (family, die-count band) cell is sampled,
+  the bands being 2-3 and 4-6 dies per switch; a claim beyond the strata drawn is not made; steady state;
+  k(T) for every layer material from cited sources; coolant 65 °C; uniform h = 5000 W/(m² K) at the baseplate
+  bottom; equal power per die, uniform over each die''s top area, at P_ref and 0.5 P_ref per stratum,
+  P_ref fixed before any judged solve by the calibration rule above; Tj at P_ref within the SiC rating
+  (sanity check); the yardstick is each die''s average junction temperature over its top face (a Galerkin
+  integral on the reference, the L1 model''s own average), with the spread per switch over its paralleled
+  dies; the hottest die of a layout is the die the reference ranks hottest by its die average at the judged
+  level, for L1 and the reference alike; the hottest-node Tj of each die is reported, not gated. This
+  ASSUMES the founder''s decision 5 at the 11-27 thesis review (die-average gated, hottest node reported);
+  if the review decides otherwise, this draft is revised before approval; the reference is solvers.thermal_fem
+  at its frozen grid rule (O007; code_must_match on the files of EV-O007-01), judged at level 1 with level-2
+  checks on a frozen subset (F1), or at level 2 if the development check of F1 shows level 1 insufficient.
+  E010''s three-level solves on 2D_Case_2R (research/notes/o002-reference-convergence.md) give level-2
+  estimates of 0.11-0.16 K for absolute die averages but only up to 0.044 K for pair differences and 0.049
+  K for spreads, and level-1-to-level-2 steps of pair differences of at most 0.036 K'
+status: proposed
+objective: O002
+evaluation: EV-O002-01
+reviews:
+- T0469
+- T0470
+caveats:
+- A1-A4 are pooled 95th percentiles over 15 strata. Per stratum, interleaved/2 at P_ref is at the 0.5
+  K A1 threshold (point p95 0.503 K, max 0.60 K), so the 0.5 K pair-difference accuracy is not established
+  for every (family, dies) stratum a derivative re-layout would search in.
+- For 2-die switches, L1's spread error is about 0.42-0.47 of the stratum-mean null's (point estimates),
+  and in u_shaped/2 it is comparable to the spread itself. The pooled A4 margin comes from 3-6 die strata,
+  whose large spreads are mostly set by family and die count.
+- The yardstick is the die average. The reference hottest node exceeds the die average by more than 2
+  K in all 15 strata (up to 5.9 K), so under O002 F6 a founder decision is due before a search relies
+  on die-average Tj alone; the claim says nothing about the hottest node.
+- Agreement is with the level-1 reference, which sits about 0.3 K (about 0.7 % of rise) below its level-2-plus-estimate
+  value in absolute die averages. L1 was calibrated to level 1 and inherits this bias. Relative and pairwise
+  quantities are much less affected (checked on the subset).
+- Both models share the stack and k(T) laws, so E007 validates L1's numerical approximation of the reference,
+  not the material physics. The result also holds only at this operating point (Tj up to 130 °C, h = 5000,
+  the default DBC stack) and for the random generator layouts drawn. L1-selected layouts reached 0.51
+  K pair error (F7, reported).
+- A5 is the median on the burst VM recorded in the run; other hosts need their own timing.
+- Every criterion holds pooled over strata. Per stratum, A1 is not met in interleaved/2 (p95 0.503 K,
+  bootstrap upper about 0.57 K), and A4 is near 0.5 in side_by_side/2 (0.47) and u_shaped/2 (0.42). The
+  claim must not be read as a per-stratum guarantee.
+- The claim covers die-average Tj only. L1's hottest node reads 0.86 K high on average (max 2.0 K) and
+  the reference's hottest node is not converged on 9 subset rows. The yardstick depends on founder decision
+  5 at the 11-27 thesis review, which has not happened yet.
+- A5 (0.60 s median) was measured on the single gcp n2d burst host; other hosts need their own timing
+  (spec scope_limits).
+- The reference's level-1 discretisation error is measured only on the 12-layout level-2 subset (max 0.089
+  K for pair differences). Elsewhere it is inferred, though the A1 margin (0.263 bound vs 0.5) absorbs
+  it.
+- 'This was a numerics review: I verified the reference''s reproducibility, not its physics against analytic
+  or experimental values (that rests on C004/O007).'
+created_at: '2026-11-19T08:37:42+00:00'
+domain:
+  family:
+  - interleaved
+  - side_by_side
+  - u_shaped
+  dies_per_switch:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  die_size_mm:
+  - 4.0
+  - 4.5
+  - 5.0
+  - 5.5
+  load:
+  - P_ref
+  - half_P_ref
+  coolant_K:
+  - 338.15
+  h_W_m2K:
+  - 5000.0
+  judged_level:
+  - 1
+  stack:
+  - default DBC (Al2O3 0.38 mm) with SAC305 die attach and 4H-SiC die
+  cpu:
+  - x86_64
+approved_by: null
+approved_at: null
+scope_restrictions: []
+annotations: []
