@@ -1,0 +1,896 @@
+{
+  "experiment_id": "E007",
+  "run_id": "E007-20261117T205235-8a84",
+  "status": "complete",
+  "seed": 1137143241,
+  "config": {
+    "coolant_K": 338.15,
+    "h_W_m2K": 5000.0,
+    "target_rise_K": 60.0,
+    "calibration_tol_K": 0.25,
+    "calibration_max_iters": 10,
+    "power_start_W": 30.0,
+    "loads": {
+      "P_ref": 1.0,
+      "half_P_ref": 0.5
+    },
+    "judged_level": 1,
+    "subset_levels": [
+      0,
+      1,
+      2
+    ],
+    "energy_tol": 1e-06,
+    "picard_tol_K": 0.0001,
+    "tj_limit_K": 448.15,
+    "metric_names": {
+      "A1": "dtj_pair_err_p95_K_max_load",
+      "A2": "tjavg_local_rel_err_p95_max_load",
+      "A3": "switch_spread_err_p95_K_max_load",
+      "A4": "switch_spread_err_ratio_vs_stratum_mean",
+      "A5": "l1_eval_s_p50",
+      "A1_own": "dtj_pair_err_ownhot_p95_K_max_load"
+    },
+    "f1": {
+      "step_floor_K": 0.01,
+      "diff_tol_K": 0.1,
+      "abs_rel_tol": 0.01,
+      "l1_vs_l2_tol_K": 0.1,
+      "subset_layouts_per_cell": 2,
+      "node_growth_tol": 0.15,
+      "subset_rule": "per (family, band) cell, in the fixed order of FAMILIES x BANDS: one stratum of the cell drawn from the l2_subset stream of the sealed seed, then 2 of its judged layouts without replacement; written to plan_frozen.json before any solve. Levels 0 and 2 are solved at both loads (level 1 is the judged solve). Level-1 error = |v1 - v2| + mfos.metrics.gci_step_floor(v0, v1, v2, 0.01 K); die averages <= 1 % of the level-1 die-local rise; spreads and same-stratum pair differences (hottest die by the level-1 die average, held fixed across levels) <= 0.1 K, and |v1 - v2| <= 0.1 K",
+      "source": "O002 F1; research/notes/o002-f1-dev-check.md (T0393; level 1 confirmed, research/o002_f1/f1_dev_check.json status complete, commit 87f639df)"
+    },
+    "allocation": {
+      "source": "research/o002_e007/allocation_m32.json",
+      "source_sha256": "6b3ac73780ee86f1db0af0f96234167b0d3d511aeaa3a8a6508d2a81f2f671e5",
+      "layouts_per_stratum": 32,
+      "n_strata": 15,
+      "n_layouts": 480,
+      "decision": "D0027 decision 2 (founder, 2026-11-18; amends D0025 decision 2): m = 32 layouts per (family, dies) stratum, 480 in all, for kill-side power. The fixed allocation is research/o002_e007/allocation_m32.json (T0464), which the freeze check reads per stratum together with the bound and which cites T0456. History: D0025 decision 2 had m = 20, 300 layouts, provisional, with f3_simulation.json's allocation (T0396, sha256 0071c857...), kept unchanged",
+      "power_coverage_evidence": "T0456's corrected simulation, research/o002_e007/a4_strata/sim_corrected.json (seed 20261456, 1000 reps per cell, V4 bound; its consistency check passed: simulated median A4 0.108 normal / 0.107 t3 against 0.107 measured). At m = 32, for the L1 as measured on development rows: joint power 1.000 (normal) / 1.000 (t3), Wilson 95 % MC interval [0.996, 1]; A4 power 1.000 / 1.000 [0.996, 1]; minimum V4 coverage over A1-A4 and K1-K3 0.974 [0.962, 0.982] (normal) / 0.981 [0.971, 0.988] (t3), 0.984 / 0.985 in the kill cells, and 0.971 or better in every cell at every m from 20 to 40. Kill side, every error scale raised so that each kill statistic's truth is 1.2 x its kill threshold: P(K1 fires) 0.812 [0.787, 0.835] (normal) / 0.581 [0.550, 0.611] (t3); P(K2 fires) 1.000 / 1.000 [0.996, 1]; P(K3 fires) 0.576 [0.545, 0.606] / 0.354 [0.325, 0.384]. Intervals are Monte Carlo only; the simulation over-predicts A3 by 30-40 % (measured A3 outside its 5-95 % band), so the kill-side rates are approximate (D0027 context). Figures and sha256 in allocation_m32.json power_coverage_evidence (research/o002_e007/t0464/make_allocation_m32.py)"
+    },
+    "bound": {
+      "ci_spec": {
+        "scheme": "woodruff",
+        "level": 0.94,
+        "cluster": "layout"
+      },
+      "crit": "t",
+      "rounding": "outward",
+      "ratio": "bonferroni",
+      "variant": "V4_t_outward_bonferroni_l094",
+      "statement": "one-sided 97 % bounds (Woodruff quantile bound, delete-one-layout jackknife, t(K-1), outward rounding) for A1-A4 and K1-K3; under the max over the two loads the upper bound is the max of the per-load upper bounds and the K1/K2 lower bound is the max of per-load lower bounds at 98.5 % (Bonferroni); A4/K3 by the Bonferroni quotient. More conservative than O002's 'upper 95 % bound' for passes and kills (a somewhat higher chance of INCONCLUSIVE): accepted by the founder, D0025 decision 1. Power (f3_simulation.json, D0025 context): at 0.6 x each threshold, joint power under t3 errors is 0.748 / 0.898 / 0.958 at m = 16 / 20 / 24; the 0.898 is really the power of A1, A2 and A4, since A3's power is 1.0 in that scenario (review T0420 (4)). For the L1 as measured on development rows (A4 = 0.366), joint power at m = 20 is 0.531 under t3 and 0.967 under normal errors, A4 alone driving the shortfall (T0434; simulated at m = 20 only). The two figures are different scenarios. m was resolved only on the grid {12, 16, 20, 24, 32}: an m between 16 and 20 needs a fresh simulation (review T0420 (5))",
+      "decision": "D0025 decision 1 (founder, 2026-11-17T01:26:21+00:00): CISpec(scheme='woodruff', level=0.94, cluster='layout'); the bound is mfos.metrics.quantile_ci (patch route I0211, merged on main in da2118fc). Every recompute entry except l1_eval_s_p50 carries this ci, as the row contract says"
+    },
+    "per_stratum_rule": "fixed before the run (F3, review T0420 (3)): A2 per (family, dies) stratum (statistic: max over loads of the p95 of |Tj,avg,L1 - Tj,avg,ref| / die-local rise over the stratum's dies; bound: the same V4 Woodruff bound on the stratum's rows, layouts as units); A4 per die-count band 2-3 and 4-6 (statistic: A4's ratio on the band's switch rows at P_ref; bound: V4 ratio bound). Reported, not gated. With 32 layouts per stratum the per-stratum A2 upper bound is expected to sit at the stratum maximum or at +inf (q + t(31) se of the share near 1; review T0436; t(19) at the former m = 20): reports.json gives each stratum's point, bound, maximum and an upper_informative flag, and the counts of infinite and informative upper bounds; a per-stratum bound is never read as precise",
+    "seeds": {
+      "streams": "numpy SeedSequence([seed, stream, *index]) -> 32-bit seeds: die_size 1, layouts 2, f7 3, timing_order 4, l2_subset 5, f7_strata 6; each stratum and pool its own index",
+      "pref_dev_seed": 20261101,
+      "pref_dev_rule": "per stratum: generate_layouts(1, 20261101, family, dies, die_size_mm = the stratum's sealed die size)[0], the development layout of C004's calibration rule (equal to C004's own development layout when the stratum is side_by_side/6 or u_shaped/2 and the size is 5.0 mm); used only for P_ref, never judged",
+      "forbidden": [
+        20261101,
+        20261115,
+        20261116,
+        20261117,
+        20261118,
+        20261395,
+        20261398,
+        831496695,
+        7,
+        20261103,
+        20261399,
+        20261456
+      ],
+      "forbidden_sources": "20261101 E009/C004 development seed; 20261115 T0392 development seed; 20261116 T0392 bootstrap seed; 20261117 and 20261118 F3 simulation seeds (T0396 rounds 1 and 2); 20261395 T0395 fresh development seed (chose the 1.5 mm grid: development rows, never judged evidence); 20261398 T0398 development seed (config.dev.dev_seed); 831496695 E009's sealed seed (C004's fresh layouts); 7 E009 smoke seed; 20261103 thermal_fem AMG seed; 20261399 T0398 F3 follow-up simulation seed (research/o002_e007/stats_sim_dev.py); 20261456 T0456 development seed (6 extra layouts in interleaved/2, side_by_side/2 and u_shaped/6, research/o002_e007/dev_rows_a4_strata.json) and its power-simulation streams"
+    },
+    "c004": {
+      "dev_fingerprints": [
+        "1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b",
+        "6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6"
+      ],
+      "fresh_fingerprints": [
+        "02f6fc1064bf6e677738e51050d7c2ac7b593fb0a4e54c5ab9911129df0536e6",
+        "0a25a72a24d09bff63f01b031606d485aea551e0e7789f59611fd2206801e4d9",
+        "51319fab0ef49705e581a404ab5a358100fac8115c2a0e7328d92316cc56b560"
+      ],
+      "other_dev_fingerprints": [
+        "bbbac5e8c6c64bddee9b94802ad26dae0ae8ffcaa61b2732319b14345fbad8ae",
+        "2207858e43e3a1c00215927324bd9511eadcf9e679611adaa60622ee84e5f165"
+      ],
+      "source": "E009 run E009-20261107T162152-a3cf domain.layout_fingerprint; research/o002_f1/f1_dev_check.json partners"
+    },
+    "f7": {
+      "pools_per_cell": 2,
+      "draws_per_pool": 40,
+      "rule": "per (family, band) cell: the pools' strata drawn from the f7_strata stream without replacement (2-3 band: both strata; 4-6: two of three); per pool, draws_per_pool layouts from its own f7 stream at the stratum's die size; the optimised layout is the draw with the lowest L1 hottest-die average (max over dies of L1's die average) at P_ref, ties to the lowest index. Solved by the reference at the judged level at both loads; its A1-type errors against every random judged layout of the same stratum reported (p95 and max per pool and load), not gated"
+    },
+    "nulls": {
+      "isolated_die": {
+        "k_at_K": 363.15,
+        "n_modes": 400,
+        "definition": "T_bp(all dies) + [box_series(die alone on the five substrate layers, laterally uniform over the baseplate, constant k at 363.15 K) - (T_c + P_i / (h A))] + P_i (t_attach / k_attach + t_die / k_die) / A_die: no inter-die coupling (solvers.thermal_series, Muzychka et al. 2003 / Carslaw and Jaeger 1959 Sec. 3.6)"
+      },
+      "die_position": "per (family, dies, load, switch, die_index): mean reference die average of the other layouts of the stratum (leave-one-layout-out)",
+      "stratum_mean": "die averages: per (family, dies, load, switch) the mean reference die average over every die of that switch in the other layouts; spreads: spread_null_K, the mean reference spread of the other layouts per (family, dies, load, switch); both leave-one-layout-out",
+      "applies": "every null is computed at both loads. null_baselines applies each of the three nulls to A1 (dtj_pair_err_p95_K_max_load) and A4 (switch_spread_err_ratio_vs_stratum_mean) only, so mfos's evaluator marks A1 or A4 non_discriminating if a null meets it at its bound. A2 and A3 are not in applies_to: O002 F2 requires each null to fail A1 and the spread nulls to fail A4, and nothing else; the hypothesis says A3 (and A5) are each met by a layout-ignorant predictor on their own and that A1 and A4 separate L1 from the nulls; the A3 description says a stratum-mean spread may meet A3 alone. Development data agree (research/notes/o002-l1-design.md null table: stratum_mean and die_position A3-type 0.411 / 0.193 K, under A3's 1 K), so applying the nulls to A3 would make E007 unable to PASS (review T0436, the blocker of attempt 1). All three nulls predict spreads (null (c) max - min of its per-index means, null (a) its per-die isolated values), so all three are applied to A4. The gated sanity check f2_null_discrimination applies F2's point rule at P_ref on the judged rows. A2 and A3 of every null are reported (A2 also per stratum); the die-position null's A4 is close to the stratum-mean null's by construction (a max of leave-one-out means is at most the mean of maxima; equal when the same die indices are hottest and coldest in every layout; review T0435)"
+    },
+    "l1": {
+      "module": "src/moduleforge/thermal/__init__.py",
+      "method": "fv_coarse_xcal",
+      "grid_rule": {
+        "h0_max": 0.0015,
+        "lat_frac": 16.0,
+        "edge_frac": 2.0,
+        "z_cells": 2
+      },
+      "calibration": {
+        "4.0": 0.98544,
+        "4.5": 0.98284,
+        "5.0": 0.98298,
+        "5.5": 0.98402
+      },
+      "calibration_version": "o002-l1-cal-v2",
+      "picard_tol_K": 0.01,
+      "timing": "A5 = median wall time of L1.evaluate per (layout, load) over the 960 judged evaluations (32 x 15 strata x 2 loads), in one subprocess with OMP/OPENBLAS/MKL/VECLIB/NUMEXPR thread variables = 1, after every P_ref calibration solve (level 0, development layouts) has finished and before any judged reference solve, with no solve running, in the sealed timing order, after one uncounted warm-up evaluation on a P_ref development layout. Every other L1 evaluation of the run (F4 constant-k ablation, F7 pools, F7 optimised layouts at half load) follows in the same process, untimed for A5. Host (reviews T0449/T0450 (5)) - A5 is timed on the host that runs the registered run's L1 phase, fixed here as the burst VM of compute option A (config.compute.vm.machine, the policy's route; the L1 phase records node, platform and processor in l1_phase.json and the run's domain records cpu). If the founder chooses option B, the host of the L1 phase is fixed in that decision before registration. T0398's development A5 was timed on the founder's Mac (Apple silicon), a development figure, not the registered host",
+      "freeze_note": "frozen at T0395's merged design (lateral grid cap 1.5 mm; calibration table from benchmarks/thermal_l1_calibration.py). T0395's fresh-seed rows (seed 20261395) chose the grid: development rows, never judged evidence"
+    },
+    "fem_rule_path": "research/o007_dev3/frozen_config.json",
+    "fem_rule_file_sha256": "0226b7709e2554013008a05f05d952bf646711edc0eb5967498864417a120e9a",
+    "fem_rule": {
+      "amg_gs_sweeps": 2,
+      "amg_seed": 20261103,
+      "candidate_id": "a_q1h4_graded_gs2",
+      "cg_eligibility_limit": 300,
+      "cg_maxiter": 400,
+      "dz_max_m": 0.001,
+      "edge_grading": {
+        "first_offset_m": 0.0001,
+        "max_offset_m": 0.004,
+        "min_gap_fraction": 0.5,
+        "ratio": 2.5
+      },
+      "element_order": 1,
+      "feasible": true,
+      "h0_m": 0.004,
+      "levels": [
+        0,
+        1,
+        2
+      ],
+      "levels_missing": {},
+      "linear_rtol": 1e-11,
+      "mandatory_lines": "box-stack mode: x and y lines through every source centroid (built in) and through the frozen reference maximum of every source (extra_lines); layout mode (manufactured case): x and y lines through every frozen reported point and maximum, z lines at their (interface) heights; generator layouts: none (Tj max = max nodal value on the die top face). Snapping: production SNAP_FRACTION 1e-2 of the level-0 cell; every snap recorded and the node at the snapped coordinate reported. Edge grading: production GridRule.edge_grading in both modes; in layout mode the fixed set also holds every layout geometry line (T0227/T0231).",
+      "min_cells": 2,
+      "near_margin_m": 0.002,
+      "nz_min": 1,
+      "picard_tol_K": 0.0001,
+      "quadrature": {
+        "faces": "3x3 Gauss (intorder 4)",
+        "manufactured_data": "4x4x4 / 4x4 Gauss (intorder 7)",
+        "stiffness": "2x2x2 Gauss (Q1)"
+      },
+      "rationale": "candidate a_q1h4_graded_gs2 verified eligible on every criterion at level 2 (sec. 0.2); only candidate. Pre-registered rule: research/notes/o007-dev-study3.md sec. 0 (commit 1cd23ad8); T0228 candidate 1 (research/o007_dev2/frozen_config.json) key for key plus amg_gs_sweeps = 2.",
+      "refinement_ratio": 2,
+      "snap_fraction": 0.01,
+      "zrefine": true
+    },
+    "thermal_fem_path": "src/moduleforge/solvers/thermal_fem.py",
+    "thermal_fem_sha256": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753",
+    "freeze": {
+      "files": {
+        "research/o002_e007/e007_metrics.py": "ed1ffbf6ae72a905ef550d2c694676028d2103fd1309957df3c7ed43cdd474a2",
+        "src/moduleforge/__init__.py": "8497b6ec8f6a31584b8a2caece91c5de82622a7c5262b3770d8ffcf42053c8de",
+        "src/moduleforge/drc/__init__.py": "d4e956db315452c839cc3821a8b0a14f98a6c5f871cc9f3417177216a6a2ab03",
+        "src/moduleforge/drc/rules.py": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
+        "src/moduleforge/generate/__init__.py": "194f83ccb880033d9fba9299ee09c1d0e8bd5e966f131a4515134af751e6df39",
+        "src/moduleforge/generate/halfbridge.py": "321c08ab97044d669f7d9d01f3fb33d584fa1a0be2a387a67cda3ba8b8ccc301",
+        "src/moduleforge/geometry/__init__.py": "9d585508033546b121219c944193e50ad0ed6a39a48b256e4ba2759b6c5c2b44",
+        "src/moduleforge/geometry/conductors.py": "e9a21349fa36cd3c66d004f98c5468d4c954e9baced0503213c68a05a9b7b9df",
+        "src/moduleforge/geometry/layout.py": "4e95052d8138d67d4f68413b5160315302554e24a731084c74924807a31a3543",
+        "src/moduleforge/geometry/stack.py": "b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999",
+        "src/moduleforge/geometry/units.py": "49b5fb83312b557e82f7b7eb014c54f077466c9207e113e19f6a7f1b5f953bcb",
+        "src/moduleforge/solvers/__init__.py": "f68728d9696592932ccc80819431f3d27be9733aad103230c93dad7e8d99e443",
+        "src/moduleforge/solvers/thermal_fem.py": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753",
+        "src/moduleforge/solvers/thermal_fv.py": "408efd57718941618ca7d176c293f52d058cf48cd65d33575fab7ad8fa5a309e",
+        "src/moduleforge/solvers/thermal_layout.py": "016569982e6ecd150f54ba2403c286102a98144269f09743f9880cdf8722acf6",
+        "src/moduleforge/solvers/thermal_series.py": "96fdff3c78d5406e01c7df31064e08e5e121d5f5c858b50587df7d4342dba466",
+        "src/moduleforge/thermal/__init__.py": "5ef21412f7166b17e34856e90f82e3455f4182f5183452eaa364f1072259d08e"
+      },
+      "thermal_layout_note": "T0395 changed src/moduleforge/solvers/thermal_layout.py (keyword overrides, defaults unchanged; 5a43758d... -> 016569982...); E006, E008, E009 and E010 record its hash, so a re-run of those experiments records a new hash for it with no change in behaviour (reviews T0423/T0424). geometry/stack.py also differs from E009's recorded hash (f213fed1... -> b032ef2d...)"
+    },
+    "compute": {
+      "bytes_per_dof": {
+        "0": 4964.065014991321,
+        "1": 4400.0,
+        "2": 4964.065014991321
+      },
+      "memory_margin": 1.15,
+      "base_rss_GB": 0.3,
+      "cpu_s_per_dof": {
+        "0": 0.000125,
+        "1": 0.000195,
+        "2": 0.000818
+      },
+      "local_cap_GB": 5.0,
+      "swap_stop_GB": 8.0,
+      "calibration_solves_expected": 3,
+      "l1_s_per_eval": 0.6,
+      "vm": {
+        "machine": "n2d-custom-8-81920-ext",
+        "ram_GB": 78.0,
+        "vcpus": 8,
+        "memory_fraction": 0.85,
+        "usd_per_h": 0.612,
+        "overhead_h": 0.5
+      },
+      "sources": "bytes/DOF: level 1 raised from 3400 to 4400 by T0456 (packet item 4). Convention (T0464, review T0463 (3)): bytes_per_dof EXCLUDES base RSS, i.e. (peak RSS - base_rss_GB) / DOF, because the runner's memory admission (Jobs.est_gb) and --plan both use DOF x bytes_per_dof x memory_margin + base_rss_GB. Recomputed from experiments/drafts/E007.dev_rows.json meta.reference_cpu_wall (T0398's 90 level-1 solves): max 4.32 kB/DOF with base RSS (0.3 GB) excluded, 4.98 kB/DOF with it included (both side_by_side_2_j02 half_P_ref, 2.27 GB at 0.455 M DOF); T0456's 36 level-1 solves 4.33 / 4.99 kB/DOF. The earlier source text's 4.29 kB/DOF was neither of these. On all 126 measured level-1 solves the admission estimate is 1.15 to 2.24 x the measured peak RSS (never below it; 1.82 is the maximum over T0398's 90 solves, 2.24 over T0456's 36; review T0465). Previously T0392's 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md); levels 0 and 2 E009 fem_bytes_per_dof (conservative at level 0). CPU s/DOF: levels 0-1 the slowest cached frozen-rule solves in research/o002_l1/cache (0.12 and 0.19 ms/DOF, wall = CPU assumed, one effective thread); level 2 T0243's burst rate 585 us/DOF (research/notes/o002-f1-dev-check.md); T0398 measures cpu_s and wall_s of one level-2 solve. VM price: the founder's figure for this machine (E010 spec, research/o002_f1/burst_level2.sh)",
+      "convention": "D0025 decision 3 (founder, 2026-11-17T04:25:17+00:00): O002's cpu_hours budget counts the CPU time the solver processes use, as run records measure it, not burst-VM vCPU-hours; VM time is costed in dollars",
+      "plan_summary": "e007_run.py --plan (T0397 attempt 2, 2026-11-17, development-seed proxies, 2 per stratum and die size): 717 reference solves (600 judged + 24 F7 + 48 subset levels 0 and 2 + 45 calibration); 1693 L1 evaluations (0.3 CPU-h). Expected die-size mix 56.7 CPU-h (upper, every die 5.5 mm: 61.1), process CPU time, within O002's 100; above policy local_cpu_hours_max = 6, so burst per policy. Option A, all on the VM: 25.4 VM-h, $15.54 (upper 29.1 h, $17.79). Option B, what fits 5 GB locally one at a time (22.2 CPU-h, about 22 h wall) then the rest on the VM: 22.6 VM-h, $13.84 (upper 26.3 h, $16.11). Over the 5 GB local cap: level 1 of side_by_side/6, interleaved/6 and u_shaped/6 (5.0-5.5 GB with the 0.3 GB base RSS; F7's 4-6 band too in the upper case) and every level-2 subset solve (28-45 GB expected, 48-77 min each; one at a time on the VM's 66 GB usable). D0025's 'about 52 CPU-hours' predates this plan. T0398: option A's packed VM figure needs --max-procs 8 --mem-cap-gb 66.3 (one at a time: 57.2 VM-h, $35.00; --plan prints both). Level 1 measured on the 90 development solves (Apple M, one thread): 0.136 ms/DOF median CPU (max 0.262), CPU/wall 0.994, peak up to 4.3 kB/DOF (above the 3.4 kB/DOF used here); cpu_s_per_dof is kept because the registered host differs, so --plan's CPU-hours and cpu_hours_est (57.0) are unchanged. No level-2 solve fits the local 10 GB limit (smallest development layout 3.48 M DOF, est. 20.2 GB): its cpu_s / wall_s are listed for the burst (research/o002_e007/l2_timing/job.json). SUPERSEDED at m = 32 by plan_summary_m32",
+      "plan_summary_m32": "e007_run.py --plan at m = 32 (T0464, 2026-11-17; D0027 decision 2; output research/o002_e007/t0464/plan_m32.json and plan_m32.txt; same proxies and per-DOF rates as above): 1077 reference solves (960 judged + 24 F7 + 48 subset levels 0 and 2 + 45 calibration); 2413 L1 evaluations (0.4 CPU-h). Expected die-size mix 74.1 CPU-h (judged 46.0, subset level 2 26.2, F7 1.1, calibration 0.2, subset level 0 0.1, L1 0.4); upper (every die 5.5 mm) 78.9 CPU-h. Process CPU time (D0025 decision 3), within O002's 100 CPU-hours; m = 20 was 56.7 / 61.1. Burst per policy (local_cpu_hours_max = 6). Option A, packed on the VM (--max-procs 8 --mem-cap-gb 66.3): 27.7 VM-h, $16.92 (upper 31.3 h, $19.15); one at a time 74.6 VM-h, $45.63 (upper 79.4 h, $48.57). Option B (19.5 CPU-h locally, one solve at a time, then the VM): 25.2 VM-h, $15.43 (upper 28.8 h, $17.62). Margin to 100 CPU-h: the 24 level-2 subset solves use T0243's 585 us/DOF, not yet measured on this code; the total stays within 100 unless level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower, which the level-2 timing burst (research/o002_e007/l2_timing/, two jobs) checks before registration",
+      "level2_measured": "founder level-2 burst 2026-11-18 (research/o002_e007/l2_timing/record*.json, frozen runner, n2d-custom-8-81920): side_by_side_2_j00 3.48 M DOF, 2384 CPU-s, 929 s wall, 10.9 GB peak (685 us/DOF); interleaved_2_j01 4.19 M DOF, 3423 CPU-s, 1358 s wall, 13.4 GB peak (817 us/DOF), energy balance <= 1.7e-12. cpu_s_per_dof level 2 set to the slower 818 us/DOF (1.40 x the 585 assumed). Regenerated --plan at m = 32: 84.5 CPU-h expected, 90.7 upper, process CPU time, within O002's 100; option A packed 36.1 VM-h, $22.06 (upper 41.1 h, $25.14); option B 33.6 VM-h, $20.57; one at a time 85.0 VM-h, $52.02. Supersedes plan_summary_m32's figures. Reference convergence on interleaved_2_j01 (review T0463 (5)): the level-1 reference spread is 0.271 / 0.269 K (HS / LS) against 0.243 / 0.238 K at level 2, within F1's 0.1 K; L1's spread error is -0.040 / -0.048 K against level 1 but -0.012 / -0.017 K against level 2, so about 70 % of it on this layout is level-1 reference discretisation, which makes level-1 judging of A4 conservative"
+    },
+    "scope_limits": [
+      "F6: the hottest-node discretisation estimate (levels 0-2, step-floor rule) exists only on the 12-layout level-2 subset; every other die reports its level-1 hottest node without an error estimate (reviews T0435 (7), T0449/T0450 (6))",
+      "F2: the die-position null is not independent of the stratum-mean null for A4: its spread is the max - min of leave-one-out per-index means, at most the mean of the per-layout spreads by construction (equal when the same die indices are hottest and coldest in every layout), so its A4 adds little beyond the stratum-mean null (review T0435 (7))",
+      "A5 is measured on one host (config.l1.timing); a claim about another machine needs its own timing"
+    ],
+    "dev": {
+      "dev_seed": 20261398,
+      "layouts_per_stratum": 3,
+      "workdir": "research/o002_e007/dev_work",
+      "f7": false,
+      "l2_subset": false,
+      "die_size_mm": {
+        "side_by_side/2": 4.0,
+        "side_by_side/3": 4.5,
+        "side_by_side/4": 5.0,
+        "side_by_side/5": 5.5,
+        "side_by_side/6": 4.0,
+        "interleaved/2": 4.5,
+        "interleaved/3": 4.0,
+        "interleaved/4": 5.5,
+        "interleaved/5": 5.0,
+        "interleaved/6": 4.5,
+        "u_shaped/2": 5.0,
+        "u_shaped/3": 5.5,
+        "u_shaped/4": 4.0,
+        "u_shaped/5": 4.5,
+        "u_shaped/6": 5.5
+      },
+      "note": "--dev (T0398): every family at every die size, interleaved/3 at 4.0 mm (T0423/T0424), recorded development seed 20261398, level 1, no level-2 subset or F7 (local); rows to experiments/drafts/E007.dev_rows.json. Its meta carries D0025 decision 4's per-stratum check (l1_dev_check_D0025: the implied factor c * sum(rise_ref) / sum(rise_L1) beside c(s), the mean HS and LS die bias, A2-type against the model's 1.8 % guard, A4-type against 0.3). Development rows are never judged",
+      "result": "T0398 (2026-11-17, research/notes/e007-dev-rows.md): 45 layouts (3 per stratum), 90 level-1 solves, every sanity check passed. A1 0.230 K, A2 0.0081, A3 0.091 K, A4 0.107, A5 0.440 s (Mac, alone). F2: every null fails A1 (die_position 5.69, stratum_mean 5.50, isolated_die 3.82 K) and A4 (1.00, 1.00, 11.42). D0025 check: the 1.8 % A2 guard holds in every stratum (max 1.16 %, interleaved/3); A4 <= 0.3 FAILS in interleaved/2 (0.352), side_by_side/2 (0.340) and u_shaped/6 (0.951), each a ratio of p95s over 6 switch rows: STOP, founder decision before E007 freezes. Implied-c family spread 0.0064 / 0.0046 / 0.0036 / 0.0031 at 4.0 / 4.5 / 5.0 / 5.5 mm (interleaved lowest; LS bias +0.29 to +0.47 K at 4.0-4.5 mm). F3 at the dev structure: V4 coverage >= 0.971 for every statistic and model (research/o002_e007/f3_dev_simulation.json)"
+    },
+    "founder_decisions_before_registration": [
+      "RESOLVED by D0027 decision 1 (founder, 2026-11-18): D0025 decision 4 check (T0398): A4 <= 0.3 failed in 3 of 15 strata on 3 development layouts each (interleaved/2 0.352, side_by_side/2 0.340, u_shaped/6 0.951); on 9 layouts (T0456) A4 is 0.286 / 0.223 / 0.096; the check counts as passed and the per-stratum A4 is a reported diagnostic, not a gate",
+      "RESOLVED by D0027 decision 2 (founder, 2026-11-18): m = 32 per stratum, 480 layouts (config.allocation, allocation_m32.json; power and coverage evidence: T0456's corrected simulation)",
+      "level-2 timing burst before registration (D0025 decision 3): research/o002_e007/l2_timing/run_l2_jobs.sh runs job.json (side_by_side_2_j00, cpu_s and wall_s of one level-2 solve) and job_interleaved_2_j01.json (review T0463 (5): whether interleaved/2's reference spread is converged at the scale of L1's spread errors), one at a time on a burst VM",
+      "registration waits for T0398's development rows: set dev_rows to experiments/drafts/E007.dev_rows.json; `mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json` must show every null failing A1 and A4 (F2), and D0025 decision 4's per-stratum L1 check (l1_dev_check_D0025 in the rows' meta) must pass the 1.8 % A2 guard and A4 <= 0.3 in every stratum, or the founder decides before E007 freezes",
+      "null applies_to: A1 and A4 for all three nulls (this draft; config.nulls.applies). A narrower reading of F2 ('the spread nulls' = null (d) only) would drop A4 from nulls (a) and (c); a wider one (A2) is not in the objective and could make A2 non_discriminating in 2-die strata (die-position A2 3.6-3.7 % on u_shaped/2, T0392)",
+      "f2_null_discrimination is a gated sanity check on the judged rows (a null whose point estimate meets A1 or A4 makes the run INVALID as a design error, F2's response) rather than only a registration-time check: founder may prefer report-only, leaving the evaluator's non_discriminating verdict to act",
+      "compute location: cpu_hours_est exceeds policy local_cpu_hours_max (6), so the policy sends the whole run to burst (option A of --plan); option B (what fits 5 GB locally, one solve at a time, then the rest on the VM, resumed from the same work directory with E007_SKIP_OVER_CAP=1 locally) is cheaper in $ but splits one run over two hosts and needs E007 handled outside burst_experiments. A5 is measured on whichever host runs the L1 phase (recorded in the domain)",
+      "the isolated-die null's constant-k temperature (363.15 K) and its laterally uniform substrate over the whole baseplate: a fixed, untuned choice of this draft",
+      "F7 pool size (40 draws) and the pool rule (two pools per cell, strata drawn without replacement): the objective fixes 'a fixed number', not the number",
+      "A5: one uncounted warm-up evaluation; the L1 phase runs after the P_ref calibration and before every judged reference solve, alone",
+      "the 'pair' rows of the packet: following e007_row_contract.md, judged pair rows are not written (pairs are formed inside pairwise_diff_error_quantile); only F7's optimised layouts have their own row kinds (f7_die, f7_layout)",
+      "F6's hottest-node estimate exists only on the level-2 subset (levels 0 and 2 on every layout are outside the budget); the hottest node itself is reported for every die",
+      "the yardstick (die average gated, hottest node reported) ASSUMES the founder's decision 5 at the 11-27 thesis review (O002 scope_in)"
+    ]
+  },
+  "provenance": {
+    "git_commit": "4e812f21ec6bc524e2862310b4313884de580545",
+    "git_dirty": false,
+    "git_branch": "HEAD",
+    "spec_hash": "sha256:3b6d1b778d668cf5502c565592a478077a277c5b5b5dc06960d4a52a97087680",
+    "lock_hash": "4a8bdc2b28bde8b94f945eeaafe16c95ab16a0691edd66bd860a726bc24d30e1",
+    "python": "3.12.3",
+    "platform": "Linux-7.0.0-1017-gcp-x86_64-with-glibc2.39",
+    "host": "mf-burst-e007-1794977556-8175-a1",
+    "packages": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "jax": "0.11.2",
+      "pydantic": "2.13.5",
+      "shapely": "2.1.2"
+    },
+    "tools": {},
+    "started": "2026-11-18T04:54:28+00:00",
+    "finished": "2026-11-19T08:21:23+00:00",
+    "code": {
+      "experiments/runners/e007_run.py": "4ce37e56d87ca107f93ce23405acd8f8d24801af2c573877151b50fdce929e73",
+      "research/o002_e007/e007_metrics.py": "ed1ffbf6ae72a905ef550d2c694676028d2103fd1309957df3c7ed43cdd474a2",
+      "research/o007_dev3/frozen_config.json": "0226b7709e2554013008a05f05d952bf646711edc0eb5967498864417a120e9a",
+      "src/moduleforge/__init__.py": "8497b6ec8f6a31584b8a2caece91c5de82622a7c5262b3770d8ffcf42053c8de",
+      "src/moduleforge/drc/__init__.py": "d4e956db315452c839cc3821a8b0a14f98a6c5f871cc9f3417177216a6a2ab03",
+      "src/moduleforge/drc/rules.py": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
+      "src/moduleforge/generate/__init__.py": "194f83ccb880033d9fba9299ee09c1d0e8bd5e966f131a4515134af751e6df39",
+      "src/moduleforge/generate/halfbridge.py": "321c08ab97044d669f7d9d01f3fb33d584fa1a0be2a387a67cda3ba8b8ccc301",
+      "src/moduleforge/geometry/__init__.py": "9d585508033546b121219c944193e50ad0ed6a39a48b256e4ba2759b6c5c2b44",
+      "src/moduleforge/geometry/conductors.py": "e9a21349fa36cd3c66d004f98c5468d4c954e9baced0503213c68a05a9b7b9df",
+      "src/moduleforge/geometry/layout.py": "4e95052d8138d67d4f68413b5160315302554e24a731084c74924807a31a3543",
+      "src/moduleforge/geometry/snap.py": "d75da78fba20d0be52e1f736b4e0a6910673f5044c4d4b26ce75ab08bce6b1de",
+      "src/moduleforge/geometry/stack.py": "b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999",
+      "src/moduleforge/geometry/units.py": "49b5fb83312b557e82f7b7eb014c54f077466c9207e113e19f6a7f1b5f953bcb",
+      "src/moduleforge/solvers/__init__.py": "f68728d9696592932ccc80819431f3d27be9733aad103230c93dad7e8d99e443",
+      "src/moduleforge/solvers/thermal_fem.py": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753",
+      "src/moduleforge/solvers/thermal_fv.py": "408efd57718941618ca7d176c293f52d058cf48cd65d33575fab7ad8fa5a309e",
+      "src/moduleforge/solvers/thermal_layout.py": "016569982e6ecd150f54ba2403c286102a98144269f09743f9880cdf8722acf6",
+      "src/moduleforge/solvers/thermal_series.py": "96fdff3c78d5406e01c7df31064e08e5e121d5f5c858b50587df7d4342dba466",
+      "src/moduleforge/thermal/__init__.py": "5ef21412f7166b17e34856e90f82e3455f4182f5183452eaa364f1072259d08e"
+    },
+    "runner_hashes": {
+      "experiments/runners/e007_run.py": "4ce37e56d87ca107f93ce23405acd8f8d24801af2c573877151b50fdce929e73"
+    }
+  },
+  "metrics": {
+    "dtj_pair_err_p95_K_max_load": {
+      "value": 0.2364472949587166,
+      "ci": [
+        0.2146346703725044,
+        0.26338978317988904
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "dtj_pair_err_ownhot_p95_K_max_load": {
+      "value": 0.22788376847907152,
+      "ci": [
+        0.2101754338229398,
+        0.2504022803951784
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "tjavg_local_rel_err_p95_max_load": {
+      "value": 0.008191015460671127,
+      "ci": [
+        0.007837241053449797,
+        0.008525575328950341
+      ],
+      "level": 0.94,
+      "n": 7680,
+      "unit": ""
+    },
+    "switch_spread_err_p95_K_max_load": {
+      "value": 0.08983625752349837,
+      "ci": [
+        0.0873039493358192,
+        0.09435295016373857
+      ],
+      "level": 0.94,
+      "n": 1920,
+      "unit": "K"
+    },
+    "switch_spread_err_ratio_vs_stratum_mean": {
+      "value": 0.11557651777168933,
+      "ci": [
+        0.10468224452653324,
+        0.13280106445129455
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": ""
+    },
+    "l1_eval_s_p50": {
+      "value": 0.6017912975000854,
+      "ci": [
+        0.5927539740000611,
+        0.6115508279999631
+      ],
+      "level": 0.95,
+      "n": 960,
+      "unit": "s"
+    },
+    "dtj_pair_err_p95_K_P_ref": {
+      "value": 0.2364472949587166,
+      "ci": [
+        0.21702204967766647,
+        0.26338978317988904
+      ],
+      "level": 0.94,
+      "n": 480,
+      "unit": "K"
+    },
+    "tjavg_local_rel_err_p95_P_ref": {
+      "value": 0.008191015460671127,
+      "ci": [
+        0.007871212310245436,
+        0.008525575328950341
+      ],
+      "level": 0.94,
+      "n": 3840,
+      "unit": ""
+    },
+    "switch_spread_err_p95_K_P_ref": {
+      "value": 0.08983625752349837,
+      "ci": [
+        0.08738775362394335,
+        0.09435295016373857
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "dtj_pair_err_p95_K_half_P_ref": {
+      "value": 0.11012321280409196,
+      "ci": [
+        0.10023909220672067,
+        0.12230659585816284
+      ],
+      "level": 0.94,
+      "n": 480,
+      "unit": "K"
+    },
+    "tjavg_local_rel_err_p95_half_P_ref": {
+      "value": 0.007709438167306176,
+      "ci": [
+        0.007385752873505293,
+        0.00795527402711923
+      ],
+      "level": 0.94,
+      "n": 3840,
+      "unit": ""
+    },
+    "switch_spread_err_p95_K_half_P_ref": {
+      "value": 0.04540448362269558,
+      "ci": [
+        0.04441593349554296,
+        0.047070623136676204
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "a4_ratio_band_2_3": {
+      "value": 0.13880581994459162,
+      "ci": [
+        0.09073627806582071,
+        0.4616240783400273
+      ],
+      "level": 0.94,
+      "n": 384,
+      "unit": ""
+    },
+    "a4_ratio_band_4_6": {
+      "value": 0.10826898400412877,
+      "ci": [
+        0.09779791450017582,
+        0.12327219242517992
+      ],
+      "level": 0.94,
+      "n": 576,
+      "unit": ""
+    },
+    "diversity_min_sd_tj_hot_ref_K": {
+      "value": 0.8641550096330108,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "null_die_position_A1_K_P_ref": {
+      "value": 4.247844872447256,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "null_die_position_A2_P_ref": {
+      "value": 0.06614221759439397,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_die_position_A4": {
+      "value": 1.0856299556188702,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_stratum_mean_A1_K_P_ref": {
+      "value": 4.2405970495994945,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "null_stratum_mean_A2_P_ref": {
+      "value": 0.18301708240442563,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_stratum_mean_A4": {
+      "value": 1.0,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_isolated_die_A1_K_P_ref": {
+      "value": 4.1083389947394675,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "null_isolated_die_A2_P_ref": {
+      "value": 0.43760415102418143,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "null_isolated_die_A4": {
+      "value": 12.37130634966324,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "f4_constant_k_A1_P_ref": {
+      "value": 0.5932088291176284,
+      "ci": [
+        0.5667656368701159,
+        0.6278176726452784
+      ],
+      "level": 0.94,
+      "n": 480,
+      "unit": "K"
+    },
+    "f4_constant_k_A2_P_ref": {
+      "value": 0.10295476389076291,
+      "ci": [
+        0.1024929488906864,
+        0.10336593789857694
+      ],
+      "level": 0.94,
+      "n": 3840,
+      "unit": ""
+    },
+    "f4_constant_k_A3_P_ref": {
+      "value": 0.9626014714786406,
+      "ci": [
+        0.9369035384170843,
+        0.9909864419727796
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "f4_constant_k_A4_P_ref": {
+      "value": 1.2384100711931902,
+      "ci": [
+        1.1180641332905359,
+        1.3670094352025868
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": ""
+    },
+    "f4_constant_k_A1_half_P_ref": {
+      "value": 0.1947555016554813,
+      "ci": [
+        0.187695753215678,
+        0.20514829918283795
+      ],
+      "level": 0.94,
+      "n": 480,
+      "unit": "K"
+    },
+    "f4_constant_k_A2_half_P_ref": {
+      "value": 0.07769464888997256,
+      "ci": [
+        0.07736389550406579,
+        0.07816507303811092
+      ],
+      "level": 0.94,
+      "n": 3840,
+      "unit": ""
+    },
+    "f4_constant_k_A3_half_P_ref": {
+      "value": 0.3203812540606378,
+      "ci": [
+        0.3100405314669388,
+        0.327524832664551
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": "K"
+    },
+    "f4_constant_k_A4_half_P_ref": {
+      "value": 0.8802233445226963,
+      "ci": [
+        0.7922005784775531,
+        0.9707563204545503
+      ],
+      "level": 0.94,
+      "n": 960,
+      "unit": ""
+    },
+    "f4_kT_tested": {
+      "value": 1.0,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "f6_max_hotnode_gap_K": {
+      "value": 5.907266695630824,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f6_n_strata_gap_over_2K": {
+      "value": 15.0,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "f7_pair_err_p95_K": {
+      "value": 0.1933666505971188,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f7_pair_err_max_K": {
+      "value": 0.5098853194308504,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f1_max_abs_rel": {
+      "value": 0.008556105923403714,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": ""
+    },
+    "f1_max_pair_K": {
+      "value": 0.08922107522013789,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f1_max_spread_K": {
+      "value": 0.07373477622023472,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f1_max_l1_l2_K": {
+      "value": 0.039653811208950174,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    },
+    "f1_max_tjmax_gci_K": {
+      "value": Infinity,
+      "ci": null,
+      "level": 0.0,
+      "n": null,
+      "unit": "K"
+    }
+  },
+  "sanity": [
+    {
+      "name": "freeze",
+      "passed": true,
+      "value": 0.0,
+      "threshold": null,
+      "detail": "file:research/o002_e007/e007_metrics.py: ok; file:src/moduleforge/__init__.py: ok; file:src/moduleforge/drc/__init__.py: ok; file:src/moduleforge/drc/rules.py: ok; file:src/moduleforge/generate/__init__.py: ok; file:src/moduleforge/generate/halfbridge.py: ok; file:src/moduleforge/geometry/__init__.py: ok; file:src/moduleforge/geometry/conductors.py: ok; file:src/moduleforge/geometry/layout.py: ok; file:src/moduleforge/geometry/stack.py: ok; file:src/moduleforge/geometry/units.py: ok; file:src/moduleforge/solvers/__init__.py: ok; file:src/moduleforge/solvers/thermal_fem.py: ok; file:src/moduleforge/solvers/thermal_fv.py: ok; file:src/moduleforge/solvers/thermal_layout.py: ok; file:src/moduleforge/solvers/thermal_series.py: ok; file:src/moduleforge/thermal/__init__.py: ok; thermal_fem_sha256: ok; grid_rule_file_sha256: ok; grid_rule_key_for_key: ok; fem_production_constants: ok; l1_grid_rule: ok; l1_calibration_table: ok; l1_picard_tol: ok; allocation_file_sha256: ok; allocation_matches_f3: ok"
+    },
+    {
+      "name": "sealed_seeds_fresh",
+      "passed": true,
+      "value": 0.0,
+      "threshold": null,
+      "detail": "mode sealed; seed in forbidden list: False; 45 derived seeds of streams ['die_size', 'f7', 'f7_strata', 'l2_subset', 'layouts', 'timing_order'] (all ['die_size', 'f7', 'f7_strata', 'l2_subset', 'layouts', 'timing_order']: True), in it: []; forbidden [7, 20261101, 20261103, 20261115, 20261116, 20261117, 20261118, 20261395, 20261398, 20261399, 20261456, 831496695]"
+    },
+    {
+      "name": "allocation_fixed",
+      "passed": true,
+      "value": 32.0,
+      "threshold": null,
+      "detail": "15 strata x 32 layouts, every (family, band) cell drawn True, one die size per stratum True: {side_by_side/2: 5.5, side_by_side/3: 4.5, side_by_side/4: 5.0, side_by_side/5: 4.0, side_by_side/6: 4.5, interleaved/2: 4.5, interleaved/3: 4.0, interleaved/4: 5.0, interleaved/5: 5.0, interleaved/6: 5.0, u_shaped/2: 4.0, u_shaped/3: 5.0, u_shaped/4: 4.5, u_shaped/5: 4.5, u_shaped/6: 4.0}"
+    },
+    {
+      "name": "layouts_distinct_and_unseen",
+      "passed": true,
+      "value": 975.0,
+      "threshold": null,
+      "detail": "960 judged/F7 fingerprints, distinct True; judged / F7 draws in C004's dev/fresh 0 / 0, in other dev sets 0 / 0, equal to a P_ref development layout 0 / 0"
+    },
+    {
+      "name": "subset_frozen_before_solves",
+      "passed": true,
+      "value": 6.0,
+      "threshold": null,
+      "detail": "plan sha256 1f263e7a95cec191 written before the first solve; subset [{'cell': 'side_by_side/2-3', 'stratum': 'side_by_side/2', 'layouts': ['side_by_side_2_j12', 'side_by_side_2_j17']}, {'cell': 'side_by_side/4-6', 'stratum': 'side_by_side/6', 'layouts': ['side_by_side_6_j14', 'side_by_side_6_j29']}, {'cell': 'interleaved/2-3', 'stratum': 'interleaved/2', 'layouts': ['interleaved_2_j01', 'interleaved_2_j20']}, {'cell': 'interleaved/4-6', 'stratum': 'interleaved/5', 'layouts': ['interleaved_5_j08', 'interleaved_5_j19']}, {'cell': 'u_shaped/2-3', 'stratum': 'u_shaped/3', 'layouts': ['u_shaped_3_j23', 'u_shaped_3_j26']}, {'cell': 'u_shaped/4-6', 'stratum': 'u_shaped/4', 'layouts': ['u_shaped_4_j01', 'u_shaped_4_j18']}]"
+    },
+    {
+      "name": "operating_point",
+      "passed": true,
+      "value": 0.20536990347187611,
+      "threshold": 0.25,
+      "detail": "P_ref per die (W), fixed in pref.json before any judged solve: {'side_by_side/2': 52.30411568955937, 'side_by_side/3': 36.53027198937788, 'side_by_side/4': 36.48047488128476, 'side_by_side/5': 27.708247390789285, 'side_by_side/6': 29.289749450274147, 'interleaved/2': 46.07464882931055, 'interleaved/3': 35.056931250745365, 'interleaved/4': 39.3598876221551, 'interleaved/5': 36.48760623818675, 'interleaved/6': 34.84052211844211, 'u_shaped/2': 38.750436180036694, 'u_shaped/3': 39.611323995204806, 'u_shaped/4': 33.21823729426338, 'u_shaped/5': 30.946781904162766, 'u_shaped/6': 26.784325915798494}"
+    },
+    {
+      "name": "energy_balance",
+      "passed": true,
+      "value": 1.042277375518097e-12,
+      "threshold": 1e-06,
+      "detail": "max |Q_out/Q_in - 1|: reference 1.04e-12 over 1074 solves (calibration included), L1 1.44e-13 over 2412"
+    },
+    {
+      "name": "picard_converged",
+      "passed": true,
+      "value": 9.99432464610095e-05,
+      "threshold": 0.0001,
+      "detail": "reference"
+    },
+    {
+      "name": "linear_solver_headroom",
+      "passed": true,
+      "value": 242.0,
+      "threshold": 400.0,
+      "detail": "no AMG-CG solve hit its iteration cap"
+    },
+    {
+      "name": "tj_max_within_rating",
+      "passed": true,
+      "value": 403.401264885896,
+      "threshold": 448.15,
+      "detail": "reference hottest node of every judged and F7 layout at P_ref, judged level (K); 3934 dies"
+    },
+    {
+      "name": "baseplate_mean_consistent",
+      "passed": true,
+      "value": 1.1368683772161603e-13,
+      "threshold": 1e-06,
+      "detail": "Q1 integral of the bottom field vs T_c + Q_out/(h A) (A2's denominator)"
+    },
+    {
+      "name": "rows_contract",
+      "passed": true,
+      "value": 0.0,
+      "threshold": null,
+      "detail": ""
+    },
+    {
+      "name": "l1_timing_single_thread",
+      "passed": true,
+      "value": null,
+      "threshold": null,
+      "detail": "L1 phase in one process after every P_ref calibration solve had finished and before any judged reference solve, none running; thread variables {'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1', 'VECLIB_MAXIMUM_THREADS': '1', 'NUMEXPR_NUM_THREADS': '1'}; sealed order of 960 timed evaluations"
+    },
+    {
+      "name": "f1_abs_die_average",
+      "passed": true,
+      "value": 0.008556105923403714,
+      "threshold": 0.01,
+      "detail": "max over subset dies and loads of level-1 error / level-1 die-local rise"
+    },
+    {
+      "name": "f1_pair_difference",
+      "passed": true,
+      "value": 0.08922107522013789,
+      "threshold": 0.1,
+      "detail": "max level-1 error of subset same-stratum pair differences (K)"
+    },
+    {
+      "name": "f1_spread",
+      "passed": true,
+      "value": 0.07373477622023472,
+      "threshold": 0.1,
+      "detail": "max level-1 error of subset per-switch spreads (K)"
+    },
+    {
+      "name": "f1_level1_vs_level2",
+      "passed": true,
+      "value": 0.039653811208950174,
+      "threshold": 0.1,
+      "detail": "max |level 1 - level 2| of subset pair differences and spreads"
+    },
+    {
+      "name": "node_count_growth",
+      "passed": true,
+      "value": 7.664580733310069,
+      "threshold": 8.0,
+      "detail": "DOF growth per level 7.33-7.66 (8 +/- 15%)"
+    },
+    {
+      "name": "recompute_consistency",
+      "passed": true,
+      "value": 0.0,
+      "threshold": null,
+      "detail": "6 entries equal"
+    },
+    {
+      "name": "f2_null_discrimination",
+      "passed": true,
+      "value": 0.0,
+      "threshold": 0.0,
+      "detail": "die_position: A1(P_ref) 4.248 K, A4 1.086; reported A2(P_ref) 0.0661, A3(P_ref) 0.844 K; stratum_mean: A1(P_ref) 4.241 K, A4 1.000; reported A2(P_ref) 0.1830, A3(P_ref) 0.777 K; isolated_die: A1(P_ref) 4.108 K, A4 12.371; reported A2(P_ref) 0.4376, A3(P_ref) 9.616 K"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "rows.json",
+      "sha256": "a67884dceec755ebbe931498c3826b4b4872d7cb51826075cff9251b44302ee2",
+      "bytes": 6176096
+    },
+    {
+      "name": "reports.json",
+      "sha256": "3cc1216af92ed4ceb8056f6ab080fbad6afe145ae49c456bf815e77dc834ac8c",
+      "bytes": 33883
+    },
+    {
+      "name": "plan_frozen.json",
+      "sha256": "ac822f49b93145a0746da01f23a4017ad7303dc3f95ae96655186e6e4cd0120d",
+      "bytes": 365212
+    },
+    {
+      "name": "pref.json",
+      "sha256": "7337c74f59bb6f3400f9a9d57e0982acd8796debd5db4a431076c6ce45fb0cb3",
+      "bytes": 553
+    },
+    {
+      "name": "solves.json",
+      "sha256": "76cde93a28d2471004073177c31b4f74033f2871034f27dd754ab174891029d0",
+      "bytes": 1048753
+    }
+  ],
+  "notes": "reports {\"per_stratum_A2\": {\"interleaved/2\": {\"value\": 0.008990671071119484, \"ci\": [0.008577273790425749, 0.0185982621100508], \"n\": 256, \"stratum_max\": 0.0185982621100508, \"upper_informative\": false}, \"interleaved/3\": {\"value\": 0.010520436891338943, \"ci\": [0.010163423744323736, 0.01119461733161539], \"n\": 384, \"stratum_max\": 0.015553739518687036, \"upper_informative\": true}, \"interleaved/4\": {\"value\": 0.006443280182028218, \"ci\": [0.006181936347395288, 0.007108842718608093], \"n\": 512, \"stratum_max\": 0.008190995028325895, \"upper_informative\": true}, \"interleaved/5\": {\"value\": 0.006961878551002951, \"ci\": [0.006575839294155968, 0.007653662799320442], \"n\": 640, \"stratum_max\": 0.01679542357891766, \"upper_informative\": true}, \"interleaved/6\": {\"value\": 0.008889451354766605, \"ci\": [0.008524528342625699, 0.009526861593822423], \"n\": 768, \"stratum_max\": 0.01827946900250448, \"upper_informative\": true}, \"side_by_side/2\": {\"value\": 0.0035888996254976493, \"ci\": [0.003326088827162337, 0.004913799457971244], \"n\": 256, \"stratum_max\": 0.005525731625856464, \"upper_informative\": true}, \"side_by_side/3\": {\"value\": 0.006311812171990751, \"ci\": [0.005894091249409163, 0.006553184661406664], \"n\": 384, \"stratum_max\": 0.008755265138122748, \"upper_informative\": true}, \"side_by_side/4\": {\"value\": 0.006082539481956984, \"ci\": [0.0050450767740035235, 0.007214470710740814], \"n\": 512, \"stratum_max\": 0.007871212310245436, \"upper_informative\": true}, \"side_by_side/5\": {\"value\": 0.006209620248239807, \"ci\": [0.005702496413330233, 0.007346414914021683], \"n\": 640, \"stratum_max\": 0.00797700027756353, \"upper_informative\": true}, \"side_by_side/6\": {\"value\": 0.007094005721781271, \"ci\": [0.006803404266539884, 0.007878296715242237], \"n\": 768, \"stratum_max\": 0.010715970155954312, \"upper_informative\": true}, \"u_shaped/2\": {\"value\": 0.00859407262493105, \"ci\": [0.0071855275403770865, 0.009853871055230461], \"n\": 256, \"stratum_max\": 0.009853871055230461, \"upper_informative\": false}, \"u_shaped/3\": {\"value\": 0.0038809448539584793, \"ci\": [0.0034599924277566143, 0.005221230215522824], \"n\": 384, \"stratum_max\": 0.0068716405323903445, \"upper_informative\": true}, \"u_shaped/4\": {\"value\": 0.005098282491742182, \"ci\": [0.004296361751380776, 0.007081049814249881], \"n\": 512, \"stratum_max\": 0.008444086594031076, \"upper_informative\": true}, \"u_shaped/5\": {\"value\": 0.005683302357708705, \"ci\": [0.0048654050946010784, 0.0067858959017855335], \"n\": 640, \"stratum_max\": 0.009308084440692387, \"upper_informative\": true}, \"u_shaped/6\": {\"value\": 0.008240555987928389, \"ci\": [0.007596909300086734, 0.008633706695642545], \"n\": 768, \"stratum_max\": 0.010046718589149909, \"upper_informative\": true}}, \"per_band_A4\": {\"2-3\": {\"value\": 0.13880581994459162, \"ci\": [0.09073627806582071, 0.4616240783400273], \"n\": 384}, \"4-6\": {\"value\": 0.10826898400412877, \"ci\": [0.09779791450017582, 0.12327219242517992], \"n\": 576}}, \"nulls\": {\"die_position\": {\"column\": \"null_pos\", \"per_stratum_P_ref\": {\"interleaved/2\": {\"A1_K\": 2.499672851041751, \"A2\": 0.03470896347045108}, \"interleaved/3\": {\"A1_K\": 3.866874489279553, \"A2\": 0.04360965484891043}, \"interleaved/4\": {\"A1_K\": 3.7759435609878835, \"A2\": 0.05361636260423794}, \"interleaved/5\": {\"A1_K\": 4.017004603288598, \"A2\": 0.06297739786408842}, \"interleaved/6\": {\"A1_K\": 4.424901453400707, \"A2\": 0.06911023504240257}, \"side_by_side/2\": {\"A1_K\": 2.8694182598483025, \"A2\": 0.04377258743900009}, \"side_by_side/3\": {\"A1_K\": 4.514018432694755, \"A2\": 0.05216400227391653}, \"side_by_side/4\": {\"A1_K\": 4.550586458350821, \"A2\": 0.06980778733455832}, \"side_by_side/5\": {\"A1_K\": 4.608991540613772, \"A2\": 0.06303604862736567}, \"side_by_side/6\": {\"A1_K\": 5.120300099588704, \"A2\": 0.0666759489722864}, \"u_shaped/2\": {\"A1_K\": 2.8692696798010786, \"A2\": 0.03477835056285052}, \"u_shaped/3\": {\"A1_K\": 3.438790610586125, \"A2\": 0.04402373493959226}, \"u_shaped/4\": {\"A1_K\": 3.724304232093033, \"A2\": 0.05426218562679912}, \"u_shaped/5\": {\"A1_K\": 5.031001579800687, \"A2\": 0.06881978229109106}, \"u_shaped/6\": {\"A1_K\": 5.355747672153441, \"A2\": 0.07638264106877218}}, \"applies_to\": [\"dtj_pair_err_p95_K_max_load\", \"switch_spread_err_ratio_vs_stratum_mean\"], \"evaluator_view\": {\"dtj_pair_err_p95_K_max_load\": {\"criterion\": \"A1\", \"point\": 4.247844872447256, \"ci\": [3.8779638740066957, 4.547439738137257], \"bound_used\": 4.547439738137257, \"threshold\": 0.5, \"meets\": false}, \"switch_spread_err_ratio_vs_stratum_mean\": {\"criterion\": \"A4\", \"point\": 1.0856299556188702, \"ci\": [0.9516764828179111, 1.4025171931139795], \"bound_used\": 1.4025171931139795, \"threshold\": 0.5, \"meets\": false}}, \"dtj_pair_err_p95_K_max_load\": 4.247844872447256, \"tjavg_local_rel_err_p95_max_load\": 0.06614221759439397, \"switch_spread_err_p95_K_max_load\": 0.8438472982968761, \"switch_spread_err_ratio_vs_stratum_mean\": 1.0856299556188702, \"A1_P_ref_K\": 4.247844872447256, \"A1_point_K\": 4.247844872447256, \"A2_P_ref\": 0.06614221759439397, \"A3_P_ref_K\": 0.8438472982968761, \"A4_point\": 1.0856299556188702, \"fails_A1_point\": true, \"fails_A4_point\": true}, \"stratum_mean\": {\"column\": \"null_smean\", \"per_stratum_P_ref\": {\"interleaved/2\": {\"A1_K\": 2.45266062635946, \"A2\": 0.03477401553702294}, \"interleaved/3\": {\"A1_K\": 3.8449098028993944, \"A2\": 0.0986041341736397}, \"interleaved/4\": {\"A1_K\": 3.7624933354531436, \"A2\": 0.12938061518158428}, \"interleaved/5\": {\"A1_K\": 4.0021055197369435, \"A2\": 0.17059745901905873}, \"interleaved/6\": {\"A1_K\": 4.460865430921061, \"A2\": 0.21976957128432695}, \"side_by_side/2\": {\"A1_K\": 2.869214275141786, \"A2\": 0.04408480993311805}, \"side_by_side/3\": {\"A1_K\": 4.497584426813376, \"A2\": 0.0968196223835327}, \"side_by_side/4\": {\"A1_K\": 4.536116391571326, \"A2\": 0.14172081705848244}, \"side_by_side/5\": {\"A1_K\": 4.5952026677979205, \"A2\": 0.15644945646337136}, \"side_by_side/6\": {\"A1_K\": 5.103148240255365, \"A2\": 0.22163755474157898}, \"u_shaped/2\": {\"A1_K\": 2.887163252670092, \"A2\": 0.03598662619709276}, \"u_shaped/3\": {\"A1_K\": 3.3844853990286907, \"A2\": 0.09873464655785169}, \"u_shaped/4\": {\"A1_K\": 3.750509091214056, \"A2\": 0.12682636563095262}, \"u_shaped/5\": {\"A1_K\": 5.0629105152223985, \"A2\": 0.18784860266759434}, \"u_shaped/6\": {\"A1_K\": 5.368112116359157, \"A2\": 0.21052842335795666}}, \"applies_to\": [\"dtj_pair_err_p95_K_max_load\", \"switch_spread_err_ratio_vs_stratum_mean\"], \"evaluator_view\": {\"dtj_pair_err_p95_K_max_load\": {\"criterion\": \"A1\", \"point\": 4.2405970495994945, \"ci\": [3.873358211226787, 4.542819219078751], \"bound_used\": 4.542819219078751, \"threshold\": 0.5, \"meets\": false}, \"switch_spread_err_ratio_vs_stratum_mean\": {\"criterion\": \"A4\", \"point\": 1.0, \"ci\": [0.8709823161832824, 1.1481289360524378], \"bound_used\": 1.1481289360524378, \"threshold\": 0.5, \"meets\": false}}, \"dtj_pair_err_p95_K_max_load\": 4.2405970495994945, \"tjavg_local_rel_err_p95_max_load\": 0.18301708240442563, \"switch_spread_err_p95_K_max_load\": 0.7772881486268824, \"switch_spread_err_ratio_vs_stratum_mean\": 1.0, \"A1_P_ref_K\": 4.2405970495994945, \"A1_point_K\": 4.2405970495994945, \"A2_P_ref\": 0.18301708240442563, \"A3_P_ref_K\": 0.7772881486268824, \"A4_point\": 1.0, \"fails_A1_point\": true, \"fails_A4_point\": true}, \"isolated_die\": {\"column\": \"null_iso\", \"per_stratum_P_ref\": {\"interleaved/2\": {\"A1_K\": 2.0823299852999924, \"A2\": 0.24405432128213017}, \"interleaved/3\": {\"A1_K\": 3.7495935415850568, \"A2\": 0.3510160600898974}, \"interleaved/4\": {\"A1_K\": 3.6414134488415186, \"A2\": 0.37908184158479175}, \"interleaved/5\": {\"A1_K\": 3.884761079318949, \"A2\": 0.38174560454833534}, \"interleaved/6\": {\"A1_K\": 4.311905388576122, \"A2\": 0.3772034109310726}, \"side_by_side/2\": {\"A1_K\": 2.738527987687391, \"A2\": 0.2899343270596231}, \"side_by_side/3\": {\"A1_K\": 4.354162747530054, \"A2\": 0.39585059406341133}, \"side_by_side/4\": {\"A1_K\": 4.364644664186187, \"A2\": 0.434857404988841}, \"side_by_side/5\": {\"A1_K\": 4.446627571514867, \"A2\": 0.45225692082346486}, \"side_by_side/6\": {\"A1_K\": 4.94636093580479, \"A2\": 0.45342892351251285}, \"u_shaped/2\": {\"A1_K\": 2.654479723091228, \"A2\": 0.28394429783689756}, \"u_shaped/3\": {\"A1_K\": 3.3147129463244056, \"A2\": 0.4012391743794661}, \"u_shaped/4\": {\"A1_K\": 3.6177240685497623, \"A2\": 0.43266781425630124}, \"u_shaped/5\": {\"A1_K\": 4.932873365095304, \"A2\": 0.45134099812573003}, \"u_shaped/6\": {\"A1_K\": 5.2469594687204335, \"A2\": 0.4621141360217206}}, \"applies_to\": [\"dtj_pair_err_p95_K_max_load\", \"switch_spread_err_ratio_vs_stratum_mean\"], \"evaluator_view\": {\"dtj_pair_err_p95_K_max_load\": {\"criterion\": \"A1\", \"point\": 4.1083389947394675, \"ci\": [3.761478692250762, 4.423901300993066], \"bound_used\": 4.423901300993066, \"threshold\": 0.5, \"meets\": false}, \"switch_spread_err_ratio_vs_stratum_mean\": {\"criterion\": \"A4\", \"point\": 12.37130634966324, \"ci\": [11.209227499141418, 13.590022276025666], \"bound_used\": 13.590022276025666, \"threshold\": 0.5, \"meets\": false}}, \"dtj_pair_err_p95_K_max_load\": 4.1083389947394675, \"tjavg_local_rel_err_p95_max_load\": 0.43760415102418143, \"switch_spread_err_p95_K_max_load\": 9.616069808625735, \"switch_spread_err_ratio_vs_stratum_mean\": 12.37130634966324, \"A1_P_ref_K\": 4.1083389947394675, \"A1_point_K\": 4.1083389947394675, \"A2_P_ref\": 0.43760415102418143, \"A3_P_ref_K\": 9.616069808625735, \"A4_point\": 12.37130634966324, \"fails_A1_point\": true, \"fails_A4_point\": true}}, \"f4_constant_k\": {}, \"per_stratum_A2_n_upper_infinite\": 0, \"per_stratum_A2_n_upper_informative\": 13, \"max_per_stratum_A2\": 0.010520436891338943, \"diversity\": {\"interleaved/2\": {\"sd_tj_hot_ref_K\": 0.8641550096330108, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"interleaved/3\": {\"sd_tj_hot_ref_K\": 1.3994502130499542, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"interleaved/4\": {\"sd_tj_hot_ref_K\": 1.3695348748913534, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"interleaved/5\": {\"sd_tj_hot_ref_K\": 1.4122985881393413, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"interleaved/6\": {\"sd_tj_hot_ref_K\": 1.548526641312913, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"side_by_side/2\": {\"sd_tj_hot_ref_K\": 1.0135569223481282, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"side_by_side/3\": {\"sd_tj_hot_ref_K\": 1.5372743742446962, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"side_by_side/4\": {\"sd_tj_hot_ref_K\": 1.5507717826246696, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"side_by_side/5\": {\"sd_tj_hot_ref_K\": 1.6242302389046261, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"side_by_side/6\": {\"sd_tj_hot_ref_K\": 1.6649706257955514, \"n_distinct_hot_die\": 1, \"n_layouts\": 32}, \"u_shaped/2\": {\"sd_tj_hot_ref_K\": 0.9999145767627601, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"u_shaped/3\": {\"sd_tj_hot_ref_K\": 1.2273369429277379, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"u_shaped/4\": {\"sd_tj_hot_ref_K\": 1.3595370125284234, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"u_shaped/5\": {\"sd_tj_hot_ref_K\": 1.8549178093298055, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}, \"u_shaped/6\": {\"sd_tj_hot_ref_K\": 1.8887083956894828, \"n_distinct_hot_die\": 2, \"n_layouts\": 32}}, \"l1_dev_check\": {\"interleaved/2\": {\"die_size_mm\": 4.5, \"c_table\": 0.98284, \"implied_c_P_ref\": 0.9771854605149924, \"bias_HS_K_P_ref\": 0.1522459691744178, \"bias_LS_K_P_ref\": 0.3825911452197488, \"A2_P_ref\": 0.008990671071119484, \"implied_c_half_P_ref\": 0.9776854006367914, \"bias_HS_K_half_P_ref\": 0.06558711541565909, \"bias_LS_K_half_P_ref\": 0.17178704464069394, \"A2_half_P_ref\": 0.008344288885185992, \"A2_max_load\": 0.008990671071119484, \"A4_P_ref\": 0.1809938894184476, \"A1_K_max_load\": 0.5025229177789328, \"A5_s_p50\": 0.47826761849989907, \"A2_recalibrated_max_load\": 0.004739582910163631, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"interleaved/3\": {\"die_size_mm\": 4.0, \"c_table\": 0.98544, \"implied_c_P_ref\": 0.9795420880562605, \"bias_HS_K_P_ref\": 0.09897846698829167, \"bias_LS_K_P_ref\": 0.41931546226879785, \"A2_P_ref\": 0.010520436891338943, \"implied_c_half_P_ref\": 0.9800108177273653, \"bias_HS_K_half_P_ref\": 0.04222067764901697, \"bias_LS_K_half_P_ref\": 0.19026083773009775, \"A2_half_P_ref\": 0.00984004451760672, \"A2_max_load\": 0.010520436891338943, \"A4_P_ref\": 0.10803499586653169, \"A1_K_max_load\": 0.1012334225755751, \"A5_s_p50\": 0.4730274809999173, \"A2_recalibrated_max_load\": 0.0050755099612993316, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"interleaved/4\": {\"die_size_mm\": 5.0, \"c_table\": 0.98298, \"implied_c_P_ref\": 0.9797291541520202, \"bias_HS_K_P_ref\": 0.03595899748961262, \"bias_LS_K_P_ref\": 0.22272976251211718, \"A2_P_ref\": 0.006443280182028218, \"implied_c_half_P_ref\": 0.9801523782637257, \"bias_HS_K_half_P_ref\": 0.011687551180477929, \"bias_LS_K_half_P_ref\": 0.09786257565032042, \"A2_half_P_ref\": 0.005921836956724135, \"A2_max_load\": 0.006443280182028218, \"A4_P_ref\": 0.07006300727045348, \"A1_K_max_load\": 0.04237836759264724, \"A5_s_p50\": 0.6234258795000187, \"A2_recalibrated_max_load\": 0.004172246732806412, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"interleaved/5\": {\"die_size_mm\": 5.0, \"c_table\": 0.98298, \"implied_c_P_ref\": 0.9794365767379845, \"bias_HS_K_P_ref\": 0.0482369064452481, \"bias_LS_K_P_ref\": 0.2135866654809732, \"A2_P_ref\": 0.006961878551002951, \"implied_c_half_P_ref\": 0.9798497427023978, \"bias_HS_K_half_P_ref\": 0.01818487425329778, \"bias_LS_K_half_P_ref\": 0.09438162069246374, \"A2_half_P_ref\": 0.006547841519265564, \"A2_max_load\": 0.006961878551002951, \"A4_P_ref\": 0.08277286772476067, \"A1_K_max_load\": 0.04290493181167676, \"A5_s_p50\": 0.7057331844999908, \"A2_recalibrated_max_load\": 0.004769143095889054, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"interleaved/6\": {\"die_size_mm\": 5.0, \"c_table\": 0.98298, \"implied_c_P_ref\": 0.9786481856565119, \"bias_HS_K_P_ref\": 0.0735740196463756, \"bias_LS_K_P_ref\": 0.2290524210073528, \"A2_P_ref\": 0.008889451354766605, \"implied_c_half_P_ref\": 0.9790618931360902, \"bias_HS_K_half_P_ref\": 0.030801633423089097, \"bias_LS_K_half_P_ref\": 0.10227237744413238, \"A2_half_P_ref\": 0.008482124575401002, \"A2_max_load\": 0.008889451354766605, \"A4_P_ref\": 0.09190328343069026, \"A1_K_max_load\": 0.0437660737108132, \"A5_s_p50\": 0.8192455129999416, \"A2_recalibrated_max_load\": 0.005543544902037303, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"side_by_side/2\": {\"die_size_mm\": 5.5, \"c_table\": 0.98402, \"implied_c_P_ref\": 0.9845219710149961, \"bias_HS_K_P_ref\": 0.033230298885447596, \"bias_LS_K_P_ref\": -0.07916689898243678, \"A2_P_ref\": 0.0034832628282686364, \"implied_c_half_P_ref\": 0.9847772186378339, \"bias_HS_K_half_P_ref\": 0.009174404120952495, \"bias_LS_K_half_P_ref\": -0.042989496904837665, \"A2_half_P_ref\": 0.0035888996254976493, \"A2_max_load\": 0.0035888996254976493, \"A4_P_ref\": 0.46989649103275555, \"A1_K_max_load\": 0.20055031534504053, \"A5_s_p50\": 0.40832473499995103, \"A2_recalibrated_max_load\": 0.0037866185790027367, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": false}, \"side_by_side/3\": {\"die_size_mm\": 4.5, \"c_table\": 0.98284, \"implied_c_P_ref\": 0.9822052525625299, \"bias_HS_K_P_ref\": 0.15420444932284086, \"bias_LS_K_P_ref\": -0.09853135758504195, \"A2_P_ref\": 0.006249672389479085, \"implied_c_half_P_ref\": 0.9825088616328457, \"bias_HS_K_half_P_ref\": 0.06569027691944918, \"bias_LS_K_half_P_ref\": -0.05150014201676534, \"A2_half_P_ref\": 0.006311812171990751, \"A2_max_load\": 0.006311812171990751, \"A4_P_ref\": 0.14575477307317017, \"A1_K_max_load\": 0.21813809841678733, \"A5_s_p50\": 0.5278361174999873, \"A2_recalibrated_max_load\": 0.006817913789061012, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"side_by_side/4\": {\"die_size_mm\": 5.0, \"c_table\": 0.98298, \"implied_c_P_ref\": 0.9834237980195035, \"bias_HS_K_P_ref\": 0.05536926515991025, \"bias_LS_K_P_ref\": -0.0913884697316778, \"A2_P_ref\": 0.006082539481956984, \"implied_c_half_P_ref\": 0.9837090383294363, \"bias_HS_K_half_P_ref\": 0.019296437540529343, \"bias_LS_K_half_P_ref\": -0.048191285230177794, \"A2_half_P_ref\": 0.0060462392427537886, \"A2_max_load\": 0.006082539481956984, \"A4_P_ref\": 0.13592718902392525, \"A1_K_max_load\": 0.18417187127390378, \"A5_s_p50\": 0.567957678500079, \"A2_recalibrated_max_load\": 0.005844210180687424, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"side_by_side/5\": {\"die_size_mm\": 4.0, \"c_table\": 0.98544, \"implied_c_P_ref\": 0.985791048460358, \"bias_HS_K_P_ref\": 0.10324231207811785, \"bias_LS_K_P_ref\": -0.13138027489241821, \"A2_P_ref\": 0.006209620248239807, \"implied_c_half_P_ref\": 0.9859944662191933, \"bias_HS_K_half_P_ref\": 0.04320355846214561, \"bias_LS_K_half_P_ref\": -0.06493361405431237, \"A2_half_P_ref\": 0.006176161893472421, \"A2_max_load\": 0.006209620248239807, \"A4_P_ref\": 0.1387370666286724, \"A1_K_max_load\": 0.23422815353973192, \"A5_s_p50\": 0.5977489179999793, \"A2_recalibrated_max_load\": 0.006007083633397365, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"side_by_side/6\": {\"die_size_mm\": 4.5, \"c_table\": 0.98284, \"implied_c_P_ref\": 0.9835339362168299, \"bias_HS_K_P_ref\": 0.07557326614453401, \"bias_LS_K_P_ref\": -0.12681237840795578, \"A2_P_ref\": 0.00709184172043166, \"implied_c_half_P_ref\": 0.9837770865962889, \"bias_HS_K_half_P_ref\": 0.02983565920602101, \"bias_LS_K_half_P_ref\": -0.06363605468146775, \"A2_half_P_ref\": 0.007094005721781271, \"A2_max_load\": 0.007094005721781271, \"A4_P_ref\": 0.15711795125303715, \"A1_K_max_load\": 0.1898505514886324, \"A5_s_p50\": 0.8461184239999966, \"A2_recalibrated_max_load\": 0.006723973385494381, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"u_shaped/2\": {\"die_size_mm\": 4.0, \"c_table\": 0.98544, \"implied_c_P_ref\": 0.9817533366191522, \"bias_HS_K_P_ref\": 0.10455697570893552, \"bias_LS_K_P_ref\": 0.24783331568586053, \"A2_P_ref\": 0.00859407262493105, \"implied_c_half_P_ref\": 0.982139823031576, \"bias_HS_K_half_P_ref\": 0.04336422587891242, \"bias_LS_K_half_P_ref\": 0.11057322528408431, \"A2_half_P_ref\": 0.007990063990770695, \"A2_max_load\": 0.00859407262493105, \"A4_P_ref\": 0.4175137207824086, \"A1_K_max_load\": 0.32221691406205366, \"A5_s_p50\": 0.3979017809999732, \"A2_recalibrated_max_load\": 0.004820786748889591, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": false}, \"u_shaped/3\": {\"die_size_mm\": 5.0, \"c_table\": 0.98298, \"implied_c_P_ref\": 0.9821409884085797, \"bias_HS_K_P_ref\": 0.005203043901527593, \"bias_LS_K_P_ref\": 0.06646168655003433, \"A2_P_ref\": 0.0038809448539584793, \"implied_c_half_P_ref\": 0.9825193001363005, \"bias_HS_K_half_P_ref\": -0.0044730457334279565, \"bias_LS_K_half_P_ref\": 0.02368531652852705, \"A2_half_P_ref\": 0.0035124254317600717, \"A2_max_load\": 0.0038809448539584793, \"A4_P_ref\": 0.1528314281013113, \"A1_K_max_load\": 0.21847235673307352, \"A5_s_p50\": 0.5341406389999293, \"A2_recalibrated_max_load\": 0.003720039920194424, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"u_shaped/4\": {\"die_size_mm\": 4.5, \"c_table\": 0.98284, \"implied_c_P_ref\": 0.9817323956273245, \"bias_HS_K_P_ref\": 0.015329961170062578, \"bias_LS_K_P_ref\": 0.07770914543933083, \"A2_P_ref\": 0.005098282491742182, \"implied_c_half_P_ref\": 0.9821176360309111, \"bias_HS_K_half_P_ref\": 0.0005926244510838785, \"bias_LS_K_half_P_ref\": 0.029023343796683143, \"A2_half_P_ref\": 0.004617300468576064, \"A2_max_load\": 0.005098282491742182, \"A4_P_ref\": 0.11888601886023283, \"A1_K_max_load\": 0.23148279542522232, \"A5_s_p50\": 0.6500904755000647, \"A2_recalibrated_max_load\": 0.00396559430988459, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"u_shaped/5\": {\"die_size_mm\": 4.5, \"c_table\": 0.98284, \"implied_c_P_ref\": 0.9815149785499553, \"bias_HS_K_P_ref\": 0.0073480888669838155, \"bias_LS_K_P_ref\": 0.09706685934239871, \"A2_P_ref\": 0.005683302357708705, \"implied_c_half_P_ref\": 0.9818890359921912, \"bias_HS_K_half_P_ref\": -0.0023812854262672545, \"bias_LS_K_half_P_ref\": 0.03895272765128262, \"A2_half_P_ref\": 0.005255201130959909, \"A2_max_load\": 0.005683302357708705, \"A4_P_ref\": 0.11265697305260033, \"A1_K_max_load\": 0.23741718420538405, \"A5_s_p50\": 0.7655882980000115, \"A2_recalibrated_max_load\": 0.004327484577016547, \"meets_guard_A2_0.018\": true, \"meets_A4_0.3\": true}, \"u_shaped/6\": {\"die_size_mm\": 4.0, \"c_table\": 0.98544, \"implied_c_P_ref\": 0.982298238800272, \"bias_HS_K_P_ref\": 0.04830125625498235, \"bias_LS_K_P_ref\": 0.19821466333142132, \"A2_P_ref\": 0.008240555987928389, \"implied_c_half_P_ref\": 0.9826717445343497, \"bias_HS_K_half_P_ref\": 0.018171727814793925, \"bias_LS_K_half_P_ref\": 0.08778434063749845, \"A2_half_P_ref\": 0.007786988935772477, \"A2_max_load\": 0.0082405",
+  "domain": {
+    "family": [
+      "interleaved",
+      "side_by_side",
+      "u_shaped"
+    ],
+    "dies_per_switch": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "die_size_mm": [
+      4.0,
+      4.5,
+      5.0,
+      5.5
+    ],
+    "load": [
+      "P_ref",
+      "half_P_ref"
+    ],
+    "coolant_K": [
+      338.15
+    ],
+    "h_W_m2K": [
+      5000.0
+    ],
+    "judged_level": [
+      1
+    ],
+    "stack": [
+      "default DBC (Al2O3 0.38 mm) with SAC305 die attach and 4H-SiC die"
+    ],
+    "cpu": [
+      "x86_64"
+    ]
+  }
+}

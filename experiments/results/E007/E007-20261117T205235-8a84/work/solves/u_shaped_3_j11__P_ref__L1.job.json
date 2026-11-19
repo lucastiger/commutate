@@ -1,0 +1,294 @@
+{
+ "key": "u_shaped_3_j11__P_ref__L1",
+ "kind": "solve",
+ "layout": {
+  "name": "u_shaped_3_j11",
+  "family": "u_shaped",
+  "dies": 3,
+  "stratum": "u_shaped/3",
+  "die_size_mm": 5.0,
+  "seed": 2759192546,
+  "index": 11,
+  "role": "judged",
+  "fingerprint": "907dad98ef52c2d6676c7a37e638ea1001f02530120d82153ec5e10295555f74",
+  "n_dies": 6
+ },
+ "load": "P_ref",
+ "level": 1,
+ "power_W": 39.611323995204806,
+ "cfg": {
+  "coolant_K": 338.15,
+  "h_W_m2K": 5000.0,
+  "target_rise_K": 60.0,
+  "calibration_tol_K": 0.25,
+  "calibration_max_iters": 10,
+  "power_start_W": 30.0,
+  "loads": {
+   "P_ref": 1.0,
+   "half_P_ref": 0.5
+  },
+  "judged_level": 1,
+  "subset_levels": [
+   0,
+   1,
+   2
+  ],
+  "energy_tol": 1e-06,
+  "picard_tol_K": 0.0001,
+  "tj_limit_K": 448.15,
+  "metric_names": {
+   "A1": "dtj_pair_err_p95_K_max_load",
+   "A2": "tjavg_local_rel_err_p95_max_load",
+   "A3": "switch_spread_err_p95_K_max_load",
+   "A4": "switch_spread_err_ratio_vs_stratum_mean",
+   "A5": "l1_eval_s_p50",
+   "A1_own": "dtj_pair_err_ownhot_p95_K_max_load"
+  },
+  "f1": {
+   "step_floor_K": 0.01,
+   "diff_tol_K": 0.1,
+   "abs_rel_tol": 0.01,
+   "l1_vs_l2_tol_K": 0.1,
+   "subset_layouts_per_cell": 2,
+   "node_growth_tol": 0.15,
+   "subset_rule": "per (family, band) cell, in the fixed order of FAMILIES x BANDS: one stratum of the cell drawn from the l2_subset stream of the sealed seed, then 2 of its judged layouts without replacement; written to plan_frozen.json before any solve. Levels 0 and 2 are solved at both loads (level 1 is the judged solve). Level-1 error = |v1 - v2| + mfos.metrics.gci_step_floor(v0, v1, v2, 0.01 K); die averages <= 1 % of the level-1 die-local rise; spreads and same-stratum pair differences (hottest die by the level-1 die average, held fixed across levels) <= 0.1 K, and |v1 - v2| <= 0.1 K",
+   "source": "O002 F1; research/notes/o002-f1-dev-check.md (T0393; level 1 confirmed, research/o002_f1/f1_dev_check.json status complete, commit 87f639df)"
+  },
+  "allocation": {
+   "source": "research/o002_e007/allocation_m32.json",
+   "source_sha256": "6b3ac73780ee86f1db0af0f96234167b0d3d511aeaa3a8a6508d2a81f2f671e5",
+   "layouts_per_stratum": 32,
+   "n_strata": 15,
+   "n_layouts": 480,
+   "decision": "D0027 decision 2 (founder, 2026-11-18; amends D0025 decision 2): m = 32 layouts per (family, dies) stratum, 480 in all, for kill-side power. The fixed allocation is research/o002_e007/allocation_m32.json (T0464), which the freeze check reads per stratum together with the bound and which cites T0456. History: D0025 decision 2 had m = 20, 300 layouts, provisional, with f3_simulation.json's allocation (T0396, sha256 0071c857...), kept unchanged",
+   "power_coverage_evidence": "T0456's corrected simulation, research/o002_e007/a4_strata/sim_corrected.json (seed 20261456, 1000 reps per cell, V4 bound; its consistency check passed: simulated median A4 0.108 normal / 0.107 t3 against 0.107 measured). At m = 32, for the L1 as measured on development rows: joint power 1.000 (normal) / 1.000 (t3), Wilson 95 % MC interval [0.996, 1]; A4 power 1.000 / 1.000 [0.996, 1]; minimum V4 coverage over A1-A4 and K1-K3 0.974 [0.962, 0.982] (normal) / 0.981 [0.971, 0.988] (t3), 0.984 / 0.985 in the kill cells, and 0.971 or better in every cell at every m from 20 to 40. Kill side, every error scale raised so that each kill statistic's truth is 1.2 x its kill threshold: P(K1 fires) 0.812 [0.787, 0.835] (normal) / 0.581 [0.550, 0.611] (t3); P(K2 fires) 1.000 / 1.000 [0.996, 1]; P(K3 fires) 0.576 [0.545, 0.606] / 0.354 [0.325, 0.384]. Intervals are Monte Carlo only; the simulation over-predicts A3 by 30-40 % (measured A3 outside its 5-95 % band), so the kill-side rates are approximate (D0027 context). Figures and sha256 in allocation_m32.json power_coverage_evidence (research/o002_e007/t0464/make_allocation_m32.py)"
+  },
+  "bound": {
+   "ci_spec": {
+    "scheme": "woodruff",
+    "level": 0.94,
+    "cluster": "layout"
+   },
+   "crit": "t",
+   "rounding": "outward",
+   "ratio": "bonferroni",
+   "variant": "V4_t_outward_bonferroni_l094",
+   "statement": "one-sided 97 % bounds (Woodruff quantile bound, delete-one-layout jackknife, t(K-1), outward rounding) for A1-A4 and K1-K3; under the max over the two loads the upper bound is the max of the per-load upper bounds and the K1/K2 lower bound is the max of per-load lower bounds at 98.5 % (Bonferroni); A4/K3 by the Bonferroni quotient. More conservative than O002's 'upper 95 % bound' for passes and kills (a somewhat higher chance of INCONCLUSIVE): accepted by the founder, D0025 decision 1. Power (f3_simulation.json, D0025 context): at 0.6 x each threshold, joint power under t3 errors is 0.748 / 0.898 / 0.958 at m = 16 / 20 / 24; the 0.898 is really the power of A1, A2 and A4, since A3's power is 1.0 in that scenario (review T0420 (4)). For the L1 as measured on development rows (A4 = 0.366), joint power at m = 20 is 0.531 under t3 and 0.967 under normal errors, A4 alone driving the shortfall (T0434; simulated at m = 20 only). The two figures are different scenarios. m was resolved only on the grid {12, 16, 20, 24, 32}: an m between 16 and 20 needs a fresh simulation (review T0420 (5))",
+   "decision": "D0025 decision 1 (founder, 2026-11-17T01:26:21+00:00): CISpec(scheme='woodruff', level=0.94, cluster='layout'); the bound is mfos.metrics.quantile_ci (patch route I0211, merged on main in da2118fc). Every recompute entry except l1_eval_s_p50 carries this ci, as the row contract says"
+  },
+  "per_stratum_rule": "fixed before the run (F3, review T0420 (3)): A2 per (family, dies) stratum (statistic: max over loads of the p95 of |Tj,avg,L1 - Tj,avg,ref| / die-local rise over the stratum's dies; bound: the same V4 Woodruff bound on the stratum's rows, layouts as units); A4 per die-count band 2-3 and 4-6 (statistic: A4's ratio on the band's switch rows at P_ref; bound: V4 ratio bound). Reported, not gated. With 32 layouts per stratum the per-stratum A2 upper bound is expected to sit at the stratum maximum or at +inf (q + t(31) se of the share near 1; review T0436; t(19) at the former m = 20): reports.json gives each stratum's point, bound, maximum and an upper_informative flag, and the counts of infinite and informative upper bounds; a per-stratum bound is never read as precise",
+  "seeds": {
+   "streams": "numpy SeedSequence([seed, stream, *index]) -> 32-bit seeds: die_size 1, layouts 2, f7 3, timing_order 4, l2_subset 5, f7_strata 6; each stratum and pool its own index",
+   "pref_dev_seed": 20261101,
+   "pref_dev_rule": "per stratum: generate_layouts(1, 20261101, family, dies, die_size_mm = the stratum's sealed die size)[0], the development layout of C004's calibration rule (equal to C004's own development layout when the stratum is side_by_side/6 or u_shaped/2 and the size is 5.0 mm); used only for P_ref, never judged",
+   "forbidden": [
+    20261101,
+    20261115,
+    20261116,
+    20261117,
+    20261118,
+    20261395,
+    20261398,
+    831496695,
+    7,
+    20261103,
+    20261399,
+    20261456
+   ],
+   "forbidden_sources": "20261101 E009/C004 development seed; 20261115 T0392 development seed; 20261116 T0392 bootstrap seed; 20261117 and 20261118 F3 simulation seeds (T0396 rounds 1 and 2); 20261395 T0395 fresh development seed (chose the 1.5 mm grid: development rows, never judged evidence); 20261398 T0398 development seed (config.dev.dev_seed); 831496695 E009's sealed seed (C004's fresh layouts); 7 E009 smoke seed; 20261103 thermal_fem AMG seed; 20261399 T0398 F3 follow-up simulation seed (research/o002_e007/stats_sim_dev.py); 20261456 T0456 development seed (6 extra layouts in interleaved/2, side_by_side/2 and u_shaped/6, research/o002_e007/dev_rows_a4_strata.json) and its power-simulation streams"
+  },
+  "c004": {
+   "dev_fingerprints": [
+    "1f66b68a27b4bbbbc86f6ce81dbb2d1e289671988be5ac718bad7c501409a55b",
+    "6aaf383a9b7b672bf03bee01955beeceadbf4d111465db7086731ddf3cf245e6"
+   ],
+   "fresh_fingerprints": [
+    "02f6fc1064bf6e677738e51050d7c2ac7b593fb0a4e54c5ab9911129df0536e6",
+    "0a25a72a24d09bff63f01b031606d485aea551e0e7789f59611fd2206801e4d9",
+    "51319fab0ef49705e581a404ab5a358100fac8115c2a0e7328d92316cc56b560"
+   ],
+   "other_dev_fingerprints": [
+    "bbbac5e8c6c64bddee9b94802ad26dae0ae8ffcaa61b2732319b14345fbad8ae",
+    "2207858e43e3a1c00215927324bd9511eadcf9e679611adaa60622ee84e5f165"
+   ],
+   "source": "E009 run E009-20261107T162152-a3cf domain.layout_fingerprint; research/o002_f1/f1_dev_check.json partners"
+  },
+  "f7": {
+   "pools_per_cell": 2,
+   "draws_per_pool": 40,
+   "rule": "per (family, band) cell: the pools' strata drawn from the f7_strata stream without replacement (2-3 band: both strata; 4-6: two of three); per pool, draws_per_pool layouts from its own f7 stream at the stratum's die size; the optimised layout is the draw with the lowest L1 hottest-die average (max over dies of L1's die average) at P_ref, ties to the lowest index. Solved by the reference at the judged level at both loads; its A1-type errors against every random judged layout of the same stratum reported (p95 and max per pool and load), not gated"
+  },
+  "nulls": {
+   "isolated_die": {
+    "k_at_K": 363.15,
+    "n_modes": 400,
+    "definition": "T_bp(all dies) + [box_series(die alone on the five substrate layers, laterally uniform over the baseplate, constant k at 363.15 K) - (T_c + P_i / (h A))] + P_i (t_attach / k_attach + t_die / k_die) / A_die: no inter-die coupling (solvers.thermal_series, Muzychka et al. 2003 / Carslaw and Jaeger 1959 Sec. 3.6)"
+   },
+   "die_position": "per (family, dies, load, switch, die_index): mean reference die average of the other layouts of the stratum (leave-one-layout-out)",
+   "stratum_mean": "die averages: per (family, dies, load, switch) the mean reference die average over every die of that switch in the other layouts; spreads: spread_null_K, the mean reference spread of the other layouts per (family, dies, load, switch); both leave-one-layout-out",
+   "applies": "every null is computed at both loads. null_baselines applies each of the three nulls to A1 (dtj_pair_err_p95_K_max_load) and A4 (switch_spread_err_ratio_vs_stratum_mean) only, so mfos's evaluator marks A1 or A4 non_discriminating if a null meets it at its bound. A2 and A3 are not in applies_to: O002 F2 requires each null to fail A1 and the spread nulls to fail A4, and nothing else; the hypothesis says A3 (and A5) are each met by a layout-ignorant predictor on their own and that A1 and A4 separate L1 from the nulls; the A3 description says a stratum-mean spread may meet A3 alone. Development data agree (research/notes/o002-l1-design.md null table: stratum_mean and die_position A3-type 0.411 / 0.193 K, under A3's 1 K), so applying the nulls to A3 would make E007 unable to PASS (review T0436, the blocker of attempt 1). All three nulls predict spreads (null (c) max - min of its per-index means, null (a) its per-die isolated values), so all three are applied to A4. The gated sanity check f2_null_discrimination applies F2's point rule at P_ref on the judged rows. A2 and A3 of every null are reported (A2 also per stratum); the die-position null's A4 is close to the stratum-mean null's by construction (a max of leave-one-out means is at most the mean of maxima; equal when the same die indices are hottest and coldest in every layout; review T0435)"
+  },
+  "l1": {
+   "module": "src/moduleforge/thermal/__init__.py",
+   "method": "fv_coarse_xcal",
+   "grid_rule": {
+    "h0_max": 0.0015,
+    "lat_frac": 16.0,
+    "edge_frac": 2.0,
+    "z_cells": 2
+   },
+   "calibration": {
+    "4.0": 0.98544,
+    "4.5": 0.98284,
+    "5.0": 0.98298,
+    "5.5": 0.98402
+   },
+   "calibration_version": "o002-l1-cal-v2",
+   "picard_tol_K": 0.01,
+   "timing": "A5 = median wall time of L1.evaluate per (layout, load) over the 960 judged evaluations (32 x 15 strata x 2 loads), in one subprocess with OMP/OPENBLAS/MKL/VECLIB/NUMEXPR thread variables = 1, after every P_ref calibration solve (level 0, development layouts) has finished and before any judged reference solve, with no solve running, in the sealed timing order, after one uncounted warm-up evaluation on a P_ref development layout. Every other L1 evaluation of the run (F4 constant-k ablation, F7 pools, F7 optimised layouts at half load) follows in the same process, untimed for A5. Host (reviews T0449/T0450 (5)) - A5 is timed on the host that runs the registered run's L1 phase, fixed here as the burst VM of compute option A (config.compute.vm.machine, the policy's route; the L1 phase records node, platform and processor in l1_phase.json and the run's domain records cpu). If the founder chooses option B, the host of the L1 phase is fixed in that decision before registration. T0398's development A5 was timed on the founder's Mac (Apple silicon), a development figure, not the registered host",
+   "freeze_note": "frozen at T0395's merged design (lateral grid cap 1.5 mm; calibration table from benchmarks/thermal_l1_calibration.py). T0395's fresh-seed rows (seed 20261395) chose the grid: development rows, never judged evidence"
+  },
+  "fem_rule_path": "research/o007_dev3/frozen_config.json",
+  "fem_rule_file_sha256": "0226b7709e2554013008a05f05d952bf646711edc0eb5967498864417a120e9a",
+  "fem_rule": {
+   "amg_gs_sweeps": 2,
+   "amg_seed": 20261103,
+   "candidate_id": "a_q1h4_graded_gs2",
+   "cg_eligibility_limit": 300,
+   "cg_maxiter": 400,
+   "dz_max_m": 0.001,
+   "edge_grading": {
+    "first_offset_m": 0.0001,
+    "max_offset_m": 0.004,
+    "min_gap_fraction": 0.5,
+    "ratio": 2.5
+   },
+   "element_order": 1,
+   "feasible": true,
+   "h0_m": 0.004,
+   "levels": [
+    0,
+    1,
+    2
+   ],
+   "levels_missing": {},
+   "linear_rtol": 1e-11,
+   "mandatory_lines": "box-stack mode: x and y lines through every source centroid (built in) and through the frozen reference maximum of every source (extra_lines); layout mode (manufactured case): x and y lines through every frozen reported point and maximum, z lines at their (interface) heights; generator layouts: none (Tj max = max nodal value on the die top face). Snapping: production SNAP_FRACTION 1e-2 of the level-0 cell; every snap recorded and the node at the snapped coordinate reported. Edge grading: production GridRule.edge_grading in both modes; in layout mode the fixed set also holds every layout geometry line (T0227/T0231).",
+   "min_cells": 2,
+   "near_margin_m": 0.002,
+   "nz_min": 1,
+   "picard_tol_K": 0.0001,
+   "quadrature": {
+    "faces": "3x3 Gauss (intorder 4)",
+    "manufactured_data": "4x4x4 / 4x4 Gauss (intorder 7)",
+    "stiffness": "2x2x2 Gauss (Q1)"
+   },
+   "rationale": "candidate a_q1h4_graded_gs2 verified eligible on every criterion at level 2 (sec. 0.2); only candidate. Pre-registered rule: research/notes/o007-dev-study3.md sec. 0 (commit 1cd23ad8); T0228 candidate 1 (research/o007_dev2/frozen_config.json) key for key plus amg_gs_sweeps = 2.",
+   "refinement_ratio": 2,
+   "snap_fraction": 0.01,
+   "zrefine": true
+  },
+  "thermal_fem_path": "src/moduleforge/solvers/thermal_fem.py",
+  "thermal_fem_sha256": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753",
+  "freeze": {
+   "files": {
+    "research/o002_e007/e007_metrics.py": "ed1ffbf6ae72a905ef550d2c694676028d2103fd1309957df3c7ed43cdd474a2",
+    "src/moduleforge/__init__.py": "8497b6ec8f6a31584b8a2caece91c5de82622a7c5262b3770d8ffcf42053c8de",
+    "src/moduleforge/drc/__init__.py": "d4e956db315452c839cc3821a8b0a14f98a6c5f871cc9f3417177216a6a2ab03",
+    "src/moduleforge/drc/rules.py": "19a32c767757434bb0e417c8987b0a80e60549514ea4ab9f63d5da927da64fc5",
+    "src/moduleforge/generate/__init__.py": "194f83ccb880033d9fba9299ee09c1d0e8bd5e966f131a4515134af751e6df39",
+    "src/moduleforge/generate/halfbridge.py": "321c08ab97044d669f7d9d01f3fb33d584fa1a0be2a387a67cda3ba8b8ccc301",
+    "src/moduleforge/geometry/__init__.py": "9d585508033546b121219c944193e50ad0ed6a39a48b256e4ba2759b6c5c2b44",
+    "src/moduleforge/geometry/conductors.py": "e9a21349fa36cd3c66d004f98c5468d4c954e9baced0503213c68a05a9b7b9df",
+    "src/moduleforge/geometry/layout.py": "4e95052d8138d67d4f68413b5160315302554e24a731084c74924807a31a3543",
+    "src/moduleforge/geometry/stack.py": "b032ef2df8bb404804cddb4a8411ffc50f8793973c0bbcc6fa4634ededd5a999",
+    "src/moduleforge/geometry/units.py": "49b5fb83312b557e82f7b7eb014c54f077466c9207e113e19f6a7f1b5f953bcb",
+    "src/moduleforge/solvers/__init__.py": "f68728d9696592932ccc80819431f3d27be9733aad103230c93dad7e8d99e443",
+    "src/moduleforge/solvers/thermal_fem.py": "a216d5fe3209bcee4ee50b2bbbc73b4fcf99ac7c4e24a197d9f060c86f1e1753",
+    "src/moduleforge/solvers/thermal_fv.py": "408efd57718941618ca7d176c293f52d058cf48cd65d33575fab7ad8fa5a309e",
+    "src/moduleforge/solvers/thermal_layout.py": "016569982e6ecd150f54ba2403c286102a98144269f09743f9880cdf8722acf6",
+    "src/moduleforge/solvers/thermal_series.py": "96fdff3c78d5406e01c7df31064e08e5e121d5f5c858b50587df7d4342dba466",
+    "src/moduleforge/thermal/__init__.py": "5ef21412f7166b17e34856e90f82e3455f4182f5183452eaa364f1072259d08e"
+   },
+   "thermal_layout_note": "T0395 changed src/moduleforge/solvers/thermal_layout.py (keyword overrides, defaults unchanged; 5a43758d... -> 016569982...); E006, E008, E009 and E010 record its hash, so a re-run of those experiments records a new hash for it with no change in behaviour (reviews T0423/T0424). geometry/stack.py also differs from E009's recorded hash (f213fed1... -> b032ef2d...)"
+  },
+  "compute": {
+   "bytes_per_dof": {
+    "0": 4964.065014991321,
+    "1": 4400.0,
+    "2": 4964.065014991321
+   },
+   "memory_margin": 1.15,
+   "base_rss_GB": 0.3,
+   "cpu_s_per_dof": {
+    "0": 0.000125,
+    "1": 0.000195,
+    "2": 0.000818
+   },
+   "local_cap_GB": 5.0,
+   "swap_stop_GB": 8.0,
+   "calibration_solves_expected": 3,
+   "l1_s_per_eval": 0.6,
+   "vm": {
+    "machine": "n2d-custom-8-81920-ext",
+    "ram_GB": 78.0,
+    "vcpus": 8,
+    "memory_fraction": 0.85,
+    "usd_per_h": 0.612,
+    "overhead_h": 0.5
+   },
+   "sources": "bytes/DOF: level 1 raised from 3400 to 4400 by T0456 (packet item 4). Convention (T0464, review T0463 (3)): bytes_per_dof EXCLUDES base RSS, i.e. (peak RSS - base_rss_GB) / DOF, because the runner's memory admission (Jobs.est_gb) and --plan both use DOF x bytes_per_dof x memory_margin + base_rss_GB. Recomputed from experiments/drafts/E007.dev_rows.json meta.reference_cpu_wall (T0398's 90 level-1 solves): max 4.32 kB/DOF with base RSS (0.3 GB) excluded, 4.98 kB/DOF with it included (both side_by_side_2_j02 half_P_ref, 2.27 GB at 0.455 M DOF); T0456's 36 level-1 solves 4.33 / 4.99 kB/DOF. The earlier source text's 4.29 kB/DOF was neither of these. On all 126 measured level-1 solves the admission estimate is 1.15 to 2.24 x the measured peak RSS (never below it; 1.82 is the maximum over T0398's 90 solves, 2.24 over T0456's 36; review T0465). Previously T0392's 26 level-1 solves (peak RSS <= 4.1 GB at 1.24 M DOF, 3.3 kB/DOF, research/notes/o002-l1-design.md); levels 0 and 2 E009 fem_bytes_per_dof (conservative at level 0). CPU s/DOF: levels 0-1 the slowest cached frozen-rule solves in research/o002_l1/cache (0.12 and 0.19 ms/DOF, wall = CPU assumed, one effective thread); level 2 T0243's burst rate 585 us/DOF (research/notes/o002-f1-dev-check.md); T0398 measures cpu_s and wall_s of one level-2 solve. VM price: the founder's figure for this machine (E010 spec, research/o002_f1/burst_level2.sh)",
+   "convention": "D0025 decision 3 (founder, 2026-11-17T04:25:17+00:00): O002's cpu_hours budget counts the CPU time the solver processes use, as run records measure it, not burst-VM vCPU-hours; VM time is costed in dollars",
+   "plan_summary": "e007_run.py --plan (T0397 attempt 2, 2026-11-17, development-seed proxies, 2 per stratum and die size): 717 reference solves (600 judged + 24 F7 + 48 subset levels 0 and 2 + 45 calibration); 1693 L1 evaluations (0.3 CPU-h). Expected die-size mix 56.7 CPU-h (upper, every die 5.5 mm: 61.1), process CPU time, within O002's 100; above policy local_cpu_hours_max = 6, so burst per policy. Option A, all on the VM: 25.4 VM-h, $15.54 (upper 29.1 h, $17.79). Option B, what fits 5 GB locally one at a time (22.2 CPU-h, about 22 h wall) then the rest on the VM: 22.6 VM-h, $13.84 (upper 26.3 h, $16.11). Over the 5 GB local cap: level 1 of side_by_side/6, interleaved/6 and u_shaped/6 (5.0-5.5 GB with the 0.3 GB base RSS; F7's 4-6 band too in the upper case) and every level-2 subset solve (28-45 GB expected, 48-77 min each; one at a time on the VM's 66 GB usable). D0025's 'about 52 CPU-hours' predates this plan. T0398: option A's packed VM figure needs --max-procs 8 --mem-cap-gb 66.3 (one at a time: 57.2 VM-h, $35.00; --plan prints both). Level 1 measured on the 90 development solves (Apple M, one thread): 0.136 ms/DOF median CPU (max 0.262), CPU/wall 0.994, peak up to 4.3 kB/DOF (above the 3.4 kB/DOF used here); cpu_s_per_dof is kept because the registered host differs, so --plan's CPU-hours and cpu_hours_est (57.0) are unchanged. No level-2 solve fits the local 10 GB limit (smallest development layout 3.48 M DOF, est. 20.2 GB): its cpu_s / wall_s are listed for the burst (research/o002_e007/l2_timing/job.json). SUPERSEDED at m = 32 by plan_summary_m32",
+   "plan_summary_m32": "e007_run.py --plan at m = 32 (T0464, 2026-11-17; D0027 decision 2; output research/o002_e007/t0464/plan_m32.json and plan_m32.txt; same proxies and per-DOF rates as above): 1077 reference solves (960 judged + 24 F7 + 48 subset levels 0 and 2 + 45 calibration); 2413 L1 evaluations (0.4 CPU-h). Expected die-size mix 74.1 CPU-h (judged 46.0, subset level 2 26.2, F7 1.1, calibration 0.2, subset level 0 0.1, L1 0.4); upper (every die 5.5 mm) 78.9 CPU-h. Process CPU time (D0025 decision 3), within O002's 100 CPU-hours; m = 20 was 56.7 / 61.1. Burst per policy (local_cpu_hours_max = 6). Option A, packed on the VM (--max-procs 8 --mem-cap-gb 66.3): 27.7 VM-h, $16.92 (upper 31.3 h, $19.15); one at a time 74.6 VM-h, $45.63 (upper 79.4 h, $48.57). Option B (19.5 CPU-h locally, one solve at a time, then the VM): 25.2 VM-h, $15.43 (upper 28.8 h, $17.62). Margin to 100 CPU-h: the 24 level-2 subset solves use T0243's 585 us/DOF, not yet measured on this code; the total stays within 100 unless level 2 is more than 1.99 x (expected) / 1.71 x (upper) slower, which the level-2 timing burst (research/o002_e007/l2_timing/, two jobs) checks before registration",
+   "level2_measured": "founder level-2 burst 2026-11-18 (research/o002_e007/l2_timing/record*.json, frozen runner, n2d-custom-8-81920): side_by_side_2_j00 3.48 M DOF, 2384 CPU-s, 929 s wall, 10.9 GB peak (685 us/DOF); interleaved_2_j01 4.19 M DOF, 3423 CPU-s, 1358 s wall, 13.4 GB peak (817 us/DOF), energy balance <= 1.7e-12. cpu_s_per_dof level 2 set to the slower 818 us/DOF (1.40 x the 585 assumed). Regenerated --plan at m = 32: 84.5 CPU-h expected, 90.7 upper, process CPU time, within O002's 100; option A packed 36.1 VM-h, $22.06 (upper 41.1 h, $25.14); option B 33.6 VM-h, $20.57; one at a time 85.0 VM-h, $52.02. Supersedes plan_summary_m32's figures. Reference convergence on interleaved_2_j01 (review T0463 (5)): the level-1 reference spread is 0.271 / 0.269 K (HS / LS) against 0.243 / 0.238 K at level 2, within F1's 0.1 K; L1's spread error is -0.040 / -0.048 K against level 1 but -0.012 / -0.017 K against level 2, so about 70 % of it on this layout is level-1 reference discretisation, which makes level-1 judging of A4 conservative"
+  },
+  "scope_limits": [
+   "F6: the hottest-node discretisation estimate (levels 0-2, step-floor rule) exists only on the 12-layout level-2 subset; every other die reports its level-1 hottest node without an error estimate (reviews T0435 (7), T0449/T0450 (6))",
+   "F2: the die-position null is not independent of the stratum-mean null for A4: its spread is the max - min of leave-one-out per-index means, at most the mean of the per-layout spreads by construction (equal when the same die indices are hottest and coldest in every layout), so its A4 adds little beyond the stratum-mean null (review T0435 (7))",
+   "A5 is measured on one host (config.l1.timing); a claim about another machine needs its own timing"
+  ],
+  "dev": {
+   "dev_seed": 20261398,
+   "layouts_per_stratum": 3,
+   "workdir": "research/o002_e007/dev_work",
+   "f7": false,
+   "l2_subset": false,
+   "die_size_mm": {
+    "side_by_side/2": 4.0,
+    "side_by_side/3": 4.5,
+    "side_by_side/4": 5.0,
+    "side_by_side/5": 5.5,
+    "side_by_side/6": 4.0,
+    "interleaved/2": 4.5,
+    "interleaved/3": 4.0,
+    "interleaved/4": 5.5,
+    "interleaved/5": 5.0,
+    "interleaved/6": 4.5,
+    "u_shaped/2": 5.0,
+    "u_shaped/3": 5.5,
+    "u_shaped/4": 4.0,
+    "u_shaped/5": 4.5,
+    "u_shaped/6": 5.5
+   },
+   "note": "--dev (T0398): every family at every die size, interleaved/3 at 4.0 mm (T0423/T0424), recorded development seed 20261398, level 1, no level-2 subset or F7 (local); rows to experiments/drafts/E007.dev_rows.json. Its meta carries D0025 decision 4's per-stratum check (l1_dev_check_D0025: the implied factor c * sum(rise_ref) / sum(rise_L1) beside c(s), the mean HS and LS die bias, A2-type against the model's 1.8 % guard, A4-type against 0.3). Development rows are never judged",
+   "result": "T0398 (2026-11-17, research/notes/e007-dev-rows.md): 45 layouts (3 per stratum), 90 level-1 solves, every sanity check passed. A1 0.230 K, A2 0.0081, A3 0.091 K, A4 0.107, A5 0.440 s (Mac, alone). F2: every null fails A1 (die_position 5.69, stratum_mean 5.50, isolated_die 3.82 K) and A4 (1.00, 1.00, 11.42). D0025 check: the 1.8 % A2 guard holds in every stratum (max 1.16 %, interleaved/3); A4 <= 0.3 FAILS in interleaved/2 (0.352), side_by_side/2 (0.340) and u_shaped/6 (0.951), each a ratio of p95s over 6 switch rows: STOP, founder decision before E007 freezes. Implied-c family spread 0.0064 / 0.0046 / 0.0036 / 0.0031 at 4.0 / 4.5 / 5.0 / 5.5 mm (interleaved lowest; LS bias +0.29 to +0.47 K at 4.0-4.5 mm). F3 at the dev structure: V4 coverage >= 0.971 for every statistic and model (research/o002_e007/f3_dev_simulation.json)"
+  },
+  "founder_decisions_before_registration": [
+   "RESOLVED by D0027 decision 1 (founder, 2026-11-18): D0025 decision 4 check (T0398): A4 <= 0.3 failed in 3 of 15 strata on 3 development layouts each (interleaved/2 0.352, side_by_side/2 0.340, u_shaped/6 0.951); on 9 layouts (T0456) A4 is 0.286 / 0.223 / 0.096; the check counts as passed and the per-stratum A4 is a reported diagnostic, not a gate",
+   "RESOLVED by D0027 decision 2 (founder, 2026-11-18): m = 32 per stratum, 480 layouts (config.allocation, allocation_m32.json; power and coverage evidence: T0456's corrected simulation)",
+   "level-2 timing burst before registration (D0025 decision 3): research/o002_e007/l2_timing/run_l2_jobs.sh runs job.json (side_by_side_2_j00, cpu_s and wall_s of one level-2 solve) and job_interleaved_2_j01.json (review T0463 (5): whether interleaved/2's reference spread is converged at the scale of L1's spread errors), one at a time on a burst VM",
+   "registration waits for T0398's development rows: set dev_rows to experiments/drafts/E007.dev_rows.json; `mfos exp check E007 --rows experiments/drafts/E007.dev_rows.json` must show every null failing A1 and A4 (F2), and D0025 decision 4's per-stratum L1 check (l1_dev_check_D0025 in the rows' meta) must pass the 1.8 % A2 guard and A4 <= 0.3 in every stratum, or the founder decides before E007 freezes",
+   "null applies_to: A1 and A4 for all three nulls (this draft; config.nulls.applies). A narrower reading of F2 ('the spread nulls' = null (d) only) would drop A4 from nulls (a) and (c); a wider one (A2) is not in the objective and could make A2 non_discriminating in 2-die strata (die-position A2 3.6-3.7 % on u_shaped/2, T0392)",
+   "f2_null_discrimination is a gated sanity check on the judged rows (a null whose point estimate meets A1 or A4 makes the run INVALID as a design error, F2's response) rather than only a registration-time check: founder may prefer report-only, leaving the evaluator's non_discriminating verdict to act",
+   "compute location: cpu_hours_est exceeds policy local_cpu_hours_max (6), so the policy sends the whole run to burst (option A of --plan); option B (what fits 5 GB locally, one solve at a time, then the rest on the VM, resumed from the same work directory with E007_SKIP_OVER_CAP=1 locally) is cheaper in $ but splits one run over two hosts and needs E007 handled outside burst_experiments. A5 is measured on whichever host runs the L1 phase (recorded in the domain)",
+   "the isolated-die null's constant-k temperature (363.15 K) and its laterally uniform substrate over the whole baseplate: a fixed, untuned choice of this draft",
+   "F7 pool size (40 draws) and the pool rule (two pools per cell, strata drawn without replacement): the objective fixes 'a fixed number', not the number",
+   "A5: one uncounted warm-up evaluation; the L1 phase runs after the P_ref calibration and before every judged reference solve, alone",
+   "the 'pair' rows of the packet: following e007_row_contract.md, judged pair rows are not written (pairs are formed inside pairwise_diff_error_quantile); only F7's optimised layouts have their own row kinds (f7_die, f7_layout)",
+   "F6's hottest-node estimate exists only on the level-2 subset (levels 0 and 2 on every layout are outside the budget); the hottest node itself is reported for every die",
+   "the yardstick (die average gated, hottest node reported) ASSUMES the founder's decision 5 at the 11-27 thesis review (O002 scope_in)"
+  ]
+ },
+ "out": "/home/lukeskywalker/mf/experiments/results/E007/E007-20261117T205235-8a84/work/solves/u_shaped_3_j11__P_ref__L1.json"
+}
