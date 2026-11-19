@@ -88,5 +88,17 @@ log:
   CPU and agent budgets go to the 2026-11-27 thesis review with these numbers. Context: finest Case 4
   decks about 100 h each; F7(a) burst about 194 h / $141 central, up to about 2,000 h upper; E004 about
   542 CPU-h against 260; O004 agent spend $139.22 of $147.85'
+- 'founder-session finding 2026-11-19 (no decision yet): the FastHenry k0/k1 measurement burst crashed
+  every deck on every attempt (SIGSEGV after the sparse preconditioner build; Linux x86-64 only, the same
+  decks complete on the Mac). Root cause found with an AddressSanitizer build: matStats (sparse/spBuild.c)
+  is passed solver_sparse.c''s 40-byte spm wrapper instead of the sparse MatrixPtr, reads past it and
+  dereferences the garbage; the values only feed a printf. The same bug explains D0002''s intermittent
+  pin-con7 crash (unpatched 13 of 40 runs crashed, patched 0 of 40, identical Zc.mat). A two-function
+  source fix gives byte-identical Zc.mat on the 14,436-filament Case 4 deck. Proposed as D0028 (founder
+  decision: a build change, D0002), on branch session/fasthenry-d0028-2026-11-19 with scripts/provision_compute.sh
+  applying the fix and its self-test checking it. The measurement burst is rerun after D0028 lands. Open
+  E004 design item for the thesis review: config.solve.fasthenry.pinned_binary_sha256 pins the Mac binary
+  and can never match a Linux VM build; it must become per-platform (or tarball plus fix with each host''s
+  sha256 recorded) before registration.'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
