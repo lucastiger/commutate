@@ -117,14 +117,32 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   below on Case 4; the frozen banded rule supports about 0.89. A FastHenry measurement burst (k0 and k1 on three Case 4
   layouts) is running and reports before the review. Options: a coarser FastHenry ladder (finest level 0.5 mm), a cropped
   domain, FastHenry at its two coarser levels with a wider estimate, or descoping E004's FastHenry comparison.
-- **O008's E011 is designed and its development L2 burst is running** (ends about 2026-11-20). W* holds at 0.25 mm (W*/W
-  0.938 on 2R, 0.718 on Case 4); R_D sits at 1.28-1.31 against the [1.25, 1.60] window (one 2R draw at 1.21). Before
-  registration: the search budget (Case 4 searches still gain up to 16 % in the last quarter of 2000 evaluations), and the
-  registered run's size, modelled at 170-246 h and $104-151 against a 120 h timeout.
+  - *Measurement burst, 2026-11-19.* The first run crashed every deck on Linux. The cause was a FastHenry bug, also behind
+    D0002's intermittent crash, fixed by D0028 (one source fix, identical results). On the rerun the first k0 deck
+    completes on the VM (dev03_trace_width: 25.74 nH at 10 MHz, 3893 s, 4.4 GB). On Linux the decks need more memory
+    than projected: k0 at least 1.5x, and k1 is stopped above 18 GB against 11.7 GB projected. They also run about 3x the
+    Mac's time. So the runner solves the k1 decks one at a time with the VM's full memory. Inference: about 25-30 h or
+    more per k1 deck, so the review may have k1 for one or two layouts, or only a lower bound on its run time.
+    E004's FastHenry memory model and its binary pin (per platform since D0028) both change before registration.
+- **O008's E011 as designed is expected to be INCONCLUSIVE** (decide here; development analysis T0471, three reviews
+  accept with caveats). W* and the band bound hold at 0.25 mm (W*/W 0.938 on 2R, 0.718 on Case 4). On the development
+  draws:
+  - A1 = 0.25: 2R passes 2 of 8 draws, Case 4 passes 8 of 8.
+  - A3 = 0: blind compaction is not beaten on 2R.
+  - P(PASS) is about 0, with a 95 % upper bound of about 0.11.
+  - O008 F1 requires A3 met on development rows, so E011 fails its own registration check.
+
+  The choice: redesign before registration, or take this evidence here as a finding against the hypothesis on 2R. The
+  statistics review's caveat bears on it. 2R's misses (0.2-3 points above the 2 % line) are larger than the spread inside
+  any 2R shortlist (at most 0.12 points), so re-ranking the existing shortlists at L2 cannot fix 2R; a redesign would
+  have to change where the search ends. If E011 is registered, the run is $65-107 of VM (53-170 h). The analysis
+  recommends keeping the 2000-evaluation search budget (2R's misses are not budget-limited) and adopting the no_moves
+  rule (`research/notes/e011-dev-l2-analysis.md` section 8).
 - **Compute constraint.** The burst project is on the Google Cloud free trial: 16 vCPUs in all at once, not raisable without
   upgrading, which the founder will not do. Bursts run in sequence; the free-trial credit bounds the total VM spend.
-- **Agent spend as of 2026-11-19** (STATUS.md): O002 $103.71 of $120, O004 $139.22 of $148, O008 $91.48 of $140; plus VM:
-  E007 about $22, E011 development about $40, O004 bursts about $12.
+- **Agent spend as of 2026-11-19** (STATUS.md): O002 $103.71 of $120, O004 $139.22 of $148, O008 $102.61 of $140 (after
+  T0471); plus VM: E007 about $22, E011 development about $40, O004 bursts about $12 plus the FastHenry measurement burst
+  (running).
 
 ## What gets recorded after the review
 - The charter (founder-owned): A-T3's status; the day-45 and day-60 outcomes; any change of order of work or route.
