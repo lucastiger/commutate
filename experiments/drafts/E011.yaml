@@ -7,7 +7,11 @@ status: draft
 runner: uv run python experiments/runners/e011_run.py
 sealed_seed: true
 config:
-  design_task: T0382 (scientist, 2026-11-16). Development-only draft; nothing here has seen a sealed draw.
+  design_task: 'T0382 (scientist, 2026-11-16); revised by T0471 (2026-11-19) from the development L2 burst (I0205):
+    dev rows, band bound, joint operating characteristic, measured sizing, review items 1-9 of 2026-11-18.
+    Development-only draft; nothing here has seen a sealed draw. NOT READY TO REGISTER: on the development draws the
+    frozen design gives A1 0.25 and A3 0 (config.dev_l2), and O008 F1 requires A3 met on development rows before
+    registration; the founder decisions are listed in config.founder_decisions_before_registration'
   layouts: [2D_Case_2R, 2D_Case_4, gen2_0]
   counted_layouts: [2D_Case_2R, 2D_Case_4]
   reported_not_counted: [gen2_0]
@@ -112,9 +116,11 @@ config:
       median_max: 0.01
       max_max: 0.02
       applies_to: per counted layout, the search's b_j over its draws (sanity check band_bound)
-      development_value: null  # filled from the dev L2 run (later task, after the founder's burst run)
+      development_value: {2D_Case_2R: {median: 0.00336, max: 0.00607}, 2D_Case_4: {median: 0.00229, max: 0.00269},
+        holds: true, source: 'research/o008_e011_dev/dev_l2/dev_rows.json band_bound (T0471); search b_j, 8 dev draws
+          per layout'}
     f2_pool_n: 2000  # draws per sampler (legacy and reach) for the coordinate-range test and the L1 lower tail
-  frozen_sha256: 61c7abc9f2075dbfee4f4fa1606429cf177d1505c51f74c221304ca424417d3b
+  frozen_sha256: 5f540d0aed1574d79854533241bb217763e6622eae460542a09438a0b5bcbda9  # T0471: changed only by band_bound.development_value (a measurement); every design value unchanged
   code_sha256:
     src/moduleforge/generate/derivative.py: 2be5db7e37217427c944c8dfa849de10b18222eb0c24903a359d30ee0fb9ea22
     src/moduleforge/generate/twin.py: 26a77a60130d95e4b5e087f30806ff2e26086757668d7d7e7fdecbb681a123e5
@@ -122,27 +128,41 @@ config:
     src/moduleforge/optimize/control.py: de00f8c97342e1f6ff2b4d5b34292e76bc16e5e17086d56c9c2951074ab7a0a1
     src/moduleforge/optimize/nulls.py: da30f8e613c90f296131e82c2f6a62f7bb9920c19a42b7211aeeedd32dce36e7
   joint_operating_characteristic:
-    status: method stated here; numbers filled after the dev L2 run (later task)
-    method: 'Per counted layout k, from the development rows at L2: the search''s s_kj and b_kj, and each gating null''s
-      s and b, j = 1..n_dev. (1) Common mode: every draw on a layout shares the one solve L_sub(W*); its error enters
-      every s_kj as the same factor. Model s_kj = (1 + s*_kj)(1 + c_k) - 1 with c_k ~ N(0, sigma_k^2), sigma_k = e_R of
-      W* against itself is 0, so sigma_k is taken from the band: sigma_k = median_j b_kj / 2 / 1.96 (the band b = 2 e_R
-      is read as a 95 % half-width; a stated assumption, reported with sensitivity at 2 sigma_k). (2) Per-draw
-      idiosyncratic part: the development draws'' s*_kj = (1 + s_kj)/(1 + c) - 1, resampled with replacement (bootstrap,
-      B = 20000, seed 20261116). (3) For each bootstrap replicate: draw c_k once per layout, draw 8 s per layout and the
-      paired null values (same draw index resampled jointly with the search), compute A1, A3 (null_beaten_min) and K1
-      with e011_metrics on the replicate rows. P(PASS) = P(A1 >= 0.875 and A3 = 1 and K1 <= 0.05) over replicates; also
-      P(A1), P(A3), P(not K1) alone and P(INCONCLUSIVE), P(FAIL). (4) Report with a 95 % interval from an outer
-      bootstrap over the development draws, and the analytic A1-only figure (independent draws) from
-      e011_metrics.a1_operating_characteristic at the estimated per-draw pass probability for comparison with
-      O008''s table (0.94 / 0.81 / 0.66 / 0.26 per layout). Development draws are few (8 per layout), so the result is
-      a planning figure, not evidence'
-    interpretation: 'review T0432 note: W* is deterministic, so the registered run''s L_sub(W*) at the production level
-      is the same number as the development value at that level. Its error against the truth is a fixed offset that
-      the development s_kj already contain, not a fresh draw. Sampling c_k on every replicate therefore estimates
-      P(PASS) against the true L_sub ratios, as O008 asks; it does not estimate the reproducibility of the development
-      outcome. The c_k = 0 figure (the development rows as they are) is reported beside it'
-    values: null
+    status: 'method defined before the numbers (T0471, review item 1, T0462 major); values from the development rows'
+    estimand: 'pi = P(the registered run''s verdict is PASS), and P(A1 met), P(A3 met), P(K1 not firing), P(INCONCLUSIVE),
+      P(FAIL), over the sealed seed''s randomness (degradation draws, search and random-screen seeds), judged exactly as the
+      evaluator judges (s and b from L_sub at 0.25 mm, e011_metrics), with W*, the code and the solver fixed. It is NOT
+      P(PASS) against continuum-exact inductance ratios: O008 defines L_sub as l2_layout at 0.25 mm, and the method below
+      does not model the discretisation error of the ratios (the band b_j reports it per draw)'
+    c_definition: 'c_k = L_sub,run(W*_k) / L_sub,dev(W*_k) - 1, the relative difference between the registered run''s one
+      production-level solve of W*_k and the development solve of the same layout, which every s on layout k shares
+      (common mode): s*_kj = (1 + s_kj)/(1 + c_k) - 1 is the s the registered run would record for the development
+      draw j. W* is deterministic (frozen descent, frozen code; dev_l2 confirms the development W* at L2), so c_k is
+      zero up to the iterative solve''s error: c_k ~ U(-tau_k, tau_k), tau_k = solver_tol_rel_L_max of the W* solve
+      (2R 1.85e-5, Case 4 2.65e-5), one draw per layout per replicate, applied to the search and both nulls. The earlier
+      draft''s sigma_k = median b / 3.92 treated the fixed discretisation offset as a fresh draw, which no registered run
+      experiences; it is replaced by the fixed-shift stress rows below'
+    method: 'e011_run.joint_oc (selftest: planted 4-of-8 case gives 9/256 per layout; vectorised form equals e011_metrics on
+      every checked replicate). Per counted layout independently, resample 8 development draws with replacement, each as
+      its whole tuple (search, widen, compact: s, b, capped; paired on D_j), B = 20000, seed 20261119; c_k as above;
+      A1, A3, K1 and the verdict per replicate. Uncertainty: e011_run.oc_lower_bounds, one-sided Clopper-Pearson lower
+      bounds on each per-draw event rate (A1 s <= 0.02; resolved; paired; s <= 0.05 for K1) and the binomial tails they
+      imply, singly and with a Bonferroni union bound on pi. With 8 draws per layout the plug-in bootstrap is degenerate
+      at 0/8 and 8/8 (it cannot represent rates the sample did not show), so the bounds are reported beside it'
+    values:
+      source: research/o008_e011_dev/dev_l2/dev_rows.json (joint_oc, oc_lower_bounds)
+      P_PASS: 0.0  # 0 of 20000 replicates
+      P_A1: 0.0003
+      P_A3: 0.226
+      P_K1_not_fired: 1.0
+      P_INCONCLUSIVE: 1.0
+      P_FAIL: 0.0
+      per_layout: '2R: P(A1) 0.0003 (2 of 8 dev draws pass; analytic 0.0004 at p = 0.25), P(compact beaten) 0.36 (paired 0.36,
+        resolved 0.97), P(widen beaten) 1.0; Case 4: P(A1) 1.0 (8 of 8; at the one-sided 95 % lower bound p_L = 0.69 the
+        A1 tail is only 0.23), P(compact beaten) 0.63 (resolved failures exactly 4 of 8, at the line), P(widen beaten) 1.0'
+      bonferroni_lower_bound_P_PASS: 0.0
+      reading: 'planning figure from 8 development draws per layout, not evidence. The registered run with this frozen
+        design is expected to be INCONCLUSIVE (A1 missed on 2R, compaction not beaten on 2R), not PASS'
   sensitivity_rows_dev:
     - 'proxy without the gain threshold (min_gain 0): steps, L1 ratio, L_sub at the development resolution'
     - 'the probe''s DRC-only proxy (reach=False): known limit of the search: on 2D_Case_2R it lies outside the domain
@@ -175,6 +195,11 @@ config:
       writes dev_solve_summary.json and exits 3 unless every job has a result that passes l2_converged''s predicate.
       With --dry-run it makes the same refusals, rebuilds and count checks and solves nothing
       (dev_solve_dryrun.json)'
+    r_d_placeholder: 'review item 4 (T0471): in record mode (dev) the degradation''s R_D callback returns the window
+      midpoint only to keep the attempt (control flow); the runner now records r_d None with r_d_provisional true
+      (draw records, attempt logs, rows'' R_D and R_D_provisional) and --dev-rows fills the measured R_D at 0.25 mm and
+      0.5 mm from the burst''s solve of D_j. The committed manifest predates this and still carries 1.425: read it as
+      the placeholder'
     search_budget_curve: 'per counted layout and draw, the share of the search''s final L1 gain made in the last 10 %
       and the last 25 % of its 2000-evaluation budget, and the medians per layout (e011_run.improvement_curve). Exact
       when last_improve_eval is at or before the cut (share 0) or when a shortlist member was evaluated by the cut
@@ -182,6 +207,48 @@ config:
       index); otherwise reported as a bracket between the shortlist''s highest L1 and the trajectory''s running
       minimum, with exact false. Reported for the founder''s budget decision before registration; this design does
       not change the budget'
+  dev_l2:
+    status: 'T0471 (2026-11-19): development rows from the burst''s 740 converged results used (743 solved; I0205),
+      e011_run.py --dev-rows experiments/drafts/E011.dev_jobs.json --workdir research/o008_e011_dev/dev_l2, no new solve.
+      The burst''s code stamp (dev_l2/code_stamp.json, tree 33dac5c7...) equals the manifest''s; the checkout''s stamp
+      differs after T0471''s runner edits, as it must; rows record both. Facts and inferences:
+      research/notes/e011-dev-l2-analysis.md'
+    rows: research/o008_e011_dev/dev_l2/dev_rows.json  # {'rows': [...]}: 96 rows, 2 layouts x 6 roles x 8 draws
+    proxy_choice: 'choose_proxy at 0.25 mm keeps the descent on both layouts (the provisional W* holds): L_sub(W*)/L_sub(W)
+      2R 0.9376 (L1 0.9138), Case 4 0.7176 (L1 0.6533); the ratio moves by at most 7e-4 across the five band levels'
+    R_D: 'R_D at 0.25 mm: 2R 1.209-1.406 (median 1.289), 7 of 8 in [1.25, 1.60] (draw 1 at 1.209); Case 4 1.279-1.305
+      (median 1.288), 8 of 8. Review item 7 confirmed: (R_D - 1) / (L1 ratio - 1) is 0.68-0.79, so the L1 target 1.3875
+      maps to about 1.28 at L2, 0.03 above the window floor; out-of-window rate 1 of 16. Redraws from the same family aim
+      at the same L1 target, so a systematic offset is not corrected by redrawing (founder decision 2)'
+    gated_on_dev_rows: 'A1 0.25 (2R 2 of 8, Case 4 8 of 8); A2 0; A3 0 (2R compact: 6 resolved, 6 paired < 7; Case 4
+      compact: 4 resolved, at the line; widen beaten on both); K1 0.0297 (2R median; Case 4 0.0069), not firing. Verdict
+      on dev rows: INCONCLUSIVE. mfos exp check E011 --rows: A1 not satisfied, A3 not satisfied. A1 risk is 2R, as the
+      L1 indicator said (review item 6)'
+    band_bound_by_role: 'search: 2R median 0.0034 max 0.0061; Case 4 median 0.0023 max 0.0027 (bound holds). Nulls, not
+      gated by the bound: compact 2R 0.0032 / 0.0068, Case 4 0.0023 / 0.0048 (would hold); widen 2R 0.0118 / 0.0171,
+      Case 4 0.0189 / 0.0250 (would fail; widen''s s is 0.08-0.20, so its resolved failures are not near the band)'
+    ranking_stability: 'review item 3: the burst solved only each shortlist''s best at 0.25 mm (1 member per group at both
+      levels; 0 groups with 2), so the direct measure is not possible from these data. Over the 51 (2R) and 50 (Case 4)
+      layouts solved at both levels, q = L(0.25)/L(0.5) spans 0.25 % (2R) and 0.49 % (Case 4), sd 0.06 % and 0.12 %;
+      screen-level gaps best to runner-up 0-0.13 %, so a different 0.25 mm best is possible in most groups, with s''s
+      selection error bounded by 0.25 % (2R) and 0.48 % (Case 4). The production-level best has L_sub no higher than the
+      screen-selected member''s, so every dev search s is an upper bound for the registered rule on the same shortlist.
+      A direct measure needs 113 (2R) + 118 (Case 4) shortlist members at 0.25 mm: about 29 h of 2R and 100 h of Case 4
+      solve time, about $30 at the burst''s measured walls; not run'
+    dc_minus_reading_l2: 'the other DC- reading''s proxy has L(0.5 mm)/L(W*) = 1.0000 on both layouts; the search of draw 0
+      under it: 2R s 0.0193 (frozen reading 0.0220, a different best), Case 4 the same best (0.0148). No reversal of W*;
+      the 2R draw-0 difference (0.27 points) straddles the 2 % line'
+    sensitivity_proxies_l2_screen: 'L(0.5 mm)/L(W*): threshold-free 1.0001 / 1.0001; reach=False probe 0.990 / 0.973
+      (deeper, outside the domain); dies-fixed 1.022 / 1.069 (2R / Case 4)'
+    tj_fallback: 'review item 9: in dev mode W* is provisional, and the old runner skipped the fallback silently. The
+      runner now evaluates tj_fallback_due in every mode and, when it is due on the provisional W*, records the dies-fixed
+      descent''s band jobs for the burst (selftest plants 3 K). On the development layouts it is not due: Tj(W*) - Tj(W)
+      = -1.62 K (2R), -2.02 K (Case 4)'
+    work_checkpoints: 'review item 8: research/o008_e011_dev/work (stage checkpoints, .wall files) and work_dev.log are not
+      on this machine (not in this worktree, main or any other worktree; never committed), so their sha256 cannot be
+      recorded. Recorded instead: manifest sha256 17bd0a76... (its layouts.*.search_improvement.per_draw holds every
+      bracket end), dev_summary.md 44d24cc6..., dev_l2 results tree (dev_rows.json provenance). The brackets can be
+      read, not re-derived; re-deriving needs a deterministic --dev rerun on the stamped code (founder decision 5)'
   prerequisites:
     status: 'satisfied in this branch (T0382 attempt 4, 2026-11-17): the founder merged main into it (commit 8a8b8fc1),
       so it has builder task T0437''s source fixes (D0026 item 3). Checked by reading the sources before the run:
@@ -258,10 +325,31 @@ config:
     registered_run_solves_per_layout: 'W and W* bands (10); R_D at 0.25 mm per attempt (8 x (1 + redraw rate)); the
       search and the random-screen shortlists at 0.25 mm (2 x 8 x 8 = 128); widen, compact and proxy-alone end points
       (24); the four 0.5 mm band levels of six scored layouts per draw (192): about 360 solves, 170 of them at 0.25 mm'
-    registered_run_usd: 'Case 4: 170 x 0.25 mm at about $0.24 (four at once) = $41 plus 190 x 0.5 mm at about $0.04 =
+    registered_run_usd_superseded_T0471: 'Case 4: 170 x 0.25 mm at about $0.24 (four at once) = $41 plus 190 x 0.5 mm at about $0.04 =
       $8; 2R about 40 % of Case 4 ($20); gen2_0 about $5: about $75 of VM, within O008''s $50-100. Development run: the
       manifest''s own totals (experiments/drafts/E011.dev_jobs.json)'
-    cpu_hours_est: 110
+    sizing_measured_T0471: 'review item 2. Measured on the burst (dev_rows.json measured_sizing): 0.25 mm walls median
+      925 s (2R) and 3046 s (Case 4), 0.53-0.66 of E010''s model; peak RSS max 6.4 GB and 16.5 GB (1.00-1.05 of the
+      model); CPU/wall 1.25-1.46 at 2 threads. The burst VM''s shape is not in the repository, and the 2026-11-09
+      calibration measured 5700-5900 s for Case 4 at 0.25 mm with four at once on the 8-vCPU N2D, so a full-load
+      sensitivity (Case 4 0.25 mm at 5900 s) is given beside each figure. Model: registered_model''s solve counts per layout
+      (P 10, D 8 + redraws, S1 152 at 0.25 mm, S2 192), phases and layouts in sequence as run_all runs them, list
+      scheduling (E010.simulate) at p90 walls and 1.1 x max peak; gen2_0 from E010''s model x 2R''s measured ratios;
+      redraws: none / the measured out-of-window rate 1/16 / every draw in all 4 waves. Pricing: 0.612 $/h at 8 vCPU
+      80 GB (founder''s figure), extended memory 0.0086 $/GB-h (E010 config, unchecked), 16 vCPU taken as 2 x 0.612
+      (assumption to check in the console)'
+    registered_run_options:  # the founder chooses; makespan h / USD as (measured walls; full-load sensitivity)
+      A_n2d_custom_8_80GB: 'current shape, 3 Case 4 0.25 mm solves at once: 105-122 h, $65-75 (full load 144-170 h,
+        $89-104). Needs timeout_min of about 10800 (180 h)'
+      B_n2d_custom_8_96GB_ext: '+16 GB extended memory, 4 at once: 92-105 h, $69-79 (full load 121-140 h, $91-105).
+        timeout_min about 9000 (150 h)'
+      C_n2d_custom_16_160GB_ext: 'all 16 vCPUs of the free-trial cap, so only when no other burst holds 8: 53-63 h,
+        $66-78 (full load 71-87 h, $87-107). timeout_min about 6000 (100 h)'
+      split: 'a split into runs (e.g. Case 4 alone) needs a layout-subset flag and a merge of work directories that the
+        runner does not have; not offered as an option for this registration'
+    registered_run_usd: '$65-107 of VM by option and load (above); plus the development burst (I0205; manifest estimate
+      $38-44). O008''s notes expected $50-100 of VM in all'
+    cpu_hours_est: 495  # process CPU-hours of the registered solves, measured walls x CPU/wall (662 at full load)
     sizing_check_attempt2: 'T0382 attempt 2, from E010''s cost model (e010_run.em_unknowns / em_cost and
       cost_model.em_level_mem_prior) on each layout''s area. These are model figures, not measurements. Usable memory
       on the VM is 0.85 x 78 GB = 66.3 GB. 2D_Case_4: lat0.25 4.11 M unknowns, 1.60 h, 15.8 GB model, 25.3 GB with the
@@ -294,17 +382,36 @@ config:
       phases overlapped) understates both time and cost. The founder decides the timeout, the VM shape or a split of
       the run before registration; this design changes none of them'
   expected_outcome:
-    note: 'expectations, not criteria; they say what a wrong model would look like'
-    A2: 'met (0): both twins are in in_domain(reach=True) (T0377 tests); F2 shows 2R false under the legacy generator'
-    A1: 'uncertain. L1 probe (reach=False proxy): the guided descent came within 2 % on 2R but not on Case 4 at 60
-      steps. Against the in-domain proxy (shallower: 0.914 on 2R, 0.653 on Case 4) and with 2000 L1 evaluations, A1
-      on Case 4 is the open question; a miss there is a search-budget or misranking question first (F4)'
-    A3: 'uncertain on 2R: T0376 found compaction +2.29 % above the reach=False proxy at 0.5 mm, inside the band;
-      against the shallower in-domain proxy compaction may come closer, so A3 on 2R may fail (INCONCLUSIVE). The dev
-      L2 rows decide before registration'
-    K1: 'not expected to fire unless the search fails broadly'
+    note: 'expectations, not criteria; they say what a wrong model would look like. Updated by T0471 from the dev L2 rows
+      (review item 6)'
+    A2: 'met (0): both twins are in in_domain(reach=True) (T0377 tests; dev rows A2 0); F2 shows 2R false under the legacy
+      generator'
+    A1: 'expected NOT met with this frozen design: on the development draws 2R passes 2 of 8 (s 0.022-0.050 on the
+      misses), Case 4 8 of 8. 2R is the A1 risk, as the L1 indicator said (5 of 8 within 2 % at L1, 2 of 8 at L2); the
+      earlier text naming Case 4 is withdrawn. A miss is an L1/L2 disagreement near the optimum first (F4: within-shortlist
+      Spearman L1 rank vs L(0.5 mm) -0.95 to 0.25 on 2R), not budget (2R made under 1 % of its L1 gain in the last 10 %)'
+    A3: 'expected NOT met: compaction is not beaten on 2R on the dev draws (6 resolved failures, 6 paired wins < 7) and
+      sits at the resolved-failure line on Case 4 (4 of 8); widen is beaten on both. Joint P(A3) 0.23'
+    K1: 'not expected to fire: medians 0.030 (2R) and 0.007 (Case 4) against 0.05'
+    joint: 'expected verdict INCONCLUSIVE (joint OC P(PASS) 0, P(INCONCLUSIVE) 1 on 20000 replicates of the dev draws)'
     what_would_prove_the_design_wrong: 'the seed null meeting A1 (s computed against D_j, not W*); a draw scored with
       D_j outside the domain; a band median above 0.01 (the resolution cannot judge a 2 % line)'
+  founder_decisions_before_registration:
+    - '1 (blocking). Register as is, or redesign first. As is, the dev rows give A1 0.25 and A3 0, and O008 F1 requires
+      A3 met on development rows at registration, so E011 cannot pass its own registration check. Options: (a) a
+      pre-registration redesign of the proxy rule, the degradation family or the search''s L2 shortlist (frozen values
+      the session may not change; each would need new dev rows); (b) accept that the control fails on 2R and go to the
+      objective''s inconclusive/stop path without spending the registered run. Recommendation in the T0471 note'
+    - '2. The degradation''s L1 target 1.3875 lands R_D at about 1.28 at L2 (window floor 1.25; 1 of 16 out). Keep it,
+      or move the target so R_D centres in the window (frozen value; founder only)'
+    - '3. Search budget (research/notes/e011-dev-run.md section 4): keep 2000; the dev L2 rows show the 2R misses are not
+      budget-limited'
+    - '4. no_moves rule (review T0444, proposed): adopt as written; it did not bind on any dev run (0 of 32 null runs, 0 of
+      16 searches)'
+    - '5. Review item 8: the work checkpoints are gone; rerun --dev deterministically on the stamped code (about 2 h local,
+      includes local level-0 thermal solves) to commit their hashes, or accept the manifest''s recorded brackets'
+    - '6. Registered-run option A, B or C (cost_estimate.registered_run_options) and timeout_min to match; O008''s VM
+      budget ($65-107 for the run plus the dev burst)'
 metrics:
   - {name: control_layout_pass_min, description: 'A1: min over counted layouts of #(search s_j <= 0.02) / 8; CI = the
       min of the Bonferroni-simultaneous per-layout Clopper-Pearson 95 % intervals'}
@@ -354,8 +461,8 @@ sanity_checks:
       config.code_sha256'}
   - {name: artifacts_resolve, description: 'every registered artifact resolves as tools/mfos/mfos/evaluate.py resolves it:
       <run_dir>/<name> with its sha256 (run-dir-relative names; T0349 finding 2)'}
-timeout_min: 7200
-cpu_hours_est: 110
+timeout_min: 10800  # option A (current shape) incl. full load and max redraws; B 9000, C 6000: the founder chooses
+cpu_hours_est: 495
 code_under_test:
   - src/moduleforge/generate/derivative.py
   - src/moduleforge/generate/twin.py

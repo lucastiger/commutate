@@ -42,6 +42,9 @@ Modes
   --dev-solve MANIFEST  on the burst VM: solve every wave-1 job (one per (fingerprint, level), count asserted), select
               each shortlist's best by (L, L1 rank) from every job's purposes, solve its band; refuses a manifest that
               is not complete (schema e011.dev_jobs/2) or whose code stamp differs; exit 3 unless all results converge
+  --dev-rows MANIFEST  (T0471) development rows from the burst's L2 results in --workdir (default
+              research/o008_e011_dev/dev_l2), no solve: W* by choose_proxy at L2, R_D measured, s and b per role and draw,
+              the gated metrics, band bound, ranking stability, joint operating characteristic, measured VM sizing
   Work directories carry code_stamp.json (code_stamp): a resumed run refuses checkpoints from other code or config.
   --child JOB internal: E010's child (one solve in a subprocess)
 """
@@ -302,8 +305,10 @@ class Solves:
     """l2_layout and thermal solves as E010 jobs: one JSON result per (fingerprint, level) under <wd>/solves.  ``mode``:
     'solve' runs them through E010's Scheduler; 'record' (dev, local) only records them for the manifest."""
 
-    def __init__(self, wd: Path, cm: dict, sched, threads: int, mode: str = "solve", fake_area: dict | None = None):
+    def __init__(self, wd: Path, cm: dict, sched, threads: int, mode: str = "solve", fake_area: dict | None = None,
+                 freq_hz: float | None = None):
         self.wd, self.cm, self.sched, self.threads, self.mode = Path(wd), cm, sched, threads, mode
+        self.freq_hz = freq_hz  # config.levels.freq_hz (review item 5: never hard-coded); em_job refuses None
         self.wanted: dict[str, dict] = {}  # out path -> job (record mode and the cost report)
         self.area: dict[str, float] = dict(fake_area or {})
         (self.wd / "solves").mkdir(parents=True, exist_ok=True)
@@ -323,12 +328,14 @@ class Solves:
     def em_job(self, lay, level: str, lname: str, purpose: str, params=None, rank: int | None = None) -> dict:
         """One l2_layout job; ``rank``: the layout's L1 rank inside the shortlist named by ``purpose`` (None elsewhere)."""
         fp = lay.fingerprint()
+        if self.freq_hz is None:
+            raise RuntimeError("Solves.freq_hz is not set (config.levels.freq_hz)")
         n = E.em_unknowns(self.area[lname], E.EM_LEVELS[level][0], level, self.cm)
         t, m = E.em_cost(n, level, self.cm)
         prior = self.cm.get("em_level_mem_prior", {}).get(level, 1.0)
         return {"type": "em", "ctx": self._ctx(lay), "which": "D", "fp": fp, "family": None,
                 "out": str(self.out(fp, "em", level)), "threads": self.threads, "ref": lname, "level": level,
-                "freq_hz": 2.0e7, "mem_GB": m * prior, "mem_model_GB": m, "est_s": t, "unknowns": n, "priority": 1,
+                "freq_hz": float(self.freq_hz), "mem_GB": m * prior, "mem_model_GB": m, "est_s": t, "unknowns": n, "priority": 1,
                 "purpose": purpose, "rank": rank, "params": params}
 
     def th_job(self, lay, lname: str, typ: str, kw: dict, purpose: str) -> dict:
@@ -581,7 +588,15 @@ def run_layout(rx: RunCtx, name: str, li: int, counted: bool) -> dict:
     lays_tj = {"W": lc.W, "Wstar": Wstar} | ({"dies_fixed": sens["dies_fixed"].layout} if "dies_fixed" in sens else {})
     tj = tj_of(rx, lc, lays_tj, P)
     out["tj_K"], out["P_ref_W"] = tj, P.get("P")
-    if tj["Wstar"] - tj["W"] > float(fr["tj_fallback_K"]) and not provisional:  # O008 scope_in: the die-fixed proxy
+    out["tj_fallback_due"] = due = tj_fallback_due(tj, fr["tj_fallback_K"])  # review item 9: evaluated in every mode
+    if due and provisional:  # dev: choose_proxy needs L2, so the burst solves the dies-fixed descent's band (T0471)
+        log(f"{name}: Tj(W*) - Tj(W) = {tj['Wstar'] - tj['W']:.2f} K > 2 K on the provisional W*: dies-fixed band jobs")
+        dfd = cached(st / "proxy_diesfixed.pkl", lambda: ops.proxy(lc, int(pr["step_limit"]), dies_fixed=True))
+        sv.run([sv.em_job(x, lv, name, "descent_diesfixed_band", ops.vec(x).tolist())
+                for x in (dfd.layout,) for lv in rx.band])
+        out["tj_fallback_pending_l2"] = {"dies_fixed_fingerprint": dfd.layout.fingerprint(), "steps": dfd.steps,
+                                         "l1_ratio": dfd.l1_ratio}
+    if due and not provisional:  # O008 scope_in: the die-fixed proxy
         log(f"{name}: Tj(W*) - Tj(W) = {tj['Wstar'] - tj['W']:.2f} K > 2 K: dies-fixed proxy")
         dfd = cached(st / "proxy_diesfixed.pkl", lambda: ops.proxy(lc, int(pr["step_limit"]), dies_fixed=True))
         sv.run([sv.em_job(x, lv, name, "descent_diesfixed_band", ops.vec(x).tolist())
@@ -603,8 +618,10 @@ def run_layout(rx: RunCtx, name: str, li: int, counted: bool) -> dict:
     dseed = sub_seed(rx.seed, "degrade")
     defects: list[str] = []
     recs = None
+    prov_fp: set[str] = set()  # attempts whose R_D is the in-window placeholder (record mode: L2 pending)
     for wave in range(int(dg["redraw_limit"]) + 2):
         pend: list = []
+        prov_fp.clear()
 
         def r_d(Dl, pend=pend):
             if not ops.in_domain(lc, Dl)[0]:  # T0414: a defect of the family, out of window, never scored
@@ -613,7 +630,8 @@ def run_layout(rx: RunCtx, name: str, li: int, counted: bool) -> dict:
             v, base = sv.L(Dl, rx.screen), L_ws_screen
             if v is None or base is None:
                 pend.append(Dl)
-                return 0.5 * (rx.window[0] + rx.window[1])  # optimistic until solved: the attempt is provisionally kept
+                prov_fp.add(Dl.fingerprint())
+                return 0.5 * (rx.window[0] + rx.window[1])  # control flow only: the attempt is provisionally kept
             return v / base
 
         log(f"{name}: degradation wave {wave}")
@@ -624,8 +642,14 @@ def run_layout(rx: RunCtx, name: str, li: int, counted: bool) -> dict:
             break
         sv.run([sv.em_job(x, rx.screen, name, "D_R_D", ops.vec(x).tolist()) for x in pend])
     acc = [r for r in recs if r.accepted]
-    out["draws"] = [{"draw": r.draw, "accepted": r.accepted, "attempts": r.attempts, "r_d": r.r_d,
-                     "attempt_log": r.attempt_log} for r in recs]
+    # review item 4: a placeholder R_D (record mode, L2 pending) is recorded as None with r_d_provisional true, never as
+    # a number; the dev L2 analysis (--dev-rows) fills the measured R_D from the burst's solve of D_j
+    prov = {r.draw: (r.layout is not None and r.layout.fingerprint() in prov_fp) for r in recs}
+    rd_meas = {r.draw: (None if prov[r.draw] else r.r_d) for r in recs}
+    out["draws"] = [{"draw": r.draw, "accepted": r.accepted, "attempts": r.attempts, "r_d": rd_meas[r.draw],
+                     "r_d_provisional": prov[r.draw],
+                     "attempt_log": [dict(a, r_d=None, r_d_provisional=True) if prov[r.draw] and a.get("in_window")
+                                     else a for a in r.attempt_log]} for r in recs]
     out["degradation_defects_out_of_domain"] = sorted(set(defects))
     l1s = [a["l1_ratio"] for r in recs for a in r.attempt_log]
     stops = [a["stop"] for r in recs for a in r.attempt_log]
@@ -680,12 +704,12 @@ def run_layout(rx: RunCtx, name: str, li: int, counted: bool) -> dict:
             s = L / L_ws - 1.0 if ok else None
             b = 2.0 * MX.ratio_band_estimate(Lb, Wb) if ok else None
             v = ops.vec(x) if x is not None else None
-            ch_d, mh_d = dist(v, ops.vec(d["D"]), range(4, len(v))) if v is not None else (None, None)
+            ch_d, mh_d = dist(v, ops.vec(d["D"]), ops.movable()) if v is not None else (None, None)  # review item 5
             ch_w, mh_w = dist(v, w_star_vec, ops.movable()) if v is not None else (None, None)
             row = {"layout": name, "counted": counted, "draw": int(j), "role": role, "s": s, "b": b, "capped": capped,
                    "terminal_kind": kind, "in_domain_W": in_dom_W, "reach_outside": 1.0 - float(in_dom_W),
                    "terminal_raw": raw, "L_sub_H": L, "L_sub_Wstar_H": L_ws, "e_R": None if b is None else b / 2,
-                   "R_D": next(rr.r_d for rr in recs if rr.draw == j), "fingerprint": None if x is None else x.fingerprint(),
+                   "R_D": rd_meas[j], "R_D_provisional": prov[j], "fingerprint": None if x is None else x.fingerprint(),
                    "changed_from_D": ch_d, "manhattan_from_D_mm": mh_d, "changed_from_Wstar": ch_w,
                    "manhattan_from_Wstar_mm": mh_w, "l_sub_level": rx.prod, "band_levels": list(rx.band),
                    "movable_indices": list(ops.movable())}
@@ -995,7 +1019,7 @@ def make_ctx(spec: dict, mode: str, wd: Path, seed: int, ops=None, fake=None, me
         mem_cap, vcpus = vm["memory_fraction"] * (E._mem_total_GB() or vm["ram_GB"]), int(vm["vcpus"])  # never cpu_count
     sched = E.Scheduler(mem_cap, vcpus, threads, fake=fake, solo_cap_GB=E.solo_cap_from_env(vm) if mode == "full" else None,
                         defer_big=mode == "full")
-    sv = Solves(wd, cm, sched, threads, "record" if mode == "dev" else "solve")
+    sv = Solves(wd, cm, sched, threads, "record" if mode == "dev" else "solve", freq_hz=float(cfg["levels"]["freq_hz"]))
     lv = cfg["levels"]
     prod, band, screen = lv["production"], tuple(lv["band"]), lv["production"]
     n_draws, window = int(fr["n_draws"]), tuple(fr["degradation"]["window"])
@@ -1072,6 +1096,7 @@ def reported(rows: list[dict], n_draws: int) -> dict:
 FAKE_L: dict[str, float] = {}
 FAKE_VEC: dict[tuple, str] = {}  # parameter vector -> fingerprint (FakeOps.rebuild)
 FAKE_UNCONVERGED: set[str] = set()
+FAKE_TJ = {"delta_K": 0.5}  # hottest-die Tj of W* above W's in the fake thermal results
 
 
 @dataclasses.dataclass
@@ -1102,7 +1127,7 @@ def fake_job(j: dict) -> dict:
     if j["type"] == "calibrate":
         return {"P_ref_W": 50.0, "rise_K": 60.0}
     if j["type"] == "thermal":
-        return {"tj": [400.0 + (0.5 if "star" in j["fp"] or "Wd" in j["fp"] else 0.0)]}
+        return {"tj": [400.0 + (FAKE_TJ["delta_K"] if "star" in j["fp"] or "Wd" in j["fp"] else 0.0)]}
     h = int(hashlib.sha256(j["fp"].encode()).hexdigest()[:6], 16) / 16**6
     if j["fp"] in FAKE_UNCONVERGED:
         return {"L_H": FAKE_L[j["fp"]], "peak_GB": 0.1}  # no convergence record: E010's predicate must fail it
@@ -1347,6 +1372,27 @@ def _unit_checks() -> list[str]:
     if c["gain_share_last10_exact"] or not (near(c["gain_share_last10"], 0.6) and near(c["gain_share_last10_lo"], 0.3)
                                             and near(c["gain_share_last25"], 1.0)):
         bad.append(f"improvement_curve bracket path {c}")
+    if tj_fallback_due({"W": 400.0, "Wstar": 401.9}, 2.0) or not tj_fallback_due({"W": 400.0, "Wstar": 402.5}, 2.0):
+        bad.append("tj_fallback_due")
+    # joint OC on planted rows (T0471): search passes on 4 of 8 draws, nulls fail far above their bands, so per layout
+    # P(A1) = P(Bin(8, 1/2) >= 7) = 9/256 exactly; the vectorised form must agree with e011_metrics replicate by replicate
+    pr = []
+    for lay in ("L1", "L2"):
+        for j in range(8):
+            base = {"layout": lay, "counted": True, "draw": j, "in_domain_W": True, "reach_outside": 0.0}
+            pr.append(base | {"role": "search", "s": 0.005 if j % 2 else 0.03, "b": 0.001, "capped": True,
+                              "terminal_kind": "budget"})
+            for nu in N7.GATING_NULLS:
+                pr.append(base | {"role": nu, "s": 0.2, "b": 0.002, "capped": False, "terminal_kind": "local_optimum"})
+    oc = joint_oc(pr, 8, 20000, 1, check_n7=300)
+    se = math.sqrt(9 / 256 * (1 - 9 / 256) / 20000)
+    if oc["n7_check"]["mismatches"] or any(abs(oc["per_layout"][x]["P_A1_layout"] - 9 / 256) > 4 * se
+                                           for x in ("L1", "L2")) or oc["P_A3"] != 1.0 or oc["P_FAIL"] != 0.0:
+        bad.append(f"joint_oc planted case {oc['per_layout']} {oc['n7_check']} A3 {oc['P_A3']} FAIL {oc['P_FAIL']}")
+    lb = oc_lower_bounds(pr, 8)
+    if not (abs(lb["each"]["events"]["L1|A1"]["p_L"] - N7.clopper_pearson_lower(4, 8)) < 1e-15
+            and lb["P_PASS_lower_bonferroni"] == 0.0):
+        bad.append("oc_lower_bounds")
     orig = M.T._net_side
     with dc_minus_reading(+1):
         moved = M.T._net_side is not orig
@@ -1405,7 +1451,7 @@ def _manifest_check(spec: dict) -> list[str]:
                    f"{sm['wave1_missing'][:3]} {sm['wave2_missing'][:3]}")
     k0 = next(iter(keys))  # E010's real Scheduler writes <out>.job.json beside each result: not a result (smoke, T0382)
     (vm / "solves" / f"em_{k0[1]}_{k0[0]}.job.json").write_text(json.dumps({"type": "em", "out": "x"}))
-    if not Solves(vm, {}, None, 1).em_ok()[0]:
+    if not Solves(vm, {}, None, 1, freq_hz=2.0e7).em_ok()[0]:
         bad.append("em_ok counts a scheduler .job.json file as a result")
     missing = [k for k in keys if not (vm / "solves" / f"em_{k[1]}_{k[0]}.json").exists()]
     if missing:
@@ -1423,6 +1469,27 @@ def _manifest_check(spec: dict) -> list[str]:
                         if not (vm / "solves" / f"em_{lv}_{v['best_fingerprint']}.json").exists()]
     if sm.get("wave2_jobs") != sm.get("wave2_expected") or not sm.get("l2_converged"):
         bad.append(f"wave 2 {sm.get('wave2_jobs')} vs {sm.get('wave2_expected')}; converged {sm.get('l2_converged')}")
+    dr = dev_rows(str(mp), str(vm), out=str(root / "dev_rows.json"), spec=spec, n_boot=500)  # T0471
+    srs = [r for r in dr["rows"] if r["role"] == "search"]
+    if not (len(dr["rows"]) == len(plans) * len(N7.ROLES) * spec["config"]["frozen"]["n_draws"]
+            and all(abs(r["s"] - BASE_PLAN["search"]) < 1e-12 for r in srs)
+            and all(abs(r["R_D"] - 1.40) < 1e-12 and r["R_D_in_window"] for r in dr["rows"])
+            and not dr["recompute_check"] and dr["joint_oc"]["n7_check"]["mismatches"] == 0
+            and dr["joint_oc"]["P_PASS"] == 1.0 and all(p["Wstar_equals_provisional"] for p in dr["per_layout"].values())
+            and all(r["changed_from_D"] is not None for r in dr["rows"])
+            and set(dr["rank_stability"]) == set(plans) and dr["metrics"]["null_beaten_min"]["value"] == 1.0):
+        bad.append(f"dev_rows: {len(dr['rows'])} rows, recompute {dr['recompute_check']}, oc {dr['joint_oc']['P_PASS']}")
+    FAKE_TJ["delta_K"] = 3.0  # Tj(W*) - Tj(W) = 3 K > 2 K on the provisional W*: dev mode must record the fallback
+    try:
+        rxt = make_ctx(spec, "dev", root / "dev_tj", 20261116, ops=FakeOps(plans), fake=fake_job, mem_cap=1e6)
+        rt = run_layout(rxt, "2D_Case_2R", 1, True)
+    finally:
+        FAKE_TJ["delta_K"] = 0.5
+    if not (rt.get("tj_fallback_due") and "tj_fallback_pending_l2" in rt and any(
+            q["purpose"] == "descent_diesfixed_band" for w in rxt.sv.wanted.values() for q in w["purposes"])):
+        bad.append("Tj fallback not reachable in dev mode")
+    if not all(d["r_d"] is None and d["r_d_provisional"] for d in rt["draws"]):
+        bad.append("dev mode records a placeholder R_D as a number")
     for label, edit, exc in (("partial status", {"status": "partial: L1 stages running"}, RuntimeError),
                              ("other code stamp", {"code_stamp": dict(man["code_stamp"], code_tree_sha256="0")},
                               StaleCheckpoint)):
@@ -1876,6 +1943,478 @@ def dev_solve(manifest: str, workdir: str | None, ops=None, fake=None, spec: dic
     return 0 if good else 3
 
 
+# ------------------------------------------------------------------------------------------------ dev L2 analysis (T0471)
+DEV_L2 = ROOT / "research" / "o008_e011_dev" / "dev_l2"
+DEV_ROWS_SCHEMA = "e011.dev_rows/1"
+L1_STAGE_COLS = ("terminal_raw", "steps", "moves", "l1_evals", "n_draws", "stopped_at_budget", "seed_in_domain",
+                 "n_neighbours_step0", "improving_last10", "last_improve_eval")
+
+
+class L2Table:
+    """The burst's l2_layout results under <l2dir>/solves (em_<level>_<fingerprint>.json), read on demand; a missing
+    result, a status other than ok or a result failing E010's predicate (em_failures) raises: no row is built on it."""
+
+    def __init__(self, l2dir: Path):
+        self.dir, self.cache = Path(l2dir) / "solves", {}
+
+    def rec(self, fp: str, lv: str) -> dict:
+        k = (fp, lv)
+        if k not in self.cache:
+            p = self.dir / f"em_{lv}_{fp}.json"
+            if not p.exists():
+                raise RuntimeError(f"no l2_layout result {p.name}")
+            r = json.loads(p.read_text())
+            why = ([f"status {r.get('status')}"] if r.get("status") != "ok" else []) + em_failures(r)
+            if why:
+                raise RuntimeError(f"{p.name}: {'; '.join(why)}")
+            self.cache[k] = r
+        return self.cache[k]
+
+    def L(self, fp: str, lv: str) -> float:
+        return float(self.rec(fp, lv)["L_H"])
+
+    def has(self, fp: str, lv: str) -> bool:
+        return (self.dir / f"em_{lv}_{fp}.json").exists()
+
+
+def _groups_from_manifest(man: dict) -> dict[tuple[str, str], list[tuple[str, int]]]:
+    """(layout, shortlist purpose) -> [(fingerprint, L1 rank)], from every wave-1 job's purposes at the screen level
+    (the same rebuild as _short_groups, on fingerprints)."""
+    g: dict[tuple[str, str], list[tuple[str, int]]] = {}
+    for j in man["jobs"]:
+        if j["level"] == man["screen_level"]:
+            for q in j["purposes"]:
+                if q["purpose"].startswith(SHORT_KEYS):
+                    g.setdefault((j["layout"], q["purpose"]), []).append((j["fingerprint"], int(q["rank"])))
+    return g
+
+
+def tj_fallback_due(tj: dict, limit_K: float) -> bool:
+    """O008 scope_in: the proxy falls back to the dies-fixed descent when Tj(W*) - Tj(W) > limit (hottest die, level 0)."""
+    return bool(tj["Wstar"] - tj["W"] > float(limit_K))
+
+
+def dev_rows(manifest: str, l2dir: str, out: str | None = None, spec: dict | None = None, n_boot: int = 20000,
+             boot_seed: int = 20261119) -> dict:
+    """T0471: development rows from the burst's L2 results (no solve).  Inputs: the complete L1 manifest (its
+    ``layouts`` records and ``rows_l1``; every job's params and purposes), <l2dir>/code_stamp.json (must equal the
+    manifest's stamp: the L2 results belong to these L1 stages, whatever the checkout's code is now),
+    <l2dir>/dev_solve_summary.json (complete, converged) and every result file used.  Per counted layout: W* by
+    control.choose_proxy's rule at the production level (the descent only if its L_sub is strictly lower than W's);
+    each shortlist's best re-derived by local_search's rule at the screen level (lowest L, ties by L1 rank) and
+    asserted equal to the burst's; one row per (layout, role, draw) with n7's columns, s and b at the production level
+    from the band levels exactly as run_layout computes them, R_D = L_sub(D_j) / L_sub(W*) at the production level and
+    at the screen level, distances over movable_indices.  Then the gated metrics (n7 and mfos.metrics), the reported
+    helpers, the band bound per role, ranking stability, the joint operating characteristic and the measured sizing.
+    Writes ``out`` (default <l2dir>/dev_rows.json, {'rows': [...], ...}: mfos exp check --rows reads it)."""
+    man = json.loads(Path(manifest).read_text())
+    l2 = Path(l2dir)
+    spec = spec or yaml.safe_load(DRAFT.read_text())
+    cfg = spec["config"]
+    stamp = json.loads((l2 / "code_stamp.json").read_text())
+    summ = json.loads((l2 / "dev_solve_summary.json").read_text())
+    if man.get("schema") != MANIFEST_SCHEMA or not str(man.get("status", "")).startswith("complete"):
+        raise RuntimeError(f"{manifest}: not a complete {MANIFEST_SCHEMA} manifest")
+    if man["code_stamp"] != stamp:
+        raise StaleCheckpoint(f"{l2}/code_stamp.json differs from the manifest's stamp: the L2 results are not these "
+                              "L1 stages' solves")
+    if not (summ.get("complete") and summ.get("l2_converged") and not summ.get("wave1_missing")
+            and not summ.get("wave2_missing")):
+        raise RuntimeError(f"{l2}/dev_solve_summary.json is not complete and converged")
+    T = L2Table(l2)
+    prod, screen, band = cfg["levels"]["production"], man["screen_level"], tuple(man["band_levels"])
+    if band != tuple(cfg["levels"]["band"]) or band[0] != prod:
+        raise RuntimeError(f"band levels {band} differ from the spec's {cfg['levels']['band']}")
+    n_draws = int(cfg["frozen"]["n_draws"])
+    lo, hi = (float(x) for x in cfg["frozen"]["degradation"]["window"])
+    params = {j["fingerprint"]: j["params"] for j in man["jobs"]}
+    groups = _groups_from_manifest(man)
+    best: dict[tuple[str, str], tuple[str, int]] = {}
+    for k, g in sorted(groups.items()):
+        best[k] = min(g, key=lambda t: (T.L(t[0], screen), t[1]))
+        sg = summ["groups"]["|".join(k)]
+        if (sg["best_fingerprint"], int(sg["best_rank"])) != best[k]:
+            raise RuntimeError(f"{k}: best {best[k]} differs from the burst's selection {sg}")
+    spear = _mods().L.spearman
+    rows: list[dict] = []
+    per: dict[str, dict] = {}
+    for name, rec in man["layouts"].items():
+        mv = [int(i) for i in rec["movable_indices"]]
+        wfp = [j["fingerprint"] for j in man["jobs"] if j["layout"] == name
+               and any(q["purpose"] == "W_band" for q in j["purposes"])]
+        if len(set(wfp)) != 1:
+            raise RuntimeError(f"{name}: {len(set(wfp))} W_band fingerprints")
+        wfp, dfp = wfp[0], rec["proxy"]["fingerprint"]
+        lw, ld = T.L(wfp, prod), T.L(dfp, prod)
+        ws = dfp if ld < lw else wfp  # control.choose_proxy (F3): the descent's end only if strictly lower
+        Wb = [T.L(ws, lv) for lv in band]
+        L_ws, L_ws_scr = Wb[0], T.L(ws, screen)
+        by = {(r["role"], int(r["draw"])): r for r in rec["rows_l1"]}
+        draws = sorted({int(r["draw"]) for r in rec["rows_l1"]})
+        Dfp = {j: by[("seed", j)]["fingerprint"] for j in draws}
+        curve = {int(k): v for k, v in rec["search_improvement"]["per_draw"].items()}
+        for j in draws:
+            for role in N7.ROLES:
+                l1 = by[(role, j)]
+                rank = None
+                if role in ("search", "random_screen"):
+                    fp, rank = best[(name, f"{'search_short' if role == 'search' else 'rs_short'}_d{j}")]
+                else:
+                    fp = l1["fingerprint"]
+                Lb = [T.L(fp, lv) for lv in band]
+                b = 2.0 * MX.ratio_band_estimate(Lb, Wb)
+                ch_d, mh_d = dist(params[fp], params[Dfp[j]], mv)
+                ch_w, mh_w = dist(params[fp], params[ws], mv)
+                rd = T.L(Dfp[j], prod) / L_ws
+                row = {"layout": name, "counted": bool(rec["counted"]), "draw": j, "role": role,
+                       "s": Lb[0] / L_ws - 1.0, "b": b, "capped": bool(l1["capped"]),
+                       "terminal_kind": l1["terminal_kind"], "in_domain_W": bool(rec["f2"]["in_domain_reach"][0]),
+                       "reach_outside": 1.0 - float(bool(rec["f2"]["in_domain_reach"][0])),
+                       "L_sub_H": Lb[0], "L_sub_Wstar_H": L_ws, "e_R": b / 2.0, "L_band_H": Lb,
+                       "s_screen": T.L(fp, screen) / L_ws_scr - 1.0, "R_D": rd,
+                       "R_D_screen": T.L(Dfp[j], screen) / L_ws_scr, "R_D_in_window": bool(lo <= rd <= hi),
+                       "R_D_provisional": False, "fingerprint": fp, "best_rank": rank,
+                       "changed_from_D": ch_d, "manhattan_from_D_mm": mh_d, "changed_from_Wstar": ch_w,
+                       "manhattan_from_Wstar_mm": mh_w, "l_sub_level": prod, "band_levels": list(band),
+                       "selection_level": screen if rank is not None else None, "movable_indices": mv,
+                       "source": "dev L2 (T0471): research/o008_e011_dev/dev_l2"}
+                row |= {k: l1[k] for k in L1_STAGE_COLS if k in l1}
+                if role == "search":
+                    g = sorted(groups[(name, f"search_short_d{j}")], key=lambda t: t[1])
+                    ls = [T.L(f, screen) for f, _ in g]
+                    row |= {"spearman_l1rank_lscreen": spear([float(r) for _, r in g], ls),
+                            "shortlist_screen_gap_rel": (sorted(ls)[1] / sorted(ls)[0] - 1.0) if len(ls) > 1 else None,
+                            **{k: curve[j][k] for k in curve.get(j, {}) if k.startswith(("gain_share", "l1_gain"))}}
+                rows.append(row)
+        alt = best.get((name, "alt_short_d0"))
+        s0 = next(r for r in rows if r["layout"] == name and r["role"] == "search" and r["draw"] == 0)
+        sens = {k: {"l1_ratio": v["l1_ratio"], "same_as_frozen": v["same_as_frozen"],
+                    "L_screen_over_Wstar": T.L(v["fingerprint"], screen) / L_ws_scr}
+                for k, v in rec.get("proxy_sensitivity", {}).items() if T.has(v["fingerprint"], screen)}
+        lr = [r for r in rows if r["layout"] == name]
+        per[name] = {
+            "W_fingerprint": wfp, "descent_fingerprint": dfp, "Wstar_fingerprint": ws,
+            "Wstar_equals_provisional": ws == rec["Wstar"]["fingerprint"],
+            "choice": "descent" if ws == dfp else "W", "L_sub_W_H": lw, "L_sub_descent_H": ld,
+            "L_sub_ratio_Wstar_W": L_ws / lw, "l1_ratio_Wstar_W": rec["proxy"]["l1_ratio"],
+            "ratio_Wstar_W_by_level": {lv: T.L(ws, lv) / T.L(wfp, lv) for lv in band},
+            "R_D": [r["R_D"] for r in lr if r["role"] == "seed"],
+            "R_D_screen": [r["R_D_screen"] for r in lr if r["role"] == "seed"],
+            "l1_ratio_D": [a["l1_ratio"] for d in rec["draws"] for a in d["attempt_log"]],
+            "R_D_in_window": sum(r["R_D_in_window"] for r in lr if r["role"] == "seed"),
+            "proxy_sensitivity_screen": sens,
+            "dcm_alt_draw0": None if alt is None else {
+                "fingerprint": alt[0], "same_best_as_frozen": alt[0] == s0["fingerprint"],
+                "s_alt": T.L(alt[0], prod) / L_ws - 1.0 if T.has(alt[0], prod) else None, "s_frozen": s0["s"]},
+            "tj_K": rec.get("tj_K"), "tj_fallback_due": tj_fallback_due(rec["tj_K"], cfg["frozen"]["tj_fallback_K"])}
+    met = metric_values(rows, n_draws)
+    out_d: dict[str, Any] = {
+        "schema": DEV_ROWS_SCHEMA, "experiment": EID, "sealed": False, "dev_seed": man["dev_seed"],
+        "rule": "development seeds and development draws only; nothing here has seen a sealed draw",
+        "provenance": {"manifest": str(manifest), "manifest_sha256": hashlib.sha256(Path(manifest).read_bytes())
+                       .hexdigest(), "l2dir": str(l2), "code_stamp_l1_and_l2": stamp,
+                       "code_stamp_checkout_now": code_stamp(spec),
+                       "dev_solve_summary_sha256": hashlib.sha256((l2 / "dev_solve_summary.json").read_bytes())
+                       .hexdigest(),
+                       "results_used": len(T.cache), "results_sha256": canon_sha(
+                           {f"{lv}|{fp}": hashlib.sha256((T.dir / f"em_{lv}_{fp}.json").read_bytes()).hexdigest()
+                            for fp, lv in sorted(T.cache)}),
+                       "generator": "e011_run.py --dev-rows (T0471)"},
+        "levels": {"production": prod, "screen": screen, "band": list(band)},
+        "per_layout": per, "metrics": met, "reported": reported(rows, n_draws),
+        "recompute_check": recompute_check(spec, rows, met, n_draws),
+        "band_bound": band_bound_table(rows, cfg["frozen"]["band_bound"]),
+        "rank_stability": rank_stability(T, man, groups, best, prod, screen),
+        "joint_oc": joint_oc(rows, n_draws, n_boot, boot_seed, tau={
+            lay: float(T.rec(p["Wstar_fingerprint"], prod).get("solver_tol_rel_L_max", 0.0)) for lay, p in per.items()}),
+        "oc_lower_bounds": oc_lower_bounds(rows, n_draws),
+        "measured_sizing": measured_sizing(l2, man, spec, q_out=float(np.mean(
+            [not r["R_D_in_window"] for r in rows if r["counted"] and r["role"] == "seed"]))),
+        "measured_sizing_full_load": measured_sizing(l2, man, spec, q_out=float(np.mean(
+            [not r["R_D_in_window"] for r in rows if r["counted"] and r["role"] == "seed"])),
+            wall_override={"2D_Case_4|lat0.25": 5900.0}),  # lessons 2026-11-09: four at once on the 8-vCPU N2D
+        "rows": rows}
+    p = Path(out or l2 / "dev_rows.json")
+    p.write_text(json.dumps(out_d, indent=1, default=_js))
+    return out_d
+
+
+def band_bound_table(rows: list[dict], bb: dict) -> dict:
+    """Per (counted layout, role): median and max b_j over the draws, and whether the frozen bound holds."""
+    out: dict[str, Any] = {}
+    for lay in sorted({r["layout"] for r in rows if r["counted"]}):
+        for role in ("search", "widen", "compact", "seed", "random_screen", "proxy_alone"):
+            bs = [float(r["b"]) for r in rows if r["layout"] == lay and r["role"] == role and r["b"] is not None]
+            if bs:
+                med, mx = float(np.median(bs)), max(bs)
+                out[f"{lay}|{role}"] = {"median_b": med, "max_b": mx, "min_b": min(bs), "n": len(bs),
+                                        "holds": bool(med <= bb["median_max"] and mx <= bb["max_max"])}
+    return out
+
+
+def rank_stability(T: L2Table, man: dict, groups: dict, best: dict, prod: str, screen: str) -> dict:
+    """Review item 3: dev selection (and the sensitivity proxies) at the screen level, the registered rule at the
+    production level.  Facts: per layout, the shortlist members solved at both levels; the ratio q = L(prod) / L(screen)
+    over every layout solved at both; per group, the relative screen-level gap between the best and the runner-up.
+    The best by the production level can differ from the screen-level best only if some member's q is lower than the
+    best's by more than that gap (L_prod(m) < L_prod(best) <=> q_m / q_best < L_screen(best) / L_screen(m)); with the
+    observed q range the bound on s's selection error is max(0, (max q / min q - 1) - gap).  By construction the
+    production-level best has L_sub no higher than the screen-selected member's, so a dev s_j is an upper bound on the
+    registered rule's s_j for the same shortlist (min property)."""
+    out: dict[str, Any] = {}
+    for name in sorted({k[0] for k in groups}):
+        fps = sorted({j["fingerprint"] for j in man["jobs"] if j["layout"] == name} |
+                     {fp for (lay, _), (fp, _) in best.items() if lay == name})
+        q = {fp: T.L(fp, prod) / T.L(fp, screen) for fp in fps if T.has(fp, prod) and T.has(fp, screen)}
+        qa = np.array(list(q.values()))
+        gs = {k[1]: g for k, g in groups.items() if k[0] == name}
+        both = {p: sum(1 for fp, _ in g if fp in q) for p, g in gs.items()}
+        gap, bound = {}, {}
+        spread = float(qa.max() / qa.min() - 1.0)
+        for p, g in gs.items():
+            ls = sorted(T.L(fp, screen) for fp, _ in g)
+            gap[p] = ls[1] / ls[0] - 1.0 if len(ls) > 1 else math.inf
+            bound[p] = max(0.0, spread - gap[p])
+        extra = [(fp, p) for p, g in gs.items() for fp, _ in g if fp not in q]
+        out[name] = {"n_solved_both_levels": len(q), "q_median": float(np.median(qa)), "q_min": float(qa.min()),
+                     "q_max": float(qa.max()), "q_spread_rel": spread, "q_sd_rel": float(qa.std(ddof=1) / qa.mean()),
+                     "shortlist_members_solved_at_both": both,
+                     "groups_with_two_or_more_at_both": sum(1 for v in both.values() if v >= 2),
+                     "screen_gap_best_to_second": gap, "selection_error_bound": bound,
+                     "groups_bound_positive": sorted(p for p, v in bound.items() if v > 0),
+                     "extra_jobs_for_direct_measure": len({fp for fp, _ in extra}),
+                     "extra_jobs_by_group": {p: sum(1 for fp, _ in g if fp not in q) for p, g in gs.items()}}
+    return out
+
+
+def joint_oc(rows: list[dict], n_draws: int, B: int, seed: int, tau: dict | None = None,
+             shift: dict | None = None, check_n7: int = 200) -> dict:
+    """Joint operating characteristic of A1, A3 and K1 (review item 1, T0462).  Estimand: the probability, over the
+    sealed seed (degradation draws, search and screen seeds), that the registered run's verdict is PASS (and A1 met, A3
+    met, K1 not firing, INCONCLUSIVE, FAIL), judged as the evaluator judges it (L_sub at the production level), with W*,
+    the code and the solver fixed.  It is not P(PASS) against continuum-exact inductance ratios.
+    c: s*_kj = (1 + s_kj) / (1 + c) - 1, c_k = L_sub,run(W*_k) / L_sub,dev(W*_k) - 1, the relative difference between the
+    registered run's single solve of W*_k and the development solve of the same layout at the same level.  W* is
+    deterministic (frozen descent, frozen code), so c_k is zero up to the iterative solve's error: c_k ~ U(-tau_k,
+    tau_k), tau_k = that solve's solver_tol_rel_L_max, drawn once per layout per replicate and applied to every role's
+    s on the layout (all share the one W* solve).  ``shift`` adds a fixed c_k (a stress sensitivity, not an estimate).
+    Method: per layout independently, resample n_draws development draws with replacement, each as its whole tuple
+    (search, widen, compact: s, b, capped; paired on D_j), B replicates, seed ``seed``; A1, A3 and K1 per replicate by
+    a vectorised form of e011_metrics, checked against e011_metrics on the first ``check_n7`` replicates."""
+    rng = np.random.default_rng(seed)
+    lays = sorted({r["layout"] for r in rows if r["counted"]})
+    roles = ("search",) + N7.GATING_NULLS
+    arr: dict[str, dict[str, np.ndarray]] = {}
+    for lay in lays:
+        d = {}
+        for role in roles:
+            rr = sorted((r for r in rows if r["layout"] == lay and r["role"] == role), key=lambda r: r["draw"])
+            d[role] = np.array([[N7._shortfall(r["s"], ""), float(r["b"]), float(bool(r["capped"]))] for r in rr])
+        arr[lay] = d
+    nd = {lay: len(arr[lay]["search"]) for lay in lays}
+    idx = {lay: rng.integers(0, nd[lay], size=(B, n_draws)) for lay in lays}
+    cc = {lay: (rng.uniform(-tau[lay], tau[lay], size=B) if tau and tau.get(lay) else np.zeros(B))
+          + (shift or {}).get(lay, 0.0) for lay in lays}
+    tol = N7.TOL
+    a1 = np.ones(B, bool)
+    a3 = np.ones(B, bool)
+    k1 = np.zeros(B, bool)
+    per_lay: dict[str, Any] = {}
+    reps: dict[str, dict[str, np.ndarray]] = {}
+    for lay in lays:
+        sel = {role: arr[lay][role][idx[lay]] for role in roles}  # (B, n, 3)
+        s = {role: (1.0 + sel[role][..., 0]) / (1.0 + cc[lay][:, None]) - 1.0 for role in roles}
+        reps[lay] = s
+        pa = (s["search"] <= tol).sum(1) >= N7.MIN_PASS
+        med = np.median(s["search"], axis=1)
+        a1 &= pa
+        k1 |= med > 0.05
+        beat = {}
+        for nu in N7.GATING_NULLS:
+            res = ((sel[nu][..., 2] == 0) & (s[nu] - sel[nu][..., 1] > tol)).sum(1) >= N7.MIN_RESOLVED
+            pair = ((s[nu] - s["search"]) > (sel["search"][..., 1] + sel[nu][..., 1])).sum(1) >= N7.MIN_PAIRED
+            beat[nu] = res & pair
+            a3 &= beat[nu]
+            per_lay[f"{lay}|{nu}"] = {"P_resolved_ok": float(res.mean()), "P_paired_ok": float(pair.mean()),
+                                      "P_beaten": float(beat[nu].mean())}
+        per_lay[lay] = {"P_A1_layout": float(pa.mean()), "P_K1_fires_layout": float((med > 0.05).mean())}
+    pas = a1 & a3 & ~k1
+    mism = 0
+    for b in range(min(check_n7, B)):  # the vectorised form against e011_metrics on the same replicate rows
+        rr = []
+        for lay in lays:
+            for jn, jo in enumerate(idx[lay][b]):
+                for role in roles:
+                    sb, bb, cap = arr[lay][role][jo]
+                    rr.append({"layout": lay, "counted": True, "draw": jn, "role": role, "s": float(reps[lay][role][b, jn]),
+                               "b": float(bb), "capped": bool(cap),
+                               "terminal_kind": "budget" if (cap and role == "search") else ("step_limit" if cap else
+                                                                                           "local_optimum"),
+                               "in_domain_W": True, "reach_outside": 0.0})
+        v1 = N7.control_layout_pass_min(rr, n_draws=n_draws) >= N7.MIN_PASS / N7.N_DRAWS
+        v3 = N7.null_beaten_min(rr, n_draws=n_draws) >= 1.0
+        vk = N7.control_shortfall_median_max(rr, n_draws=n_draws) > 0.05
+        mism += int((v1, v3, vk) != (bool(a1[b]), bool(a3[b]), bool(k1[b])))
+    p_draw = {lay: float((arr[lay]["search"][:, 0] <= tol).mean()) for lay in lays}
+    return {"estimand": "P over the sealed seed of the registered run's outcome as judged (L_sub at the production "
+                        "level), W*, code and solver fixed; not P(PASS) against continuum-exact ratios",
+            "c_definition": "c_k = L_sub,run(W*_k) / L_sub,dev(W*_k) - 1 ~ U(-tau_k, tau_k), tau_k = solver_tol_rel_L_max "
+                            "of the W* solve" + (f"; plus a fixed shift {shift}" if shift else ""),
+            "tau": tau, "B": B, "seed": seed, "n_dev_draws": nd,
+            "P_PASS": float(pas.mean()), "P_A1": float(a1.mean()), "P_A3": float(a3.mean()),
+            "P_K1_not_fired": float((~k1).mean()), "P_FAIL": float(k1.mean()),
+            "P_INCONCLUSIVE": float((~k1 & ~(a1 & a3)).mean()),
+            "mc_se_P_PASS": float(np.sqrt(pas.mean() * (1 - pas.mean()) / B)), "per_layout": per_lay,
+            "p_draw_pass_hat": p_draw,
+            "A1_only_independent_draws_at_p_hat": {lay: N7.a1_operating_characteristic(p) for lay, p in p_draw.items()},
+            "n7_check": {"replicates": min(check_n7, B), "mismatches": mism}}
+
+
+def oc_lower_bounds(rows: list[dict], n_draws: int, level: float = 0.95) -> dict:
+    """Per counted layout and event, the one-sided Clopper-Pearson lower bound on the per-draw rate from the development
+    draws and the binomial tail it implies (A1: P(Bin(n, p_L) >= 7); resolved: >= 4; paired: >= 7; K1 not firing,
+    sufficient: >= 5 draws with s <= 0.05).  These assume draws independent given W*; with 8 development draws they show
+    how little a perfect development record certifies.  Also the union (Bonferroni) lower confidence bound on P(PASS)."""
+    lays = sorted({r["layout"] for r in rows if r["counted"]})
+    ev: dict[str, tuple[int, int]] = {}  # event -> (successes, k needed)
+    for lay in lays:
+        g = {(r["role"], r["draw"]): r for r in rows if r["layout"] == lay}
+        js = sorted({d for (ro, d) in g if ro == "search"})
+        ss = [N7._shortfall(g[("search", j)]["s"], "") for j in js]
+        ev[f"{lay}|A1"] = (sum(x <= N7.TOL for x in ss), N7.MIN_PASS)
+        ev[f"{lay}|K1_not"] = (sum(x <= 0.05 for x in ss), 5)
+        for nu in N7.GATING_NULLS:
+            ev[f"{lay}|{nu}|resolved"] = (sum(1 for j in js if not g[(nu, j)]["capped"]
+                                             and g[(nu, j)]["s"] - g[(nu, j)]["b"] > N7.TOL), N7.MIN_RESOLVED)
+            ev[f"{lay}|{nu}|paired"] = (sum(1 for j in js if g[(nu, j)]["s"] - g[("search", j)]["s"]
+                                           > g[("search", j)]["b"] + g[(nu, j)]["b"]), N7.MIN_PAIRED)
+    from scipy import stats as st
+    m = len(ev)
+    out: dict[str, Any] = {}
+    for lv_name, lev in (("each", level), ("bonferroni", 1.0 - (1.0 - level) / m)):
+        tails = {}
+        for e, (k, need) in ev.items():
+            pl = N7.clopper_pearson_lower(k, n_draws, lev)
+            tails[e] = {"k": k, "n": n_draws, "p_L": pl, "P_event_at_p_L": float(st.binom.sf(need - 1, n_draws, pl))}
+        out[lv_name] = {"level": lev, "events": tails}
+    out["P_PASS_lower_bonferroni"] = max(0.0, 1.0 - sum(1.0 - t["P_event_at_p_L"] for t in out["bonferroni"]["events"]
+                                                        .values()))
+    out["n_events"] = m
+    return out
+
+
+def measured_sizing(l2: Path, man: dict, spec: dict, q_out: float | None = None,
+                    wall_override: dict | None = None) -> dict:
+    """Review item 2: per (layout, level) the burst's measured wall, CPU and peak RSS of every l2_layout result (with
+    its job file), against E010's model; then the registered run's makespan and cost on VM options, by list scheduling
+    (E010.simulate) with the measured walls (p90) and peaks (max x 1.1, the Scheduler's learned admission), the phase
+    order of registered_model (layouts one after another; the L1 phase from the dev run's stage walls x MAC_TO_VM_L1).
+    gen2_0 has no measurement: E010's model scaled by 2D_Case_2R's measured / model ratio per level (stated)."""
+    meas: dict[str, dict] = {}
+    for p in sorted((Path(l2) / "solves").glob("em_*.job.json")):
+        jb = json.loads(p.read_text())
+        rp = p.with_name(p.name.replace(".job.json", ".json"))
+        if not rp.exists():
+            continue
+        r = json.loads(rp.read_text())
+        if "wall_s" not in r or "peak_GB" not in r or "est_s" not in jb:
+            continue  # fake results (selftest) carry no measurement
+        e = meas.setdefault(f"{jb['ref']}|{jb['level']}", {"wall": [], "cpu": [], "peak": [], "est": [], "model_GB": []})
+        e["wall"].append(float(r["wall_s"]))
+        e["cpu"].append(float(r.get("cpu_s", math.nan)))
+        e["peak"].append(float(r["peak_GB"]))
+        e["est"].append(float(jb["est_s"]))
+        e["model_GB"].append(float(jb["mem_model_GB"]))
+    if not meas:
+        return {}
+    per = {}
+    for k, e in meas.items():
+        w = np.array(e["wall"])
+        per[k] = {"n": len(w), "wall_s_median": float(np.median(w)), "wall_s_p90": float(np.percentile(w, 90)),
+                  "wall_s_max": float(w.max()), "cpu_over_wall_median": float(np.nanmedian(np.array(e["cpu"]) / w)),
+                  "peak_GB_median": float(np.median(e["peak"])), "peak_GB_max": float(max(e["peak"])),
+                  "model_wall_s": float(np.median(e["est"])), "model_GB": float(np.median(e["model_GB"])),
+                  "wall_over_model": float(np.median(w) / np.median(e["est"])),
+                  "peak_over_model": float(max(e["peak"]) / np.median(e["model_GB"]))}
+    c10 = cfg10()
+    cm, vm = c10["compute"]["cost_model"], c10["compute"]["vm"]
+    reg = man["vm_sizing"]["registered_run"]["solves"]
+
+    def cost(name: str, lv: str) -> tuple[float, float]:
+        k = f"{name}|{lv}"
+        if wall_override and k in wall_override:
+            return float(wall_override[k]), per[k]["peak_GB_max"] * 1.1
+        if k in per:
+            return per[k]["wall_s_p90"], per[k]["peak_GB_max"] * 1.1
+        ref = per.get(f"2D_Case_2R|{lv}")  # gen2_0: E010's model on its unknowns x 2R's measured / model ratio
+        n = int(reg[name]["unknowns"][lv])
+        t, m = E.em_cost(n, lv, cm)
+        return t * ref["wall_over_model"], m * ref["peak_over_model"] * 1.1
+
+    def sim(vcpus: int, cap: float, q: float) -> float:
+        """q: per-attempt probability that R_D falls outside the window; redraw wave w solves ceil(n q^w) attempts
+        (q = 1: every draw redrawn in every wave, the upper bound)."""
+        jobs, prev = [], None
+        for name, m in reg.items():
+            if "omitted" in m:
+                continue
+            phases = [("P", m["P"]), ("D", m["D_wave0"])]
+            for w in range(1, int(m["redraw_waves_max"]) + 1):
+                cw = {lv: math.ceil(c * q ** w - 1e-9) for lv, c in m["D_wave0"].items()}
+                if sum(cw.values()):
+                    phases.append((f"D{w}", cw))
+            phases += [("L1", None), ("S1", m["S1"]), ("S2", m["S2"])]
+            for ph, counts in phases:
+                g = f"{name}|{ph}"
+                if counts is None:
+                    h = m["L1_wall_h_mac"] or 1.0
+                    jobs.append({"name": g, "group": g, "after": [prev] if prev else [], "est_s": h * 3600 * MAC_TO_VM_L1,
+                                 "threads": 1, "mem_GB": 0.0})
+                else:
+                    for lv, c in counts.items():
+                        t, mm = cost(name, lv)
+                        jobs += [{"name": f"{g}|{lv}|{i}", "group": g, "after": [prev] if prev else [], "est_s": t,
+                                  "threads": 2, "mem_GB": mm} for i in range(int(c))]
+                prev = g
+        return E.simulate(jobs, vcpus, cap) / 3600
+
+    opts = {"A: n2d-custom-8-81920-ext (current shape)": (8, 78.0, float(vm["usd_per_h"])),
+            "B: n2d-custom-8-98304-ext (+16 GB extended memory)": (8, 94.0, float(vm["usd_per_h"]) + 16 * float(
+                vm["ext_usd_per_GB_h"])),
+            "C: n2d-custom-16-163840-ext (all 16 vCPUs; only when no other burst runs)": (16, 158.0,
+                                                                                            2 * float(vm["usd_per_h"]))}
+    res = {}
+    for oname, (vc, ram, usd) in opts.items():
+        cap = float(vm["memory_fraction"]) * ram
+        r = {"vcpus": vc, "ram_GB": ram, "usable_GB": round(cap, 1), "usd_per_h": round(usd, 3)}
+        for scen, q in (("no_redraws", 0.0), ("max_redraws", 1.0)) + (
+                (("measured_out_of_window_rate", float(q_out)),) if q_out else ()):
+            mk = sim(vc, cap, q)
+            r[scen] = {"makespan_h": round(mk, 1), "vm_h": round(mk + float(vm["overhead_h"]), 1),
+                       "usd": round((mk + float(vm["overhead_h"])) * usd, 1),
+                       "billed_vcpu_h": round((mk + float(vm["overhead_h"])) * vc, 0)}
+        res[oname] = r
+    cpu_h = 0.0  # process CPU-hours of the registered run's solves (no redraws): count x wall x measured cpu / wall
+    for name, m in reg.items():
+        if "omitted" in m:
+            continue
+        cnt: dict[str, int] = {}
+        for ph in ("P", "D_wave0", "S1", "S2"):
+            for lv, c in m[ph].items():
+                cnt[lv] = cnt.get(lv, 0) + int(c)
+        for lv, c in cnt.items():
+            k = f"{name}|{lv}" if f"{name}|{lv}" in per else f"2D_Case_2R|{lv}"
+            cpu_h += c * cost(name, lv)[0] * per[k]["cpu_over_wall_median"] / 3600
+        cpu_h += (m["L1_wall_h_mac"] or 1.0) * MAC_TO_VM_L1
+    return {"per_layout_level": per, "registered_solves": reg, "options": res, "cpu_hours_no_redraws": round(cpu_h, 1),
+            "wall_override": wall_override,
+            "basis": measured_sizing.__doc__.split("\n")[0] + " (measured_sizing)",
+            "redraw_model": "wave w solves ceil(n_draws q^w) attempts, q per attempt; q_out = the development draws' "
+                            "out-of-window fraction at the production level", "q_out": q_out,
+            "pricing_basis": vm.get("pricing_note"), "vm_config": {k: vm[k] for k in ("machine", "usd_per_h",
+                                                                                     "ext_usd_per_GB_h", "overhead_h")}}
+
+
 def full(workdir: str | None) -> int:
     from mfos.evidence import ExperimentRun
     spec = load_spec()
@@ -1889,7 +2428,8 @@ def full(workdir: str | None) -> int:
         except E.NeedsLargerMachine as e:
             print(json.dumps(E.phase_stop(e, wd, cfg10()["compute"]["vm"])))
             sys.exit(E.PHASE_B_EXIT)
-        er.domain(layouts=[r["layout"] for r in recs], freq_hz=[2.0e7], movable=["Params.NAMES[4:40]"])
+        er.domain(layouts=[r["layout"] for r in recs], freq_hz=[float(spec["config"]["levels"]["freq_hz"])],
+                  movable=["Params.NAMES[4:40]"])
         v, _, _ = finish(er, rx, recs, spec)
         er.notes = f"runner verdict preview {v} (the evaluator decides)"
     return 0
@@ -1904,6 +2444,9 @@ def main(argv=None) -> int:
     g.add_argument("--dev-solve", metavar="MANIFEST")
     g.add_argument("--child", metavar="JOB")
     g.add_argument("--freeze-report", action="store_true")
+    g.add_argument("--dev-rows", metavar="MANIFEST", help="T0471: development rows from the burst's L2 results in "
+                   "--workdir (default research/o008_e011_dev/dev_l2); no solve")
+    ap.add_argument("--out", help="with --dev-rows: output path (default <workdir>/dev_rows.json)")
     ap.add_argument("--workdir")
     ap.add_argument("--dry-run", action="store_true", help="with --dev-solve: check every job would be submitted, solve none")
     a = ap.parse_args(argv)
@@ -1917,6 +2460,12 @@ def main(argv=None) -> int:
         return dev(a.workdir)
     if a.dev_solve:
         return dev_solve(a.dev_solve, a.workdir, dry=a.dry_run)
+    if a.dev_rows:
+        d = dev_rows(a.dev_rows, a.workdir or str(DEV_L2), a.out)
+        print(json.dumps({"metrics": {k: m["value"] for k, m in d["metrics"].items()},
+                          "joint_oc": {k: v for k, v in d["joint_oc"].items() if k.startswith("P_")},
+                          "recompute_check": d["recompute_check"], "rows": len(d["rows"])}, default=_js))
+        return 0 if not d["recompute_check"] else 3
     if a.freeze_report:
         print(json.dumps(freeze_report(yaml.safe_load(DRAFT.read_text())["config"]), indent=1))
         return 0
