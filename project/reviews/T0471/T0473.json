@@ -1,0 +1,63 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Note understates how much R_D changes between levels on Case 4",
+      "detail": "Section 1 of research/notes/e011-dev-l2-analysis.md says R_D at 0.5 mm differs from R_D at 0.25 mm by at most 0.0013. From the committed rows, the maximum |R_D - R_D_screen| is 0.00125 on 2D_Case_2R but 0.00146 on 2D_Case_4. This does not affect any conclusion: the window margins are about 0.03.",
+      "evidence": "Computed max |R_D - R_D_screen| over the seed rows of dev_rows.json: 2R 0.0012498, Case 4 0.0014626.",
+      "suggested_check": "Change the figure to 0.0015, or give it per layout.",
+      "impact": "evidence"
+    },
+    {
+      "severity": "minor",
+      "title": "Dev gates and the joint OC count a draw the registered run would never score",
+      "detail": "On 2R, draw 1 has R_D = 1.209, below the frozen window [1.25, 1.60]. The registered run would redraw it. The dev-row A1, A3 and K1 values, `exp check --rows` and the bootstrap all still use it. On these rows, the premise of sanity check F1a (seed s = R_D - 1 >= 0.25 by construction) fails: 0.209. F6 (8 in-window draws per counted layout) would also fail on 2R. The note reports 7 of 8 in window but does not say that the gates were evaluated on an out-of-window draw. Dropping the draw leaves the verdict unchanged: 2R A1 is 2 of 7, compact has 5 paired wins out of 7, and the verdict is still INCONCLUSIVE.",
+      "evidence": "per_layout['2D_Case_2R'].R_D[1] = 1.2090 and R_D_in_window = 7. Draw 1 has search s 0.0442, compact s 0.0562 and b 0.0023.",
+      "suggested_check": "Report the gated metrics and the joint OC with and without the out-of-window draw, and note that F1a and F6 do not hold on the dev rows.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Vectorised joint_oc disagrees with e011_metrics on non-finite s",
+      "detail": "For a null whose s is infinite (no candidate), joint_oc's vectorised A3 counts a resolved failure and a paired win. e011_metrics.null_beaten_table requires finite s for both. A row with b = None makes float(r['b']) raise. Neither case occurs in the dev rows (every s and b is finite), so these results are unaffected. The selftest's planted case does not cover non-finite s, capped nulls or a nonzero c_k, so the 0-mismatch check would not catch the divergence.",
+      "evidence": "Code reading of joint_oc: `res = ((cap == 0) & (s[nu] - b > tol))` and `pair = ((s[nu] - s['search']) > ...)` have no isfinite guard. e011_metrics lines 216 and 220 do.",
+      "suggested_check": "Add np.isfinite guards, and add a planted row with s = None to the selftest.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "Selection-error bound extrapolates the q spread to shortlist members that were never solved",
+      "detail": "The bound max(0, q_spread - gap) uses q = L(0.25)/L(0.5) over the 51 (2R) and 50 (Case 4) layouts solved at both levels. The 113 + 118 non-best shortlist members were never solved at 0.25 mm. The direction argument (a dev s is an upper bound on the registered rule's s for the same shortlist) is sound by the min property. The size of the bound is an inference, and the note labels it as one. It cannot change A1 on 2R: only draw 0 (s 0.0220) is within 0.25 points of the line.",
+      "evidence": "rank_stability: groups_with_two_or_more_at_both = 0. 2R search s values: 0.0220, 0.0442, 0.0254, 0.0497, 0.0420, -0.0101, 0.0165, 0.0340.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "\"Ratio moves by at most 7e-4\" means deviation from the 0.25 mm value",
+      "detail": "On Case 4, the W*/W ratio across the five band levels runs from 0.71711 to 0.71824, a spread of 1.1e-3. Its largest deviation from the production value (0.71757) is 6.7e-4. The statement is correct under that reading and does not matter against the 0.72 vs 1.0 margin of choose_proxy.",
+      "evidence": "per_layout['2D_Case_4'].ratio_Wstar_W_by_level",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all definition-of-done commands. `e011_run.py --selftest` gives SELFTEST PASS. The ExperimentSpec validation one-liner passes. `mfos exp check E011` exits 0. Ruff passes on e011_run.py and e011_metrics.py. Both deliverable files exist.",
+    "Ran `mfos exp check E011 --rows dev_rows.json`. It reports A1 not satisfied (0.25), A2 satisfied, A3 not satisfied, matching the draft and the note.",
+    "Recomputed every dev row from the raw l2_layout result files with my own code, not the runner's: W* by the strict-lower rule at lat0.25; the search and random-screen best by (L at lat0.5, L1 rank); s = L/L(W*) - 1; b = 2*e_R, with Roache's GCI terms re-implemented; R_D = L(D_j)/L(W*). The maximum absolute difference from the committed s, b and R_D is 0.0 on all 96 rows, and all fingerprints match.",
+    "Re-ran e011_run.dev_rows end to end into $TMPDIR. The output equals the committed dev_rows.json in every top-level key, including the provenance hashes and code stamps, so the file is reproducible.",
+    "Verified the frozen-hash claim. canon_sha(config.frozen) equals the recorded 5f540d0a.... With band_bound.development_value reset to null it equals the previous 61c7abc9..., so development_value is the only change to the frozen block.",
+    "Checked that each seed-null fingerprint is the degraded layout D_j: all 8 per layout are among the D_R_D jobs, and changed_from_D and manhattan_from_D are both 0. So R_D is computed on the right layout.",
+    "Recomputed the A3 tables by hand from the rows. 2R compact: 6 resolved, 6 paired. Case 4 compact: 4 resolved, 8 paired. Widen: 8 and 8 on both layouts. K1 medians: 0.0297 and 0.0069.",
+    "Ran an independent bootstrap (my own code, seed 12345, B = 40000): P(A1) 0.0004, P(A3) 0.232, P(compact beaten) 0.368 (2R) and 0.635 (Case 4), P(PASS) 0. These agree with the stored 0.0003, 0.226, 0.360 and 0.632 within Monte Carlo error, and with the binomial closed forms P(Bin(8,.75) >= 7) = 0.367 and P(Bin(8,.5) >= 4) = 0.637.",
+    "Checked the closed-form figures in the note by hand. The Clopper-Pearson lower bound for 8/8 is 0.05^(1/8) = 0.688, giving an A1 tail of 0.232. P(Bin(8, 0.25) >= 7) = 3.8e-4. The upper bound for 2/8 is about 0.59, giving an A1 tail of about 0.096. The CP upper bound for 1/16 is 0.26. (R_D-1)/(L1-1) ranges are 0.68-0.79 and 0.70-0.74.",
+    "Checked the measured sizing against the draft text. Median 0.25 mm walls are 925 s and 3046 s; peak RSS maxima are 6.43 GB and 16.53 GB; wall/model ratios are 0.53-0.66. Tj(W*) - Tj(W) is -1.62 K and -2.02 K, so the Tj fallback is not due."
+  ],
+  "caveats": [
+    "The dev L2 rows, gated metrics, band bound and joint OC reproduce exactly from the committed L2 results. Their validity rests on the burst's raw result files, whose solver correctness I did not re-verify; that is outside this lens.",
+    "The joint OC is a planning figure from 8 dev draws per layout, including one 2R draw outside the R_D window. The conclusion that the registered run is expected to be INCONCLUSIVE is robust to dropping that draw, but the probabilities are not estimates for a registered run.",
+    "The draft correctly declares itself NOT READY TO REGISTER: A3 is not met on the dev rows, which O008 F1 requires. Accepting this deliverable does not make E011 registrable.",
+    "timeout_min, cpu_hours_est and the cost options rest on an unchecked 16-vCPU price and an unchecked extended-memory price. The draft flags both as assumptions."
+  ]
+}
