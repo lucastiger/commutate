@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-19T15:52:09+00:00 from repository state — do not edit_
+_generated 2026-11-19T16:23:45+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0259** [claim_approval] [O002] approve the wording of claim C005
+- **I0260** [protected_change] T0471: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -16,7 +17,7 @@ _generated 2026-11-19T15:52:09+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $98.69/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $102.61/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -28,20 +29,15 @@ _generated 2026-11-19T15:52:09+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 47 | $98.69 | 1663708 | 891750 | 126 | 0 |
+| O008 | 47 | $102.61 | 1731186 | 929899 | 136 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 418, failed: 4, review: 1, running: 2, todo: 2
+cancelled: 47, done: 420, failed: 4, needs_founder: 1, todo: 2
 
-- T0471 `review` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
-- T0472 `running` critic/review: Review T0471 (physics) (attempt 1)
-- T0474 `running` critic/review: Review T0471 (statistics) (attempt 1)
+- T0471 `needs_founder` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
 
 ## Recent events
-- 2026-11-19T08:37:42+00:00 inbox_opened {"id": "I0259", "kind": "claim_approval", "subject": "[O002] approve the wording of claim C005"}
-- 2026-11-19T08:37:44+00:00 objective_passed {"objective": "O002", "evaluation": "EV-O002-01"}
-- 2026-11-19T08:39:27+00:00 founder_decision_recorded {"objective": "O002", "summary": "C005 approval after the 11-27 thesis review; final statement drafted with the reviews' limits"}
 - 2026-11-19T09:19:15+00:00 session_note_recorded {"objective": "O004", "summary": "FastHenry Linux crash root-caused (matStats overflow); D0028 proposed; E004 binary pin must be per-platform"}
 - 2026-11-19T15:08:44+00:00 inbox_resolved {"id": "I0205", "status": "approved", "note": "Done. The founder ran the E011 development burst on GCP (2026-11-18 and 19, phases 1 and 2): 743 EM solves, all o
 - 2026-11-19T15:12:01+00:00 task_added {"task": "T0471"}
@@ -54,3 +50,6 @@ cancelled: 47, done: 418, failed: 4, review: 1, running: 2, todo: 2
 - 2026-11-19T15:46:21+00:00 run_started {"run": "T0473-critic-20261119T074621-827a", "task": "T0473", "role": "critic", "session": "4a88ca8f-d712-447a-a280-9a7a16b23216"}
 - 2026-11-19T15:46:25+00:00 run_started {"run": "T0474-critic-20261119T074625-c079", "task": "T0474", "role": "critic", "session": "ddc8e60e-42bf-4b4e-b75b-7db844655af8"}
 - 2026-11-19T15:52:01+00:00 run_finished {"run": "T0473-critic-20261119T074621-827a", "status": "completed", "cost": 1.94533, "subtype": "success", "report": "structured_output"}
+- 2026-11-19T15:52:47+00:00 run_finished {"run": "T0474-critic-20261119T074625-c079", "status": "completed", "cost": 1.941723, "subtype": "success", "report": "structured_output"}
+- 2026-11-19T15:52:48+00:00 run_finished {"run": "T0472-critic-20261119T074617-b753", "status": "completed", "cost": 1.977752, "subtype": "success", "report": "structured_output"}
+- 2026-11-19T16:23:40+00:00 inbox_opened {"id": "I0260", "kind": "protected_change", "subject": "T0471: merge needs founder approval"}
