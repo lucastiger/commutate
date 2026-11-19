@@ -1,0 +1,64 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Pooled A1 hides one stratum at or over 0.5 K (interleaved/2 at P_ref)",
+      "detail": "A1 is a 95th percentile pooled over all 15 strata (0.236 K, bound 0.263 K). Computed per stratum, interleaved/2 at P_ref has an L1 pair-difference error p95 of 0.503 K and a maximum of 0.599 K. That is a point estimate already at the threshold; its upper bound would be higher. Every other stratum is at most 0.32 K (u_shaped/2 0.322, u_shaped/6 0.311). In the derivative regime a search runs inside one stratum, so a user in interleaved/2 at P_ref does not get the 0.5 K guarantee the pooled figure suggests. The cause is not the hottest die switching between HS and LS: in all 32 interleaved/2 layouts the reference's hottest die is on LS. It is layout-to-layout scatter on top of a family-dependent LS bias of +0.38 K. The pre-registered criterion is pooled, so the claim as worded holds. This is a limit of validity, not a defect.",
+      "evidence": "rows.json kind=layout, all 496 unordered same-stratum pairs per (stratum, load), |(L1_a-L1_b)-(ref_a-ref_b)| at the reference-hottest die, numpy p95: interleaved/2 P_ref 0.503 K (max 0.599), half_P_ref 0.231 K. Stratum-mean null p95 in the same stratum 2.45 K.",
+      "suggested_check": "Report A1 per stratum with its V4 bound beside the pooled value, and state in the claim that the 0.5 K holds as a pooled p95, not in every stratum.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "In 2-die strata, spread prediction barely beats the stratum-mean null",
+      "detail": "The pooled A4 (0.116) is driven by the 3-6 die strata. There the reference spreads are large (median 4.7-9.6 K) and mostly set by family and die count, and L1 tracks them well (per-stratum ratio 0.06-0.16). In the 2-die strata the spreads are small (median 0.18-0.53 K) and L1 does much worse: side_by_side/2 point ratio 0.47, u_shaped/2 0.42. In u_shaped/2, L1's spread-error p95 (0.343 K) is close to the median spread itself (0.386 K). The per-band 2-3 A4 upper bound is 0.46, close to 0.5. A4 is gated pooled, so this narrows scope rather than refuting the claim.",
+      "evidence": "rows.json kind=switch, load=P_ref, per stratum: p95 |spread_l1-spread_ref| / p95 |spread_null-spread_ref| = side_by_side/2 0.197/0.419 = 0.47; u_shaped/2 0.343/0.821 = 0.42; interleaved/2 0.181. result.json a4_ratio_band_2_3 = 0.139, ci upper 0.462.",
+      "suggested_check": "State that, for 2-die switches, L1 captures only about half of the layout-dependent spread variation.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Hottest-node minus die-average gap exceeds 2 K in every stratum",
+      "detail": "f6_n_strata_gap_over_2K = 15 of 15 and f6_max_hotnode_gap_K = 5.9 K. Under O002 F6 this requires a founder decision before a search relies on die-average Tj alone. The claim's yardstick is explicitly the die average, with the hottest node reported and assumed pending decision 5 of the 11-27 thesis review. So the claim is not false, but a +2 K die-average budget does not bound the hot spot. L1's tj_max is uncalibrated: on side_by_side_2_j00 it is 0.94 K above the reference.",
+      "evidence": "result.json metrics f6_max_hotnode_gap_K = 5.907, f6_n_strata_gap_over_2K = 15; rows.json die row side_by_side_2_j00: tj_max_ref 398.94 K, tj_max_l1 399.88 K.",
+      "suggested_check": "Carry the F6 founder decision into the claim's limits before O008/O009 score with L1.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "L1-optimised layouts (F7) reach 0.51 K pair error",
+      "detail": "The reported, ungated F7 maximum pair error is 0.510 K (p95 0.193 K). This is consistent with the claim being shown only on random generator layouts, and it is the case where the optimiser's-curse audit in O008/O009 is needed.",
+      "evidence": "result.json f7_pair_err_max_K = 0.5099, f7_pair_err_p95_K = 0.1934.",
+      "suggested_check": "",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Agreement is numerical, not a test of the material physics, and calibration covers two families only",
+      "detail": "L1 and the reference share geometry.stack K_LAWS (Layer.k_at) and the stack definition. E007 therefore tests coarse-FV discretisation plus the c(s) calibration against the FEM, not the k(T) laws themselves; those laws are cited and plausible. c(s) was fitted on side_by_side/6 and u_shaped/2 only. The interleaved family shows a systematic LS bias of +0.21 to +0.42 K, against about -0.1 K for side_by_side LS. This mostly cancels in same-stratum pairs, but it contributes to the interleaved/2 result above.",
+      "evidence": "src/moduleforge/thermal/__init__.py lines 38-44; mean L1-ref per (stratum, switch) at P_ref: interleaved/3 HS +0.099 / LS +0.419 K; side_by_side/3 HS +0.154 / LS -0.099 K.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Re-generated two judged layouts (side_by_side_2_j00, 4 dies; u_shaped_6_j11, 12 dies) from plan_frozen.json's sealed seed and index and re-ran moduleforge.thermal.evaluate at P_ref. Die averages match rows.json to 7e-11 K and 7e-13 K. Local wall time was 0.24 and 0.39 s, consistent with A5 (0.60 s on the VM).",
+    "Analytic 1D slab tests of the L1 kernel solvers.thermal_fv.solve_steady (uniform top flux, h = 5000 at the bottom). Two-layer constant k: exact to 1e-12 K. Single layer with k = k0 (T/300)^-1.3: converges at second order to the exact Kirchhoff-transform solution (744.28145 K; error 5e-5 K at nz = 1 and 5e-8 K at nz = 32). Energy balance <= 2e-12.",
+    "k(T) consistency between L1 and the reference: the ratio of half-load to full-load rise above the coolant is 0.488-0.493 for every die in both models (below 0.5, as decreasing k(T) requires). L1 minus reference differs by at most 5.3e-4 over 3840 die pairs.",
+    "Energy-balance cross-check from rows: the baseplate area implied by n P / (h (T_bp - T_c)) is 0.004816 m^2, identical in all 15 strata and both loads.",
+    "Re-derived the hottest-die columns (reference-hottest by die average, L1 at that die, L1 own-hottest) from die rows: 0 mismatches over 960 layout rows.",
+    "Compared L1 with level-2 reference values on the 12-layout F1 subset. Die-average error / rise: p95 0.62 % and max 0.71 % against level 2, versus 0.70 % / 1.07 % against level 1. Pair-difference errors against level 2 are similar to those against level 1 (largest 0.169 K against level 2, 0.209 K against level 1, both on the u_shaped/3 pair). Judging at level 1 does not flatter L1.",
+    "Computed A1 per stratum and load from the rows (L1, own-hottest, stratum-mean null, reference |dT| scale): interleaved/2 at P_ref is 0.503 K (max 0.599); all other strata are at most 0.32 K; the null is 1.2-5.4 K in every stratum.",
+    "Computed A3 and A4 per stratum at P_ref: A4 is 0.06-0.18 in 3-6 die strata and interleaved/2, but 0.42 (u_shaped/2) and 0.47 (side_by_side/2).",
+    "Read the k(T) laws and their citations (geometry/stack.py K_LAWS) and the L1 calibration (thermal/__init__.py). The calibration multiplies only the die-local rise above an exact baseplate mean; it was derived on forbidden development seeds, not judged layouts."
+  ],
+  "caveats": [
+    "A1-A4 are pooled 95th percentiles over 15 strata. Per stratum, interleaved/2 at P_ref is at the 0.5 K A1 threshold (point p95 0.503 K, max 0.60 K), so the 0.5 K pair-difference accuracy is not established for every (family, dies) stratum a derivative re-layout would search in.",
+    "For 2-die switches, L1's spread error is about 0.42-0.47 of the stratum-mean null's (point estimates), and in u_shaped/2 it is comparable to the spread itself. The pooled A4 margin comes from 3-6 die strata, whose large spreads are mostly set by family and die count.",
+    "The yardstick is the die average. The reference hottest node exceeds the die average by more than 2 K in all 15 strata (up to 5.9 K), so under O002 F6 a founder decision is due before a search relies on die-average Tj alone; the claim says nothing about the hottest node.",
+    "Agreement is with the level-1 reference, which sits about 0.3 K (about 0.7 % of rise) below its level-2-plus-estimate value in absolute die averages. L1 was calibrated to level 1 and inherits this bias. Relative and pairwise quantities are much less affected (checked on the subset).",
+    "Both models share the stack and k(T) laws, so E007 validates L1's numerical approximation of the reference, not the material physics. The result also holds only at this operating point (Tj up to 130 \u00b0C, h = 5000, the default DBC stack) and for the random generator layouts drawn. L1-selected layouts reached 0.51 K pair error (F7, reported).",
+    "A5 is the median on the burst VM recorded in the run; other hosts need their own timing."
+  ]
+}
