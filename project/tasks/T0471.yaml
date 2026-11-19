@@ -4,7 +4,7 @@ title: 'E011 dev L2 analysis: R_D, band bound, joint operating characteristic an
   draft for registration'
 type: design_experiment
 agent: scientist
-status: needs_founder
+status: merge
 depends_on: []
 description: "The E011 development burst is done (I0205; the founder ran it on GCP, 2026-11-18 and 19):\
   \ 743 EM solves, all ok and L2-converged, none missing. Results: research/o008_e011_dev/dev_l2 (dev_solve_summary.json\
@@ -103,8 +103,8 @@ runs:
 - T0471-scientist-20261119T071220-5fd9
 created_by: founder
 created_at: '2026-11-19T15:12:01+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0260
 target: null
 lens: null
 trigger: null
@@ -240,3 +240,10 @@ history:
 - outcome: full_gate_passed
   summary: f594a465a3f55af7759f1d7cb96cb1e59bec3726
   at: '2026-11-19T16:23:38+00:00'
+- outcome: merge_approved
+  summary: I0260
+  replan: false
+  at: '2026-11-19T16:35:39+00:00'
+- outcome: full_gate_passed
+  summary: f11cafefed0ac98824cbac5b3aaeb695830c6f91
+  at: '2026-11-19T17:11:58+00:00'
