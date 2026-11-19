@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-19T16:23:45+00:00 from repository state — do not edit_
+_generated 2026-11-19T16:29:56+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -38,7 +38,6 @@ cancelled: 47, done: 420, failed: 4, needs_founder: 1, todo: 2
 - T0471 `needs_founder` scientist/design_experiment: E011 dev L2 analysis: R_D, band bound, joint operating characteristic and dev rows; revise the draft for registration (attempt 1)
 
 ## Recent events
-- 2026-11-19T09:19:15+00:00 session_note_recorded {"objective": "O004", "summary": "FastHenry Linux crash root-caused (matStats overflow); D0028 proposed; E004 binary pin must be per-platform"}
 - 2026-11-19T15:08:44+00:00 inbox_resolved {"id": "I0205", "status": "approved", "note": "Done. The founder ran the E011 development burst on GCP (2026-11-18 and 19, phases 1 and 2): 743 EM solves, all o
 - 2026-11-19T15:12:01+00:00 task_added {"task": "T0471"}
 - 2026-11-19T15:12:20+00:00 run_started {"run": "T0471-scientist-20261119T071220-5fd9", "task": "T0471", "role": "scientist", "session": "ac5c8c88-b457-4163-b242-e4365faf745c"}
@@ -53,3 +52,4 @@ cancelled: 47, done: 420, failed: 4, needs_founder: 1, todo: 2
 - 2026-11-19T15:52:47+00:00 run_finished {"run": "T0474-critic-20261119T074625-c079", "status": "completed", "cost": 1.941723, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T15:52:48+00:00 run_finished {"run": "T0472-critic-20261119T074617-b753", "status": "completed", "cost": 1.977752, "subtype": "success", "report": "structured_output"}
 - 2026-11-19T16:23:40+00:00 inbox_opened {"id": "I0260", "kind": "protected_change", "subject": "T0471: merge needs founder approval"}
+- 2026-11-19T16:29:23+00:00 session_note_recorded {"objective": "O008", "about": "T0471 review items"}

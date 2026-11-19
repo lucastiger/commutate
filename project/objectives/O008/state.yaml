@@ -47,5 +47,21 @@ log:
 - 'founder 2026-11-19: added T0471, the E011 development L2 analysis (R_D, band bound, joint operating
   characteristic, dev rows) and the draft revision for registration, carrying open review items (1)-(9)
   of 2026-11-18 and the 16-vCPU compute cap (no replan)'
+- 'open review items 2026-11-19T16:29:23+00:00 (founder session; reviews T0472-T0474 of T0471, all accept_with_caveats;
+  carry into founder decision 1 and any E011 redesign): (1) T0474 major: the note and expected_outcome.A1
+  attribute the 2R misses to an L1/L2 disagreement on within-shortlist Spearman correlations, but every
+  2R search shortlist spans at most 0.0012 in L(0.5 mm)/L(W*) - 1 while the misses are 0.2-3 points above
+  the 2 % line: re-ranking an existing shortlist at L2 moves s by about 0.1 point at most, so decision
+  1(a) must not offer within-shortlist re-ranking as a fix for 2R; (2) T0472/T0473: 2R draw 1 (R_D 1.209,
+  outside [1.25, 1.60]) is counted in the dev gates and the joint OC; report with and without it (without:
+  2R A1 2/7, compact paired wins 5/7, verdict still INCONCLUSIVE); F1a and F6 do not hold on the dev rows;
+  (3) T0472: P(FAIL) 0 and P(INCONCLUSIVE) 1 are degenerate (no 2R search s above 0.05); the K1 lower
+  bound 0.78 implies P(FAIL) could be about 0.2; (4) T0474: the 95 % upper bound on P(A1 on 2R) is 0.106
+  (Clopper-Pearson 0.5997), not 0.09; put an upper bound on P(PASS) in config.joint_operating_characteristic.values;
+  (5) T0474: the spec promises fixed-shift stress rows for the common-mode error that do not exist (reviewer
+  bootstrap with shifts up to max b: P(PASS) <= 0.0004); add them or delete the sentence; (6) T0472/T0474:
+  A3 on 2R is within selection error of flipping on draw 2 (needs 0.27 points vs a 0.25 bound); (7) T0473:
+  joint_oc lacks isfinite guards that e011_metrics has, and the selftest plants no non-finite s, capped
+  null or nonzero c_k; (8) T0472/T0473: R_D level difference is 0.00146 on Case 4, not 0.0013'
 evidence_rules: 2
 frozen_hash: sha256:9e948c4b2861f22f1bdbcf2f54d0330fe6f90df2106eb5cdef158b6aeb530387
