@@ -101,6 +101,31 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   revised draft's control, 24 sealed degradations, may need $50-100 of VM against the plan's $10-25), O002 $108 left of
   $120, O004 $90 left of $100 plus $15-30 VM, O009 $80-120 plus $20-45 VM. O003's remaining $6.77 is not spent.
 
+## Updates since the briefing was written (added by the founder session, 2026-11-19)
+- **O002 passed its experiment.** E007 (480 sealed layouts, 32 per stratum, D0025/D0027) met A1-A5 with margin: A1 0.236 K
+  (bound 0.263 against 0.5), A2 0.82 % (3 %), A3 0.090 K (1 K), A4 0.116 (0.5), A5 0.60 s (1 s); every null fails A1 by
+  about 4 K. EV-O002-01 is PASS, and reviews T0469 and T0470 accept it with caveats. **Decision 5 now has evidence behind
+  it:** each die's hottest node lies 2-5.9 K above its average in every stratum (O002 F6's trigger), so a +2 K die-average
+  budget does not bound the hot spot. Claim C005 assumes decision 5 and waits for it; its final wording, with the reviews'
+  limits, is drafted in `research/notes/claim-drafts/C005-statement.txt`. Two limits matter for the product: A1 holds
+  pooled, not per stratum (interleaved/2 at P_ref: p95 0.503 K), and spread prediction is weak in two-die strata (A4
+  0.42-0.47 per stratum).
+- **O004 hit a cost wall** (decide here). FastHenry's finest level is far slower than planned: a 0.5 mm trace cell runs
+  at least 5x its projection, each finest Case 4 deck about 100 h. The F7(a) burst would be about 194 h and $141 (up to
+  about 2,000 h on the upper envelope), and E004 about 542 CPU-h against O004's 260; O004's agent budget is nearly spent
+  ($139 of $148). F7(c) passed: burst 1 excluded none of 13 development pairs. The span cannot reach a lower end of 0.80 or
+  below on Case 4; the frozen banded rule supports about 0.89. A FastHenry measurement burst (k0 and k1 on three Case 4
+  layouts) is running and reports before the review. Options: a coarser FastHenry ladder (finest level 0.5 mm), a cropped
+  domain, FastHenry at its two coarser levels with a wider estimate, or descoping E004's FastHenry comparison.
+- **O008's E011 is designed and its development L2 burst is running** (ends about 2026-11-20). W* holds at 0.25 mm (W*/W
+  0.938 on 2R, 0.718 on Case 4); R_D sits at 1.28-1.31 against the [1.25, 1.60] window (one 2R draw at 1.21). Before
+  registration: the search budget (Case 4 searches still gain up to 16 % in the last quarter of 2000 evaluations), and the
+  registered run's size, modelled at 170-246 h and $104-151 against a 120 h timeout.
+- **Compute constraint.** The burst project is on the Google Cloud free trial: 16 vCPUs in all at once, not raisable without
+  upgrading, which the founder will not do. Bursts run in sequence; the free-trial credit bounds the total VM spend.
+- **Agent spend as of 2026-11-19** (STATUS.md): O002 $103.71 of $120, O004 $139.22 of $148, O008 $91.48 of $140; plus VM:
+  E007 about $22, E011 development about $40, O004 bursts about $12.
+
 ## What gets recorded after the review
 - The charter (founder-owned): A-T3's status; the day-45 and day-60 outcomes; any change of order of work or route.
 - Decision records, drafted by the session and accepted by the founder: decisions 1, 2, 4, 5 and 6.
