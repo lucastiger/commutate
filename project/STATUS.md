@@ -1,17 +1,16 @@
 # ModuleForge status
-_generated 2026-11-19T08:30:26+00:00 from repository state — do not edit_
+_generated 2026-11-19T08:31:23+00:00 from repository state — do not edit_
 
-## Founder inbox (3 open)
+## Founder inbox (2 open)
 - **I0205** [external_action] [O008] Burst VM for E011's development L2 draws (band bound, joint operating characteristic, dev rows)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
-- **I0255** [decision] E007 needs burst compute (~84.5 CPU-h)
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
 |---|---|---|---|---|---|
 | O000 | passed | PASS | 1/2 | $0.50/$20 | Framework canary — the loop carries a known-answer hypothesis from plan to verdict |
 | O001 | passed | PASS | 1/3 | $287.86/$315 | L1 PEEC ranks half-bridge layouts faithfully enough to drive layout search |
-| O002 | active | - | 0/1 | $99.38/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
+| O002 | evaluating | PASS | 1/1 | $99.38/$120 | A fast L1 thermal model predicts each die's average junction temperature, the spread across paralleled dies and layout-to-layout differences well enough to drive search |
 | O003 | needs_founder | - | 0/1 | $258.22/$265 | Reference wire-bonded half-bridge layouts leave >= 20 % loop-inductance headroom inside their own housing at <= +2 K Tj |
 | O004 | active | - | 0/1 | $139.22/$148 | The L2 inductance reference agrees with an independent field solver on the inductance ratios of re-layouts of PowerSynth public sample designs |
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
@@ -23,7 +22,7 @@ _generated 2026-11-19T08:30:26+00:00 from repository state — do not edit_
 ## Usage (from run records)
 | objective | runs | usd | output tokens | thinking | denials | limit hits |
 |---|---|---|---|---|---|---|
-| O002 | 41 | $99.38 | 1794921 | 884897 | 131 | 0 |
+| O002 | 43 | $99.38 | 1794921 | 884897 | 131 | 0 |
 | O003 | 135 | $258.22 | 4105839 | 2002393 | 280 | 0 |
 | O004 | 60 | $139.22 | 2176735 | 1194906 | 158 | 0 |
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
@@ -33,14 +32,12 @@ _generated 2026-11-19T08:30:26+00:00 from repository state — do not edit_
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 414, failed: 4, needs_founder: 1, todo: 2
+cancelled: 47, done: 415, failed: 4, running: 2, todo: 2
 
-- T0399 `needs_founder` none/experiment: Run E007: frozen L1 thermal model against the verified scikit-fem reference on fresh sealed layouts at P_ref and 0.5 P_ref (attempt 0)
+- T0469 `running` critic/review: Review EV-O002-01 (physics) (attempt 1)
+- T0470 `running` critic/review: Review EV-O002-01 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-18T08:43:14+00:00 run_finished {"run": "T0390-scientist-20261117T222835-1c59", "status": "error", "cost": 4.035547, "subtype": "error_max_budget_usd", "report": "transcript"}
-- 2026-11-18T08:43:14+00:00 task_failed_attempt {"task": "T0390", "signal": "agent_error", "action": "repair"}
-- 2026-11-18T08:43:22+00:00 run_started {"run": "T0390-scientist-20261118T004322-d913", "task": "T0390", "role": "scientist", "session": "5fcfe529-dbde-4739-8c19-7f02af3f2501"}
 - 2026-11-18T09:54:41+00:00 run_finished {"run": "T0390-scientist-20261118T004322-d913", "status": "completed", "cost": 2.797189, "subtype": "success", "report": "structured_output"}
 - 2026-11-18T10:18:07+00:00 verified {"task": "T0390"}
 - 2026-11-18T10:18:18+00:00 run_started {"run": "T0467-critic-20261118T021818-450b", "task": "T0467", "role": "critic", "session": "fef46b8c-f715-4d56-8db2-4bb66b243f3f"}
@@ -53,3 +50,6 @@ cancelled: 47, done: 414, failed: 4, needs_founder: 1, todo: 2
 - 2026-11-18T15:02:23+00:00 inbox_opened {"id": "I0258", "kind": "experiment_registration", "subject": "register E004 (pre-registration)"}
 - 2026-11-18T15:03:28+00:00 inbox_resolved {"id": "I0258", "status": "rejected", "note": "Premature: E004 needs the founder decisions on the FastHenry ladder, the span lower end, the CPU budget and timeo
 - 2026-11-18T15:19:49+00:00 founder_decision_recorded {"objective": "O004", "summary": "measure FastHenry k0/k1 on Case 4, then decide at the thesis review; E004 agent work paused"}
+- 2026-11-19T08:31:03+00:00 evaluation {"objective": "O002", "id": "EV-O002-01", "verdict": "PASS"}
+- 2026-11-19T08:31:19+00:00 run_started {"run": "T0469-critic-20261119T003119-af79", "task": "T0469", "role": "critic", "session": "52cddc6d-f0fb-4245-aac7-69750409fe98"}
+- 2026-11-19T08:31:23+00:00 run_started {"run": "T0470-critic-20261119T003123-e023", "task": "T0470", "role": "critic", "session": "ac00b5d3-dfb0-4c6d-9762-c5ba0e7297dc"}
