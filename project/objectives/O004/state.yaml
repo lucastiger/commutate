@@ -129,5 +129,12 @@ log:
   k1 may not finish within the burst''s 60 h, in which case the review gets a lower bound on k1''s run
   time and no k0-to-k1 ratio step. FastHenry''s stdout is block-buffered into the job log, so a run cut
   at the deadline leaves no progress record'
+- 'founder-session finding 2026-11-20 (no decision yet): first FastHenry k1 result. case4_base k1_nh5
+  (290,168 filaments, 0.5 mm trace cell) at full memory, alone on e2-highmem-8, D0028 build: ok, L 22.9490
+  nH at 10 MHz and 22.8187 nH at 20 MHz (k1/k0 0.9443 and 0.9418), 22,731 s (6.3 h) wall, peak 38.45 GB.
+  That is 0.46x the job list''s projection (49,855 s), not above it; memory is 3.3x the projection (11.7
+  GB). The remaining retries (standin k0, standin k1, dev03 k1) need about 14 h, so the burst should finish
+  about 2026-11-20 14:30 UTC, well inside its 60 h limit and the $15 first approved. The k0-to-k1 ratio
+  step needs the two other layouts at k1'
 evidence_rules: 2
 frozen_hash: sha256:20e94c0b2c6e4e675c29fa7378e42fe4febee19800e88c03772b0ac5f3eb9f38
