@@ -115,15 +115,29 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   about 2,000 h on the upper envelope), and E004 about 542 CPU-h against O004's 260; O004's agent budget is nearly spent
   ($139 of $148). F7(c) passed: burst 1 excluded none of 13 development pairs. The span cannot reach a lower end of 0.80 or
   below on Case 4; the frozen banded rule supports about 0.89. A FastHenry measurement burst (k0 and k1 on three Case 4
-  layouts) is running and reports before the review. Options: a coarser FastHenry ladder (finest level 0.5 mm), a cropped
+  layouts) has measured k1 (below). Options: a coarser FastHenry ladder (finest level 0.5 mm), a cropped
   domain, FastHenry at its two coarser levels with a wider estimate, or descoping E004's FastHenry comparison.
-  - *Measurement burst, 2026-11-19.* The first run crashed every deck on Linux. The cause was a FastHenry bug, also behind
-    D0002's intermittent crash, fixed by D0028 (one source fix, identical results). On the rerun the first k0 deck
-    completes on the VM (dev03_trace_width: 25.74 nH at 10 MHz, 3893 s, 4.4 GB). On Linux the decks need more memory
-    than projected: k0 at least 1.5x, and k1 is stopped above 18 GB against 11.7 GB projected. They also run about 3x the
-    Mac's time. So the runner solves the k1 decks one at a time with the VM's full memory. Inference: about 25-30 h or
-    more per k1 deck, so the review may have k1 for one or two layouts, or only a lower bound on its run time.
-    E004's FastHenry memory model and its binary pin (per platform since D0028) both change before registration.
+  - *Measurement burst, 2026-11-19 and 20* (`research/o004_f7/fh_solves`, about $6 of VM). The first run crashed every
+    deck on Linux. The cause was a FastHenry bug, also behind D0002's intermittent crash, fixed by D0028 (one source fix,
+    identical results). The rerun solved all six decks: k0 (1 mm trace cell) and k1 (0.5 mm) on three Case 4 layouts,
+    each deck alone with the VM's memory (e2-highmem-8).
+
+    | layout | L at k0, 10 MHz | L at k1, 10 MHz | ratio to case4_base, k0 | ratio, k1 | k1 run time, peak memory |
+    |---|---|---|---|---|---|
+    | case4_base | 24.302 nH | 22.949 nH | 1 | 1 | 6.3 h, 37.6 GB |
+    | dev03_trace_width | 25.741 nH | 24.320 nH | 1.0592 | 1.0597 | 1.6 h, 21.3 GB |
+    | standin_compound | 19.783 nH | 18.694 nH | 0.8141 | 0.8146 | 3.1 h, 24.4 GB |
+
+    - Facts: from k0 to k1 each inductance falls 5.5-5.8 %, but each ratio moves by +0.0005 (at 20 MHz: dev03 +0.0005,
+      standin +0.0011), 50-100 times less. k1 needs 21-38 GB against 11.7 GB projected, and 1.6-6.3 h; k0 needs 4.3-4.7
+      GB and 1.0-1.6 h. Against the job list's projections, k1 took 0.1-0.5 times the projected time (13.7-14.5 h,
+      which included the 5x factor above) and 2.3-4.2 times the raw memory estimate (about 9 GB). FastHenry uses one core
+      (CPU time equals wall time), so memory, not vCPUs, limits how many decks share a VM.
+    - Inference: a ladder whose finest level is 0.5 mm is affordable, and on these layouts its ratio error looks small.
+      This supports the "coarser FastHenry ladder" option above. Limits: three layouts, all Case 4; two levels only, so the
+      k1-to-k2 step is unmeasured and a two-level estimate assumes the step keeps shrinking; F7(a)'s thickness ladder
+      (nh 3/5/9) was not run.
+    - E004's FastHenry memory model and its binary pin (per platform since D0028) both change before registration.
 - **O008's E011 as designed is expected to be INCONCLUSIVE** (decide here; development analysis T0471, three reviews
   accept with caveats). W* and the band bound hold at 0.25 mm (W*/W 0.938 on 2R, 0.718 on Case 4). On the development
   draws:
@@ -142,7 +156,7 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   upgrading, which the founder will not do. Bursts run in sequence; the free-trial credit bounds the total VM spend.
 - **Agent spend as of 2026-11-19** (STATUS.md): O002 $103.71 of $120, O004 $139.22 of $148, O008 $102.61 of $140 (after
   T0471); plus VM: E007 about $22, E011 development about $40, O004 bursts about $12 plus the FastHenry measurement burst
-  (running).
+  (about $6).
 
 ## What gets recorded after the review
 - The charter (founder-owned): A-T3's status; the day-45 and day-60 outcomes; any change of order of work or route.

@@ -1,0 +1,61 @@
+{
+ "id": "case4_base__fh_k1_nh5__fullmem",
+ "job_hash": "96acfe09b861be183c97910f22f118fee8bbed7f559ae79ff61b37913f674c6f",
+ "fingerprint": "7566b7a31d920fdc8dc0a55b7ba75ee14374747626ce3abe1b68591bf51c3a6f",
+ "fingerprint_ok": true,
+ "host": "mf-burst-cmd-1795107379-85134-a1",
+ "time_utc": "2026-11-19T18:00:10Z",
+ "ok": true,
+ "status": "ok",
+ "reason": "",
+ "binary_sha256": "076689243ccf57a192dbccf0e4799b9fb179cba8b57842143bbf39f97142e546",
+ "binary_path": "/home/lukeskywalker/.local/bin/fasthenry",
+ "deck_sha256": "e57d3d61a10c7f87ff7eb64b059385ad66251ea1b28ccf27b33b915d915919da",
+ "n_filaments_exporter": 290168,
+ "n_filaments_refined": 290168,
+ "nh_trace": 5,
+ "nh_plane": 5,
+ "wire_n": 4,
+ "wire_sub": 2,
+ "die_model": "short",
+ "args": [
+  "-s",
+  "iterative",
+  "-m",
+  "multi",
+  "-t",
+  "0.0001",
+  "-o",
+  "4"
+ ],
+ "L_H": {
+  "10MHz": 2.2949028709249663e-08,
+  "20MHz": 2.2818680810857402e-08
+ },
+ "R_ohm": {
+  "10MHz": 0.0331054,
+  "20MHz": 0.039794
+ },
+ "attempts": [
+  {
+   "n": 1,
+   "status": "ok",
+   "wall_s": 22730.462998559,
+   "peak_mem_mb": 38450.828125,
+   "cpu_s": 22728.555739,
+   "exit_code": 0,
+   "signal": null,
+   "mem_polled": true,
+   "log_tail": "ll impedance matrices dumped to file Zc.mat\n\nTimes:  Read geometry   0.213547\n        Multipole setup 98.2638\n        Scanning graph  0.02651\n        Form A M and Z  0.443083\n        form M'ZM       0.003661\n        Form precond    22160\n        GMRES time      465.067\n   Total:               22724\n"
+  }
+ ],
+ "crashed_every_attempt": false,
+ "peak_mem_mb_max": 38450.828125,
+ "wall_s": 22730.621456516998,
+ "peak_GB_self": 0.071892992,
+ "threads": {
+  "OMP_NUM_THREADS": null,
+  "OPENBLAS_NUM_THREADS": null,
+  "MF_L2_THREADS": null
+ }
+}
