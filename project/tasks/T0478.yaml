@@ -3,7 +3,7 @@ objective: O008
 title: 'E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter'
 type: implement
 agent: builder
-status: review
+status: merge
 depends_on: []
 description: 'E011''s search misses on 2D_Case_2R because it stops short of moves that both L1 and L2
   rate as improving (diagnosis research/diagnoses/e011-2r-dev-miss.md, reviews T0476 and T0477 in project/reviews/T0475).
@@ -194,3 +194,6 @@ history:
     - Changing local.py, control.py and twin.py changes their recorded code hashes. The search config
       hash changes only when the new fields are switched on. Re-registering the frozen values is the founder's
       call, as the diagnosis notes.
+- outcome: full_gate_passed
+  summary: 134f87a1338845ccf4d6061c87bd9e02b379bb25
+  at: '2026-11-21T11:14:52+00:00'

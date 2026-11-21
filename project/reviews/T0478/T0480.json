@@ -1,0 +1,61 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "minor",
+      "title": "Checkpoint-key mesh separation fails for an injected non-default screen and for near-equal meshes",
+      "detail": "LocalSolvers.l1_key returns 'l1' whenever l1_hmax_mm is None. So LocalSolvers(twin.l1_screen(2.0), l_sub) writes its 2 mm L1 values under the same key as the frozen 4 mm screen, even though the screen carries .hmax_mm = 2.0. The module docstring's promise that 'a workdir never mixes meshes' holds only when the mesh is passed as l1_hmax_mm. Separately, f'{h:g}' keeps 6 significant digits, so 1.9999999 and 2.0 both map to 'l1@2mm'. peec._grid_lines (ceil(diff/hmax - 1e-9)) can mesh those two values differently, so the key can hide a real mesh difference. No current impact: e011_run.py calls local_search with workdir=None.",
+      "evidence": "Scratch run: LocalSolvers(W.l1_screen(2.0), ...).l1_key == 'l1' while the screen's hmax_mm == 2.0; l1_hmax_mm=1.9999999 -> 'l1@2mm'; 0.1234567 and 0.1234568 -> 'l1@0.123457mm'.",
+      "suggested_check": "Read getattr(self.l1, 'hmax_mm', self.l1_hmax_mm) in l1_key and format the mesh with repr or more digits.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "The E011 runner cannot yet use the mesh parameter",
+      "detail": "experiments/runners/e011_run.py still passes self.M.T._l1 directly to LocalSolvers, proxy_descent, draw_degradations, ablation_random_screen and proxy_alone, and has its own ops.l1 wrapper. So 'the L1 mesh size as a parameter' exists in the library API but cannot be selected from the experiment config without a further runner change. The deliverable is only optimize/local.py, so this limits scope rather than being a defect.",
+      "evidence": "grep in e011_run.py: lines 180, 256, 262, 270, 280 and 284 inject T._l1.",
+      "suggested_check": "Add a follow-up runner task that passes l1=None with l1_hmax_mm taken from the config.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "Coupled retries only move partners in the same direction",
+      "detail": "Coupled retries move each partner by the same displacement d plus further steps in the same sign. Repairs that trade one parameter against another (one up, the other down) are never offered. I probed all 18 rejected single u-moves at the four 2R end points whose failure is a coupling rule. Four of the in-bound one-partner repairs need the opposite sign (row_HS_u0 against row_HS_gap), and 9 of the 18 rejected moves have no one-partner repair at +-1 or +-2 steps. The docstring states the same-sign rule, so this is a limit of how general the coupled moves are, not a bug.",
+      "evidence": "Scratch script binds_check.py on the 2R end points (draws 0, 2, 3, 4): 25 in-bound repairs, 0 outside rule_binds, 4 opposite-sign, 9 with no single-partner repair.",
+      "suggested_check": "If the redesign meant trade-off couplings to be covered, also try opposite-sign partner displacements.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "Kind label of stuck-search coupled retries differs from the docstring",
+      "detail": "The module docstring says the move taken by the stuck line search has kind 'line_stuck'. A coupled retry of a rejected line_stuck move is yielded as kind 'coupled', so trajectory and yield statistics attribute it to 'coupled'.",
+      "evidence": "_Space.checked yields ('coupled', *r) for any kind in _RETRIED, including 'line_stuck'.",
+      "suggested_check": "Document the behaviour, or tag such retries as line_stuck+coupled.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "'Generic' coupled moves are limited to the slot-free-end and die-row rules, on the moved parameter's axis",
+      "detail": "rule_binds covers slot{i}_free_end and row_{sw}_{u0,v0,gap}. Every other replay rule gets no coupled retry (column inner/outer edges, slot attach, column v edges, feet, landing lines, slot gaps, windows). A v-move that fails a free-end rule because of v-overlap also gets no retry, since the u-axis partners are filtered out. Within the covered rules, my check of rule_binds against derivative._replay found the partner sets correct, and complete for single-partner u repairs.",
+      "evidence": "Read derivative._replay lines 1120-1245 against rule_binds; probe found 0 repairs with a partner outside rule_binds.",
+      "suggested_check": "",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done commands. `uv run pytest -q tests/unit/optimize tests/unit/generate`: 323 passed in 909 s. `uv run ruff check src tests`: all checks passed. `uv run mfos gate --fast`: all gates passed. Also ran test_local_moves.py on its own: 19 passed.",
+    "Rebuilt the pre-change package in $TMPDIR from main HEAD's local.py, control.py and twin.py; main's derivative.py and nulls.py are byte-identical to the snapshot. Ran 6 default-config local searches not in the author's tests with both old and new code: a new seed layout, dies_fixed, step_mm=1 with n_joint=3, a 900-eval budget, and the real twin._l1 screen. All digests are identical, and LocalConfig().hash() is bdefe640d8cac683 in both.",
+    "Confirmed that LocalSolvers(None, ...) at the default mesh gives the same search digest as injecting twin._l1, and that DEFAULT_HMAX is 4.0e-3 m, so hmax_mm/1000 converts units correctly.",
+    "Checked rule_binds by hand against derivative._replay: slot free end, needed/limit, the other columns' facing edges, the split-housing reach, the landing slot's 1 mm clearance, the row_u0 offset, and row_v0 against slot v0/v1 (hts = slot v1 - v0). All partner sets match.",
+    "Probed coupling completeness at the four 2R end points: for every rejected single u-move with a coupling-rule failure, tried every other movable u-parameter at +-1 and +-2 steps. 0 valid repairs used a partner outside rule_binds; 4 in-bound repairs needed the opposite sign.",
+    "Checked the checkpoint keys: an injected l1_screen(2.0) gets key 'l1', and near-equal meshes share a key under :g formatting.",
+    "Read e011_run.py to see how the E011 entry points get their L1 solver."
+  ],
+  "caveats": [
+    "Coupled moves cover only the slot-free-end and die-row replay rules. Partners must be on the moved parameter's axis and are displaced in the same direction only.",
+    "The L1 mesh parameter is available in twin, control, local and nulls, but the E011 runner still injects twin._l1 directly. Selecting a mesh from the experiment config needs a runner change.",
+    "Checkpoint keys keep meshes apart only when the mesh is passed as l1_hmax_mm (not as an injected l1_screen) and only to 6 significant digits.",
+    "The default config was confirmed bit-identical to the pre-change code on 6 independent runs with synthetic and real L1 solvers. None of my own runs triggered a perturbation; the author's recorded digest covers that path.",
+    "The T0478 task record and research/diagnoses/e011-2r-dev-miss.md are not in this snapshot, so 'completely' was judged against the docstrings and the packet's material."
+  ]
+}
