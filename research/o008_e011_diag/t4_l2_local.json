@@ -1,0 +1,1540 @@
+{
+ "level": "lat0.5",
+ "freq_hz": 20000000.0,
+ "Wstar_local_H": 1.3219090411463894e-08,
+ "Wstar_burst_H": 1.3219090411463807e-08,
+ "cpu_h_total": 0.34928132444444443,
+ "cases": [
+  {
+   "name": "A0_Wstar",
+   "why": "determinism: local vs burst",
+   "fingerprint": "9570ef4c9199be651318f2b213af8d1ad116f2254caef9af5a6c93b64df1e02b",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0,
+   "l1_ratio_1mm": 1.0,
+   "diff_from_Wstar": [],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3219090411463894e-08,
+    "n_unknowns": 378300,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.6035824452551888e-05,
+    "wall_s": 55.17595375003293,
+    "cpu_s": 65.427599,
+    "peak_GB": 1.601814528
+   },
+   "l2_burst_H": 1.3219090411463807e-08,
+   "l2_ratio": 1.0,
+   "l2_ratio_burst": 1.0
+  },
+  {
+   "name": "A1_b7",
+   "why": "determinism: local vs burst",
+   "fingerprint": "2ac8be058265686709b56d65c8a8809a58c32ea4a4bba721b4c8a4aada2304b7",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9986814155284125,
+   "l1_ratio_1mm": 1.0037609859848997,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 13.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 42.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 14.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 16.5,
+     "delta": -6.0
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 46.0,
+     "delta": -1.0
+    },
+    {
+     "name": "slot1_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 45.5,
+     "delta": -2.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.0,
+     "delta": 2.0
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    },
+    {
+     "name": "row_LS_u0",
+     "group": "die_row",
+     "a": 11.0,
+     "b": 17.0,
+     "delta": 6.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3665945395237465e-08,
+    "n_unknowns": 377890,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.556268139701999e-05,
+    "wall_s": 69.74463254096918,
+    "cpu_s": 82.385771,
+    "peak_GB": 1.758216192
+   },
+   "l2_burst_H": 1.3665945395237267e-08,
+   "l2_ratio": 1.0338037618220728,
+   "l2_ratio_burst": 1.0338037618220646
+  },
+  {
+   "name": "B1_Wstar_rowLS+6",
+   "why": "H1: L2 cost of the LS die-row shift the search leaves on draws 4, 7",
+   "fingerprint": "17d3f2fe2c1952f6631a36f8a9a0d0c724cb062564527e6a54a3ec2adbb54404",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0107764669320303,
+   "l1_ratio_1mm": 1.011281248038912,
+   "diff_from_Wstar": [
+    {
+     "name": "row_LS_u0",
+     "group": "die_row",
+     "a": 11.0,
+     "b": 17.0,
+     "delta": 6.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3789433296722604e-08,
+    "n_unknowns": 378300,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.5483573436553268e-05,
+    "wall_s": 69.38366920803674,
+    "cpu_s": 81.841686,
+    "peak_GB": 1.650098176
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0431453955987846
+  },
+  {
+   "name": "B2_Wstar_rowLS+3",
+   "why": "H1: linearity of the same",
+   "fingerprint": "31014019b1d02176d0ef9a503d167acfa42c78a962246164a184005bf2617ce5",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0056780479594025,
+   "l1_ratio_1mm": 1.0043635290284698,
+   "diff_from_Wstar": [
+    {
+     "name": "row_LS_u0",
+     "group": "die_row",
+     "a": 11.0,
+     "b": 14.0,
+     "delta": 3.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.346707429789946e-08,
+    "n_unknowns": 378300,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.5825310463678534e-05,
+    "wall_s": 67.19616058305837,
+    "cpu_s": 79.758147,
+    "peak_GB": 1.72818432
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0187595272228798
+  },
+  {
+   "name": "B3_b7_rowLS=W*",
+   "why": "H1: draw 7's end point with the LS die row back at W*'s position",
+   "fingerprint": "bb7329b45f353449e1b3d6e316cb9274108cd5deab3d89b0009d85b9d8945aa6",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9895251398213013,
+   "l1_ratio_1mm": 0.9930318633423023,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 13.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 42.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 14.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 16.5,
+     "delta": -6.0
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 46.0,
+     "delta": -1.0
+    },
+    {
+     "name": "slot1_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 45.5,
+     "delta": -2.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.0,
+     "delta": 2.0
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3103350856671132e-08,
+    "n_unknowns": 377890,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.6115824936976162e-05,
+    "wall_s": 67.84388279193081,
+    "cpu_s": 80.644949,
+    "peak_GB": 1.73252608
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9912445144718588
+  },
+  {
+   "name": "B4_b4_slot1,rowLS=W*",
+   "why": "H1: draw 4's end point with slot1_u0 and the LS die row at W*'s",
+   "fingerprint": "c517ac8bbba08e0e2fdd1473d838f3c103ab28d40ec4a260917211023fdf6481",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9877269677620371,
+   "l1_ratio_1mm": 0.9847361796108339,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_v0",
+     "group": "column",
+     "a": 37.0,
+     "b": 37.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 14.0,
+     "delta": 1.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 43.5,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 9.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_v0",
+     "group": "column",
+     "a": 7.5,
+     "b": 7.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 12.0,
+     "delta": 1.0
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "col_PHASE_v1",
+     "group": "column",
+     "a": 47.5,
+     "b": 50.0,
+     "delta": 2.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 45.5,
+     "delta": -1.5
+    },
+    {
+     "name": "slot0_v1",
+     "group": "slot",
+     "a": 13.0,
+     "b": 12.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot1_v0",
+     "group": "slot",
+     "a": 15.0,
+     "b": 14.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 34.5,
+     "delta": 1.5
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 46.5,
+     "delta": -1.0
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 19.5,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    },
+    {
+     "name": "row_LS_v0",
+     "group": "die_row",
+     "a": 16.0,
+     "b": 15.5,
+     "delta": -0.5
+    },
+    {
+     "name": "land_LS",
+     "group": "landing",
+     "a": 12.625,
+     "b": 12.125,
+     "delta": -0.5
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3040343198641572e-08,
+    "n_unknowns": 377870,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.607067105459621e-05,
+    "wall_s": 70.96237595798448,
+    "cpu_s": 83.086233,
+    "peak_GB": 1.51814144
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9864781004397013
+  },
+  {
+   "name": "B4b_b4_slot1=W*",
+   "why": "confound: slot1_u0 alone (L1 is flat in it)",
+   "fingerprint": "0f8d4630fd71ca45d0a0e53cf20d3f861c54fac245c83a3afe390866ca053e12",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0079671565610766,
+   "l1_ratio_1mm": 1.0073052377582763,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_v0",
+     "group": "column",
+     "a": 37.0,
+     "b": 37.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 14.0,
+     "delta": 1.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 43.5,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 9.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_v0",
+     "group": "column",
+     "a": 7.5,
+     "b": 7.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 12.0,
+     "delta": 1.0
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "col_PHASE_v1",
+     "group": "column",
+     "a": 47.5,
+     "b": 50.0,
+     "delta": 2.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 45.5,
+     "delta": -1.5
+    },
+    {
+     "name": "slot0_v1",
+     "group": "slot",
+     "a": 13.0,
+     "b": 12.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot1_v0",
+     "group": "slot",
+     "a": 15.0,
+     "b": 14.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 34.5,
+     "delta": 1.5
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 46.5,
+     "delta": -1.0
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 19.5,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    },
+    {
+     "name": "row_LS_u0",
+     "group": "die_row",
+     "a": 11.0,
+     "b": 17.5,
+     "delta": 6.5
+    },
+    {
+     "name": "row_LS_v0",
+     "group": "die_row",
+     "a": 16.0,
+     "b": 15.5,
+     "delta": -0.5
+    },
+    {
+     "name": "land_LS",
+     "group": "landing",
+     "a": 12.625,
+     "b": 12.125,
+     "delta": -0.5
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3764086384813895e-08,
+    "n_unknowns": 377870,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.537760556042294e-05,
+    "wall_s": 72.39930124999955,
+    "cpu_s": 84.757034,
+    "peak_GB": 1.477083136
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0412279480952311
+  },
+  {
+   "name": "B5_Wstar_slot1+3",
+   "why": "confound: slot1_u0 at W* (L1 flat)",
+   "fingerprint": "996a540de616a9b6ef96133954c425bf07a8755a62abd6988429c4b446c1c73c",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0000113186762458,
+   "l1_ratio_1mm": 1.0000259718249829,
+   "diff_from_Wstar": [
+    {
+     "name": "slot1_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.0,
+     "delta": 3.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3272492745053098e-08,
+    "n_unknowns": 376440,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.5939486009683325e-05,
+    "wall_s": 71.54723541694693,
+    "cpu_s": 85.66255699999999,
+    "peak_GB": 1.919434752
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0040397888150376
+  },
+  {
+   "name": "C1_b2_triple-0.5",
+   "why": "H2: draw 2's blocked coupled move (col_PHASE_u0, row_HS_u0, slot2_u1)",
+   "fingerprint": "496fae13ece9bb0b49388596010f01cefbe8bff86647c58b527616051170ad49",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.008182344110668,
+   "l1_ratio_1mm": 1.0092291869885257,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 17.5,
+     "delta": 5.0
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 42.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 11.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_PHASE_u0",
+     "group": "column",
+     "a": 37.0,
+     "b": 37.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.5,
+     "delta": 2.5
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.0,
+     "delta": 3.0
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 48.0,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 21.5,
+     "delta": 2.5
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3366970410475937e-08,
+    "n_unknowns": 377220,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.5867581286382593e-05,
+    "wall_s": 71.25355616607703,
+    "cpu_s": 85.30145900000001,
+    "peak_GB": 1.741062144
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0111868513194975
+  },
+  {
+   "name": "C2_b2_triple-1.0",
+   "why": "H2: the same, two steps",
+   "fingerprint": "c464a0d8788072adbf73224ebbecd2849cab9fdbccdb39cd4cf1cb32dcad9165",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9931781610288659,
+   "l1_ratio_1mm": 0.9937535878014534,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 17.5,
+     "delta": 5.0
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 42.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 11.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.0,
+     "delta": 2.0
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.0,
+     "delta": 3.0
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 48.0,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 21.0,
+     "delta": 2.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3190972703963176e-08,
+    "n_unknowns": 377880,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.6094199974370276e-05,
+    "wall_s": 75.70503137493506,
+    "cpu_s": 91.090061,
+    "peak_GB": 1.833025536
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9978729468801928
+  },
+  {
+   "name": "C3_b3_triple-0.5",
+   "why": "H2: draw 3's blocked coupled move",
+   "fingerprint": "c00f6fd05708e8a1ec7af1b34d3643d10d3d3d809d745d183bcc0244d8205d8c",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.038299540461288,
+   "l1_ratio_1mm": 1.0383828104683765,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 12.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 41.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC-_v0",
+     "group": "column",
+     "a": 7.5,
+     "b": 8.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 13.5,
+     "delta": 1.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 13.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_PHASE_u0",
+     "group": "column",
+     "a": 37.0,
+     "b": 38.5,
+     "delta": 1.5
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "col_PHASE_v1",
+     "group": "column",
+     "a": 47.5,
+     "b": 51.0,
+     "delta": 3.5
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 43.5,
+     "delta": -3.5
+    },
+    {
+     "name": "slot1_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 9.0,
+     "delta": 2.0
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 36.5,
+     "delta": 3.5
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.0,
+     "delta": 3.0
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 21.5,
+     "delta": 2.5
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3671462709764767e-08,
+    "n_unknowns": 373110,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.5398794249863833e-05,
+    "wall_s": 75.96092133410275,
+    "cpu_s": 90.98141,
+    "peak_GB": 1.62152448
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0342211365699234
+  },
+  {
+   "name": "D1_b1_rows=W*",
+   "why": "H2/ruggedness: draw 1's end point with row_HS_u0, row_LS_u0, row_LS_gap at W*'s",
+   "fingerprint": "593b3d4b77b8c8ce4398f0f19abfca08c447472c8d73a9715ef9c1aecf91b727",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0271257509171083,
+   "l1_ratio_1mm": 1.0293116440012942,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 13.5,
+     "delta": 1.0
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 43.5,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 12.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 11.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_PHASE_u0",
+     "group": "column",
+     "a": 37.0,
+     "b": 38.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.5,
+     "delta": 1.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 45.0,
+     "delta": -2.0
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.5,
+     "delta": 3.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 36.0,
+     "delta": 3.0
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 48.0,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.346402888368859e-08,
+    "n_unknowns": 375850,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.564499789754068e-05,
+    "wall_s": 57.63474979111925,
+    "cpu_s": 68.85287799999999,
+    "peak_GB": 2.183757824
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 1.0185291472106341
+  },
+  {
+   "name": "E0_b0_slot1,rowLS=W*",
+   "why": "H1/H2: draw 0's end point with slot1_u0 and the LS die row at W*'s",
+   "fingerprint": "3cbb7271757a51e9d4f081e44291f61da34270ad4e713d3dd3f483055b7718b3",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 1.0059231254216299,
+   "l1_ratio_1mm": 1.0062703832818445,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 14.5,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 41.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC-_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 11.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 21.5,
+     "delta": -1.0
+    },
+    {
+     "name": "col_PHASE_v1",
+     "group": "column",
+     "a": 47.5,
+     "b": 52.0,
+     "delta": 4.5
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 42.5,
+     "delta": -4.5
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 32.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 11.0,
+     "delta": 4.0
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 45.5,
+     "delta": -2.0
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 16.0,
+     "delta": -3.0
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    },
+    {
+     "name": "row_LS_gap",
+     "group": "die_row",
+     "a": 6.0,
+     "b": 5.5,
+     "delta": -0.5
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3170060382289295e-08,
+    "n_unknowns": 373530,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.600143612560964e-05,
+    "wall_s": 84.156543583842,
+    "cpu_s": 101.215721,
+    "peak_GB": 1.477738496
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9962909680130427
+  },
+  {
+   "name": "C4_b3_triple-2.0",
+   "why": "H2: draw 3's coupled move, four steps (col_PHASE_u0 back at W*'s)",
+   "fingerprint": "e8df23d3f4c2fd350d9d5657366e0656db8ccdcb720d98a696f43eaaca6b903f",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9915874965775424,
+   "l1_ratio_1mm": 0.9892908662927202,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 12.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 41.0,
+     "delta": -0.5
+    },
+    {
+     "name": "col_DC-_v0",
+     "group": "column",
+     "a": 7.5,
+     "b": 8.0,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 13.5,
+     "delta": 1.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 13.0,
+     "delta": 2.0
+    },
+    {
+     "name": "col_PHASE_v0",
+     "group": "column",
+     "a": 22.5,
+     "b": 20.5,
+     "delta": -2.0
+    },
+    {
+     "name": "col_PHASE_v1",
+     "group": "column",
+     "a": 47.5,
+     "b": 51.0,
+     "delta": 3.5
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 43.5,
+     "delta": -3.5
+    },
+    {
+     "name": "slot1_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 9.0,
+     "delta": 2.0
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.0,
+     "delta": 2.0
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.0,
+     "delta": 3.0
+    },
+    {
+     "name": "row_HS_u0",
+     "group": "die_row",
+     "a": 19.0,
+     "b": 20.0,
+     "delta": 1.0
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3125482387286358e-08,
+    "n_unknowns": 375090,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.6082505633594906e-05,
+    "wall_s": 83.5936002919916,
+    "cpu_s": 100.485663,
+    "peak_GB": 1.499758592
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9929187242643899
+  },
+  {
+   "name": "D2_b1_rows=W*,pair-1.0",
+   "why": "H2: D1 plus col_PHASE_u0 and slot2_u1 by -1 mm (row_HS_u0 already at W*'s)",
+   "fingerprint": "f459caff49e291d9aba7349a9d1608b0a945b123159cbc3fd16d3875676a993f",
+   "valid": true,
+   "valid_why": "ok",
+   "l1_ratio_4mm": 0.9922588177727502,
+   "l1_ratio_1mm": 0.9931222409477053,
+   "diff_from_Wstar": [
+    {
+     "name": "col_DC+_u0",
+     "group": "column",
+     "a": 7.0,
+     "b": 7.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC+_u1",
+     "group": "column",
+     "a": 12.5,
+     "b": 13.5,
+     "delta": 1.0
+    },
+    {
+     "name": "col_DC+_v1",
+     "group": "column",
+     "a": 41.5,
+     "b": 43.5,
+     "delta": 2.0
+    },
+    {
+     "name": "col_DC-_u1",
+     "group": "column",
+     "a": 12.0,
+     "b": 12.5,
+     "delta": 0.5
+    },
+    {
+     "name": "col_DC-_v1",
+     "group": "column",
+     "a": 11.0,
+     "b": 11.5,
+     "delta": 0.5
+    },
+    {
+     "name": "slot0_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.5,
+     "delta": 1.5
+    },
+    {
+     "name": "slot0_u1",
+     "group": "slot",
+     "a": 47.0,
+     "b": 45.0,
+     "delta": -2.0
+    },
+    {
+     "name": "slot1_u1",
+     "group": "slot",
+     "a": 48.0,
+     "b": 47.5,
+     "delta": -0.5
+    },
+    {
+     "name": "slot2_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 10.5,
+     "delta": 3.5
+    },
+    {
+     "name": "slot2_u1",
+     "group": "slot",
+     "a": 33.0,
+     "b": 35.0,
+     "delta": 2.0
+    },
+    {
+     "name": "slot3_u0",
+     "group": "slot",
+     "a": 7.0,
+     "b": 8.0,
+     "delta": 1.0
+    },
+    {
+     "name": "slot3_u1",
+     "group": "slot",
+     "a": 47.5,
+     "b": 48.0,
+     "delta": 0.5
+    },
+    {
+     "name": "row_HS_gap",
+     "group": "die_row",
+     "a": 5.0,
+     "b": 6.0,
+     "delta": 1.0
+    }
+   ],
+   "l2_local": {
+    "status": "ok",
+    "L_H": 1.3111689704325168e-08,
+    "n_unknowns": 377170,
+    "gmres_flags": [
+     0
+    ],
+    "solver_tol_rel_L_max": 1.6113960863051684e-05,
+    "wall_s": 63.18138220789842,
+    "cpu_s": 75.9216,
+    "peak_GB": 2.366947328
+   },
+   "l2_burst_H": null,
+   "l2_ratio": 0.9918753330376207
+  }
+ ]
+}
