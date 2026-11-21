@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T08:10:50+00:00 from repository state — do not edit_
+_generated 2026-11-21T08:36:19+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning

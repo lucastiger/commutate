@@ -3,7 +3,7 @@ objective: O008
 title: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign
 type: investigate
 agent: scientist
-status: needs_founder
+status: merge
 depends_on: []
 description: "E011's development rows (T0471, research/notes/e011-dev-l2-analysis.md section 3) are INCONCLUSIVE:\
   \ on 2D_Case_2R the search passes 2 of 8 draws (A1 = 0.25) and blind compaction is not beaten (A3 =\
@@ -81,8 +81,8 @@ runs:
 - T0475-scientist-20261120T222058-2abe
 created_by: founder
 created_at: '2026-11-21T06:20:06+00:00'
-protected_approved: false
-approval: null
+protected_approved: true
+approval: I0262
 target: null
 lens: null
 trigger: null
@@ -283,3 +283,7 @@ history:
 - outcome: full_gate_passed
   summary: 71d77c43e947759b4b69dd7f74f8e8c87c8b13a1
   at: '2026-11-21T08:08:37+00:00'
+- outcome: merge_approved
+  summary: I0262
+  replan: false
+  at: '2026-11-21T08:36:30+00:00'
