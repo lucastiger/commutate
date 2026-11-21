@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T05:20:49+00:00 from repository state — do not edit_
+_generated 2026-11-21T05:46:14+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -36,7 +36,6 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-20T19:55:41+00:00 loop_started {"pid": 47147}
 - 2026-11-20T20:44:12+00:00 loop_started {"pid": 56711}
 - 2026-11-20T23:22:58+00:00 sleep_detected {"gap_s": 941, "slept_s": 897, "runs_extended": 0}
 - 2026-11-20T23:41:34+00:00 sleep_detected {"gap_s": 613, "slept_s": 570, "runs_extended": 0}
@@ -51,3 +50,4 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 - 2026-11-21T04:38:59+00:00 sleep_detected {"gap_s": 974, "slept_s": 925, "runs_extended": 0}
 - 2026-11-21T05:03:47+00:00 sleep_detected {"gap_s": 1488, "slept_s": 1440, "runs_extended": 0}
 - 2026-11-21T05:20:37+00:00 sleep_detected {"gap_s": 1009, "slept_s": 931, "runs_extended": 0}
+- 2026-11-21T05:46:06+00:00 sleep_detected {"gap_s": 1218, "slept_s": 1163, "runs_extended": 0}
