@@ -1,0 +1,53 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "Draws 0 and 4 are attributed to die-row dents, but a slot1_free_end DRC coupling blocks their fix",
+      "detail": "\u00a73.5 and \u00a74 put draws 0 and 4 under 'die-row line moves' (dent plus fidelity), and the counts say 3 die-row misses (0, 4, 7) and 2 coupled-block misses. From b\u2080 and b\u2084, moving row_LS_u0 alone toward W*'s 11.0 mm is valid only down to 14.0 mm. Every value from 13.5 to 11.0 fails in_domain with 'slot1_free_end'. E0 and B4 work only because they also set slot1_u0 to W*'s value. The doc tests slot1_u0 only as an L2-sensitivity confound (B4b, B5), not as a constraint. The slot1 move needed to unblock the row is almost L1-flat (1.00783 to 1.00777 on b\u2080), so a strictly-improving search has no reason to take it first. So on draws 0 and 4 the binding obstacle beyond 14 mm is mechanism (b), a DRC-coupled move, not mechanism (a). The 'no DRC wall' in T3b holds only for a greedy path that moves slot1 first. The recommendation survives: option A's generic coupled-move retry covers slot1_free_end. From (14.0, 13.0) on b\u2084, paired \u22120.5 mm steps stay valid down to (11.0, 10.0), and L1 falls monotonically from 0.9987 to 0.9877. But the mechanism split, and with it the weight given to the 2 mm screen relative to the structured moves, is misstated.",
+      "evidence": "Checked with D.in_domain(spec, Params.from_vector(v), reach=True). b\u2080 (row_LS 14.5, slot1 13.0): 14.0 is ok (L1 1.0084); 13.5 to 11.0 return slot1_free_end. b\u2084 (row_LS 17.5, slot1 13.0): 17.0 to 14.0 are ok (L1 1.0093 to 0.9987); 13.5 to 11.0 return slot1_free_end. b\u2087 (slot1 7.5): the whole line to 11.0 is valid. The paired (row_LS, slot1) \u22120.5 mm path is valid on b\u2080 and b\u2084; its L1 on b\u2080 is non-monotone: 1.0084, 1.0078, 1.0084, 1.0074, \u2026, 1.0059.",
+      "suggested_check": "Re-attribute draws 0 and 4 to the coupled (row_LS_u0, slot1_u0) block in \u00a74. State in option A that its coupled retry must cover slot1_free_end on die-row line moves, not only on \u00b10.5 mm single moves.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "The claim that dents disappear at 2 mm is contradicted by the doc's own T5 data at draw 7's end point",
+      "detail": "The bottom line says the dents 'disappear at 2 mm and 1 mm mesh'. \u00a76 says that at 2 mm 'L1 resolves the coordinate's sign'. \u00a73.4 says the noise is '3\u20134 times smaller' at 2 mm. In t5_l1_mesh.json at 2 mm, the first step from b\u2087 toward W* still goes uphill (+0.00016), and so does the step away (1.0048 > 1.0028). So b\u2087 is still a strict local minimum along row_LS_u0 at 2 mm, with 3 slope sign changes. Draw 6 behaves the same way (+0.00053; 3 sign changes). The RMS falls only 2.1\u00d7 on draw 7 and 2.3\u00d7 on draw 6. Option A's 2 mm screen therefore does not by itself remove trap (a) on the one draw (7) that is a pure dent case. Option A's line moves would, because the 2 mm line minimum is at W*'s value. This weakens the stated reason for paying for the 2 mm screen: a re-derived W*, a re-aimed degradation target and a 6\u20139 h L1 stage. It does not invalidate option A.",
+      "evidence": "Recomputed from t5_l1_mesh.json. Draw 7 at 2 mm: 17.5 \u2192 1.0048, 17.0 \u2192 1.0028, 16.5 \u2192 1.0030; first step +1.6e-4; sign changes 5/3/1 at 4/2/1 mm; RMS 0.077/0.037/0.022 %. Draw 6 at 2 mm: first step +5.3e-4; sign changes 3/3/1. At 2 mm the first step is improving on draws 4 and 1 (\u22129.8e-4, \u22123.8e-4).",
+      "suggested_check": "Add a 2 mm first-step column to the T5 table and qualify the bottom line: the 2 mm screen removes the dents on draws 4 and 1 but not on 7 or 6, where the line moves are what escape them.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Draw 0's counterfactual is L1-improving only within the 4 mm screen's noise",
+      "detail": "The doc says the frozen 4 mm L1 rates every counterfactual as improving, so L1 and L2 agree on the direction. For E0 (draw 0) the L1 gain is only 0.19 points (1.0078 \u2192 1.0059), and the path to it is non-monotone at 4 mm. That gain is at or below the doc's own noise figures (0.07\u20130.09 % RMS, dents up to 0.4 %). Agreement on draw 0 holds by point value but is not resolved. Draw 0 is also the closest miss (s 0.022), so whether a redesigned search fixes it is the least certain of the six.",
+      "evidence": "t4_l2_local.json: b\u2080 L1 1.0078, E0 L1 1.0059 at 4 mm and 1.0063 at 1 mm. My paired-step path is listed in the first finding.",
+      "suggested_check": "Report E0's L1 gain beside the screen-noise figure, and at 2 mm, in \u00a73.5.",
+      "impact": "scope"
+    },
+    {
+      "severity": "note",
+      "title": "The probability of proposing the coupled triple assumes equal steps; unequal steps are also valid",
+      "detail": "The \u22484e-7 estimate requires equal steps for (col_PHASE_u0, row_HS_u0, slot2_u1). From b\u2082 and b\u2083, (\u22120.5, \u22121, \u22120.5) and (\u22120.5, \u22121, \u22121) are also valid and L1-improving. The rule seems to be that row_HS must move at least as far as PHASE. So the estimate is a modest underestimate, but it stays of order 1e-6 and the conclusion does not change.",
+      "evidence": "in_domain and L1 from b\u2082: (\u22120.5, \u22121, \u22120.5) valid, 1.0104; (\u22120.5, \u22121, \u22121) valid, 1.0104; (\u22120.5, \u22120.5, \u22121) DRC fail. b\u2083 gives the same pattern.",
+      "suggested_check": "",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran the definition-of-done lint, `uv run ruff check research/o008_e011_diag`: passes. The deliverable file is absent from the review checkout by design: .mfos/policy.toml blinding removes research/diagnoses. I reviewed its text from the packet.",
+    "Recomputed every T4 ratio from the committed raw solve files (research/o008_e011_diag/l2/solves/em_lat0.5_<fp>.json) against the local W* solve. All 15 cases match the table, all are status ok with gmres flag 0, and local W* equals the burst to 7e-15. The 2.6\u20135.6 point drops and the 0.987\u20130.998 range follow from T1 and T4.",
+    "Refitted T2 myself with fingerprint-checked twin._l1 values and burst L2. At lat0.5 (n = 168) it reproduces a = 0.7105, c = 0.0131, sd 0.0164, r(residual, row_LS_u0) = 0.899 and +0.48 %/mm. New check at lat0.25 (51 layouts): a = 0.717, r = 0.82, +0.45 %/mm with row_LS_u0 in the fit. The die-row term is not an artifact of the 0.5 mm level, which partly answers the doc's own open \u00a79 item.",
+    "Recomputed the T5 roughness metrics (quadratic-residual RMS, slope sign changes, first steps at 4/2/1 mm) from t5_l1_mesh.json. The 4 mm and 1 mm columns match. The 2 mm first steps show the draw-7 and draw-6 dents survive (finding 2).",
+    "Ran D.in_domain directly on the coupled triple from b\u2082 and b\u2083. Single and paired moves fail with 'slot2_free_end' as claimed, and the triple is valid with L1 1.0082 and 1.0383 as claimed. Some unequal-step variants are also valid (finding 4).",
+    "Read local._joint and LocalConfig (n_joint 12, k in 2..4, steps 1..4, uniform over 36 parameters). They are consistent with the doc's order-of-magnitude proposal probability.",
+    "Scanned row_LS_u0 alone toward W* from b\u2080, b\u2084 and b\u2087 with in_domain and L1. This found the slot1_free_end wall at 14.0 mm on draws 0 and 4 (finding 1). I also tested paired (row_LS_u0, slot1_u0) \u22120.5 mm steps: valid on both draws, monotone in L1 on draw 4, noisy on draw 0."
+  ],
+  "caveats": [
+    "The root-cause conclusion holds within these limits: the search stops short of structured moves that both L1 and L2 rate as improving, H1\u2032 and H3 are refuted, and L1 under-weights the die row at L2 (now also seen at 0.25 mm). The per-draw split by mechanism is wrong for draws 0 and 4, which are blocked by a slot1_free_end coupling, not only by dents. Coupled-DRC moves therefore account for at least 4 of the 6 misses (2, 3, 0, 4; draw 1 is mixed), not 2.",
+    "Option A's 2 mm screen is not shown to remove the dent at draw 7's end point. Along the die-row coordinates, the escape from the dents comes from the line moves. Read the case for the 2 mm screen as noise reduction (2\u20134\u00d7), not as removing the traps, when choosing between A and A\u2032.",
+    "Option A's coupled-move rule must apply to the slot1_free_end binding that die-row line moves hit, not only to \u00b10.5 mm single moves. Otherwise draws 0 and 4 stay blocked at row_LS_u0 = 14.0 mm.",
+    "The counterfactuals are one or two moves chosen with knowledge of W*, not full searches. Draw 0's L1 improvement (0.19 points) is within the 4 mm screen's noise. The 0.25 mm confirmation of the counterfactual ratios was not run, by the doc's own statement.",
+    "I did not re-run the T3 path search, the T6 sensitivity solves or any new L2 solve. I checked only T1 and T6 numbers that bear on the findings above."
+  ]
+}

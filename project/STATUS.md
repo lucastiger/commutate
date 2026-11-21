@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T07:30:38+00:00 from repository state — do not edit_
+_generated 2026-11-21T07:36:20+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -16,7 +16,7 @@ _generated 2026-11-21T07:30:38+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $109.35/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $111.25/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -28,18 +28,16 @@ _generated 2026-11-21T07:30:38+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 50 | $109.35 | 1850373 | 987392 | 136 | 0 |
+| O008 | 50 | $111.25 | 1879673 | 1001977 | 138 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 421, failed: 4, review: 1, running: 2, todo: 2
+cancelled: 47, done: 422, failed: 4, review: 1, running: 1, todo: 2
 
 - T0475 `review` scientist/investigate: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign (attempt 1)
-- T0476 `running` critic/review: Review T0475 (physics) (attempt 1)
 - T0477 `running` critic/review: Review T0475 (numerics) (attempt 1)
 
 ## Recent events
-- 2026-11-21T03:48:04+00:00 sleep_detected {"gap_s": 392, "slept_s": 344, "runs_extended": 0}
 - 2026-11-21T03:59:30+00:00 sleep_detected {"gap_s": 687, "slept_s": 639, "runs_extended": 0}
 - 2026-11-21T04:06:35+00:00 sleep_detected {"gap_s": 425, "slept_s": 378, "runs_extended": 0}
 - 2026-11-21T04:22:45+00:00 sleep_detected {"gap_s": 970, "slept_s": 923, "runs_extended": 0}
@@ -54,3 +52,4 @@ cancelled: 47, done: 421, failed: 4, review: 1, running: 2, todo: 2
 - 2026-11-21T07:30:20+00:00 verified {"task": "T0475"}
 - 2026-11-21T07:30:34+00:00 run_started {"run": "T0476-critic-20261120T233034-6c6f", "task": "T0476", "role": "critic", "session": "6720c681-e134-4db2-8cb8-8e9ee36b42a6"}
 - 2026-11-21T07:30:38+00:00 run_started {"run": "T0477-critic-20261120T233038-b80b", "task": "T0477", "role": "critic", "session": "61ec6ef7-b202-4fbe-be63-c7237ca384c8"}
+- 2026-11-21T07:36:11+00:00 run_finished {"run": "T0476-critic-20261120T233034-6c6f", "status": "completed", "cost": 1.89274, "subtype": "success", "report": "structured_output"}
