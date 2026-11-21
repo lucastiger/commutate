@@ -1,0 +1,56 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "The 2 mm screen does not remove the dents at the end points of draws 7 and 6, contrary to \u00a70 and \u00a76",
+      "detail": "\u00a70 says the dents 'disappear at 2 mm and 1 mm mesh'. \u00a76 says 'At 2 mm \u2026 L1 resolves the coordinate's sign', and \u00a77 says option A 'removes both mechanisms that trap the search (T3, T5)'. The diagnosis's own T5 rows contradict this. At hmax 2 mm, b\u2087 and b\u2086 are still strict local minima along row_LS_u0: both \u00b10.5 mm steps go uphill. At 1 mm the step toward W* goes downhill, so at 2 mm the sign is wrong. The \u00a73.4 table reports the first step only at 4 and 1 mm, which hides this. Its own sign-change column (3 at 2 mm for draws 7 and 6) shows the ruggedness survives at 2 mm. My recomputation puts the minimum's disappearance between 2 and 1.5 mm. Option A probably still works on these draws, because its line moves (2\u201316 steps) jump the shallow 2 mm dent (0.016\u20130.05 %). But the claim that the 2 mm screen removes mechanism (a) is wrong. The reason for choosing 2 mm (resolution of the sign) is not shown, and that choice feeds a founder decision (frozen.proxy.rule, re-deriving W*).",
+      "evidence": "t5_l1_mesh.json, first step toward W* (k1 \u2212 k0) at 4/2/1 mm: draw 7 +0.00206/+0.00016/\u22120.00112; draw 6 +0.00144/+0.00053/\u22120.00064. Independent loop_inductance recompute, (\u22120.5 mm step, +0.5 mm step) in %: hmax 2 mm draw 7 (+0.016, +0.192), draw 6 (+0.053, +0.142); hmax 2.5 mm draw 7 (+0.077, +0.25); hmax 1.5 mm draw 7 (\u22120.090, +0.146), draw 6 (\u22120.057, +0.092).",
+      "suggested_check": "Add the 2 mm first-step column to \u00a73.4. Then either rest the case for option A's screen on line moves alone, or measure end-point local optimality at 1.5 mm, which the T7 cost data can price.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "major",
+      "title": "Draws 0 and 4 are misattributed: a slot1_u0 / row_LS_u0 coupled DRC wall, not only dents, stops the die-row move",
+      "detail": "\u00a74 counts draws 0 and 4 as die-row/fidelity misses ('left in a dent'). It says the only coupled block is PHASE/HS/slot2 on draws 2 and 3, and that 'slot1_u0 is not the cause'. In fact, from b\u2080 and b\u2084, row_LS_u0 cannot go below 14.0 mm while slot1_u0 stays at its planted 13.0 mm (W* 7.0). Both in_domain ('slot1_free_end') and DRC ('die_edge_margin') reject the move. slot1_u0 single moves are L1-flat (relative change of about 2e-5, slightly uphill), so a search that accepts only strict improvements never unlocks the wall. On draw 0 the only valid row step, 14.5 \u2192 14.0, is L1-uphill at 4 mm (1.0078 \u2192 1.0084), and the wall comes right after it. The E0 and B4 counterfactuals move slot1_u0 by \u22126 mm for exactly this reason. So mechanism (b) covers four of the six misses, not two, and the per-draw counts are wrong. 'slot1_u0 is not the cause' holds only for L2 pricing (B4b, B5), not for reach. Option A's rule 2 names slot free-end rules, so it plausibly covers this case, but as specified it fires only when a \u00b10.5 mm single move is rejected. From b\u2080 the single step is valid but uphill, and on the paired path at 4 mm (1.0078, 1.0084, 1.0078, 1.0084, 1.0074 \u2026 1.0059) the paired steps alternately rise and fall before descending, so at 4 mm draw 0 may stay trapped.",
+      "evidence": "Validity scan from each end point (common.L1.valid): draw 4 row_LS_u0 17.0 \u2026 14.0 ok (L1 1.0093 \u2192 0.9987), 13.5 \u2026 11.0 drc; draw 0 14.0 ok (1.0084), 13.5 \u2026 11.0 drc. Violation at 13.5: die_edge_margin; in_domain: (False, 'slot1_free_end'). Pair (row_LS_u0, slot1_u0) both \u22120.5\u00b7k from row 14.0, all valid: draw 4 L1 0.9971, 0.9937 \u2026 0.9868; draw 0 1.0078, 1.0084, 1.0074, 1.0066, 1.0060, 1.0059. slot1_u0 \u22120.5/\u22121/\u22122 alone: 1.00782/1.00782/1.00783 (draw 0).",
+      "suggested_check": "Re-attribute draws 0 and 4 in \u00a74 and \u00a70 as dent plus a slot1 coupled block. State that option A's coupled-move rule must also apply when a line move (n \u2265 2), not just a single move, is rejected.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Small wording inaccuracies in the T3c and T4 descriptions",
+      "detail": "The PHASE-only and partial-pair moves from b\u2082 fail DRC (min_spacing DC+/PHASE 1.5 mm < 2.0 mm) as well as in_domain 'slot2_free_end'. The text names only the second. D2 is a five-parameter change but is counted among 'one or two structured moves'. On the T5 first steps, 1 mm draw 7 is \u22120.0011, not \u22120.0012. None of these changes a conclusion.",
+      "evidence": "M.check on b\u2082 with col_PHASE_u0 \u22120.5: Violation(rule='min_spacing', \u2026 1.500e-03 m < 2.000e-03 m); in_domain (False, 'slot2_free_end'). t5 rows draw 7 1 mm: 1.0037610 \u2192 1.0026374.",
+      "suggested_check": "",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "Counterfactual L2 values exist only at 0.5 mm, and nothing was tested as a full search",
+      "detail": "Every T4/T6 ratio comes from l2_layout at 0.5 mm, while the objective scores at 0.25 mm. The burst end points agree across levels (draw 4: 1.0416 against s 0.042; draw 7: 1.0338 against 0.034), so the die-row amplifier is not a 0.5 mm artefact for the end points. The six rescue counterfactuals themselves have no 0.25 mm check. \u00a79 acknowledges this and costs the check.",
+      "evidence": "t4_l2_local.json recomputed from l2/solves/*.json: all 15 ratios match, GMRES flags 0, 144\u2013146 iterations, tol \u2264 1.61e-5, W* local/burst \u2212 1 = 6.7e-15.",
+      "suggested_check": "Run the 7-fingerprint 0.25 mm job list from \u00a79 before committing to option A's burst.",
+      "impact": "scope"
+    }
+  ],
+  "independent_checks_performed": [
+    "Recomputed the T5 quadratic-residual RMS, slope sign changes and first steps from the rows of t5_l1_mesh.json. RMS and sign counts reproduce the \u00a73.4 table exactly. The first steps at 2 mm (not reported in \u00a73.4) are uphill for draws 7 and 6.",
+    "Called physics.peec.loop_inductance independently at hmax 3, 2.5, 2 and 1.5 mm for b\u2080, b\u2084, b\u2086 and b\u2087 with \u00b10.5 mm row_LS_u0 steps. The local minima on draws 7 and 6 persist at 2 mm and disappear at 1.5 mm.",
+    "Recomputed all 15 T4 L2 ratios from the raw solve JSONs against local W*. All match t4_l2_local.json and the \u00a73.5 table. GMRES converged (flag 0), and local and burst W* agree to 6.7e-15.",
+    "Checked the arithmetic of the per-draw rescues: L2 gains of 2.57\u20135.63 points to 0.9865\u20130.9979, and L1 at 4 mm improving for E0, D2, C2, C4, B4 and B3 (all hold).",
+    "Independently tested coupled-block validity from b\u2082 and b\u2083. col_PHASE_u0 \u22120.5 alone or with one partner is invalid; the triple at \u22120.5 and \u22121.0 is valid. L1 1.0233 \u2192 1.0082 and 1.0554 \u2192 1.0383 reproduced.",
+    "Read local._joint and LocalConfig (k uniform on 2..4, choice without replacement over 36 movable parameters, \u00b1, 1..4 steps, n_joint = 12) and re-derived P \u2248 (1/3)(1/7140)(1/8)(1/16) \u2248 3.6e-7 per proposal. Claim holds.",
+    "Scanned row_LS_u0 line-move validity from b\u2080, b\u2084 and b\u2087, identified the blocking rules (die_edge_margin, slot1_free_end), and tested paired slot1_u0/row_LS_u0 moves and L1 flatness of slot1_u0. This revealed the misattribution of draws 0 and 4.",
+    "Checked the \u00a73.2 numbers against t2_fidelity.json (a = 0.711, r = 0.90, 0.48 %/mm, n = 55 gives 0.44, leave-one-out 0.41\u20130.49). All hold.",
+    "Checked the pass counts from the \u00a71 and \u00a73.1 tables: L2 2 of 8, L1 indicator 5 of 8. Both hold.",
+    "Ran the definition-of-done command `uv run ruff check research/o008_e011_diag`: all checks passed. The deliverable file exists."
+  ],
+  "caveats": [
+    "The root cause and its class hold: the search stops short of moves that both L1 and L2 rate as improving, a reach failure. So does the recommended move-set change. The mechanism breakdown does not. The slot1_u0/row_LS_u0 coupled DRC wall also traps draws 0 and 4, so coupled blocks explain four of the six misses, not two.",
+    "The case for a 2 mm L1 screen is weaker than the diagnosis states. At 2 mm, the end points of draws 7 and 6 are still local minima along row_LS_u0 with the wrong sign. Escaping them depends on the proposed line moves, not on the mesh. Whether 2 mm is the right hmax, as opposed to 1.5 mm, is open.",
+    "As written, option A's coupled-move rule fires only on rejected \u00b10.5 mm single moves. It may not free draw 0, where the valid single step is L1-uphill at 4 mm, unless it also covers rejected line moves.",
+    "The counterfactual evidence is single structured moves solved at 0.5 mm. Nothing shows that a full redesigned search reaches these points or that they hold at 0.25 mm. \u00a79 acknowledges both limits.",
+    "Bash denied several of my read-only inspection scripts, which looked like pattern-triggered denials. I did not inspect t3_l1_paths.json, t3b_dierow_scans.json or t6_sensitivity.json directly, and the T3a/T3b/T6 numbers were not re-verified beyond the overlapping checks listed."
+  ]
+}
