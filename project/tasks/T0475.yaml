@@ -1,0 +1,90 @@
+id: T0475
+objective: O008
+title: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign
+type: investigate
+agent: scientist
+status: todo
+depends_on: []
+description: "E011's development rows (T0471, research/notes/e011-dev-l2-analysis.md section 3) are INCONCLUSIVE:\
+  \ on 2D_Case_2R the search passes 2 of 8 draws (A1 = 0.25) and blind compaction is not beaten (A3 =\
+  \ 0); 2D_Case_4 passes 8 of 8. The founder decided (2026-11-20) not to register E011 as designed: one\
+  \ diagnosis (this task, skill mf-diagnosis), then one redesign before registration, which counts as\
+  \ the plan's one redesign. A second failure stops parametric inductance-search work (O008 decision_if_fail).\
+  \ Diagnose 2R; propose the redesign; do not carry it out.\n\nQuestion: why does the search on 2R end\
+  \ 0.2-3 points above the 2 % line at 0.25 mm, and why is compaction not beaten there? Competing explanations\
+  \ to rank with evidence (add others; discard none without a test):\n  H1 fidelity: the search stops\
+  \ at an L1 optimum that L2 ranks below W* (C002: pairs under 5 % apart are misordered      23-38 %).\
+  \ The L1 indicator passes 5 of 8 draws where L2 passes 2.\n  H2 basin or reach: from D_j the L1 descent\
+  \ does not reach W*'s L1 level at all (3 of 8 draws miss at L1 too): move      set, step size, budget,\
+  \ or a DRC wall under 2R's measured rules.\n  H3 selection: W* is the lower at 0.25 mm of W and the\
+  \ descent result, so it carries a selection advantage (and the      common-mode error of one L_sub(W*)\
+  \ solve) that no search run shares.\n  H4 the degradation family moves parameters whose effect L1 does\
+  \ not see.\nDiscriminating tests, from the committed development data first (research/o008_e011_dev):\
+  \ per draw, which parameters differ between the returned layout and W*, with L1 and L2 of both; where\
+  \ compaction ends against the search (draws 2, 5 and 6); the parameter path between a returned layout\
+  \ and W* at L1 and at 0.5 mm. Local 0.5 mm l2_layout solves are allowed up to 6 CPU-hours in all. No\
+  \ VM, no network, no 0.25 mm solves: if a test needs them, write the job list with hours and cost and\
+  \ stop there (the founder launches bursts; compute is capped at 16 vCPUs).\n\nCarry these review findings\
+  \ (T0472-T0474, O008 state log 2026-11-19):\n  - T0474 major: every 2R shortlist spans at most 0.0012\
+  \ in L(0.5 mm)/L(W*) - 1, so re-ranking an existing shortlist     at L2 moves s by about 0.1 point.\
+  \ Do not offer within-shortlist re-ranking as a fix; a redesign must change where     the search ends.\n\
+  \  - 2R draw 1 has R_D 1.209, outside [1.25, 1.60]: report every count with and without it.\n  - A3\
+  \ on 2R is within selection error of flipping on draw 2 (0.27 points needed against a 0.25 bound).\n\
+  \  - The L1 degradation target 1.3875 gives R_D about 1.28 at L2, at the window's edge (decision 2 of\
+  \ the analysis note).\n\nThe redesign proposal: at most three options, each with what changes (search,\
+  \ proxy rule or degradation family), which frozen values of the draft change (each listed as a founder\
+  \ decision; change none yourself), what new development rows and burst it needs with hours and cost,\
+  \ and what result on development rows would show it failed. Say which one you recommend and why. O008's\
+  \ objective is frozen: the 2 % line, 7 of 8 and A3 do not change. If the evidence says the 2 % line\
+  \ is below what L1-guided search can resolve on 2R, say so as a finding for the founder; do not design\
+  \ around it. Note decision_if_inconclusive: when only A3 fails the redesign changes the degradation\
+  \ family or the proxy rule, not the search; here A1 fails too.\n\nDeliverable: the diagnosis note, with\
+  \ facts and inferences kept apart, every number traceable to a committed file, the explanations ranked,\
+  \ and a section on what would show the diagnosis wrong. Development data only: never the sealed seeds,\
+  \ never data/holdout/, and no NC State PREES, 2D_Case_5 or customer geometry (leakage rule). Do not\
+  \ edit experiments/specs, the objective, or experiments/drafts/E011.yaml.\n"
+context_files:
+- project/objectives/O008/objective.yaml
+- project/objectives/O008/state.yaml
+- research/notes/e011-dev-l2-analysis.md
+- research/notes/e011-dev-run.md
+- research/o008_e011_dev/dev_l2/dev_rows.json
+- research/o008_e011_dev/dev_l2/dev_solve_summary.json
+- experiments/drafts/E011.yaml
+- experiments/runners/e011_run.py
+- experiments/runners/e011_metrics.py
+- research/notes/o008-control-probe.md
+- .claude/skills/mf-diagnosis/SKILL.md
+deliverables:
+- research/diagnoses/e011-2r-dev-miss.md
+touches:
+- research/diagnoses/e011-2r-dev-miss.md
+- research/o008_e011_diag/**
+definition_of_done:
+- cmd: null
+  exists: research/diagnoses/e011-2r-dev-miss.md
+  timeout_s: 900
+- cmd: uv run ruff check research/o008_e011_diag || test ! -d research/o008_e011_diag
+  exists: null
+  timeout_s: 900
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-21T06:20:06+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder decision 2026-11-20: E011 is expected INCONCLUSIVE as designed (T0471), so it is diagnosed
+  and redesigned once before registration instead of spending $65-107 of VM on the run.'
+history: []
