@@ -1,0 +1,101 @@
+id: T0478
+objective: O008
+title: 'E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter'
+type: implement
+agent: builder
+status: running
+depends_on: []
+description: 'E011''s search misses on 2D_Case_2R because it stops short of moves that both L1 and L2
+  rate as improving (diagnosis research/diagnoses/e011-2r-dev-miss.md, reviews T0476 and T0477 in project/reviews/T0475).
+  Implement the search changes the redesign needs. Everything new is off by default: with the default
+  config every existing result is bit for bit what it is today (same visited sequence, same seeds, same
+  result).
+
+
+  1. Line moves (src/moduleforge/optimize/local.py). A config field for the step counts (the redesign
+  uses 2, 4, 8 and 16    grid steps each way) on the die-row parameters, offered every iteration beside
+  today''s neighbours. A second field:    when the search is stuck, line-search every movable parameter
+  before the random perturbation.
+
+  2. Coupled moves. When a single or line move is rejected by derivative.in_domain for a rule that binds
+  other    parameters (the slot free-end rules and the die-row rules: enumerate them from in_domain, do
+  not hard-code one    case), retry it with the parameters that rule binds moved so the rule holds: first
+  by the same displacement, then,    under a config limit, by further grid steps (review T0476: from the
+  draw-2 and draw-3 end points (-0.5, -1, -0.5)    and (-0.5, -1, -1) on (col_PHASE_u0, row_HS_u0, slot2_u1)
+  are valid too). It must apply to line moves as well:    reviews T0476/T0477 show that from the draw-0
+  and draw-4 end points row_LS_u0 cannot pass 14.0 mm while slot1_u0    stays at 13.0 mm (slot1_free_end;
+  DRC die_edge_margin), and the unlocking slot1_u0 move is L1-flat, so a search that    accepts only strict
+  improvements never makes it alone.
+
+  3. The L1 screen''s mesh size as a parameter (hmax in mm; research/o008_e011_diag/t5_l1_mesh.py shows
+  how the diagnosis    varied it) wherever E011 uses L1: generate/twin._l1, the proxy descent and the
+  degradation family in    optimize/control.py, the nulls and ablations, and the search''s default score.
+  Default: today''s 4 mm, unchanged.
+
+  4. LocalConfig.hash(): the frozen draft pins bdefe640d8cac683 for today''s config. Keep that hash for
+  a config whose    new fields are all at their defaults (for example, hash only the non-default new fields),
+  and test it.
+
+
+  Tests (never weaken an existing test or tolerance): default-config bit-identity against a recorded run;
+  determinism with the new moves on; from the 2D_Case_2R end points of draws 0, 2, 3 and 4 (research/o008_e011_diag/t1_assembled.json
+  gives each as W* plus diff_from_Wstar, and common.py rebuilds them; embed the vectors in the test) the
+  new neighbour set contains a DRC-clean, in-domain layout past each wall (row_LS_u0 below 14.0 mm for
+  draws 0 and 4; the PHASE/HS/slot2 move for draws 2 and 3); every layout the new moves return is in_domain
+  and DRC-clean under the reference''s rules; an L1 value at hmax 2 mm differs from the 4 mm value and
+  the 4 mm default equals today''s number. Development geometry only (2D_Case_2R, 2D_Case_4, gen2_0);
+  never data/holdout/, NC State PREES, 2D_Case_5 or customer geometry.
+
+  '
+context_files:
+- research/diagnoses/e011-2r-dev-miss.md
+- project/reviews/T0475/T0476.json
+- project/reviews/T0475/T0477.json
+- src/moduleforge/optimize/local.py
+- src/moduleforge/optimize/control.py
+- src/moduleforge/optimize/nulls.py
+- src/moduleforge/generate/twin.py
+- src/moduleforge/generate/derivative.py
+- research/o008_e011_diag/t5_l1_mesh.py
+- research/o008_e011_diag/t1_assembled.json
+- tests/unit/optimize/test_local_search.py
+deliverables:
+- src/moduleforge/optimize/local.py
+touches:
+- src/moduleforge/optimize/**
+- src/moduleforge/generate/twin.py
+- src/moduleforge/generate/derivative.py
+- tests/unit/optimize/**
+- tests/unit/generate/**
+definition_of_done:
+- cmd: uv run pytest -q tests/unit/optimize tests/unit/generate
+  exists: null
+  timeout_s: 3600
+- cmd: uv run ruff check src tests
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos gate --fast
+  exists: null
+  timeout_s: 2400
+experiment: null
+risk: high
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 1
+max_attempts: 3
+branch: task/T0478-e011-redesign-code-line-moves-generic-co
+pr: null
+runs:
+- T0478-builder-20261121T004400-de6f
+created_by: founder
+created_at: '2026-11-21T08:43:40+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder decision 2026-11-21: option A of the T0475 diagnosis with the corrections of T0476/T0477.
+  High risk: this is code under test of E011, so physics and numerics reviews and a founder merge.'
+history: []

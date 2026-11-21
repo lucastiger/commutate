@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T08:37:03+00:00 from repository state — do not edit_
+_generated 2026-11-21T08:44:00+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -28,17 +28,15 @@ _generated 2026-11-21T08:37:03+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 50 | $113.01 | 1911768 | 1020275 | 145 | 0 |
+| O008 | 51 | $113.01 | 1911768 | 1020275 | 145 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 424, failed: 4, todo: 2
+cancelled: 47, done: 424, failed: 4, running: 1, todo: 3
 
+- T0478 `running` builder/implement: E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter (attempt 1)
 
 ## Recent events
-- 2026-11-21T05:20:37+00:00 sleep_detected {"gap_s": 1009, "slept_s": 931, "runs_extended": 0}
-- 2026-11-21T05:46:06+00:00 sleep_detected {"gap_s": 1218, "slept_s": 1163, "runs_extended": 0}
-- 2026-11-21T06:19:57+00:00 loop_started {"pid": 43793}
 - 2026-11-21T06:20:06+00:00 task_added {"task": "T0475"}
 - 2026-11-21T06:20:58+00:00 run_started {"run": "T0475-scientist-20261120T222058-2abe", "task": "T0475", "role": "scientist", "session": "c1fc7e6e-3f8d-4116-a16a-c913112f874e"}
 - 2026-11-21T07:24:24+00:00 run_finished {"run": "T0475-scientist-20261120T222058-2abe", "status": "completed", "cost": 6.747742, "subtype": "success", "report": "structured_output"}
@@ -51,3 +49,6 @@ cancelled: 47, done: 424, failed: 4, todo: 2
 - 2026-11-21T08:10:17+00:00 note {"objective": "O008", "about": "T0475_reviews"}
 - 2026-11-21T08:36:30+00:00 inbox_resolved {"id": "I0262", "status": "approved", "note": "Merge T0475, the diagnosis of the E011 development miss on 2D_Case_2R. Reviews T0476 and T0477 accept with caveat
 - 2026-11-21T08:36:57+00:00 merged {"task": "T0475"}
+- 2026-11-21T08:43:40+00:00 task_added {"task": "T0478"}
+- 2026-11-21T08:43:40+00:00 task_added {"task": "T0479"}
+- 2026-11-21T08:44:00+00:00 run_started {"run": "T0478-builder-20261121T004400-de6f", "task": "T0478", "role": "builder", "session": "0e9023b7-0ca5-4eaf-84c5-c0b96bdebba0"}

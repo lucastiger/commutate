@@ -1,0 +1,132 @@
+id: T0479
+objective: O008
+title: 'E011 redesign: measure the L1 mesh size on a new development seed, local go/no-go on 2R, revise
+  the draft and write the development job list'
+type: design_experiment
+agent: scientist
+status: todo
+depends_on:
+- T0478
+description: 'Redesign E011 before registration (founder, 2026-11-20 and 21: one redesign, counted as
+  the plan''s one; option A of research/diagnoses/e011-2r-dev-miss.md with the corrections of reviews
+  T0476 and T0477). The search code is in place (the task this one depends on): line moves, generic coupled
+  moves, and the L1 mesh size as a parameter. Scientists do not edit src/ or tests/: if the code is wrong
+  or short, stop and report it.
+
+
+  Decided, do not reopen: the experiment keeps the id E011 (it was never registered and no sealed draw
+  was used, so the frozen objective needs no change); the objective''s thresholds stay; the degradation''s
+  L1 target is re-aimed so R_D centres in [1.25, 1.60] at L2 (decision 2 of research/notes/e011-dev-l2-analysis.md,
+  adopted); the L1 budget stays 2000 unless the new improvement curve shows more than 1 % of L1 gain in
+  the last 10 %, in which case report it; the no_moves rule is adopted. New development seed: 20261121.
+  The 16 draws of seed 20261116 are tuning data now and count for nothing here.
+
+
+  (a) Before any run, write the selection rule in the note and commit it. Defaults, to be changed only
+  with a stated     reason: structured moves on (line steps 2, 4, 8, 16; stuck line search; coupled retry).
+  The mesh size is measured,     not assumed (both reviews: the dents do not disappear at 2 mm, they go
+  between 2 and 1.5 mm, and the line moves do     the escaping). Candidates in order 4, 2, 1.5 mm. For
+  each, on 2D_Case_2R only and locally: re-derive W* under     that screen, draw 8 degradations from the
+  new seed under that screen, run the search and nulls (b) and (d), and     solve the shortlists and end
+  points with l2_layout at 0.5 mm. A candidate passes when at least 7 of 8 draws have     s <= 0.02 at
+  0.5 mm, none is above 0.03, and A3 holds on these draws against both nulls by its own definition.     Take
+  the coarsest candidate that passes and stop there. If none passes: no burst, no draft for registration;     report
+  it, because the plan''s stop line then applies and the founder decides.
+
+  (b) With the chosen mesh: the full development L1 stage on the counted layouts (2D_Case_2R, 2D_Case_4;
+  gen2_0     reported), checkpointed and resumable (a run is cut at 6 h of wall time; a later attempt
+  must resume, not restart). (c) Revise experiments/drafts/E011.yaml: the search config and its hash,
+  code_sha256, the proxy rule, the degradation     target, ablations (c) and (e), the development seed,
+  expected_outcome, and the registered run''s size. List every     frozen value that changed in the note,
+  each marked adopted (above) or needs the founder.
+
+  (d) experiments/drafts/E011.dev_jobs.json for the development burst the founder launches: the 0.25 mm
+  and remaining     0.5 mm solves, with hours and cost on at most 16 vCPUs (no other burst is running).
+  Agents never start VMs.
+
+  (e) State what on the development rows would show the redesign failed (the diagnosis lists them in its
+  option A), so     the analysis after the burst has nothing to choose.
+
+  (f) Open review items to close in the draft and runner (O008 state log, 2026-11-19 and 21): report 2R
+  counts with and     without any draw outside the R_D window; the upper bound on P(PASS) in the joint
+  operating characteristic; the     fixed-shift stress rows (add them or delete the sentence); isfinite
+  guards in joint_oc with a selftest that plants     a non-finite s, a capped null and a nonzero c_k;
+  draw 0''s counterfactual gain was inside the 4 mm screen''s noise,     so say what the new rows show
+  for the closest misses; the counterfactuals existed only at 0.5 mm and as single     moves, so the note
+  must report the full search''s result, not the counterfactuals, as the evidence.
+
+
+  Deliverables: the note (facts and inferences apart; every number traceable to a committed file; the
+  selection rule committed before the runs), the revised draft, the runner changes with the selftest passing,
+  the job list. Do not register E011 and do not edit experiments/specs or the objective. Development data
+  only: never the sealed seed''s draws, never data/holdout/, and no NC State PREES, 2D_Case_5 or customer
+  geometry (leakage rule).
+
+  '
+context_files:
+- project/objectives/O008/objective.yaml
+- project/objectives/O008/state.yaml
+- research/diagnoses/e011-2r-dev-miss.md
+- project/reviews/T0475/T0476.json
+- project/reviews/T0475/T0477.json
+- research/notes/e011-dev-l2-analysis.md
+- research/notes/e011-dev-run.md
+- experiments/drafts/E011.yaml
+- experiments/drafts/E011.dev_jobs.json
+- experiments/runners/e011_run.py
+- experiments/runners/e011_metrics.py
+- src/moduleforge/optimize/local.py
+- src/moduleforge/optimize/control.py
+- .claude/skills/mf-evidence/SKILL.md
+deliverables:
+- research/notes/e011-redesign.md
+- experiments/drafts/E011.yaml
+- experiments/drafts/E011.dev_jobs.json
+- experiments/runners/e011_run.py
+touches:
+- experiments/drafts/E011*
+- experiments/runners/e011_run.py
+- experiments/runners/e011_metrics.py
+- research/o008_e011_dev2/**
+- research/notes/e011-redesign.md
+definition_of_done:
+- cmd: uv run python experiments/runners/e011_run.py --selftest
+  exists: null
+  timeout_s: 1800
+- cmd: uv run python -c "import yaml; from mfos.models import ExperimentSpec; s=ExperimentSpec.model_validate(yaml.safe_load(open('experiments/drafts/E011.yaml')));
+    assert s.id=='E011' and s.objective=='O008' and s.sealed_seed, s.id"
+  exists: null
+  timeout_s: 900
+- cmd: uv run mfos exp check E011
+  exists: null
+  timeout_s: 900
+- cmd: uv run ruff check experiments/runners/e011_run.py experiments/runners/e011_metrics.py
+  exists: null
+  timeout_s: 900
+- cmd: null
+  exists: research/notes/e011-redesign.md
+  timeout_s: 900
+- cmd: null
+  exists: experiments/drafts/E011.dev_jobs.json
+  timeout_s: 900
+experiment: null
+risk: critical
+model: null
+budget_usd: 8.0
+max_turns: 120
+wall_minutes: null
+attempts: 0
+max_attempts: 3
+branch: null
+pr: null
+runs: []
+created_by: founder
+created_at: '2026-11-21T08:43:40+00:00'
+protected_approved: false
+approval: null
+target: null
+lens: null
+trigger: null
+rationale: 'Founder decision 2026-11-21: the one redesign of E011 before registration. Critical risk:
+  physics, numerics and statistics reviews, founder merge.'
+history: []
