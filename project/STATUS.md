@@ -1,9 +1,10 @@
 # ModuleForge status
-_generated 2026-11-21T10:43:26+00:00 from repository state — do not edit_
+_generated 2026-11-21T11:15:00+00:00 from repository state — do not edit_
 
-## Founder inbox (2 open)
+## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
 - **I0259** [claim_approval] [O002] approve the wording of claim C005
+- **I0263** [protected_change] T0478: merge needs founder approval
 
 ## Objectives
 | id | status | verdict | evals | spent | title |
@@ -16,7 +17,7 @@ _generated 2026-11-21T10:43:26+00:00 from repository state — do not edit_
 | O005 | draft | - | 0/2 | $7.65/$60 | L1 picks near-best layouts within a fixed family and die count, the regime derivative re-layout searches |
 | O006 | active | INCONCLUSIVE | 1/1 | $137.91/$140 | The thermal L2 reference matches converged analytic solutions and an independent FEM, and design pilots measure what O002-O004 must fix |
 | O007 | passed | PASS | 1/1 | $92.55/$110 | The scikit-fem thermal reference matches converged analytic solutions and the in-house finite-volume L2 on generator layouts |
-| O008 | active | - | 0/2 | $120.30/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
+| O008 | active | - | 0/2 | $122.52/$140 | A search seeded at a degraded copy of a near-optimal layout recovers it, where inductance-blind heuristics do not, on every designer-derived development layout |
 | O901 | passed | PASS | 1/2 | $9.19/$30 | Infrastructure canary v2 - a known answer through registered, sealed, recomputed and null-checked evidence |
 
 ## Usage (from run records)
@@ -28,18 +29,15 @@ _generated 2026-11-21T10:43:26+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 53 | $120.30 | 2049599 | 1095898 | 148 | 0 |
+| O008 | 53 | $122.52 | 2086960 | 1112790 | 155 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 425, failed: 4, review: 1, running: 1, todo: 3
+cancelled: 47, done: 426, failed: 4, needs_founder: 1, todo: 3
 
-- T0478 `review` builder/implement: E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter (attempt 1)
-- T0480 `running` critic/review: Review T0478 (physics) (attempt 1)
+- T0478 `needs_founder` builder/implement: E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter (attempt 1)
 
 ## Recent events
-- 2026-11-21T07:30:38+00:00 run_started {"run": "T0477-critic-20261120T233038-b80b", "task": "T0477", "role": "critic", "session": "61ec6ef7-b202-4fbe-be63-c7237ca384c8"}
-- 2026-11-21T07:36:11+00:00 run_finished {"run": "T0476-critic-20261120T233034-6c6f", "status": "completed", "cost": 1.89274, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T07:36:57+00:00 run_finished {"run": "T0477-critic-20261120T233038-b80b", "status": "completed", "cost": 1.762303, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T08:08:39+00:00 inbox_opened {"id": "I0262", "kind": "protected_change", "subject": "T0475: merge needs founder approval"}
 - 2026-11-21T08:10:17+00:00 note {"objective": "O008", "about": "T0475_reviews"}
@@ -53,3 +51,5 @@ cancelled: 47, done: 425, failed: 4, review: 1, running: 1, todo: 3
 - 2026-11-21T10:17:54+00:00 run_started {"run": "T0480-critic-20261121T021754-8e0d", "task": "T0480", "role": "critic", "session": "80d9484f-04a8-4671-872f-dd8ea4eb13dd"}
 - 2026-11-21T10:17:59+00:00 run_started {"run": "T0481-critic-20261121T021759-8b7a", "task": "T0481", "role": "critic", "session": "4d130f03-0f6f-4f8c-86ea-ffffae784ef1"}
 - 2026-11-21T10:36:30+00:00 run_finished {"run": "T0481-critic-20261121T021759-8b7a", "status": "completed", "cost": 1.990867, "subtype": "success", "report": "structured_output"}
+- 2026-11-21T10:44:01+00:00 run_finished {"run": "T0480-critic-20261121T021754-8e0d", "status": "completed", "cost": 2.222336, "subtype": "success", "report": "structured_output"}
+- 2026-11-21T11:14:55+00:00 inbox_opened {"id": "I0263", "kind": "protected_change", "subject": "T0478: merge needs founder approval"}
