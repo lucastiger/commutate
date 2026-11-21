@@ -3,7 +3,7 @@ objective: O008
 title: 'E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter'
 type: implement
 agent: builder
-status: running
+status: review
 depends_on: []
 description: 'E011''s search misses on 2D_Case_2R because it stops short of moves that both L1 and L2
   rate as improving (diagnosis research/diagnoses/e011-2r-dev-miss.md, reviews T0476 and T0477 in project/reviews/T0475).
@@ -98,4 +98,99 @@ lens: null
 trigger: null
 rationale: 'Founder decision 2026-11-21: option A of the T0475 diagnosis with the corrections of T0476/T0477.
   High risk: this is code under test of E011, so physics and numerics reviews and a founder merge.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'T0478 is done and committed as 134f87a1. Every DoD command passes: the optimize/generate tests
+    (323 passed), ruff, and the fast gate (run twice, the second time after the commit).
+
+
+    **What changed (all new behaviour is off by default):**
+
+    - **Line moves (`local.py`):** `LocalConfig.line_steps` offers each die-row parameter at ±n grid steps
+    every iteration. `line_search_stuck` line-searches every movable parameter before the random perturbation.
+
+    - **Coupled moves:** with `coupled_moves`, a single or line move that `in_domain` rejects for a slot
+    free-end or die-row rule is retried with the other parameters that rule binds. The new `rule_binds`
+    reads those parameters off the replay''s own inequalities, so no case is hard-coded. The retry tries
+    the same displacement first (smallest group of partn'
+  report:
+    status: completed
+    summary: "T0478 is done and committed as 134f87a1. Every DoD command passes: the optimize/generate\
+      \ tests (323 passed), ruff, and the fast gate (run twice, the second time after the commit).\n\n\
+      **What changed (all new behaviour is off by default):**\n- **Line moves (`local.py`):** `LocalConfig.line_steps`\
+      \ offers each die-row parameter at ±n grid steps every iteration. `line_search_stuck` line-searches\
+      \ every movable parameter before the random perturbation.\n- **Coupled moves:** with `coupled_moves`,\
+      \ a single or line move that `in_domain` rejects for a slot free-end or die-row rule is retried\
+      \ with the other parameters that rule binds. The new `rule_binds` reads those parameters off the\
+      \ replay's own inequalities, so no case is hard-coded. The retry tries the same displacement first\
+      \ (smallest group of partners first), then up to `coupled_extra_steps` further grid steps. The first\
+      \ valid retry replaces the rejected move, so it costs at most one L1 evaluation. A new `neighbourhood()`\
+      \ function returns the candidate set exactly as the search builds it.\n- **Config hash:** the four\
+      \ new fields enter `LocalConfig.hash()` only when they are not at their defaults. The default config\
+      \ still hashes to `bdefe640d8cac683`, and a test pins that.\n- **L1 mesh as a parameter:** `twin._l1`\
+      \ takes `hmax_mm` (default 4.0). New helpers `twin.l1_screen` and `twin.resolve_l1` build the screen\
+      \ at a given mesh. `l1_hmax_mm` is now accepted by `proxy_descent`, `proxy_alone`, `degrade_draw`\
+      \ and `draw_degradations` in `control.py`, and by `LocalSolvers`. `LocalSolvers` drives the search's\
+      \ default score and ablation (c). In each case the mesh applies when no `l1` callable is passed.\
+      \ A non-default mesh gets its own checkpoint keys (`l1@2mm`), so a work directory never mixes meshes.\n\
+      \n**What the tests check:**\n- **Bit-identity:** with the default config, three runs match digests\
+      \ I recorded from the code before any change: two on the 70x40 housing (one goes through a perturbation)\
+      \ and one on the 2R twin. The same holds with the new fields passed explicitly at their defaults.\n\
+      - **Determinism:** with all new moves on, two runs with the same seed are identical and a different\
+      \ seed differs.\n- **The walls at the 2R end points** (vectors embedded, each rebuild checked against\
+      \ its recorded fingerprint):\n  - Draws 0 and 4: the new neighbour set reaches `row_LS_u0` below\
+      \ 14.0 mm, with `slot1_u0` moved alongside. Today's set does not.\n  - Draws 2 and 3: the new set\
+      \ contains the (`col_PHASE_u0`, `row_HS_u0`, `slot2_u1`) −0.5 mm triple. Today's set has no downward\
+      \ `col_PHASE_u0` move.\n- **A search past the wall:** from draw 4, with a score that rewards only\
+      \ `row_LS_u0`, the default search never gets below 14.0 mm and the new one reaches 11.0 mm.\n- **Validity:**\
+      \ every layout the new moves return passes `in_domain` and is DRC-clean under the reference's rules.\
+      \ Across 244 rejected moves on the u axis, the moved parameter was always among the ones `rule_binds`\
+      \ reports.\n- **Further grid steps:** a constructed case on the 70x40 housing with 3 dies per switch\
+      \ shows that path working.\n- **L1 mesh:** at 4 mm, `twin._l1(W*)` equals today's 1.0206874855971848e-08\
+      \ exactly. At 2 mm it differs by −0.95 % and matches a direct `loop_inductance` call.\n\n**Not included:**\
+      \ E011's runner (`experiments/runners/`) is outside my write scope, so it still uses today's defaults.\
+      \ Turning the new moves or the 2 mm screen on there is a later step and a founder decision. Changing\
+      \ `local.py`, `control.py` and `twin.py` also changes their recorded code hashes, which the diagnosis\
+      \ already expected."
+    checks_run:
+    - cmd: uv run pytest -q tests/unit/optimize/test_local_search.py tests/unit/optimize/test_control.py
+        tests/unit/optimize/test_nulls.py (before the hash-test update)
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/optimize/test_local_moves.py -x (first run; test helper bug)
+      exit_code: 1
+    - cmd: uv run pytest -q tests/unit/optimize/test_local_moves.py
+      exit_code: 0
+    - cmd: uv run ruff check src tests
+      exit_code: 0
+    - cmd: uv run pytest -q tests/unit/optimize tests/unit/generate
+      exit_code: 0
+    - cmd: uv run mfos gate --fast
+      exit_code: 0
+    - cmd: uv run mfos gate --fast (after commit)
+      exit_code: 0
+    - cmd: uv run ruff check src tests (after commit)
+      exit_code: 0
+    files_changed:
+    - src/moduleforge/optimize/local.py
+    - src/moduleforge/optimize/control.py
+    - src/moduleforge/generate/twin.py
+    - tests/unit/optimize/test_local_moves.py
+    - tests/unit/optimize/test_local_search.py
+    concerns:
+    - I changed one line of an existing test, test_config_is_frozen_with_a_stable_hash. It computed the
+      expected hash as sha256 over every field, which cannot hold once new fields exist and stay out of
+      the hash at their defaults, as the packet requires. Its expected value now leaves out the four new
+      fields while they are at their defaults; they are listed by hand in the test, not imported. Every
+      assertion is kept and it is still an exact-equality check. Please confirm this is acceptable.
+    - 'The mesh parameter follows the existing design in which `l1` is passed in: `l1_hmax_mm` applies
+      only when `l1` is None, and passing both raises ValueError. Today''s runner passes `twin._l1` explicitly,
+      so a 2 mm run means changing the runner to pass None plus `l1_hmax_mm` (or `twin.l1_screen(2.0)`).
+      That runner change is outside my write scope.'
+    - 'Coupled retries apply only to single and line moves, as the packet asks (not to reach jumps, joint
+      moves or perturbations). They go one rule deep: if the retry fails on a second, different rule,
+      it is not chained further. They also move partners only in the same direction as the original move.
+      All four 2R walls are covered within those limits.'
+    - Changing local.py, control.py and twin.py changes their recorded code hashes. The search config
+      hash changes only when the new fields are switched on. Re-registering the frozen values is the founder's
+      call, as the diagnosis notes.
