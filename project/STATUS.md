@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T11:15:00+00:00 from repository state — do not edit_
+_generated 2026-11-21T11:15:43+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -38,7 +38,6 @@ cancelled: 47, done: 426, failed: 4, needs_founder: 1, todo: 3
 - T0478 `needs_founder` builder/implement: E011 redesign code: line moves, generic coupled moves and the L1 mesh size as a parameter (attempt 1)
 
 ## Recent events
-- 2026-11-21T07:36:57+00:00 run_finished {"run": "T0477-critic-20261120T233038-b80b", "status": "completed", "cost": 1.762303, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T08:08:39+00:00 inbox_opened {"id": "I0262", "kind": "protected_change", "subject": "T0475: merge needs founder approval"}
 - 2026-11-21T08:10:17+00:00 note {"objective": "O008", "about": "T0475_reviews"}
 - 2026-11-21T08:36:30+00:00 inbox_resolved {"id": "I0262", "status": "approved", "note": "Merge T0475, the diagnosis of the E011 development miss on 2D_Case_2R. Reviews T0476 and T0477 accept with caveat
@@ -53,3 +52,4 @@ cancelled: 47, done: 426, failed: 4, needs_founder: 1, todo: 3
 - 2026-11-21T10:36:30+00:00 run_finished {"run": "T0481-critic-20261121T021759-8b7a", "status": "completed", "cost": 1.990867, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T10:44:01+00:00 run_finished {"run": "T0480-critic-20261121T021754-8e0d", "status": "completed", "cost": 2.222336, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T11:14:55+00:00 inbox_opened {"id": "I0263", "kind": "protected_change", "subject": "T0478: merge needs founder approval"}
+- 2026-11-21T11:15:37+00:00 note {"objective": "O008", "about": "T0478_reviews"}

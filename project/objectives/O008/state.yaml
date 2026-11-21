@@ -93,5 +93,14 @@ log:
   registered). Decision 2 of the dev L2 analysis (re-aim the degradation target) and the no_moves rule
   are adopted. Added T0478 (builder, the search code) and T0479 (scientist, the redesign; depends on T0478)
   (no replan)'
+- 'open review items 2026-11-21 (founder session; reviews T0480 physics and T0481 numerics of T0478, both
+  accept_with_caveats; default path bit-identical on 15 reviewer runs, LocalConfig hash bdefe640d8cac683
+  kept): (1) T0481 major, T0480 minor: coupled moves cover only slot free-end and die-row rules, same-axis
+  partners, same direction; (2) both: e011_run.py still injects the 4 mm twin._l1, so the mesh parameter
+  has no effect until the runner passes l1_hmax_mm; an injected screen shares the checkpoint key ''l1''
+  across meshes; (3) T0481 minor: coupled_extra_steps=1.0 crashes; dataclasses.replace on LocalSolvers
+  with a mesh raises; hmax=inf accepted; (4) the E011 draft''s code hashes need re-freezing. Items (1),
+  (2) and (4) are carried in T0479''s brief; (3) is a builder fix before registration if the go/no-go
+  passes'
 evidence_rules: 2
 frozen_hash: sha256:9e948c4b2861f22f1bdbcf2f54d0330fe6f90df2106eb5cdef158b6aeb530387

@@ -7,62 +7,66 @@ agent: scientist
 status: todo
 depends_on:
 - T0478
-description: 'Redesign E011 before registration (founder, 2026-11-20 and 21: one redesign, counted as
-  the plan''s one; option A of research/diagnoses/e011-2r-dev-miss.md with the corrections of reviews
-  T0476 and T0477). The search code is in place (the task this one depends on): line moves, generic coupled
-  moves, and the L1 mesh size as a parameter. Scientists do not edit src/ or tests/: if the code is wrong
-  or short, stop and report it.
-
-
-  Decided, do not reopen: the experiment keeps the id E011 (it was never registered and no sealed draw
-  was used, so the frozen objective needs no change); the objective''s thresholds stay; the degradation''s
-  L1 target is re-aimed so R_D centres in [1.25, 1.60] at L2 (decision 2 of research/notes/e011-dev-l2-analysis.md,
-  adopted); the L1 budget stays 2000 unless the new improvement curve shows more than 1 % of L1 gain in
-  the last 10 %, in which case report it; the no_moves rule is adopted. New development seed: 20261121.
-  The 16 draws of seed 20261116 are tuning data now and count for nothing here.
-
-
-  (a) Before any run, write the selection rule in the note and commit it. Defaults, to be changed only
-  with a stated     reason: structured moves on (line steps 2, 4, 8, 16; stuck line search; coupled retry).
-  The mesh size is measured,     not assumed (both reviews: the dents do not disappear at 2 mm, they go
-  between 2 and 1.5 mm, and the line moves do     the escaping). Candidates in order 4, 2, 1.5 mm. For
-  each, on 2D_Case_2R only and locally: re-derive W* under     that screen, draw 8 degradations from the
-  new seed under that screen, run the search and nulls (b) and (d), and     solve the shortlists and end
-  points with l2_layout at 0.5 mm. A candidate passes when at least 7 of 8 draws have     s <= 0.02 at
-  0.5 mm, none is above 0.03, and A3 holds on these draws against both nulls by its own definition.     Take
-  the coarsest candidate that passes and stop there. If none passes: no burst, no draft for registration;     report
-  it, because the plan''s stop line then applies and the founder decides.
-
-  (b) With the chosen mesh: the full development L1 stage on the counted layouts (2D_Case_2R, 2D_Case_4;
-  gen2_0     reported), checkpointed and resumable (a run is cut at 6 h of wall time; a later attempt
-  must resume, not restart). (c) Revise experiments/drafts/E011.yaml: the search config and its hash,
-  code_sha256, the proxy rule, the degradation     target, ablations (c) and (e), the development seed,
-  expected_outcome, and the registered run''s size. List every     frozen value that changed in the note,
-  each marked adopted (above) or needs the founder.
-
-  (d) experiments/drafts/E011.dev_jobs.json for the development burst the founder launches: the 0.25 mm
-  and remaining     0.5 mm solves, with hours and cost on at most 16 vCPUs (no other burst is running).
-  Agents never start VMs.
-
-  (e) State what on the development rows would show the redesign failed (the diagnosis lists them in its
-  option A), so     the analysis after the burst has nothing to choose.
-
-  (f) Open review items to close in the draft and runner (O008 state log, 2026-11-19 and 21): report 2R
-  counts with and     without any draw outside the R_D window; the upper bound on P(PASS) in the joint
-  operating characteristic; the     fixed-shift stress rows (add them or delete the sentence); isfinite
-  guards in joint_oc with a selftest that plants     a non-finite s, a capped null and a nonzero c_k;
-  draw 0''s counterfactual gain was inside the 4 mm screen''s noise,     so say what the new rows show
-  for the closest misses; the counterfactuals existed only at 0.5 mm and as single     moves, so the note
-  must report the full search''s result, not the counterfactuals, as the evidence.
-
-
-  Deliverables: the note (facts and inferences apart; every number traceable to a committed file; the
-  selection rule committed before the runs), the revised draft, the runner changes with the selftest passing,
-  the job list. Do not register E011 and do not edit experiments/specs or the objective. Development data
-  only: never the sealed seed''s draws, never data/holdout/, and no NC State PREES, 2D_Case_5 or customer
-  geometry (leakage rule).
-
-  '
+description: "Redesign E011 before registration (founder, 2026-11-20 and 21: one redesign, counted as\
+  \ the plan's one; option A of research/diagnoses/e011-2r-dev-miss.md with the corrections of reviews\
+  \ T0476 and T0477). The search code is in place (the task this one depends on): line moves, generic\
+  \ coupled moves, and the L1 mesh size as a parameter. Scientists do not edit src/ or tests/: if the\
+  \ code is wrong or short, stop and report it.\n\nDecided, do not reopen: the experiment keeps the id\
+  \ E011 (it was never registered and no sealed draw was used, so the frozen objective needs no change);\
+  \ the objective's thresholds stay; the degradation's L1 target is re-aimed so R_D centres in [1.25,\
+  \ 1.60] at L2 (decision 2 of research/notes/e011-dev-l2-analysis.md, adopted); the L1 budget stays 2000\
+  \ unless the new improvement curve shows more than 1 % of L1 gain in the last 10 %, in which case report\
+  \ it; the no_moves rule is adopted. New development seed: 20261121. The 16 draws of seed 20261116 are\
+  \ tuning data now and count for nothing here.\n\n(a) Before any run, write the selection rule in the\
+  \ note and commit it. Defaults, to be changed only with a stated     reason: structured moves on (line\
+  \ steps 2, 4, 8, 16; stuck line search; coupled retry). The mesh size is measured,     not assumed (both\
+  \ reviews: the dents do not disappear at 2 mm, they go between 2 and 1.5 mm, and the line moves do \
+  \    the escaping). Candidates in order 4, 2, 1.5 mm. For each, on 2D_Case_2R only and locally: re-derive\
+  \ W* under     that screen, draw 8 degradations from the new seed under that screen, run the search\
+  \ and nulls (b) and (d), and     solve the shortlists and end points with l2_layout at 0.5 mm. A candidate\
+  \ passes when at least 7 of 8 draws have     s <= 0.02 at 0.5 mm, none is above 0.03, and A3 holds on\
+  \ these draws against both nulls by its own definition.     Take the coarsest candidate that passes\
+  \ and stop there. If none passes: no burst, no draft for registration;     report it, because the plan's\
+  \ stop line then applies and the founder decides.\n(b) With the chosen mesh: the full development L1\
+  \ stage on the counted layouts (2D_Case_2R, 2D_Case_4; gen2_0     reported), checkpointed and resumable\
+  \ (a run is cut at 6 h of wall time; a later attempt must resume, not restart). (c) Revise experiments/drafts/E011.yaml:\
+  \ the search config and its hash, code_sha256, the proxy rule, the degradation     target, ablations\
+  \ (c) and (e), the development seed, expected_outcome, and the registered run's size. List every   \
+  \  frozen value that changed in the note, each marked adopted (above) or needs the founder.\n(d) experiments/drafts/E011.dev_jobs.json\
+  \ for the development burst the founder launches: the 0.25 mm and remaining     0.5 mm solves, with\
+  \ hours and cost on at most 16 vCPUs (no other burst is running). Agents never start VMs.\n(e) State\
+  \ what on the development rows would show the redesign failed (the diagnosis lists them in its option\
+  \ A), so     the analysis after the burst has nothing to choose.\n(f) Open review items to close in\
+  \ the draft and runner (O008 state log, 2026-11-19 and 21): report 2R counts with and     without any\
+  \ draw outside the R_D window; the upper bound on P(PASS) in the joint operating characteristic; the\
+  \     fixed-shift stress rows (add them or delete the sentence); isfinite guards in joint_oc with a\
+  \ selftest that plants     a non-finite s, a capped null and a nonzero c_k; draw 0's counterfactual\
+  \ gain was inside the 4 mm screen's noise,     so say what the new rows show for the closest misses;\
+  \ the counterfactuals existed only at 0.5 mm and as single     moves, so the note must report the full\
+  \ search's result, not the counterfactuals, as the evidence.\n\nDeliverables: the note (facts and inferences\
+  \ apart; every number traceable to a committed file; the selection rule committed before the runs),\
+  \ the revised draft, the runner changes with the selftest passing, the job list. Do not register E011\
+  \ and do not edit experiments/specs or the objective. Development data only: never the sealed seed's\
+  \ draws, never data/holdout/, and no NC State PREES, 2D_Case_5 or customer geometry (leakage rule).\n\
+  \n\nAdded by the founder session, 2026-11-21, from reviews T0480 and T0481 of the search code (T0478,\
+  \ both accept with caveats; default behaviour confirmed bit for bit):\n  - The runner still injects\
+  \ twin._l1 (fixed at 4 mm) in every call. Change experiments/runners/e011_run.py so the     mesh comes\
+  \ from the experiment config, and pass it as l1_hmax_mm, never as an injected screen: with an injected\
+  \     screen the checkpoint key is 'l1' for every mesh, so one workdir would mix meshes. Use a separate\
+  \ workdir per     mesh candidate as well.\n  - Write coupled_extra_steps and the line steps as integers\
+  \ in the config (coupled_extra_steps = 1.0 passes     validation and then crashes the search); do not\
+  \ use dataclasses.replace on a LocalSolvers that carries a mesh.\n  - Coupled moves cover only the slot\
+  \ free-end and die-row rules, partners on the moved parameter's axis, displaced     in the same direction\
+  \ (T0481 major, T0480 minor: 9 of 18 rejected single u-moves at the four 2R end points have     no one-partner\
+  \ repair at 1 or 2 steps; slot attach, slot gap and height, column v edges and landing lines get no\
+  \     retry). Per draw, report how many rejected moves got a coupled retry and how many had none, and\
+  \ name the rule     that stops any draw that still misses. If a wall of an uncovered kind stops a draw,\
+  \ report it; do not work     around it.\n  - T0481 note: at 4 mm the screen cannot order differences\
+  \ under 0.2 %, and the 2R end points of draws 0 and 4 swap     order between 4 and 3 mm. Report it beside\
+  \ the mesh measurement.\n  - The draft's code_sha256 for twin.py, local.py and control.py no longer\
+  \ match; re-freeze them. If the go/no-go     passes, list the small defects of T0480/T0481 (float coupled_extra_steps,\
+  \ the checkpoint key, replace, hmax = inf)     in the note as a builder fix to land before registration,\
+  \ since it changes the hashes again.\n"
 context_files:
 - project/objectives/O008/objective.yaml
 - project/objectives/O008/state.yaml
@@ -78,6 +82,8 @@ context_files:
 - src/moduleforge/optimize/local.py
 - src/moduleforge/optimize/control.py
 - .claude/skills/mf-evidence/SKILL.md
+- project/reviews/T0478/T0480.json
+- project/reviews/T0478/T0481.json
 deliverables:
 - research/notes/e011-redesign.md
 - experiments/drafts/E011.yaml
