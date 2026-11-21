@@ -195,7 +195,7 @@ L4. The system *proposes* such changes (planner `founder_requests`, scientist `a
 | | planner | builder | scientist | critic | scout | scribe |
 |---|---|---|---|---|---|---|
 | **Purpose** | Turn a frozen objective + evidence into the smallest decisive task graph | Implement one task: code, tests, small docs | Design pre-registered experiments; derive; diagnose failures | Blinded attempt to refute a claim or diff | External facts: literature, tools, licenses, competitors, market | Faithful compression: digests, summaries, memory curation |
-| **Model** | opus, effort high | sonnet (opus on attempt ≥ 2) | opus, effort high | opus, effort high | sonnet | haiku |
+| **Model** | opus, effort high | opus (sonnet until 2026-11-20) | opus, effort high | opus, effort high | sonnet | haiku |
 | **Tools** | Read, Grep, Glob | Read, Edit, Write, Grep, Glob, Bash, TodoWrite, Skill | Read, Edit, Write, Grep, Glob, Bash, WebSearch, WebFetch, Skill | Read, Grep, Glob, Bash, WebSearch, WebFetch, Skill | Read, Grep, Glob, Write, Edit, WebSearch, WebFetch, Skill, Workflow | Read, Grep, Glob, Write, Edit |
 | **Writes** | nothing (returns JSON) | `src/`, `tests/unit/`, `tests/regression/`, `docs/`, `benchmarks/`, deps | `research/`, `experiments/drafts/`, `experiments/runners/`, `tests/acceptance_drafts/`, `project/memory/` | `/tmp` only | `project/memory/literature/`, `research/notes/` | `project/memory/`, `docs/reports/` |
 | **Runs in** | main checkout (read-only) | own worktree | own worktree | sanitized review checkout | own worktree | own worktree |
@@ -707,7 +707,7 @@ claude -p "You are the \`builder\` agent working on T0012 (O001). Your complete 
            task packet at \`.mfos/packets/T0012-a1.md\`. …"
        --agent builder --output-format json --json-schema '<BuildReport JSON schema>'
        --max-turns 80 --max-budget-usd 4.00 --permission-mode auto --permission-prompts none
-       --session-id <uuid4, recorded before launch> --model sonnet
+       --session-id <uuid4, recorded before launch> --model opus
 env:   MFOS_ROLE=builder MFOS_TASK_ID=T0012 MFOS_OBJECTIVE=O001 MFOS_DOD_FILE=<worktree>/.mfos/packets/T0012-a1.dod.json
        (GitHub tokens and the bot's gh config are scrubbed from the environment)
 cwd:   ~/mf/wt/T0012
@@ -760,7 +760,7 @@ New gate: add a command to `[gates]`.
 4. **Per day / week:** `daily_usd` $40 / `weekly_usd` $200; at the cap, dispatch stops until tomorrow and
    you get one inbox notice.
 5. **Structural:** no LLM in experiments, evaluation, verification or merging; model routing by role
-   (haiku for compression, sonnet for building, opus where judgment is the product); escalation only
+   (haiku for compression, opus for building since 2026-11-20 and where judgment is the product); escalation only
    after a failed attempt; review depth by risk; sealed-seed runs never re-run silently; evaluation caps;
    planner task limits; rate/usage-limit backoff that does not burn attempts.
 
@@ -1228,7 +1228,7 @@ public, deleting infrastructure, or abandoning the objective.
 name: builder
 description: Implementation engineer. Implements one well-specified task in its own git worktree - code, tests, and small docs - and must make the task's definition-of-done commands pass. Use for implement and docs tasks.
 tools: Read, Edit, Write, Grep, Glob, Bash, TodoWrite, Skill
-model: sonnet
+model: opus
 effort: medium
 skills:
   - mf-conventions
@@ -1504,7 +1504,7 @@ diagnosis_usd = 5.0
 
 [models]                         # Claude Code aliases; resolved by the installed CLI
 planner = "opus"
-builder = "sonnet"
+builder = "opus"
 scientist = "opus"
 critic = "opus"
 scout = "sonnet"

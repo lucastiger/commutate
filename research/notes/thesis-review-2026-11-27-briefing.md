@@ -158,6 +158,43 @@ proposals; the founder decides. On the day, `/thesis-review` writes the full rep
   T0471); plus VM: E007 about $22, E011 development about $40, O004 bursts about $12 plus the FastHenry measurement burst
   (about $6).
 
+## Founder updates and decisions, 2026-11-20 (recorded by the founder session)
+- **Context (confidential).** The founder has been accepted to Y Combinator's S27 batch. It is not binding until the
+  documents are signed, and the company may not describe itself as a YC company before then. The founder will attend
+  the batch and work full-time on the company from then. Consequences the founder stated: no investor to satisfy for
+  the next months; outreach is expected to work better once the YC name can be used; the direction continues until
+  concrete evidence invalidates the thesis.
+- **Decided 2026-11-20** (the founder; "go with your recommendation" where marked *delegated*):
+  - Decision 2: continue. The Dec 18 LOI and Dec 27 paid-sprint lines no longer bind. Kill lines become evidence-based
+    (proposal below, not yet accepted). This replaces the charter's dated kill lines; it is a change of the lines, not
+    a pass of them, and decision 1's post-hoc record should say so.
+  - Decision 6: option (c), the route comparison on development geometry in early December (*delegated*).
+  - O008's E011: do not register it as designed. One diagnosis and one redesign before registration, counted as the
+    plan's one redesign (*delegated*); a second failure stops parametric inductance-search work, as O008 says.
+  - Decision 9, budgets (*delegated*): per-objective agent budgets stay, read as effort estimates, since the plan is a
+    flat subscription. An overrun prompts a scope review, not a money decision. The per-task and weekly caps stay as
+    runaway limits. VM spend is the only cash cost and is tracked apart (`research/notes/vm-spend-ledger.md`).
+  - Builder runs on Opus from 2026-11-20 (`.mfos/policy.toml`); 16 of 74 builder tasks had needed a second attempt.
+- **Still open for 11-27:** decisions 1 (wording), 3, 4, 5, 7 and 8, O004's FastHenry route, and the kill lines.
+
+### Proposed evidence-based kill lines (session proposal; the founder sets the numbers)
+Each line names a test, the result that kills, and how many tries the instrument gets, so an inconclusive result
+cannot repeat without limit.
+
+| line | test | kills if | tries | today |
+|---|---|---|---|---|
+| K1 search | planted-headroom control on development layouts (O008) | the parametric search fails after its one redesign and the reference-native route fails its own control | one redesign per route | E011 redesign starting |
+| K2 headroom (A-T3) | frozen search with a passed control and a checked reference (O004), on at least 3 fresh judged references (O009) | no reference shows 10 % loop-inductance headroom at +2 K die-average Tj or less, and current-mismatch headroom, measured once on the same references, is under 25 % | one run per reference | not runnable before K1 |
+| K3 coverage | census modules whose layout can be determined | under 50 % are representable after the route decision (target stays 80 %) | one route change | 0 of 14 confirmed |
+| K4 problem (A-T4, A-T5) | 15 recorded conversations with module makers, Tier 1s or OEMs, counted from when the YC name can be used | none confirms that derivative re-layouts recur and cost iterations, or none would share a layout under NDA | none | 0 on record |
+
+- Between 10 % and 20 % on K2, A-T3 is weakened, not dead: continue only if a customer states that 10 % matters.
+- O004 is a gate, not a kill line: if the L2 reference fails its check after one redesign, headroom work stops until a
+  reference exists (a customer's Q3D deck is the fallback).
+- Backstop: a line whose test has not been run by the start of the batch (June 2027) triggers a review by itself, and a
+  thesis review every 30 days records which lines were tested. Without this, a line can stay untested indefinitely.
+- No revenue line before the batch. A free pilot counts for K4 and for decision 7.
+
 ## What gets recorded after the review
 - The charter (founder-owned): A-T3's status; the day-45 and day-60 outcomes; any change of order of work or route.
 - Decision records, drafted by the session and accepted by the founder: decisions 1, 2, 4, 5 and 6.

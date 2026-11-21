@@ -65,7 +65,7 @@ diagnosis_usd = 5.0
 
 [models]                         # Claude Code aliases; resolved by the installed CLI
 planner = "opus"
-builder = "sonnet"
+builder = "opus"                 # founder, 2026-11-20: was sonnet; 16 of 74 builder tasks needed a second attempt
 scientist = "opus"
 critic = "opus"
 scout = "sonnet"
@@ -74,7 +74,7 @@ scribe = "haiku"
 [escalation]
 after_attempts = 2               # attempt >= 2 runs on the escalation model
 [escalation.models]
-builder = "opus"                 # 'fable' is never automatic: it requires a founder model_escalation approval
+builder = "opus"                 # same as the first attempt since 2026-11-20; 'fable' is never automatic: it requires a founder model_escalation approval
 
 [permission_modes]               # headless runs always add --permission-prompts none
 builder = "auto"                 # fallback if auto mode is unavailable on your plan: "acceptEdits"
