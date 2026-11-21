@@ -1,0 +1,69 @@
+{
+  "verdict": "accept_with_caveats",
+  "findings": [
+    {
+      "severity": "major",
+      "title": "'Generic' coupled moves cover only the slot free-end and die-row rules",
+      "detail": "Coupled retries fire only for rules matched by `_RULE_RE`: `slot{i}_free_end`, `row_{sw}_u0`, `row_{sw}_v0` and `row_{sw}_gap`. Several other `in_domain` rules also bind more than one parameter, and a move that fails them is never retried: `slot{i}_attach` (a column's inner edge against the slot's attached end, on the u-axis), `slot{i}_gap` and `slot{i}_height` (the slots' v extents), `col_{net}_v_edge` and `land_{sw}`. The free-end rule also depends on v-axis parameters through `limit(net, *sv[i])` (the slot's own v extent and the other columns' v extents), but `rule_binds` lists only u-parameters. So a v-move that fails a free end gets no partners and no retry. The module docstring states this restriction, so the code is consistent with its own documentation. It is narrower than the word 'generic' in the claim, and the option-A design note it cites (research/diagnoses/e011-2r-dev-miss.md) does not exist at this commit, so I could not check what the redesign required.",
+      "evidence": "I took the four 2R end points plus three hb layouts and collected the failure reasons of every rejected single move and \u00b12/\u00b14 line move. Covered rules: slot#_free_end 57+33, row gap/u0/v0 23+4+48 (2R) and 16+3+30 (hb). Not covered: slot#_attach 29+35, slot#_gap 48+21, slot#_height 48+18, col_net_v_edge 25+12, land_sw 47+16. A completeness probe of 12,724 perturbations, holding the primary sides fixed and calling `D._replay`, found that no same-axis parameter missing from `rule_binds` repairs a u-move's coupling failure. The only misses were slot1_v0 and slot3_v0 repairing slot1_free_end and slot3_free_end after v-moves.",
+      "suggested_check": "Confirm against the option-A design note that coupling repairs for slot_attach and the v-axis rules are deliberately out of scope; otherwise extend `_RULE_RE` and `rule_binds`.",
+      "impact": "scope"
+    },
+    {
+      "severity": "minor",
+      "title": "coupled_extra_steps=1.0 passes validation, then crashes the search",
+      "detail": "`__post_init__` accepts a float that equals an integer (`1.0 == int(1.0)`) but does not convert it to int, unlike `line_steps`. Such a config hashes differently from `coupled_extra_steps=1`, and `local_search` raises TypeError at the first coupled retry, from `range(extra_steps + 1)`. A YAML value written `1.0` would hit this.",
+      "evidence": "LocalConfig(coupled_moves=True, coupled_extra_steps=1.0).hash() is 05eb91fb61e9953f, against 94db5ef65b7e124f for the int 1. local_search on hb then raised \"TypeError: 'float' object cannot be interpreted as an integer\".",
+      "suggested_check": "Convert to int in `__post_init__` (`object.__setattr__(self, 'coupled_extra_steps', int(...))`) and add the 1.0 case to the test.",
+      "impact": "correctness"
+    },
+    {
+      "severity": "minor",
+      "title": "Checkpoint key can still mix meshes when an L1 screen is injected",
+      "detail": "`LocalSolvers.l1_key` returns 'l1' for any injected `l1`, even `twin.l1_screen(2.0)`, which carries `hmax_mm=2.0`. A runner that injects the screen instead of passing `l1_hmax_mm` would therefore store 2 mm values under the same key as 4 mm values in one workdir. This contradicts the docstring's 'a workdir never mixes meshes'. Separately, the `:g` format collapses meshes that differ beyond six significant digits.",
+      "evidence": "LocalSolvers(W.l1_screen(2.0), f).l1_key == 'l1'. LocalSolvers(None, f, l1_hmax_mm=2.0000001).l1_key == LocalSolvers(None, f, l1_hmax_mm=2.0).l1_key == 'l1@2mm'.",
+      "suggested_check": "Derive the key from `getattr(self.l1, 'hmax_mm', self.l1_hmax_mm)` and format it with `repr`.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "minor",
+      "title": "dataclasses.replace on LocalSolvers with a mesh raises ValueError",
+      "detail": "`__post_init__` overwrites `self.l1` with the resolved screen. `dataclasses.replace(s, tag=...)` therefore passes both `l1` and `l1_hmax_mm` back in, and `resolve_l1` rejects that as ambiguous.",
+      "evidence": "dataclasses.replace(LocalSolvers(None, f, l1_hmax_mm=2.0), tag='x') raises 'ValueError: pass either an l1 callable or l1_hmax_mm, not both'.",
+      "suggested_check": "Keep the resolved callable in a separate field, or skip the check when `l1` is the screen built for that same mesh.",
+      "impact": "maintainability"
+    },
+    {
+      "severity": "note",
+      "title": "hmax_mm=inf is accepted",
+      "detail": "Validation is only `hmax_mm > 0`, so infinity is accepted and silently gives the coarsest possible mesh.",
+      "evidence": "W.l1_screen(float('inf'))(layout) returned 6.43e-09 H with no error. NaN is correctly rejected.",
+      "suggested_check": "Require `math.isfinite(hmax_mm)`.",
+      "impact": "none"
+    },
+    {
+      "severity": "note",
+      "title": "At 4 mm the L1 screen cannot order sub-0.2 % differences",
+      "detail": "This supports making the mesh a parameter; it is not a defect in the change. L1 converges monotonically under refinement (W*: 1.02069e-8 at 4 mm, 1.01622e-8 at 3 mm, 1.01104e-8 at 2 mm, 1.00811e-8 at 1.5 mm, about 1.2 % in total). However, the order of the 2R end points of draws 0 and 4 swaps between 4 mm and 3 mm.",
+      "evidence": "L1(end)/L1(W*) for draws 0, 2, 3, 4: 1.0078, 1.0233, 1.0554, 1.0080 at 4 mm; 1.0119, 1.0259, 1.0616, 1.0099 at 3 mm; 1.0112, 1.0265, 1.0578, 1.0086 at 2 mm.",
+      "suggested_check": "When the E011 redesign is registered, choose the screen mesh from a refinement study of rankings, not of values alone.",
+      "impact": "none"
+    }
+  ],
+  "independent_checks_performed": [
+    "Ran all three definition-of-done commands. `uv run pytest -q tests/unit/optimize tests/unit/generate`: 323 passed in 861 s. `uv run ruff check src tests`: all checks passed. `uv run mfos gate --fast`: all gates passed.",
+    "Rebuilt the pre-change code by reverse-applying the packet's diff into $TMPDIR. On inputs I chose myself, old and new code with default config gave identical results in all nine cases. The cases were local_search on hb with a toy solver (seeds 2 and 9, budgets 300 and 700), on hb with the real `twin._l1` (budget 120, and dies_fixed at budget 80), and on 2R from the twin with the real `_l1` (seed 11, budget 150); plus `proxy_descent` trajectory and final L1, `degrade_draw` l1_ratio and path, and the ablation (c) shortlist. This confirms the 'bit-identical by default' claim without relying on the author's recorded digests.",
+    "Checked that `rule_binds` matches the inequalities in `derivative._replay`: the free-end, row_u0 and row_v0 dependencies, the gap included for the correct side, the inner edge for landing slots and split housings, and the facing edges of other columns. Confirmed that `_primary_sides` uses the same expression as `in_domain`'s `prim`.",
+    "Completeness probe: 12,724 perturbations through `D._replay` with fixed sides at the 2R end points and three hb layouts. No same-axis parameter missing from `rule_binds` repairs a u-move's coupling failure. The only misses were v-axis slot extents for free-end rules.",
+    "Histogram of `in_domain` failure reasons for rejected single and line moves, to measure how much coupling the retries actually cover.",
+    "Mutation test: I flipped the side condition for adding the row gap to a free-end rule's partners, and `test_rule_binds_names_the_partners_of_the_2R_walls` failed. The new soundness test therefore detects this kind of error.",
+    "Edge-case probes: coupled_extra_steps=1.0, `dataclasses.replace` on LocalSolvers, the checkpoint key with an injected `l1_screen`, the key `:g` collision, int 4 for hmax (bit-identical: 4/1000.0 == 4e-3 == DEFAULT_HMAX), and NaN or infinite hmax.",
+    "Mesh refinement of L1 at 4, 3, 2 and 1.5 mm on W* and the four 2R end points: values converge monotonically and peak memory stays at or below 361 MB."
+  ],
+  "caveats": [
+    "Coupled moves are 'generic' only within the slot free-end and die-row rules, and for free ends only on the u-axis. Wall types made of other coupling rules (slot_attach, slot gap/height, column v-edges, landing lines) are never repaired. The option-A design note the code cites is not in this commit, so I could not check whether the redesign required more.",
+    "The L1 mesh is a parameter in twin, control, local and nulls (via LocalSolvers), but experiments/runners/e011_run.py still injects `T._l1`, which is fixed at 4 mm, in every call. The parameter has no effect on E011 until the runner passes it.",
+    "The draft's frozen file hashes (experiments/drafts/E011.yaml: sha256 of twin.py, local.py, control.py) no longer match these files. A redesigned E011 has to be re-frozen. The default `LocalConfig` hash bdefe640d8cac683 is preserved.",
+    "Bit-identity of the default path was checked on 9 run configurations plus the author's 3 recorded digests, not proven for every possible input."
+  ]
+}
