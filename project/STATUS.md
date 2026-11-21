@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T06:20:05+00:00 from repository state — do not edit_
+_generated 2026-11-21T06:20:58+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -28,15 +28,15 @@ _generated 2026-11-21T06:20:05+00:00 from repository state — do not edit_
 | O005 | 4 | $7.65 | 185443 | 108670 | 29 | 0 |
 | O006 | 69 | $137.91 | 2633380 | 1435121 | 137 | 0 |
 | O007 | 50 | $92.55 | 1684141 | 838123 | 79 | 1 |
-| O008 | 47 | $102.61 | 1731186 | 929899 | 136 | 0 |
+| O008 | 48 | $102.61 | 1731186 | 929899 | 136 | 0 |
 | O901 | 3 | $5.05 | 101607 | 52842 | 14 | 0 |
 
 ## Tasks
-cancelled: 47, done: 421, failed: 4, todo: 3
+cancelled: 47, done: 421, failed: 4, running: 1, todo: 2
 
+- T0475 `running` scientist/investigate: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign (attempt 1)
 
 ## Recent events
-- 2026-11-20T23:41:34+00:00 sleep_detected {"gap_s": 613, "slept_s": 570, "runs_extended": 0}
 - 2026-11-21T02:11:51+00:00 sleep_detected {"gap_s": 2548, "slept_s": 2500, "runs_extended": 0}
 - 2026-11-21T02:43:34+00:00 founder_decision {"objective": "O008", "about": "e011_redesign_route_budgets"}
 - 2026-11-21T02:56:11+00:00 sleep_detected {"gap_s": 606, "slept_s": 564, "runs_extended": 0}
@@ -51,3 +51,4 @@ cancelled: 47, done: 421, failed: 4, todo: 3
 - 2026-11-21T05:46:06+00:00 sleep_detected {"gap_s": 1218, "slept_s": 1163, "runs_extended": 0}
 - 2026-11-21T06:19:57+00:00 loop_started {"pid": 43793}
 - 2026-11-21T06:20:06+00:00 task_added {"task": "T0475"}
+- 2026-11-21T06:20:58+00:00 run_started {"run": "T0475-scientist-20261120T222058-2abe", "task": "T0475", "role": "scientist", "session": "c1fc7e6e-3f8d-4116-a16a-c913112f874e"}
