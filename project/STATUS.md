@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T03:49:34+00:00 from repository state — do not edit_
+_generated 2026-11-21T03:59:42+00:00 from repository state — do not edit_
 
 ## Founder inbox (2 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -36,7 +36,6 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 
 
 ## Recent events
-- 2026-11-19T17:26:00+00:00 inbox_resolved {"id": "I0261", "status": "rejected", "note": "Not registering now. T0471 finds E011 as designed expected INCONCLUSIVE (dev rows A1 0.25, A3 0, P(PASS) about 0)
 - 2026-11-19T18:06:54+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry k0 Linux equals Mac"}
 - 2026-11-20T00:25:35+00:00 session_note_recorded {"objective": "O004", "about": "FastHenry case4 k1 result"}
 - 2026-11-20T03:40:19+00:00 note {"objective": "O004", "about": "fh_measurement_burst"}
@@ -51,3 +50,4 @@ cancelled: 47, done: 421, failed: 4, todo: 2
 - 2026-11-21T02:56:11+00:00 sleep_detected {"gap_s": 606, "slept_s": 564, "runs_extended": 0}
 - 2026-11-21T03:41:31+00:00 sleep_detected {"gap_s": 2720, "slept_s": 2671, "runs_extended": 0}
 - 2026-11-21T03:48:04+00:00 sleep_detected {"gap_s": 392, "slept_s": 344, "runs_extended": 0}
+- 2026-11-21T03:59:30+00:00 sleep_detected {"gap_s": 687, "slept_s": 639, "runs_extended": 0}
