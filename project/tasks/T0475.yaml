@@ -3,7 +3,7 @@ objective: O008
 title: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign
 type: investigate
 agent: scientist
-status: running
+status: review
 depends_on: []
 description: "E011's development rows (T0471, research/notes/e011-dev-l2-analysis.md section 3) are INCONCLUSIVE:\
   \ on 2D_Case_2R the search passes 2 of 8 draws (A1 = 0.25) and blind compaction is not beaten (A3 =\
@@ -88,4 +88,195 @@ lens: null
 trigger: null
 rationale: 'Founder decision 2026-11-20: E011 is expected INCONCLUSIVE as designed (T0471), so it is diagnosed
   and redesigned once before registration instead of spending $65-107 of VM on the run.'
-history: []
+history:
+- attempt: 1
+  outcome: agent_finished
+  summary: 'Diagnosis of E011''s development miss on 2D_Case_2R, written to research/diagnoses/e011-2r-dev-miss.md.
+
+
+    The search does not stop at an L1 optimum that L2 ranks below W*. It stops short of structured moves
+    that both the frozen 4 mm L1 and L2 rate as improving. Two mechanisms trap it:
+
+    - **(a) A rugged screen.** The 4 mm L1 mesh is rugged at the search''s 0.5 mm step along die-row coordinates:
+    the end points sit in dents 0.1–0.4 % deep, and the dents vanish at 2 mm and 1 mm mesh.
+
+    - **(b) A DRC-coupled move.** Under slot2_free_end, col_PHASE_u0 can move only together with row_HS_u0
+    and slot2_u1. The move set offers that triple with probability of order 1e-6 per proposal.
+
+
+    An amplifier explains why the L1 indicator passes 5 of 8 draws and L2 passes 2: L2 prices the low-side
+    die row''s u position '
+  report:
+    summary: 'Diagnosis of E011''s development miss on 2D_Case_2R, written to research/diagnoses/e011-2r-dev-miss.md.
+
+
+      The search does not stop at an L1 optimum that L2 ranks below W*. It stops short of structured moves
+      that both the frozen 4 mm L1 and L2 rate as improving. Two mechanisms trap it:
+
+      - **(a) A rugged screen.** The 4 mm L1 mesh is rugged at the search''s 0.5 mm step along die-row
+      coordinates: the end points sit in dents 0.1–0.4 % deep, and the dents vanish at 2 mm and 1 mm mesh.
+
+      - **(b) A DRC-coupled move.** Under slot2_free_end, col_PHASE_u0 can move only together with row_HS_u0
+      and slot2_u1. The move set offers that triple with probability of order 1e-6 per proposal.
+
+
+      An amplifier explains why the L1 indicator passes 5 of 8 draws and L2 passes 2: L2 prices the low-side
+      die row''s u position about 4 times higher than L1 (+4.31 % against +1.08 % for a +6 mm shift).
+
+
+      The counterfactual 0.5 mm L2 solves were run locally (50 solves, 1.33 CPU-h; local reproduces the
+      burst to 7e-15). From each of the six failed end points, one or two structured moves bring L2 to
+      0.987–0.998 of W*: E0, D2, C2, C4, B4, B3.
+
+
+      H3 (selection) and within-shortlist re-ranking are refuted as causes.
+
+
+      Finding for the founder: with the frozen screen, the 2 % line on 2R sits at the screen''s resolution
+      along the low-side die row. It is not shown to be below what an L1-guided search with a smoother
+      screen can resolve.
+
+
+      Three redesign options are proposed (A, A′, B); option A is recommended. Nothing was changed in
+      src, the specs, the objective or E011.yaml.
+
+
+      Commands run, all exit 0:
+
+      - the T1–T7 scripts under research/o008_e011_diag/;
+
+      - `uv run ruff check research/o008_e011_diag`;
+
+      - `uv run mfos gate --fast` ("all gates passed").
+
+
+      One background wait wrapper hit its time limit and was stopped. The solves it waited on finished,
+      and the three extra T4 cases were rerun to completion.
+
+
+      The work is committed as 71d77c43 on the task branch.'
+    status: completed
+    failure_class: model
+    confidence: 0.75
+    root_cause: 'Two things trap E011''s seeded search on 2R: the move set, and the frozen L1 screen''s
+      discretisation.
+
+      - **(H2b) A rugged screen.** The 4 mm L1 mesh conforms to the die footprints, which makes L1 rugged
+      at the 0.5 mm step along die-row coordinates (RMS residual 0.07–0.09 %, first step toward W* uphill
+      on every scanned draw). The search''s single steps end in those dents with die rows displaced.
+
+      - **(H2a) A coupled DRC move.** On draws 2 and 3, and partly 1, the big remaining gain needs a 3-parameter
+      move (col_PHASE_u0, row_HS_u0, slot2_u1) that slot2_free_end makes valid only as a group. The random
+      joint moves essentially never propose it.
+
+      - **(H4/H1) An amplifier.** L2 prices the low-side die-row offset at about 0.7 %/mm, while L1 prices
+      it at 0.15–0.19 %/mm. Die-row offsets of 6–6.5 mm left by the trapped search therefore become 3.4–4.2
+      point misses at L2 that L1 does not show.
+
+
+      It is not a bug: the code is byte-identical to the stamp and local solves equal the burst''s. It
+      is not selection (H3), and not within-shortlist misordering.'
+    evidence:
+    - 'dev_rows.json: on 2R the search''s s is 0.022 0.044 0.025 0.050 0.042 -0.010 0.017 0.034, so A1
+      passes 2 of 8 (2 of 7 without draw 1). Compaction''s paired wins are 6 of 8 (5 of 7), missed on
+      draws 2 and 6.'
+    - 't1_assembled.json: the L2 span of each search shortlist at 0.5 mm is 0.0000-0.0013. On draws 1-3
+      L2 is close to L1 (1.045/1.045, 1.025/1.023, 1.049/1.055) and ablation (e) ends within 0.3 points
+      of the search. On draws 4 and 7, L1 is 1.008 and 0.999 while L2 is 1.042 and 1.034. Compaction never
+      moves a die row, and on draws 2 and 6 it leaves the die rows where the search does.'
+    - 't2_fidelity.py: over 168 2R layouts, log L2 is about 0.711 log L1 + 0.0131 with residual sd 0.0164.
+      The residual correlates with the row_LS_u0 offset at r = 0.90. Adding it gives +0.48 %/mm, residual
+      sd 0.0069 and R2 0.988. The coefficient is 0.44 %/mm with one point per group, 0.41-0.49 %/mm leaving
+      out each draw, and slot1_u0 adds only 0.03-0.09 %/mm.'
+    - 't3_l1_paths.py: a valid greedy path from every end point reaches W*, with an L1 barrier of at most
+      0.0073, so there is no DRC wall. From b2 and b3, moving col_PHASE_u0 alone or with one partner fails
+      in_domain with slot2_free_end. The triple is valid and lowers L1 from 1.0233 to 1.0082 and from
+      1.0554 to 1.0383.'
+    - 't5_l1_mesh.py and t7: along the die-row scans the first step toward W* raises the 4 mm L1 by 0.13-0.20
+      % but lowers the 1 mm L1. The RMS residual is 0.07-0.09 % at 4 mm, 0.02-0.04 % at 2 mm and 0.003-0.02
+      % at 1 mm. L1 per evaluation on 2R takes 14/42/387 ms and on Case 4 29/131/3540 ms (4/2/1 mm).'
+    - 't4_l2_local.json (local lat0.5): the local W* solve equals the burst''s to 7e-15. W* with row_LS_u0
+      +6 mm gives L2 1.0431 against L1 1.0108; +3 mm gives 1.0188. The counterfactual moves give L2 0.9963
+      (E0), 0.9919 (D2), 0.9979 (C2), 0.9929 (C4), 0.9865 (B4) and 0.9912 (B3), each rated improving by
+      the 4 mm L1. slot1_u0 alone (B4b) gives 1.0412.'
+    - 't6_sensitivity.json: over 35 one-at-a-time moves at W*, L2 against L1 has slope 0.71-0.72, residual
+      sd 0.24 % and Pearson 0.98. The largest residuals are die rows: row_LS_u0 +2 mm is +0.96 %, row_HS_u0
+      -2 mm is -0.61 % and row_LS_u0 -2 mm is -0.53 %.'
+    - 'H3: L2(W)/L2(W*) = 1.0666. The W* solve is deterministic. The search''s band b on 2R is 0.0004-0.0061.
+      W*''s -1.3 % residual in the plain fit falls to about -0.1 % once row_LS_u0 is included.'
+    alternative_explanations:
+    - explanation: 'H1 as stated: the search ends at an L1 optimum that L2 misorders against W* (C002-type
+        local misranking).'
+      how_to_discriminate: 'Is the end point an L1 optimum along the move back to W*, and do L1 and L2
+        agree on that move''s direction? T3/T4: they agree in every failed draw (B3, B4, C2, C4, D2, E0
+        are all L1-improving), so H1 is an amplifier here, not the cause.'
+    - explanation: Within-shortlist L1/L2 misranking (T0474).
+      how_to_discriminate: The L2 span of each shortlist is at most 0.13 points (t1_assembled.json). Refuted
+        as a cause.
+    - explanation: 'H2c: the budget alone is too small.'
+      how_to_discriminate: Look at ablation (e)'s terminal kind and the improving moves left at the end.
+        Plain descent ends at a local optimum on draws 1, 2, 5 and 6 at the same L1 levels, and the remaining
+        single-step gains are at most 0.19 points. So budget is a minor factor.
+    - explanation: 'H3: W*''s selection advantage, or a shared solve error.'
+      how_to_discriminate: 'Check the size of the two-way choice (6.7 %), the determinism of the W* solve
+        (7e-15), and W*''s residual once row_LS_u0 is in the fit (about -0.1 %). Refuted as material:
+        bounded by b of at most 0.6 points.'
+    - explanation: The die-row term is an accident of these 8 dev draws or of 0.5 mm discretisation.
+      how_to_discriminate: Solve the six counterfactuals and W* at 0.25 mm (7 jobs, about 1.8 solve-h,
+        about $1). On a fresh dev seed, refit T2's row_LS_u0 coefficient.
+    discriminating_tests:
+    - 'T1: per-draw L1 and L2 (0.5 mm) of the end point, shortlist spans, parameter differences and restoration
+      of the planted parameters (committed data only).'
+    - 'T2: L1-to-L2 regression over 168 layouts, residual against parameter offsets, one point per group,
+      leave-one-draw-out.'
+    - 'T3: local L1 optimality of the end points, a greedy valid path to W* with its barrier, the coupled-block
+      validity check, and die-row scans.'
+    - 'T5/T7: die-row L1 scans at hmax 4, 2 and 1 mm (roughness and cost).'
+    - 'T4: counterfactual l2_layout solves at 0.5 mm: die row put back, the coupled triple, determinism
+      against the burst.'
+    - 'T6: one-at-a-time L1 and L2 sensitivity at W* for all valid moves of at most 2 mm.'
+    - 'Not run (needs 0.25 mm): the 7 counterfactual fingerprints at lat0.25, about 1.8 solve-h, about
+      $1 on n2d-custom-8.'
+    recommended_actions:
+    - 'Founder: choose among redesign options A, A′ and B (note section 7). The recommendation is A: die-row
+      line moves and DRC-coupled moves added to the search, with the L1 screen at hmax 2 mm everywhere
+      E011 uses L1 (proxy, degradation, search, ablations c and e). It gets a new experiment id and a
+      new dev seed.'
+    - 'Founder decisions under A: frozen.search, search_cfg_hash and local.py''s hash; frozen.proxy.rule
+      (new screen, so W* is re-derived and choose_proxy reruns at 0.25 mm); frozen.degradation''s L1 target
+      (re-aim; decision 2 again); frozen.ablation_c and ablation_e; the dev seed. None of these was changed
+      here.'
+    - 'Before any VM under A: run the L1 stage locally (about 6-9 h, checkpointed), then a local 0.5 mm
+      go/no-go on 2R (about 160 solves, about 3.6 CPU-h). Stop if 2R passes fewer than 7 of 8 draws at
+      0.5 mm. Only then run the dev burst (last one $40, 61-72 h on 8 vCPU, about 35 h on 16).'
+    - 'Failure criteria for the redesign''s dev rows: 2R or Case 4 passes fewer than 7 of 8 at 0.25 mm,
+      A3 = 0, or K1 fires. If the L1 indicator is at 7 of 8 or more while L2 is below 7 of 8, with residual
+      row_LS_u0 offsets above about 2.5 mm, the fidelity limit binds and decision_if_fail applies.'
+    - Option B (an L2-guided refinement at 0.5 mm) would change the hypothesis's description of the search
+      ('L1 screen'). Only the founder can amend that.
+    - 'Optional, about $1: 0.25 mm solves of the 7 counterfactual fingerprints, to confirm that the 0.5
+      mm ratios carry to the evaluation level.'
+    - 'Do not change the degradation family to plant smaller die-row offsets: that designs around the
+      finding.'
+    affects_acceptance_criteria: false
+    files_written:
+    - research/diagnoses/e011-2r-dev-miss.md
+    - research/o008_e011_diag/common.py
+    - research/o008_e011_diag/t1_assemble.py
+    - research/o008_e011_diag/t2_fidelity.py
+    - research/o008_e011_diag/t3_l1_paths.py
+    - research/o008_e011_diag/t3b_dierow_scans.py
+    - research/o008_e011_diag/t4_l2_local.py
+    - research/o008_e011_diag/t5_l1_mesh.py
+    - research/o008_e011_diag/t6_sensitivity.py
+    - research/o008_e011_diag/t7_l1_cost_roughness.py
+    - research/o008_e011_diag/t1_assembled.json
+    - research/o008_e011_diag/t2_fidelity.json
+    - research/o008_e011_diag/t3_l1_paths.json
+    - research/o008_e011_diag/t3b_dierow_scans.json
+    - research/o008_e011_diag/t4_l2_local.json
+    - research/o008_e011_diag/t5_l1_mesh.json
+    - research/o008_e011_diag/t6_sensitivity.json
+    - research/o008_e011_diag/t7_l1_cost_roughness.json
+    - research/o008_e011_diag/l2/ (50 local lat0.5 results with job files, layout pickles, run logs)
+    experiment_drafts: []
