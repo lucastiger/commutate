@@ -1,5 +1,5 @@
 # ModuleForge status
-_generated 2026-11-21T08:08:44+00:00 from repository state — do not edit_
+_generated 2026-11-21T08:10:50+00:00 from repository state — do not edit_
 
 ## Founder inbox (3 open)
 - **I0209** [external_action] [O004] O004: two F7 burst-VM runs before E004 registration, and a budget warning
@@ -38,7 +38,6 @@ cancelled: 47, done: 423, failed: 4, needs_founder: 1, todo: 2
 - T0475 `needs_founder` scientist/investigate: Diagnose E011's development miss on 2D_Case_2R and propose the one redesign (attempt 1)
 
 ## Recent events
-- 2026-11-21T04:22:45+00:00 sleep_detected {"gap_s": 970, "slept_s": 923, "runs_extended": 0}
 - 2026-11-21T04:38:59+00:00 sleep_detected {"gap_s": 974, "slept_s": 925, "runs_extended": 0}
 - 2026-11-21T05:03:47+00:00 sleep_detected {"gap_s": 1488, "slept_s": 1440, "runs_extended": 0}
 - 2026-11-21T05:20:37+00:00 sleep_detected {"gap_s": 1009, "slept_s": 931, "runs_extended": 0}
@@ -53,3 +52,4 @@ cancelled: 47, done: 423, failed: 4, needs_founder: 1, todo: 2
 - 2026-11-21T07:36:11+00:00 run_finished {"run": "T0476-critic-20261120T233034-6c6f", "status": "completed", "cost": 1.89274, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T07:36:57+00:00 run_finished {"run": "T0477-critic-20261120T233038-b80b", "status": "completed", "cost": 1.762303, "subtype": "success", "report": "structured_output"}
 - 2026-11-21T08:08:39+00:00 inbox_opened {"id": "I0262", "kind": "protected_change", "subject": "T0475: merge needs founder approval"}
+- 2026-11-21T08:10:17+00:00 note {"objective": "O008", "about": "T0475_reviews"}
